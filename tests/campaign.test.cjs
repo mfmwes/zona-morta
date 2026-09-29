@@ -437,3 +437,65 @@ test('tabelas e criação: cobertura completa dos dados, 30 origens e habilidade
     for (const specialty of archetype.specialties) assert.ok(specialty.effect.length > 5,specialty.name);
   }
 });
+
+test('carga de provisões só aumenta a cada quatro porções completas', () => {
+  const s = survivor();
+  s.inventory = [];
+  s.food = 3; s.water = 3;
+  let stats = survivorStats(s);
+  assert.equal(stats.load.food, 0);
+  assert.equal(stats.load.water, 0);
+
+  s.food = 4; s.water = 4;
+  stats = survivorStats(s);
+  assert.equal(stats.load.food, 1);
+  assert.equal(stats.load.water, 1);
+
+  s.food = 7; s.water = 7;
+  stats = survivorStats(s);
+  assert.equal(stats.load.food, 1);
+  assert.equal(stats.load.water, 1);
+
+  s.food = 8; s.water = 8;
+  stats = survivorStats(s);
+  assert.equal(stats.load.food, 2);
+  assert.equal(stats.load.water, 2);
+});
+
+test('dois bolsos aceitam objetos compactos e conservam o item ao guardar', () => {
+  const s = survivor();
+  const radio = item('Rádio portátil');
+  const alicate = item('Alicate');
+  const crowbar = item('Pé de cabra');
+  s.inventory.push(radio, alicate, crowbar);
+
+  assert.ok(inventory.compatibleSlots(radio).includes('pocket1'));
+  assert.ok(inventory.compatibleSlots(radio).includes('pocket2'));
+  assert.ok(inventory.compatibleSlots(alicate).includes('pocket1'));
+  assert.equal(inventory.compatibleSlots(crowbar).includes('pocket1'), false);
+
+  assert.equal(inventory.equipItem(s, radio.id, 'pocket1'), true);
+  assert.equal(inventory.equipItem(s, alicate.id, 'pocket2'), true);
+  assert.equal(s.pocket1, 'Rádio portátil');
+  assert.equal(s.pocket2, 'Alicate');
+  assert.equal(inventory.stowSlot(s, 'pocket1'), true);
+  assert.equal(s.pocket1, '');
+  assert.ok(s.inventory.some(entry => entry.name === 'Rádio portátil'));
+});
+
+test('alimentos e água prontos são identificados para contagem automática de porções', () => {
+  const cereal = item('Barra de cereal');
+  const biscuits = item('Pacote de bolachas');
+  const water = item('Garrafa de água lacrada');
+  const uncertainWater = item('Água de cisterna tratada');
+  const oats = item('Aveia');
+
+  assert.equal(inventory.automaticProvision(cereal).type, 'food');
+  assert.equal(inventory.automaticProvision(cereal).portions, 1);
+  assert.equal(inventory.automaticProvision(biscuits).portions, 2);
+  assert.equal(inventory.automaticProvision(water).type, 'water');
+  assert.equal(inventory.automaticProvision(water).portions, 1);
+  assert.equal(inventory.automaticProvision(uncertainWater), null);
+  assert.equal(inventory.automaticProvision(oats), null);
+});
+

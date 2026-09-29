@@ -1,36 +1,43 @@
-# Zona Morta — Feedback de Ações: Redesign visual v0.4.1
+# Zona Morta — Carga, Bolsos e Porções Automáticas v0.4.2 (revisado)
 
-Redesign visual das notificações do sistema, mantendo o comportamento já implementado.
+Este ZIP **substitui o patch v0.4.2 anterior**. Use apenas este.
 
-## Visual
-- estilo de terminal/dossiê de campo coerente com Zona Morta;
-- fundo verde-petróleo escuro;
-- faixa lateral semântica;
-- sucesso em verde claro;
-- erro em ferrugem/vermelho;
-- alerta em âmbar;
-- informação em ciano;
-- ícones em cápsulas próprias;
-- tipografia de registro técnico;
-- detalhe `ZM // REGISTRO`;
-- acabamento com grade/scanline discreta e círculos de radar;
-- botão de fechar redesenhado;
-- versão responsiva para celular.
+## 1. Carga de porções
+- 1–3 porções: 0 espaços.
+- 4–7 porções: 1 espaço.
+- 8–11 porções: 2 espaços.
+- e assim por diante.
 
-## Não altera
-- banco D1;
-- regras;
-- rolagens;
-- Hope/Fear;
-- inventário;
-- dados das campanhas.
+## 2. Dois bolsos no Kit Ativo
+- `Bolso 1` e `Bolso 2`.
+- 0 carga enquanto o objeto estiver ativo no bolso.
+- Aceitam itens compactos marcados como `Carga 0` ou `Guarda 0`.
+- Alimentos e bebidas não usam esses slots.
 
-## Aplicação no Codespaces
+## 3. Porções automáticas
+Ao usar **Registrar achado**:
+- alimento pronto entra automaticamente no contador de Comida;
+- bebida/água pronta entra automaticamente no contador de Água;
+- a quantidade de porções vem do próprio catálogo;
+- o item é convertido para porções, evitando duplicação entre objeto e contador;
+- prazo/perecibilidade é mantido no lote de provisões.
 
-Aplique primeiro o Feedback de Ações v0.4. Depois extraia este ZIP na raiz e rode:
+Exemplos:
+- 1 Barra de cereal → +1 Comida;
+- 2 Pacotes de bolachas → +4 Comida;
+- 3 Garrafas de água lacrada → +3 Água.
+
+### Exceção importante
+Itens que exigem preparo, tratamento ou verificação **não entram automaticamente** no contador. Eles continuam como objetos físicos até a ação ser resolvida. Isso evita contar como água potável algo ainda não verificado ou como comida pronta algo que ainda precisa ser preparado.
+
+Não exige migração no D1.
+
+## Codespaces
+
+Extraia o ZIP na raiz e rode:
 
 ```bash
-python3 apply_feedback_style.py
+python3 apply_inventory_fixes.py
 npm test
 npm run build
 ```
@@ -38,8 +45,8 @@ npm run build
 Se tudo passar:
 
 ```bash
-rm -rf .feedback-style-backup
+rm -rf .inventory-fix-backup
 git add .
-git commit -m "style: redesenhar feedback de ações"
+git commit -m "fix: carga, bolsos e porções automáticas"
 git push
 ```

@@ -32,7 +32,7 @@ export type HexState = {
   events: { id: string; text: string; trigger: string; revealed: boolean }[];
 };
 
-export type EquipmentSlot = "primary" | "secondary" | "protection" | "personal" | "bag";
+export type EquipmentSlot = "primary" | "secondary" | "protection" | "personal" | "bag" | "pocket1" | "pocket2";
 export type InventoryItem = {
   id: string;
   name: string;
@@ -89,6 +89,8 @@ export type Survivor = {
   protection: string;
   personal: string;
   bag: string;
+  pocket1?: string;
+  pocket2?: string;
   kitCondition?: Partial<Record<EquipmentSlot, string>>;
   equippedItems?: Partial<Record<EquipmentSlot, InventoryItem>>;
   ammoType?: string;
@@ -309,8 +311,8 @@ export function survivorStats(s: Survivor) {
   const firearm = ammoType !== null && (s.ammoType ?? ammoType) === ammoType;
   const load = {
     items: s.inventory.reduce((sum, item) => sum + Math.max(0, item.load) * Math.max(0, item.qty), 0),
-    food: Math.ceil(Math.max(0, s.food + pockets("Alimentos") - 2) / 4),
-    water: Math.ceil(Math.max(0, s.water + pockets("Bebidas") - 2) / 4),
+    food: Math.floor(Math.max(0, s.food + pockets("Alimentos")) / 4),
+    water: Math.floor(Math.max(0, s.water + pockets("Bebidas")) / 4),
     ammo: Math.max(0, s.ammo - (firearm ? 1 : 0)),
     personal: s.personal === "Kit médico de campo" || s.personal === "Kit de ferramentas de trabalho" ? 1 : 0,
   };

@@ -26,7 +26,7 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
 
 const immutable = ["id", "name", "level", "proficiency", "origin", "past", "archetype", "specialty",
   "attributes", "freeExperience", "techniques", "infection", "exposureDeadline", "treatmentAttempted", "terminalScenes"] as const;
-const editable = ["portrait", "primary", "secondary", "protection", "personal", "bag", "equippedItems", "kitCondition",
+const editable = ["portrait", "primary", "secondary", "protection", "personal", "bag", "pocket1", "pocket2", "equippedItems", "kitCondition",
   "hp", "armorMarked", "stress", "hope", "food", "water", "foodConsumedDay", "waterConsumedDay", "provisionLots",
   "ammo", "ammoType", "inventory", "notes", "abilityUses"] as const;
 const allowedKeys = new Set<string>([...immutable, ...editable]);

@@ -64,6 +64,12 @@ export function discardItem(game: GameState, from: string, itemId: string, quant
   if (item.qty === 0) source.splice(source.indexOf(item), 1);
   return true;
 }
+export function pocketEligible(item: InventoryItem) {
+  const entry = catalogForItem(item);
+  if (entry && ["Alimentos", "Bebidas"].includes(entry.category)) return false;
+  const loadField = entry?.fields.find(field => ["Carga", "Guarda", "Carga em viagem"].includes(field.label))?.value;
+  return item.load === 0 || loadField === "0";
+}
 export function compatibleSlots(item: InventoryItem): EquipmentSlot[] {
   const name = item.name;
   const slots: EquipmentSlot[] = [];
@@ -72,10 +78,12 @@ export function compatibleSlots(item: InventoryItem): EquipmentSlot[] {
   if (getProtection(name)) slots.push("protection");
   if (["Bolsa tiracolo", "Mochila urbana", "Mochila de trilha", "Mochila cargueira"].includes(name)) slots.push("bag");
   if (content.personal.some(x => x.name === name) && !slots.includes("bag")) slots.push("personal");
+  if (pocketEligible(item)) slots.push("pocket1", "pocket2");
   return slots;
 }
 export const slotLabels: Record<EquipmentSlot, string> = {
-  primary: "Arma principal", secondary: "Arma secundária", protection: "Proteção", personal: "Item pessoal", bag: "Bolsa/mochila",
+  primary: "Arma principal", secondary: "Arma secundária", protection: "Proteção", personal: "Item pessoal",
+  bag: "Bolsa/mochila", pocket1: "Bolso 1", pocket2: "Bolso 2",
 };
 export function storedLoad(name: string, slot: EquipmentSlot) {
   const record = slot === "primary" ? getPrimary(name)
@@ -141,14 +149,19 @@ export function provisionInfo(item: InventoryItem) {
   const label = category === "food" ? "Porções" : "Água em jogo";
   const description = catalog?.fields.find(f => f.label === label)?.value ?? "";
   const listed = Number(description.match(/\d+/)?.[0] ?? 1);
-  const requiresVerification = category === "water" && listed === 0 && /até/i.test(description);
-  const portions = requiresVerification ? 1 : listed;
+  const requiresVerification = category === "water"
+    && (/verific|examinar|identificar/i.test(description) || (listed === 0 && /até/i.test(description)));
+  const portions = requiresVerification ? Math.max(1, listed) : listed;
   const type = portions > 0 && item.condition !== "Estragado" ? category : null;
   const preparation = catalog?.fields.find(f => f.label === "Preparo")?.value;
   const shelf = catalog?.fields.find(f => f.label === "Prazo")?.value;
   const needsPreparation = Boolean(requiresVerification || (preparation && !/^Pronto/i.test(preparation))
     || item.condition === "Contaminado" || (item.condition && item.condition !== "Íntegro" && /se íntegr[ao]/i.test(preparation ?? "")));
   return { type, portions, preparation, shelf, needsPreparation, requiresVerification };
+}
+export function automaticProvision(item: InventoryItem) {
+  const provision = provisionInfo(item);
+  return provision.type && !provision.needsPreparation ? provision : null;
 }
 
 export type Provision = "food" | "water" | "ammo";

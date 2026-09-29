@@ -10,7 +10,7 @@ import { ItemArt } from "@/components/item-art";
 import { addLog, survivorStats, type EquipmentSlot, type GameState, type InventoryItem } from "@/lib/game";
 import { createId } from "@/lib/id";
 import { provisionDeadline, recordProvisionLot } from "@/lib/provisions";
-import { addStack, ammoTypeFor, atSharedStorage, catalogForItem, catalogItems, catalogKey, compatibleSlots, conditions,
+import { addStack, ammoTypeFor, atSharedStorage, automaticProvision, catalogForItem, catalogItems, catalogKey, compatibleSlots, conditions,
   container, countsAsMedication, discardItem, displacedSlots, equipItem, inventoryCategories, itemFromCatalog, provisionInfo, provisionTransferError, slotLabels, transferItem, transferProvisions } from "@/lib/inventory";
 
 type Edit = (fn: (draft: GameState) => void) => void;
@@ -46,15 +46,44 @@ export function AddItemDialog({ game, edit, ownerId }: { game: GameState; edit: 
       qty: amount, condition, category: "Outros",
     };
     let added = false;
+    let autoPortions = 0;
+    let autoResource: "food" | "water" | null = null;
     edit(draft => {
       const target = container(draft, ownerId);
       if (!target || (ownerId === "shared" && !atSharedStorage(draft))) return;
+      const auto = !custom ? automaticProvision(item) : null;
+      const holder = ownerId === "shared" ? draft.shelter : draft.survivors.find(s => s.id === ownerId);
+      const total = auto ? item.qty * auto.portions : 0;
+      const limit = ownerId === "shared" ? 999 : 99;
+      if (auto?.type && holder && holder[auto.type] + total <= limit) {
+        const expiresDay = auto.type === "food"
+          ? provisionDeadline(auto.shelf, auto.shelf === "C" ? draft.day : item.foundDay ?? draft.day)
+          : null;
+        recordProvisionLot(holder, auto.type, total, item.name, expiresDay);
+        autoPortions = total;
+        autoResource = auto.type;
+        added = true;
+        addLog(draft, "provisões", ownerName(draft, ownerId) + ": " + item.qty + "× " + item.name + " registrado automaticamente como " + total +
+          " porção(ões) de " + (auto.type === "food" ? "Comida" : "Água") + ".");
+        return;
+      }
       addStack(target, item);
       added = true;
       addLog(draft, "inventário", ownerName(draft, ownerId) + ": recebeu " + item.qty + "× " + item.name + ".");
     });
     if (!added) { toast.error("O destino não está acessível. Confira a posição do grupo."); return; }
-    toast.success(`${item.qty}× ${item.name} registrado.`, { description: ownerName(game, ownerId) });
+    if (autoPortions && autoResource) {
+      toast.success(`${autoPortions} porção(ões) registradas automaticamente.`, {
+        description: `${item.qty}× ${item.name} → ${autoResource === "food" ? "Comida" : "Água"} de ${ownerName(game, ownerId)}`,
+      });
+    } else {
+      const pending = !custom ? provisionInfo(item) : null;
+      toast.success(`${item.qty}× ${item.name} registrado.`, {
+        description: pending?.type && pending.needsPreparation
+          ? `${ownerName(game, ownerId)} · aguarda preparo/verificação antes de entrar no contador`
+          : ownerName(game, ownerId),
+      });
+    }
     setOpen(false); setKey(""); setQuery(""); setQty("1"); setCondition("Íntegro"); setCustom(false); setName("");
   }
 
@@ -74,7 +103,7 @@ export function AddItemDialog({ game, edit, ownerId }: { game: GameState; edit: 
             <ItemArt name={item.name} category={item.category} /><span><b>{item.name}</b><small>{item.category}</small></span><strong>{item.fields.find(f => ["Guarda", "Carga"].includes(f.label))?.value ?? "1"} espaço(s)</strong></button>)}
           {matches.length === 0 && <p>Nenhum item encontrado. Tente outro termo ou registre um item livre.</p>}
         </div>
-        {entry && <div className="inventory-selection"><div className="inventory-selection-heading"><ItemArt name={entry.name} category={entry.category} size="large" /><div><b>{entry.name}</b><span>Carga registrada: {preview?.load === 0 ? "bolso; porções agrupadas" : (preview?.load ?? 1) + " por unidade"}</span></div></div>
+        {entry && <div className="inventory-selection"><div className="inventory-selection-heading"><ItemArt name={entry.name} category={entry.category} size="large" /><div><b>{entry.name}</b><span>Carga registrada: {preview?.load === 0 && ["Alimentos","Bebidas"].includes(entry.category) ? "porções agrupadas no contador" : preview?.load === 0 ? "objeto compacto · pode usar bolso" : (preview?.load ?? 1) + " por unidade"}</span></div></div>
           <dl>{entry.fields.filter(f => !["Guarda", "Carga"].includes(f.label)).slice(0, 4).map(f => <div key={f.label}><dt>{f.label}</dt><dd>{f.value}</dd></div>)}</dl></div>}
       </> : <div className="inventory-search"><Field label="Nome" value={name} onChange={setName} placeholder="Ex.: filtro portátil" />
         <Field label="Carga por unidade" value={load} onChange={setLoad} type="number" /></div>}
