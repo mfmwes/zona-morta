@@ -17,8 +17,7 @@ import { PlayersPanel } from "@/components/players-panel";
 import { AuthPanel } from "@/components/auth-panel";
 import { CharacterWizard } from "@/components/character-wizard";
 import { CampaignLibrary, type CampaignSummary } from "@/components/campaign-library";
-import { RollDialog } from "@/components/roll-dialog";
-import { RollCenter } from "@/components/roll-center";
+import { TableChat } from "@/components/table-chat";
 import { addLog, defaultState, displayTime, type GameState, type Point, type Survivor } from "@/lib/game";
 import { createId } from "@/lib/id";
 import { sectorProfiles } from "@/lib/sectors";
@@ -45,6 +44,7 @@ export default function CampaignApp() {
   const [status, setStatus] = useState<SaveStatus>("salvo");
   const [saveError, setSaveError] = useState("");
   const [tab, setTab] = useState("mapa");
+  const [chatOpen, setChatOpen] = useState(true);
   const [playerPreview, setPlayerPreview] = useState(false);
   const [role, setRole] = useState<"mestre" | "jogador" | "convidado">("mestre");
   const [ownerId, setOwnerId] = useState("");
@@ -347,14 +347,13 @@ export default function CampaignApp() {
   const nav = [
     { value: "mapa", label: "Mapa e hexes", icon: Map },
     { value: "sobreviventes", label: "Sobreviventes", icon: Users },
-    { value: "rolagens", label: "Rolagens", icon: Dice5 },
     { value: "abrigo", label: "Abrigo e reservas", icon: House },
     { value: "referencias", label: "Regras e itens", icon: BookOpen },
     ...(role === "mestre" ? [{ value: "jogadores", label: "Jogadores", icon: Users }] : []),
   ];
 
   return <Tabs value={tab} onValueChange={setTab} className="w-full">
-    <SidebarProvider className="app-shell">
+    <SidebarProvider className={`app-shell ${chatOpen ? "chat-open" : "chat-closed"}`}>
     <Sidebar collapsible="none" className="rail">
       <div className="flex items-center gap-3 px-2">
         <div className="brand-mark">ZM</div><div><div className="text-[.93rem] font-extrabold tracking-wide">ZONA MORTA</div>
@@ -394,7 +393,7 @@ export default function CampaignApp() {
             onClick={() => setPlayerPreview(value => !value)}>
             {playerPreview ? <Eye size={16} /> : <EyeOff size={16} />}<span>{playerPreview ? "Prévia ativa" : "Prévia dos jogadores"}</span>
           </Button>}
-          {!playerPreview && <span className="topbar-roll"><RollDialog game={game} edit={edit} /></span>}
+          <Button size="sm" variant={chatOpen ? "default" : "outline"} onClick={() => setChatOpen(value => !value)} aria-expanded={chatOpen} aria-controls="table-chat"><MessageSquare size={16} /><span className="topbar-options-label">Chat</span></Button>
           <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" variant="outline" aria-label="Abrir opções da campanha"><MoreHorizontal size={17} /><span className="topbar-options-label">Opções</span></Button></DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-52">
               <DropdownMenuItem onSelect={downloadBackup}><Download size={16} />Baixar cópia</DropdownMenuItem>
@@ -501,7 +500,6 @@ export default function CampaignApp() {
           </div>}
         </>}
         {tab === "sobreviventes" && <SurvivorPanel game={game} edit={edit} playerPreview={readOnlyPreview} playerMode={role === "jogador"} />}
-        {tab === "rolagens" && <RollCenter game={game} edit={edit} role={role} survivorId={survivorId} />}
         {tab === "abrigo" && <ShelterPanel game={game} edit={edit} playerPreview={readOnlyPreview} />}
         {tab === "referencias" && <ReferencePanel />}
         {tab === "jogadores" && role === "mestre" && <PlayersPanel game={game} ownerId={ownerId} />}
