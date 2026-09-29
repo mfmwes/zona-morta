@@ -15,6 +15,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CharacterWizard } from "@/components/character-wizard";
 import { AddItemDialog, ItemActionsDialog, ProvisionTransferDialog } from "@/components/inventory-workflow";
+import { ItemContextMenu } from "@/components/item-context-menu";
 import { EmptyItemArt, ItemArt } from "@/components/item-art";
 import { AbilityArt } from "@/components/ability-art";
 import { RollDialog, type RollRequest } from "@/components/roll-dialog";
@@ -445,14 +446,17 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false }:
               {inventoryGroups.length === 0 && <p className="character-empty-list">{selected.inventory.length ? "Nenhum item com esse filtro." : "Nenhum item guardado. Registre um achado ou guarde algo do kit ativo."}{selected.inventory.length > 0 && <button type="button" className="character-text-link" onClick={() => { setInventoryQuery(""); setInventoryCategory("Todas"); }}>Limpar filtros</button>}</p>}
               {inventoryGroups.map(([category, items]) => <div className="character-inventory-group" key={category}><h4>{category}</h4>
                 <Accordion type="multiple">{items.map(item => { const catalog = catalogForItem(item); const provisionState = provisionItemInfo(item); return <AccordionItem value={item.id} key={item.id} className="character-item">
-                  <div className="character-item-row"><AccordionTrigger className="character-item-trigger"><ItemArt name={item.name} category={category} /><span className="character-item-name">{item.name}<small>{provisionState.resource ? provisionDisplay(item) : `${item.condition || "Estado não registrado"} · ${item.load * item.qty} espaço(s)`}</small></span><span className="character-item-meta">×{item.qty}</span></AccordionTrigger>
-                    <ItemActionsDialog game={game} edit={edit} ownerId={selected.id} item={item} allowCorrection={!playerPreview} selfOnly={playerMode} /></div>
+                  <ItemContextMenu game={game} edit={edit} ownerId={selected.id} item={item} selfOnly={playerMode}>
+                    <div className="character-item-row inventory-context-target"><AccordionTrigger className="character-item-trigger"><ItemArt name={item.name} category={category} /><span className="character-item-name">{item.name}<small>{provisionState.resource ? provisionDisplay(item) : `${item.condition || "Estado não registrado"} · ${item.load * item.qty} espaço(s)`}</small></span><span className="character-item-meta">×{item.qty}</span></AccordionTrigger>
+                      <ItemActionsDialog game={game} edit={edit} ownerId={selected.id} item={item} allowCorrection={!playerPreview} selfOnly={playerMode} /></div>
+                  </ItemContextMenu>
                   <AccordionContent className="character-item-detail"><div className="character-chips"><span>{category}</span><span>Estado: {item.condition || "Sem registro"}</span>{provisionState.resource ? <><span>{provisionState.remaining} porção(ões) restantes</span><span>{provisionState.status}</span>{item.opened && <span>Aberto</span>}{item.expiresDay && <span>Vence no dia {item.expiresDay}</span>}</> : <span>{item.load + " espaço(s) por unidade"}</span>}{item.armorMarked ? <span>Armadura marcada: {item.armorMarked}</span> : null}{item.foundDay && <span>Encontrado no dia {item.foundDay}</span>}</div>
                     {catalog && <dl>{catalog.fields.map(field => <div key={field.label}><dt>{field.label}</dt><dd>{field.value}</dd></div>)}</dl>}
                   </AccordionContent>
                 </AccordionItem>; })}</Accordion>
               </div>)}
-              {selected.inventory.length > 0 && <p className="roll-hint inventory-count" role="status">{inventoryGroups.reduce((sum, [, items]) => sum + items.length, 0)} de {selected.inventory.length} registros · {selected.inventory.reduce((sum, item) => sum + item.qty, 0)} unidades no total</p>}
+              {selected.inventory.length > 0 && <><p className="roll-hint inventory-context-hint">No computador, clique com o botão direito em um item para abrir as ações rápidas. O botão <b>Ações</b> continua disponível para edição e opções avançadas.</p>
+                <p className="roll-hint inventory-count" role="status">{inventoryGroups.reduce((sum, [, items]) => sum + items.length, 0)} de {selected.inventory.length} registros · {selected.inventory.reduce((sum, item) => sum + item.qty, 0)} unidades no total</p></>}
             </section>
           </TabsContent>
           <TabsContent value="condicoes" className="character-tab-content">

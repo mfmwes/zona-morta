@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Counter, Field, Pick } from "@/components/game-controls";
 import { AddItemDialog, ItemActionsDialog } from "@/components/inventory-workflow";
+import { ItemContextMenu } from "@/components/item-context-menu";
 import { ItemArt } from "@/components/item-art";
 import { ShelterMoveDialog } from "@/components/shelter-move";
 import { content, establishShelter, recoverFormerStock, type GameState } from "@/lib/game";
@@ -114,9 +115,13 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
       {!sharedAccessible && <p className="character-rule-note">O grupo está fora do abrigo. Volte ao hex da base para mover os itens compartilhados.</p>}
       <div className="shared-inventory-list">
         {(s.inventory ?? []).length === 0 ? <p className="character-empty-list">Nenhum objeto guardado no depósito.</p>
-          : (s.inventory ?? []).map(item => { const provisionState = provisionItemInfo(item); return <div className="shared-inventory-row" key={item.id}><div className="shared-inventory-entry"><ItemArt name={item.name} category={catalogForItem(item)?.category ?? item.category} /><div><b>{item.name}</b><span>{provisionState.resource ? provisionDisplay(item) : `${catalogForItem(item)?.category ?? item.category ?? "Outros"} · ${item.qty}× · carga ${item.load} cada · ${item.condition ?? "sem estado"}`}</span></div></div>
-            {sharedAccessible && !playerPreview && <ItemActionsDialog game={game} edit={edit} ownerId="shared" item={item} allowCorrection />}</div>; })}
+          : (s.inventory ?? []).map(item => { const provisionState = provisionItemInfo(item); const row = <div className={`shared-inventory-row ${sharedAccessible && !playerPreview ? "inventory-context-target" : ""}`}><div className="shared-inventory-entry"><ItemArt name={item.name} category={catalogForItem(item)?.category ?? item.category} /><div><b>{item.name}</b><span>{provisionState.resource ? provisionDisplay(item) : `${catalogForItem(item)?.category ?? item.category ?? "Outros"} · ${item.qty}× · carga ${item.load} cada · ${item.condition ?? "sem estado"}`}</span></div></div>
+            {sharedAccessible && !playerPreview && <ItemActionsDialog game={game} edit={edit} ownerId="shared" item={item} allowCorrection />}</div>;
+            return sharedAccessible && !playerPreview
+              ? <ItemContextMenu key={item.id} game={game} edit={edit} ownerId="shared" item={item}>{row}</ItemContextMenu>
+              : <div key={item.id}>{row}</div>; })}
       </div>
+      {(s.inventory ?? []).length > 0 && sharedAccessible && !playerPreview && <p className="roll-hint inventory-context-hint">No computador, clique com o botão direito em um item para usar ações rápidas.</p>}
       {hasShelter && !playerPreview && <div className="mt-5 grid gap-3 sm:grid-cols-3">
         <Counter label="Segurança" value={s.security} max={3} onChange={value=>edit(d=>{d.shelter.security=value;})} />
         <Counter label="Energia" value={s.energy} max={2} onChange={value=>edit(d=>{d.shelter.energy=value;})} />

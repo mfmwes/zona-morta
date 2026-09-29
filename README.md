@@ -1,31 +1,39 @@
-# Zona Morta — Provisões Físicas v0.4.3
+# Zona Morta — Menu Contextual de Inventário v0.4.4
 
-Este patch substitui o comportamento de “converter o item em contador”.
+Adiciona ações rápidas pelo clique direito sem remover o fluxo atual do botão **Ações**.
 
-## O que muda
+## Onde funciona
+- Itens guardados do sobrevivente.
+- Itens compartilhados do abrigo/reservas, quando acessíveis.
 
-- Alimentos e bebidas continuam no inventário.
-- O total de Comida/Água soma porções soltas + porções consumíveis nos itens físicos.
-- Cada item acompanha suas porções restantes.
-- Consumir uma porção não apaga o pacote inteiro.
-- Pilhas são separadas automaticamente quando uma unidade fica parcialmente consumida.
-- Preparar ou verificar não destrói o objeto.
-- Itens pendentes de preparo/verificação não entram no total disponível.
-- A carga usa as porções realmente restantes.
-- Transferência conserva porções restantes, estado, abertura e prazo.
-- Alimentos preparados podem ganhar vencimento próprio.
-- Ao fechar o dia, o abrigo pode usar itens físicos prontos se as porções soltas não bastarem.
-- Mantém os dois bolsos e a regra 3 porções = 0 carga / 4 porções = 1 carga.
+## Ações rápidas
+Dependem do item e do contexto:
+- Consumir 1 porção.
+- Preparar.
+- Verificar/tratar.
+- Equipar em arma principal/secundária, proteção, item pessoal ou bolsos compatíveis.
+- Transferir para outro sobrevivente ou abrigo.
+- Transferir 1 unidade ou tudo quando houver pilha.
+- Usar medicamentos/itens utilizáveis.
+- Registrar Medicamentos abstratos.
+- Guardar suprimentos abstratos nas reservas.
+- Deixar 1 unidade ou tudo para trás, sempre com confirmação.
 
-## Importante sobre dados já convertidos
+## Importante
+O menu contextual e o diálogo antigo usam o mesmo executor em `lib/item-actions.ts`.
+Assim, as regras de consumir, transferir, equipar, preparar e descartar não são duplicadas.
 
-Se a versão anterior já apagou um item e transformou tudo em `food`/`water`, a identidade do objeto foi perdida. Essas porções continuam válidas como **porções soltas**, mas não há como o sistema adivinhar automaticamente se eram bolachas, garrafas, frutas etc.
+O botão **Ações** continua disponível para:
+- editar estado;
+- corrigir quantidade/carga;
+- fluxos avançados;
+- celulares e telas touch.
 
 ## Aplicar no Codespaces
 
 ```bash
-unzip -o Zona_Morta_Provisoes_Fisicas_v0_4_3.zip
-python3 apply_provision_model.py
+unzip -o Zona_Morta_Menu_Contextual_v0_4_4.zip
+python3 apply_context_menu.py
 npm test
 npm run build
 ```
@@ -33,9 +41,9 @@ npm run build
 Se tudo passar:
 
 ```bash
-rm -rf .provision-model-backup
+rm -rf .context-menu-backup
 git add .
-git commit -m "feat: preservar itens e rastrear porcoes fisicas"
+git commit -m "feat: menu contextual de inventario"
 git push
 ```
 

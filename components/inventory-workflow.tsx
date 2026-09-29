@@ -10,8 +10,9 @@ import { ItemArt } from "@/components/item-art";
 import { addLog, survivorStats, type EquipmentSlot, type GameState, type InventoryItem } from "@/lib/game";
 import { createId } from "@/lib/id";
 import { addStack, ammoTypeFor, atSharedStorage, catalogForItem, catalogItems, catalogKey, compatibleSlots, conditions,
-  consumeProvisionItem, container, countsAsMedication, discardItem, displacedSlots, equipItem, inventoryCategories, itemFromCatalog,
-  prepareProvisionItem, provisionInfo, provisionTransferError, slotLabels, transferItem, transferProvisions } from "@/lib/inventory";
+  container, countsAsMedication, displacedSlots, equipItem, inventoryCategories, itemFromCatalog,
+  provisionInfo, provisionTransferError, slotLabels, transferItem, transferProvisions } from "@/lib/inventory";
+import { performItemAction } from "@/lib/item-actions";
 import { provisionDisplay, provisionItemInfo } from "@/lib/provision-items";
 
 type Edit = (fn: (draft: GameState) => void) => void;
@@ -102,7 +103,6 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
   const [slot, setSlot] = useState<EquipmentSlot>("primary");
   const [amount, setAmount] = useState(1);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
-  const [prepared, setPrepared] = useState(false);
   const [conditionDraft, setConditionDraft] = useState(item.condition || "Íntegro");
   const [qtyDraft, setQtyDraft] = useState(item.qty);
   const [loadDraft, setLoadDraft] = useState(item.load);
@@ -147,48 +147,35 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
     if (mode === "discard" && !confirmDiscard) { setConfirmDiscard(true); return; }
     let message = "";
     edit(draft => {
-      const person = draft.survivors.find(s => s.id === ownerId);
-      const owner = ownerName(draft, ownerId);
-      if (ownerId === "shared" && !atSharedStorage(draft)) return;
-      if (mode === "transfer" && destination) {
-        if (transferItem(draft, ownerId, destination, item.id, count)) message = owner + " → " + ownerName(draft, destination) + ": " + count + "× " + item.name + ".";
-      } else if (mode === "equip" && person && selectedSlot) {
-        if (equipItem(person, item.id, selectedSlot)) message = person.name + " equipou " + item.name + "." + (displaced.length ? " Guardou: " + displaced.join(", ") + "." : "");
-      } else if (mode === "consume" && provisionState.resource) {
-        const consumed = consumeProvisionItem(draft, ownerId, item.id, consumerId || undefined);
-        if (consumed) {
-          const consumer = consumerId ? draft.survivors.find(s => s.id === consumerId) : person;
-          message = (consumer?.name ?? owner) + " consumiu 1 porção de " + item.name + "." +
-            (consumed.remainingInOpenedUnit > 0 ? ` Restam ${consumed.remainingInOpenedUnit} porção(ões) na unidade aberta.` : "");
-        }
-      } else if (mode === "prepare" && provisionState.resource) {
-        const preparedItem = prepareProvisionItem(draft, ownerId, item.id, count);
-        if (preparedItem) {
-          message = owner + ": " + count + "× " + item.name + " " +
-            (provisionState.requiresVerification ? "foi verificado/tratado" : "foi preparado") +
-            " e permanece como item físico no inventário.";
-        }
-      } else if (mode === "use" && discardItem(draft, ownerId, item.id, count)) {
-        message = owner + " usou " + count + "× " + item.name + ". Aplicar o efeito indicado pelo item em cena.";
-      } else if (mode === "medication" && countsAsMedication(item) && atSharedStorage(draft)
-        && draft.shelter.medications + count <= 99 && discardItem(draft, ownerId, item.id, count)) {
-        draft.shelter.medications += count;
-        message = owner + " guardou " + count + "× " + item.name + " como " + count + " unidade(s) de Medicamentos nas reservas compartilhadas.";
-      } else if (mode === "stock" && stockResource && atSharedStorage(draft)
-        && draft.shelter[stockResource] + count <= 99 && discardItem(draft, ownerId, item.id, count)) {
-        draft.shelter[stockResource] += count;
-        message = owner + " guardou " + count + " unidade(s) de " + item.name + " nas reservas compartilhadas.";
-      } else if (mode === "discard" && discardItem(draft, ownerId, item.id, count)) {
-        message = owner + " deixou para trás " + count + "× " + item.name + " no hex " + draft.partyHex + ".";
-      } else if (mode === "edit") {
+      if (mode === "edit") {
+        const person = draft.survivors.find(s => s.id === ownerId);
         const found = container(draft, ownerId)?.find(entry => entry.id === item.id);
         if (found) {
           found.condition = conditionDraft;
           if (allowCorrection) { found.qty = qtyDraft; found.load = loadDraft; }
-          message = owner + ": registro de " + item.name + " atualizado.";
+          message = ownerName(draft, ownerId) + ": registro de " + item.name + " atualizado.";
+          addLog(draft, "inventário", message, person?.id);
         }
+        return;
       }
-      if (message) addLog(draft, "inventário", message, person?.id);
+      const result = mode === "transfer" && destination
+        ? performItemAction(draft, ownerId, item.id, { type: "transfer", targetId: destination, quantity: count })
+        : mode === "equip" && selectedSlot
+          ? performItemAction(draft, ownerId, item.id, { type: "equip", slot: selectedSlot })
+          : mode === "consume"
+            ? performItemAction(draft, ownerId, item.id, { type: "consume", consumerId: consumerId || undefined })
+            : mode === "prepare"
+              ? performItemAction(draft, ownerId, item.id, { type: "prepare", quantity: count })
+              : mode === "use"
+                ? performItemAction(draft, ownerId, item.id, { type: "use", quantity: count })
+                : mode === "medication"
+                  ? performItemAction(draft, ownerId, item.id, { type: "medication", quantity: count })
+                  : mode === "stock"
+                    ? performItemAction(draft, ownerId, item.id, { type: "stock", quantity: count })
+                    : mode === "discard"
+                      ? performItemAction(draft, ownerId, item.id, { type: "discard", quantity: count })
+                      : { ok: false, message: "" };
+      if (result.ok) message = result.message;
     });
     if (!message) { toast.error("A ação não foi concluída. Confira a quantidade, o limite do destino e o acesso às reservas."); return; }
     toast.success(message);

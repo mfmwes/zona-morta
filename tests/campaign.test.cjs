@@ -8,6 +8,7 @@ require.extensions['.ts'] = (module, path) => module._compile(ts.transpileModule
 }).outputText, path);
 const { defaultState, initialSurvivor, survivorStats, content } = require('../lib/game.ts');
 const inventory = require('../lib/inventory.ts');
+const itemActions = require('../lib/item-actions.ts');
 const equipment = require('../lib/equipment.ts');
 const survival = require('../lib/survival.ts');
 const provisions = require('../lib/provisions.ts');
@@ -499,3 +500,40 @@ test('alimentos e água prontos são identificados para contagem automática de 
   assert.equal(inventory.automaticProvision(oats), null);
 });
 
+test('ações contextuais reutilizam as mesmas regras de inventário', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  ana.food = 0; ana.water = 0; bia.food = 0; bia.water = 0;
+  ana.inventory = [item('Pacote de bolachas', 2), item('Rádio portátil')];
+
+  const biscuits = ana.inventory.find(entry => entry.name === 'Pacote de bolachas');
+  let result = itemActions.performItemAction(g, ana.id, biscuits.id, { type: 'consume', consumerId: ana.id });
+  assert.equal(result.ok, true);
+  assert.equal(require('../lib/provision-items.ts').physicalProvisionPortions(ana.inventory, 'food', true), 3);
+
+  const radio = ana.inventory.find(entry => entry.name === 'Rádio portátil');
+  const options = itemActions.itemActionOptions(g, ana.id, radio, false);
+  assert.ok(options.slots.includes('pocket1'));
+  result = itemActions.performItemAction(g, ana.id, radio.id, { type: 'equip', slot: 'pocket1' });
+  assert.equal(result.ok, true);
+  assert.equal(ana.pocket1, 'Rádio portátil');
+
+  const remaining = ana.inventory.find(entry => entry.name === 'Pacote de bolachas' && !entry.opened);
+  result = itemActions.performItemAction(g, ana.id, remaining.id, { type: 'transfer', targetId: bia.id, quantity: 1 });
+  assert.equal(result.ok, true);
+  assert.ok(bia.inventory.some(entry => entry.name === 'Pacote de bolachas'));
+});
+
+test('menu contextual respeita preparo e descarte confirmado pelas regras centrais', () => {
+  const g = campaign(); const ana = g.survivors[0];
+  ana.food = 0; ana.inventory = [item('Aveia'), item('Pé de cabra')];
+
+  const oats = ana.inventory.find(entry => entry.name === 'Aveia');
+  let result = itemActions.performItemAction(g, ana.id, oats.id, { type: 'prepare', quantity: 1 });
+  assert.equal(result.ok, true);
+  assert.equal(require('../lib/provision-items.ts').provisionItemInfo(ana.inventory.find(entry => entry.name === 'Aveia')).ready, true);
+
+  const crowbar = ana.inventory.find(entry => entry.name === 'Pé de cabra');
+  result = itemActions.performItemAction(g, ana.id, crowbar.id, { type: 'discard', quantity: 1 });
+  assert.equal(result.ok, true);
+  assert.equal(ana.inventory.some(entry => entry.name === 'Pé de cabra'), false);
+});
