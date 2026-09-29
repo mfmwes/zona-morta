@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { BookOpen, Clock3, Download, Eye, EyeOff, House, Map, Package, RotateCcw, Users, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,6 +15,7 @@ import { ReferencePanel, ShelterPanel } from "@/components/campaign-views";
 import { PlayersPanel } from "@/components/players-panel";
 import { AuthPanel } from "@/components/auth-panel";
 import { CharacterWizard } from "@/components/character-wizard";
+import { CampaignLibrary, type CampaignSummary } from "@/components/campaign-library";
 import { RollDialog } from "@/components/roll-dialog";
 import { addLog, defaultState, displayTime, type GameState, type Point, type Survivor } from "@/lib/game";
 import { createId } from "@/lib/id";
@@ -34,9 +34,10 @@ type ModelTool = {
 type ModelContext = { registerTool: (tool: ModelTool, options: { signal: AbortSignal }) => void | Promise<void> };
 
 export default function CampaignApp() {
-  const router = useRouter();
   const [game, setGame] = useState<GameState | null>(null);
   const [loading, setLoading] = useState(true);
+  const [campaigns, setCampaigns] = useState<CampaignSummary[]>([]);
+  const [showLibrary, setShowLibrary] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [needsAuth, setNeedsAuth] = useState(false);
   const [status, setStatus] = useState<SaveStatus>("salvo");
@@ -64,6 +65,20 @@ export default function CampaignApp() {
 
   const loadCampaign = useCallback(async () => {
     try {
+      const campaignId = new URLSearchParams(window.location.search).get("campanha")?.trim() ?? "";
+      if (!campaignId) {
+        const response = await fetch("/api/campaigns", { cache: "no-store" });
+        const payload = await response.json() as { error?: string; campaigns?: CampaignSummary[] };
+        if (response.status === 401) { setNeedsAuth(true); setShowLibrary(false); setLoadError(""); setGame(null); return; }
+        if (!response.ok) throw new Error(payload.error || "Falha ao abrir seus dossiês.");
+        setNeedsAuth(false);
+        setCampaigns(payload.campaigns ?? []);
+        setShowLibrary(true);
+        setGame(null); current.current = null;
+        setLoadError("");
+        return;
+      }
+      setShowLibrary(false);
       const response = await fetch(apiPath(), { cache: "no-store" });
       const payload = await response.json() as { error?: string; revision?: number; state?: GameState };
       if (response.status === 401) { setNeedsAuth(true); setLoadError(""); setGame(null); return; }
@@ -288,7 +303,7 @@ export default function CampaignApp() {
     if (!window.confirm("Substituir o mapa e as fichas desta campanha pelos dados da cópia? Baixe uma cópia atual antes de continuar.")) return;
     try {
       const state = JSON.parse(await file.text()) as GameState;
-      const response = await fetch("/api/campaign", { method: "PUT", headers: { "Content-Type": "application/json" },
+      const response = await fetch(apiPath(), { method: "PUT", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ revision: revision.current, state }) });
       const result = await response.json() as { error?: string };
       if (!response.ok) throw new Error(result.error || "Não foi possível importar a cópia.");
@@ -298,6 +313,11 @@ export default function CampaignApp() {
   }
 
   if (needsAuth) return <AuthPanel onAuthenticated={loadCampaign} />;
+
+  if (showLibrary) return <CampaignLibrary campaigns={campaigns} onRefresh={loadCampaign} onSignOut={async () => {
+    await fetch("/api/auth", { method: "DELETE" });
+    window.location.assign("/");
+  }} />;
 
   if (role === "convidado") return <main className="min-h-screen grid place-items-center p-6"><section className="panel panel-pad max-w-xl w-full">
     <p className="dossier-title">Zona Morta / acesso à mesa</p><h1 className="page-title mt-2">Entre na campanha</h1>
@@ -362,12 +382,12 @@ export default function CampaignApp() {
             if (window.confirm("Descarte as alterações desta tela e carregue a versão salva em outra janela?")) { setLoading(true); setLoadError(""); void loadCampaign(); }
           }}>Recarregar</Button>}
           <Button size="sm" variant="outline" aria-label="Baixar cópia dos dados visíveis" title="Baixar cópia dos dados visíveis" onClick={downloadBackup}><Download size={16} /></Button>
-          {role === "jogador" && <Button size="sm" variant="outline" onClick={() => { router.push("/"); router.refresh(); }}>Minha campanha</Button>}
+          <Button size="sm" variant="outline" onClick={() => window.location.assign("/")}>Meus dossiês</Button>
           {role === "mestre" && <label className="cursor-pointer text-sm font-semibold px-2" title="Importar uma cópia da campanha">
             Importar cópia<input className="sr-only" type="file" accept="application/json,.json" onChange={event => {
               const file = event.target.files?.[0]; if (file) void importBackup(file); event.target.value = "";
             }} /></label>}
-          <Button size="sm" variant="ghost" onClick={() => void fetch("/api/auth", { method: "DELETE" }).then(() => { router.push("/"); router.refresh(); void loadCampaign(); })}>Sair</Button>
+          <Button size="sm" variant="ghost" onClick={() => void fetch("/api/auth", { method: "DELETE" }).then(() => window.location.assign("/"))}>Sair</Button>
           {role === "mestre" && <Button size="sm" className="topbar-preview-button" variant={playerPreview ? "default" : "outline"}
             aria-label={playerPreview ? "Desativar prévia dos jogadores" : "Ativar prévia dos jogadores"}
             title={playerPreview ? "Desativar prévia dos jogadores" : "Ativar prévia dos jogadores"}
@@ -391,10 +411,10 @@ export default function CampaignApp() {
               "Consulte itens, adversários e procedimentos durante a sessão."}</p></div>
           {!readOnlyPreview && tab === "mapa" &&
             <AlertDialog>
-              <AlertDialogTrigger asChild><Button variant="outline" size="sm"><RotateCcw /> Nova campanha</Button></AlertDialogTrigger>
+              <AlertDialogTrigger asChild><Button variant="outline" size="sm"><RotateCcw /> Reiniciar cidade</Button></AlertDialogTrigger>
               <AlertDialogContent>
-                <AlertDialogHeader><AlertDialogTitle>Criar outra cidade?</AlertDialogTitle>
-                  <AlertDialogDescription>Uma nova cidade substitui o mapa, os sobreviventes, as reservas e o diário atuais. Baixe uma cópia se quiser guardar esta campanha.</AlertDialogDescription>
+                <AlertDialogHeader><AlertDialogTitle>Reiniciar esta cidade?</AlertDialogTitle>
+                  <AlertDialogDescription>Isso reinicia o mapa, os sobreviventes, as reservas e o diário desta campanha. Para manter esta mesa e começar outra, volte a Seus dossiês e crie uma nova campanha.</AlertDialogDescription>
                 </AlertDialogHeader>
                 <div className="grid gap-4 py-2">
                   <Pick label="Setor de partida (hex 0,0)" value={startSectorId} onChange={setStartSectorId}
@@ -420,7 +440,7 @@ export default function CampaignApp() {
                       withShelter: startWithShelter,
                     })));
                     setTab("mapa"); setPlayerPreview(false);
-                  }}>Criar campanha</AlertDialogAction>
+                  }}>Reiniciar cidade</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>}

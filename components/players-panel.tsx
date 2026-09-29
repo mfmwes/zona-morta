@@ -14,20 +14,21 @@ export function PlayersPanel({ game, ownerId }: { game: GameState; ownerId: stri
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
+  const api = "/api/players?campanha=" + encodeURIComponent(ownerId);
   const link = typeof window === "undefined" || !code ? "" : window.location.origin + "/?campanha=" + encodeURIComponent(ownerId) + "#convite=" + code;
 
   useEffect(() => {
-    void fetch("/api/players", { cache: "no-store" }).then(async response => {
+    void fetch(api, { cache: "no-store" }).then(async response => {
       const result = await response.json() as { players?: Player[]; error?: string };
       if (!response.ok) throw new Error(result.error || "Não foi possível carregar os jogadores.");
       setPlayers(result.players ?? []);
     }).catch(reason => setError(String(reason)));
-  }, []);
+  }, [api]);
 
   async function createInvite() {
     setBusy(true); setError("");
     try {
-      const response = await fetch("/api/players", { method: "POST" });
+      const response = await fetch(api, { method: "POST" });
       const result = await response.json() as { code?: string; error?: string };
       if (!response.ok) throw new Error(result.error || "Não foi possível atualizar.");
       setCode(result.code ?? ""); setCopied(false);
@@ -38,7 +39,7 @@ export function PlayersPanel({ game, ownerId }: { game: GameState; ownerId: stri
   async function remove(email: string) {
     setBusy(true); setError("");
     try {
-      const response = await fetch("/api/players", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) });
+      const response = await fetch(api, { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) });
       const result = await response.json() as { players?: Player[]; error?: string };
       if (!response.ok) throw new Error(result.error || "Não foi possível remover.");
       setPlayers(result.players ?? []);
@@ -51,7 +52,7 @@ export function PlayersPanel({ game, ownerId }: { game: GameState; ownerId: stri
     if (!survivorId) return;
     setBusy(true); setError("");
     try {
-      const response = await fetch("/api/players/assign", { method: "POST", headers: { "Content-Type": "application/json" },
+      const response = await fetch("/api/players/assign?campanha=" + encodeURIComponent(ownerId), { method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, survivorId }) });
       const result = await response.json() as { players?: Player[]; error?: string };
       if (!response.ok) throw new Error(result.error || "Não foi possível vincular a ficha.");

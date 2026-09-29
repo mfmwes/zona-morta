@@ -40,7 +40,7 @@ export function AuthPanel({ onAuthenticated }: { onAuthenticated: () => void | P
     <h1 className="page-title mt-2">{reset ? "Recuperar acesso" : register ? "Criar conta" : "Entrar no dossiê"}</h1>
     <p className="intro-line mt-3">{invited
       ? "Entre ou crie uma conta para aceitar o convite da campanha e montar seu sobrevivente."
-      : "Crie sua própria campanha e convide seus jogadores."}</p>
+      : "Entre para acessar suas campanhas salvas como mestre ou jogador. Você também pode criar uma nova mesa depois do login."}</p>
     <form onSubmit={event => void submit(event)} className="mt-6 grid gap-4">
       <label className="field text-sm font-semibold">E-mail
         <input className="field-input" type="email" autoComplete="email" required maxLength={254}

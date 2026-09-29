@@ -1,5 +1,18 @@
-import { integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { integer, primaryKey, sqliteTable, text, uniqueIndex, index } from "drizzle-orm/sqlite-core";
 
+export const campaigns = sqliteTable("campaigns", {
+  id: text("id").primaryKey(),
+  ownerId: text("owner_id").notNull(),
+  name: text("name").notNull(),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+  archivedAt: text("archived_at"),
+}, table => [
+  index("idx_campaigns_owner").on(table.ownerId, table.archivedAt),
+]);
+
+// Legacy note: owner_id in the three tables below is kept for database compatibility.
+// From v0.2 onward it stores the campaign id, not necessarily the master's user id.
 export const campaignStates = sqliteTable("campaign_states", {
   ownerId: text("owner_id").primaryKey(),
   revision: integer("revision").notNull().default(1),
