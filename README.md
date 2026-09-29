@@ -1,40 +1,45 @@
-# Zona Morta — Feedback de Ações v0.4
+# Zona Morta — Feedback de Ações: Redesign visual v0.4.1
 
-Adiciona feedback visual imediato para ações importantes usando o sistema de notificações que já existe no projeto.
+Redesign visual das notificações do sistema, mantendo o comportamento já implementado.
 
-## O que entra
-- Rolagens: sucesso, falha, crítico, total e mudanças de Hope/Fear/Stress.
-- Dano rolado: valor, arma e crítico.
-- Nova cena e nova expedição.
-- Avanço de tempo.
-- Reiniciar cidade.
-- Estabelecer e renomear abrigo.
-- Salvar notas do abrigo.
-- Descanso curto e longo.
-- Virada de dia.
+## Visual
+- estilo de terminal/dossiê de campo coerente com Zona Morta;
+- fundo verde-petróleo escuro;
+- faixa lateral semântica;
+- sucesso em verde claro;
+- erro em ferrugem/vermelho;
+- alerta em âmbar;
+- informação em ciano;
+- ícones em cápsulas próprias;
+- tipografia de registro técnico;
+- detalhe `ZM // REGISTRO`;
+- acabamento com grade/scanline discreta e círculos de radar;
+- botão de fechar redesenhado;
+- versão responsiva para celular.
 
-Os feedbacks já existentes de inventário, habilidades e provisões são preservados.
+## Não altera
+- banco D1;
+- regras;
+- rolagens;
+- Hope/Fear;
+- inventário;
+- dados das campanhas.
 
-## Como aplicar no Codespaces
+## Aplicação no Codespaces
 
-Extraia o ZIP na raiz do projeto e rode:
+Aplique primeiro o Feedback de Ações v0.4. Depois extraia este ZIP na raiz e rode:
 
 ```bash
-python3 apply_feedback.py
+python3 apply_feedback_style.py
 npm test
 npm run build
-git status
 ```
 
-Se estiver tudo certo:
+Se tudo passar:
 
 ```bash
-rm -rf .feedback-backup
+rm -rf .feedback-style-backup
 git add .
-git commit -m "feat: feedback de ações"
+git commit -m "style: redesenhar feedback de ações"
 git push
 ```
-
-Não exige SQL nem alteração no D1.
-
-Compatível para aplicar depois da Central de Rolagens v0.3.

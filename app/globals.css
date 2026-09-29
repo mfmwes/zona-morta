@@ -656,3 +656,222 @@ button { cursor: pointer; } button:disabled { cursor: not-allowed; }
 .shelter-move-items label span { flex:1; }
 .shelter-move-items label small { color:#516765; }
 @media(max-width:580px) { .shelter-move-grid { grid-template-columns:1fr; } }
+
+/* =========================================================
+   ZONA MORTA — FEEDBACK DE AÇÕES / SISTEMA DE NOTIFICAÇÕES
+   ========================================================= */
+.toaster.group[data-sonner-toaster] {
+  --width: 390px;
+  font-family: var(--font-sans);
+}
+
+.toaster.group [data-sonner-toast].zm-toast {
+  --zm-accent: #89cfc0;
+  --zm-accent-soft: #203f3e;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 82px;
+  padding: 27px 42px 14px 16px !important;
+  border: 1px solid #456864 !important;
+  border-left: 5px solid var(--zm-accent) !important;
+  border-radius: 10px !important;
+  background:
+    linear-gradient(112deg, color-mix(in srgb, var(--zm-accent-soft) 78%, transparent) 0%, transparent 38%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0 1px, transparent 1px 4px),
+    #102629 !important;
+  color: #eef5ef !important;
+  box-shadow:
+    0 2px 0 rgba(255,255,255,.035) inset,
+    0 18px 45px rgba(5,22,23,.26),
+    0 3px 10px rgba(5,22,23,.18) !important;
+  backdrop-filter: blur(10px);
+}
+
+.toaster.group [data-sonner-toast].zm-toast::before {
+  content: "ZM // REGISTRO";
+  position: absolute;
+  z-index: -1;
+  top: 9px;
+  left: 16px;
+  color: color-mix(in srgb, var(--zm-accent) 82%, white);
+  opacity: .78;
+  font: 800 .56rem var(--font-mono);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.toaster.group [data-sonner-toast].zm-toast::after {
+  content: "";
+  position: absolute;
+  z-index: -2;
+  width: 110px;
+  height: 110px;
+  right: -42px;
+  bottom: -58px;
+  border: 1px solid color-mix(in srgb, var(--zm-accent) 28%, transparent);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 14px color-mix(in srgb, var(--zm-accent) 5%, transparent),
+    0 0 0 28px color-mix(in srgb, var(--zm-accent) 3%, transparent);
+  pointer-events: none;
+}
+
+/* Variações semânticas */
+.toaster.group [data-sonner-toast][data-type="success"].zm-toast {
+  --zm-accent: #9fd8ad;
+  --zm-accent-soft: #1f493a;
+  border-color: #4f7663 !important;
+}
+
+.toaster.group [data-sonner-toast][data-type="error"].zm-toast {
+  --zm-accent: #e68d78;
+  --zm-accent-soft: #542c2b;
+  border-color: #76504a !important;
+  background:
+    linear-gradient(112deg, rgba(100,46,43,.68) 0%, transparent 39%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.016) 0 1px, transparent 1px 4px),
+    #2a1d1d !important;
+}
+
+.toaster.group [data-sonner-toast][data-type="warning"].zm-toast {
+  --zm-accent: #e4bd72;
+  --zm-accent-soft: #534328;
+  border-color: #796742 !important;
+  background:
+    linear-gradient(112deg, rgba(93,72,35,.66) 0%, transparent 39%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.016) 0 1px, transparent 1px 4px),
+    #29251b !important;
+}
+
+.toaster.group [data-sonner-toast][data-type="info"].zm-toast {
+  --zm-accent: #81cbd3;
+  --zm-accent-soft: #244850;
+}
+
+/* Ícone */
+.toaster.group .zm-toast-icon {
+  align-self: center !important;
+  margin-right: 2px !important;
+}
+
+.zm-toast-symbol {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid color-mix(in srgb, var(--zm-accent) 68%, transparent);
+  border-radius: 7px;
+  color: var(--zm-accent);
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--zm-accent) 16%, transparent), transparent),
+    rgba(3,18,19,.28);
+  box-shadow:
+    inset 0 0 0 2px rgba(255,255,255,.025),
+    0 0 18px color-mix(in srgb, var(--zm-accent) 12%, transparent);
+}
+
+/* Tipografia */
+.toaster.group .zm-toast-title {
+  color: #f4f8f2 !important;
+  font-size: .93rem !important;
+  font-weight: 850 !important;
+  letter-spacing: -.01em;
+  line-height: 1.25 !important;
+}
+
+.toaster.group .zm-toast-description {
+  margin-top: 4px !important;
+  color: #bfd0ca !important;
+  font-size: .79rem !important;
+  line-height: 1.45 !important;
+  font-family: var(--font-mono);
+}
+
+.toaster.group [data-sonner-toast][data-type="error"] .zm-toast-description {
+  color: #e4c1ba !important;
+}
+
+.toaster.group [data-sonner-toast][data-type="warning"] .zm-toast-description {
+  color: #dfd0ad !important;
+}
+
+/* Botão fechar */
+.toaster.group .zm-toast-close {
+  left: auto !important;
+  right: 8px !important;
+  top: 8px !important;
+  transform: none !important;
+  width: 22px !important;
+  height: 22px !important;
+  border: 1px solid rgba(210,232,224,.22) !important;
+  border-radius: 5px !important;
+  background: rgba(4,20,21,.42) !important;
+  color: #b9ccc6 !important;
+  opacity: .8;
+  transition: opacity .15s ease, background .15s ease, border-color .15s ease;
+}
+
+.toaster.group .zm-toast-close:hover {
+  opacity: 1;
+  background: rgba(137,207,192,.13) !important;
+  border-color: rgba(155,218,204,.48) !important;
+  color: #effaf5 !important;
+}
+
+/* Ações opcionais de um toast futuro */
+.toaster.group .zm-toast-action,
+.toaster.group .zm-toast-cancel {
+  height: 30px !important;
+  border-radius: 5px !important;
+  padding-inline: 10px !important;
+  font: 800 .72rem var(--font-mono) !important;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+
+.toaster.group .zm-toast-action {
+  border: 1px solid color-mix(in srgb, var(--zm-accent) 62%, transparent) !important;
+  background: var(--zm-accent) !important;
+  color: #102629 !important;
+}
+
+.toaster.group .zm-toast-cancel {
+  border: 1px solid #4b6864 !important;
+  background: #193437 !important;
+  color: #d7e5de !important;
+}
+
+/* Pequeno brilho quando o registro entra, sem competir com a animação do Sonner */
+@media (prefers-reduced-motion: no-preference) {
+  .toaster.group [data-sonner-toast].zm-toast[data-mounted="true"] {
+    box-shadow:
+      0 2px 0 rgba(255,255,255,.035) inset,
+      0 18px 45px rgba(5,22,23,.26),
+      0 3px 10px rgba(5,22,23,.18),
+      -8px 0 26px color-mix(in srgb, var(--zm-accent) 9%, transparent) !important;
+  }
+}
+
+/* Celular */
+@media (max-width: 600px) {
+  .toaster.group[data-sonner-toaster] {
+    --width: calc(100vw - 24px);
+  }
+  .toaster.group [data-sonner-toast].zm-toast {
+    min-height: 76px;
+    padding: 25px 38px 12px 13px !important;
+    border-left-width: 4px !important;
+  }
+  .toaster.group [data-sonner-toast].zm-toast::before {
+    left: 13px;
+  }
+  .zm-toast-symbol {
+    width: 30px;
+    height: 30px;
+  }
+  .toaster.group .zm-toast-description {
+    font-size: .75rem !important;
+  }
+}
