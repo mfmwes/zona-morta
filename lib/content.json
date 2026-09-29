@@ -1,0 +1,6361 @@
+{
+  "origins": [
+    {
+      "number": 1,
+      "name": "Docente",
+      "experience": "Ensinar procedimentos.",
+      "feature": "Explicação clara",
+      "effect": "uma vez por cena, antes de um aliado Perto rolar para executar algo que você sabe explicar, marque 1 Stress para conceder +1 à rolagem.",
+      "past": "Qual aluno você ainda procura?"
+    },
+    {
+      "number": 2,
+      "name": "Estudante",
+      "experience": "Pesquisar em arquivos.",
+      "feature": "Olhar de revisão",
+      "effect": "uma vez por cena, após dez minutos examinando um mapa, manual ou conjunto de anotações, pergunte ao mestre qual detalhe ali está faltando ou se contradiz. Se não houver nenhum, ele informa isso.",
+      "past": "Que estudo ficou inacabado?"
+    },
+    {
+      "number": 3,
+      "name": "Profissional de enfermagem",
+      "experience": "Triagem de plantão.",
+      "feature": "Cuidado imediato",
+      "effect": "uma vez por cena, use uma ação e material médico adequado para cuidar de alguém com dor ou em choque; essa pessoa limpa 1 Stress, sem recuperar HP.",
+      "past": "Qual paciente você prometeu reencontrar?"
+    },
+    {
+      "number": 4,
+      "name": "Médico(a)",
+      "experience": "Diagnosticar sintomas.",
+      "feature": "Hipótese clínica",
+      "effect": "uma vez por cena, após examinar uma pessoa, pergunte qual é o risco imediato mais provável entre trauma, doença, privação e possível Exposição. O mestre responde pelos sinais disponíveis; a característica não confirma nem cura infecção.",
+      "past": "Quem desacreditou um aviso seu?"
+    },
+    {
+      "number": 5,
+      "name": "Cuidador(a)",
+      "experience": "Manter rotinas de cuidado.",
+      "feature": "Presença constante",
+      "effect": "uma vez por descanso longo, quando ajudar outra pessoa a comer, beber e repousar em segurança, ela limpa 1 Stress adicional. Os mantimentos são consumidos normalmente.",
+      "past": "Por quem você ainda se sente responsável?"
+    },
+    {
+      "number": 6,
+      "name": "Bombeiro(a)",
+      "experience": "Resgate em edifícios.",
+      "feature": "Avaliar a entrada",
+      "effect": "uma vez por cena, antes de entrar numa estrutura com fogo, fumaça, escombros, inundação ou acesso instável, pergunte qual passagem parece viável e qual perigo a ameaça primeiro. Se não houver passagem viável, o mestre deixa isso claro.",
+      "past": "Quem você não conseguiu retirar a tempo?"
+    },
+    {
+      "number": 7,
+      "name": "Agente comunitário(a)",
+      "experience": "Visitas domiciliares.",
+      "feature": "Pessoa de referência",
+      "effect": "uma vez por expedição, após uma conversa não hostil com alguém de um lugar habitado, descubra quem ali costuma oferecer informação, abrigo ou cuidado e como pedir contato. Isso não obriga ninguém a ajudar.",
+      "past": "Quem ainda atenderia ao seu chamado?"
+    },
+    {
+      "number": 8,
+      "name": "Policial",
+      "experience": "Examinar cenas alteradas.",
+      "feature": "Vestígio de intervenção",
+      "effect": "uma vez por cena, ao investigar um lugar onde houve confronto, acidente ou entrada forçada, pergunte qual sinal observável indica o que aconteceu mais recentemente. Vestígios apagados não reaparecem.",
+      "past": "Qual investigação você se recusou a abandonar?"
+    },
+    {
+      "number": 9,
+      "name": "Militar",
+      "experience": "Organizar um perímetro.",
+      "feature": "Aviso de cobertura",
+      "effect": "uma vez por cena, antes de um ataque visível contra um aliado Perto, marque 1 Stress para conceder +1 Evasion a ele contra esse ataque.",
+      "past": "Qual ordem você se arrepende de ter cumprido?"
+    },
+    {
+      "number": 10,
+      "name": "Vigilante",
+      "experience": "Monitorar acessos.",
+      "feature": "Olhos na entrada",
+      "effect": "uma vez por cena, enquanto vigia ativamente um acesso, perceba a direção e o número aproximado de quem se aproxima por ele antes do contato, se houver sinais perceptíveis. Só observa o acesso escolhido; não revela quem vem por outro caminho.",
+      "past": "Qual posto você abandonou na primeira noite?"
+    },
+    {
+      "number": 11,
+      "name": "Mecânico(a)",
+      "experience": "Reparar motores.",
+      "feature": "Diagnóstico de oficina",
+      "effect": "uma vez por cena, após examinar uma máquina danificada, pergunte qual componente impede seu funcionamento e que tipo de peça poderia substituí-lo. A resposta não fornece a peça nem conclui o reparo.",
+      "past": "De quem era o último veículo que você reparou?"
+    },
+    {
+      "number": 12,
+      "name": "Eletricista",
+      "experience": "Ler instalações elétricas.",
+      "feature": "Seguir o circuito",
+      "effect": "uma vez por cena, ao inspecionar fiação ou um quadro acessível, identifique o que ele alimenta — como alarme, iluminação ou tranca — e onde seria possível isolá-lo. Desligar sob risco ainda pode exigir rolagem.",
+      "past": "O que você desligou tarde demais?"
+    },
+    {
+      "number": 13,
+      "name": "Encanador(a)",
+      "experience": "Percorrer redes hidráulicas.",
+      "feature": "Caminho da água",
+      "effect": "uma vez por local, após dez minutos inspecionando tubulações, identifique a direção provável da fonte ou reservatório e um sinal visível de vazamento ou contaminação, se houver.",
+      "past": "Qual prédio você sabe que ficará sem água?"
+    },
+    {
+      "number": 14,
+      "name": "Técnico(a) em informática",
+      "experience": "Recuperar dados de aparelhos.",
+      "feature": "Último registro",
+      "effect": "uma vez por cena, ao examinar um aparelho com energia, descubra se ele guarda algum registro pertinente à investigação atual e o que falta para acessá-lo. A característica não contorna senha nem recupera dados destruídos.",
+      "past": "Que informação você salvou contra ordens?"
+    },
+    {
+      "number": 15,
+      "name": "Motorista profissional",
+      "experience": "Conduzir por rotas urbanas.",
+      "feature": "Antes da curva",
+      "effect": "uma vez por expedição, ao encontrar uma via bloqueada enquanto dirige, pergunte se há desvio transitável para o veículo naquele hex ou num adjacente e qual risco é visível antes de escolhê-lo.",
+      "past": "Quem você transportava quando tudo começou?"
+    },
+    {
+      "number": 16,
+      "name": "Entregador(a)",
+      "experience": "Localizar entradas de serviço.",
+      "feature": "Rota de entrega",
+      "effect": "uma vez por hex novo, depois de observar um edifício, identifique uma entrada de carga, serviço ou fundos, se existir, e o obstáculo visível para alcançá-la.",
+      "past": "Qual entrega ficou pela metade?"
+    },
+    {
+      "number": 17,
+      "name": "Trabalhador(a) de depósito",
+      "experience": "Organizar estoques.",
+      "feature": "Busca por setor",
+      "effect": "uma vez por expedição, ao procurar em qualquer lugar amplo com indícios de achado, reduza uma busca de 1 hora para 30 minutos. Se ela já levaria 30 minutos, descubra qual setor oferece a melhor chance antes de começar, sem criar achado extra. A escolha entre busca específica e aberta permanece.",
+      "past": "Que estoque sumiu antes do surto?"
+    },
+    {
+      "number": 18,
+      "name": "Trabalhador(a) da construção",
+      "experience": "Escorar estruturas.",
+      "feature": "Escora provisória",
+      "effect": "uma vez por cena, use uma ação, materiais ao alcance e 1 Stress para conter um risco localizado de desabamento até o fim da cena, se a estrutura puder ser escorada. O reparo definitivo permanece necessário.",
+      "past": "Quem ficou preso na obra?"
+    },
+    {
+      "number": 19,
+      "name": "Agricultor(a)",
+      "experience": "Reconhecer plantas úteis.",
+      "feature": "Olho para a colheita",
+      "effect": "uma vez por local com plantas cultivadas ou silvestres, após dez minutos de observação, descubra se há algo comestível ou útil ali, quando estaria pronto e um sinal visível de água ou solo comprometido. Não torna planta desconhecida automaticamente segura nem acrescenta porções a um lugar esgotado.",
+      "past": "Qual plantio você deixou para trás?"
+    },
+    {
+      "number": 20,
+      "name": "Cozinheiro(a)",
+      "experience": "Preparar refeições com pouco.",
+      "feature": "Comida de verdade",
+      "effect": "uma vez por descanso longo, ao preparar e repartir pelo menos duas porções com utensílios e insumos adequados, escolha uma pessoa que comeu: ela limpa 1 Stress. A preparação e o consumo seguem as regras normais.",
+      "past": "Para quem você costumava cozinhar?"
+    },
+    {
+      "number": 21,
+      "name": "Comerciante",
+      "experience": "Negociar trocas.",
+      "feature": "Outra proposta",
+      "effect": "uma vez por cena, quando alguém disposto a negociar recusar uma oferta, pergunte que outro bem ou serviço consideraria receber. A resposta não garante que um acordo será fechado.",
+      "past": "A quem você ainda deve um favor?"
+    },
+    {
+      "number": 22,
+      "name": "Jornalista",
+      "experience": "Conferir relatos.",
+      "feature": "Fonte verificável",
+      "effect": "uma vez por cena, após ouvir um relato importante, pergunte que sinal, documento ou pessoa permitiria conferir uma parte dele. O mestre indica uma pista plausível, se existir, sem declarar o relato verdadeiro.",
+      "past": "Que notícia você não conseguiu publicar?"
+    },
+    {
+      "number": 23,
+      "name": "Radialista",
+      "experience": "Operar transmissões.",
+      "feature": "Varredura de frequência",
+      "effect": "uma vez por descanso longo, use um rádio funcional por dez minutos para identificar a direção aproximada e a próxima janela de um sinal ativo ao alcance. Se não houver sinal, identifique se há interferência discernível ou um ponto de melhor recepção conhecido pela observação do terreno; não inventa uma transmissão.",
+      "past": "Quem respondeu à sua última transmissão?"
+    },
+    {
+      "number": 24,
+      "name": "Pesquisador(a)",
+      "experience": "Comparar evidências.",
+      "feature": "Hipótese testável",
+      "effect": "uma vez por descanso longo, passe uma hora comparando duas observações ou amostras e pergunte qual das explicações propostas pelos personagens é contrariada pelas evidências disponíveis e por quê.",
+      "past": "Qual pergunta você ainda precisa responder?"
+    },
+    {
+      "number": 25,
+      "name": "Assistente social",
+      "experience": "Escutar pessoas em crise.",
+      "feature": "Ajuda concreta",
+      "effect": "uma vez por cena, depois que uma pessoa aceitar conversar sobre um problema, marque 1 Stress para que ela limpe 1 Stress e diga qual ajuda concreta aceitaria agora. Ela conserva o direito de recusar outras propostas.",
+      "past": "Que família você tentava reunir?"
+    },
+    {
+      "number": 26,
+      "name": "Vida nas ruas",
+      "experience": "Encontrar abrigo na cidade.",
+      "feature": "Lugar para passar a noite",
+      "effect": "uma vez por expedição, após dez minutos examinando um hex, encontre o local disponível com melhor proteção contra o tempo e descubra seu risco mais evidente. Encontrá-lo não torna o descanso automaticamente seguro.",
+      "past": "Quem já lhe ofereceu abrigo?"
+    },
+    {
+      "number": 27,
+      "name": "Guia de trilhas",
+      "experience": "Orientar caminhadas.",
+      "feature": "Recuperar a direção",
+      "effect": "uma vez por expedição, quando uma rota incerta levaria a atraso ou acesso pior, marque 1 Stress para encontrar uma passagem plausível e evitar até 30 minutos de atraso ou chegar pelo acesso planejado. Não atravessa um bloqueio completo nem altera Hope/Fear da rolagem que revelou o problema.",
+      "past": "Quem você guiava quando o surto começou?"
+    },
+    {
+      "number": 28,
+      "name": "Atleta",
+      "experience": "Treinar resistência física.",
+      "feature": "Segundo fôlego",
+      "effect": "uma vez por cena, quando for marcar Stress especificamente por correr, escalar, nadar ou esforço físico semelhante, evite 1 Stress dessa marcação. Não se aplica a medo, ferimentos ou privação.",
+      "past": "Por quem você continuava competindo?"
+    },
+    {
+      "number": 29,
+      "name": "Artista",
+      "experience": "Prender a atenção de um público.",
+      "feature": "Todos olham para cá",
+      "effect": "uma vez por cena, ao atrair de modo plausível a atenção de pessoas ou infectados, marque 1 Stress para conceder +1 à próxima rolagem de Finesse de um aliado Perto que aproveite a distração. A ação ainda produz o Barulho correspondente.",
+      "past": "Qual apresentação foi interrompida?"
+    },
+    {
+      "number": 30,
+      "name": "Pai de Família",
+      "experience": "Proteger quem depende de mim.",
+      "feature": "Fique comigo",
+      "effect": "uma vez por cena, antes de um aliado Perto rolar para alcançar, amparar ou retirar outra pessoa de um perigo imediato, marque 1 Stress para conceder +1 à rolagem. A característica não elimina obstáculos entre eles.",
+      "past": "Quem ainda espera que você volte?"
+    }
+  ],
+  "archetypes": [
+    {
+      "name": "Soldado",
+      "evasion": 10,
+      "hp": 6,
+      "tracks": [
+        "Confronto",
+        "Manobra"
+      ],
+      "feature": "Cobrir retirada",
+      "effect": "uma vez por cena, quando um aliado se retirar sob ameaça de um inimigo ao seu alcance, gaste 1 Hope para impor desvantagem ao próximo ataque desse inimigo contra ele nesta cena.",
+      "specialties": [
+        {
+          "name": "Defensor",
+          "effect": "uma vez por cena, quando um aliado Muito perto sofrer um ataque que você possa interceptar, marque 1 espaço da sua Armadura para reduzir em uma faixa o dano dele; não some com o uso da própria Armadura do aliado nesse ataque."
+        },
+        {
+          "name": "Atirador",
+          "effect": "uma vez por cena, quando disparar uma arma de fogo de posição estável e com linha de visão, marque 1 Stress para receber vantagem nesse ataque, sem ação prévia de mira. Munição e Barulho seguem normais."
+        }
+      ],
+      "hopeFeature": "Forçar abertura: depois de acertar um ataque com arma, gaste 3 Hope para rolar mais um dado de dano da arma, sem repetir o bônus fixo, e permitir que um aliado Perto alcance cobertura transitável Muito perto dele, sem rolagem adicional apenas de movimento. Não atravessa bloqueios nem cancela ataques já resolvidos."
+    },
+    {
+      "name": "Sobrevivente",
+      "evasion": 11,
+      "hp": 5,
+      "tracks": [
+        "Exploração",
+        "Manobra"
+      ],
+      "feature": "Insistir",
+      "effect": "uma vez por cena, após falhar numa ação para escapar, resistir ao ambiente ou proteger alguém, marque 1 Stress para somar +2 ao total; Hope/Fear da rolagem não muda.",
+      "specialties": [
+        {
+          "name": "Resiliente",
+          "effect": "uma vez por descanso curto, ao limpar Stress, limpe +1."
+        },
+        {
+          "name": "Carregador",
+          "effect": "sempre que preparar a carga, receba +1 espaço de carga sem penalidade."
+        }
+      ],
+      "hopeFeature": "Ainda de pé: quando você marcaria seu último HP ou seu último espaço de Stress, gaste 3 Hope para marcar 1 a menos dessa consequência, mínimo 0, e mova-se até cobertura acessível Muito perto. Não impede Exposição ou outra consequência separada."
+    },
+    {
+      "name": "Socorrista",
+      "evasion": 10,
+      "hp": 5,
+      "tracks": [
+        "Cuidados",
+        "Conexão"
+      ],
+      "feature": "Primeiros socorros",
+      "effect": "uma vez por cena, com material médico adequado e uma ação fora de ataque, marque 1 Stress para limpar 1 HP de alguém ao alcance; uma jogada de morte já realizada exige situação plausível para socorro.",
+      "specialties": [
+        {
+          "name": "Urgencista",
+          "effect": "ao aplicar Primeiros socorros num paciente com pelo menos metade do HP total marcado (arredonde para cima), limpe 2 HP, em vez de 1."
+        },
+        {
+          "name": "Acolhedor",
+          "effect": "uma vez por cena, após conversar com alguém em segurança, gaste 1 Hope para essa pessoa limpar 1 Stress."
+        }
+      ],
+      "hopeFeature": "Atendimento conjunto: com material médico adequado, gaste 3 Hope e uma ação para que até duas pessoas Muito perto limpem, cada uma, 1 HP ou 1 Stress à escolha delas. Não substitui tratamento de Exposição nem se soma a Primeiros socorros no mesmo paciente e cena."
+    },
+    {
+      "name": "Mecânico",
+      "evasion": 10,
+      "hp": 5,
+      "tracks": [
+        "Técnica",
+        "Exploração"
+      ],
+      "feature": "Reparo improvisado",
+      "effect": "uma vez por cena, com ferramentas e acesso plausíveis, marque 1 Stress para manter veículo, porta ou aparelho danificado funcionando até o fim da cena; o reparo permanente continua um projeto. Em veículo de Condição 0, isso permite uma última partida, até um hex, sem repetir para o mesmo defeito antes de reparo definitivo.",
+      "specialties": [
+        {
+          "name": "Operador",
+          "effect": "uma vez por cena, ao conduzir veículo ou operar máquina sob pressão, marque 1 Stress para evitar 1 perda de Condição ou receber +2 na rolagem de controle."
+        },
+        {
+          "name": "Construtor",
+          "effect": "uma vez por descanso longo, quando fizer Trabalhar em projeto num abrigo, veículo ou instalação, conte esse avanço como dois, em vez de um."
+        }
+      ],
+      "hopeFeature": "Fôlego da máquina: com ferramentas e acesso, gaste 3 Hope e uma ação para recuperar 1 ponto temporário de Condição de um veículo danificado, até o máximo 3, ou manter um mecanismo danificado operante até o próximo descanso. A Condição temporária desaparece no próximo descanso; combustível e Barulho são normais. Não repara peça destruída nem cria energia ou Peças."
+    },
+    {
+      "name": "Batedor",
+      "evasion": 12,
+      "hp": 5,
+      "tracks": [
+        "Manobra",
+        "Exploração"
+      ],
+      "feature": "Antecipar perigo",
+      "effect": "uma vez por hex ou local ainda não explorado, ao observar antes de entrar, pergunte por uma ameaça concreta e uma rota de recuo; o mestre responde com sinais perceptíveis.",
+      "specialties": [
+        {
+          "name": "Infiltrador",
+          "effect": "uma vez por cena, quando houver cobertura acessível, marque 1 Stress para aproveitar a abertura e ficar Oculto."
+        },
+        {
+          "name": "Vigia",
+          "effect": "uma vez por descanso, ao assumir a guarda, perceba a primeira aproximação com sinais perceptíveis, venha de onde vier, antes que se torne emboscada; o grupo ainda decide como reagir. Diferentemente de Montar perímetro, não exige escolher um acesso."
+        }
+      ],
+      "hopeFeature": "Ponta da expedição: ao observar um hex novo de um acesso plausível, gaste 3 Hope para identificar até dois pontos de interesse perceptíveis e conduzir o grupo até um deles sem rolagem de navegação. O mestre ainda descreve perigos e acessos; locais fechados, Barulho e buscas continuam exigindo as decisões normais."
+    },
+    {
+      "name": "Negociador",
+      "evasion": 11,
+      "hp": 5,
+      "tracks": [
+        "Conexão",
+        "Cuidados"
+      ],
+      "feature": "Abrir conversa",
+      "effect": "uma vez por cena, quando alguém disposto a conversar declarar o que quer, gaste 1 Hope para descobrir uma alternativa concreta que essa pessoa consideraria ou o limite que não pretende negociar. Se não houver abertura para nenhuma proposta, saiba disso antes do gasto. Saber a exigência declarada não custa Hope.",
+      "specialties": [
+        {
+          "name": "Mediador",
+          "effect": "uma vez por cena, quando uma conversa tensa resultar em sucesso com Fear ou falha com Hope, escolha o custo social plausível: tempo adicional ou concessão pequena e explícita. Não transforma falha em sucesso; o mestre recebe Fear quando a rolagem disser que recebe."
+        },
+        {
+          "name": "Líder de campo",
+          "effect": "uma vez por cena, depois que aliado Muito perto seguir orientação útil sua, marque 1 Stress para ele limpar 1 Stress."
+        }
+      ],
+      "hopeFeature": "Manter a conversa: quando uma pessoa ou grupo que ainda pode dialogar estiver prestes a encerrar a conversa por conflito, gaste 3 Hope e ofereça uma proposta concreta. Saiba que gesto manteria a conversa aberta; até haver resposta e chance de aceitá-la ou recusá-la, a discussão por si só não deflagra ataque. Isso não força acordo nem impede uma ameaça independente."
+    },
+    {
+      "name": "Caçador",
+      "evasion": 11,
+      "hp": 5,
+      "tracks": [
+        "Exploração",
+        "Confronto"
+      ],
+      "feature": "Ler rastros",
+      "effect": "uma vez por local ou hex, ao examinar vestígios, obtenha direção e tamanho aproximado do grupo mais recente, se houver marcas.",
+      "specialties": [
+        {
+          "name": "Rastreador",
+          "effect": "uma vez por expedição, ao escolher como contornar um obstáculo real, reduza uma travessia difícil de 2 para 1 hora; funciona na cidade, mata ou estrada."
+        },
+        {
+          "name": "Predador",
+          "effect": "uma vez por cena, ao acertar ataque estando Oculto, some +2 ao dano; o ataque revela sua posição conforme o SRD."
+        }
+      ],
+      "hopeFeature": "Presa exposta: depois de acertar um adversário que você observou ou rastreou nesta cena, gaste 3 Hope para rolar mais um dado de dano da arma, sem repetir o bônus fixo, e deixá-lo temporariamente Vulnerável à próxima rolagem de ataque de um aliado, ou até o fim da cena. O alvo pode gastar seu Spotlight para se livrar da condição temporária."
+    },
+    {
+      "name": "Especialista",
+      "evasion": 10,
+      "hp": 5,
+      "tracks": [
+        "Técnica",
+        "Conexão"
+      ],
+      "feature": "Solução localizada",
+      "effect": "uma vez por cena, após examinar dispositivo, informação ou procedimento, pergunte como utilizá-lo ou contorná-lo; o mestre indica ação possível e risco concreto.",
+      "specialties": [
+        {
+          "name": "Analista",
+          "effect": "uma vez por cena, ao compartilhar um dado verificável sobre pessoa, grupo ou local, dê +1 à próxima rolagem de um aliado que o aproveite."
+        },
+        {
+          "name": "Comunicador",
+          "effect": "uma vez por cena, ao interpretar rádio, marcas, sinais ou bilhetes, gaste 1 Hope para descobrir provável autor, direção ou origem, se houver indícios suficientes."
+        }
+      ],
+      "hopeFeature": "Plano B: quando um aliado Perto falhar uma rolagem de ação diante de dispositivo, estrutura ou procedimento que você examinou nesta cena, gaste 3 Hope para ele rolar de novo com vantagem. Vale o novo resultado, inclusive seus dados de Hope/Fear; não se pode usar depois de resolver as consequências da primeira rolagem."
+    }
+  ],
+  "techniques": [
+    {
+      "track": "Confronto",
+      "name": "Abrir brecha",
+      "effect": "Uma vez por cena, depois de acertar um ataque contra qualquer adversário, marque 1 Stress para deixá-lo temporariamente Vulnerável à próxima rolagem de ataque de um aliado contra ele, ou até o fim da cena. O adversário pode gastar seu Spotlight para se livrar da condição temporária, como no SRD; recebê-lo não a encerra automaticamente."
+    },
+    {
+      "track": "Confronto",
+      "name": "Cobrir avanço",
+      "effect": "Uma vez por cena, quando um aliado Perto avançar para enfrentar um adversário ao alcance da sua arma, gaste 1 Hope e descreva como o pressiona. O aliado recebe +1 na próxima rolagem de ataque contra esse adversário nesta cena. Se houver cobertura alcançável no avanço, pode terminar nela sem outra rolagem apenas para chegar. Não atravessa bloqueios. Pressionar com um disparo gera munição e Barulho normais; não concede ataque ou disparo extra."
+    },
+    {
+      "track": "Confronto",
+      "name": "Golpe controlado",
+      "effect": "Uma vez por cena, ao acertar com uma arma e antes de rolar dano, escolha uma opção:\nPressão: some +2 ao dano e fique Vulnerável a um adversário capaz de atacá-lo até sua próxima ação.\nContenção: reduza o dano em 2, mínimo 0, para empurrar o alvo até Muito perto ou desequilibrá-lo, se terreno e tamanho permitirem."
+    },
+    {
+      "track": "Exploração",
+      "name": "Ler o caminho",
+      "effect": "Uma vez por hex ou local novo, ao declarar um objetivo ali, gaste 1 Hope para descobrir uma abordagem praticável e seu impedimento perceptível. O mestre dá informação adicional aos sinais gratuitos, inclusive quando o melhor caminho leva a outro ponto. Não cria recurso ou passagem inexistente nem garante segurança."
+    },
+    {
+      "track": "Exploração",
+      "name": "Carga bem distribuída",
+      "effect": "Sempre que preparar sua carga, receba +1 espaço de carga; este bônus não se multiplica e pode somar-se a uma mochila e ao Carregador. Além disso, uma vez por cena, quando suprimentos que você transporta estiverem prestes a ser perdidos, marque 1 Stress para salvar 1 unidade."
+    },
+    {
+      "track": "Exploração",
+      "name": "Viver com pouco",
+      "effect": "Uma vez por dia, após 10 minutos examinando fonte plausível de comida ou água, gaste 1 Hope para obter 1 porção utilizável sem rolagem. Se ela estiver esgotada, saiba disso antes do gasto e descubra um indício de outra fonte possível. Não repõe lugar já esvaziado nem cria estoque."
+    },
+    {
+      "track": "Manobra",
+      "name": "Reposicionar",
+      "effect": "Uma vez por cena, em perigo, gaste 1 Hope e indique uma passagem transitável: você e um aliado Muito perto alcançam cobertura ou outra posição até Longe, sem rolagem extra de movimento. Vale para avanço ou retirada; não atravessa paredes ou bloqueios completos nem anula ataques já resolvidos."
+    },
+    {
+      "track": "Manobra",
+      "name": "Ação discreta",
+      "effect": "Uma vez por cena, antes de uma ação sua ou de um aliado Muito perto que causaria Barulho, marque 1 Stress e descreva a precaução para reduzir o aumento de Barulho dessa ação em 1, mínimo 0. Vale para arrombamento, movimento e disparo; não reduz explosão ou alarme contínuo, que fixam Barulho em 5."
+    },
+    {
+      "track": "Manobra",
+      "name": "Controlar passagem",
+      "effect": "Uma vez por cena, gaste uma ação e marque 1 Stress para usar porta, móveis, grade ou desnível disponível e criar barreira temporária ou cobertura para um aliado. Cruzá-la exige contorno, remoção ou rolagem de Dificuldade 12, conforme a ficção; nada surge em terreno vazio."
+    },
+    {
+      "track": "Cuidados",
+      "name": "Mãos firmes",
+      "effect": "Durante uma cena: uma vez por paciente, ao cuidar com kit médico ou material adequado, gaste 1 Hope e uma ação para limpar 1 HP. Não some com Primeiros socorros ou Atendimento conjunto do Socorrista no mesmo paciente e cena.\nDurante um descanso curto: uma vez por paciente, ao usar Tratar Feridas, limpe +1 HP além da ação normal, sem pagar Hope. Não aumenta Tratar Todas as Feridas no descanso longo, que já limpa tudo."
+    },
+    {
+      "track": "Cuidados",
+      "name": "Tirar do choque",
+      "effect": "Uma vez por cena, quando um aliado Perto for marcar Stress por medo ou esforço, marque 1 Stress seu ou gaste 1 Hope para evitar 1 Stress dele. Se não houver Stress iminente, use uma ação de apoio e pague o mesmo custo para limpar 1 Stress já marcado pelo aliado."
+    },
+    {
+      "track": "Cuidados",
+      "name": "Diagnóstico de campo",
+      "effect": "Uma vez por cena, examine sem custo uma pessoa, ferida, alimento, água ou risco físico ao seu alcance e pergunte qual é o risco imediato ou que cuidado é necessário. O mestre dá um indício observável; a primeira rolagem para lidar com esse risco nesta cena recebe +1. Pode beneficiar a tentativa de limpar Exposição feita depois do exame, mas não confirma a infecção por si nem substitui Medicamentos ou tratamento."
+    },
+    {
+      "track": "Técnica",
+      "name": "Ferramenta inesperada",
+      "effect": "Uma vez por cena, com um objeto cotidiano que possa manipular, marque 1 Stress para usá-lo como ferramenta simples em uma tarefa e receber +1 na rolagem pertinente. Não cria energia, Peças nem reparo permanente."
+    },
+    {
+      "track": "Técnica",
+      "name": "Encontrar o ponto fraco",
+      "effect": "Uma vez por cena, depois de examinar adversário, dispositivo, estrutura ou procedimento, gaste 1 Hope para descobrir uma vulnerabilidade explorável agora: o mestre descreve a pista e você ou um aliado recebe +2 na próxima rolagem que a aproveite nesta cena. Se não houver fraqueza explorável, saiba disso antes do gasto."
+    },
+    {
+      "track": "Técnica",
+      "name": "Aproveitamento",
+      "effect": "Uma vez por descanso longo, escolha uma opção:\nColeta: passe 1 hora em um local com sucata dispersa e gaste 1 Hope para reunir 1 unidade de Peças a partir de material que, isolado, não seria uma unidade utilizável (uma coleta por local).\nProjeto: ao começar um projeto, gaste 1 Hope para reduzir seu custo em 1 unidade de Peças, mínimo 1.\nNão produz material onde não há fonte nem repõe sucata já usada."
+    },
+    {
+      "track": "Conexão",
+      "name": "Ler intenções",
+      "effect": "Uma vez por cena, após observar por alguns instantes uma pessoa, grupo, animal ou infectado, gaste 1 Hope e pergunte qual atitude provavelmente tomará agora se ninguém intervier. O mestre aponta um comportamento que sustente a resposta e uma forma plausível de antecipá-la; infectados revelam só impulsos simples. Se não houver sinal interpretável, saiba disso antes do gasto. Não lê pensamentos nem garante que o alvo não mudará de ideia."
+    },
+    {
+      "track": "Conexão",
+      "name": "Reunir esforços",
+      "effect": "Uma vez por cena, depois que um aliado Perto falhar uma rolagem de ação na qual você ainda possa ajudar concretamente, marque 1 Stress e descreva sua intervenção para somar +2 ao total. Pode converter falha em sucesso, sem alterar Hope/Fear; não acumula com Ajudar Aliado nessa rolagem nem vale para reação."
+    },
+    {
+      "track": "Conexão",
+      "name": "Palavra cumprida",
+      "effect": "Uma vez por descanso longo, após cumprir uma promessa significativa a qualquer pessoa ou arriscar-se para protegê-la, ganhe 1 Hope; a pessoa beneficiada pode limpar 1 Stress ou, se for NPC disposto e souber de algo, compartilhar uma informação útil. A técnica não força gratidão nem acordo político."
+    }
+  ],
+  "primaries": [
+    {
+      "name": "Faca resistente",
+      "trait": "Finesse",
+      "range": "Corpo a corpo",
+      "damage": "d8+1",
+      "hands": "Uma",
+      "noise": "0",
+      "stored": 1,
+      "note": "Fácil de ocultar"
+    },
+    {
+      "name": "Cano / bastão",
+      "trait": "Força",
+      "range": "Corpo a corpo",
+      "damage": "d8+2",
+      "hands": "Uma",
+      "noise": "0",
+      "stored": 1,
+      "note": "Pode ser empunhado com secundária; machado causa mais dano, mas exige duas mãos."
+    },
+    {
+      "name": "Machado de trabalho",
+      "trait": "Força",
+      "range": "Corpo a corpo",
+      "damage": "d10+2",
+      "hands": "Duas",
+      "noise": "0",
+      "stored": 2,
+      "note": "—"
+    },
+    {
+      "name": "Pé de cabra",
+      "trait": "Agilidade",
+      "range": "Corpo a corpo",
+      "damage": "d8+1",
+      "hands": "Uma",
+      "noise": "0",
+      "stored": 1,
+      "note": "Ferramenta de alavanca"
+    },
+    {
+      "name": "Lança improvisada",
+      "trait": "Instinto",
+      "range": "Muito perto",
+      "damage": "d8+2",
+      "hands": "Duas",
+      "noise": "0",
+      "stored": 2,
+      "note": "—"
+    },
+    {
+      "name": "Pistola",
+      "trait": "Finesse",
+      "range": "Longe",
+      "damage": "d8+2",
+      "hands": "Uma",
+      "noise": "+2",
+      "stored": 1,
+      "note": "Inicial: 1 carga compatível além do item pessoal. Achada: sem munição."
+    },
+    {
+      "name": "Revólver",
+      "trait": "Agilidade",
+      "range": "Longe",
+      "damage": "d10+1",
+      "hands": "Uma",
+      "noise": "+2",
+      "stored": 1,
+      "note": "Inicial: 1 carga compatível além do item pessoal. Achada: sem munição."
+    },
+    {
+      "name": "Espingarda",
+      "trait": "Força",
+      "range": "Perto",
+      "damage": "d10+3",
+      "hands": "Duas",
+      "noise": "+3",
+      "stored": 2,
+      "note": "Em Longe, fora de alcance"
+    },
+    {
+      "name": "Carabina",
+      "trait": "Instinto",
+      "range": "Muito longe",
+      "damage": "d8+3",
+      "hands": "Duas",
+      "noise": "+3",
+      "stored": 2,
+      "note": "Exige linha de visão"
+    }
+  ],
+  "secondaries": [
+    {
+      "name": "Faca pequena",
+      "trait": "Finesse",
+      "range": "Corpo a corpo",
+      "damage": "d6 físico",
+      "stored": 0,
+      "effect": "+1 ao dano da primária em Corpo a corpo."
+    },
+    {
+      "name": "Tampa resistente",
+      "trait": "Força",
+      "range": "Corpo a corpo",
+      "damage": "d4 físico",
+      "stored": 1,
+      "effect": "+1 ao valor de Armadura."
+    },
+    {
+      "name": "Lanterna pesada",
+      "trait": "Força",
+      "range": "Corpo a corpo",
+      "damage": "d6 físico",
+      "stored": 1,
+      "effect": "Ilumina até Perto com bateria plausível."
+    }
+  ],
+  "protections": [
+    {
+      "name": "Roupa reforçada",
+      "major": 5,
+      "severe": 11,
+      "armor": 3,
+      "stored": 1,
+      "effect": "+1 Evasion"
+    },
+    {
+      "name": "Jaqueta grossa",
+      "major": 6,
+      "severe": 13,
+      "armor": 3,
+      "stored": 1,
+      "effect": "Sem efeito adicional"
+    },
+    {
+      "name": "Colete de proteção",
+      "major": 7,
+      "severe": 15,
+      "armor": 4,
+      "stored": 1,
+      "effect": "−1 Evasion. Não impede infecção por si só"
+    }
+  ],
+  "personal": [
+    {
+      "name": "Kit médico de campo",
+      "load": "1",
+      "effect": "Ferramenta reutilizável para cuidados básicos. Não equivale a 1 Medicamentos."
+    },
+    {
+      "name": "Kit de ferramentas de trabalho",
+      "load": "1",
+      "effect": "Reparos comuns, parafusos e alavancas. Não fornece Peças."
+    },
+    {
+      "name": "Rádio portátil",
+      "load": "0",
+      "effect": "Escutar ou transmitir ao alcance. Começa com bateria funcionando."
+    },
+    {
+      "name": "Alicate",
+      "load": "0",
+      "effect": "Cortar arame fino e segurar peça quente com proteção adequada."
+    },
+    {
+      "name": "Mochila urbana",
+      "load": "0/1",
+      "effect": "Vestida, concede +2 espaços de carga; guardada, ocupa 1. Cabe uma peça longa presa por fora."
+    },
+    {
+      "name": "Lanterna pequena",
+      "load": "0",
+      "effect": "Ilumina até Perto. Começa com bateria funcionando."
+    }
+  ],
+  "lootTables": [
+    {
+      "name": "Residências / condomínios",
+      "entries": [
+        {
+          "roll": 1,
+          "text": "Garrafa de água lacrada (1 porção)."
+        },
+        {
+          "roll": 2,
+          "text": "Roupa seca sobressalente."
+        },
+        {
+          "roll": 3,
+          "text": "Canivete simples."
+        },
+        {
+          "roll": 4,
+          "text": "Cobertor."
+        },
+        {
+          "roll": 5,
+          "text": "Kit de higiene."
+        },
+        {
+          "roll": 6,
+          "text": "Lanterna pequena."
+        },
+        {
+          "roll": 7,
+          "text": "Kit de pilhas."
+        },
+        {
+          "roll": 8,
+          "text": "Kit médico de campo."
+        },
+        {
+          "roll": 9,
+          "text": "Faca resistente, sem outro equipamento."
+        },
+        {
+          "roll": 10,
+          "text": "Jaqueta grossa."
+        },
+        {
+          "roll": 11,
+          "text": "Bolsa tiracolo."
+        },
+        {
+          "roll": 12,
+          "text": "Bolsa de tratamento lacrada (1 Medicamentos)."
+        }
+      ]
+    },
+    {
+      "name": "Mercados / depósitos de alimentos",
+      "entries": [
+        {
+          "roll": 1,
+          "text": "Barra de cereal (1 porção)."
+        },
+        {
+          "roll": 2,
+          "text": "Pacote de bolachas (2 porções)."
+        },
+        {
+          "roll": 3,
+          "text": "Suco em caixa (1 porção de Água)."
+        },
+        {
+          "roll": 4,
+          "text": "Conserva em lata (2 porções)."
+        },
+        {
+          "roll": 5,
+          "text": "Fita resistente."
+        },
+        {
+          "roll": 6,
+          "text": "Garrafa de água lacrada (1 porção)."
+        },
+        {
+          "roll": 7,
+          "text": "Mapa de entregas com um endereço próximo."
+        },
+        {
+          "roll": 8,
+          "text": "Mochila urbana."
+        },
+        {
+          "roll": 9,
+          "text": "Facão de trabalho."
+        },
+        {
+          "roll": 10,
+          "text": "Ração de emergência (1 Comida)."
+        },
+        {
+          "roll": 11,
+          "text": "Filtro portátil."
+        },
+        {
+          "roll": 12,
+          "text": "Pacote de quatro águas (1 Água)."
+        }
+      ]
+    },
+    {
+      "name": "Restaurantes / cozinhas",
+      "entries": [
+        {
+          "roll": 1,
+          "text": "Garrafa de água lacrada (1 porção)."
+        },
+        {
+          "roll": 2,
+          "text": "Pão embalado (2 porções)."
+        },
+        {
+          "roll": 3,
+          "text": "Conserva em lata (2 porções)."
+        },
+        {
+          "roll": 4,
+          "text": "Panela leve."
+        },
+        {
+          "roll": 5,
+          "text": "Faca pequena."
+        },
+        {
+          "roll": 6,
+          "text": "Filtro portátil."
+        },
+        {
+          "roll": 7,
+          "text": "Fogareiro, sem combustível."
+        },
+        {
+          "roll": 8,
+          "text": "Arroz cru (4 porções após preparo)."
+        },
+        {
+          "roll": 9,
+          "text": "Kit de higiene."
+        },
+        {
+          "roll": 10,
+          "text": "Carrinho dobrável."
+        },
+        {
+          "roll": 11,
+          "text": "Bebida isotônica (1 porção de Água)."
+        },
+        {
+          "roll": 12,
+          "text": "Ração de emergência (1 Comida)."
+        }
+      ]
+    },
+    {
+      "name": "Hortas / áreas rurais",
+      "entries": [
+        {
+          "roll": 1,
+          "text": "Fruta firme (1 porção)."
+        },
+        {
+          "roll": 2,
+          "text": "Verduras de horta (1 porção após preparo)."
+        },
+        {
+          "roll": 3,
+          "text": "Raízes colhidas (2 porções após preparo)."
+        },
+        {
+          "roll": 4,
+          "text": "Luvas de trabalho."
+        },
+        {
+          "roll": 5,
+          "text": "Corda curta."
+        },
+        {
+          "roll": 6,
+          "text": "Botas impermeáveis."
+        },
+        {
+          "roll": 7,
+          "text": "Pá curta."
+        },
+        {
+          "roll": 8,
+          "text": "Frutas variadas (2 porções)."
+        },
+        {
+          "roll": 9,
+          "text": "Galão vazio."
+        },
+        {
+          "roll": 10,
+          "text": "Galão de água lacrado (1 Água)."
+        },
+        {
+          "roll": 11,
+          "text": "1 unidade de Peças de equipamento de irrigação."
+        },
+        {
+          "roll": 12,
+          "text": "Saco de raízes conservadas (1 Comida após preparo)."
+        }
+      ]
+    },
+    {
+      "name": "Farmácias / consultórios",
+      "entries": [
+        {
+          "roll": 1,
+          "text": "Gaze e ataduras."
+        },
+        {
+          "roll": 2,
+          "text": "Termômetro."
+        },
+        {
+          "roll": 3,
+          "text": "Solução de limpeza lacrada."
+        },
+        {
+          "roll": 4,
+          "text": "Analgésico genérico."
+        },
+        {
+          "roll": 5,
+          "text": "Medicamento para alergia."
+        },
+        {
+          "roll": 6,
+          "text": "Sachês de reidratação."
+        },
+        {
+          "roll": 7,
+          "text": "Uniforme de saúde."
+        },
+        {
+          "roll": 8,
+          "text": "Kit médico de campo."
+        },
+        {
+          "roll": 9,
+          "text": "Curativo compressivo."
+        },
+        {
+          "roll": 10,
+          "text": "Óculos de proteção."
+        },
+        {
+          "roll": 11,
+          "text": "Bolsa de tratamento lacrada (1 Medicamentos)."
+        },
+        {
+          "roll": 12,
+          "text": "Estojo de antissepsia completo (1 Medicamentos)."
+        }
+      ]
+    },
+    {
+      "name": "Hospitais / laboratórios",
+      "entries": [
+        {
+          "roll": 1,
+          "text": "Luvas de procedimento."
+        },
+        {
+          "roll": 2,
+          "text": "Tala e faixa."
+        },
+        {
+          "roll": 3,
+          "text": "Soro fisiológico lacrado."
+        },
+        {
+          "roll": 4,
+          "text": "Antitérmico genérico."
+        },
+        {
+          "roll": 5,
+          "text": "Medicamento prescrito identificado."
+        },
+        {
+          "roll": 6,
+          "text": "Kit médico de campo."
+        },
+        {
+          "roll": 7,
+          "text": "Máscara e avental clínico."
+        },
+        {
+          "roll": 8,
+          "text": "Tesoura de resgate."
+        },
+        {
+          "roll": 9,
+          "text": "Termômetro e caderno de triagem."
+        },
+        {
+          "roll": 10,
+          "text": "Máscara respiratória com filtro."
+        },
+        {
+          "roll": 11,
+          "text": "Bolsa de tratamento lacrada (1 Medicamentos)."
+        },
+        {
+          "roll": 12,
+          "text": "Caixa clínica completa (1 Medicamentos)."
+        }
+      ]
+    },
+    {
+      "name": "Escolas / escritórios",
+      "entries": [
+        {
+          "roll": 1,
+          "text": "Caderno e lápis."
+        },
+        {
+          "roll": 2,
+          "text": "Mapa de bairro antigo."
+        },
+        {
+          "roll": 3,
+          "text": "Barra de cereal (1 porção)."
+        },
+        {
+          "roll": 4,
+          "text": "Uniforme de manutenção."
+        },
+        {
+          "roll": 5,
+          "text": "Garrafa de água lacrada (1 porção)."
+        },
+        {
+          "roll": 6,
+          "text": "Lanterna pequena."
+        },
+        {
+          "roll": 7,
+          "text": "Rádio portátil sem bateria."
+        },
+        {
+          "roll": 8,
+          "text": "Kit médico de campo."
+        },
+        {
+          "roll": 9,
+          "text": "Mochila urbana."
+        },
+        {
+          "roll": 10,
+          "text": "Binóculos."
+        },
+        {
+          "roll": 11,
+          "text": "Casaco acolchoado."
+        },
+        {
+          "roll": 12,
+          "text": "Rádio portátil com bateria."
+        }
+      ]
+    },
+    {
+      "name": "Oficinas / postos de serviço",
+      "entries": [
+        {
+          "roll": 1,
+          "text": "Fita isolante."
+        },
+        {
+          "roll": 2,
+          "text": "Alicate."
+        },
+        {
+          "roll": 3,
+          "text": "Chave inglesa."
+        },
+        {
+          "roll": 4,
+          "text": "Macacão de oficina."
+        },
+        {
+          "roll": 5,
+          "text": "Galão vazio."
+        },
+        {
+          "roll": 6,
+          "text": "Kit de pilhas."
+        },
+        {
+          "roll": 7,
+          "text": "Lanterna frontal."
+        },
+        {
+          "roll": 8,
+          "text": "1 unidade de Peças de materiais de reparo."
+        },
+        {
+          "roll": 9,
+          "text": "Pá curta."
+        },
+        {
+          "roll": 10,
+          "text": "Kit de ferramentas de trabalho."
+        },
+        {
+          "roll": 11,
+          "text": "Jaqueta de motociclista."
+        },
+        {
+          "roll": 12,
+          "text": "1 Combustível em recipiente identificado."
+        }
+      ]
+    },
+    {
+      "name": "Delegacias / quartéis",
+      "entries": [
+        {
+          "roll": 1,
+          "text": "Cassetete curto."
+        },
+        {
+          "roll": 2,
+          "text": "Uniforme de segurança."
+        },
+        {
+          "roll": 3,
+          "text": "Apito."
+        },
+        {
+          "roll": 4,
+          "text": "Lanterna pequena."
+        },
+        {
+          "roll": 5,
+          "text": "Luvas de trabalho."
+        },
+        {
+          "roll": 6,
+          "text": "Escudo improvisado."
+        },
+        {
+          "roll": 7,
+          "text": "Revólver sem munição."
+        },
+        {
+          "roll": 8,
+          "text": "Pistola sem munição."
+        },
+        {
+          "roll": 9,
+          "text": "1 carga de munição de pistola, revólver, espingarda ou carabina, conforme o estoque anunciado."
+        },
+        {
+          "roll": 10,
+          "text": "Colete de proteção."
+        },
+        {
+          "roll": 11,
+          "text": "Espingarda sem munição."
+        },
+        {
+          "roll": 12,
+          "text": "Carabina sem munição."
+        }
+      ]
+    },
+    {
+      "name": "Ruas / veículos abandonados",
+      "entries": [
+        {
+          "roll": 1,
+          "text": "Capa de chuva leve."
+        },
+        {
+          "roll": 2,
+          "text": "Colete refletivo."
+        },
+        {
+          "roll": 3,
+          "text": "Mapa de bairro."
+        },
+        {
+          "roll": 4,
+          "text": "Kit de pilhas."
+        },
+        {
+          "roll": 5,
+          "text": "Alicate."
+        },
+        {
+          "roll": 6,
+          "text": "Lanterna pequena."
+        },
+        {
+          "roll": 7,
+          "text": "Galão vazio."
+        },
+        {
+          "roll": 8,
+          "text": "Bolsa tiracolo."
+        },
+        {
+          "roll": 9,
+          "text": "Kit médico de campo de veículo."
+        },
+        {
+          "roll": 10,
+          "text": "Carrinho dobrável."
+        },
+        {
+          "roll": 11,
+          "text": "1 Combustível em tanque acessível."
+        },
+        {
+          "roll": 12,
+          "text": "Pistola compacta sem munição, se houver dono ou veículo compatível. Caso contrário, rádio portátil."
+        }
+      ]
+    },
+    {
+      "name": "Lojas de roupa / lavanderias",
+      "entries": [
+        {
+          "roll": 1,
+          "text": "Moletom escuro."
+        },
+        {
+          "roll": 2,
+          "text": "Roupa térmica."
+        },
+        {
+          "roll": 3,
+          "text": "Capa de chuva leve."
+        },
+        {
+          "roll": 4,
+          "text": "Botas impermeáveis."
+        },
+        {
+          "roll": 5,
+          "text": "Tênis leves."
+        },
+        {
+          "roll": 6,
+          "text": "Luvas de trabalho."
+        },
+        {
+          "roll": 7,
+          "text": "Óculos de proteção."
+        },
+        {
+          "roll": 8,
+          "text": "Máscara de poeira."
+        },
+        {
+          "roll": 9,
+          "text": "Macacão de oficina."
+        },
+        {
+          "roll": 10,
+          "text": "Jaqueta de motociclista."
+        },
+        {
+          "roll": 11,
+          "text": "Capacete de obra com viseira."
+        },
+        {
+          "roll": 12,
+          "text": "Roupa reforçada."
+        }
+      ]
+    },
+    {
+      "name": "Artigos esportivos / caça",
+      "entries": [
+        {
+          "roll": 1,
+          "text": "Estilingue. Pedras encontradas conforme o lugar."
+        },
+        {
+          "roll": 2,
+          "text": "1 carga de flechas."
+        },
+        {
+          "roll": 3,
+          "text": "Canivete robusto."
+        },
+        {
+          "roll": 4,
+          "text": "Luvas de trabalho."
+        },
+        {
+          "roll": 5,
+          "text": "Arco simples sem flechas."
+        },
+        {
+          "roll": 6,
+          "text": "Corda curta."
+        },
+        {
+          "roll": 7,
+          "text": "Mochila de trilha."
+        },
+        {
+          "roll": 8,
+          "text": "Besta leve sem virotes."
+        },
+        {
+          "roll": 9,
+          "text": "1 carga de virotes."
+        },
+        {
+          "roll": 10,
+          "text": "Arma de pressão sem chumbinhos."
+        },
+        {
+          "roll": 11,
+          "text": "1 carga de chumbinhos."
+        },
+        {
+          "roll": 12,
+          "text": "Rifle de caça sem munição."
+        }
+      ]
+    },
+    {
+      "name": "Obras / instalações em reforma",
+      "entries": [
+        {
+          "roll": 1,
+          "text": "Chaves de boca."
+        },
+        {
+          "roll": 2,
+          "text": "Capacete de obra com viseira."
+        },
+        {
+          "roll": 3,
+          "text": "Martelo de obra."
+        },
+        {
+          "roll": 4,
+          "text": "Óculos de proteção."
+        },
+        {
+          "roll": 5,
+          "text": "Pá curta."
+        },
+        {
+          "roll": 6,
+          "text": "Chave inglesa."
+        },
+        {
+          "roll": 7,
+          "text": "Serra manual."
+        },
+        {
+          "roll": 8,
+          "text": "Lanterna frontal."
+        },
+        {
+          "roll": 9,
+          "text": "Corrente com cadeado."
+        },
+        {
+          "roll": 10,
+          "text": "Macacão industrial."
+        },
+        {
+          "roll": 11,
+          "text": "1 unidade de Peças."
+        },
+        {
+          "roll": 12,
+          "text": "Colete tático reforçado, somente se a obra tinha vigilância armada. Caso contrário, roupa reforçada."
+        }
+      ]
+    },
+    {
+      "name": "Galpões / centros de distribuição",
+      "entries": [
+        {
+          "roll": 1,
+          "text": "Documento com endereço de entrega."
+        },
+        {
+          "roll": 2,
+          "text": "Rádio portátil sem bateria."
+        },
+        {
+          "roll": 3,
+          "text": "Fita resistente."
+        },
+        {
+          "roll": 4,
+          "text": "Capa de chuva leve."
+        },
+        {
+          "roll": 5,
+          "text": "Mochila urbana."
+        },
+        {
+          "roll": 6,
+          "text": "Carrinho dobrável."
+        },
+        {
+          "roll": 7,
+          "text": "Colete refletivo."
+        },
+        {
+          "roll": 8,
+          "text": "Binóculos."
+        },
+        {
+          "roll": 9,
+          "text": "Galão vazio."
+        },
+        {
+          "roll": 10,
+          "text": "Mochila cargueira."
+        },
+        {
+          "roll": 11,
+          "text": "1 unidade de Combustível em recipiente identificado."
+        },
+        {
+          "roll": 12,
+          "text": "Fuzil de patrulha sem munição, somente se houver guarda armada. Caso contrário, rádio de carro."
+        }
+      ]
+    }
+  ],
+  "hexes": [
+    {
+      "q": 0,
+      "r": 0,
+      "name": "Ginásio e abrigo",
+      "border": "",
+      "fixed": "Depósito da Linha, Mara, Joel e suprimentos da seção 4. Infestação 0.",
+      "invites": [
+        "verificar as necessidades do abrigo",
+        "conversar sobre prioridades de suprimentos",
+        "observar dos telhados os seis hexes vizinhos."
+      ]
+    },
+    {
+      "q": 1,
+      "r": 0,
+      "name": "Rua da saúde",
+      "border": "cruz antiga sobre uma fachada e escada externa.",
+      "fixed": "",
+      "invites": [
+        "unidade de saúde e suas salas",
+        "apartamentos acima da fachada",
+        "pátio e saída lateral entre prédios."
+      ]
+    },
+    {
+      "q": 0,
+      "r": 1,
+      "name": "Comércio de bairro",
+      "border": "portas de lojas e um corredor de carga.",
+      "fixed": "",
+      "invites": [
+        "prateleiras acessíveis de um mercadinho",
+        "depósito ou sobreloja ainda não examinados",
+        "beco que corta o quarteirão."
+      ]
+    },
+    {
+      "q": -1,
+      "r": 1,
+      "name": "Viaduto",
+      "border": "carros parados e passagem sob a pista.",
+      "fixed": "",
+      "invites": [
+        "veículos abandonados",
+        "rampa elevada",
+        "acesso inferior cuja ocupação será mostrada antes de entrar."
+      ]
+    },
+    {
+      "q": -1,
+      "r": 0,
+      "name": "Praça",
+      "border": "bica manchada e sombras de árvores.",
+      "fixed": "",
+      "invites": [
+        "verificar a água",
+        "examinar mensagens nos muros",
+        "abrigo improvisado junto à calçada."
+      ]
+    },
+    {
+      "q": 0,
+      "r": -1,
+      "name": "Escola",
+      "border": "portão lateral e quadra coberta.",
+      "fixed": "",
+      "invites": [
+        "mural de avisos",
+        "salas e cozinha",
+        "área de manutenção."
+      ]
+    },
+    {
+      "q": 1,
+      "r": -1,
+      "name": "Posto de serviço",
+      "border": "bombas sem luz e carro próximo da oficina.",
+      "fixed": "",
+      "invites": [
+        "tanque e mangueiras",
+        "loja de conveniência",
+        "pátio de veículos."
+      ]
+    },
+    {
+      "q": -2,
+      "r": 0,
+      "name": "Oficinas",
+      "border": "telhados baixos, serragem ou metal ao vento.",
+      "fixed": "",
+      "invites": [
+        "bancada de trabalho",
+        "depósito de materiais",
+        "travessa aos fundos."
+      ]
+    },
+    {
+      "q": -2,
+      "r": 1,
+      "name": "Terrenos cultivados",
+      "border": "cerca de arame e canteiros visíveis.",
+      "fixed": "",
+      "invites": [
+        "plantas prontas ou recém-colhidas",
+        "captação de água",
+        "acesso à propriedade vizinha."
+      ]
+    },
+    {
+      "q": -2,
+      "r": 2,
+      "name": "Reservatórios",
+      "border": "torre d'água antiga e terreno de bombas.",
+      "fixed": "",
+      "invites": [
+        "entrada da estação de água",
+        "encanamento exposto",
+        "caminho para um núcleo de moradias."
+      ]
+    },
+    {
+      "q": -1,
+      "r": -1,
+      "name": "Prédios residenciais",
+      "border": "janelas ocupáveis e portaria.",
+      "fixed": "",
+      "invites": [
+        "guarita",
+        "pátio interno",
+        "um apartamento alcançável por acesso ainda desconhecido."
+      ]
+    },
+    {
+      "q": -1,
+      "r": 2,
+      "name": "Terminal de ônibus",
+      "border": "coberturas, filas de veículos parados e guichês.",
+      "fixed": "",
+      "invites": [
+        "ônibus",
+        "plataformas",
+        "salas de operação."
+      ]
+    },
+    {
+      "q": 0,
+      "r": -2,
+      "name": "Via de contorno",
+      "border": "ônibus atravessado e canteiro de obras.",
+      "fixed": "",
+      "invites": [
+        "desvio a pé",
+        "interior do ônibus",
+        "veículo menor atrás do bloqueio."
+      ]
+    },
+    {
+      "q": 0,
+      "r": 2,
+      "name": "Prédios de serviços",
+      "border": "fachada moderna e portão de carga.",
+      "fixed": "",
+      "invites": [
+        "recepção",
+        "pavimento com salas técnicas",
+        "saída para o quarteirão vizinho."
+      ]
+    },
+    {
+      "q": 1,
+      "r": -2,
+      "name": "Galpões",
+      "border": "portões altos e trilhas de pneus.",
+      "fixed": "",
+      "invites": [
+        "oficina interna",
+        "estantes de carga",
+        "passagem entre pátios."
+      ]
+    },
+    {
+      "q": 1,
+      "r": 1,
+      "name": "Quadra residencial",
+      "border": "pintura infantil num muro e varanda com varal.",
+      "fixed": "",
+      "invites": [
+        "casas e suas cozinhas",
+        "quintal",
+        "corredor para as lojas próximas."
+      ]
+    },
+    {
+      "q": 2,
+      "r": -2,
+      "name": "Torre e antenas",
+      "border": "torre de comunicação e cabos no solo.",
+      "fixed": "",
+      "invites": [
+        "casa de máquinas",
+        "rota até o topo",
+        "caderno ou registro, se restou equipamento."
+      ]
+    },
+    {
+      "q": 2,
+      "r": -1,
+      "name": "Pátio murado",
+      "border": "muro alto e acesso de veículos.",
+      "fixed": "",
+      "invites": [
+        "guarita",
+        "garagem coberta",
+        "passagem junto ao muro."
+      ]
+    },
+    {
+      "q": 2,
+      "r": 0,
+      "name": "Garagens",
+      "border": "fileiras de portões e marcas no asfalto.",
+      "fixed": "",
+      "invites": [
+        "sala de ferramentas",
+        "vagas e veículos",
+        "depósito com outro acesso."
+      ]
+    }
+  ],
+  "generators": {
+    "locais": [
+      {
+        "roll": 1,
+        "text": "Casa geminada. Dois portões dividem o mesmo quintal; qual entrada investigam?"
+      },
+      {
+        "roll": 2,
+        "text": "Prédio de três andares. Uma janela está aberta e a portaria fechada; seguem por onde?"
+      },
+      {
+        "roll": 3,
+        "text": "Condomínio de casas. A guarita tem recados recentes; observam ou procuram moradores?"
+      },
+      {
+        "roll": 4,
+        "text": "Vila de fundos. Um corredor dá em três portas; há passos só na última."
+      },
+      {
+        "roll": 5,
+        "text": "Sobrado em reforma. Andaime encosta na janela; o térreo parece acessível."
+      },
+      {
+        "roll": 6,
+        "text": "Casa com varanda. Roupa no varal indica uso recente; chamam ou contornam?"
+      },
+      {
+        "roll": 7,
+        "text": "Edifício sem energia. Escada iluminada pelo dia e garagem escura oferecem caminhos."
+      },
+      {
+        "roll": 8,
+        "text": "Casa com cisterna. O ruído de goteira vem do pátio; verificam a água?"
+      },
+      {
+        "roll": 9,
+        "text": "República estudantil. Uma mesa coletiva está posta; bilhetes apontam ocupantes."
+      },
+      {
+        "roll": 10,
+        "text": "Pensão familiar. Nomes nas portas e uma saída de serviço sugerem escolhas."
+      },
+      {
+        "roll": 11,
+        "text": "Casa inundada. Água baixa cobre o piso; porta elevada leva ao fundo."
+      },
+      {
+        "roll": 12,
+        "text": "Prédio com cobertura. Escada externa oferece observação, mas alguém a usou."
+      },
+      {
+        "roll": 13,
+        "text": "Casa com oficina doméstica. Luz passa por janela coberta; ferramentas ou gente?"
+      },
+      {
+        "roll": 14,
+        "text": "Conjunto habitacional. Corredores ligam blocos; placas indicam um posto de vigia."
+      },
+      {
+        "roll": 15,
+        "text": "Casa isolada. Cerca aberta e horta cuidada sugerem visita recente."
+      },
+      {
+        "roll": 16,
+        "text": "Edifício em obra. Portas numeradas param no segundo andar; passarela segue adiante."
+      },
+      {
+        "roll": 17,
+        "text": "Casarão dividido. Campainhas diferentes indicam unidades e acessos separados."
+      },
+      {
+        "roll": 18,
+        "text": "Abrigo de garagem. Colchões visíveis não revelam quem os deixou."
+      },
+      {
+        "roll": 19,
+        "text": "Moradia sobre loja. Escada independente e vitrine fechada levam a destinos distintos."
+      },
+      {
+        "roll": 20,
+        "text": "Pátio compartilhado. Bicicletas e baldes marcam um ponto de encontro possível."
+      },
+      {
+        "roll": 21,
+        "text": "Escola de bairro. Mural do portão lista salas e horários antigos; por onde entram?"
+      },
+      {
+        "roll": 22,
+        "text": "Creche desocupada. Tapetes secos contrastam com a cozinha fechada."
+      },
+      {
+        "roll": 23,
+        "text": "Posto de saúde. Recepção e acesso lateral às salas oferecem duas entradas."
+      },
+      {
+        "roll": 24,
+        "text": "Biblioteca pública. Catálogo rasgado indica seção remanejada; que assunto procuram?"
+      },
+      {
+        "roll": 25,
+        "text": "Centro esportivo. Quadra vazia e almoxarifado fechado sugerem usos diferentes."
+      },
+      {
+        "roll": 26,
+        "text": "Cartório. Arquivo de papel e saída de funcionários separam a visita."
+      },
+      {
+        "roll": 27,
+        "text": "Agência dos correios. Caixas etiquetadas ficaram sem retirada; quem as reclamaria?"
+      },
+      {
+        "roll": 28,
+        "text": "Subprefeitura. Quadro de avisos e mapa de obras mostram rotas locais."
+      },
+      {
+        "roll": 29,
+        "text": "Terminal escolar. Ônibus imóveis, sala de motoristas e cerca dão alternativas."
+      },
+      {
+        "roll": 30,
+        "text": "Museu pequeno. Entrada pública trancada, porta técnica entreaberta."
+      },
+      {
+        "roll": 31,
+        "text": "Delegacia de bairro. Registro de ocorrências está à vista; cela e pátio, não."
+      },
+      {
+        "roll": 32,
+        "text": "Clínica veterinária. Marcas de patas chegam à porta dos fundos."
+      },
+      {
+        "roll": 33,
+        "text": "Centro de assistência. Lista de atendimentos aponta moradores, sem localizá-los."
+      },
+      {
+        "roll": 34,
+        "text": "Templo de bairro. Velas recentes e corredor lateral podem indicar ocupação."
+      },
+      {
+        "roll": 35,
+        "text": "Teatro comunitário. Palco, camarins e telhado são três acessos possíveis."
+      },
+      {
+        "roll": 36,
+        "text": "Laboratório de ensino. Pia e armário sinalizado pedem cautela antes da entrada."
+      },
+      {
+        "roll": 37,
+        "text": "Centro cultural. Mural de recados aponta atividade marcada para hoje."
+      },
+      {
+        "roll": 38,
+        "text": "Estação de bombeiros. Viatura ausente; torre de secagem e alojamento permanecem."
+      },
+      {
+        "roll": 39,
+        "text": "Arquivo municipal. Caixas preservadas contrastam com corredor molhado."
+      },
+      {
+        "roll": 40,
+        "text": "Cemitério. Capela e depósito de manutenção ficam em lados opostos."
+      },
+      {
+        "roll": 41,
+        "text": "Garagem de ônibus. Portão principal emperrou; oficina tem entrada menor."
+      },
+      {
+        "roll": 42,
+        "text": "Pátio ferroviário. Vagões parados ocultam passagem, sem garantir carga útil."
+      },
+      {
+        "roll": 43,
+        "text": "Depósito de entregas. Etiquetas indicam destino de caixas ainda não verificadas."
+      },
+      {
+        "roll": 44,
+        "text": "Oficina de manutenção. Bancadas estão limpas; poço de inspeção fica no fundo."
+      },
+      {
+        "roll": 45,
+        "text": "Galpão de embalagens. Esteiras e escritório elevado dão caminhos diferentes."
+      },
+      {
+        "roll": 46,
+        "text": "Fábrica de alimentos. Câmara fria sem energia e refeitório pedem avaliação."
+      },
+      {
+        "roll": 47,
+        "text": "Pátio de caminhões. Cabines fechadas e guarita permitem aproximações distintas."
+      },
+      {
+        "roll": 48,
+        "text": "Estacionamento vertical. Rampas podem servir de rota ou de mirante."
+      },
+      {
+        "roll": 49,
+        "text": "Túnel de serviço. Vento na grade sugere outra saída; escutam antes?"
+      },
+      {
+        "roll": 50,
+        "text": "Usina de concreto. Silos lançam sombra; sala de controle fica separada."
+      },
+      {
+        "roll": 51,
+        "text": "Oficina de bicicletas. Correntes penduradas e trilha de pneus levam aos fundos."
+      },
+      {
+        "roll": 52,
+        "text": "Porto seco. Contêineres formam corredores; numeração indica uma fileira aberta."
+      },
+      {
+        "roll": 53,
+        "text": "Depósito de combustível. Odor no ar denuncia vazamento; válvulas estão à vista."
+      },
+      {
+        "roll": 54,
+        "text": "Armazém frigorífico. Vedação intacta não garante frio; verifiquem primeiro."
+      },
+      {
+        "roll": 55,
+        "text": "Hangares de manutenção. Porta larga fechada e acesso lateral usado recentemente."
+      },
+      {
+        "roll": 56,
+        "text": "Estação de metrô. Plataforma escura e bilheteria iluminada dividem a escolha."
+      },
+      {
+        "roll": 57,
+        "text": "Lavagem de veículos. Canaletas seguem até reservatório, condição desconhecida."
+      },
+      {
+        "roll": 58,
+        "text": "Ponto de táxis. Chaves expostas e quadro de turnos apontam rotas passadas."
+      },
+      {
+        "roll": 59,
+        "text": "Oficina de elevadores. Cabos e peças marcadas exigem espaço para transporte."
+      },
+      {
+        "roll": 60,
+        "text": "Centro de triagem. Caçambas separadas indicam material possível, não estoque pronto."
+      },
+      {
+        "roll": 61,
+        "text": "Praça arborizada. Bica e mural visíveis; pergolado esconde outro caminho."
+      },
+      {
+        "roll": 62,
+        "text": "Horta de calçada. Canteiros cuidados têm pegadas de alguém que voltou."
+      },
+      {
+        "roll": 63,
+        "text": "Campo de futebol. Arquibancada oferece visão; vestiários têm outra entrada."
+      },
+      {
+        "roll": 64,
+        "text": "Parque cercado. Portões distintos dão em trilhas com condições diferentes."
+      },
+      {
+        "roll": 65,
+        "text": "Terreno baldio. Trilha entre entulho indica travessia ou abrigo improvisado."
+      },
+      {
+        "roll": 66,
+        "text": "Córrego canalizado. Grade de inspeção permite olhar sem descer."
+      },
+      {
+        "roll": 67,
+        "text": "Margem alagada. Estacas marcam trecho firme; água esconde o restante."
+      },
+      {
+        "roll": 68,
+        "text": "Pomar abandonado. Frutos caídos atraem animais; por onde se aproximar?"
+      },
+      {
+        "roll": 69,
+        "text": "Quintal de cultivo. Irrigação interrompida aponta para reservatório próximo."
+      },
+      {
+        "roll": 70,
+        "text": "Viaduto. Pista superior e passagem sob as vigas seguem direções distintas."
+      },
+      {
+        "roll": 71,
+        "text": "Passarela fechada. Grade bloqueia a subida; apoio lateral oferece outra rota."
+      },
+      {
+        "roll": 72,
+        "text": "Reservatório elevado. Escada intacta e tubulação rompida merecem inspeções diferentes."
+      },
+      {
+        "roll": 73,
+        "text": "Torre de rádio. Cabos chegam à casa de máquinas; antena parece sem energia."
+      },
+      {
+        "roll": 74,
+        "text": "Subestação elétrica. Placa de risco é legível; cerca amassada abre alternativa."
+      },
+      {
+        "roll": 75,
+        "text": "Galeria pluvial. Água corre em direção conhecida; acesso estreito exige preparo."
+      },
+      {
+        "roll": 76,
+        "text": "Lote em demolição. Maquinário parado; uma parede preserva sinalização antiga."
+      },
+      {
+        "roll": 77,
+        "text": "Jardim comunitário. Ferramentas guardadas e banco ocupado sugerem conversa."
+      },
+      {
+        "roll": 78,
+        "text": "Lago artificial. Margem apresenta marcas; estrutura de captação fica além."
+      },
+      {
+        "roll": 79,
+        "text": "Mirante. Dá para observar dois hexes; há uma mensagem sob o corrimão."
+      },
+      {
+        "roll": 80,
+        "text": "Trilha periférica. Marcas no chão apontam desvio mais curto, ainda não testado."
+      },
+      {
+        "roll": 81,
+        "text": "Estúdio de rádio. Luz apagada; gravações e rota do telhado são possibilidades."
+      },
+      {
+        "roll": 82,
+        "text": "Hotel pequeno. Recepção vazia e corredores laterais distribuem as visitas."
+      },
+      {
+        "roll": 83,
+        "text": "Cinema de rua. Bilheteria exposta e sala de projeção separadas."
+      },
+      {
+        "roll": 84,
+        "text": "Clube social. Piscina turva e cozinha ampla atraem interesses diferentes."
+      },
+      {
+        "roll": 85,
+        "text": "Salão de festas. Mesas abandonadas; saída de emergência está destravada."
+      },
+      {
+        "roll": 86,
+        "text": "Prédio administrativo. Quadro de horários indica setor ainda acessível."
+      },
+      {
+        "roll": 87,
+        "text": "Centro de dados. Ventiladores parados; escada exterior leva a geradores."
+      },
+      {
+        "roll": 88,
+        "text": "Estacionamento subterrâneo. Luz do portão alcança só as primeiras vagas."
+      },
+      {
+        "roll": 89,
+        "text": "Hospital antigo. Ala de exames e arquivo têm acessos separados."
+      },
+      {
+        "roll": 90,
+        "text": "Complexo universitário. Laboratório, cantina e passarela oferecem rumos."
+      },
+      {
+        "roll": 91,
+        "text": "Mercado de rua. Bancas desmontadas deixam caixas e toldos a inspecionar."
+      },
+      {
+        "roll": 92,
+        "text": "Prédio misto. Consultório no térreo, moradia acima, entradas independentes."
+      },
+      {
+        "roll": 93,
+        "text": "Casa de bombas. Mostrador ainda responde; a água exige verificação."
+      },
+      {
+        "roll": 94,
+        "text": "Depósito subterrâneo. Etiquetas indicam função, sem revelar conteúdo útil."
+      },
+      {
+        "roll": 95,
+        "text": "Torre de observação. Visibilidade ampla em troca de escada exposta."
+      },
+      {
+        "roll": 96,
+        "text": "Pavilhão de feiras. Entradas múltiplas; divisórias escondem espaços vazios."
+      },
+      {
+        "roll": 97,
+        "text": "Antiga hospedaria. Livro de hóspedes e saídas para o quintal podem dar pistas."
+      },
+      {
+        "roll": 98,
+        "text": "Complexo de oficinas. Placas indicam ofícios distintos em cada bloco."
+      },
+      {
+        "roll": 99,
+        "text": "Prédio recém-vazio. Objetos empilhados junto à saída sugerem partida apressada."
+      },
+      {
+        "roll": 100,
+        "text": "Pátio murado. Guarita com luz natural e garagem escura pedem escolhas."
+      }
+    ],
+    "comercios": [
+      {
+        "roll": 1,
+        "text": "Mercadinho de esquina. Prateleiras à vista; porta do depósito fechada."
+      },
+      {
+        "roll": 2,
+        "text": "Padaria. Vitrine vazia; forno e almoxarifado ficam nos fundos."
+      },
+      {
+        "roll": 3,
+        "text": "Hortifruti. Caixas empilhadas; câmara de estocagem é separada."
+      },
+      {
+        "roll": 4,
+        "text": "Mercearia familiar. Livro de fiados indica nomes; sobreloja tem outra porta."
+      },
+      {
+        "roll": 5,
+        "text": "Distribuidora de água. Galões vazios predominam; pergunte pela origem dos cheios."
+      },
+      {
+        "roll": 6,
+        "text": "Peixaria. O cheiro denuncia perda do frio; depósito pode estar fechado."
+      },
+      {
+        "roll": 7,
+        "text": "Açougue. Câmara fria sem luz; balcão e oficina de corte são distintos."
+      },
+      {
+        "roll": 8,
+        "text": "Restaurante popular. Cozinha e salão têm acessos opostos."
+      },
+      {
+        "roll": 9,
+        "text": "Lanchonete. Freezer sem energia; cartaz indica fornecedor próximo."
+      },
+      {
+        "roll": 10,
+        "text": "Cafeteria. Pia ainda pinga; área de estoque fica sob a escada."
+      },
+      {
+        "roll": 11,
+        "text": "Sorveteria. Produto derretido à vista; gerador pode ter sido removido."
+      },
+      {
+        "roll": 12,
+        "text": "Armazém de grãos. Sacos rasgados e silo fechado exigem inspeções diferentes."
+      },
+      {
+        "roll": 13,
+        "text": "Feira coberta. Bancas vazias; calendário aponta depósito de feirantes."
+      },
+      {
+        "roll": 14,
+        "text": "Quiosque de praça. Balcão exposto e cadeado novo indicam intervenção recente."
+      },
+      {
+        "roll": 15,
+        "text": "Loja de conveniência. Caixa aberto; porta do estoque traz aviso de risco."
+      },
+      {
+        "roll": 16,
+        "text": "Casa de massas. Forno apagado; insumos secos talvez estejam protegidos."
+      },
+      {
+        "roll": 17,
+        "text": "Depósito de bebidas. Engradados tombados; piso escorregadio está sinalizado."
+      },
+      {
+        "roll": 18,
+        "text": "Loja de ração. Sacos fechados têm destino animal; escritório guarda rotas."
+      },
+      {
+        "roll": 19,
+        "text": "Empório de conservas. Potes expostos podem estar abertos; despensa fica acima."
+      },
+      {
+        "roll": 20,
+        "text": "Cantina de terminal. Luminária caída; balcão e cozinha oferecem abordagens."
+      },
+      {
+        "roll": 21,
+        "text": "Farmácia de bairro. Balcão revirado; porta de dispensação exige acesso."
+      },
+      {
+        "roll": 22,
+        "text": "Drogaria de rede. Vidros quebrados; inventário eletrônico pode existir."
+      },
+      {
+        "roll": 23,
+        "text": "Loja de produtos naturais. Rótulos antigos; filtro de água em exposição."
+      },
+      {
+        "roll": 24,
+        "text": "Ótica. Vitrine de lentes e oficina de ajustes têm usos diferentes."
+      },
+      {
+        "roll": 25,
+        "text": "Casa ortopédica. Mostruário de talas; depósito tem acesso para ambulância."
+      },
+      {
+        "roll": 26,
+        "text": "Laboratório de análises. Coleta fechada; resultados arquivados noutro cômodo."
+      },
+      {
+        "roll": 27,
+        "text": "Consultório odontológico. Cadeira visível; esterilização está atrás da porta."
+      },
+      {
+        "roll": 28,
+        "text": "Consultório de fisioterapia. Macas abertas e armários trancados separam tarefas."
+      },
+      {
+        "roll": 29,
+        "text": "Clínica veterinária privada. Guia de pacientes aponta animais e tutores."
+      },
+      {
+        "roll": 30,
+        "text": "Loja de higiene. Sabonetes na frente; estoque pode estar molhado."
+      },
+      {
+        "roll": 31,
+        "text": "Lavanderia. Máquinas paradas; roupas identificadas têm donos."
+      },
+      {
+        "roll": 32,
+        "text": "Loja de uniformes. Etiquetas de escolas e ofícios apontam usos concretos."
+      },
+      {
+        "roll": 33,
+        "text": "Brechó. Araras acessíveis; porão permanece por examinar."
+      },
+      {
+        "roll": 34,
+        "text": "Loja de calçados. Numeração misturada; oficina de reparo nos fundos."
+      },
+      {
+        "roll": 35,
+        "text": "Armarinho. Gavetas pequenas e rolos de tecido pedem busca específica."
+      },
+      {
+        "roll": 36,
+        "text": "Costuraria. Máquina sem energia; armário de encomendas guarda nomes."
+      },
+      {
+        "roll": 37,
+        "text": "Loja de artigos de bebê. Vitrine protegida; depósito talvez tenha sido retirado."
+      },
+      {
+        "roll": 38,
+        "text": "Perfumaria. Produtos vencidos misturam-se aos lacrados; verifiquem rótulos."
+      },
+      {
+        "roll": 39,
+        "text": "Barbearia. Espelhos mostram interior; porta de fundos está encostada."
+      },
+      {
+        "roll": 40,
+        "text": "Salão de beleza. Água acumulada no lavatório; insumos pedem triagem."
+      },
+      {
+        "roll": 41,
+        "text": "Ferragem de bairro. Ferramentas expostas; prateleira alta exige acesso."
+      },
+      {
+        "roll": 42,
+        "text": "Loja de tintas. Latas vazando; área ventilada é outra entrada."
+      },
+      {
+        "roll": 43,
+        "text": "Depósito de madeira. Tábuas organizadas; risco de desabamento tem sinal."
+      },
+      {
+        "roll": 44,
+        "text": "Loja de hidráulica. Conexões e mapa de tubulações atrás do balcão."
+      },
+      {
+        "roll": 45,
+        "text": "Casa de material elétrico. Fiação no chão; quadro está sinalizado."
+      },
+      {
+        "roll": 46,
+        "text": "Papelaria. Cadernos visíveis; arquivos de pedidos apontam escolas."
+      },
+      {
+        "roll": 47,
+        "text": "Livraria. Guias de bairro expostos; depósito seco tem outra chave."
+      },
+      {
+        "roll": 48,
+        "text": "Loja de informática. Mostruário sem energia; oficina de reparos no fundo."
+      },
+      {
+        "roll": 49,
+        "text": "Loja de eletrônicos. Alarmes desligados? Confiram cabos antes de abrir."
+      },
+      {
+        "roll": 50,
+        "text": "Oficina de celulares. Gavetas etiquetadas por clientes; baterias exigem teste."
+      },
+      {
+        "roll": 51,
+        "text": "Loja de pilhas e baterias. Terminais oxidados denunciam armazenamento ruim."
+      },
+      {
+        "roll": 52,
+        "text": "Loja de fotografia. Álbuns com nomes; laboratório sem luz."
+      },
+      {
+        "roll": 53,
+        "text": "Papelaria técnica. Plantas e réguas; armário de cópias indica endereços."
+      },
+      {
+        "roll": 54,
+        "text": "Loja de equipamentos de proteção. Capacetes expostos; tamanhos limitam uso."
+      },
+      {
+        "roll": 55,
+        "text": "Casa de ferramentas. Demonstrações na vitrine; oficina testa equipamento."
+      },
+      {
+        "roll": 56,
+        "text": "Depósito de construção. Paletes fechados; carrinho pode mover volume."
+      },
+      {
+        "roll": 57,
+        "text": "Loja de jardinagem. Vasos secos e mangueira apontam a fonte de água."
+      },
+      {
+        "roll": 58,
+        "text": "Floricultura. Flores murchas; estufa pode ter ventilação."
+      },
+      {
+        "roll": 59,
+        "text": "Loja de utensílios domésticos. Panelas na frente; fundos com caixas seladas."
+      },
+      {
+        "roll": 60,
+        "text": "Loja de colchões. Vitrine acessível; depósito serve de abrigo potencial."
+      },
+      {
+        "roll": 61,
+        "text": "Oficina mecânica. Elevador travado; bancada ainda tem sinais de uso."
+      },
+      {
+        "roll": 62,
+        "text": "Autopeças. Estoques codificados exigem reconhecer modelo compatível."
+      },
+      {
+        "roll": 63,
+        "text": "Posto de combustível. Bombas sem energia; acesso ao tanque é distinto."
+      },
+      {
+        "roll": 64,
+        "text": "Borracharia. Pneus empilhados; compressor parado pode ser reparado."
+      },
+      {
+        "roll": 65,
+        "text": "Lava-rápido. Reservatório e canaletas pedem avaliação de água."
+      },
+      {
+        "roll": 66,
+        "text": "Loja de bicicletas. Peças suspensas; oficina no fundo tem outro acesso."
+      },
+      {
+        "roll": 67,
+        "text": "Loja de motos. Oficina e showroom estão separados por grade."
+      },
+      {
+        "roll": 68,
+        "text": "Locadora de veículos. Quadro de chaves pode não corresponder aos carros."
+      },
+      {
+        "roll": 69,
+        "text": "Funilaria. Placas de metal úteis exigem corte e transporte."
+      },
+      {
+        "roll": 70,
+        "text": "Loja de tintas automotivas. Solventes exalam odor; ventilação importa."
+      },
+      {
+        "roll": 71,
+        "text": "Oficina de geradores. Área externa abrigada; etiquetas indicam defeitos."
+      },
+      {
+        "roll": 72,
+        "text": "Centro de reciclagem. Material separado; prensa requer energia."
+      },
+      {
+        "roll": 73,
+        "text": "Loja de rádios. Antenas visíveis; sala de teste pode captar sinal."
+      },
+      {
+        "roll": 74,
+        "text": "Eletrônica de reparos. Aparelhos de clientes têm identificação e donos."
+      },
+      {
+        "roll": 75,
+        "text": "Oficina de refrigeração. Unidade desmontada; peças não servem a tudo."
+      },
+      {
+        "roll": 76,
+        "text": "Loja de camping. Mochilas e fogareiros expostos; verifiquem combustível."
+      },
+      {
+        "roll": 77,
+        "text": "Artigos de pesca. Varas à vista; armazenamento de gelo já falhou."
+      },
+      {
+        "roll": 78,
+        "text": "Loja esportiva. Equipamentos expostos; porta de estoque numerada."
+      },
+      {
+        "roll": 79,
+        "text": "Loja de caça legal. Mostruário protegido; munição nunca vem implícita."
+      },
+      {
+        "roll": 80,
+        "text": "Gráfica rápida. Panfletos revelam eventos; sala de papel está atrás."
+      },
+      {
+        "roll": 81,
+        "text": "Lan house. Terminais sem rede; mural físico conserva recados."
+      },
+      {
+        "roll": 82,
+        "text": "Cartório privado. Notas de retirada e gavetas sugerem endereços."
+      },
+      {
+        "roll": 83,
+        "text": "Agência de viagens. Mapas expostos; itinerários antigos podem orientar."
+      },
+      {
+        "roll": 84,
+        "text": "Imobiliária. Chaves catalogadas por rua; confirmar endereço ainda exige visita."
+      },
+      {
+        "roll": 85,
+        "text": "Pequena agência bancária. Cofre fechado; caixas eletrônicos podem atrair risco."
+      },
+      {
+        "roll": 86,
+        "text": "Casa lotérica. Janelas gradeadas; porta de funcionários separada."
+      },
+      {
+        "roll": 87,
+        "text": "Loja de animais. Gaiolas abertas; água e bem-estar vêm antes de coleta."
+      },
+      {
+        "roll": 88,
+        "text": "Pet shop. Estoque de ração e sala de banho têm acessos distintos."
+      },
+      {
+        "roll": 89,
+        "text": "Casa de festas. Fantasias à vista; galpão de mesas ocupa outro lote."
+      },
+      {
+        "roll": 90,
+        "text": "Antiquário. Peças pesadas; catálogo pode contar a história do bairro."
+      },
+      {
+        "roll": 91,
+        "text": "Loja de instrumentos. Sons ecoam; cabos e estojo ficam em outra sala."
+      },
+      {
+        "roll": 92,
+        "text": "Loja de brinquedos. Vitrine quebrada; peças úteis são inesperadas."
+      },
+      {
+        "roll": 93,
+        "text": "Sebo. Estantes altas; marcador de páginas indica alguém presente."
+      },
+      {
+        "roll": 94,
+        "text": "Oficina de relógios. Peças minúsculas; iluminação adequada é necessária."
+      },
+      {
+        "roll": 95,
+        "text": "Chaveiro. Painel de chaves sem rótulos; bancada pode ajudar a testar."
+      },
+      {
+        "roll": 96,
+        "text": "Loja de telefonia. Roteadores desligados; repetidora fica no telhado."
+      },
+      {
+        "roll": 97,
+        "text": "Ateliê de impressão. Matrizes e tinta; pedidos mostram mensagens recentes."
+      },
+      {
+        "roll": 98,
+        "text": "Loja de artigos de festa. Balões e cilindros exigem cuidado com válvulas."
+      },
+      {
+        "roll": 99,
+        "text": "Pequeno bazar. Mistura de itens; escolha um setor antes de buscar."
+      },
+      {
+        "roll": 100,
+        "text": "Loja de suprimentos agrícolas. Catálogos de sementes; depósito tem acesso pelo pátio."
+      }
+    ],
+    "eventos": [
+      {
+        "roll": 1,
+        "text": "Rádio entrecortado. Uma frase cita uma rua próxima; tentam captar o restante?"
+      },
+      {
+        "roll": 2,
+        "text": "Bilhete recente. Papel preso à porta indica hora e lugar ainda verificáveis."
+      },
+      {
+        "roll": 3,
+        "text": "Pintura nova. Seta fresca contradiz uma placa antiga; qual seguem?"
+      },
+      {
+        "roll": 4,
+        "text": "Janela de observação. Clarão distante denuncia movimento em outro hex."
+      },
+      {
+        "roll": 5,
+        "text": "Mapa rasgado. Um pedaço mostra passagem de serviço, sem revelar seu estado."
+      },
+      {
+        "roll": 6,
+        "text": "Telefone tocando. O aparelho pode parar a qualquer instante; atendem?"
+      },
+      {
+        "roll": 7,
+        "text": "Luz em sequência. Dois flashes repetem padrão; observam de cobertura?"
+      },
+      {
+        "roll": 8,
+        "text": "Pegadas pequenas. Saem de uma porta e voltam por outra; acompanham?"
+      },
+      {
+        "roll": 9,
+        "text": "Marca de roda. Carrinho carregado passou há pouco; rastro aponta direção."
+      },
+      {
+        "roll": 10,
+        "text": "Aviso na água. Placa improvisada alerta para contaminação ainda verificável."
+      },
+      {
+        "roll": 11,
+        "text": "Lista de nomes. Vários estão riscados; um endereço foi acrescentado hoje."
+      },
+      {
+        "roll": 12,
+        "text": "Calendário alterado. Data atual circulada marca encontro ou prazo desconhecido."
+      },
+      {
+        "roll": 13,
+        "text": "Porta sinalizada. Fita colorida marca acesso já usado; descobrem por quem?"
+      },
+      {
+        "roll": 14,
+        "text": "Arquivo aberto. Página destaca problema local que ainda pode existir."
+      },
+      {
+        "roll": 15,
+        "text": "Chave pendurada. Etiqueta mostra número de sala; levar tem dono possível."
+      },
+      {
+        "roll": 16,
+        "text": "Mensagem em giz. Instrução para atravessar o bairro termina no meio."
+      },
+      {
+        "roll": 17,
+        "text": "Sinal sonoro distante. Três batidas vêm de direção reconhecível; respondem?"
+      },
+      {
+        "roll": 18,
+        "text": "Linha no horizonte. Fumaça breve aponta atividade, sem garantir incêndio."
+      },
+      {
+        "roll": 19,
+        "text": "Caixa postal usada. Carta recém-deixada tem destinatário em outro hex."
+      },
+      {
+        "roll": 20,
+        "text": "Mapa de rotas. Duas travessias assinaladas pedem confirmação no terreno."
+      },
+      {
+        "roll": 21,
+        "text": "Pessoa à janela. Observa o grupo e fecha a cortina; chamam de longe?"
+      },
+      {
+        "roll": 22,
+        "text": "Carregador solitário. Puxa um carrinho pesado; aceitar ajuda muda a rota."
+      },
+      {
+        "roll": 23,
+        "text": "Moradora com pressa. Pergunta pelas horas antes de explicar o motivo."
+      },
+      {
+        "roll": 24,
+        "text": "Criança chamando. A voz vem de lugar visível; um adulto pode estar perto."
+      },
+      {
+        "roll": 25,
+        "text": "Vigia nervoso. Avisa sobre um acesso e pede distância; como respondem?"
+      },
+      {
+        "roll": 26,
+        "text": "Socorrista improvisado. Procura pano limpo para alguém fora de vista."
+      },
+      {
+        "roll": 27,
+        "text": "Vendedor de trocas. Oferece informação por serviço, sem estoque definido."
+      },
+      {
+        "roll": 28,
+        "text": "Pessoa perdida. Descreve uma fachada conhecida mas indica lado errado."
+      },
+      {
+        "roll": 29,
+        "text": "Motorista parado. Pede orientação antes de ligar motor barulhento."
+      },
+      {
+        "roll": 30,
+        "text": "Gente carregando água. Mostra recipiente; a origem e a posse importam."
+      },
+      {
+        "roll": 31,
+        "text": "Alguém num telhado. Faz sinal de parada; uma rota alternativa é visível."
+      },
+      {
+        "roll": 32,
+        "text": "Conversa atrás da porta. O grupo é mencionado sem perceberem que escuta."
+      },
+      {
+        "roll": 33,
+        "text": "Vizinho em conflito. Dois relatos sobre a mesma passagem se contradizem."
+      },
+      {
+        "roll": 34,
+        "text": "Animal preso. Movimento junto à grade pode atrair atenção; libertam?"
+      },
+      {
+        "roll": 35,
+        "text": "Cão farejando. Segue cheiro específico; aproximação lenta evita correria."
+      },
+      {
+        "roll": 36,
+        "text": "Gato de coleira. Entra em prédio ocupado ou recém-abandonado; seguem?"
+      },
+      {
+        "roll": 37,
+        "text": "Pessoa com febre. Pede água; sinais de Exposição não são presumidos."
+      },
+      {
+        "roll": 38,
+        "text": "Mensageira de bicicleta. Mostra endereço e pede rota mais segura."
+      },
+      {
+        "roll": 39,
+        "text": "Morador repetindo aviso. Pode confirmar se viu a ameaça ou só ouviu rumor."
+      },
+      {
+        "roll": 40,
+        "text": "Grupo atravessando. Quer passar sem contato; abordar muda a cena."
+      },
+      {
+        "roll": 41,
+        "text": "Chuva repentina. Cobertura próxima existe; esperar ou seguir molhados?"
+      },
+      {
+        "roll": 42,
+        "text": "Rajada de vento. Solta porta de metal; segurá-la evita ruído."
+      },
+      {
+        "roll": 43,
+        "text": "Queda de telhas. Estalos anunciam risco; contornam ou escoram?"
+      },
+      {
+        "roll": 44,
+        "text": "Poça recente. Rastro revela vazamento de cima; água não é própria ainda."
+      },
+      {
+        "roll": 45,
+        "text": "Fiação baixa. Cabo oscila; descubram se há energia antes de tocar."
+      },
+      {
+        "roll": 46,
+        "text": "Goteira de teto. Água pinga perto de documentos ou aparelho; o que salvam?"
+      },
+      {
+        "roll": 47,
+        "text": "Poeira no ar. Movimento num cômodo próximo é denunciado antes de aparecer."
+      },
+      {
+        "roll": 48,
+        "text": "Lama na via. A passagem estreita pode exigir desvio anunciado."
+      },
+      {
+        "roll": 49,
+        "text": "Fumaça leve. Cheiro indica origem aproximada; vistoriam ou se afastam?"
+      },
+      {
+        "roll": 50,
+        "text": "Calor sob a porta. Pode haver fogo atrás; acesso lateral ainda está livre."
+      },
+      {
+        "roll": 51,
+        "text": "Estrutura rangendo. Pequena fissura piora ao pisar; outra rota existe."
+      },
+      {
+        "roll": 52,
+        "text": "Grade emperrada. Abrir lentamente é possível; pressa causa Barulho."
+      },
+      {
+        "roll": 53,
+        "text": "Portão automático. Motor tenta ligar sem concluir; escolha de desligar."
+      },
+      {
+        "roll": 54,
+        "text": "Alagamento subindo. Marca na parede mostra avanço; avisem quem estiver dentro."
+      },
+      {
+        "roll": 55,
+        "text": "Luz falhando. Um corredor fica escuro; saída iluminada permanece."
+      },
+      {
+        "roll": 56,
+        "text": "Vidraça partida. Fragmentos no piso anunciam ruído se correrem."
+      },
+      {
+        "roll": 57,
+        "text": "Lona solta. Esconde algo imóvel; vento dá pista antes da aproximação."
+      },
+      {
+        "roll": 58,
+        "text": "Gás no ar. Odor junto ao registro; fechar exige acesso ventilado."
+      },
+      {
+        "roll": 59,
+        "text": "Trânsito bloqueado. Veículo parou há pouco e deixa via lateral transitável."
+      },
+      {
+        "roll": 60,
+        "text": "Chuva cessando. Uma trilha antes encharcada se torna verificável."
+      },
+      {
+        "roll": 61,
+        "text": "Garrafa esquecida. Um recipiente individual tem dono possível, indicado por marca."
+      },
+      {
+        "roll": 62,
+        "text": "Ferramenta no caminho. A peça pode ajudar agora ou ser levada e registrada."
+      },
+      {
+        "roll": 63,
+        "text": "Tanque pingando. Há líquido identificável; conter a perda exige ação."
+      },
+      {
+        "roll": 64,
+        "text": "Porta que antes abria. Agora está travada por dentro; mostre sinais de quem."
+      },
+      {
+        "roll": 65,
+        "text": "Cadeira diante da janela. Alguém observou a rua há pouco; investigam o posto?"
+      },
+      {
+        "roll": 66,
+        "text": "Saco rasgado. Pegadas e trilha de grãos mostram para onde foi levado."
+      },
+      {
+        "roll": 67,
+        "text": "Carrinho abandonado. Roda quebrada indica reparo simples ou outra rota."
+      },
+      {
+        "roll": 68,
+        "text": "Comida exposta. Cheiro indica perecibilidade; avaliar antes de consumir."
+      },
+      {
+        "roll": 69,
+        "text": "Caixa lacrada. Etiqueta indica uso, sem garantir conteúdo intacto."
+      },
+      {
+        "roll": 70,
+        "text": "Chuva captada. Recipiente encheu; qualidade da água ainda importa."
+      },
+      {
+        "roll": 71,
+        "text": "Rádio acende. Restou energia para uma escuta curta; sintonizam qual sinal?"
+      },
+      {
+        "roll": 72,
+        "text": "Painel de energia. Uma chave desligada revela circuito local, não reserva."
+      },
+      {
+        "roll": 73,
+        "text": "Ferrolho novo. Alguém reforçou acesso; procurar dono ou outra entrada?"
+      },
+      {
+        "roll": 74,
+        "text": "Escada colocada. Mudança recente dá acesso alto, porém exposto."
+      },
+      {
+        "roll": 75,
+        "text": "Sombra em galpão. Um espaço seco oferece pausa se puderem vigiá-lo."
+      },
+      {
+        "roll": 76,
+        "text": "Reservatório vazando. Reparar pode salvar água já existente no lugar."
+      },
+      {
+        "roll": 77,
+        "text": "Cartaz de serviço. Endereço de conserto ainda legível em bairro adjacente."
+      },
+      {
+        "roll": 78,
+        "text": "Pequena troca possível. Uma pessoa mostra o que procura, sem preço definido."
+      },
+      {
+        "roll": 79,
+        "text": "Objeto pesado visível. Retirar exige transporte ou deixar marcado no mapa."
+      },
+      {
+        "roll": 80,
+        "text": "Rota liberada. Entulho removido por alguém revela passagem e marcas."
+      },
+      {
+        "roll": 81,
+        "text": "Arranhões na porta. Algo está do outro lado; som permite estimar movimento."
+      },
+      {
+        "roll": 82,
+        "text": "Passos arrastados. Infectado cruza outra rua; esperar evita contato."
+      },
+      {
+        "roll": 83,
+        "text": "Silêncio interrompido. Batida repetida surge de ponto fixo; observem primeiro."
+      },
+      {
+        "roll": 84,
+        "text": "Corredor estreito ocupado. Um vulto passa sem notar; há caminho alternativo."
+      },
+      {
+        "roll": 85,
+        "text": "Vultos atrás da grade. Concentração visível não atravessa barreira intacta."
+      },
+      {
+        "roll": 86,
+        "text": "Infectado preso. Está imobilizado, mas alcança quem se aproximar."
+      },
+      {
+        "roll": 87,
+        "text": "Passos seguindo som. O mesmo infectado sinalizado muda de direção; ajustem rota."
+      },
+      {
+        "roll": 88,
+        "text": "Alarme quase ativo. Um carro pisca e estala; desligar, afastar-se ou arriscar acioná-lo?"
+      },
+      {
+        "roll": 89,
+        "text": "Pássaros levantam voo. Movimento sob as árvores indica direção, não identidade."
+      },
+      {
+        "roll": 90,
+        "text": "Porta golpeada. Algo insiste do outro lado; tempo de resistência é visível."
+      },
+      {
+        "roll": 91,
+        "text": "Estilhaços no chão. Quem correr aqui fará ruído; por onde desviam?"
+      },
+      {
+        "roll": 92,
+        "text": "Figura imóvel. Pode ser corpo, infectado ou pessoa; há distância para observar."
+      },
+      {
+        "roll": 93,
+        "text": "Rastro de arrasto. Marcas recentes entram num recinto; recuar ainda é fácil."
+      },
+      {
+        "roll": 94,
+        "text": "Alarme distante. O som atrai atenção para outro ponto; decidam se seguem."
+      },
+      {
+        "roll": 95,
+        "text": "Sombra na escada. Um infectado conhecido ocupa trecho que antes estava livre."
+      },
+      {
+        "roll": 96,
+        "text": "Ruído sob o piso. Origem incerta é localizável; outro acesso permanece."
+      },
+      {
+        "roll": 97,
+        "text": "Portão cedendo. A deformação anuncia entrada futura, não ataque imediato."
+      },
+      {
+        "roll": 98,
+        "text": "Concentração na esquina. Contorná-la é possível se aceitarem desvio visível."
+      },
+      {
+        "roll": 99,
+        "text": "Saída quase fechada. Uma mão empurra do outro lado; anuncie tempo para agir."
+      },
+      {
+        "roll": 100,
+        "text": "Barulho refletido. O eco confunde a direção; esperar o próximo som permite localizar."
+      }
+    ]
+  },
+  "catalog": [
+    {
+      "category": "Armas primárias",
+      "name": "Faca resistente",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Finesse"
+        },
+        {
+          "label": "Alcance",
+          "value": "Corpo a corpo"
+        },
+        {
+          "label": "Dano",
+          "value": "d8+1"
+        },
+        {
+          "label": "Mãos",
+          "value": "Uma"
+        },
+        {
+          "label": "Barulho",
+          "value": "0"
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        },
+        {
+          "label": "Observação",
+          "value": "Fácil de ocultar"
+        }
+      ]
+    },
+    {
+      "category": "Armas primárias",
+      "name": "Cano / bastão",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Força"
+        },
+        {
+          "label": "Alcance",
+          "value": "Corpo a corpo"
+        },
+        {
+          "label": "Dano",
+          "value": "d8+2"
+        },
+        {
+          "label": "Mãos",
+          "value": "Uma"
+        },
+        {
+          "label": "Barulho",
+          "value": "0"
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        },
+        {
+          "label": "Observação",
+          "value": "Pode ser empunhado com secundária; machado causa mais dano, mas exige duas mãos."
+        }
+      ]
+    },
+    {
+      "category": "Armas primárias",
+      "name": "Machado de trabalho",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Força"
+        },
+        {
+          "label": "Alcance",
+          "value": "Corpo a corpo"
+        },
+        {
+          "label": "Dano",
+          "value": "d10+2"
+        },
+        {
+          "label": "Mãos",
+          "value": "Duas"
+        },
+        {
+          "label": "Barulho",
+          "value": "0"
+        },
+        {
+          "label": "Guarda",
+          "value": "2"
+        },
+        {
+          "label": "Observação",
+          "value": "—"
+        }
+      ]
+    },
+    {
+      "category": "Armas primárias",
+      "name": "Pé de cabra",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Agilidade"
+        },
+        {
+          "label": "Alcance",
+          "value": "Corpo a corpo"
+        },
+        {
+          "label": "Dano",
+          "value": "d8+1"
+        },
+        {
+          "label": "Mãos",
+          "value": "Uma"
+        },
+        {
+          "label": "Barulho",
+          "value": "0"
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        },
+        {
+          "label": "Observação",
+          "value": "Ferramenta de alavanca"
+        }
+      ]
+    },
+    {
+      "category": "Armas primárias",
+      "name": "Lança improvisada",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Instinto"
+        },
+        {
+          "label": "Alcance",
+          "value": "Muito perto"
+        },
+        {
+          "label": "Dano",
+          "value": "d8+2"
+        },
+        {
+          "label": "Mãos",
+          "value": "Duas"
+        },
+        {
+          "label": "Barulho",
+          "value": "0"
+        },
+        {
+          "label": "Guarda",
+          "value": "2"
+        },
+        {
+          "label": "Observação",
+          "value": "—"
+        }
+      ]
+    },
+    {
+      "category": "Armas primárias",
+      "name": "Pistola",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Finesse"
+        },
+        {
+          "label": "Alcance",
+          "value": "Longe"
+        },
+        {
+          "label": "Dano",
+          "value": "d8+2"
+        },
+        {
+          "label": "Mãos",
+          "value": "Uma"
+        },
+        {
+          "label": "Barulho",
+          "value": "+2"
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        },
+        {
+          "label": "Observação",
+          "value": "Inicial: 1 carga compatível além do item pessoal. Achada: sem munição."
+        }
+      ]
+    },
+    {
+      "category": "Armas primárias",
+      "name": "Revólver",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Agilidade"
+        },
+        {
+          "label": "Alcance",
+          "value": "Longe"
+        },
+        {
+          "label": "Dano",
+          "value": "d10+1"
+        },
+        {
+          "label": "Mãos",
+          "value": "Uma"
+        },
+        {
+          "label": "Barulho",
+          "value": "+2"
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        },
+        {
+          "label": "Observação",
+          "value": "Inicial: 1 carga compatível além do item pessoal. Achada: sem munição."
+        }
+      ]
+    },
+    {
+      "category": "Armas primárias",
+      "name": "Espingarda",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Força"
+        },
+        {
+          "label": "Alcance",
+          "value": "Perto"
+        },
+        {
+          "label": "Dano",
+          "value": "d10+3"
+        },
+        {
+          "label": "Mãos",
+          "value": "Duas"
+        },
+        {
+          "label": "Barulho",
+          "value": "+3"
+        },
+        {
+          "label": "Guarda",
+          "value": "2"
+        },
+        {
+          "label": "Observação",
+          "value": "Em Longe, fora de alcance"
+        }
+      ]
+    },
+    {
+      "category": "Armas primárias",
+      "name": "Carabina",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Instinto"
+        },
+        {
+          "label": "Alcance",
+          "value": "Muito longe"
+        },
+        {
+          "label": "Dano",
+          "value": "d8+3"
+        },
+        {
+          "label": "Mãos",
+          "value": "Duas"
+        },
+        {
+          "label": "Barulho",
+          "value": "+3"
+        },
+        {
+          "label": "Guarda",
+          "value": "2"
+        },
+        {
+          "label": "Observação",
+          "value": "Exige linha de visão"
+        }
+      ]
+    },
+    {
+      "category": "Armas primárias",
+      "name": "Canivete robusto",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Finesse"
+        },
+        {
+          "label": "Alcance",
+          "value": "Corpo a corpo"
+        },
+        {
+          "label": "Dano",
+          "value": "d6+2"
+        },
+        {
+          "label": "Mãos",
+          "value": "Uma"
+        },
+        {
+          "label": "Barulho",
+          "value": "0"
+        },
+        {
+          "label": "Guarda",
+          "value": "0"
+        },
+        {
+          "label": "Observação",
+          "value": "Abre embalagens e corta cordas"
+        }
+      ]
+    },
+    {
+      "category": "Armas primárias",
+      "name": "Facão",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Força"
+        },
+        {
+          "label": "Alcance",
+          "value": "Corpo a corpo"
+        },
+        {
+          "label": "Dano",
+          "value": "d10+1"
+        },
+        {
+          "label": "Mãos",
+          "value": "Uma"
+        },
+        {
+          "label": "Barulho",
+          "value": "0"
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        },
+        {
+          "label": "Observação",
+          "value": "Também abre vegetação leve"
+        }
+      ]
+    },
+    {
+      "category": "Armas primárias",
+      "name": "Martelo de obra",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Força"
+        },
+        {
+          "label": "Alcance",
+          "value": "Corpo a corpo"
+        },
+        {
+          "label": "Dano",
+          "value": "d8+2"
+        },
+        {
+          "label": "Mãos",
+          "value": "Uma"
+        },
+        {
+          "label": "Barulho",
+          "value": "0"
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        },
+        {
+          "label": "Observação",
+          "value": "Ferramenta de impacto"
+        }
+      ]
+    },
+    {
+      "category": "Armas primárias",
+      "name": "Chave inglesa",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Força"
+        },
+        {
+          "label": "Alcance",
+          "value": "Corpo a corpo"
+        },
+        {
+          "label": "Dano",
+          "value": "d8+1"
+        },
+        {
+          "label": "Mãos",
+          "value": "Uma"
+        },
+        {
+          "label": "Barulho",
+          "value": "0"
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        },
+        {
+          "label": "Observação",
+          "value": "Ajuda a desmontar peças acessíveis"
+        }
+      ]
+    },
+    {
+      "category": "Armas primárias",
+      "name": "Taco de beisebol",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Agilidade"
+        },
+        {
+          "label": "Alcance",
+          "value": "Corpo a corpo"
+        },
+        {
+          "label": "Dano",
+          "value": "d10+1"
+        },
+        {
+          "label": "Mãos",
+          "value": "Duas"
+        },
+        {
+          "label": "Barulho",
+          "value": "0"
+        },
+        {
+          "label": "Guarda",
+          "value": "2"
+        },
+        {
+          "label": "Observação",
+          "value": "Comprido e fácil de identificar"
+        }
+      ]
+    },
+    {
+      "category": "Armas primárias",
+      "name": "Enxada",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Força"
+        },
+        {
+          "label": "Alcance",
+          "value": "Muito perto"
+        },
+        {
+          "label": "Dano",
+          "value": "d8+2"
+        },
+        {
+          "label": "Mãos",
+          "value": "Duas"
+        },
+        {
+          "label": "Barulho",
+          "value": "0"
+        },
+        {
+          "label": "Guarda",
+          "value": "2"
+        },
+        {
+          "label": "Observação",
+          "value": "Ferramenta rural"
+        }
+      ]
+    },
+    {
+      "category": "Armas primárias",
+      "name": "Pá curta",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Força"
+        },
+        {
+          "label": "Alcance",
+          "value": "Corpo a corpo"
+        },
+        {
+          "label": "Dano",
+          "value": "d8+1"
+        },
+        {
+          "label": "Mãos",
+          "value": "Duas"
+        },
+        {
+          "label": "Barulho",
+          "value": "0"
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        },
+        {
+          "label": "Observação",
+          "value": "Escava e remove entulho"
+        }
+      ]
+    },
+    {
+      "category": "Armas primárias",
+      "name": "Bastão telescópico",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Agilidade"
+        },
+        {
+          "label": "Alcance",
+          "value": "Corpo a corpo"
+        },
+        {
+          "label": "Dano",
+          "value": "d8+1"
+        },
+        {
+          "label": "Mãos",
+          "value": "Uma"
+        },
+        {
+          "label": "Barulho",
+          "value": "0"
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        },
+        {
+          "label": "Observação",
+          "value": "Pode ser guardado fechado"
+        }
+      ]
+    },
+    {
+      "category": "Armas primárias",
+      "name": "Estilingue",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Agilidade"
+        },
+        {
+          "label": "Alcance",
+          "value": "Perto"
+        },
+        {
+          "label": "Dano",
+          "value": "d6+1"
+        },
+        {
+          "label": "Mãos",
+          "value": "Uma"
+        },
+        {
+          "label": "Barulho",
+          "value": "0"
+        },
+        {
+          "label": "Guarda",
+          "value": "0"
+        },
+        {
+          "label": "Observação",
+          "value": "Usa pedras plausíveis. Sem carga de munição"
+        }
+      ]
+    },
+    {
+      "category": "Armas primárias",
+      "name": "Arco simples",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Instinto"
+        },
+        {
+          "label": "Alcance",
+          "value": "Longe"
+        },
+        {
+          "label": "Dano",
+          "value": "d8+1"
+        },
+        {
+          "label": "Mãos",
+          "value": "Duas"
+        },
+        {
+          "label": "Barulho",
+          "value": "0"
+        },
+        {
+          "label": "Guarda",
+          "value": "2"
+        },
+        {
+          "label": "Observação",
+          "value": "Usa carga de flechas por cena"
+        }
+      ]
+    },
+    {
+      "category": "Armas primárias",
+      "name": "Besta leve",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Finesse"
+        },
+        {
+          "label": "Alcance",
+          "value": "Longe"
+        },
+        {
+          "label": "Dano",
+          "value": "d10+1"
+        },
+        {
+          "label": "Mãos",
+          "value": "Duas"
+        },
+        {
+          "label": "Barulho",
+          "value": "+1"
+        },
+        {
+          "label": "Guarda",
+          "value": "2"
+        },
+        {
+          "label": "Observação",
+          "value": "Usa carga de virotes por cena"
+        }
+      ]
+    },
+    {
+      "category": "Armas primárias",
+      "name": "Pistola compacta",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Finesse"
+        },
+        {
+          "label": "Alcance",
+          "value": "Longe"
+        },
+        {
+          "label": "Dano",
+          "value": "d6+2"
+        },
+        {
+          "label": "Mãos",
+          "value": "Uma"
+        },
+        {
+          "label": "Barulho",
+          "value": "+2"
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        },
+        {
+          "label": "Observação",
+          "value": "Usa carga de pistola. Fácil de ocultar"
+        }
+      ]
+    },
+    {
+      "category": "Armas primárias",
+      "name": "Arma de pressão",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Finesse"
+        },
+        {
+          "label": "Alcance",
+          "value": "Perto"
+        },
+        {
+          "label": "Dano",
+          "value": "d6+2"
+        },
+        {
+          "label": "Mãos",
+          "value": "Uma"
+        },
+        {
+          "label": "Barulho",
+          "value": "+1"
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        },
+        {
+          "label": "Observação",
+          "value": "Usa carga própria de chumbinhos"
+        }
+      ]
+    },
+    {
+      "category": "Armas primárias",
+      "name": "Rifle de caça",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Instinto"
+        },
+        {
+          "label": "Alcance",
+          "value": "Muito longe"
+        },
+        {
+          "label": "Dano",
+          "value": "d10+2"
+        },
+        {
+          "label": "Mãos",
+          "value": "Duas"
+        },
+        {
+          "label": "Barulho",
+          "value": "+4"
+        },
+        {
+          "label": "Guarda",
+          "value": "2"
+        },
+        {
+          "label": "Observação",
+          "value": "Usa carga compatível com carabina"
+        }
+      ]
+    },
+    {
+      "category": "Armas primárias",
+      "name": "Fuzil de patrulha",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Finesse"
+        },
+        {
+          "label": "Alcance",
+          "value": "Muito longe"
+        },
+        {
+          "label": "Dano",
+          "value": "d8+4"
+        },
+        {
+          "label": "Mãos",
+          "value": "Duas"
+        },
+        {
+          "label": "Barulho",
+          "value": "+4"
+        },
+        {
+          "label": "Guarda",
+          "value": "2"
+        },
+        {
+          "label": "Observação",
+          "value": "Usa carga compatível com carabina"
+        }
+      ]
+    },
+    {
+      "category": "Armas secundárias",
+      "name": "Faca pequena",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Finesse"
+        },
+        {
+          "label": "Alcance",
+          "value": "Corpo a corpo"
+        },
+        {
+          "label": "Dano",
+          "value": "d6 físico"
+        },
+        {
+          "label": "Efeito",
+          "value": "+1 ao dano da primária em Corpo a corpo."
+        },
+        {
+          "label": "Guarda",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Armas secundárias",
+      "name": "Tampa resistente",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Força"
+        },
+        {
+          "label": "Alcance",
+          "value": "Corpo a corpo"
+        },
+        {
+          "label": "Dano",
+          "value": "d4 físico"
+        },
+        {
+          "label": "Efeito",
+          "value": "+1 ao valor de Armadura."
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Armas secundárias",
+      "name": "Lanterna pesada",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Força"
+        },
+        {
+          "label": "Alcance",
+          "value": "Corpo a corpo"
+        },
+        {
+          "label": "Dano",
+          "value": "d6 físico"
+        },
+        {
+          "label": "Efeito",
+          "value": "Ilumina até Perto com bateria plausível."
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Armas secundárias",
+      "name": "Canivete simples",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Finesse"
+        },
+        {
+          "label": "Alcance",
+          "value": "Corpo a corpo"
+        },
+        {
+          "label": "Dano",
+          "value": "d4 físico"
+        },
+        {
+          "label": "Efeito",
+          "value": "Corta fios, ataduras e lacres acessíveis."
+        },
+        {
+          "label": "Guarda",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Armas secundárias",
+      "name": "Martelo pequeno",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Força"
+        },
+        {
+          "label": "Alcance",
+          "value": "Corpo a corpo"
+        },
+        {
+          "label": "Dano",
+          "value": "d6 físico"
+        },
+        {
+          "label": "Efeito",
+          "value": "Permite pregar ou soltar peça pequena."
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Armas secundárias",
+      "name": "Cassetete curto",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Agilidade"
+        },
+        {
+          "label": "Alcance",
+          "value": "Corpo a corpo"
+        },
+        {
+          "label": "Dano",
+          "value": "d6 físico"
+        },
+        {
+          "label": "Efeito",
+          "value": "Cabe em bolso ou cinto. Sem bônus automático."
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Armas secundárias",
+      "name": "Chave de fenda reforçada",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Finesse"
+        },
+        {
+          "label": "Alcance",
+          "value": "Corpo a corpo"
+        },
+        {
+          "label": "Dano",
+          "value": "d4 físico"
+        },
+        {
+          "label": "Efeito",
+          "value": "Permite abrir tampa com parafusos expostos."
+        },
+        {
+          "label": "Guarda",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Armas secundárias",
+      "name": "Escudo improvisado",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Força"
+        },
+        {
+          "label": "Alcance",
+          "value": "Corpo a corpo"
+        },
+        {
+          "label": "Dano",
+          "value": "d4 físico"
+        },
+        {
+          "label": "Efeito",
+          "value": "+1 ao valor de Armadura enquanto íntegro e empunhado."
+        },
+        {
+          "label": "Guarda",
+          "value": "2"
+        }
+      ]
+    },
+    {
+      "category": "Armas secundárias",
+      "name": "Tesoura de resgate",
+      "fields": [
+        {
+          "label": "Atributo",
+          "value": "Finesse"
+        },
+        {
+          "label": "Alcance",
+          "value": "Corpo a corpo"
+        },
+        {
+          "label": "Dano",
+          "value": "d4 físico"
+        },
+        {
+          "label": "Efeito",
+          "value": "Corta tecido, cinta ou cinto de segurança acessível."
+        },
+        {
+          "label": "Guarda",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Proteções",
+      "name": "Roupa reforçada",
+      "fields": [
+        {
+          "label": "Limiar Maior / Severo",
+          "value": "5 / 11"
+        },
+        {
+          "label": "Armadura (espaços)",
+          "value": "3"
+        },
+        {
+          "label": "Efeito",
+          "value": "+1 Evasion"
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Proteções",
+      "name": "Jaqueta grossa",
+      "fields": [
+        {
+          "label": "Limiar Maior / Severo",
+          "value": "6 / 13"
+        },
+        {
+          "label": "Armadura (espaços)",
+          "value": "3"
+        },
+        {
+          "label": "Efeito",
+          "value": "Sem efeito adicional"
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Proteções",
+      "name": "Colete de proteção",
+      "fields": [
+        {
+          "label": "Limiar Maior / Severo",
+          "value": "7 / 15"
+        },
+        {
+          "label": "Armadura (espaços)",
+          "value": "4"
+        },
+        {
+          "label": "Efeito",
+          "value": "−1 Evasion. Não impede infecção por si só"
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Proteções",
+      "name": "Casaco acolchoado",
+      "fields": [
+        {
+          "label": "Limiar Maior / Severo",
+          "value": "5 / 12"
+        },
+        {
+          "label": "Armadura (espaços)",
+          "value": "3"
+        },
+        {
+          "label": "Efeito",
+          "value": "Ajuda a suportar frio sem proteção adicional de HP"
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Proteções",
+      "name": "Jaqueta impermeável grossa",
+      "fields": [
+        {
+          "label": "Limiar Maior / Severo",
+          "value": "5 / 11"
+        },
+        {
+          "label": "Armadura (espaços)",
+          "value": "2"
+        },
+        {
+          "label": "Efeito",
+          "value": "Mantém a roupa sob ela seca se estiver íntegra"
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Proteções",
+      "name": "Macacão industrial",
+      "fields": [
+        {
+          "label": "Limiar Maior / Severo",
+          "value": "6 / 12"
+        },
+        {
+          "label": "Armadura (espaços)",
+          "value": "3"
+        },
+        {
+          "label": "Efeito",
+          "value": "Tecido fechado. Cobertura depende da área exposta"
+        },
+        {
+          "label": "Guarda",
+          "value": "2"
+        }
+      ]
+    },
+    {
+      "category": "Proteções",
+      "name": "Jaqueta de motociclista",
+      "fields": [
+        {
+          "label": "Limiar Maior / Severo",
+          "value": "6 / 14"
+        },
+        {
+          "label": "Armadura (espaços)",
+          "value": "3"
+        },
+        {
+          "label": "Efeito",
+          "value": "−1 Finesse por rigidez"
+        },
+        {
+          "label": "Guarda",
+          "value": "2"
+        }
+      ]
+    },
+    {
+      "category": "Proteções",
+      "name": "Traje de bombeiro",
+      "fields": [
+        {
+          "label": "Limiar Maior / Severo",
+          "value": "7 / 14"
+        },
+        {
+          "label": "Armadura (espaços)",
+          "value": "4"
+        },
+        {
+          "label": "Efeito",
+          "value": "−1 Agilidade. Máscara e ar são itens separados"
+        },
+        {
+          "label": "Guarda",
+          "value": "2"
+        }
+      ]
+    },
+    {
+      "category": "Proteções",
+      "name": "Colete tático reforçado",
+      "fields": [
+        {
+          "label": "Limiar Maior / Severo",
+          "value": "7 / 16"
+        },
+        {
+          "label": "Armadura (espaços)",
+          "value": "4"
+        },
+        {
+          "label": "Efeito",
+          "value": "−1 Agilidade. Volumoso e visível"
+        },
+        {
+          "label": "Guarda",
+          "value": "2"
+        }
+      ]
+    },
+    {
+      "category": "Trajes e acessórios",
+      "name": "Roupa seca sobressalente",
+      "fields": [
+        {
+          "label": "Uso concreto",
+          "value": "Permite trocar roupas molhadas antes de descanso. Conjunto dobrado ocupa 1 espaço."
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Trajes e acessórios",
+      "name": "Moletom escuro",
+      "fields": [
+        {
+          "label": "Uso concreto",
+          "value": "Facilita passar despercebido na penumbra com cobertura. Não torna Oculto sozinho."
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Trajes e acessórios",
+      "name": "Roupa térmica",
+      "fields": [
+        {
+          "label": "Uso concreto",
+          "value": "Torna plausível descansar ou viajar no frio sem roupa molhada."
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Trajes e acessórios",
+      "name": "Capa de chuva leve",
+      "fields": [
+        {
+          "label": "Uso concreto",
+          "value": "Protege mapas e roupa de chuva comum. Não veda água contaminada."
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Trajes e acessórios",
+      "name": "Botas impermeáveis",
+      "fields": [
+        {
+          "label": "Uso concreto",
+          "value": "Permitem atravessar lama e água rasa sem encharcar os pés."
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Trajes e acessórios",
+      "name": "Tênis leves",
+      "fields": [
+        {
+          "label": "Uso concreto",
+          "value": "Adequados para corrida em piso seco, frágeis em entulho cortante."
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Trajes e acessórios",
+      "name": "Luvas de trabalho",
+      "fields": [
+        {
+          "label": "Uso concreto",
+          "value": "Permitem mover entulho áspero ou vidro com cuidado."
+        },
+        {
+          "label": "Guarda",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Trajes e acessórios",
+      "name": "Luvas descartáveis",
+      "fields": [
+        {
+          "label": "Uso concreto",
+          "value": "Ajudam em higiene de cuidados. Um par é usado numa cena de procedimento."
+        },
+        {
+          "label": "Guarda",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Trajes e acessórios",
+      "name": "Óculos de proteção",
+      "fields": [
+        {
+          "label": "Uso concreto",
+          "value": "Protegem os olhos de poeira e respingos comuns se estiverem no rosto."
+        },
+        {
+          "label": "Guarda",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Trajes e acessórios",
+      "name": "Máscara de poeira",
+      "fields": [
+        {
+          "label": "Uso concreto",
+          "value": "Reduz inalação de poeira. Não é respirador para fumaça tóxica."
+        },
+        {
+          "label": "Guarda",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Trajes e acessórios",
+      "name": "Avental impermeável",
+      "fields": [
+        {
+          "label": "Uso concreto",
+          "value": "Protege roupa de sujeira numa tarefa de limpeza."
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Trajes e acessórios",
+      "name": "Macacão de oficina",
+      "fields": [
+        {
+          "label": "Uso concreto",
+          "value": "Bolsos e tecido de trabalho. Roupa comum, não Armadura."
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Trajes e acessórios",
+      "name": "Uniforme de saúde",
+      "fields": [
+        {
+          "label": "Uso concreto",
+          "value": "Identifica possível trabalhador da área. Pode abrir diálogo ou criar cobranças."
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Trajes e acessórios",
+      "name": "Uniforme de manutenção",
+      "fields": [
+        {
+          "label": "Uso concreto",
+          "value": "Justifica circular com ferramentas em prédios ainda ocupados."
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Trajes e acessórios",
+      "name": "Colete refletivo",
+      "fields": [
+        {
+          "label": "Uso concreto",
+          "value": "Torna o portador visível a motoristas e aliados, inclusive a observadores."
+        },
+        {
+          "label": "Guarda",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Trajes e acessórios",
+      "name": "Roupa de trilha",
+      "fields": [
+        {
+          "label": "Uso concreto",
+          "value": "Adequada a mato e chuva leve, sem reduzir horas por hex sozinha."
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Trajes e acessórios",
+      "name": "Uniforme de segurança",
+      "fields": [
+        {
+          "label": "Uso concreto",
+          "value": "Pode permitir disfarce se ninguém o reconhecer. Brasão também denuncia."
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Trajes e acessórios",
+      "name": "Capacete de obra com viseira",
+      "fields": [
+        {
+          "label": "Uso concreto",
+          "value": "Ajuda a atravessar risco de queda de detritos. Não concede espaço extra de Armadura."
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Ferramentas, acesso e reparo",
+      "name": "Kit de ferramentas de trabalho",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Reparo comum, parafusos e alavancas. Não fornece Peças."
+        },
+        {
+          "label": "Carga",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Ferramentas, acesso e reparo",
+      "name": "Alicate",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Corta arame fino e segura peça quente com proteção adequada."
+        },
+        {
+          "label": "Carga",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Ferramentas, acesso e reparo",
+      "name": "Pé de cabra",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Força portas e serve como arma primária da tabela."
+        },
+        {
+          "label": "Carga",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Ferramentas, acesso e reparo",
+      "name": "Jogo de chaves",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Abre fechadura compatível. Etiquetas podem indicar portas."
+        },
+        {
+          "label": "Carga",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Ferramentas, acesso e reparo",
+      "name": "Gazua improvisada",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Permite tentar abrir fechadura simples. Exige tempo e Finesse se houver risco."
+        },
+        {
+          "label": "Carga",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Ferramentas, acesso e reparo",
+      "name": "Chaves de boca",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Desmontam conexões acessíveis. Sem fonte de energia gratuita."
+        },
+        {
+          "label": "Carga",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Ferramentas, acesso e reparo",
+      "name": "Fita isolante",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Reforça ligação ou cobre fio numa cena. Não substitui reparo definitivo."
+        },
+        {
+          "label": "Carga",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Ferramentas, acesso e reparo",
+      "name": "Fita resistente",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Prende uma barreira leve por uma cena, se houver superfície adequada."
+        },
+        {
+          "label": "Carga",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Ferramentas, acesso e reparo",
+      "name": "Corda curta",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Permite amarrar objeto ou descer trecho com ancoragem confiável."
+        },
+        {
+          "label": "Carga",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Ferramentas, acesso e reparo",
+      "name": "Corrente com cadeado",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Fecha passagem. Intrusos podem contornar ou quebrar."
+        },
+        {
+          "label": "Carga",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Ferramentas, acesso e reparo",
+      "name": "Serra manual",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Corta madeira ou metal apropriado, com tempo e Barulho plausível."
+        },
+        {
+          "label": "Carga",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Ferramentas, acesso e reparo",
+      "name": "Pá dobrável",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Escava ou retira entulho. Arma primária Pá curta se empunhada."
+        },
+        {
+          "label": "Carga",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Ferramentas, acesso e reparo",
+      "name": "Galão vazio",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Vazio ou cheio, ocupa 1 espaço. Transporta até 4 porções de Água ou 1 unidade de Combustível, sem somar a carga do conteúdo."
+        },
+        {
+          "label": "Carga",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Luz, comunicação e informação",
+      "name": "Lanterna pequena",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Ilumina até Perto enquanto houver bateria plausível."
+        },
+        {
+          "label": "Carga",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Luz, comunicação e informação",
+      "name": "Lanterna frontal",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Ilumina até Perto deixando as mãos livres. Luz denuncia posição."
+        },
+        {
+          "label": "Carga",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Luz, comunicação e informação",
+      "name": "Kit de pilhas",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Repõe energia de um aparelho pequeno durante uma expedição. Uma utilização."
+        },
+        {
+          "label": "Carga",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Luz, comunicação e informação",
+      "name": "Rádio portátil",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Escuta ou transmite sinal ao alcance e com bateria."
+        },
+        {
+          "label": "Carga",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Luz, comunicação e informação",
+      "name": "Rádio de carro",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Funciona se houver veículo, bateria e antena utilizáveis."
+        },
+        {
+          "label": "Carga",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Luz, comunicação e informação",
+      "name": "Apito",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Chama aliados ou desvia Cego. Gera +1 Barulho na cena."
+        },
+        {
+          "label": "Carga",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Luz, comunicação e informação",
+      "name": "Espelho pequeno",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Observa uma quina sem expor o rosto. Reflexo pode denunciar."
+        },
+        {
+          "label": "Carga",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Luz, comunicação e informação",
+      "name": "Binóculos",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Permitem examinar um marco distante de posição com vista."
+        },
+        {
+          "label": "Carga",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Luz, comunicação e informação",
+      "name": "Mapa de bairro",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Oferece traçado antigo das ruas. Bloqueios atuais ainda são descobertos."
+        },
+        {
+          "label": "Carga",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Luz, comunicação e informação",
+      "name": "Caderno e lápis",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Guardam rotas, nomes, horários e promessas sem rolagem."
+        },
+        {
+          "label": "Carga",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Luz, comunicação e informação",
+      "name": "Telefone descarregado",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Contatos e fotos só podem ser vistos após conseguir energia."
+        },
+        {
+          "label": "Carga",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Luz, comunicação e informação",
+      "name": "Câmera com bateria",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Registra prova visível. Mostrar a gravação exige aparelho funcional."
+        },
+        {
+          "label": "Carga",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Abrigo, transporte e mochilas",
+      "name": "Bolsa tiracolo",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Vestida, +1 espaço de carga. Acesso rápido, não segura arma longa."
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Abrigo, transporte e mochilas",
+      "name": "Mochila urbana",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Vestida, +2 espaços de carga. Cabe uma peça longa presa externamente."
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Abrigo, transporte e mochilas",
+      "name": "Mochila de trilha",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Vestida, +3 espaços de carga. Exige ajuste, cabe uma peça longa externa."
+        },
+        {
+          "label": "Guarda",
+          "value": "2"
+        }
+      ]
+    },
+    {
+      "category": "Abrigo, transporte e mochilas",
+      "name": "Mochila cargueira",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Vestida, +4 espaços de carga. Cheia, atrapalha vãos estreitos e natação."
+        },
+        {
+          "label": "Guarda",
+          "value": "2"
+        }
+      ]
+    },
+    {
+      "category": "Abrigo, transporte e mochilas",
+      "name": "Carrinho dobrável",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Guardado ocupa 1. Aberto leva até 4 espaços no piso acessível. Não atravessa escada sem esforço."
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Abrigo, transporte e mochilas",
+      "name": "Cobertor",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Ajuda a estabelecer um lugar de descanso plausível. Não torna a rua segura."
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Abrigo, transporte e mochilas",
+      "name": "Saco de dormir",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Protege do frio durante descanso em abrigo protegido."
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Abrigo, transporte e mochilas",
+      "name": "Filtro portátil",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Permite tentar tornar água suspeita utilizável com tempo e verificação. Não cria Água."
+        },
+        {
+          "label": "Guarda",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Abrigo, transporte e mochilas",
+      "name": "Pastilhas de purificação",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Uma utilização para até 4 porções de água encontrada. Acesso e verificação ainda importam."
+        },
+        {
+          "label": "Guarda",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Abrigo, transporte e mochilas",
+      "name": "Isqueiro",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Acende chama com combustível. Fogo e fumaça são perceptíveis."
+        },
+        {
+          "label": "Guarda",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Abrigo, transporte e mochilas",
+      "name": "Fogareiro",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Prepara comida se houver combustível adequado e local ventilado."
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Abrigo, transporte e mochilas",
+      "name": "Panela leve",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Permite cozinhar e aquecer água. Não purifica automaticamente contaminação desconhecida."
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Abrigo, transporte e mochilas",
+      "name": "Kit de higiene",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Sabão, pano e recipiente para manter espaço limpo num descanso."
+        },
+        {
+          "label": "Guarda",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Abrigo, transporte e mochilas",
+      "name": "Documento ou crachá",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Pode estabelecer identidade verdadeira ou permitir disfarce verificável."
+        },
+        {
+          "label": "Guarda",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Abrigo, transporte e mochilas",
+      "name": "Fotografias e cartas",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Ligam pessoas e lugares já descobertos. Não têm bônus de rolagem por si."
+        },
+        {
+          "label": "Guarda",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Abrigo, transporte e mochilas",
+      "name": "Sinalizador de mão",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Uma utilização: ilumina e revela posição. +2 Barulho quando acionado."
+        },
+        {
+          "label": "Guarda",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Bebidas",
+      "name": "Garrafa de água lacrada",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 garrafa"
+        },
+        {
+          "label": "Água em jogo",
+          "value": "1 porção"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Bebidas",
+      "name": "Pacote de quatro águas",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "4 garrafas"
+        },
+        {
+          "label": "Água em jogo",
+          "value": "4 porções = 1 unidade"
+        },
+        {
+          "label": "Carga",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Bebidas",
+      "name": "Cantil de água verificada",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 cantil"
+        },
+        {
+          "label": "Água em jogo",
+          "value": "1 porção"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Bebidas",
+      "name": "Água de cisterna tratada",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 recipiente"
+        },
+        {
+          "label": "Água em jogo",
+          "value": "1 porção se verificada"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Bebidas",
+      "name": "Galão de água lacrado",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 galão"
+        },
+        {
+          "label": "Água em jogo",
+          "value": "4 porções"
+        },
+        {
+          "label": "Carga",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Bebidas",
+      "name": "Água de torneira sem verificação",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 recipiente"
+        },
+        {
+          "label": "Água em jogo",
+          "value": "0 até examinar origem e qualidade"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Bebidas",
+      "name": "Água de chuva coletada",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 recipiente"
+        },
+        {
+          "label": "Água em jogo",
+          "value": "0 até verificar e tornar utilizável"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Bebidas",
+      "name": "Suco em caixa fechado",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 caixa"
+        },
+        {
+          "label": "Água em jogo",
+          "value": "1 porção"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Bebidas",
+      "name": "Bebida isotônica lacrada",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 frasco"
+        },
+        {
+          "label": "Água em jogo",
+          "value": "1 porção"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Bebidas",
+      "name": "Refrigerante lacrado",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 lata"
+        },
+        {
+          "label": "Água em jogo",
+          "value": "1 porção"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Bebidas",
+      "name": "Chá pronto fechado",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 garrafa"
+        },
+        {
+          "label": "Água em jogo",
+          "value": "1 porção"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Bebidas",
+      "name": "Café pronto em recipiente",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 porção"
+        },
+        {
+          "label": "Água em jogo",
+          "value": "1 porção se ainda próprio para consumo"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Bebidas",
+      "name": "Leite de longa vida fechado",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 caixa"
+        },
+        {
+          "label": "Água em jogo",
+          "value": "1 porção se próprio para consumo"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Bebidas",
+      "name": "Bebida energética fechada",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 lata"
+        },
+        {
+          "label": "Água em jogo",
+          "value": "1 porção. Estímulo não elimina fadiga"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Bebidas",
+      "name": "Cerveja ou vinho",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 recipiente"
+        },
+        {
+          "label": "Água em jogo",
+          "value": "0 porções de Água. Objeto de troca"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Bebidas",
+      "name": "Garrafa sem rótulo",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 recipiente"
+        },
+        {
+          "label": "Água em jogo",
+          "value": "0 até identificar conteúdo e segurança"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Alimentos",
+      "name": "Barra de cereal",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 unidade"
+        },
+        {
+          "label": "Porções",
+          "value": "1"
+        },
+        {
+          "label": "Preparo",
+          "value": "Pronto"
+        },
+        {
+          "label": "Prazo",
+          "value": "D"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Alimentos",
+      "name": "Pacote de bolachas",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 pacote"
+        },
+        {
+          "label": "Porções",
+          "value": "2"
+        },
+        {
+          "label": "Preparo",
+          "value": "Pronto"
+        },
+        {
+          "label": "Prazo",
+          "value": "D"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Alimentos",
+      "name": "Fruta firme",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 fruta"
+        },
+        {
+          "label": "Porções",
+          "value": "1"
+        },
+        {
+          "label": "Preparo",
+          "value": "Pronto"
+        },
+        {
+          "label": "Prazo",
+          "value": "F"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Alimentos",
+      "name": "Frutas variadas",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 sacola"
+        },
+        {
+          "label": "Porções",
+          "value": "2"
+        },
+        {
+          "label": "Preparo",
+          "value": "Pronto"
+        },
+        {
+          "label": "Prazo",
+          "value": "F"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Alimentos",
+      "name": "Verduras de horta",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 maço"
+        },
+        {
+          "label": "Porções",
+          "value": "1"
+        },
+        {
+          "label": "Preparo",
+          "value": "Lavar"
+        },
+        {
+          "label": "Prazo",
+          "value": "F"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Alimentos",
+      "name": "Raízes colhidas",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 saco pequeno"
+        },
+        {
+          "label": "Porções",
+          "value": "2"
+        },
+        {
+          "label": "Preparo",
+          "value": "Cozinhar"
+        },
+        {
+          "label": "Prazo",
+          "value": "F"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Alimentos",
+      "name": "Pão embalado",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 pacote"
+        },
+        {
+          "label": "Porções",
+          "value": "2"
+        },
+        {
+          "label": "Preparo",
+          "value": "Pronto"
+        },
+        {
+          "label": "Prazo",
+          "value": "F"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Alimentos",
+      "name": "Sanduíche pronto",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 unidade"
+        },
+        {
+          "label": "Porções",
+          "value": "1"
+        },
+        {
+          "label": "Preparo",
+          "value": "Pronto"
+        },
+        {
+          "label": "Prazo",
+          "value": "R"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Alimentos",
+      "name": "Conserva em lata",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 lata"
+        },
+        {
+          "label": "Porções",
+          "value": "2"
+        },
+        {
+          "label": "Preparo",
+          "value": "Pronto, se íntegra"
+        },
+        {
+          "label": "Prazo",
+          "value": "D"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Alimentos",
+      "name": "Feijão pronto fechado",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 embalagem"
+        },
+        {
+          "label": "Porções",
+          "value": "2"
+        },
+        {
+          "label": "Preparo",
+          "value": "Pronto, se íntegro"
+        },
+        {
+          "label": "Prazo",
+          "value": "D"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Alimentos",
+      "name": "Sopa enlatada",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 lata"
+        },
+        {
+          "label": "Porções",
+          "value": "2"
+        },
+        {
+          "label": "Preparo",
+          "value": "Pronto ou aquecer"
+        },
+        {
+          "label": "Prazo",
+          "value": "D"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Alimentos",
+      "name": "Macarrão seco",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 pacote"
+        },
+        {
+          "label": "Porções",
+          "value": "4"
+        },
+        {
+          "label": "Preparo",
+          "value": "Cozinhar com Água"
+        },
+        {
+          "label": "Prazo",
+          "value": "D"
+        },
+        {
+          "label": "Carga",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Alimentos",
+      "name": "Arroz cru",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 pacote"
+        },
+        {
+          "label": "Porções",
+          "value": "4"
+        },
+        {
+          "label": "Preparo",
+          "value": "Cozinhar com Água"
+        },
+        {
+          "label": "Prazo",
+          "value": "D"
+        },
+        {
+          "label": "Carga",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Alimentos",
+      "name": "Aveia",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 pacote pequeno"
+        },
+        {
+          "label": "Porções",
+          "value": "2"
+        },
+        {
+          "label": "Preparo",
+          "value": "Misturar com Água"
+        },
+        {
+          "label": "Prazo",
+          "value": "D"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Alimentos",
+      "name": "Farinha / mistura seca",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 pacote"
+        },
+        {
+          "label": "Porções",
+          "value": "2"
+        },
+        {
+          "label": "Preparo",
+          "value": "Cozinhar com Água"
+        },
+        {
+          "label": "Prazo",
+          "value": "D"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Alimentos",
+      "name": "Carne seca embalada",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 pacote"
+        },
+        {
+          "label": "Porções",
+          "value": "2"
+        },
+        {
+          "label": "Preparo",
+          "value": "Pronto, se íntegra"
+        },
+        {
+          "label": "Prazo",
+          "value": "D"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Alimentos",
+      "name": "Peixe em lata",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 lata"
+        },
+        {
+          "label": "Porções",
+          "value": "2"
+        },
+        {
+          "label": "Preparo",
+          "value": "Pronto, se íntegro"
+        },
+        {
+          "label": "Prazo",
+          "value": "D"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Alimentos",
+      "name": "Leite em pó",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 pacote"
+        },
+        {
+          "label": "Porções",
+          "value": "2"
+        },
+        {
+          "label": "Preparo",
+          "value": "Misturar com Água"
+        },
+        {
+          "label": "Prazo",
+          "value": "D"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Alimentos",
+      "name": "Nozes e sementes",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 pacote"
+        },
+        {
+          "label": "Porções",
+          "value": "2"
+        },
+        {
+          "label": "Preparo",
+          "value": "Pronto"
+        },
+        {
+          "label": "Prazo",
+          "value": "D"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Alimentos",
+      "name": "Chocolate fechado",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 barra"
+        },
+        {
+          "label": "Porções",
+          "value": "1"
+        },
+        {
+          "label": "Preparo",
+          "value": "Pronto"
+        },
+        {
+          "label": "Prazo",
+          "value": "D"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Alimentos",
+      "name": "Refeição congelada",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 pacote"
+        },
+        {
+          "label": "Porções",
+          "value": "2"
+        },
+        {
+          "label": "Preparo",
+          "value": "Cozinhar"
+        },
+        {
+          "label": "Prazo",
+          "value": "C"
+        },
+        {
+          "label": "Carga",
+          "value": "0/1"
+        }
+      ]
+    },
+    {
+      "category": "Alimentos",
+      "name": "Ração de emergência",
+      "fields": [
+        {
+          "label": "Achado",
+          "value": "1 pacote"
+        },
+        {
+          "label": "Porções",
+          "value": "4"
+        },
+        {
+          "label": "Preparo",
+          "value": "Pronto"
+        },
+        {
+          "label": "Prazo",
+          "value": "D"
+        },
+        {
+          "label": "Carga",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Medicamentos e cuidado",
+      "name": "Kit médico de campo",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Ferramenta reutilizável para cuidados básicos. Não é 1 Medicamentos."
+        },
+        {
+          "label": "Carga",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Medicamentos e cuidado",
+      "name": "Bolsa de tratamento lacrada",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "1 unidade de Medicamentos. Recurso para Exposição ou procedimento complexo."
+        },
+        {
+          "label": "Carga",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Medicamentos e cuidado",
+      "name": "Caixa clínica completa",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "1 unidade de Medicamentos e material para procedimentos básicos. Gastar a unidade deixa o estojo."
+        },
+        {
+          "label": "Carga",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Medicamentos e cuidado",
+      "name": "Estojo de antissepsia completo",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "1 unidade de Medicamentos para a tentativa de limpar Exposição. Não garante sucesso."
+        },
+        {
+          "label": "Carga",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Medicamentos e cuidado",
+      "name": "Gaze e ataduras",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Material adequado para uma ação de cuidado. Não limpa HP sozinho."
+        },
+        {
+          "label": "Carga",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Medicamentos e cuidado",
+      "name": "Luvas de procedimento",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Um par para uma cena de cuidados. Não impede Mordida."
+        },
+        {
+          "label": "Carga",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Medicamentos e cuidado",
+      "name": "Solução de limpeza lacrada",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Material de higiene para um cuidado. Isoladamente não é 1 Medicamentos."
+        },
+        {
+          "label": "Carga",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Medicamentos e cuidado",
+      "name": "Soro fisiológico lacrado",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Permite lavar sujeira numa cena de cuidado. Não equivale a tratamento de Exposição."
+        },
+        {
+          "label": "Carga",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Medicamentos e cuidado",
+      "name": "Curativo compressivo",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Material de cuidado para ferimento visível. Não altera limiares ou HP sozinho."
+        },
+        {
+          "label": "Carga",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Medicamentos e cuidado",
+      "name": "Tala e faixa",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Permite imobilizar membro ferido em cena. A recuperação segue o SRD."
+        },
+        {
+          "label": "Carga",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Medicamentos e cuidado",
+      "name": "Termômetro",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Permite verificar febre. Não identifica causa secreta."
+        },
+        {
+          "label": "Carga",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Medicamentos e cuidado",
+      "name": "Máscara e avental clínico",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Protegem roupa de respingos comuns. Não bloqueiam Mordida sem Armadura apropriada."
+        },
+        {
+          "label": "Carga",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Medicamentos e cuidado",
+      "name": "Analgésico genérico",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Objeto de troca/cuidado para dor comum. Sem bônus nem cura automática."
+        },
+        {
+          "label": "Carga",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Medicamentos e cuidado",
+      "name": "Antitérmico genérico",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Acompanha cuidado de febre comum. Não reverte estado de infecção."
+        },
+        {
+          "label": "Carga",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Medicamentos e cuidado",
+      "name": "Medicamento para alergia",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Uso narrativo em alergia comum. Não cura o agente do surto."
+        },
+        {
+          "label": "Carga",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Medicamentos e cuidado",
+      "name": "Medicamento para enjoo",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Uso narrativo em mal-estar comum. Não elimina Stress sozinho."
+        },
+        {
+          "label": "Carga",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Medicamentos e cuidado",
+      "name": "Medicamento prescrito identificado",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Útil a quem depende dele. Guarda, troca e administração exigem contexto."
+        },
+        {
+          "label": "Carga",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Medicamentos e cuidado",
+      "name": "Antibiótico prescrito",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Recurso ficcional de tratamento médico comum. Não cura infecção zumbi."
+        },
+        {
+          "label": "Carga",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Medicamentos e cuidado",
+      "name": "Sachês de reidratação",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Acompanham água limpa e repouso. Não contam como porção de Água."
+        },
+        {
+          "label": "Carga",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "category": "Medicamentos e cuidado",
+      "name": "Máscara respiratória com filtro",
+      "fields": [
+        {
+          "label": "Uso em jogo",
+          "value": "Permite lidar com poeira/fumaça apropriada ao filtro. Não substitui ar respirável."
+        },
+        {
+          "label": "Carga",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "category": "Suprimentos abstratos",
+      "name": "Comida (1 unidade)",
+      "fields": [
+        {
+          "label": "Carga em viagem",
+          "value": "1"
+        },
+        {
+          "label": "Regra de transporte",
+          "value": "Quatro porções ocupam 1. Até duas porções pessoais soltas ocupam 0."
+        }
+      ]
+    },
+    {
+      "category": "Suprimentos abstratos",
+      "name": "Água (1 unidade)",
+      "fields": [
+        {
+          "label": "Carga em viagem",
+          "value": "1"
+        },
+        {
+          "label": "Regra de transporte",
+          "value": "Quatro porções: galão ou pacote inteiro 1. Até duas porções pessoais ocupam 0."
+        }
+      ]
+    },
+    {
+      "category": "Suprimentos abstratos",
+      "name": "Medicamentos (1 unidade)",
+      "fields": [
+        {
+          "label": "Carga em viagem",
+          "value": "1"
+        },
+        {
+          "label": "Regra de transporte",
+          "value": "Um tratamento relevante. Bolsa ou caixa já inclui a unidade em sua carga."
+        }
+      ]
+    },
+    {
+      "category": "Suprimentos abstratos",
+      "name": "Munição (1 carga)",
+      "fields": [
+        {
+          "label": "Carga em viagem",
+          "value": "0/1"
+        },
+        {
+          "label": "Regra de transporte",
+          "value": "Uma carga pronta na arma ativa ocupa 0. Cada reserva, 1. Anote o tipo."
+        }
+      ]
+    },
+    {
+      "category": "Suprimentos abstratos",
+      "name": "Combustível (1 unidade)",
+      "fields": [
+        {
+          "label": "Carga em viagem",
+          "value": "1"
+        },
+        {
+          "label": "Regra de transporte",
+          "value": "Em galão já contado não some carga. No veículo, segue o reservatório."
+        }
+      ]
+    },
+    {
+      "category": "Suprimentos abstratos",
+      "name": "Peças (1 unidade)",
+      "fields": [
+        {
+          "label": "Carga em viagem",
+          "value": "1"
+        },
+        {
+          "label": "Regra de transporte",
+          "value": "Materiais de um avanço ou reparo. Itens isolados não viram unidade sem ficção."
+        }
+      ]
+    },
+    {
+      "category": "Consulta antes de sair e ao retornar",
+      "name": "Equipar",
+      "fields": [
+        {
+          "label": "Pergunta de conferência",
+          "value": "Qual arma, secundária possível, proteção, traje e uma bolsa estão ativos (0 espaço)?"
+        }
+      ]
+    },
+    {
+      "category": "Consulta antes de sair e ao retornar",
+      "name": "Somar",
+      "fields": [
+        {
+          "label": "Pergunta de conferência",
+          "value": "Capacidade = 3 + bônus da bolsa + técnicas pertinentes. Quais itens guardados ocupam 1 ou 2 espaços?"
+        }
+      ]
+    },
+    {
+      "category": "Consulta antes de sair e ao retornar",
+      "name": "Separar porções",
+      "fields": [
+        {
+          "label": "Pergunta de conferência",
+          "value": "Até 2 Comida e 2 Água pessoais em bolso cabem sem espaço. Grupos extras de até 4 porções ocupam 1."
+        }
+      ]
+    },
+    {
+      "category": "Consulta antes de sair e ao retornar",
+      "name": "Preparar munição",
+      "fields": [
+        {
+          "label": "Pergunta de conferência",
+          "value": "Uma carga pronta na arma ativa ocupa 0. Cada reserva ocupa 1 e tem tipo específico."
+        }
+      ]
+    },
+    {
+      "category": "Consulta antes de sair e ao retornar",
+      "name": "Avaliar saque",
+      "fields": [
+        {
+          "label": "Pergunta de conferência",
+          "value": "Pergunte o que procuram, para quê e onde. Busca específica responde ao objetivo se houver fonte; busca aberta usa um d12 por setor. Nada se duplica depois de vasculhado."
+        }
+      ]
+    },
+    {
+      "category": "Consulta antes de sair e ao retornar",
+      "name": "Identificar alimento",
+      "fields": [
+        {
+          "label": "Pergunta de conferência",
+          "value": "Marque o amanhecer de vencimento do lote: F vence no segundo seguinte, R no próximo. Ingrediente seco D bem guardado continua D após aberto; comida preparada ou úmida aberta vira R. C exige frio comprovado."
+        }
+      ]
+    },
+    {
+      "category": "Consulta antes de sair e ao retornar",
+      "name": "Escolher transporte",
+      "fields": [
+        {
+          "label": "Pergunta de conferência",
+          "value": "Bolsa não empilha com outra. Carrinho aberto leva 4 espaços, carro 3, moto 1, van 6. Tudo precisa caber na rota."
+        }
+      ]
+    },
+    {
+      "category": "Consulta antes de sair e ao retornar",
+      "name": "No abrigo",
+      "fields": [
+        {
+          "label": "Pergunta de conferência",
+          "value": "Transfira porções sem duplicá-las. Desconte comida e água ao anoitecer. No amanhecer, descarte apenas os lotes cujo prazo venceu fora do frio."
+        }
+      ]
+    }
+  ],
+  "adversaries": [
+    {
+      "name": "INFECTADO DISPERSO",
+      "intro": "Tier 1 Lacaio. Um recém-transformado sozinho, perigoso quando vários bloqueiam uma fuga. Motivações e Táticas: seguir ruído, cercar, obstruir passagem.",
+      "stats": "10 | Limiares — | PV 1 | Estresse 1",
+      "attack": "+0 | Unhas e empurrão | Corpo a corpo | 3 físico",
+      "features": [
+        "Lacaio (4) — Passiva: cai ao receber qualquer dano; para cada 4 de dano causado, um Lacaio adicional ao alcance e que seria atingido pode ser derrotado, conforme a característica Lacaio do SRD. Não some quatro lacaios como um único adversário para ataques.",
+        "Agarre impreciso — Ação: contra alvo Corpo a corpo, faça ataque normal; no sucesso, em vez de dano, deixe o alvo temporariamente Restrito. O alvo pode se soltar com ação plausível.",
+        "Mordida — Ação: somente contra alvo já Restrito ou indefeso; anuncie, dê chance de reação Agilidade (12) ou bloqueio com Armadura que cubra o local. Siga seção 5."
+      ]
+    },
+    {
+      "name": "ERRANTE",
+      "intro": "Tier 1 Padrão. Corpo lento, persistente, ainda reconhecível. Motivações e Táticas: aproximar-se do som, empurrar presas para um canto, segurar.",
+      "stats": "11 | Limiares 7/14 | PV 3 | Estresse 2",
+      "attack": "+0 | Investida curta | Corpo a corpo | 1d6+2 físico",
+      "features": [
+        "Agarrar — Ação: marque 1 Estresse para atacar alguém Corpo a corpo; no sucesso, cause o dano básico e deixe o alvo temporariamente Restrito. Diga onde os braços prenderam.",
+        "Mordida — Ação: somente contra alvo já Restrito ou indefeso; use a reação/bloqueio da seção 5. O Errante precisa de outro Spotlight para morder após Agarrar.",
+        "Rastro lento — Passiva: não persegue carro em movimento nem alcança alguém que já tomou uma rota de retirada sem barreiras; pode aguardar em gargalos."
+      ]
+    },
+    {
+      "name": "CORREDOR",
+      "intro": "Tier 1 Emboscador. Infectado recente que acelera ao detectar presa. Motivações e Táticas: surgir de trás de obstáculos, alcançar o último do grupo, separar.",
+      "stats": "13 | Limiares 7/14 | PV 3 | Estresse 2",
+      "attack": "+1 | Choque e garras | Corpo a corpo | 1d8+2 físico",
+      "features": [
+        "Arrancada — Passiva: ao receber Spotlight, pode alcançar alvo em Longe se houver percurso desimpedido; antes de atacá-lo, marque 1 Estresse. Se não puder pagar, mova só como adversário comum.",
+        "Derrubar — Reação: após acertar um alvo isolado, marque 1 Estresse para deixá-lo temporariamente Restrito pelo peso do corpo, em vez de infligir o dano do ataque.",
+        "Mordida — Ação: somente alvo já Restrito ou indefeso; seção 5, exigindo Spotlight próprio."
+      ]
+    },
+    {
+      "name": "AGARRADOR",
+      "intro": "Tier 1 Bruto. Ombros largos, braços fortes e pouco equilíbrio. Motivações e Táticas: fechar porta com o corpo, capturar alguém, impedir retirada.",
+      "stats": "12 | Limiares 9/17 | PV 5 | Estresse 3",
+      "attack": "+1 | Braços esmagadores | Corpo a corpo | 1d8+2 físico",
+      "features": [
+        "Imobilizar — Ação: marque 1 Estresse; faça ataque padrão. No sucesso, o alvo sofre dano normal e fica temporariamente Restrito. Um aliado Muito perto pode tentar livrá-lo, Força ou Finesse (12).",
+        "Mordida — Ação: somente contra alvo já Restrito ou indefeso; seção 5. Necessita novo Spotlight após Imobilizar.",
+        "Desequilíbrio — Passiva: uma barricada baixa, escada estreita ou empurrão bem descrito cria abertura plausível para fugir ou derrubá-lo; peça rolagem só se houver risco."
+      ]
+    },
+    {
+      "name": "INCHADO",
+      "intro": "Tier 1 Padrão. Infectado deteriorado cujo rompimento libera fluidos irritantes. Motivações e Táticas: vagar em espaços estreitos, reagir ao toque, bloquear passagens.",
+      "stats": "11 | Limiares 8/16 | PV 4 | Estresse 2",
+      "attack": "+0 | Peso morto | Corpo a corpo | 1d6+3 físico",
+      "features": [
+        "Nuvem irritante — Reação: quando perde o último PV em Corpo a corpo, pessoas Muito perto fazem reação de Agilidade (12); na falha marcam 1 Stress. Na reação crítica, ignoram até os respingos. A nuvem não causa Exposição.",
+        "Mordida — Ação: somente contra alvo já Restrito ou indefeso; seção 5.",
+        "Odor — Passiva: o grupo pode detectá-lo antes de vê-lo em corredor sem ventilação."
+      ]
+    },
+    {
+      "name": "CEGO",
+      "intro": "Tier 1 Padrão. Olhos destruídos, procura vibração e som. Motivações e Táticas: seguir motores, emboscar ruídos, perder o alvo silencioso.",
+      "stats": "11 | Limiares 7/13 | PV 3 | Estresse 2",
+      "attack": "+0 | Golpe na direção do som | Corpo a corpo | 1d6+2 físico",
+      "features": [
+        "Audição obsessiva — Passiva: sabe a direção geral de qualquer fonte de Barulho 3+ na mesma cena, mas não enxerga uma pessoa silenciosa e parada em outra cobertura. Barulho pode ser usado para desviá-lo.",
+        "Agarre — Ação: marque 1 Estresse para tentar restringir um alvo Corpo a corpo no lugar do dano de um ataque bem-sucedido.",
+        "Mordida — Ação: alvo Restrito ou indefeso; seção 5."
+      ]
+    },
+    {
+      "name": "MASSA DE INFECTADOS",
+      "intro": "Tier 1 Horda (2 infectados/PV, aproximadamente 12 corpos). Uma frente que ocupa rua e empurra contra vitrines. Motivações e Táticas: convergir ao ruído, pressionar passagens, separar fugitivos. A Horda nunca é recompensa por “ganhar Fear” sem chegada telegrafada.",
+      "stats": "12 | Limiares 9/17 | PV 6 | Estresse 2",
+      "attack": "+2 | Frente de corpos | Perto | 1d10+3 físico",
+      "features": [
+        "Horda — Passiva: com 3 ou mais PV marcados, o ataque básico cai para 1d6+2 físico; descreva dispersão de corpos.",
+        "Fechar a rua — Ação: ocupe uma saída de até Perto e mostre uma alternativa arriscada. Passar através da massa exige ação de Agilidade ou Força (15), se houver caminho; fracasso significa recuo ou alvo temporariamente Restrito, não mordida automática.",
+        "Mordida na massa — Ação: somente contra alvo já Restrito/indefeso dentro da massa. Use a reação/bloqueio da seção 5. Ela toma o Spotlight da Horda.",
+        "Dispersar — Passiva: se barulho se afastar ou um bloqueio for fechado, sobreviventes podem fugir sem zerar PV; ofereça rotas como solução."
+      ]
+    },
+    {
+      "name": "SAQUEADOR CAUTELOSO",
+      "intro": "Tier 1 Padrão. Pessoa armada que prefere voltar viva. Motivações e Táticas: avaliar superioridade, ameaçar, negociar suprimentos, fugir ferida.",
+      "stats": "12 | Limiares 7/14 | PV 3 | Estresse 2",
+      "attack": "+1 | Pistola velha | Longe | 1d8+2 físico",
+      "features": [
+        "Tiro que denuncia — Passiva: disparar aumenta Barulho em +2 na cena. Depois de uma troca longa, descreva recarga e oportunidade de negociação. A munição de NPC não é saque infinito.",
+        "Pedir trégua — Reação: após marcar 2 PV, oferece recuo por suprimento ou informação; não é obrigatoriamente sincero."
+      ]
+    },
+    {
+      "name": "VIGIA DE PASSAGEM",
+      "intro": "Tier 1 Atirador. Pessoa que guarda uma passagem por um motivo a definir quando surgir na ficção. Motivações e Táticas: anunciar presença, pedir distância, usar cobertura e aceitar rendição.",
+      "stats": "13 | Limiares 8/16 | PV 4 | Estresse 3",
+      "attack": "+1 | Carabina | Muito longe | 1d8+3 físico",
+      "features": [
+        "Advertência — Ação: em vez de atirar numa pessoa, atire em superfície próxima (+3 Barulho); um alvo que compreenda a ordem sabe qual saída o vigia quer liberar. Não causa dano automático.",
+        "Recuar para cobertura — Reação: quando atacado e há cobertura Perto, marque 1 Estresse para se mover até ela antes do próximo Spotlight; isto não cancela o ataque já resolvido."
+      ]
+    },
+    {
+      "name": "AMBIENTE: PORTA ALARMADA",
+      "intro": "Tier 1 Ambiente. Porta de ferro e alarme alimentado por bateria. Motivações e Táticas: impedir acesso, atrair atenção, permitir saída lateral.",
+      "stats": "12 | Limiares — | PV — | Estresse —",
+      "attack": "— | Alarme | Perto | sem dano",
+      "features": [
+        "Bateria ativa — Reação: se for arrombada sem desarmar, +2 Barulho; anuncie LED e fios visíveis. Finesse (12) com tempo desarma; outra abordagem plausível pode contornar. Sucesso com Fear pode gastar tempo ou quebrar ferramenta, mas não adicionar automaticamente outro +2 por causa do mesmo alarme."
+      ]
+    }
+  ]
+}

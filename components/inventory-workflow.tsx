@@ -1,0 +1,279 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { ArrowLeftRight, Backpack, PackagePlus, Plus } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Counter, Field, Pick } from "@/components/game-controls";
+import { ItemArt } from "@/components/item-art";
+import { addLog, survivorStats, type EquipmentSlot, type GameState, type InventoryItem } from "@/lib/game";
+import { createId } from "@/lib/id";
+import { provisionDeadline, recordProvisionLot } from "@/lib/provisions";
+import { addStack, ammoTypeFor, atSharedStorage, catalogForItem, catalogItems, catalogKey, compatibleSlots, conditions,
+  container, countsAsMedication, discardItem, displacedSlots, equipItem, inventoryCategories, itemFromCatalog, provisionInfo, provisionTransferError, slotLabels, transferItem, transferProvisions } from "@/lib/inventory";
+
+type Edit = (fn: (draft: GameState) => void) => void;
+const normalizeSearch = (text: string) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
+
+function ownerName(game: GameState, id: string) {
+  return id === "shared" ? (game.shelter.hex ? "Depósito do abrigo" : "Reservas do grupo")
+    : game.survivors.find(s => s.id === id)?.name ?? "Sobrevivente";
+}
+
+export function AddItemDialog({ game, edit, ownerId }: { game: GameState; edit: Edit; ownerId: string }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("Todas");
+  const [key, setKey] = useState("");
+  const [custom, setCustom] = useState(false);
+  const [name, setName] = useState("");
+  const [load, setLoad] = useState("1");
+  const [qty, setQty] = useState("1");
+  const [condition, setCondition] = useState("Íntegro");
+  const entry = catalogItems.find(x => catalogKey(x) === key);
+  const matches = useMemo(() => catalogItems.filter(item => (category === "Todas" || item.category === category)
+    && normalizeSearch(item.name + " " + item.fields.map(f => f.value).join(" ")).includes(normalizeSearch(query.trim()))), [category, query]);
+  const preview = entry ? itemFromCatalog(entry) : null;
+  const amount = Number(qty);
+  const quantityValid = Number.isInteger(amount) && amount >= 1 && amount <= 99;
+  const loadValid = !custom || (load.trim() !== "" && Number.isInteger(Number(load)) && Number(load) >= 0 && Number(load) <= 9);
+
+  function add() {
+    if ((!entry && !custom) || (custom && !name.trim()) || !quantityValid || !loadValid) return;
+    const item = entry && !custom ? itemFromCatalog(entry, amount, condition, game.day) : {
+      id: createId(), name: name.trim().slice(0, 100), load: Math.max(0, Math.min(9, Math.trunc(Number(load) || 0))),
+      qty: amount, condition, category: "Outros",
+    };
+    let added = false;
+    edit(draft => {
+      const target = container(draft, ownerId);
+      if (!target || (ownerId === "shared" && !atSharedStorage(draft))) return;
+      addStack(target, item);
+      added = true;
+      addLog(draft, "inventário", ownerName(draft, ownerId) + ": recebeu " + item.qty + "× " + item.name + ".");
+    });
+    if (!added) { toast.error("O destino não está acessível. Confira a posição do grupo."); return; }
+    toast.success(`${item.qty}× ${item.name} registrado.`, { description: ownerName(game, ownerId) });
+    setOpen(false); setKey(""); setQuery(""); setQty("1"); setCondition("Íntegro"); setCustom(false); setName("");
+  }
+
+  return <Dialog open={open} onOpenChange={setOpen}>
+    <DialogTrigger asChild><Button size="sm" variant="outline" disabled={ownerId === "shared" && !atSharedStorage(game)}><PackagePlus size={16} /> Registrar achado</Button></DialogTrigger>
+    <DialogContent className="inventory-dialog"><DialogHeader><DialogTitle>Registrar achado</DialogTitle>
+      <DialogDescription>Escolha do catálogo para preencher a carga e consultar as regras. Se não encontrar, use um item livre.</DialogDescription></DialogHeader>
+      <div className="inventory-mode"><button type="button" aria-pressed={!custom} onClick={() => setCustom(false)}>Catálogo</button>
+        <button type="button" aria-pressed={custom} onClick={() => setCustom(true)}>Item livre</button></div>
+      {!custom ? <>
+        <div className="inventory-search"><Field label="Buscar item" value={query} onChange={value => { setQuery(value); setKey(""); }} placeholder="Nome ou efeito" />
+          <Pick label="Categoria" value={category} onChange={value => { setCategory(value); setKey(""); }} options={["Todas", ...inventoryCategories]} /></div>
+        <span className="roll-hint" role="status">{matches.length} itens no catálogo com este filtro</span>
+        <div className="inventory-catalog-results" aria-label="Resultados do catálogo">
+          {matches.map(item => <button type="button" key={catalogKey(item)} className={catalogKey(item) === key ? "selected" : ""}
+            onClick={() => setKey(catalogKey(item))} aria-pressed={catalogKey(item) === key}>
+            <ItemArt name={item.name} category={item.category} /><span><b>{item.name}</b><small>{item.category}</small></span><strong>{item.fields.find(f => ["Guarda", "Carga"].includes(f.label))?.value ?? "1"} espaço(s)</strong></button>)}
+          {matches.length === 0 && <p>Nenhum item encontrado. Tente outro termo ou registre um item livre.</p>}
+        </div>
+        {entry && <div className="inventory-selection"><div className="inventory-selection-heading"><ItemArt name={entry.name} category={entry.category} size="large" /><div><b>{entry.name}</b><span>Carga registrada: {preview?.load === 0 ? "bolso; porções agrupadas" : (preview?.load ?? 1) + " por unidade"}</span></div></div>
+          <dl>{entry.fields.filter(f => !["Guarda", "Carga"].includes(f.label)).slice(0, 4).map(f => <div key={f.label}><dt>{f.label}</dt><dd>{f.value}</dd></div>)}</dl></div>}
+      </> : <div className="inventory-search"><Field label="Nome" value={name} onChange={setName} placeholder="Ex.: filtro portátil" />
+        <Field label="Carga por unidade" value={load} onChange={setLoad} type="number" /></div>}
+      <div className="inventory-search"><Field label="Quantidade" value={qty} onChange={setQty} type="number" />
+        <Pick label="Estado" value={condition} options={conditions} onChange={setCondition} /></div>
+      {(!quantityValid || !loadValid) && <p className="inventory-danger" role="alert">Use uma quantidade inteira de 1 a 99 e carga de 0 a 9.</p>}
+      <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button><Button disabled={!quantityValid || !loadValid || (custom ? !name.trim() : !entry)} onClick={add}><Plus size={16} /> Adicionar</Button></DialogFooter>
+    </DialogContent>
+  </Dialog>;
+}
+
+export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection = false, selfOnly = false }: { game: GameState; edit: Edit; ownerId: string; item: InventoryItem; allowCorrection?: boolean; selfOnly?: boolean }) {
+  const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<"transfer" | "equip" | "portion" | "medication" | "stock" | "use" | "discard" | "edit">("transfer");
+  const [targetId, setTargetId] = useState("");
+  const [slot, setSlot] = useState<EquipmentSlot>("primary");
+  const [amount, setAmount] = useState(1);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [prepared, setPrepared] = useState(false);
+  const [conditionDraft, setConditionDraft] = useState(item.condition || "Íntegro");
+  const [qtyDraft, setQtyDraft] = useState(item.qty);
+  const [loadDraft, setLoadDraft] = useState(item.load);
+  const slots = ownerId === "shared" ? [] : compatibleSlots(item);
+  const provision = provisionInfo(item);
+  const targets = selfOnly ? [] : [...game.survivors.filter(s => s.id !== ownerId).map(s => ({ value: s.id, label: s.name })),
+    ...(ownerId !== "shared" && atSharedStorage(game) ? [{ value: "shared", label: ownerName(game, "shared") }] : [])];
+  const destination = targets.some(x => x.value === targetId) ? targetId : targets[0]?.value ?? "";
+  const portionTarget = ownerId === "shared" && (targetId === "shared" || game.survivors.some(s => s.id === targetId)) ? targetId : "shared";
+  const selectedSlot = slots.includes(slot) ? slot : slots[0];
+  const count = Math.max(1, Math.min(item.qty, amount));
+  const current = catalogForItem(item);
+  const bearer = game.survivors.find(s => s.id === ownerId);
+  const displaced = mode === "equip" && bearer && selectedSlot ? displacedSlots(bearer, item, selectedSlot).map(key => bearer[key]) : [];
+  const expiresDay = provision.type === "food" ? provisionDeadline(provision.shelf, provision.shelf === "C" ? game.day : item.foundDay ?? game.day) : null;
+  const expired = expiresDay !== null && expiresDay <= game.day;
+  const canUse = current?.category === "Medicamentos e cuidado"
+    && !["Kit médico de campo", "Termômetro", "Tala e faixa", "Máscara respiratória com filtro"].includes(item.name);
+  const stockResource = item.category === "Suprimentos abstratos"
+    ? ({ "Medicamentos (1 unidade)": "medications", "Combustível (1 unidade)": "fuel", "Peças (1 unidade)": "parts" } as const)[item.name as "Medicamentos (1 unidade)" | "Combustível (1 unidade)" | "Peças (1 unidade)"] : undefined;
+  let loadPreview: { name: string; carried: number; capacity: number } | null = null;
+  if ((mode === "transfer" && destination && destination !== "shared") || (mode === "equip" && selectedSlot && bearer)) {
+    const preview = structuredClone(game);
+    const receiver = preview.survivors.find(s => s.id === (mode === "equip" ? ownerId : destination));
+    const ok = mode === "equip" && receiver && selectedSlot ? equipItem(receiver, item.id, selectedSlot)
+      : transferItem(preview, ownerId, destination, item.id, count);
+    if (receiver && ok) { const stats = survivorStats(receiver); loadPreview = { name: receiver.name, carried: stats.carried, capacity: stats.capacity }; }
+  }
+
+  function close() { setOpen(false); setConfirmDiscard(false); setPrepared(false); setAmount(1); }
+  function openDialog(value: boolean) {
+    if (!value) { close(); return; }
+    setConditionDraft(item.condition || "Íntegro"); setQtyDraft(item.qty); setLoadDraft(item.load);
+    setMode(slots.length ? "equip" : provision.type ? "portion" : targets.length ? "transfer" : "edit");
+    setOpen(true);
+  }
+
+  function perform() {
+    if (mode === "discard" && !confirmDiscard) { setConfirmDiscard(true); return; }
+    let message = "";
+    edit(draft => {
+      const person = draft.survivors.find(s => s.id === ownerId);
+      const owner = ownerName(draft, ownerId);
+      if (ownerId === "shared" && !atSharedStorage(draft)) return;
+      if (mode === "transfer" && destination) {
+        if (transferItem(draft, ownerId, destination, item.id, count)) message = owner + " → " + ownerName(draft, destination) + ": " + count + "× " + item.name + ".";
+      } else if (mode === "equip" && person && selectedSlot) {
+        if (equipItem(person, item.id, selectedSlot)) message = person.name + " equipou " + item.name + "." + (displaced.length ? " Guardou: " + displaced.join(", ") + "." : "");
+      } else if (mode === "portion" && provision.type) {
+        if ((provision.needsPreparation && !prepared) || expired) return;
+        const receiver = person ?? draft.survivors.find(s => s.id === portionTarget);
+        const accessible = ownerId !== "shared" || atSharedStorage(draft);
+        const receiving = receiver ?? draft.shelter;
+        if (accessible && receiving[provision.type] + count * provision.portions <= (receiver ? 99 : 999)
+          && (receiver || ownerId === "shared") && discardItem(draft, ownerId, item.id, count)) {
+          const total = count * provision.portions;
+          const key = provision.type as "food" | "water";
+          recordProvisionLot(receiving, key, total, item.name, expiresDay);
+          message = owner + ": " + count + "× " + item.name + " virou " + total + " porção(ões) de " + (provision.type === "food" ? "Comida" : "Água") + " para " + (receiver?.name ?? owner) +
+            (expiresDay !== null ? `. Vence ao amanhecer do dia ${expiresDay}.` : ".") + " Preparo e segurança resolvidos em cena.";
+        }
+      } else if (mode === "use" && discardItem(draft, ownerId, item.id, count)) {
+        message = owner + " usou " + count + "× " + item.name + ". Aplicar o efeito indicado pelo item em cena.";
+      } else if (mode === "medication" && countsAsMedication(item) && atSharedStorage(draft)
+        && draft.shelter.medications + count <= 99 && discardItem(draft, ownerId, item.id, count)) {
+        draft.shelter.medications += count;
+        message = owner + " guardou " + count + "× " + item.name + " como " + count + " unidade(s) de Medicamentos nas reservas compartilhadas.";
+      } else if (mode === "stock" && stockResource && atSharedStorage(draft)
+        && draft.shelter[stockResource] + count <= 99 && discardItem(draft, ownerId, item.id, count)) {
+        draft.shelter[stockResource] += count;
+        message = owner + " guardou " + count + " unidade(s) de " + item.name + " nas reservas compartilhadas.";
+      } else if (mode === "discard" && discardItem(draft, ownerId, item.id, count)) {
+        message = owner + " deixou para trás " + count + "× " + item.name + " no hex " + draft.partyHex + ".";
+      } else if (mode === "edit") {
+        const found = container(draft, ownerId)?.find(entry => entry.id === item.id);
+        if (found) {
+          found.condition = conditionDraft;
+          if (allowCorrection) { found.qty = qtyDraft; found.load = loadDraft; }
+          message = owner + ": registro de " + item.name + " atualizado.";
+        }
+      }
+      if (message) addLog(draft, "inventário", message, person?.id);
+    });
+    if (!message) { toast.error("A ação não foi concluída. Confira a quantidade, o limite do destino e o acesso às reservas."); return; }
+    toast.success(message);
+    close();
+  }
+
+  return <Dialog open={open} onOpenChange={openDialog}>
+    <DialogTrigger asChild><Button size="sm" variant="outline" aria-label={`Ações de ${item.name}`}><ArrowLeftRight size={15} /> Ações</Button></DialogTrigger>
+    <DialogContent className="inventory-dialog"><DialogHeader><DialogTitle className="inventory-action-title"><ItemArt name={item.name} category={current?.category ?? item.category} size="small" />{item.name}</DialogTitle>
+      <DialogDescription>{ownerName(game, ownerId)} · {item.qty} unidade(s) · {item.load} espaço(s) por unidade · {item.condition ?? "Estado não registrado"}</DialogDescription></DialogHeader>
+      {current && <details className="inventory-reference"><summary>Consultar efeito e prazo</summary>
+        <dl>{current.fields.map(field => <div key={field.label}><dt>{field.label}</dt><dd>{field.value}</dd></div>)}</dl></details>}
+      <div className="inventory-action-tabs">
+        {targets.length > 0 && <button type="button" aria-pressed={mode === "transfer"} onClick={() => setMode("transfer")}>Transferir</button>}
+        {slots.length > 0 && <button type="button" aria-pressed={mode === "equip"} onClick={() => setMode("equip")}>Equipar</button>}
+        {provision.type && <button type="button" aria-pressed={mode === "portion"} onClick={() => setMode("portion")}>Porções</button>}
+        {!selfOnly && countsAsMedication(item) && atSharedStorage(game) && <button type="button" aria-pressed={mode === "medication"} onClick={() => setMode("medication")}>Medicamentos</button>}
+        {!selfOnly && stockResource && atSharedStorage(game) && <button type="button" aria-pressed={mode === "stock"} onClick={() => setMode("stock")}>Guardar nas reservas</button>}
+        {canUse && <button type="button" aria-pressed={mode === "use"} onClick={() => setMode("use")}>Usar</button>}
+        <button type="button" aria-pressed={mode === "edit"} onClick={() => setMode("edit")}>Editar</button>
+        <button type="button" aria-pressed={mode === "discard"} onClick={() => { setMode("discard"); setConfirmDiscard(false); }}>Deixar</button>
+      </div>
+      {mode === "edit" && <><Pick label="Estado do item" value={conditionDraft} options={conditions} onChange={setConditionDraft} />
+        {allowCorrection && <div className="inventory-corrections"><Counter compact label="Quantidade total" value={qtyDraft} min={1} max={99} onChange={setQtyDraft} />
+          <Counter compact label="Carga por unidade" value={loadDraft} min={0} max={9} onChange={setLoadDraft} /></div>}
+        <p className="roll-hint">As alterações só entram na ficha ao salvar.</p></>}
+      {mode === "transfer" && destination && <Pick label="Destino" value={destination} options={targets} onChange={setTargetId} />}
+      {mode === "transfer" && !destination && <p className="inventory-hint">Nenhum destino acessível neste local.</p>}
+      {mode === "equip" && selectedSlot && <><Pick label="Espaço do kit" value={selectedSlot} options={slots.map(value => ({ value, label: slotLabels[value] }))} onChange={value => setSlot(value as EquipmentSlot)} />
+        <p className="inventory-hint">{displaced.length ? `Vai para os itens guardados: ${displaced.join(" e ")}.` : "O espaço está livre."} Armas de duas mãos exigem a outra mão livre. Proteções conservam a armadura marcada.</p></>}
+      {loadPreview && <div className={`inventory-preview ${loadPreview.carried > loadPreview.capacity ? "inventory-danger" : ""}`}><Backpack size={19} aria-hidden="true" /><span><b>{loadPreview.name} após a ação</b><small>{loadPreview.carried > loadPreview.capacity ? "Acima da capacidade — redistribua antes de viajar." : "Carga dentro da capacidade."}</small></span><strong>{loadPreview.carried}/{loadPreview.capacity}</strong></div>}
+      {mode === "portion" && <><p className="inventory-hint">{provision.portions} porção(ões) por item. {provision.preparation && "Preparo: " + provision.preparation + ". "}{provision.shelf && "Prazo: " + provision.shelf + "."}
+        {expiresDay !== null && ` Lote encontrado no dia ${item.foundDay ?? game.day}; as porções vencem no amanhecer do dia ${expiresDay}.`}</p>
+        {expired && <p className="inventory-danger" role="alert">Este alimento passou do prazo. Deixe-o como item estragado ou descarte.</p>}
+        {provision.needsPreparation && <label className="inventory-ready"><input type="checkbox" checked={prepared} onChange={event => setPrepared(event.target.checked)} />
+          <span>{provision.requiresVerification ? "A água foi identificada, tratada e liberada na cena." : "O preparo ou a verificação de qualidade foi resolvido na cena."}</span></label>}
+        {ownerId === "shared" && game.survivors.length > 0 && <Pick label="Destino das porções" value={portionTarget} options={[{ value: "shared", label: ownerName(game, "shared") }, ...game.survivors.map(s => ({ value: s.id, label: s.name }))]} onChange={setTargetId} />}</>}
+      {mode === "use" && <p className="inventory-hint">Desconta a unidade. Consulte o efeito no catálogo e aplique em cena; não adiciona Medicamentos abstratos ao estoque.</p>}
+      {mode === "medication" && <p className="inventory-hint">Cada unidade deste item vira 1 Medicamentos nas reservas compartilhadas. O objeto sai da lista para evitar contagem dupla.</p>}
+      {mode === "stock" && <p className="inventory-hint">Cada unidade física vira uma unidade nas reservas compartilhadas. O objeto sai do inventário para evitar contagem dupla.</p>}
+      {mode === "discard" && <p className="inventory-hint inventory-danger">{confirmDiscard ? "Confirmar: as unidades serão retiradas da ficha e o descarte aparecerá no registro." : "Deixar para trás retira o item sem criar uma reserva nova no mapa."}</p>}
+      {!["equip", "edit"].includes(mode) && <Counter label="Unidades" value={count} min={1} max={item.qty} onChange={setAmount} compact />}
+      {mode === "transfer" && destination && <p className="roll-hint">{count}× {item.name} → {ownerName(game, destination)}. Permanecem {item.qty - count} na origem.</p>}
+      <DialogFooter><Button variant="outline" onClick={close}>Cancelar</Button>
+        <Button variant={mode === "discard" ? "destructive" : "default"} disabled={(mode === "transfer" && !destination) || (mode === "equip" && !selectedSlot) || (mode === "portion" && ((provision.needsPreparation && !prepared) || expired)) || (mode === "medication" && game.shelter.medications + count > 99)
+          || (mode === "stock" && (!stockResource || game.shelter[stockResource] + count > 99))} onClick={perform}>
+          {mode === "edit" ? "Salvar alterações" : mode === "transfer" ? "Transferir" : mode === "equip" ? "Equipar" : mode === "portion" ? "Registrar porções" : mode === "medication" ? "Registrar Medicamentos" : mode === "stock" ? "Guardar nas reservas" : mode === "use" ? "Usar" : confirmDiscard ? "Confirmar descarte" : "Deixar para trás"}</Button></DialogFooter>
+    </DialogContent>
+  </Dialog>;
+}
+
+export function ProvisionTransferDialog({ game, edit, survivorId }: { game: GameState; edit: Edit; survivorId: string }) {
+  const [open, setOpen] = useState(false);
+  const [resource, setResource] = useState<"food" | "water" | "ammo">("food");
+  const [from, setFrom] = useState(survivorId);
+  const [to, setTo] = useState("shared");
+  const [amount, setAmount] = useState(1);
+  const choices = [...game.survivors.map(s => ({ value: s.id, label: s.name })),
+    ...(atSharedStorage(game) ? [{ value: "shared", label: ownerName(game, "shared") }] : [])];
+  const sourceId = choices.some(x => x.value === from) ? from : survivorId;
+  const targetId = choices.some(x => x.value === to) && to !== sourceId ? to : choices.find(x => x.value !== sourceId)?.value ?? "";
+  const source = sourceId === "shared" ? (resource === "ammo" ? game.shelter.pistolAmmo : game.shelter[resource])
+    : game.survivors.find(s => s.id === sourceId)?.[resource] ?? 0;
+  const count = Math.max(1, Math.min(99, amount));
+  const error = provisionTransferError(game, sourceId, targetId, resource, count);
+  const sourcePerson = game.survivors.find(s => s.id === sourceId);
+  const ammoType = sourcePerson ? ammoTypeFor(sourcePerson) : "Pistola";
+  let loadPreview: ReturnType<typeof survivorStats> | null = null;
+  if (!error && targetId !== "shared") {
+    const preview = structuredClone(game);
+    transferProvisions(preview, sourceId, targetId, resource, count);
+    const receiver = preview.survivors.find(s => s.id === targetId);
+    if (receiver) loadPreview = survivorStats(receiver);
+  }
+  function move() {
+    let moved = false;
+    edit(draft => {
+      moved = transferProvisions(draft, sourceId, targetId, resource, count);
+      if (!moved) return;
+      addLog(draft, "provisões", ownerName(draft, sourceId) + " → " + ownerName(draft, targetId) + ": " + count + " " +
+        (resource === "ammo" ? `carga(s) de ${ammoType}` : resource === "food" ? "porção(ões) de comida" : "porção(ões) de água") + ".");
+    });
+    if (!moved) { toast.error("A transferência não foi concluída. Confira as reservas e tente novamente."); return; }
+    toast.success("Provisões transferidas.", { description: `${ownerName(game, sourceId)} → ${ownerName(game, targetId)}` });
+    setOpen(false); setAmount(1);
+  }
+  return <Dialog open={open} onOpenChange={setOpen}>
+    <DialogTrigger asChild><Button size="sm" variant="outline"><ArrowLeftRight size={16} /> Transferir provisões</Button></DialogTrigger>
+    <DialogContent className="inventory-dialog"><DialogHeader><DialogTitle>Transferir provisões</DialogTitle>
+      <DialogDescription>Move porções ou cargas entre fichas e reservas compartilhadas. O total da campanha permanece igual.</DialogDescription></DialogHeader>
+      <Pick label="Recurso" value={resource} options={[{ value: "food", label: "Comida · porções" }, { value: "water", label: "Água · porções" }, { value: "ammo", label: "Munição · cargas" }]} onChange={value => setResource(value as typeof resource)} />
+      <div className="inventory-search"><Pick label="De" value={sourceId} options={choices} onChange={setFrom} />
+        <Pick label="Para" value={targetId} options={choices.filter(x => x.value !== sourceId)} onChange={setTo} /></div>
+      <Counter label={"Quantidade · disponível " + source} value={count} min={1} max={Math.max(1, Math.min(99, source))} onChange={setAmount} compact />
+      {resource === "ammo" && <p className="inventory-hint">Tipo na origem: <b>{ammoType}</b>. Um contador vazio recebe esse tipo automaticamente. O estoque compartilhado aceita Pistola.</p>}
+      {error && <p className="inventory-hint inventory-danger" role="status">{error}</p>}
+      {loadPreview && <div className={`inventory-preview ${loadPreview.carried > loadPreview.capacity ? "inventory-danger" : ""}`}><Backpack size={19} aria-hidden="true" /><span><b>Carga no destino após a transferência</b><small>{loadPreview.carried > loadPreview.capacity ? "Acima da capacidade; redistribua antes de viajar." : "Dentro da capacidade."}</small></span><strong>{loadPreview.carried}/{loadPreview.capacity}</strong></div>}
+      <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button><Button disabled={Boolean(error)} onClick={move}>Transferir</Button></DialogFooter>
+    </DialogContent>
+  </Dialog>;
+}

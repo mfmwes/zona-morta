@@ -1,0 +1,490 @@
+"use client";
+/* eslint-disable @next/next/no-img-element -- local portraits are reduced to small data URLs before storage. */
+
+import { useMemo, useState, type ChangeEvent, type ReactNode } from "react";
+import {
+  Activity, Backpack, BookOpen, Crosshair, Dice5, Droplets, Heart, Search,
+  HeartPulse, History, Minus, Plus, Shield, ShieldCheck, Sparkles,
+  Stethoscope, Swords, Upload, Utensils, Zap,
+} from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CharacterWizard } from "@/components/character-wizard";
+import { AddItemDialog, ItemActionsDialog, ProvisionTransferDialog } from "@/components/inventory-workflow";
+import { EmptyItemArt, ItemArt } from "@/components/item-art";
+import { AbilityArt } from "@/components/ability-art";
+import { RollDialog, type RollRequest } from "@/components/roll-dialog";
+import { Counter, Field, Pick } from "@/components/game-controls";
+import { absoluteMinutes, addLog, content, survivorStats, traits, type EquipmentSlot, type GameState, type Infection, type Survivor } from "@/lib/game";
+import { ammoTypeFor, ammoTypes, atSharedStorage, catalogForItem, countsAsMedication, discardItem, stowSlot } from "@/lib/inventory";
+import { equipmentModifiers, getPrimary, getProtection, getSecondary } from "@/lib/equipment";
+import { rollDie } from "@/lib/rolls";
+import { consumeDailyProvision } from "@/lib/survival";
+import { adjustProvisionCount } from "@/lib/provisions";
+import { abilityAvailable, abilityCosts, abilityPeriod, costLabels, periodLabels, recordAbilityUse, type AbilityCost } from "@/lib/abilities";
+
+type Edit = (fn: (draft: GameState) => void) => void;
+const infectionStates: Infection[] = ["Saudável", "Exposto", "Infectado", "Sintomático", "Terminal"];
+const tabs = [
+  { id: "resumo", label: "Resumo", icon: Activity },
+  { id: "atributos", label: "Atributos", icon: Crosshair },
+  { id: "combate", label: "Combate", icon: Swords },
+  { id: "habilidades", label: "Habilidades", icon: Sparkles },
+  { id: "inventario", label: "Inventário", icon: Backpack },
+  { id: "condicoes", label: "Condições", icon: HeartPulse },
+  { id: "historia", label: "História", icon: History },
+] as const;
+
+function SectionHeading({ index, title, aside }: { index: string; title: string; aside?: ReactNode }) {
+  return <div className="character-section-heading"><div><span>{index}</span><h3>{title}</h3></div>{aside}</div>;
+}
+
+function Portrait({ survivor, editable, onUpload, onClear }: {
+  survivor: Survivor; editable: boolean; onUpload: (event: ChangeEvent<HTMLInputElement>) => void;
+  onClear: () => void;
+}) {
+  const initials = survivor.name.trim().split(/\s+/).slice(0, 2).map(part => part[0]?.toUpperCase()).join("") || "ZM";
+  return <div className="character-portrait-wrap">
+    <div className="character-portrait" role="img" aria-label={`Retrato de ${survivor.name}`}>
+      {survivor.portrait ? <img src={survivor.portrait} alt="" /> : <span aria-hidden="true">{initials}</span>}
+    </div>
+    {editable && <div className="character-portrait-actions">
+      <label className="character-portrait-upload" title="Enviar retrato" aria-label="Enviar retrato">
+        <Upload size={13} aria-hidden="true" /><span>Retrato</span>
+        <input type="file" accept="image/*" aria-label="Escolher retrato" onChange={onUpload} />
+      </label>
+      {survivor.portrait && <button type="button" onClick={onClear} aria-label="Remover retrato" title="Remover retrato">×</button>}
+    </div>}
+  </div>;
+}
+
+function ResourceControl({ label, icon: Icon, current, max, onChange, tone, reverse = false }: {
+  label: string; icon: typeof Heart; current: number; max: number;
+  onChange: (value: number) => void; tone: string; reverse?: boolean;
+}) {
+  const safeMax = Math.max(0, max);
+  const value = Math.max(0, Math.min(current, safeMax));
+  return <div className={`character-resource character-resource-${tone}`}>
+    <div className="character-resource-top"><span><Icon size={17} aria-hidden="true" /> {label}</span><strong aria-label={`${label}: ${value} de ${safeMax}`}>{value}<small> / {safeMax}</small></strong></div>
+    <div className="character-resource-bottom">
+      <div className="character-pips" aria-hidden="true">{Array.from({ length: safeMax }, (_, i) => <span key={i} className={i < value ? "filled" : ""} />)}</div>
+      <div className="character-stepper">
+        <button type="button" aria-label={`Diminuir ${label}`} title={`Diminuir ${label}`} disabled={value <= 0} onClick={() => onChange(value - 1)}><Minus size={16} /></button>
+        <button type="button" aria-label={`Aumentar ${label}`} title={`Aumentar ${label}`} disabled={value >= safeMax} onClick={() => onChange(value + 1)}><Plus size={16} /></button>
+      </div>
+    </div>
+    {reverse && <span className="sr-only">O valor exibido corresponde aos espaços disponíveis; os danos marcados são registrados automaticamente.</span>}
+  </div>;
+}
+
+function AbilityUseControl({ game, edit, survivorId, abilityId, name, effect, hopeFeature = false, buttonLabel }: {
+  game: GameState; edit: Edit; survivorId: string; abilityId: string; name: string; effect: string; hopeFeature?: boolean; buttonLabel?: string;
+}) {
+  const period = abilityPeriod(effect);
+  const costs = abilityCosts(effect, hopeFeature);
+  const [open, setOpen] = useState(false);
+  const [cost, setCost] = useState<AbilityCost>(costs[0]);
+  const [context, setContext] = useState("");
+  const person = game.survivors.find(s => s.id === survivorId);
+  const placeOrPatient = period === "place" || period === "patient";
+  const target = period === "place" && !context.trim() ? `hex ${game.partyHex}` : context;
+  const available = abilityAvailable(game, survivorId, abilityId, effect, target);
+  const canPay = person && (cost === "free" || cost === "hope1" && person.hope >= 1 || cost === "hope3" && person.hope >= 3 ||
+    cost === "stress1" && person.stress < 6 || cost === "armor1" && (person.armorMarked ?? 0) < survivorStats(person).armor);
+  if (!period && costs.length === 1 && costs[0] === "free" && !hopeFeature) return null;
+  function register() {
+    let succeeded = false;
+    edit(draft => { succeeded = recordAbilityUse(draft, survivorId, abilityId, name, effect, cost, target, hopeFeature); });
+    if (!succeeded) { toast.error("Uso não registrado. Confira o custo e o limite da habilidade."); return; }
+    toast.success(`${name}: uso registrado.`, { description: `Custo: ${costLabels[cost]}. Resolva o efeito na cena.` });
+    setOpen(false);
+  }
+  return <Dialog open={open} onOpenChange={setOpen}>
+    <DialogTrigger asChild><Button size="sm" variant="outline" disabled={(!placeOrPatient && !available) || (hopeFeature && !canPay)}>
+      {!available ? `Usada ${period === "scene" ? "nesta cena" : period === "day" ? "hoje" : "neste período"}`
+        : hopeFeature && !canPay ? "Exige 3 Hope" : buttonLabel ?? "Registrar uso"}
+    </Button></DialogTrigger>
+    <DialogContent className="ability-use-dialog"><DialogHeader><DialogTitle>Usar {name}</DialogTitle>
+      <DialogDescription>Confirme que o gatilho ocorreu. O aplicativo desconta o recurso e guarda o limite de uso; resolva o efeito descrito com o grupo.</DialogDescription></DialogHeader>
+      <p className="character-rule-note">{effect}</p>
+      {period && <p className="inventory-hint"><b>Limite:</b> {periodLabels[period]}{period === "place" ? " identificado abaixo" : period === "patient" ? /durante um descanso curto/i.test(effect) ? " por descanso curto" : " por cena" : ""}.</p>}
+      {placeOrPatient && <Field label={period === "patient" ? "Nome do paciente" : "Hex ou local da descoberta"} value={context}
+        onChange={setContext} placeholder={period === "patient" ? "Ex.: Joana" : `hex ${game.partyHex}`} />}
+      {costs.length > 1 && <Pick label="Custo desta opção" value={cost} options={costs.map(value => ({ value, label: costLabels[value] }))} onChange={value => setCost(value as AbilityCost)} />}
+      {costs.length === 1 && <p className="inventory-hint"><b>Custo:</b> {costLabels[cost]}.</p>}
+      {!available && <p className="inventory-danger" role="status">Esta habilidade já foi usada neste período ou neste alvo/local.</p>}
+      {!canPay && <p className="inventory-danger" role="status">O recurso disponível não cobre o custo escolhido.</p>}
+      <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+        <Button disabled={!available || !canPay} onClick={register}>Confirmar uso</Button></DialogFooter>
+    </DialogContent>
+  </Dialog>;
+}
+
+function AbilityCard({ game, edit, survivorId, abilityId, name, category, effect }: {
+  game: GameState; edit: Edit; survivorId: string; abilityId: string; name: string; category: string; effect?: string;
+}) {
+  const text = effect || "Nenhuma descrição registrada.";
+  const period = abilityPeriod(text);
+  const frequency = period ? periodLabels[period] : undefined;
+  const cost = text.match(/(?:gaste|marque) \d+ (?:Hope|Stress|Esperança|Estresse)/i)?.[0];
+  const reaction = /reaç[aã]o|ap[oó]s .* rolagem|antes de um ataque/i.test(text);
+  const restDivider = name === "Mãos firmes" ? effect?.indexOf("\nDurante um descanso curto:") ?? -1 : -1;
+  return <AccordionItem value={`${category}-${name}`} className="character-ability">
+    <AccordionTrigger className="character-ability-trigger">
+      <AbilityArt abilityId={abilityId} />
+      <span className="character-ability-main"><span className="character-ability-title">{name}</span>
+        <span className="character-ability-meta"><span>{category}</span>{frequency && <span>{frequency}</span>}{cost && <span>{cost}</span>}{reaction && <span>Reação</span>}</span>
+        <span className="character-ability-preview">{text}</span>
+      </span>
+    </AccordionTrigger>
+    <AccordionContent className="character-ability-detail"><p>{text}</p>
+      {effect && <div className="character-ability-actions">{restDivider >= 0 ? <>
+        <AbilityUseControl game={game} edit={edit} survivorId={survivorId} abilityId={`${abilityId}:cena`} name={`${name} · cena`} effect={effect.slice(0, restDivider)} buttonLabel="Usar na cena" />
+        <AbilityUseControl game={game} edit={edit} survivorId={survivorId} abilityId={`${abilityId}:descanso`} name={`${name} · descanso`} effect={effect.slice(restDivider + 1)} buttonLabel="Usar no descanso" />
+      </> : <AbilityUseControl game={game} edit={edit} survivorId={survivorId}
+        abilityId={abilityId} name={name} effect={effect} />}</div>}
+    </AccordionContent>
+  </AccordionItem>;
+}
+
+function deadlineLabel(deadline: number | null | undefined) {
+  if (deadline == null) return "—";
+  return `dia ${Math.floor(deadline / 1440) + 1}, ${String(Math.floor((deadline % 1440) / 60)).padStart(2, "0")}:${String(deadline % 60).padStart(2, "0")}`;
+}
+
+export function SurvivorPanel({ game, edit, playerPreview, playerMode = false }: { game: GameState; edit: Edit; playerPreview: boolean; playerMode?: boolean }) {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("resumo");
+  const [notesDraft, setNotesDraft] = useState<{ id: string; source: string; value: string } | null>(null);
+  const [portraitError, setPortraitError] = useState("");
+  const [treatmentOpen, setTreatmentOpen] = useState(false);
+  const [treatmentSource, setTreatmentSource] = useState("");
+  const [cleanWaterConfirmed, setCleanWaterConfirmed] = useState(false);
+  const [rollRequest, setRollRequest] = useState<RollRequest | null>(null);
+  const [inventoryQuery, setInventoryQuery] = useState("");
+  const [inventoryCategory, setInventoryCategory] = useState("Todas");
+  const selected = game.survivors.find(s => s.id === selectedId) ?? game.survivors[0];
+  const notes = notesDraft && selected && notesDraft.id === selected.id && notesDraft.source === selected.notes
+    ? notesDraft.value : selected?.notes ?? "";
+  const stats = selected ? survivorStats(selected) : null;
+  const origin = selected ? content.origins.find(o => o.name === selected.origin) : null;
+  const archetype = selected ? content.archetypes.find(a => a.name === selected.archetype) : null;
+  const hopeFeature = archetype?.hopeFeature ?? "";
+  const hopeSeparator = hopeFeature.indexOf(":");
+  const hopeName = hopeSeparator >= 0 ? hopeFeature.slice(0, hopeSeparator).trim() : "Característica de Hope";
+  const hopeEffect = hopeSeparator >= 0 ? hopeFeature.slice(hopeSeparator + 1).trim() : hopeFeature;
+  const primary = selected ? getPrimary(selected.primary) : null;
+  const secondary = selected ? getSecondary(selected.secondary) : null;
+  const protection = selected ? getProtection(selected.protection) : null;
+  const modifiers = selected ? equipmentModifiers(selected) : null;
+  const personal = selected ? content.personal.find(a => a.name === selected.personal) : null;
+  const recentRolls = selected ? game.log.filter(entry => ["dados", "dano"].includes(entry.kind) &&
+    (entry.actorId === selected.id || (!entry.actorId && entry.text.startsWith(`${selected.name}:`)))).slice(0, 4) : [];
+  const inventoryGroups = useMemo(() => {
+    if (!selected) return [];
+    const grouped = new Map<string, typeof selected.inventory>();
+    for (const item of selected.inventory) {
+      const category = catalogForItem(item)?.category ?? item.category ?? "Outros";
+      const searchText = [item.name, category, item.condition ?? ""].join(" ").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
+      const query = inventoryQuery.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
+      if ((inventoryCategory !== "Todas" && category !== inventoryCategory) || !searchText.includes(query)) continue;
+      grouped.set(category, [...(grouped.get(category) ?? []), item]);
+    }
+    return [...grouped.entries()];
+  }, [selected, inventoryQuery, inventoryCategory]);
+  const categoryOptions = ["Todas", ...new Set(selected?.inventory.map(item => catalogForItem(item)?.category ?? item.category ?? "Outros"))];
+  const medicineSources = [
+    ...(!playerMode && atSharedStorage(game) && game.shelter.medications > 0 ? [{ value: "shared", label: "Reservas compartilhadas · " + game.shelter.medications }] : []),
+    ...(selected?.inventory.filter(item => countsAsMedication(item)).map(item => ({ value: item.id, label: item.name + " · " + item.qty })) ?? []),
+  ];
+  const chosenMedicine = medicineSources.some(option => option.value === treatmentSource) ? treatmentSource : medicineSources[0]?.value ?? "";
+
+  function change(id: string, fn: (s: Survivor) => void) {
+    edit(draft => { const s = draft.survivors.find(x => x.id === id); if (s) fn(s); });
+  }
+  function storeActive(slot: EquipmentSlot) {
+    if (!selected) return;
+    edit(draft => {
+      const s = draft.survivors.find(x => x.id === selected.id);
+      if (!s || !s[slot]) return;
+      const name = s[slot];
+      if (stowSlot(s, slot)) { addLog(draft, "inventário", s.name + " guardou " + name + " do kit ativo.", s.id);
+        toast.success(`${name} guardado.`, { description: "Disponível na lista de itens do inventário." }); }
+    });
+  }
+
+  async function uploadPortrait(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || !selected) return;
+    if (!file.type.startsWith("image/") || file.size > 8_000_000) { setPortraitError("Escolha uma imagem de até 8 MB."); return; }
+    const id = selected.id;
+    const url = URL.createObjectURL(file);
+    try {
+      const image = new Image();
+      await new Promise<void>((resolve, reject) => { image.onload = () => resolve(); image.onerror = () => reject(); image.src = url; });
+      let encoded = "";
+      for (const size of [160, 128, 96]) {
+        const canvas = document.createElement("canvas"); canvas.width = canvas.height = size;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) throw new Error("canvas");
+        const side = Math.min(image.naturalWidth, image.naturalHeight);
+        ctx.drawImage(image, (image.naturalWidth-side)/2, (image.naturalHeight-side)/2, side, side, 0, 0, size, size);
+        for (const quality of [0.7, 0.5, 0.35]) {
+          encoded = canvas.toDataURL("image/webp", quality);
+          if (encoded.length <= 9_000) break;
+        }
+        if (encoded.length <= 9_000) break;
+      }
+      if (encoded.length > 9_000) { setPortraitError("A imagem não pôde ser reduzida; tente outra."); return; }
+      change(id, s => { s.portrait = encoded; });
+      setPortraitError("");
+    } catch { setPortraitError("Não foi possível abrir essa imagem."); }
+    finally { URL.revokeObjectURL(url); }
+  }
+
+  function treatExposure() {
+    if (!selected || selected.infection !== "Exposto" || selected.treatmentAttempted ||
+        (selected.exposureDeadline ?? 0) < absoluteMinutes(game) || !chosenMedicine || !cleanWaterConfirmed) return;
+    const hope = rollDie(12), fear = rollDie(12);
+    const total = hope + fear + (selected.attributes.Conhecimento ?? 0);
+    const success = hope === fear || total >= 13;
+    edit(draft => {
+      const s = draft.survivors.find(x => x.id === selected.id);
+      if (!s || s.infection !== "Exposto" || s.treatmentAttempted ||
+          (s.exposureDeadline ?? 0) < absoluteMinutes(draft)) return;
+      let sourceLabel = "";
+      if (chosenMedicine === "shared") {
+        if (!atSharedStorage(draft) || draft.shelter.medications < 1) return;
+        draft.shelter.medications -= 1;
+        sourceLabel = "reservas compartilhadas";
+      } else {
+        const item = s.inventory.find(x => x.id === chosenMedicine);
+        if (!item || !countsAsMedication(item) || !discardItem(draft, s.id, item.id, 1)) return;
+        sourceLabel = item.name;
+      }
+      s.treatmentAttempted = true;
+      if (success) { s.infection = "Saudável"; s.exposureDeadline = null; }
+      if (hope === fear) { s.hope = Math.min(6, s.hope + 1); s.stress = Math.max(0, s.stress - 1); }
+      else if (hope > fear) s.hope = Math.min(6, s.hope + 1);
+      else draft.fear = Math.min(12, draft.fear + 1);
+      addLog(draft, "tratamento", s.name + ": limpeza de Exposição (" + hope + " Hope / " + fear + " Fear + Conhecimento = " + total +
+        ", Dificuldade 13). " + (success ? "Saudável" : "Permanece Exposto") + ". Gastou 1 Medicamentos de " + sourceLabel + ".", s.id);
+    });
+    setTreatmentOpen(false); setCleanWaterConfirmed(false);
+  }
+
+  return <div className="character-sheet">
+    <div className="character-roster" aria-label="Sobreviventes da campanha">
+      <div className="character-roster-label"><span>Equipe</span><b>{game.survivors.length.toString().padStart(2, "0")}</b></div>
+      <div className="character-roster-scroll">
+        {game.survivors.map(s => { const st = survivorStats(s); return <button type="button" key={s.id} onClick={() => { setSelectedId(s.id); setActiveTab("resumo"); setPortraitError(""); setInventoryQuery(""); setInventoryCategory("Todas"); }}
+          aria-current={selected?.id === s.id ? "true" : undefined} className="character-roster-person">
+          <span className="character-roster-avatar">{s.portrait ? <img src={s.portrait} alt="" /> : s.name.charAt(0).toUpperCase()}</span>
+          <span><b>{s.name}</b><small><Heart size={12} aria-hidden="true" /> {st.hp-s.hp}/{st.hp}<span aria-hidden="true"> · </span>{s.archetype}</small></span>
+        </button>; })}
+        {game.survivors.length === 0 && <span className="character-roster-empty">Nenhum dossiê aberto. Crie o primeiro sobrevivente.</span>}
+      </div>
+      {!playerPreview && <CharacterWizard onCreate={survivor => {
+        edit(draft => { draft.survivors.push(survivor); addLog(draft, "sobrevivente", `${survivor.name} entrou para a equipe.`); });
+        setSelectedId(survivor.id); setActiveTab("resumo"); setPortraitError("");
+      }} />}
+    </div>
+
+    {!selected || !stats ? <div className="panel character-empty"><BookOpen size={36} aria-hidden="true" /><h2>O dossiê começa aqui</h2><p>A origem define o passado; o arquétipo define como a pessoa atua agora.</p></div> : <>
+      <header className="character-hero">
+        <Portrait survivor={selected} editable={!playerPreview || playerMode} onUpload={uploadPortrait} onClear={() => change(selected.id, s => { delete s.portrait; })} />
+        <div className="character-identity">
+          <p className="character-serial">ZONA MORTA <span aria-hidden="true">/</span> DOSSIÊ DE SOBREVIVENTE</p>
+          <h2>{selected.name}</h2>
+          <div className="character-identity-meta"><span>{selected.origin}</span><span>{selected.archetype} · {selected.specialty}</span><span>Nível {selected.level ?? 1}</span></div>
+        </div>
+        <div className="character-hero-status"><span className={selected.infection === "Saudável" ? "character-condition healthy" : "character-condition at-risk"}><Activity size={15} aria-hidden="true" /> {selected.infection}</span><span className="character-hero-code">REGISTRO {selected.id.slice(0, 6).toUpperCase()}</span></div>
+      </header>
+      {portraitError && <p className="character-portrait-error" role="alert">{portraitError}</p>}
+
+      <div className="character-layout">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="character-main">
+          <div className="character-tabs-scroll"><TabsList className="character-tabs" aria-label="Áreas da ficha">{tabs.map(tab => <TabsTrigger key={tab.id} value={tab.id} className="character-tab"><tab.icon size={16} aria-hidden="true" />{tab.label}</TabsTrigger>)}</TabsList></div>
+          <TabsContent value="resumo" className="character-tab-content">
+            <div className="character-summary-grid">
+              <section className="character-surface"><SectionHeading index="01" title="Pronto para agir" aside={<span className="character-micro">KIT ATIVO</span>} />
+                <div className="character-active-weapon">{selected.primary ? <ItemArt name={selected.primary} category="Armas primárias" /> : <EmptyItemArt />}<div><span>Arma principal</span><strong>{selected.primary || "Sem arma principal"}</strong><small>{primary ? `${primary.damage} · ${primary.range} · ${primary.trait}` : "Dados da arma no kit"}</small></div>
+                  <Button size="sm" variant="outline" className="character-weapon-roll" onClick={() => setRollRequest({ survivorId: selected.id, kind: "attack", weapon: "primary" })}><Dice5 size={16} /> Atacar</Button></div>
+                {selected.secondary && <div className="character-info-row"><ItemArt name={selected.secondary} category="Armas secundárias" size="small" /><span>Secundária</span><b>{selected.secondary}</b></div>}
+                <div className="character-info-row">{selected.protection ? <ItemArt name={selected.protection} category="Proteções" size="small" /> : <EmptyItemArt />}<span>Proteção</span><b>{selected.protection || "Sem proteção"}</b></div>
+                <div className="character-info-row">{selected.personal ? <ItemArt name={selected.personal} category="Abrigo, transporte e mochilas" size="small" /> : <EmptyItemArt />}<span>Item pessoal</span><b>{selected.personal || "Nenhum item pessoal"}</b></div>
+                <button className="character-text-link" type="button" onClick={() => setActiveTab("combate")}>Abrir detalhes de combate <span aria-hidden="true">↗</span></button>
+              </section>
+              <section className="character-surface"><SectionHeading index="02" title="Recursos de campo" />
+                <div className="character-provision-grid">
+                  <span><Utensils size={18} aria-hidden="true" /><b>{selected.food}</b><small>Comida</small></span>
+                  <span><Droplets size={18} aria-hidden="true" /><b>{selected.water}</b><small>Água</small></span>
+                  <span><Crosshair size={18} aria-hidden="true" /><b>{selected.ammo}</b><small>Munição</small></span>
+                </div>
+                <div className="character-load-line"><span><Backpack size={16} aria-hidden="true" /> Carga guardada</span><b>{stats.carried}/{stats.capacity}</b></div>
+                <Progress value={Math.min(100, stats.carried / Math.max(1, stats.capacity) * 100)} />
+                {stats.carried > stats.capacity && <p className="character-alert">Acima da capacidade. Redistribua antes de atravessar.</p>}
+                <button className="character-text-link" type="button" onClick={() => setActiveTab("inventario")}>Abrir inventário <span aria-hidden="true">↗</span></button>
+              </section>
+              <section className="character-surface"><SectionHeading index="03" title="Especialidades" />
+                <div className="character-experience"><b>{origin?.experience || selected.origin}</b><span>Experience de origem · +2 por 1 Hope</span></div>
+                <div className="character-experience"><b>{selected.freeExperience}</b><span>Experience livre · +2 por 1 Hope</span></div>
+                <button className="character-hope-teaser" type="button" onClick={() => setActiveTab("habilidades")}
+                  aria-label={`Ler habilidade de Hope: ${hopeName}`}>
+                  <AbilityArt abilityId={`hope:${selected.archetype}`} size="small" /><span><small>HABILIDADE DE HOPE</small><b>{hopeName}</b></span><strong>3 Hope</strong>
+                </button>
+                <div className="character-technique-preview">{selected.techniques.map(name => <span key={name}><AbilityArt abilityId={`technique:${name}`} size="tiny" />{name}</span>)}</div>
+                <button className="character-text-link" type="button" onClick={() => setActiveTab("habilidades")}>Consultar habilidades <span aria-hidden="true">↗</span></button>
+              </section>
+              <section className="character-surface"><SectionHeading index="04" title="Situação atual" />
+                <div className="character-status-line"><span className={selected.infection === "Saudável" ? "character-status-dot healthy" : "character-status-dot"} /><b>{selected.infection}</b></div>
+                {selected.infection === "Exposto" ? <p>Janela de tratamento até <b>{deadlineLabel(selected.exposureDeadline)}</b>. {selected.treatmentAttempted ? "Tentativa já usada." : "Uma tentativa disponível."}</p> : <p>{selected.past || "Passado e vínculos ainda não registrados."}</p>}
+                <button className="character-text-link" type="button" onClick={() => setActiveTab(selected.infection === "Saudável" ? "historia" : "condicoes")}>Ver {selected.infection === "Saudável" ? "história" : "condições"} <span aria-hidden="true">↗</span></button>
+              </section>
+            </div>
+          </TabsContent>
+          <TabsContent value="atributos" className="character-tab-content">
+            <section className="character-surface"><SectionHeading index="01" title="Atributos e testes" aside={<span className="character-micro">DADOS DE DUALIDADE</span>} />
+              <p className="character-section-intro">Clique em um atributo para rolar. Uma Experience pertinente acrescenta +2 ao gastar 1 Hope; declare seu uso antes da rolagem.</p>
+              <div className="character-attributes">{traits.map(trait => <button type="button" key={trait} className="character-attribute" onClick={() => setRollRequest({ survivorId: selected.id, kind: "action", trait })} aria-label={`Rolar ${trait}, modificador ${selected.attributes[trait]}`}><span>{trait}</span><strong>{selected.attributes[trait] > 0 ? "+" : ""}{selected.attributes[trait]}</strong><Dice5 size={15} aria-hidden="true" /></button>)}</div>
+              {Object.entries(modifiers?.traits ?? {}).some(([, value]) => value !== 0) && <p className="character-rule-note">Equipamento: {Object.entries(modifiers?.traits ?? {}).filter(([, value]) => value !== 0).map(([name, value]) => `${value} em ${name}`).join(" · ")}. Os atributos acima são os valores base; os ajustes entram automaticamente ao rolar.</p>}
+              <div className="character-experience-list"><button type="button" onClick={() => setRollRequest({ survivorId: selected.id, kind: "action", experience: "origin" })} aria-label={`Rolar com Experience ${origin?.experience || selected.origin}, custa 1 Hope`}><BookOpen size={18} aria-hidden="true" /><span>{origin?.experience || selected.origin}</span><b>+2 · 1 Hope</b></button><button type="button" onClick={() => setRollRequest({ survivorId: selected.id, kind: "action", experience: "free" })} aria-label={`Rolar com Experience ${selected.freeExperience}, custa 1 Hope`}><BookOpen size={18} aria-hidden="true" /><span>{selected.freeExperience}</span><b>+2 · 1 Hope</b></button></div>
+            </section>
+            <section className="character-surface"><SectionHeading index="02" title="Origem" /><div className="character-feature-callout"><b>{selected.origin} · {origin?.feature}</b><p>{origin?.effect}</p></div></section>
+            <section className="character-surface"><SectionHeading index="03" title="Últimas rolagens" />{recentRolls.length ? <div className="character-roll-history">{recentRolls.map(entry => <div key={entry.id}><span>Dia {entry.day} · {entry.time} · {entry.kind}</span><p>{entry.text}</p></div>)}</div> : <p className="character-empty-list">Nenhuma rolagem deste sobrevivente registrada ainda.</p>}</section>
+          </TabsContent>
+          <TabsContent value="combate" className="character-tab-content">
+            <section className="character-mobile-resources" aria-label="Ajustar recursos de combate">
+              <ResourceControl label="Vida" icon={Heart} current={stats.hp-selected.hp} max={stats.hp} onChange={value => change(selected.id, s => { s.hp = stats.hp - value; })} tone="health" reverse />
+              <ResourceControl label="Estresse" icon={Zap} current={selected.stress} max={6} onChange={value => change(selected.id, s => { s.stress = value; })} tone="stress" />
+              <ResourceControl label="Esperança" icon={Sparkles} current={selected.hope} max={6} onChange={value => change(selected.id, s => { s.hope = value; })} tone="hope" />
+              <ResourceControl label="Armadura livre" icon={Shield} current={Math.max(0, stats.armor-(selected.armorMarked ?? 0))} max={stats.armor} onChange={value => change(selected.id, s => { s.armorMarked = Math.max(0, (s.armorMarked ?? 0) + Math.max(0, stats.armor - (s.armorMarked ?? 0)) - value); })} tone="armor" reverse />
+            </section>
+            <section className="character-surface"><SectionHeading index="01" title="Ataque e proteção" /><div className="character-combat-metrics">
+              <div><Crosshair size={17} aria-hidden="true" /><span>Evasão</span><b>{stats.evasion}</b></div>
+              <div><Shield size={17} aria-hidden="true" /><span>Armadura</span><b>{Math.max(0, stats.armor - (selected.armorMarked ?? 0))}/{stats.armor}</b></div>
+              <div><Zap size={17} aria-hidden="true" /><span>Limiar maior</span><b>{stats.major}</b></div>
+              <div><HeartPulse size={17} aria-hidden="true" /><span>Limiar severo</span><b>{stats.severe}</b></div>
+            </div>
+              <div className="character-proficiency"><ShieldCheck size={18} aria-hidden="true" /><span>Proficiência registrada</span>{playerMode ? <b>{selected.proficiency ?? 1}</b> : <Counter compact label="Proficiência" value={selected.proficiency ?? 1} min={1} max={9} onChange={value => change(selected.id, s => { s.proficiency = value; })} />}</div>
+            </section>
+            <section className="character-surface"><SectionHeading index="02" title="Armas e kit ativo" />
+              <div className="character-equipment">{selected.primary ? <ItemArt name={selected.primary} category="Armas primárias" size="large" /> : <EmptyItemArt size="large" />}<div><span>PRIMÁRIA</span><h4>{selected.primary || "Sem arma principal"}</h4>{primary && <><p><b>{primary.damage}</b> dano · {primary.range} · {primary.trait} · {primary.hands === "Uma" ? "uma mão" : "duas mãos"}</p><div className="character-chips"><span>Ruído: {primary.noise}</span><span>Carga guardada: {primary.stored}</span></div><p>{primary.note}</p></>}
+                <Button size="sm" className="mt-2" disabled={!primary} onClick={() => setRollRequest({ survivorId: selected.id, kind: "attack", weapon: "primary" })}><Dice5 size={16} /> Rolar ataque</Button>{!primary && <button type="button" className="character-text-link" onClick={() => setActiveTab("inventario")}>Equipar uma arma no inventário ↗</button>}{Boolean(modifiers?.primaryDamage) && <p>+{modifiers?.primaryDamage} ao dano pela Faca pequena (automático).</p>}</div></div>
+              {selected.secondary && <div className="character-equipment"><ItemArt name={selected.secondary} category="Armas secundárias" size="large" /><div><span>SECUNDÁRIA</span><h4>{selected.secondary}</h4>{secondary && <><p><b>{secondary.damage}</b> dano · {secondary.range} · {secondary.trait}</p><div className="character-chips"><span>Carga guardada: {secondary.stored}</span></div><p>{secondary.effect}</p></>}
+                <Button size="sm" variant="outline" className="mt-2" onClick={() => setRollRequest({ survivorId: selected.id, kind: "attack", weapon: "secondary" })}><Dice5 size={16} /> Rolar secundária</Button></div></div>}
+              <div className="character-equipment">{selected.protection ? <ItemArt name={selected.protection} category="Proteções" size="large" /> : <EmptyItemArt size="large" />}<div><span>PROTEÇÃO VESTIDA</span><h4>{selected.protection || "Sem proteção"}</h4>{protection && <><p>Limiar maior {stats.major} · severo {stats.severe} · {stats.armor} espaços de armadura</p><p>{protection.effect}</p></>}</div></div>
+              <div className="character-equipment">{selected.personal ? <ItemArt name={selected.personal} category="Abrigo, transporte e mochilas" size="large" /> : <EmptyItemArt size="large" />}<div><span>ITEM PESSOAL</span><h4>{selected.personal || "Nenhum item pessoal"}</h4>{personal && <p>{personal.effect} · Carga guardada {personal.load}</p>}</div></div>
+            </section>
+            <p className="character-rule-note">Uma carga de munição compatível cobre uma cena de disparos; a próxima cena pede nova carga. Arma ativa e proteção vestida não ocupam espaço guardado.</p>
+          </TabsContent>
+          <TabsContent value="habilidades" className="character-tab-content">
+            <section className="character-hope-feature" aria-labelledby="hope-feature-title">
+              <div className="character-hope-feature-top"><span><Sparkles size={17} aria-hidden="true" /> HABILIDADE DE HOPE</span><span>ARQUÉTIPO · {selected.archetype}</span></div>
+              <div className="character-hope-feature-body"><AbilityArt abilityId={`hope:${selected.archetype}`} size="large" />
+                <div><h3 id="hope-feature-title">{hopeName}</h3><p>{hopeEffect}</p></div></div>
+              <div className="character-hope-feature-foot"><span className="character-hope-cost"><Sparkles size={15} aria-hidden="true" /> Custo: 3 Hope</span><span>Esperança atual: <b>{selected.hope}/6</b></span>
+                <AbilityUseControl game={game} edit={edit} survivorId={selected.id} abilityId={`hope:${selected.archetype}`}
+                  name={hopeName} effect={hopeEffect} hopeFeature /></div>
+            </section>
+            <section className="character-surface"><SectionHeading index="02" title="Outras características e técnicas" aside={<span className="character-micro">TOQUE PARA LER</span>} /><p className="character-section-intro">Abra um card para consultar o efeito completo, inclusive gatilho, custo e limites.</p>
+              <Accordion type="multiple" className="character-abilities">
+                <AbilityCard game={game} edit={edit} survivorId={selected.id} abilityId={`origin:${selected.origin}`} name={origin?.feature || selected.origin} category={`Origem · ${selected.origin}`} effect={origin?.effect} />
+                <AbilityCard game={game} edit={edit} survivorId={selected.id} abilityId={`archetype:${selected.archetype}`} name={archetype?.feature || selected.archetype} category={`Arquétipo · ${selected.archetype}`} effect={archetype?.effect} />
+                <AbilityCard game={game} edit={edit} survivorId={selected.id} abilityId={`specialty:${selected.specialty}`} name={selected.specialty} category="Especialização" effect={archetype?.specialties.find(s => s.name === selected.specialty)?.effect} />
+                {selected.techniques.map(name => { const technique = content.techniques.find(t => t.name === name); return <AbilityCard key={name} game={game} edit={edit} survivorId={selected.id} abilityId={`technique:${name}`} name={name} category={`Trilha · ${technique?.track ?? "Técnica"}`} effect={technique?.effect} />; })}
+              </Accordion>
+            </section>
+          </TabsContent>
+          <TabsContent value="inventario" className="character-tab-content">
+            <div className="character-inventory-dashboard">
+            <section className="character-surface"><SectionHeading index="01" title="Carga e provisões" aside={<b className="character-load-badge">{stats.carried} / {stats.capacity} espaços</b>} />
+              <div className="character-load-meter"><Progress value={Math.min(100, stats.carried / Math.max(1, stats.capacity) * 100)} />{stats.carried > stats.capacity && <p className="character-alert">Acima da capacidade. Redistribua a carga antes de uma travessia.</p>}</div>
+              <div className="character-inventory-top"><div><Backpack size={19} aria-hidden="true" /><span>{selected.bag || "Sem bolsa ou mochila"}</span></div>{selected.bag && <Button size="sm" variant="outline" onClick={() => storeActive("bag")}>Guardar mochila</Button>}</div>
+              <details className="character-load-details"><summary>Como esta carga foi calculada</summary><dl><div><dt>Itens guardados</dt><dd>{stats.load.items}</dd></div><div><dt>Comida e água</dt><dd>{stats.load.food + stats.load.water}</dd></div><div><dt>Munição de reserva</dt><dd>{stats.load.ammo}</dd></div><div><dt>Kit pessoal</dt><dd>{stats.load.personal}</dd></div></dl>
+                <p>Armas e proteção em uso não ocupam espaço. Cabem duas porções soltas de cada recurso nos bolsos; cada grupo extra de até quatro ocupa um espaço. Uma carga compatível pronta na arma não ocupa espaço.</p><p>Use uma bolsa por pessoa. Ao equipar outra, a anterior volta aos itens guardados.</p></details>
+              <div className="character-stock-grid"><Counter label="Comida · porções" value={selected.food} max={99} onChange={value => change(selected.id, s => { adjustProvisionCount(s, "food", value); })} /><Counter label="Água · porções" value={selected.water} max={99} onChange={value => change(selected.id, s => { adjustProvisionCount(s, "water", value); })} /><Counter label="Munição · cargas" value={selected.ammo} max={99} onChange={value => change(selected.id, s => { s.ammo = value; })} /></div>
+              {(selected.provisionLots ?? []).length > 0 && <p className="character-rule-note">Perecíveis: {selected.provisionLots!.map(lot => `${lot.qty} porção(ões) de ${lot.resource === "food" ? "comida" : "água"} (${lot.label}) · vence no amanhecer do dia ${lot.expiresDay}`).join("; ")}.</p>}
+              <div className="character-consume-actions"><Button size="sm" variant="outline" disabled={selected.food < 1 || selected.foodConsumedDay === game.day} onClick={() => edit(draft => {
+                if (consumeDailyProvision(draft, selected.id, "food")) toast.success("Comida de hoje registrada.");
+              })}><Utensils size={15} /> {selected.foodConsumedDay === game.day ? "Comida de hoje registrada" : "Comer 1 porção"}</Button>
+                <Button size="sm" variant="outline" disabled={selected.water < 1 || selected.waterConsumedDay === game.day} onClick={() => edit(draft => {
+                  if (consumeDailyProvision(draft, selected.id, "water")) toast.success("Água de hoje registrada.");
+                })}><Droplets size={15} /> {selected.waterConsumedDay === game.day ? "Água de hoje registrada" : "Beber 1 porção"}</Button></div>
+              <div className="character-provision-actions">{!playerMode && <ProvisionTransferDialog key={selected.id} game={game} edit={edit} survivorId={selected.id} />}<Pick label="Tipo de munição" value={ammoTypeFor(selected)} options={ammoTypes} onChange={value => change(selected.id, s => { s.ammoType = value; })} /></div>
+            </section>
+            <section className="character-surface"><SectionHeading index="02" title="Kit ativo" />
+              {([ ["primary","Arma principal","Armas primárias"], ["secondary","Arma secundária","Armas secundárias"], ["protection","Proteção","Proteções"], ["personal","Item pessoal","Abrigo, transporte e mochilas"] ] as const).map(([slot,label,category]) =>
+                <div className="character-kit-line" key={slot}>{selected[slot] ? <ItemArt name={selected[slot]} category={category} size="small" /> : <EmptyItemArt />}<span>{label}</span><b>{selected[slot] || "Vazio"}</b>{selected[slot] && <Button size="sm" variant="ghost" aria-label={`Guardar ${selected[slot]}`} onClick={() => storeActive(slot)}>Guardar</Button>}</div>)}
+              <p className="roll-hint">Para trocar o kit, use <b>Ações → Equipar</b> em um item abaixo.</p>
+            </section>
+            </div>
+            <section className="character-surface"><SectionHeading index="03" title="Itens guardados" aside={<AddItemDialog game={game} edit={edit} ownerId={selected.id} />} />
+              {selected.inventory.length > 0 && <div className="character-inventory-toolbar"><div className="field"><label htmlFor="inventory-search"><Search size={14} aria-hidden="true" /> Buscar no inventário</label><input id="inventory-search" type="search" placeholder="Nome, categoria ou estado" value={inventoryQuery} onChange={event => setInventoryQuery(event.target.value)} /></div><Pick label="Categoria" value={inventoryCategory} options={categoryOptions} onChange={setInventoryCategory} /></div>}
+              {inventoryGroups.length === 0 && <p className="character-empty-list">{selected.inventory.length ? "Nenhum item com esse filtro." : "Nenhum item guardado. Registre um achado ou guarde algo do kit ativo."}{selected.inventory.length > 0 && <button type="button" className="character-text-link" onClick={() => { setInventoryQuery(""); setInventoryCategory("Todas"); }}>Limpar filtros</button>}</p>}
+              {inventoryGroups.map(([category, items]) => <div className="character-inventory-group" key={category}><h4>{category}</h4>
+                <Accordion type="multiple">{items.map(item => { const catalog = catalogForItem(item); return <AccordionItem value={item.id} key={item.id} className="character-item">
+                  <div className="character-item-row"><AccordionTrigger className="character-item-trigger"><ItemArt name={item.name} category={category} /><span className="character-item-name">{item.name}<small>{item.condition || "Estado não registrado"} · {item.load === 0 && ["Alimentos","Bebidas"].includes(category) ? "carga agrupada" : item.load * item.qty + " espaço(s)"}</small></span><span className="character-item-meta">×{item.qty}</span></AccordionTrigger>
+                    <ItemActionsDialog game={game} edit={edit} ownerId={selected.id} item={item} allowCorrection={!playerPreview} selfOnly={playerMode} /></div>
+                  <AccordionContent className="character-item-detail"><div className="character-chips"><span>{category}</span><span>Estado: {item.condition || "Sem registro"}</span><span>{item.load === 0 && ["Alimentos","Bebidas"].includes(category) ? "Porções agrupadas na carga" : item.load + " espaço(s) por unidade"}</span>{item.armorMarked ? <span>Armadura marcada: {item.armorMarked}</span> : null}{item.foundDay && <span>Encontrado no dia {item.foundDay}</span>}</div>
+                    {catalog && <dl>{catalog.fields.map(field => <div key={field.label}><dt>{field.label}</dt><dd>{field.value}</dd></div>)}</dl>}
+                  </AccordionContent>
+                </AccordionItem>; })}</Accordion>
+              </div>)}
+              {selected.inventory.length > 0 && <p className="roll-hint inventory-count" role="status">{inventoryGroups.reduce((sum, [, items]) => sum + items.length, 0)} de {selected.inventory.length} registros · {selected.inventory.reduce((sum, item) => sum + item.qty, 0)} unidades no total</p>}
+            </section>
+          </TabsContent>
+          <TabsContent value="condicoes" className="character-tab-content">
+            <section className="character-surface"><SectionHeading index="01" title="Exposição e infecção" /><div className="character-condition-banner"><HeartPulse size={24} aria-hidden="true" /><div><b>{selected.infection}</b><p>{selected.infection === "Saudável" ? "Nenhuma exposição registrada." : "Acompanhe o estado e as escolhas de tratamento."}</p></div></div>
+              {!playerPreview && <div className="character-condition-edit"><Pick label="Estado" value={selected.infection} options={infectionStates} onChange={value => change(selected.id, s => {
+                s.infection = value as Infection;
+                if (value === "Exposto") { s.exposureDeadline = absoluteMinutes(game) + 120; s.treatmentAttempted = false; }
+                else s.exposureDeadline = null;
+                if (value === "Terminal") s.terminalScenes = 3;
+              })} /></div>}
+              <p className="character-rule-note">Mordida anunciada contra alvo Restrito ou indefeso pode causar Exposição. Ataques comuns não causam. A limpeza exige 1 Medicamentos, água limpa e uma tentativa em até 2 horas.</p>
+              {selected.infection === "Exposto" && <div className="character-treatment"><b>Janela: até {deadlineLabel(selected.exposureDeadline)}</b><span>{selected.treatmentAttempted ? "Tentativa já usada" : "Uma tentativa possível"} · {medicineSources.length} fonte(s) de Medicamentos acessível(is)</span>
+                {!playerMode ? <>
+                <Dialog open={treatmentOpen} onOpenChange={value => { setTreatmentOpen(value); if (!value) setCleanWaterConfirmed(false); }}><DialogTrigger asChild><Button size="sm" disabled={selected.treatmentAttempted || (selected.exposureDeadline ?? 0) < absoluteMinutes(game) || !chosenMedicine}><Stethoscope size={16} /> Tentar limpar exposição</Button></DialogTrigger>
+                  <DialogContent><DialogHeader><DialogTitle>Tratamento imediato</DialogTitle><DialogDescription>Escolha 1 Medicamentos acessível, confirme água limpa e role Conhecimento contra 13. Uma tentativa por Exposição.</DialogDescription></DialogHeader>
+                    <Pick label="Fonte do tratamento" value={chosenMedicine} options={medicineSources} onChange={setTreatmentSource} />
+                    <label className="inventory-ready"><input type="checkbox" checked={cleanWaterConfirmed} onChange={event => setCleanWaterConfirmed(event.target.checked)} /><span>Há água limpa e condições de cuidar da ferida nesta cena.</span></label>
+                    <DialogFooter><Button variant="outline" onClick={() => setTreatmentOpen(false)}>Cancelar</Button><Button disabled={!cleanWaterConfirmed || !chosenMedicine} onClick={treatExposure}>Confirmar e rolar</Button></DialogFooter></DialogContent>
+                </Dialog></> : <p className="text-sm subtle">Peça ao mestre para registrar a tentativa de tratamento e o resultado da infecção.</p>}
+              </div>}
+              {selected.infection === "Terminal" && !playerPreview && <div className="character-terminal"><Counter compact label="Cenas significativas restantes" value={selected.terminalScenes} max={3} onChange={value => change(selected.id, s => { s.terminalScenes = value; })} /></div>}
+              {selected.infection === "Terminal" && playerPreview && <p className="character-terminal">Cenas significativas restantes: <b>{selected.terminalScenes}</b></p>}
+            </section>
+            <section className="character-surface"><SectionHeading index="02" title="Estado de combate" /><div className="character-combat-metrics"><div><Heart size={17} aria-hidden="true" /><span>Vida disponível</span><b>{stats.hp-selected.hp}/{stats.hp}</b></div><div><Zap size={17} aria-hidden="true" /><span>Estresse marcado</span><b>{selected.stress}/6</b></div><div><Shield size={17} aria-hidden="true" /><span>Armadura marcada</span><b>{selected.armorMarked ?? 0}/{stats.armor}</b></div></div><p className="character-rule-note">Ajuste os recursos no painel lateral. Em telas menores, toque em Combate na barra de consulta rápida.</p></section>
+          </TabsContent>
+          <TabsContent value="historia" className="character-tab-content">
+            <section className="character-surface"><SectionHeading index="01" title="Antes e depois" /><div className="character-story-grid"><div><span>ORIGEM</span><b>{selected.origin}</b><p>{origin?.past}</p></div><div><span>ATUAÇÃO</span><b>{selected.archetype} · {selected.specialty}</b><p>Trilhas: {archetype?.tracks.join(" e ")}</p></div></div>
+              <div className="character-backstory"><span>PESSOA IMPORTANTE, PERDA OU PROMESSA</span><p>{selected.past || "Nada registrado por enquanto."}</p></div>
+            </section>
+            <section className="character-surface"><SectionHeading index="02" title="Anotações" />{!playerPreview || playerMode ? <><Field label="Notas do sobrevivente" value={notes} onChange={value => setNotesDraft({ id: selected.id, source: selected.notes, value })} multiline /><Button size="sm" variant="outline" className="mt-3" onClick={() => { change(selected.id, s => { s.notes = notes.trim(); }); setNotesDraft(null); }}>Salvar notas</Button></> : <p className="character-notes">{selected.notes || "Nenhuma anotação registrada."}</p>}</section>
+            {!playerPreview && <section className="character-surface"><SectionHeading index="03" title="Identificação" /><div className="character-identity-edit"><Field label="Nome do sobrevivente" value={selected.name} onChange={value => change(selected.id, s => { s.name = value; })} /><Field label="Pessoa importante, perda ou promessa" value={selected.past} onChange={value => change(selected.id, s => { s.past = value; })} /></div><p className="character-rule-note">Origem, arquétipo e kit inicial foram definidos na criação. O nível atualiza os limiares da proteção. Outras escolhas de evolução continuam sob controle da mesa.</p><Counter compact label="Nível registrado" value={selected.level ?? 1} min={1} max={20} onChange={value => change(selected.id, s => { s.level = value; })} /></section>}
+          </TabsContent>
+        </Tabs>
+
+        <aside className="character-quick" aria-label="Consulta rápida do sobrevivente">
+          <div className="character-quick-desktop"><div className="character-quick-heading"><span>CONSULTA RÁPIDA</span><small>RECURSOS EM CENA</small></div>
+            <ResourceControl label="Vida" icon={Heart} current={stats.hp-selected.hp} max={stats.hp} onChange={value => change(selected.id, s => { s.hp = stats.hp - value; })} tone="health" reverse />
+            <ResourceControl label="Estresse" icon={Zap} current={selected.stress} max={6} onChange={value => change(selected.id, s => { s.stress = value; })} tone="stress" />
+            <ResourceControl label="Esperança" icon={Sparkles} current={selected.hope} max={6} onChange={value => change(selected.id, s => { s.hope = value; })} tone="hope" />
+            <ResourceControl label="Armadura livre" icon={Shield} current={Math.max(0, stats.armor-(selected.armorMarked ?? 0))} max={stats.armor} onChange={value => change(selected.id, s => { s.armorMarked = Math.max(0, (s.armorMarked ?? 0) + Math.max(0, stats.armor - (s.armorMarked ?? 0)) - value); })} tone="armor" reverse />
+            <div className="character-quick-defenses"><span><Crosshair size={16} aria-hidden="true" /> Evasão <b>{stats.evasion}</b></span><span>Proficiência <b>{selected.proficiency ?? 1}</b></span><span>Maior <b>{stats.major}</b></span><span>Severo <b>{stats.severe}</b></span></div>
+            <div className="character-quick-attack"><span><Swords size={17} aria-hidden="true" /> ATAQUE PRONTO</span><strong>{selected.primary || "Sem arma principal"}</strong><small>{primary ? `${primary.damage} · ${primary.range}` : "Veja o kit de combate"}</small><div><span>Munição</span><b>{selected.ammo} carga(s)</b></div></div>
+            <div className="character-quick-rolls"><button type="button" onClick={() => setRollRequest({ survivorId: selected.id, kind: "action" })}><Dice5 size={16} aria-hidden="true" /> Teste</button><button type="button" disabled={!primary} onClick={() => setRollRequest({ survivorId: selected.id, kind: "attack", weapon: "primary" })}><Crosshair size={16} aria-hidden="true" /> Ataque</button></div>
+          </div>
+          <div className="character-quick-mobile"><span title="Vida disponível"><Heart size={16} aria-hidden="true" /><b>{stats.hp-selected.hp}/{stats.hp}</b><small>Vida</small></span><span title="Estresse marcado"><Zap size={16} aria-hidden="true" /><b>{selected.stress}/6</b><small>Stress</small></span><span title="Esperança"><Sparkles size={16} aria-hidden="true" /><b>{selected.hope}/6</b><small>Hope</small></span><span title="Evasão"><Crosshair size={16} aria-hidden="true" /><b>{stats.evasion}</b><small>EV</small></span><button type="button" onClick={() => setActiveTab("combate")} aria-label="Abrir combate e controles de recursos"><Shield size={16} aria-hidden="true" /><b>{Math.max(0, stats.armor-(selected.armorMarked ?? 0))}</b><small>Combate</small></button><button type="button" className="character-quick-mobile-weapon" onClick={() => setActiveTab("combate")}><Swords size={14} aria-hidden="true" /><strong>{selected.primary || "Sem arma principal"}</strong><span>{primary ? `${primary.damage} · ${primary.range}` : "Ver ataque"}</span><span>{selected.ammo} carga(s)</span></button></div>
+        </aside>
+      </div>
+      {rollRequest && <RollDialog game={game} edit={edit} request={rollRequest} open onOpenChange={opened => { if (!opened) setRollRequest(null); }} />}
+    </>}
+  </div>;
+}
