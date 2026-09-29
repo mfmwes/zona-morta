@@ -77,8 +77,9 @@ export function expirePhysicalFood(game: GameState, items: InventoryItem[], cold
     if (item.condition === "Estragado" || item.category !== "Alimentos" || !item.foundDay) continue;
     // The catalog lookup lives here to keep both the shelter and personal inventory on the same clock.
     const shelf = catalogShelf(item);
-    if (shelf === "C" && cold) continue;
-    const deadline = provisionDeadline(shelf, item.foundDay);
+    const preparedExpiry = item.expiresDay ?? null;
+    if (shelf === "C" && cold && preparedExpiry === null && !item.prepared) continue;
+    const deadline = preparedExpiry ?? provisionDeadline(shelf, item.foundDay);
     if (deadline !== null && game.day >= deadline) {
       item.condition = "Estragado";
       expired.push(`${item.qty}× ${item.name}`);

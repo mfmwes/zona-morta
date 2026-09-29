@@ -30,6 +30,8 @@ const editable = ["portrait", "primary", "secondary", "protection", "personal", 
   "hp", "armorMarked", "stress", "hope", "food", "water", "foodConsumedDay", "waterConsumedDay", "provisionLots",
   "ammo", "ammoType", "inventory", "notes", "abilityUses"] as const;
 const allowedKeys = new Set<string>([...immutable, ...editable]);
+const allowedItemKeys = new Set(["id", "name", "load", "qty", "condition", "catalogKey", "category", "armorMarked", "foundDay",
+  "provisionResource", "portionsPerUnit", "portionsRemaining", "prepared", "verified", "opened", "expiresDay"]);
 export type PlayerLog = { kind: string; text: string };
 
 export function playerEditPayload(before: GameState, after: GameState) {
@@ -59,8 +61,17 @@ export function applyPlayerChange(game: GameState, survivorId: string, before: S
     || ![after.food, after.water, after.ammo].every(value => Number.isInteger(value) && value >= 0 && value <= 99)
     || !Array.isArray(after.inventory) || after.inventory.length > 120
     || after.inventory.some(item => !item || typeof item.id !== "string" || typeof item.name !== "string"
+      || !Object.keys(item).every(key => allowedItemKeys.has(key))
       || item.name.length > 100 || !Number.isInteger(item.qty) || item.qty < 1 || item.qty > 99
-      || !Number.isInteger(item.load) || item.load < 0 || item.load > 9)
+      || !Number.isInteger(item.load) || item.load < 0 || item.load > 9
+      || (item.provisionResource !== undefined && !["food", "water"].includes(item.provisionResource))
+      || (item.portionsPerUnit !== undefined && (!Number.isInteger(item.portionsPerUnit) || item.portionsPerUnit < 1 || item.portionsPerUnit > 99))
+      || (item.portionsRemaining !== undefined && (!Number.isInteger(item.portionsRemaining) || item.portionsRemaining < 1
+        || item.portionsRemaining > (item.portionsPerUnit ?? 99) || item.qty !== 1))
+      || (item.prepared !== undefined && typeof item.prepared !== "boolean")
+      || (item.verified !== undefined && typeof item.verified !== "boolean")
+      || (item.opened !== undefined && typeof item.opened !== "boolean")
+      || (item.expiresDay !== undefined && (!Number.isInteger(item.expiresDay) || item.expiresDay < 1 || item.expiresDay > 9999)))
     || typeof after.notes !== "string" || after.notes.length > 4000
     || logs.some(log => !log || !["dados", "dano", "inventário", "habilidade", "provisões", "tratamento"].includes(log.kind)
       || typeof log.text !== "string" || log.text.length > 600)) return null;

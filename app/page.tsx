@@ -24,6 +24,7 @@ import { sectorProfiles } from "@/lib/sectors";
 import { adjustProvisionCount } from "@/lib/provisions";
 import { beginExpedition, beginScene } from "@/lib/abilities";
 import { playerEditPayload } from "@/lib/collaboration";
+import { provisionBreakdown } from "@/lib/provision-items";
 
 type CampaignResponse = { revision?: number; state?: GameState; role: "mestre" | "jogador" | "convidado"; ownerId: string; survivorId?: string | null };
 type SaveStatus = "salvo" | "salvando" | "erro" | "conflito";

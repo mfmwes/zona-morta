@@ -1,43 +1,31 @@
-# Zona Morta — Carga, Bolsos e Porções Automáticas v0.4.2 (revisado)
+# Zona Morta — Provisões Físicas v0.4.3
 
-Este ZIP **substitui o patch v0.4.2 anterior**. Use apenas este.
+Este patch substitui o comportamento de “converter o item em contador”.
 
-## 1. Carga de porções
-- 1–3 porções: 0 espaços.
-- 4–7 porções: 1 espaço.
-- 8–11 porções: 2 espaços.
-- e assim por diante.
+## O que muda
 
-## 2. Dois bolsos no Kit Ativo
-- `Bolso 1` e `Bolso 2`.
-- 0 carga enquanto o objeto estiver ativo no bolso.
-- Aceitam itens compactos marcados como `Carga 0` ou `Guarda 0`.
-- Alimentos e bebidas não usam esses slots.
+- Alimentos e bebidas continuam no inventário.
+- O total de Comida/Água soma porções soltas + porções consumíveis nos itens físicos.
+- Cada item acompanha suas porções restantes.
+- Consumir uma porção não apaga o pacote inteiro.
+- Pilhas são separadas automaticamente quando uma unidade fica parcialmente consumida.
+- Preparar ou verificar não destrói o objeto.
+- Itens pendentes de preparo/verificação não entram no total disponível.
+- A carga usa as porções realmente restantes.
+- Transferência conserva porções restantes, estado, abertura e prazo.
+- Alimentos preparados podem ganhar vencimento próprio.
+- Ao fechar o dia, o abrigo pode usar itens físicos prontos se as porções soltas não bastarem.
+- Mantém os dois bolsos e a regra 3 porções = 0 carga / 4 porções = 1 carga.
 
-## 3. Porções automáticas
-Ao usar **Registrar achado**:
-- alimento pronto entra automaticamente no contador de Comida;
-- bebida/água pronta entra automaticamente no contador de Água;
-- a quantidade de porções vem do próprio catálogo;
-- o item é convertido para porções, evitando duplicação entre objeto e contador;
-- prazo/perecibilidade é mantido no lote de provisões.
+## Importante sobre dados já convertidos
 
-Exemplos:
-- 1 Barra de cereal → +1 Comida;
-- 2 Pacotes de bolachas → +4 Comida;
-- 3 Garrafas de água lacrada → +3 Água.
+Se a versão anterior já apagou um item e transformou tudo em `food`/`water`, a identidade do objeto foi perdida. Essas porções continuam válidas como **porções soltas**, mas não há como o sistema adivinhar automaticamente se eram bolachas, garrafas, frutas etc.
 
-### Exceção importante
-Itens que exigem preparo, tratamento ou verificação **não entram automaticamente** no contador. Eles continuam como objetos físicos até a ação ser resolvida. Isso evita contar como água potável algo ainda não verificado ou como comida pronta algo que ainda precisa ser preparado.
-
-Não exige migração no D1.
-
-## Codespaces
-
-Extraia o ZIP na raiz e rode:
+## Aplicar no Codespaces
 
 ```bash
-python3 apply_inventory_fixes.py
+unzip -o Zona_Morta_Provisoes_Fisicas_v0_4_3.zip
+python3 apply_provision_model.py
 npm test
 npm run build
 ```
@@ -45,8 +33,10 @@ npm run build
 Se tudo passar:
 
 ```bash
-rm -rf .inventory-fix-backup
+rm -rf .provision-model-backup
 git add .
-git commit -m "fix: carga, bolsos e porções automáticas"
+git commit -m "feat: preservar itens e rastrear porcoes fisicas"
 git push
 ```
+
+Não exige SQL nem migração no D1.

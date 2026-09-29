@@ -12,6 +12,7 @@ import { ItemArt } from "@/components/item-art";
 import { ShelterMoveDialog } from "@/components/shelter-move";
 import { content, establishShelter, recoverFormerStock, type GameState } from "@/lib/game";
 import { atSharedStorage, catalogForItem } from "@/lib/inventory";
+import { provisionBreakdown, provisionDisplay, provisionItemInfo } from "@/lib/provision-items";
 import { closeDay, eveningNeeds } from "@/lib/survival";
 import { adjustProvisionCount } from "@/lib/provisions";
 import { registerRest } from "@/lib/abilities";
@@ -32,6 +33,8 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
   const homeSector = s.hex ? game.hexes[s.hex]?.sector?.name ?? `Hex ${s.hex}` : null;
   const visitedCache = (game.formerShelters ?? []).find(site => site.hex === game.partyHex);
   const recipient = game.survivors.find(person => person.id === cacheRecipient) ?? game.survivors[0];
+  const shelterFood = provisionBreakdown(s, "food");
+  const shelterWater = provisionBreakdown(s, "water");
   useEffect(() => { setShelterNotes(s.notes); }, [s.notes]);
   useEffect(() => { setShelterName(s.name); }, [s.name]);
   const stocks: { key: keyof typeof s; label: string; unit: string; max: number }[] = [
@@ -93,25 +96,26 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
       <div className="flex items-center gap-2 mb-3"><Package size={18} /><h3 className="section-title">{hasShelter ? "Estoque do abrigo" : "Reservas do grupo"}</h3></div>
       <p className="intro-line mb-4">Comida e Água são contadas em porções: quatro porções formam uma unidade. Não desconte duas vezes o que saiu na mochila. {hasShelter ? "As reservas ficam na base." : "Registre aqui só o que o grupo transporta; confira a carga na ficção."}</p>
       <div className="grid gap-3 sm:grid-cols-2">
-        {stocks.map(stock => <div key={stock.key} className="metric">
-          {playerPreview ? <div><span className="smallcaps subtle">{stock.label}</span><strong>{String(s[stock.key])}</strong></div>
-          : <Counter compact editable quickStep={["food","water"].includes(stock.key) ? 4 : undefined}
-              label={stock.label} value={Number(s[stock.key])} max={stock.max}
+        {stocks.map(stock => { const provision = stock.key === "food" ? shelterFood : stock.key === "water" ? shelterWater : null; return <div key={stock.key} className="metric">
+          {provision && <div><span className="smallcaps subtle">{stock.label} disponível</span><strong>{provision.total}</strong><p className="text-xs subtle mt-2">{provision.loose} soltas · {provision.itemsReady} em itens{provision.itemsWaiting ? ` · ${provision.itemsWaiting} aguardando preparo/verificação` : ""}</p></div>}
+          {!provision && playerPreview && <div><span className="smallcaps subtle">{stock.label}</span><strong>{String(s[stock.key])}</strong></div>}
+          {!playerPreview && <Counter compact editable quickStep={["food","water"].includes(stock.key) ? 4 : undefined}
+              label={provision ? `${stock.label} solta` : stock.label} value={Number(s[stock.key])} max={stock.max}
               onChange={value => edit(draft => { if (stock.key === "food" || stock.key === "water") adjustProvisionCount(draft.shelter, stock.key, value);
                 else (draft.shelter[stock.key] as number) = value; })} />}
-          <p className="text-xs subtle mt-2">{stock.unit}{["food","water"].includes(stock.key) ? ` · ${Math.floor(Number(s[stock.key])/4)} un. + ${Number(s[stock.key])%4} porções` : ""}</p>
-        </div>)}
+          <p className="text-xs subtle mt-2">{stock.unit}{provision ? " · itens físicos são contados automaticamente no total acima" : ""}</p>
+        </div>; })}
       </div>
       {(s.provisionLots ?? []).length > 0 && <p className="character-rule-note mt-3">Lotes com prazo: {s.provisionLots!.map(lot => `${lot.qty} ${lot.resource === "food" ? "comida" : "água"} (${lot.label}) → amanhecer do dia ${lot.expiresDay}`).join(" · ")}.</p>}
       <div className="divider" />
       <div className="flex items-center justify-between gap-3 flex-wrap"><h3 className="section-title">Itens compartilhados</h3>
         {sharedAccessible && !playerPreview && <AddItemDialog game={game} edit={edit} ownerId="shared" />}</div>
-      <p className="intro-line mt-2">Objetos físicos ficam aqui. Comida, água e munição convertidas em porções ou cargas aparecem nos contadores acima, sem duplicar itens.</p>
+      <p className="intro-line mt-2">Objetos físicos continuam identificados aqui. Alimentos e bebidas prontos contribuem automaticamente para o total disponível sem desaparecer do inventário; itens pendentes de preparo/verificação aparecem separados.</p>
       {!sharedAccessible && <p className="character-rule-note">O grupo está fora do abrigo. Volte ao hex da base para mover os itens compartilhados.</p>}
       <div className="shared-inventory-list">
         {(s.inventory ?? []).length === 0 ? <p className="character-empty-list">Nenhum objeto guardado no depósito.</p>
-          : (s.inventory ?? []).map(item => <div className="shared-inventory-row" key={item.id}><div className="shared-inventory-entry"><ItemArt name={item.name} category={catalogForItem(item)?.category ?? item.category} /><div><b>{item.name}</b><span>{catalogForItem(item)?.category ?? item.category ?? "Outros"} · {item.qty}× · carga {item.load} cada · {item.condition ?? "sem estado"}</span></div></div>
-            {sharedAccessible && !playerPreview && <ItemActionsDialog game={game} edit={edit} ownerId="shared" item={item} allowCorrection />}</div>)}
+          : (s.inventory ?? []).map(item => { const provisionState = provisionItemInfo(item); return <div className="shared-inventory-row" key={item.id}><div className="shared-inventory-entry"><ItemArt name={item.name} category={catalogForItem(item)?.category ?? item.category} /><div><b>{item.name}</b><span>{provisionState.resource ? provisionDisplay(item) : `${catalogForItem(item)?.category ?? item.category ?? "Outros"} · ${item.qty}× · carga ${item.load} cada · ${item.condition ?? "sem estado"}`}</span></div></div>
+            {sharedAccessible && !playerPreview && <ItemActionsDialog game={game} edit={edit} ownerId="shared" item={item} allowCorrection />}</div>; })}
       </div>
       {hasShelter && !playerPreview && <div className="mt-5 grid gap-3 sm:grid-cols-3">
         <Counter label="Segurança" value={s.security} max={3} onChange={value=>edit(d=>{d.shelter.security=value;})} />
@@ -142,7 +146,7 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
     <aside className="grid gap-5 self-start">
       <section className="panel panel-pad">
         <p className="dossier-title">Rotina / sobrevivência</p><h3 className="section-title mt-1">Anoitecer e descanso</h3>
-        <p className="intro-line mt-3">Cada pessoa precisa de uma porção de Comida e uma de Água por dia. O consumo pessoal registrado na ficha é excluído da sugestão de gasto compartilhado.</p>
+        <p className="intro-line mt-3">Cada pessoa precisa de uma porção de Comida e uma de Água por dia. O consumo pessoal registrado na ficha é excluído da sugestão. Ao fechar o dia, o sistema usa porções soltas e, se necessário, itens físicos prontos das reservas compartilhadas.</p>
         {!playerPreview && <Dialog open={closeOpen} onOpenChange={setCloseOpen}>
           <DialogTrigger asChild><Button className="mt-4 w-full" onClick={() => {
             const needs = eveningNeeds(game);

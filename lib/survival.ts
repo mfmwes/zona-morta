@@ -1,5 +1,6 @@
 import { absoluteMinutes, addLog, type GameState } from "./game";
-import { atSharedStorage } from "./inventory";
+import { atSharedStorage, consumeReadyProvisionPortions } from "./inventory";
+import { provisionBreakdown } from "./provision-items";
 import { expirePhysicalFood, expirePortionLots, withdrawPortions } from "./provisions";
 
 export function consumeDailyProvision(game: GameState, survivorId: string, resource: "food" | "water") {
@@ -22,11 +23,21 @@ export function eveningNeeds(game: GameState) {
 
 export function closeDay(game: GameState, food: number, water: number, expectedDay = game.day) {
   if (game.day !== expectedDay || ![food, water].every(n => Number.isInteger(n) && n >= 0 && n <= 999)) return false;
-  const foodMissing = Math.max(0, food - game.shelter.food);
-  const waterMissing = Math.max(0, water - game.shelter.water);
-  withdrawPortions(game.shelter, "food", food);
-  withdrawPortions(game.shelter, "water", water);
-  addLog(game, "provisões", `Anoitecer: ${food} porção(ões) de Comida e ${water} de Água saíram das reservas compartilhadas. ` +
+  const foodAvailable = provisionBreakdown(game.shelter, "food").total;
+  const waterAvailable = provisionBreakdown(game.shelter, "water").total;
+  const foodMissing = Math.max(0, food - foodAvailable);
+  const waterMissing = Math.max(0, water - waterAvailable);
+
+  const looseFood = Math.min(food, game.shelter.food);
+  const looseWater = Math.min(water, game.shelter.water);
+  withdrawPortions(game.shelter, "food", looseFood);
+  withdrawPortions(game.shelter, "water", looseWater);
+  const foodFromItems = consumeReadyProvisionPortions(game.shelter.inventory, "food", Math.max(0, food - looseFood));
+  const waterFromItems = consumeReadyProvisionPortions(game.shelter.inventory, "water", Math.max(0, water - looseWater));
+
+  const itemUse = [...foodFromItems.labels, ...waterFromItems.labels];
+  addLog(game, "provisões", `Anoitecer: ${food - foodMissing} porção(ões) de Comida e ${water - waterMissing} de Água foram consumidas das reservas compartilhadas. ` +
+    (itemUse.length ? `Itens usados: ${itemUse.join(", ")}. ` : "") +
     (foodMissing ? `Faltaram ${foodMissing} de Comida. ` : "") + (waterMissing ? `Faltaram ${waterMissing} de Água.` : ""));
   game.day += 1;
   game.minutes = 480;

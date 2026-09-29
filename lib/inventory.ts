@@ -2,6 +2,7 @@ import { content, type EquipmentSlot, type GameState, type InventoryItem, type S
 import { getPrimary, getProtection, getSecondary, weaponAmmoType } from "./equipment";
 import { createId } from "./id";
 import { transferPortionLots } from "./provisions";
+import { hydrateProvisionItem, physicalProvisionPortions, provisionItemInfo, type ProvisionResource } from "./provision-items";
 
 type CatalogEntry = (typeof content.catalog)[number];
 export const inventoryCategories = [...new Set(content.catalog
@@ -24,13 +25,18 @@ export function itemFromCatalog(entry: CatalogEntry, qty = 1, condition = "Ínte
   // "0/1" denotes a loose pocket item; food and drink share the portion load calculation.
   const load = field === "0/1" && ["Alimentos", "Bebidas"].includes(entry.category)
     ? 0 : Number(field.match(/^\d+/)?.[0] ?? 1);
-  return { id: createId(), name: entry.name, catalogKey: catalogKey(entry), category: entry.category,
-    load, qty, condition, ...(["Alimentos", "Bebidas"].includes(entry.category) && foundDay ? { foundDay } : {}) };
+  return hydrateProvisionItem({ id: createId(), name: entry.name, catalogKey: catalogKey(entry), category: entry.category,
+    load, qty, condition, ...(["Alimentos", "Bebidas"].includes(entry.category) && foundDay ? { foundDay } : {}) });
 }
 export function addStack(items: InventoryItem[], incoming: InventoryItem) {
   const match = items.find(item => item.name === incoming.name && item.catalogKey === incoming.catalogKey
     && item.category === incoming.category && item.condition === incoming.condition
     && item.load === incoming.load && item.foundDay === incoming.foundDay
+    && item.provisionResource === incoming.provisionResource
+    && item.portionsPerUnit === incoming.portionsPerUnit
+    && item.portionsRemaining === incoming.portionsRemaining
+    && item.prepared === incoming.prepared && item.verified === incoming.verified
+    && item.opened === incoming.opened && item.expiresDay === incoming.expiresDay
     && (item.armorMarked ?? 0) === (incoming.armorMarked ?? 0)
     && item.qty + incoming.qty <= 99);
   if (match) match.qty += incoming.qty;
@@ -95,7 +101,7 @@ export function storedLoad(name: string, slot: EquipmentSlot) {
     return Number(value === "0/1" ? 1 : value);
   }
   const entry = content.catalog.find(x => x.name === name && (slot !== "bag" || x.category === "Abrigo, transporte e mochilas"));
-  const field = entry?.fields.find(x => x.label === "Guarda")?.value;
+  const field = entry?.fields.find(x => ["Guarda", "Carga", "Carga em viagem"].includes(x.label))?.value;
   return Number(field?.match(/^\d+/)?.[0] ?? 1);
 }
 export function stowSlot(s: Survivor, slot: EquipmentSlot) {
@@ -144,24 +150,121 @@ export function equipItem(s: Survivor, itemId: string, slot: EquipmentSlot) {
   return true;
 }
 export function provisionInfo(item: InventoryItem) {
-  const catalog = catalogForItem(item);
-  const category: "food" | "water" | null = catalog?.category === "Alimentos" ? "food" : catalog?.category === "Bebidas" ? "water" : null;
-  const label = category === "food" ? "Porções" : "Água em jogo";
-  const description = catalog?.fields.find(f => f.label === label)?.value ?? "";
-  const listed = Number(description.match(/\d+/)?.[0] ?? 1);
-  const requiresVerification = category === "water"
-    && (/verific|examinar|identificar/i.test(description) || (listed === 0 && /até/i.test(description)));
-  const portions = requiresVerification ? Math.max(1, listed) : listed;
-  const type = portions > 0 && item.condition !== "Estragado" ? category : null;
-  const preparation = catalog?.fields.find(f => f.label === "Preparo")?.value;
-  const shelf = catalog?.fields.find(f => f.label === "Prazo")?.value;
-  const needsPreparation = Boolean(requiresVerification || (preparation && !/^Pronto/i.test(preparation))
-    || item.condition === "Contaminado" || (item.condition && item.condition !== "Íntegro" && /se íntegr[ao]/i.test(preparation ?? "")));
-  return { type, portions, preparation, shelf, needsPreparation, requiresVerification };
+  const info = provisionItemInfo(item);
+  return {
+    type: info.resource,
+    portions: info.portionsPerUnit,
+    remaining: info.remaining,
+    preparation: info.preparation,
+    shelf: info.shelf,
+    needsPreparation: Boolean(info.resource && !info.ready),
+    requiresVerification: info.requiresVerification,
+    requiresPreparation: info.requiresPreparation,
+    ready: info.ready,
+    status: info.status,
+  };
 }
 export function automaticProvision(item: InventoryItem) {
   const provision = provisionInfo(item);
-  return provision.type && !provision.needsPreparation ? provision : null;
+  return provision.type && provision.ready ? provision : null;
+}
+
+function splitInventoryUnits(items: InventoryItem[], item: InventoryItem, quantity: number) {
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > item.qty || item.portionsRemaining !== undefined) return null;
+  if (quantity === item.qty) return item;
+  item.qty -= quantity;
+  const split = { ...item, id: createId(), qty: quantity };
+  items.push(split);
+  return split;
+}
+
+export function prepareProvisionItem(game: GameState, ownerId: string, itemId: string, quantity: number) {
+  if (ownerId === "shared" && !atSharedStorage(game)) return null;
+  const items = container(game, ownerId);
+  const item = items?.find(entry => entry.id === itemId);
+  if (!items || !item) return null;
+  const before = provisionItemInfo(item);
+  if (!before.resource || before.ready || item.condition === "Estragado" || item.condition === "Contaminado") return null;
+  const target = splitInventoryUnits(items, item, quantity);
+  if (!target) return null;
+  if (before.requiresPreparation) {
+    target.prepared = true;
+    target.expiresDay = game.day + 1;
+  }
+  if (before.requiresVerification) target.verified = true;
+  const after = provisionItemInfo(target);
+  return after.ready ? { item: target, info: after } : null;
+}
+
+function consumePortionFromItems(items: InventoryItem[], itemId: string) {
+  const item = items.find(entry => entry.id === itemId);
+  if (!item) return null;
+  const info = provisionItemInfo(item);
+  if (!info.resource || !info.ready || info.remaining < 1) return null;
+
+  let remainingInOpenedUnit = 0;
+  if (item.portionsRemaining !== undefined) {
+    item.portionsRemaining = Math.max(0, item.portionsRemaining - 1);
+    item.opened = true;
+    remainingInOpenedUnit = item.portionsRemaining;
+    if (item.portionsRemaining === 0) items.splice(items.indexOf(item), 1);
+  } else if (item.qty > 1) {
+    item.qty -= 1;
+    remainingInOpenedUnit = Math.max(0, info.portionsPerUnit - 1);
+    if (remainingInOpenedUnit > 0) {
+      items.push({ ...item, id: createId(), qty: 1, portionsRemaining: remainingInOpenedUnit, opened: true });
+    }
+  } else {
+    remainingInOpenedUnit = Math.max(0, info.portionsPerUnit - 1);
+    if (remainingInOpenedUnit > 0) {
+      item.portionsRemaining = remainingInOpenedUnit;
+      item.opened = true;
+    } else {
+      items.splice(items.indexOf(item), 1);
+    }
+  }
+  return { resource: info.resource, name: item.name, remainingInOpenedUnit };
+}
+
+export function consumeProvisionItem(game: GameState, ownerId: string, itemId: string, consumerId?: string) {
+  if (ownerId === "shared" && !atSharedStorage(game)) return null;
+  const items = container(game, ownerId);
+  if (!items) return null;
+  const result = consumePortionFromItems(items, itemId);
+  if (!result) return null;
+  const consumer = consumerId ? game.survivors.find(person => person.id === consumerId)
+    : game.survivors.find(person => person.id === ownerId);
+  if (consumer) {
+    const dayKey = result.resource === "food" ? "foodConsumedDay" : "waterConsumedDay";
+    if (consumer[dayKey] !== game.day) consumer[dayKey] = game.day;
+  }
+  return {
+    ...result,
+    remainingReady: physicalProvisionPortions(items, result.resource, true),
+  };
+}
+
+export function consumeReadyProvisionPortions(items: InventoryItem[] | undefined, resource: ProvisionResource, quantity: number) {
+  if (!items || quantity <= 0) return { consumed: 0, labels: [] as string[] };
+  let remaining = Math.max(0, Math.trunc(quantity));
+  const labels: string[] = [];
+  while (remaining > 0) {
+    const candidates = items
+      .filter(item => {
+        const info = provisionItemInfo(item);
+        return info.resource === resource && info.ready && info.remaining > 0;
+      })
+      .sort((a, b) => Number(Boolean(b.opened)) - Number(Boolean(a.opened))
+        || (a.expiresDay ?? 999999) - (b.expiresDay ?? 999999)
+        || (a.foundDay ?? 999999) - (b.foundDay ?? 999999));
+    const next = candidates[0];
+    if (!next) break;
+    const result = consumePortionFromItems(items, next.id);
+    if (!result) break;
+    labels.push(result.name);
+    remaining -= 1;
+  }
+  return { consumed: Math.max(0, Math.trunc(quantity)) - remaining, labels };
 }
 
 export type Provision = "food" | "water" | "ammo";

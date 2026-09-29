@@ -3,6 +3,7 @@ import { revealSector, sectorProfiles, type Sector } from "./sectors";
 import { equipmentModifiers, getProtection, weaponAmmoType } from "./equipment";
 import { createId } from "./id";
 import { transferPortionLots } from "./provisions";
+import { groupedProvisionPortions } from "./provision-items";
 
 export { content };
 
@@ -43,6 +44,13 @@ export type InventoryItem = {
   category?: string;
   armorMarked?: number;
   foundDay?: number;
+  provisionResource?: "food" | "water";
+  portionsPerUnit?: number;
+  portionsRemaining?: number;
+  prepared?: boolean;
+  verified?: boolean;
+  opened?: boolean;
+  expiresDay?: number;
 };
 
 export type ProvisionLot = {
@@ -298,21 +306,14 @@ export function survivorStats(s: Survivor) {
   const capacity = 3 + (bagBonus[s.bag] ?? 0)
     + (s.specialty === "Carregador" ? 1 : 0)
     + (s.techniques.includes("Carga bem distribuída") ? 1 : 0);
-  const pockets = (category: string) => s.inventory.reduce((sum, item) => {
-    if (item.load !== 0) return sum;
-    const entry = content.catalog.find(x => `${x.category}::${x.name}` === item.catalogKey)
-      ?? content.catalog.find(x => x.name === item.name && x.category === category);
-    if (entry?.category !== category) return sum;
-    const description = entry.fields.find(x => x.label === (category === "Alimentos" ? "Porções" : "Água em jogo"))?.value ?? "1";
-    const portions = Math.max(1, Number(description.match(/\d+/)?.[0] ?? 1));
-    return sum + item.qty * portions;
-  }, 0);
+  const foodInItems = groupedProvisionPortions(s.inventory, "food");
+  const waterInItems = groupedProvisionPortions(s.inventory, "water");
   const ammoType = weaponAmmoType(s.primary);
   const firearm = ammoType !== null && (s.ammoType ?? ammoType) === ammoType;
   const load = {
     items: s.inventory.reduce((sum, item) => sum + Math.max(0, item.load) * Math.max(0, item.qty), 0),
-    food: Math.floor(Math.max(0, s.food + pockets("Alimentos")) / 4),
-    water: Math.floor(Math.max(0, s.water + pockets("Bebidas")) / 4),
+    food: Math.floor(Math.max(0, s.food + foodInItems) / 4),
+    water: Math.floor(Math.max(0, s.water + waterInItems) / 4),
     ammo: Math.max(0, s.ammo - (firearm ? 1 : 0)),
     personal: s.personal === "Kit médico de campo" || s.personal === "Kit de ferramentas de trabalho" ? 1 : 0,
   };

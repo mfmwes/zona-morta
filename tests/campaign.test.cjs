@@ -31,7 +31,7 @@ function item(name, qty = 1, category) {
   assert.ok(entry, name);
   return inventory.itemFromCatalog(entry, qty, 'Íntegro', 1);
 }
-function physicalCount(s) { return s.inventory.reduce((sum, x) => sum + x.qty, 0) + ['primary','secondary','protection','bag','personal'].filter(key => s[key] && !(key === 'personal' && s.personal === s.bag)).length; }
+function physicalCount(s) { return s.inventory.reduce((sum, x) => sum + x.qty, 0) + ['primary','secondary','protection','bag','personal','pocket1','pocket2'].filter(key => s[key] && !(key === 'personal' && s.personal === s.bag)).length; }
 
 test('jogador cria ficha válida sem poder injetar recursos ou escolhas fora do arquétipo', () => {
   const archetype = content.archetypes[0];
