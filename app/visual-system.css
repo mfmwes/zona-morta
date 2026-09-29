@@ -54,7 +54,8 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 .reference-controls .field { max-width:650px; }
 .reference-view { display:flex; gap:5px; }
 .reference-view button { width:39px; height:39px; }
-.reference-categories { display:flex; gap:7px; overflow-x:auto; scrollbar-width:thin; padding:2px 2px 12px; margin-bottom:8px; }
+.reference-categories { display:flex; gap:7px; overflow-x:auto; scrollbar-width:none; padding:2px 2px 12px; margin-bottom:8px; mask-image:linear-gradient(90deg,#000 96%,transparent); }
+.reference-categories::-webkit-scrollbar { display:none; }
 .reference-category { flex:none; min-height:36px; padding:6px 12px; border:1px solid #c9d7ce; border-radius:999px; background:#f6f9f3; color:#456461; font-size:.79rem; font-weight:750; white-space:nowrap; transition:background .16s,border-color .16s,color .16s; }
 .reference-category:hover { border-color:#6d9b90; background:#eaf3eb; }
 .reference-category[aria-pressed="true"] { background:#245f60; border-color:#245f60; color:#fff; }
@@ -89,8 +90,10 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 .library-hero { padding:clamp(20px,3vw,32px); border-radius:12px; background:linear-gradient(105deg,#163539,#275451); color:#f8faf2; box-shadow:0 15px 32px #0a2d3028; }
 .library-hero .eyebrow { color:#afd9c9; }
 .library-hero .intro-line { color:#d4e4dc; }
-.library-hero button { color:#f3f7ed; border-color:#92b4a7; }
+.library-hero button { color:#f3f7ed; border-color:#92b4a7; background:transparent; }
+.library-hero button:hover { color:#fff; background:#315b57; border-color:#c2d9ca; }
 .library-create { border-left:4px solid var(--accent-warm); }
+.library-create .field-input { min-height:42px; padding:9px 12px; border:1px solid var(--input); background:#fffefa; }
 .library-card { border-left-width:1px; transition:transform .18s,box-shadow .18s,border-color .18s; }
 .library-card:hover { transform:translateY(-3px); border-color:#80aa9c; box-shadow:0 12px 24px #143a341c; }
 .library-card .players-avatar { background:#e1eee7; }

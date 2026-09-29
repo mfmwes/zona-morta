@@ -248,7 +248,8 @@ export function ReferencePanel() {
             <DialogTrigger asChild><button type="button" className="reference-item" aria-label={`Ver detalhes de ${item.name}`}>
               {item.category !== "Consulta antes de sair e ao retornar" && <ItemArt name={item.name} category={item.category} size="large" />}
               <span className="reference-item-copy"><span className="dossier-title">{item.category}</span><strong>{item.name}</strong>
-                <span className="reference-item-excerpt">{item.fields.find(field => field.value)?.value ?? "Abra para consultar os detalhes."}</span></span>
+                <span className="reference-item-excerpt">{item.fields.filter(field => field.value).slice(0,2)
+                  .map(field => `${field.label}: ${field.value}`).join(" · ") || "Abra para consultar os detalhes."}</span></span>
               <ChevronRight size={18} className="reference-item-arrow" aria-hidden="true" />
             </button></DialogTrigger>
             <DialogContent className="reference-detail"><DialogHeader><p className="dossier-title">{item.category}</p><DialogTitle>{item.name}</DialogTitle>
