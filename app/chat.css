@@ -370,6 +370,7 @@
 @media (min-width:1321px) {
   .app-shell.chat-open { grid-template-columns:238px minmax(0,1fr) 360px; }
   .app-shell.chat-closed { grid-template-columns:238px minmax(0,1fr); }
+  .app-shell.chat-closed #table-chat { display:none; }
   .app-shell.chat-closed .table-chat { display:none; }
   .table-chat-backdrop { display:none; }
 }
