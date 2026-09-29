@@ -7,7 +7,8 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
   visible.formerShelters = [];
   // O jogador vê o próprio histórico e as rolagens públicas feitas por outros
   // sobreviventes. Rolagens livres do mestre (sem actorId) continuam reservadas.
-  visible.log = visible.log.filter(entry => entry.actorId === survivorId
+  visible.log = visible.log.filter(entry => entry.kind === "chat"
+    || entry.actorId === survivorId
     || (Boolean(entry.actorId) && ["dados", "dano"].includes(entry.kind)));
   for (const hex of Object.values(visible.hexes)) {
     hex.notes = "";
@@ -73,7 +74,7 @@ export function applyPlayerChange(game: GameState, survivorId: string, before: S
       || (item.opened !== undefined && typeof item.opened !== "boolean")
       || (item.expiresDay !== undefined && (!Number.isInteger(item.expiresDay) || item.expiresDay < 1 || item.expiresDay > 9999)))
     || typeof after.notes !== "string" || after.notes.length > 4000
-    || logs.some(log => !log || !["dados", "dano", "inventário", "habilidade", "provisões", "tratamento"].includes(log.kind)
+    || logs.some(log => !log || !["chat", "dados", "dano", "inventário", "habilidade", "provisões", "tratamento"].includes(log.kind)
       || typeof log.text !== "string" || log.text.length > 600)) return null;
   const next = structuredClone(game);
   const index = next.survivors.findIndex(s => s.id === survivorId);
