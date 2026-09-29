@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { BookOpen, Clock3, Download, Eye, EyeOff, House, Map, Package, RotateCcw, Users, Volume2 } from "lucide-react";
+import { BookOpen, Clock3, Dice5, Download, Eye, EyeOff, House, Map, Package, RotateCcw, Users, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -17,6 +17,7 @@ import { AuthPanel } from "@/components/auth-panel";
 import { CharacterWizard } from "@/components/character-wizard";
 import { CampaignLibrary, type CampaignSummary } from "@/components/campaign-library";
 import { RollDialog } from "@/components/roll-dialog";
+import { RollCenter } from "@/components/roll-center";
 import { addLog, defaultState, displayTime, type GameState, type Point, type Survivor } from "@/lib/game";
 import { createId } from "@/lib/id";
 import { sectorProfiles } from "@/lib/sectors";
@@ -339,11 +340,12 @@ export default function CampaignApp() {
   </section></main>;
 
   const readOnlyPreview = playerPreview || role === "jogador";
-  const title = { mapa: "Exploração", sobreviventes: "Sobreviventes", abrigo: "Abrigo e reservas",
+  const title = { mapa: "Exploração", sobreviventes: "Sobreviventes", rolagens: "Central de rolagens", abrigo: "Abrigo e reservas",
     referencias: "Arquivo de campo", jogadores: "Jogadores e acessos" }[tab] || "Campanha";
   const nav = [
     { value: "mapa", label: "Mapa e hexes", icon: Map },
     { value: "sobreviventes", label: "Sobreviventes", icon: Users },
+    { value: "rolagens", label: "Rolagens", icon: Dice5 },
     { value: "abrigo", label: "Abrigo e reservas", icon: House },
     { value: "referencias", label: "Regras e itens", icon: BookOpen },
     ...(role === "mestre" ? [{ value: "jogadores", label: "Jogadores", icon: Users }] : []),
@@ -406,6 +408,7 @@ export default function CampaignApp() {
           <div><p className="eyebrow">Daggerheart / Zona Morta</p><h1 className="page-title mt-1">{title}</h1>
             <p className="intro-line mt-2">{tab === "mapa" ? "Explore a partir do que o grupo avista. Registre apenas o que a ficção tornou real." :
               tab === "sobreviventes" ? "Históricos, arquétipos e recursos prontos para jogar." :
+              tab === "rolagens" ? "Acompanhe as jogadas da mesa, Hope, Fear, críticos e dano em um único registro." :
               tab === "abrigo" ? "Organize reservas e descanso. Estabeleça um abrigo quando o grupo encontrar um lugar." :
               tab === "jogadores" ? "Compartilhe a campanha e acompanhe quem entrou na mesa." :
               "Consulte itens, adversários e procedimentos durante a sessão."}</p></div>
@@ -480,6 +483,7 @@ export default function CampaignApp() {
           </div>}
         </>}
         {tab === "sobreviventes" && <SurvivorPanel game={game} edit={edit} playerPreview={readOnlyPreview} playerMode={role === "jogador"} />}
+        {tab === "rolagens" && <RollCenter game={game} edit={edit} role={role} survivorId={survivorId} />}
         {tab === "abrigo" && <ShelterPanel game={game} edit={edit} playerPreview={readOnlyPreview} />}
         {tab === "referencias" && <ReferencePanel />}
         {tab === "jogadores" && role === "mestre" && <PlayersPanel game={game} ownerId={ownerId} />}

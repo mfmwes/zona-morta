@@ -5,7 +5,10 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
   visible.survivors = visible.survivors.filter(person => person.id === survivorId);
   visible.shelter.notes = "";
   visible.formerShelters = [];
-  visible.log = visible.log.filter(entry => entry.actorId === survivorId);
+  // O jogador vê o próprio histórico e as rolagens públicas feitas por outros
+  // sobreviventes. Rolagens livres do mestre (sem actorId) continuam reservadas.
+  visible.log = visible.log.filter(entry => entry.actorId === survivorId
+    || (Boolean(entry.actorId) && ["dados", "dano"].includes(entry.kind)));
   for (const hex of Object.values(visible.hexes)) {
     hex.notes = "";
     hex.infestation = null;
