@@ -101,10 +101,6 @@ export function TableChat({
   const [rollRequest, setRollRequest] = useState<RollRequest | undefined>();
   const feedRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (role === "jogador" && survivorId) setSpeakerId(survivorId);
-  }, [role, survivorId]);
-
   const rows = useMemo(() => {
     const relevant = game.log.filter(entry => ["chat", "dados", "dano"].includes(entry.kind));
     const grouped: ChatRow[] = [];
