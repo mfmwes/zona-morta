@@ -32,6 +32,12 @@ export function resolveActionRoll(input: {
   };
 }
 
+export function resolveAttackHit(outcome: Pick<ActionOutcome, "total" | "critical">, defense: number | null, confirmed = false): boolean | null {
+  if (outcome.critical) return true;
+  if (defense !== null) return outcome.total >= defense;
+  return confirmed ? true : null;
+}
+
 export function resolveRollResources(input: {
   hope: number | null; stress: number | null; fear: number;
   experienceCost: number; reaction: boolean; outcome: ActionOutcome;

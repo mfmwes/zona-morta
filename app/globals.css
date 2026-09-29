@@ -550,6 +550,8 @@ button { cursor: pointer; } button:disabled { cursor: not-allowed; }
 .roll-damage-settings label,.roll-confirm { display:flex; align-items:center; gap:7px; min-height:37px; font-size:.82rem; }
 .roll-damage-actions { display:flex; flex-wrap:wrap; gap:6px; }
 .roll-damage-result { display:grid; gap:3px; padding:10px; border-radius:5px; background:#e0eee8; color:#245856; }
+.roll-damage-result.is-pending { background:#fff4de; color:#76551c; }
+.roll-damage-result.is-miss { background:#f5eaea; color:#803c3c; }
 .roll-damage-result strong { font-size:1.08rem; }
 .roll-damage-result span { font-size:.8rem; }
 @media (max-width:540px) { .roll-experiences legend small { display:block; margin-left:0; } .roll-modes button { font-size:.79rem; } .roll-dice > div { padding:7px; } }

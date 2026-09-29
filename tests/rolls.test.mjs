@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseWeaponDamage, resolveActionRoll, resolveRollResources, resolveWeaponDamage } from '../lib/rolls.ts';
+import { parseWeaponDamage, resolveActionRoll, resolveAttackHit, resolveRollResources, resolveWeaponDamage } from '../lib/rolls.ts';
 
 const base = { trait: 0, experience: 0, other: 0, symptom: 0, edge: 'none' };
 
@@ -37,4 +37,15 @@ test('proficiência multiplica só os dados, e crítico soma o máximo de cada d
   assert.deepEqual(parseWeaponDamage('d6 físico'), { die: 6, flat: 0 });
   assert.deepEqual(resolveWeaponDamage([3, 7], 8, 2, 1, true),
     { dice: [3, 7], flat: 2, extra: 1, criticalBonus: 16, total: 29 });
+});
+
+test('defesa pode ser informada depois do ataque sem mudar os dados já rolados', () => {
+  const attack = resolveActionRoll({ ...base, hopeDie: 8, fearDie: 6, difficulty: null });
+  assert.equal(resolveAttackHit(attack, null), null);
+  assert.equal(resolveAttackHit(attack, null, true), true);
+  assert.equal(resolveAttackHit(attack, 15), false);
+  assert.equal(resolveAttackHit(attack, 14), true);
+  const critical = resolveActionRoll({ ...base, hopeDie: 3, fearDie: 3, difficulty: null });
+  assert.equal(resolveAttackHit(critical, null), true);
+  assert.equal(resolveAttackHit(critical, 99), true);
 });

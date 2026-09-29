@@ -20,7 +20,11 @@ function actorLabel(game: GameState, entry: LogEntry) {
 }
 
 function outcome(entry: LogEntry) {
-  if (entry.kind === "dano") return { label: "Dano", tone: "damage" } as const;
+  if (entry.kind === "dano") {
+    if (/não aplicado/i.test(entry.text)) return { label: "Não aplicado", tone: "neutral" } as const;
+    if (/acerto pendente/i.test(entry.text)) return { label: "Dano potencial", tone: "neutral" } as const;
+    return { label: "Dano", tone: "damage" } as const;
+  }
   if (/Sucesso crítico/i.test(entry.text)) return { label: "Crítico", tone: "critical" } as const;
   if (/Falha com Fear/i.test(entry.text)) return { label: "Falha · Fear", tone: "fear" } as const;
   if (/Falha com Hope/i.test(entry.text)) return { label: "Falha · Hope", tone: "hope" } as const;
@@ -109,7 +113,7 @@ export function RollCenter({ game, edit, role, survivorId }: {
                   <p className="font-mono text-[.7rem] subtle mt-1">Dia {entry.day} · {entry.time}</p>
                 </div>
               </div>
-              {damage && <strong className="text-xl font-mono">{damage} <span className="text-xs font-normal subtle">dano</span></strong>}
+              {damage && <strong className="text-xl font-mono">{damage} <span className="text-xs font-normal subtle">{result.label === "Não aplicado" ? "não aplicado" : result.label === "Dano potencial" ? "potencial" : "dano"}</span></strong>}
             </div>
             <p className="text-sm leading-relaxed mt-3">{entry.text}</p>
           </article>;
