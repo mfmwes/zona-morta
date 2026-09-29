@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { Crosshair, Dice5, Sparkles, Swords, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -78,14 +79,32 @@ function RollForm({ game, edit, request }: { game: GameState; edit: Edit; reques
     const experienceLabel = used.length ? ` · Experiences: ${used.join(" e ")} (−${used.length} Hope)` : "";
     const fixedBonus = traitBonus + used.length * 2 + other + symptom + equipmentBonus;
     const text = `${lead}: Hope ${result.hopeDie} + Fear ${result.fearDie} ${fixedBonus >= 0 ? "+" : "−"} ${Math.abs(fixedBonus)}${edgeLabel} = ${result.total}; ${targetLabel}. ${outcomeLabel(record)}${experienceLabel}${equipmentBonus ? ` · ${equipmentBonus} por equipamento` : ""}${symptom ? " · −1 por sintomas" : ""}${kind === "reaction" ? " · reação sem ganho de Hope/Fear" : ""}.`;
+    const beforeHope = survivor?.hope ?? null;
+    const beforeStress = survivor?.stress ?? null;
+    const beforeFear = game.fear;
+    const resourcePreview = resolveRollResources({
+      hope: beforeHope, stress: beforeStress, fear: beforeFear,
+      experienceCost: used.length, reaction: kind === "reaction", outcome: result,
+    });
     edit(draft => {
       const actor = draft.survivors.find(s => s.id === person);
-      const resources = resolveRollResources({ hope: actor?.hope ?? null, stress: actor?.stress ?? null,
-        fear: draft.fear, experienceCost: used.length, reaction: kind === "reaction", outcome: result });
-      if (actor) { actor.hope = resources.hope!; actor.stress = resources.stress!; }
-      draft.fear = resources.fear;
+      if (actor) { actor.hope = resourcePreview.hope!; actor.stress = resourcePreview.stress!; }
+      draft.fear = resourcePreview.fear;
       addLog(draft, "dados", text, actor?.id);
     });
+    const resourceFeedback: string[] = [];
+    if (beforeHope !== null && resourcePreview.hope !== null && resourcePreview.hope !== beforeHope)
+      resourceFeedback.push(`${resourcePreview.hope > beforeHope ? "+" : ""}${resourcePreview.hope - beforeHope} Hope`);
+    if (beforeStress !== null && resourcePreview.stress !== null && resourcePreview.stress !== beforeStress)
+      resourceFeedback.push(`${resourcePreview.stress > beforeStress ? "+" : ""}${resourcePreview.stress - beforeStress} Stress`);
+    if (resourcePreview.fear !== beforeFear)
+      resourceFeedback.push(`+${resourcePreview.fear - beforeFear} Fear para o mestre`);
+    if (kind === "reaction") resourceFeedback.push("reação não altera Hope/Fear");
+    const rollDescription = `${survivor?.name ?? "Rolagem livre"} · total ${result.total} · ${result.with}${resourceFeedback.length ? ` · ${resourceFeedback.join(" · ")}` : ""}`;
+    if (result.critical) toast.success("Sucesso crítico!", { description: rollDescription });
+    else if (result.success === true) toast.success("Sucesso na rolagem", { description: rollDescription });
+    else if (result.success === false) toast.error("Falha na rolagem", { description: rollDescription });
+    else toast("Rolagem concluída", { description: rollDescription });
     setLast(record); setLastDamage(null); setConfirmedHit(false);
   }
 
@@ -102,6 +121,9 @@ function RollForm({ game, edit, request }: { game: GameState; edit: Edit; reques
     const record: DamageRecord = { ...result, weaponName: weapon.name, formula: `${proficiency}d${formula.die}${formula.flat >= 0 ? "+" : ""}${formula.flat}`, critical, equipment: equipmentDamage };
     const text = `${survivor.name}: ${weapon.name} — ${record.formula}${equipmentDamage ? ` +${equipmentDamage} da Faca pequena` : ""}${extraDamage ? `${extraDamage >= 0 ? "+" : ""}${extraDamage} situacional` : ""}${critical ? ` + ${result.criticalBonus} crítico` : ""} = ${result.total} dano físico (dados: ${dice.join(", ")}). Compare aos limiares do alvo; registre Barulho e carga de munição conforme a cena.`;
     edit(draft => addLog(draft, "dano", text, survivor.id));
+    toast("Dano calculado", {
+      description: `${survivor.name} · ${weapon.name} · ${result.total} dano físico${critical ? " · crítico" : ""}`,
+    });
     setLastDamage(record);
   }
 

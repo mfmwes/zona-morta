@@ -443,6 +443,7 @@ export default function CampaignApp() {
                       withShelter: startWithShelter,
                     })));
                     setTab("mapa"); setPlayerPreview(false);
+                    toast.success("Cidade reiniciada", { description: "Mapa, sobreviventes, reservas e diário foram reiniciados nesta campanha." });
                   }}>Reiniciar cidade</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -456,8 +457,14 @@ export default function CampaignApp() {
             <section className="grid gap-3 content-start">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2"><Volume2 size={19} /><b>Pressão da cena</b></div>
-                <div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => edit(beginScene)}>Nova cena</Button>
-                  <Button size="sm" variant="outline" onClick={() => edit(beginExpedition)}>Nova expedição</Button></div>
+                <div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => {
+                  edit(beginScene);
+                  toast.success("Nova cena iniciada", { description: "Barulho voltou a 0 e habilidades por cena foram renovadas." });
+                }}>Nova cena</Button>
+                  <Button size="sm" variant="outline" onClick={() => {
+                    edit(beginExpedition);
+                    toast.success("Nova expedição iniciada", { description: "Habilidades por expedição foram renovadas." });
+                  }}>Nova expedição</Button></div>
               </div>
               <div className="flex flex-wrap gap-x-6 gap-y-3"><Counter compact label="Barulho · 0–5" value={game.noise} max={5} onChange={value=>edit(d=>{d.noise=value;})} />
                 <Counter compact label="Fear · 0–12" value={game.fear} max={12} onChange={value=>edit(d=>{d.fear=value;})} /></div>
@@ -478,7 +485,10 @@ export default function CampaignApp() {
           {!readOnlyPreview && <div className="panel panel-pad mt-5 flex flex-wrap items-center gap-3">
             <div className="mr-auto"><b>Relógio da expedição</b><p className="text-xs subtle">Ao anoitecer, feche o dia na seção de descanso, mesmo sem abrigo.</p></div>
             {[30,60,120].map(amount=><Button key={amount} size="sm" variant="outline" disabled={game.minutes+amount>=1440}
-              onClick={()=>edit(d=>{d.minutes+=amount;addLog(d,"tempo",`Passaram ${amount} minutos na expedição.`);})}>
+              onClick={() => {
+                edit(d=>{d.minutes+=amount;addLog(d,"tempo",`Passaram ${amount} minutos na expedição.`);});
+                toast("Tempo avançado", { description: `+${amount < 60 ? `${amount} min` : `${amount / 60} h`} na expedição.` });
+              }}>
               +{amount<60?`${amount} min`:`${amount/60} h`}</Button>)}
           </div>}
         </>}

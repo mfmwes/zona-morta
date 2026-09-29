@@ -46,6 +46,7 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
   function nextMorning() {
     if (!consumptionValid) return;
     edit(draft => { closeDay(draft, Number(foodConsumers), Number(waterConsumers), game.day); });
+    toast.success("Novo amanhecer registrado", { description: `Dia ${game.day + 1}. Consumo e progressão diária foram processados.` });
     setCloseOpen(false);
   }
   const consumptionValid = [foodConsumers, waterConsumers].every(value => value.trim() !== "" && Number.isInteger(Number(value)) && Number(value) >= 0 && Number(value) <= 999);
@@ -62,7 +63,12 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
       </div>
       {!hasShelter && !playerPreview && <div className="mt-5 list-card">
         <p className="text-sm">O setor atual já foi explorado. Estabelecer uma base aqui não consome tempo automaticamente: resolva segurança, acesso e transporte na ficção.</p>
-        <Button className="mt-3" onClick={() => edit(draft => { establishShelter(draft, draft.partyHex); })}><House /> Estabelecer abrigo aqui</Button>
+        <Button className="mt-3" onClick={() => {
+          let established = false;
+          edit(draft => { established = establishShelter(draft, draft.partyHex); });
+          if (established) toast.success("Abrigo estabelecido", { description: `Base registrada em ${currentSector}.` });
+          else toast.error("Não foi possível estabelecer o abrigo.");
+        }}><House /> Estabelecer abrigo aqui</Button>
       </div>}
       {hasShelter && <>
         <div className="grid gap-3 mt-6 sm:grid-cols-3">
@@ -72,7 +78,11 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
         {!playerPreview && <div className="grid gap-3 mt-4 sm:grid-cols-2">
           <div><Field label="Nome do abrigo" value={shelterName} onChange={setShelterName} placeholder="Ex.: Escola das Mangueiras" />
             <Button size="sm" variant="outline" className="mt-2" disabled={!shelterName.trim() || shelterName.trim() === s.name}
-              onClick={() => edit(draft => { draft.shelter.name = shelterName.trim().slice(0, 80); })}>Salvar nome</Button></div>
+              onClick={() => {
+                const name = shelterName.trim().slice(0, 80);
+                edit(draft => { draft.shelter.name = name; });
+                toast.success("Nome do abrigo atualizado", { description: name });
+              }}>Salvar nome</Button></div>
           <div className="grid gap-3"><Counter compact label="Capacidade" value={s.capacity} min={1} max={99}
             onChange={value => edit(draft => { draft.shelter.capacity = value; })} />
             <Counter compact label="Outros moradores" value={s.residents} max={99}
@@ -124,7 +134,10 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
         ].map(([name,cost,effect]) => <div className="list-card text-sm" key={name}><b>{name}</b><p className="subtle mt-1">{cost}</p><p className="mt-1">{effect}</p></div>)}
       </div>
       {!playerPreview && <div className="mt-5"><Field label="Notas do abrigo" value={shelterNotes} onChange={setShelterNotes} multiline />
-        <Button size="sm" variant="outline" className="mt-2" onClick={() => edit(draft => { draft.shelter.notes = shelterNotes.trim(); })}>Salvar notas</Button></div>}</>}
+        <Button size="sm" variant="outline" className="mt-2" onClick={() => {
+          edit(draft => { draft.shelter.notes = shelterNotes.trim(); });
+          toast.success("Notas do abrigo salvas.");
+        }}>Salvar notas</Button></div>}</>}
     </section>
     <aside className="grid gap-5 self-start">
       <section className="panel panel-pad">
@@ -145,8 +158,14 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
             <DialogFooter><Button variant="outline" onClick={() => setCloseOpen(false)}>Cancelar</Button><Button disabled={!consumptionValid} onClick={nextMorning}>Confirmar anoitecer</Button></DialogFooter>
           </DialogContent>
         </Dialog>}
-        {!playerPreview && <div className="flex gap-2 flex-wrap mt-3"><Button size="sm" variant="outline" onClick={() => edit(d => registerRest(d, "short"))}>Registrar descanso curto</Button>
-          <Button size="sm" variant="outline" onClick={() => edit(d => registerRest(d, "long"))}>Registrar descanso longo</Button></div>}
+        {!playerPreview && <div className="flex gap-2 flex-wrap mt-3"><Button size="sm" variant="outline" onClick={() => {
+          edit(d => registerRest(d, "short"));
+          toast.success("Descanso curto registrado", { description: "Habilidades correspondentes foram renovadas." });
+        }}>Registrar descanso curto</Button>
+          <Button size="sm" variant="outline" onClick={() => {
+            edit(d => registerRest(d, "long"));
+            toast.success("Descanso longo registrado", { description: "Habilidades de descanso curto e longo foram renovadas." });
+          }}>Registrar descanso longo</Button></div>}
         <p className="text-xs subtle mt-2">Registre o descanso quando as ações forem concluídas; aplique recuperação de Vida, Estresse ou Armadura na ficha.</p>
       </section>
       {hasShelter && <section className="panel panel-pad">
