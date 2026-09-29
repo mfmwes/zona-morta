@@ -1,39 +1,51 @@
-# Zona Morta — Menu Contextual de Inventário v0.4.4
+# Zona Morta — Menus Contextuais v3 + v4
 
-Adiciona ações rápidas pelo clique direito sem remover o fluxo atual do botão **Ações**.
+Este patch continua o menu contextual já aplicado no inventário.
 
-## Onde funciona
-- Itens guardados do sobrevivente.
-- Itens compartilhados do abrigo/reservas, quando acessíveis.
+## v3 — Hexes
 
-## Ações rápidas
-Dependem do item e do contexto:
-- Consumir 1 porção.
-- Preparar.
-- Verificar/tratar.
-- Equipar em arma principal/secundária, proteção, item pessoal ou bolsos compatíveis.
-- Transferir para outro sobrevivente ou abrigo.
-- Transferir 1 unidade ou tudo quando houver pilha.
-- Usar medicamentos/itens utilizáveis.
-- Registrar Medicamentos abstratos.
-- Guardar suprimentos abstratos nas reservas.
-- Deixar 1 unidade ou tudo para trás, sempre com confirmação.
+Clique direito em um hex no mapa:
 
-## Importante
-O menu contextual e o diálogo antigo usam o mesmo executor em `lib/item-actions.ts`.
-Assim, as regras de consumir, transferir, equipar, preparar e descartar não são duplicadas.
+- Abrir detalhes.
+- Avistar setor, quando for um hex vizinho desconhecido.
+- Entrar no hex, quando a viagem for possível.
+- Estabelecer abrigo no hex atual.
+- Abrir o diálogo completo de mudança de abrigo quando já existir outra base.
+- Gerar B1 Local.
+- Gerar B2 Comércio.
+- Gerar B3 Evento.
+- Criar ponto manualmente.
+- Ajustar Infestação de 0 a 5 ou voltar para “em aberto”.
+- Abrir as Ferramentas do Mestre.
 
-O botão **Ações** continua disponível para:
-- editar estado;
-- corrigir quantidade/carga;
-- fluxos avançados;
-- celulares e telas touch.
+As ações de avistar e viajar foram centralizadas em `lib/hex-actions.ts`, então botão normal e clique direito usam a mesma regra.
 
-## Aplicar no Codespaces
+## v4 — Sobreviventes
+
+Clique direito em um sobrevivente na barra de equipe:
+
+- Abrir ficha.
+- Ir diretamente para Atributos, Combate, Inventário, Habilidades, Condições ou História.
+- Rolar teste.
+- Rolar ataque com arma primária ou secundária.
+- Mestre: transferir um item guardado diretamente para outro sobrevivente/abrigo.
+- Mestre: abrir rapidamente Condições, Combate e Inventário.
+
+O jogador continua vendo apenas a própria ficha projetada pelo servidor, então as ações de personagem não liberam controle sobre fichas de outros jogadores.
+
+## Segurança de fluxo
+
+- Nenhuma migração D1.
+- O clique normal continua funcionando.
+- Celular/touch mantém o fluxo existente.
+- Mudança de abrigo continua usando o diálogo completo para escolher o que será transportado.
+- Transferências reutilizam `lib/item-actions.ts`.
+
+## Aplicar
 
 ```bash
-unzip -o Zona_Morta_Menu_Contextual_v0_4_4.zip
-python3 apply_context_menu.py
+unzip -o Zona_Morta_Contextual_Hexes_Sobreviventes_v0_4_5.zip
+python3 apply_context_v3_v4.py
 npm test
 npm run build
 ```
@@ -41,10 +53,8 @@ npm run build
 Se tudo passar:
 
 ```bash
-rm -rf .context-menu-backup
+rm -rf .context-v3-v4-backup
 git add .
-git commit -m "feat: menu contextual de inventario"
+git commit -m "feat: menus contextuais de hexes e sobreviventes"
 git push
 ```
-
-Não exige SQL nem migração no D1.

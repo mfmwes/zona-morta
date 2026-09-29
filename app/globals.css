@@ -937,3 +937,15 @@ button { cursor: pointer; } button:disabled { cursor: not-allowed; }
   .inventory-context-target:hover { background:transparent; box-shadow:none; }
   .inventory-context-hint { display:none; }
 }
+
+/* Context menus v3/v4: map and survivors */
+.map-cell { cursor: context-menu; }
+.map-context-menu { min-width: 255px !important; }
+.survivor-context-target { cursor: context-menu; }
+.survivor-context-target:hover { box-shadow: inset 3px 0 #c79a5e; }
+.survivor-context-menu { min-width: 260px !important; }
+.survivor-transfer-items { max-height: min(420px,70vh); overflow-y:auto; }
+
+@media (hover:none) {
+  .map-cell,.survivor-context-target { cursor:pointer; }
+}

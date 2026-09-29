@@ -9,6 +9,7 @@ require.extensions['.ts'] = (module, path) => module._compile(ts.transpileModule
 const { defaultState, initialSurvivor, survivorStats, content } = require('../lib/game.ts');
 const inventory = require('../lib/inventory.ts');
 const itemActions = require('../lib/item-actions.ts');
+const hexActions = require('../lib/hex-actions.ts');
 const equipment = require('../lib/equipment.ts');
 const survival = require('../lib/survival.ts');
 const provisions = require('../lib/provisions.ts');
@@ -536,4 +537,62 @@ test('menu contextual respeita preparo e descarte confirmado pelas regras centra
   result = itemActions.performItemAction(g, ana.id, crowbar.id, { type: 'discard', quantity: 1 });
   assert.equal(result.ok, true);
   assert.equal(ana.inventory.some(entry => entry.name === 'Pé de cabra'), false);
+});
+
+test('ações contextuais de hex respeitam avistamento, viagem e relógio', () => {
+  const g = campaign();
+  const start = content.hexes.find(hex => `${hex.q},${hex.r}` === g.partyHex);
+  assert.ok(start);
+  const neighbor = content.hexes.find(hex => require('../lib/game.ts').hexDistance(hex.q-start.q, hex.r-start.r) === 1);
+  assert.ok(neighbor);
+  const id = `${neighbor.q},${neighbor.r}`;
+  g.hexes[id].discovery = 'desconhecido';
+  g.hexes[id].sector = null;
+  const before = g.minutes;
+
+  let result = hexActions.performHexAction(g, id, { type:'observe' });
+  assert.equal(result.ok, true);
+  assert.equal(g.hexes[id].discovery, 'avistado');
+  const hours = g.hexes[id].routeHours;
+
+  result = hexActions.performHexAction(g, id, { type:'travel' });
+  assert.equal(result.ok, true);
+  assert.equal(g.partyHex, id);
+  assert.equal(g.hexes[id].discovery, 'explorado');
+  assert.equal(g.minutes, before + hours * 60);
+});
+
+test('ações contextuais de hex controlam infestação e abrigo sem pular regras', () => {
+  const g = campaign();
+  const id = g.partyHex;
+  g.hexes[id].discovery = 'explorado';
+
+  let result = hexActions.performHexAction(g, id, { type:'infestation', value:4 });
+  assert.equal(result.ok, true);
+  assert.equal(g.hexes[id].infestation, 4);
+
+  result = hexActions.performHexAction(g, id, { type:'infestation', value:null });
+  assert.equal(result.ok, true);
+  assert.equal(g.hexes[id].infestation, null);
+
+  g.shelter.hex = null;
+  result = hexActions.performHexAction(g, id, { type:'establish' });
+  assert.equal(result.ok, true);
+  assert.equal(g.shelter.hex, id);
+
+  result = hexActions.performHexAction(g, id, { type:'establish' });
+  assert.equal(result.ok, false);
+});
+
+test('menu de sobrevivente pode transferir item pelas regras centrais já usadas no inventário', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  ana.inventory = [item('Rádio portátil', 2)];
+  const radio = ana.inventory[0];
+  const options = itemActions.itemActionOptions(g, ana.id, radio, false);
+  assert.ok(options.targets.some(target => target.value === bia.id));
+
+  const result = itemActions.performItemAction(g, ana.id, radio.id, { type:'transfer', targetId:bia.id, quantity:1 });
+  assert.equal(result.ok, true);
+  assert.equal(ana.inventory.reduce((sum, entry) => sum + entry.qty, 0), 1);
+  assert.equal(bia.inventory.some(entry => entry.name === 'Rádio portátil'), true);
 });

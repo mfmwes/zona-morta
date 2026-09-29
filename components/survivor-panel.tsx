@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CharacterWizard } from "@/components/character-wizard";
 import { AddItemDialog, ItemActionsDialog, ProvisionTransferDialog } from "@/components/inventory-workflow";
 import { ItemContextMenu } from "@/components/item-context-menu";
+import { SurvivorContextMenu } from "@/components/survivor-context-menu";
 import { EmptyItemArt, ItemArt } from "@/components/item-art";
 import { AbilityArt } from "@/components/ability-art";
 import { RollDialog, type RollRequest } from "@/components/roll-dialog";
@@ -210,6 +211,9 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false }:
   function change(id: string, fn: (s: Survivor) => void) {
     edit(draft => { const s = draft.survivors.find(x => x.id === id); if (s) fn(s); });
   }
+  function openSurvivor(id: string, tab = "resumo") {
+    setSelectedId(id); setActiveTab(tab); setPortraitError(""); setInventoryQuery(""); setInventoryCategory("Todas");
+  }
   function storeActive(slot: EquipmentSlot) {
     if (!selected) return;
     edit(draft => {
@@ -283,14 +287,19 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false }:
   }
 
   return <div className="character-sheet">
-    <div className="character-roster" aria-label="Sobreviventes da campanha">
+    <div className="character-roster" aria-label="Sobreviventes da campanha" title="No computador, clique com o botão direito em um sobrevivente para ações rápidas.">
       <div className="character-roster-label"><span>Equipe</span><b>{game.survivors.length.toString().padStart(2, "0")}</b></div>
       <div className="character-roster-scroll">
-        {game.survivors.map(s => { const st = survivorStats(s); return <button type="button" key={s.id} onClick={() => { setSelectedId(s.id); setActiveTab("resumo"); setPortraitError(""); setInventoryQuery(""); setInventoryCategory("Todas"); }}
-          aria-current={selected?.id === s.id ? "true" : undefined} className="character-roster-person">
-          <span className="character-roster-avatar">{s.portrait ? <img src={s.portrait} alt="" /> : s.name.charAt(0).toUpperCase()}</span>
-          <span><b>{s.name}</b><small><Heart size={12} aria-hidden="true" /> {st.hp-s.hp}/{st.hp}<span aria-hidden="true"> · </span>{s.archetype}</small></span>
-        </button>; })}
+        {game.survivors.map(s => { const st = survivorStats(s); const canControl = !playerPreview || playerMode; const masterMode = !playerPreview && !playerMode; return <SurvivorContextMenu key={s.id}
+          game={game} edit={edit} survivor={s} canControl={canControl} masterMode={masterMode}
+          onOpenTab={tab => openSurvivor(s.id, tab)}
+          onRoll={request => { openSurvivor(s.id, request.kind === "attack" ? "combate" : "atributos"); setRollRequest(request); }}>
+          <button type="button" onClick={() => openSurvivor(s.id)}
+            aria-current={selected?.id === s.id ? "true" : undefined} className="character-roster-person survivor-context-target">
+            <span className="character-roster-avatar">{s.portrait ? <img src={s.portrait} alt="" /> : s.name.charAt(0).toUpperCase()}</span>
+            <span><b>{s.name}</b><small><Heart size={12} aria-hidden="true" /> {st.hp-s.hp}/{st.hp}<span aria-hidden="true"> · </span>{s.archetype}</small></span>
+          </button>
+        </SurvivorContextMenu>; })}
         {game.survivors.length === 0 && <span className="character-roster-empty">Nenhum dossiê aberto. Crie o primeiro sobrevivente.</span>}
       </div>
       {!playerPreview && <CharacterWizard onCreate={survivor => {

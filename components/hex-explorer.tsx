@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { ChevronDown, Compass, Dice5, Eye, Footprints, House, MapPin, Package, Plus, Route, Search, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ShelterMoveDialog } from "@/components/shelter-move";
+import { HexContextMenu } from "@/components/hex-context-menu";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { Counter, Field, Pick } from "@/components/game-controls";
@@ -13,6 +15,7 @@ import { createId } from "@/lib/id";
 import { revealSector } from "@/lib/sectors";
 import { rollDie } from "@/lib/rolls";
 import { normalizedSector, recordSearch, searchError, type SearchInput } from "@/lib/exploration";
+import { performHexAction, type HexQuickAction } from "@/lib/hex-actions";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 type Generator = "locais" | "comercios" | "eventos";
@@ -67,6 +70,8 @@ export function HexExplorer({ game, edit, playerPreview }: { game: GameState; ed
   const [compact, setCompact] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [mapOverview, setMapOverview] = useState(false);
+  const [relocateOpen, setRelocateOpen] = useState(false);
+  const [relocateDestination, setRelocateDestination] = useState<string | null>(null);
   const mapViewport = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -178,32 +183,48 @@ export function HexExplorer({ game, edit, playerPreview }: { game: GameState; ed
   const travelMinutes = record.routeHours * 60;
   const canMakeBase = selected === game.partyHex && record.discovery === "explorado" && game.shelter.hex !== selected;
 
-  function travel() {
-    if (!canTravel || record.discovery === "desconhecido" || game.minutes + travelMinutes >= 1440) return;
-    edit(draft => {
-      draft.minutes += travelMinutes;
-      draft.partyHex = selected;
-      const destination = revealSector(draft, selected);
-      draft.hexes[selected].discovery = "explorado";
-      for (const neighbor of content.hexes) {
-        if (hexDistance(neighbor.q-area.q, neighbor.r-area.r) !== 1) continue;
-        const key = hexKey(neighbor.q, neighbor.r);
-        if (draft.hexes[key].discovery === "desconhecido") {
-          revealSector(draft, key);
-          draft.hexes[key].discovery = "avistado";
-        }
-      }
-      addLog(draft, "travessia", `O grupo entrou em ${destination.name} após ${record.routeHours} h de trajeto.`);
-    });
+  function runHexAction(id: string, action: HexQuickAction) {
+    let result: ReturnType<typeof performHexAction> | null = null;
+    edit(draft => { result = performHexAction(draft, id, action); });
+    if (!result?.ok) return false;
+    toast.success(result.message);
+    return true;
   }
 
-  function observe() {
-    if (!canTravel || record.discovery !== "desconhecido") return;
-    edit(draft => {
-      const sector = revealSector(draft, selected);
-      draft.hexes[selected].discovery = "avistado";
-      addLog(draft, "avistamento", `Do limite do hex, o grupo avistou ${sector.name}.`);
-    });
+  function travel() { runHexAction(selected, { type: "travel" }); }
+
+  function observe() { runHexAction(selected, { type: "observe" }); }
+
+  function openGenerator(id: string, kind: Generator) {
+    selectHex(id);
+    const roll = dice100();
+    const row = content.generators[kind].find(entry => entry.roll === roll)!;
+    setGenerated({ kind, roll, text: row.text });
+    if (kind === "eventos") {
+      setEventTrigger("");
+      setShowPointForm(false);
+    } else {
+      const point = pointFromResult(row.text);
+      setPointName(point.name); setPointSignal(point.signal);
+      setPointAccess(""); setPointNotes(""); setShowPointForm(true);
+    }
+  }
+
+  function openManualPoint(id: string) {
+    selectHex(id);
+    setGenerated(null); setPointName(""); setPointSignal(""); setPointAccess(""); setPointNotes("");
+    setShowPointForm(true);
+  }
+
+  function openMasterTools(id: string) {
+    selectHex(id);
+    setGmOpen(true);
+  }
+
+  function openRelocation(id: string) {
+    selectHex(id);
+    setRelocateDestination(id);
+    setRelocateOpen(true);
   }
 
   const detailPanel = <section className="panel panel-pad min-w-0">
@@ -427,25 +448,32 @@ export function HexExplorer({ game, edit, playerPreview }: { game: GameState; ed
               : state.points.length;
             const formerBase = (game.formerShelters ?? []).some(site => site.hex === id);
             const lines = discovered || observed ? labelLines(title) : ["?"];
-            return <g key={id} role="button" tabIndex={0} className="map-cell" aria-pressed={id === selected}
-              aria-label={`${id}: ${title}${nearby ? ", adjacente ao grupo" : ""}${id === game.shelter.hex ? ", abrigo" : ""}${formerBase ? ", antiga base com depósito" : ""}${id === game.partyHex ? ", grupo" : ""}`}
-              onClick={() => selectHex(id)} onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectHex(id); } }}>
-              <title>{title} · Hex {id}</title>
-              <polygon points={polygon} className={`map-hex ${id === selected ? "selected" : ""} ${nearby ? "nearby" : ""}`}
-                fill={fill} stroke={observed ? "#759897" : "#49666a"} strokeWidth="2" />
-              <text x={x} y={y-17} textAnchor="middle" fontSize="10" fill="#c4d8d3" fontFamily="monospace">{id}</text>
-              <text x={x} y={lines.length > 1 ? y-1 : y+8} textAnchor="middle" fontSize={discovered || observed ? "11.5" : "17"} fontWeight="700" fill={discovered ? "#f5f8f2" : "#d1e0dc"}>
-                {lines.map((line,index) => <tspan key={index} x={x} dy={index ? 13 : 0}>{line}</tspan>)}
-              </text>
-              {shownPoints > 0 && <g aria-hidden="true"><circle cx={x+27} cy={y+27} r="10" fill="#eecb98" stroke="#173135" strokeWidth="2" />
-                <text x={x+27} y={y+31} textAnchor="middle" fontSize="11" fill="#173135" fontWeight="800">{shownPoints > 9 ? "9+" : shownPoints}</text></g>}
-              {id === game.shelter.hex && <g aria-hidden="true"><circle cx={x+27} cy={y-29} r="13" fill="#a7e1d3" stroke="#173135" strokeWidth="2" />
-                <House x={x+18} y={y-38} width={18} height={18} stroke="#173135" strokeWidth={2.5} /></g>}
-              {formerBase && <g aria-hidden="true"><circle cx={x+27} cy={y-29} r="13" fill="#e7d3a2" stroke="#173135" strokeWidth="2" />
-                <Package x={x+18} y={y-38} width={18} height={18} stroke="#173135" strokeWidth={2.5} /></g>}
-              {id === game.partyHex && <g aria-hidden="true"><circle cx={x-27} cy={y-29} r="13" fill="#f1c481" stroke="#173135" strokeWidth="2" />
-                <Footprints x={x-36} y={y-38} width={18} height={18} stroke="#173135" strokeWidth={2.5} /></g>}
-            </g>;
+            return <HexContextMenu key={id} game={game} edit={edit} hexId={id} playerPreview={playerPreview}
+              onOpenDetails={() => selectHex(id)}
+              onGenerate={kind => openGenerator(id, kind)}
+              onCreatePoint={() => openManualPoint(id)}
+              onOpenMasterTools={() => openMasterTools(id)}
+              onRelocateShelter={() => openRelocation(id)}>
+              <g role="button" tabIndex={0} className="map-cell" aria-pressed={id === selected}
+                aria-label={`${id}: ${title}${nearby ? ", adjacente ao grupo" : ""}${id === game.shelter.hex ? ", abrigo" : ""}${formerBase ? ", antiga base com depósito" : ""}${id === game.partyHex ? ", grupo" : ""}`}
+                onClick={() => selectHex(id)} onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectHex(id); } }}>
+                <title>{title} · Hex {id}</title>
+                <polygon points={polygon} className={`map-hex ${id === selected ? "selected" : ""} ${nearby ? "nearby" : ""}`}
+                  fill={fill} stroke={observed ? "#759897" : "#49666a"} strokeWidth="2" />
+                <text x={x} y={y-17} textAnchor="middle" fontSize="10" fill="#c4d8d3" fontFamily="monospace">{id}</text>
+                <text x={x} y={lines.length > 1 ? y-1 : y+8} textAnchor="middle" fontSize={discovered || observed ? "11.5" : "17"} fontWeight="700" fill={discovered ? "#f5f8f2" : "#d1e0dc"}>
+                  {lines.map((line,index) => <tspan key={index} x={x} dy={index ? 13 : 0}>{line}</tspan>)}
+                </text>
+                {shownPoints > 0 && <g aria-hidden="true"><circle cx={x+27} cy={y+27} r="10" fill="#eecb98" stroke="#173135" strokeWidth="2" />
+                  <text x={x+27} y={y+31} textAnchor="middle" fontSize="11" fill="#173135" fontWeight="800">{shownPoints > 9 ? "9+" : shownPoints}</text></g>}
+                {id === game.shelter.hex && <g aria-hidden="true"><circle cx={x+27} cy={y-29} r="13" fill="#a7e1d3" stroke="#173135" strokeWidth="2" />
+                  <House x={x+18} y={y-38} width={18} height={18} stroke="#173135" strokeWidth={2.5} /></g>}
+                {formerBase && <g aria-hidden="true"><circle cx={x+27} cy={y-29} r="13" fill="#e7d3a2" stroke="#173135" strokeWidth="2" />
+                  <Package x={x+18} y={y-38} width={18} height={18} stroke="#173135" strokeWidth={2.5} /></g>}
+                {id === game.partyHex && <g aria-hidden="true"><circle cx={x-27} cy={y-29} r="13" fill="#f1c481" stroke="#173135" strokeWidth="2" />
+                  <Footprints x={x-36} y={y-38} width={18} height={18} stroke="#173135" strokeWidth={2.5} /></g>}
+              </g>
+            </HexContextMenu>;
           })}
         </svg>
         </div>
@@ -465,6 +493,8 @@ export function HexExplorer({ game, edit, playerPreview }: { game: GameState; ed
       <p className="intro-line mt-4">O setor ganha nome e sinais quando é avistado. Um hex pode conter vários pontos; seus interiores continuam em aberto até a exploração.</p>
     </section>
 
+    {relocateDestination && <ShelterMoveDialog game={game} edit={edit} mode="relocate" destination={relocateDestination}
+      open={relocateOpen} onOpenChange={setRelocateOpen} hideTrigger />}
     {compact ? <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
       <SheetContent side="bottom" showCloseButton={false} className="max-h-[88dvh] overflow-y-auto rounded-t-xl p-0">
         <SheetHeader className="sticky top-0 z-10 flex flex-row items-center justify-between border-b bg-background px-4 py-3">
