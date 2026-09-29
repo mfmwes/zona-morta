@@ -29,6 +29,7 @@ function sameMoment(a: LogEntry, b: LogEntry) {
 function actor(game: GameState, entry: LogEntry) {
   const survivor = entry.actorId ? game.survivors.find(person => person.id === entry.actorId) : null;
   if (survivor) return { name: survivor.name, portrait: survivor.portrait, subtitle: survivor.archetype || survivor.origin };
+  if (entry.actorName) return { name: entry.actorName, portrait: entry.actorPortrait, subtitle: "Sobrevivente" };
   if (entry.kind === "chat") return { name: "Mestre", portrait: undefined, subtitle: "Narrador da mesa" };
   return { name: "Mesa", portrait: undefined, subtitle: "Zona Morta" };
 }
