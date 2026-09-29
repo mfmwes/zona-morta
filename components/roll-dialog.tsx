@@ -116,19 +116,6 @@ function RollForm({ game, edit, request }: { game: GameState; edit: Edit; reques
       if (damage) addLog(draft, "dano", damageLog(damage, damageStatus), actor?.id);
       addLog(draft, "dados", text, actor?.id);
     });
-    const resourceFeedback: string[] = [];
-    if (beforeHope !== null && resourcePreview.hope !== null && resourcePreview.hope !== beforeHope)
-      resourceFeedback.push(`${resourcePreview.hope > beforeHope ? "+" : ""}${resourcePreview.hope - beforeHope} Hope`);
-    if (beforeStress !== null && resourcePreview.stress !== null && resourcePreview.stress !== beforeStress)
-      resourceFeedback.push(`${resourcePreview.stress > beforeStress ? "+" : ""}${resourcePreview.stress - beforeStress} Stress`);
-    if (resourcePreview.fear !== beforeFear)
-      resourceFeedback.push(`+${resourcePreview.fear - beforeFear} Fear para o mestre`);
-    if (kind === "reaction") resourceFeedback.push("reação não altera Hope/Fear");
-    const rollDescription = `${survivor?.name ?? "Rolagem livre"} · total ${result.total} · ${result.with}${resourceFeedback.length ? ` · ${resourceFeedback.join(" · ")}` : ""}`;
-    if (result.critical) toast.success("Sucesso crítico!", { description: rollDescription });
-    else if (result.success === true) toast.success("Sucesso na rolagem", { description: rollDescription });
-    else if (result.success === false) toast.error("Falha na rolagem", { description: rollDescription });
-    else toast("Rolagem concluída", { description: rollDescription });
     setLast(record); setLastDamage(damage); setStandaloneDamage(null); setConfirmedHit(false);
   }
 
@@ -137,9 +124,6 @@ function RollForm({ game, edit, request }: { game: GameState; edit: Edit; reques
     const record = calculateDamage(manualCritical);
     if (!record) return;
     edit(draft => addLog(draft, "dano", damageLog(record, "Dano avulso; confirme quando se aplica."), survivor.id));
-    toast("Dano calculado", {
-      description: `${survivor.name} · ${weapon.name} · ${record.total} dano físico${record.critical ? " · crítico" : ""}`,
-    });
     setStandaloneDamage(record);
   }
 
