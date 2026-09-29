@@ -70,7 +70,7 @@ export function CampaignLibrary({ campaigns, onRefresh, onSignOut }: {
   }
 
   const cards = (items: CampaignSummary[]) => <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-    {items.map(campaign => <article key={`${campaign.role}-${campaign.id}`} className="list-card flex min-h-[180px] flex-col">
+    {items.map(campaign => <article key={`${campaign.role}-${campaign.id}`} className="list-card library-card flex min-h-[180px] flex-col">
       <div className="flex items-start gap-3">
         <div className="players-avatar mt-0.5">{campaign.role === "mestre" ? <ShieldCheck size={18} /> : <UserRound size={18} />}</div>
         <div className="min-w-0 flex-1"><p className="dossier-title">{campaign.role === "mestre" ? "Mestre" : "Jogador"}</p>
@@ -90,9 +90,9 @@ export function CampaignLibrary({ campaigns, onRefresh, onSignOut }: {
     </article>)}
   </div>;
 
-  return <main className="min-h-screen p-5 sm:p-8 lg:p-10">
+  return <main className="library-shell min-h-screen p-5 sm:p-8 lg:p-10">
     <div className="mx-auto max-w-6xl">
-      <header className="flex flex-wrap items-start justify-between gap-4 mb-7">
+      <header className="library-hero flex flex-wrap items-start justify-between gap-4 mb-7">
         <div><p className="eyebrow">Daggerheart / Zona Morta</p><h1 className="page-title mt-1">Seus dossiês</h1>
           <p className="intro-line mt-2 max-w-2xl">Suas campanhas ficam vinculadas à conta. O convite é necessário apenas para entrar em uma nova mesa; depois ela permanece aqui.</p></div>
         <Button variant="outline" onClick={() => void onSignOut()}><LogOut size={16} /> Sair</Button>
@@ -100,7 +100,7 @@ export function CampaignLibrary({ campaigns, onRefresh, onSignOut }: {
 
       {error && <div role="alert" className="mb-5 rounded-md border border-[#d5aaa1] bg-[#fff2ed] px-4 py-3 text-sm text-[#803b35]">{error}</div>}
 
-      <section className="panel panel-pad mb-6">
+      <section className="panel panel-pad library-create mb-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div><p className="dossier-title">Nova operação</p><h2 className="section-title mt-1">Criar campanha como mestre</h2>
             <p className="intro-line mt-2">Cada campanha possui mapa, sobreviventes, jogadores e convite próprios.</p></div>

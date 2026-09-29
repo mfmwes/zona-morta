@@ -28,14 +28,16 @@ export function AuthPanel({ onAuthenticated }: { onAuthenticated: () => void | P
     finally { setBusy(false); }
   }
 
-  if (newRecovery) return <main className="min-h-screen grid place-items-center p-6"><section className="panel panel-pad max-w-lg w-full">
+  if (newRecovery) return <main className="auth-shell"><section className="panel panel-pad auth-card max-w-lg w-full">
+    <div className="auth-emblem" aria-hidden="true">ZM</div>
     <p className="dossier-title">Zona Morta / sua conta</p><h1 className="page-title mt-2">Guarde seu código de recuperação</h1>
     <p className="intro-line mt-3">Este código substitui a recuperação por e-mail. Guarde-o fora do navegador: ele aparece uma vez e permite redefinir a senha. Nunca o envie a outros jogadores.</p>
     <code className="block mt-5 p-3 break-all rounded border bg-white select-all">{newRecovery}</code>
     <Button className="mt-5" onClick={() => void onAuthenticated()}>Guardei o código · continuar</Button>
   </section></main>;
 
-  return <main className="min-h-screen grid place-items-center p-6"><section className="panel panel-pad max-w-lg w-full">
+  return <main className="auth-shell"><section className="panel panel-pad auth-card max-w-lg w-full">
+    <div className="auth-emblem" aria-hidden="true">ZM</div>
     <p className="dossier-title">Zona Morta / acesso independente</p>
     <h1 className="page-title mt-2">{reset ? "Recuperar acesso" : register ? "Criar conta" : "Entrar no dossiê"}</h1>
     <p className="intro-line mt-3">{invited

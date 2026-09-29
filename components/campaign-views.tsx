@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BookOpen, House, Moon, Package, ShieldAlert } from "lucide-react";
+import { BookOpen, ChevronLeft, ChevronRight, House, LayoutGrid, List, Moon, Package, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -214,30 +214,56 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
 export function ReferencePanel() {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("Todas");
+  const [page, setPage] = useState(1);
+  const [view, setView] = useState<"grid" | "list">("grid");
   const categories = useMemo(() => ["Todas", ...new Set(content.catalog.map(i => i.category))], []);
   const matches = content.catalog.filter(item => (category === "Todas" || item.category === category)
     && `${item.name} ${item.fields.map(f=>f.value).join(" ")}`.toLowerCase().includes(query.toLowerCase()));
+  const pageSize = 24;
+  const pageCount = Math.max(1, Math.ceil(matches.length / pageSize));
+  const visible = matches.slice((page - 1) * pageSize, page * pageSize);
 
-  return <div className="panel panel-pad">
+  return <div className="panel panel-pad reference-panel">
     <Tabs defaultValue="itens">
-      <TabsList className="mb-5 max-w-full overflow-x-auto"><TabsTrigger value="itens"><Package /> Itens</TabsTrigger>
+      <TabsList className="mb-5 max-w-full overflow-x-auto reference-tabs"><TabsTrigger value="itens"><Package /> Itens</TabsTrigger>
         <TabsTrigger value="ameacas"><ShieldAlert /> Ameaças</TabsTrigger>
         <TabsTrigger value="procedimentos"><BookOpen /> Procedimentos</TabsTrigger></TabsList>
       <TabsContent value="itens">
         <div className="flex flex-wrap items-end justify-between gap-4 mb-4"><div><h2 className="section-title">Catálogo de exploração</h2>
           <p className="intro-line mt-1">{content.catalog.length} itens do apêndice. A carga e os efeitos seguem a alfa.</p></div>
           <span className="tag">{matches.length} resultados</span></div>
-        <div className="grid gap-3 sm:grid-cols-[1fr_280px] mb-3">
-          <Field label="Buscar pelo nome ou efeito" value={query} onChange={setQuery} placeholder="Água, lanterna, mochila..." />
-          <Pick label="Categoria" value={category} options={categories} onChange={setCategory} />
+        <div className="reference-controls">
+          <Field label="Buscar pelo nome ou efeito" value={query} onChange={value => { setQuery(value); setPage(1); }} placeholder="Água, lanterna, mochila..." />
+          <div className="reference-view" role="group" aria-label="Visualização do catálogo">
+            <Button size="sm" variant={view === "grid" ? "default" : "outline"} aria-label="Visualizar em grade" aria-pressed={view === "grid"} onClick={() => setView("grid")}><LayoutGrid size={16} /></Button>
+            <Button size="sm" variant={view === "list" ? "default" : "outline"} aria-label="Visualizar em lista" aria-pressed={view === "list"} onClick={() => setView("list")}><List size={16} /></Button>
+          </div>
         </div>
-        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-          {matches.map((item,index) => <article key={`${item.category}-${item.name}-${index}`} className="list-card text-sm">
-            <div className="catalog-item-heading">{item.category !== "Consulta antes de sair e ao retornar" && <ItemArt name={item.name} category={item.category} size="large" />}<div><p className="dossier-title">{item.category}</p><h3 className="font-extrabold mt-1 text-[1rem]">{item.name}</h3></div></div>
-            <div className="mt-2 grid gap-1 leading-relaxed">{item.fields.filter(f=>f.value).map((f,i)=><p key={i}><b>{f.label}:</b> {f.value}</p>)}</div>
-          </article>)}
+        <div className="reference-categories" role="group" aria-label="Filtrar por categoria">
+          {categories.map(value => <button type="button" key={value} className="reference-category" aria-pressed={category === value}
+            onClick={() => { setCategory(value); setPage(1); }}>{value}</button>)}
+        </div>
+        <div className={`reference-results ${view === "list" ? "is-list" : ""}`}>
+          {visible.map((item,index) => <Dialog key={`${item.category}-${item.name}-${index}`}>
+            <DialogTrigger asChild><button type="button" className="reference-item" aria-label={`Ver detalhes de ${item.name}`}>
+              {item.category !== "Consulta antes de sair e ao retornar" && <ItemArt name={item.name} category={item.category} size="large" />}
+              <span className="reference-item-copy"><span className="dossier-title">{item.category}</span><strong>{item.name}</strong>
+                <span className="reference-item-excerpt">{item.fields.find(field => field.value)?.value ?? "Abra para consultar os detalhes."}</span></span>
+              <ChevronRight size={18} className="reference-item-arrow" aria-hidden="true" />
+            </button></DialogTrigger>
+            <DialogContent className="reference-detail"><DialogHeader><p className="dossier-title">{item.category}</p><DialogTitle>{item.name}</DialogTitle>
+              <DialogDescription>Dados completos do item no apêndice da campanha.</DialogDescription></DialogHeader>
+              <dl>{item.fields.filter(field => field.value).map((field,i) => <div key={i}><dt>{field.label}</dt><dd>{field.value}</dd></div>)}</dl>
+            </DialogContent>
+          </Dialog>)}
         </div>
         {matches.length === 0 && <p className="intro-line py-8">Nenhum item corresponde à busca.</p>}
+        {matches.length > pageSize && <nav className="reference-pagination" aria-label="Páginas do catálogo">
+          <span>Exibindo {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, matches.length)} de {matches.length}</span>
+          <div><Button size="sm" variant="outline" disabled={page === 1} aria-label="Página anterior" onClick={() => setPage(value => value - 1)}><ChevronLeft size={16} /> Anterior</Button>
+            <span aria-live="polite">{page} / {pageCount}</span>
+            <Button size="sm" variant="outline" disabled={page === pageCount} aria-label="Próxima página" onClick={() => setPage(value => value + 1)}>Próxima <ChevronRight size={16} /></Button></div>
+        </nav>}
       </TabsContent>
       <TabsContent value="ameacas">
         <div className="mb-4"><h2 className="section-title">Adversários e perigos · nível 1</h2>

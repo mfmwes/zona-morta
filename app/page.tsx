@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { BookOpen, Clock3, Dice5, Download, Eye, EyeOff, House, Map, Package, RotateCcw, Users, Volume2 } from "lucide-react";
+import { BookOpen, Clock3, Dice5, Download, Eye, EyeOff, House, LogOut, Map, MoreHorizontal, Package, RotateCcw, Upload, Users, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,7 +25,6 @@ import { sectorProfiles } from "@/lib/sectors";
 import { adjustProvisionCount } from "@/lib/provisions";
 import { beginExpedition, beginScene } from "@/lib/abilities";
 import { playerEditPayload } from "@/lib/collaboration";
-import { provisionBreakdown } from "@/lib/provision-items";
 
 type CampaignResponse = { revision?: number; state?: GameState; role: "mestre" | "jogador" | "convidado"; ownerId: string; survivorId?: string | null };
 type SaveStatus = "salvo" | "salvando" | "erro" | "conflito";
@@ -53,6 +53,7 @@ export default function CampaignApp() {
   const [joinError, setJoinError] = useState("");
   const [startWithShelter, setStartWithShelter] = useState(false);
   const [startSectorId, setStartSectorId] = useState("random");
+  const importInput = useRef<HTMLInputElement>(null);
   const current = useRef<GameState | null>(null);
   const revision = useRef(0);
   const pending = useRef<GameState | null>(null);
@@ -362,21 +363,24 @@ export default function CampaignApp() {
       <div className="px-3"><span className="smallcaps text-[#81d0cb]">Dossiê de campanha</span>
         <p className="text-sm text-[#a9c0bc] mt-1">Cidade em descoberta · mapa aberto</p></div>
       <TabsList aria-label="Seções da campanha" className="rail-nav bg-transparent h-auto w-full p-0">
-        {nav.map(item => <TabsTrigger value={item.value} key={item.value} aria-current={tab===item.value ? "page" : undefined}>
+        {nav.map((item,index) => <TabsTrigger value={item.value} key={item.value} className={index >= 4 ? "rail-nav-extra" : undefined} aria-current={tab===item.value ? "page" : undefined}>
           <item.icon size={17} />{item.label}</TabsTrigger>)}
+        <DropdownMenu><DropdownMenuTrigger asChild><button type="button" className="rail-more" aria-label="Mais seções" aria-current={nav.slice(4).some(item => item.value === tab) ? "page" : undefined}><MoreHorizontal size={19} /><span>Mais</span></button></DropdownMenuTrigger>
+          <DropdownMenuContent align="end" side="top" className="min-w-48">{nav.slice(4).map(item => <DropdownMenuItem key={item.value} onSelect={() => setTab(item.value)}><item.icon size={16} />{item.label}</DropdownMenuItem>)}</DropdownMenuContent>
+        </DropdownMenu>
       </TabsList>
       <div className="rail-foot"><b>Dia {game.day}</b> · {displayTime(game.minutes)}
         <p>Um hex pode guardar muitos lugares, pistas e acontecimentos.</p></div>
     </Sidebar>
     <div className="workspace">
       <header className="topbar">
-        <div className="flex flex-wrap items-center gap-3 text-sm">
+        <div className="topbar-context text-sm">
           <span className="tag">DIA {String(game.day).padStart(2,"0")}</span>
           <span className="font-mono font-extrabold flex items-center gap-1"><Clock3 size={16} /> {displayTime(game.minutes)}</span>
           <span className="hidden sm:inline text-[#c4cfcb]">/</span>
           <span className="subtle hidden sm:inline">{game.shelter.hex ? game.shelter.name : "Sem abrigo"}</span>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="topbar-actions">
           <span className={`save-status ${status === "salvo" ? "ok" : status === "salvando" ? "" : "error"}`} role="status">
             {status === "salvo" ? "● Salvo" : status === "salvando" ? "◌ Salvando" : "● Não salvo"}
           </span>
@@ -384,20 +388,24 @@ export default function CampaignApp() {
           {status === "conflito" && <Button size="sm" variant="outline" onClick={() => {
             if (window.confirm("Descarte as alterações desta tela e carregue a versão salva em outra janela?")) { setLoading(true); setLoadError(""); void loadCampaign(); }
           }}>Recarregar</Button>}
-          <Button size="sm" variant="outline" aria-label="Baixar cópia dos dados visíveis" title="Baixar cópia dos dados visíveis" onClick={downloadBackup}><Download size={16} /></Button>
-          <Button size="sm" variant="outline" onClick={() => window.location.assign("/")}>Meus dossiês</Button>
-          {role === "mestre" && <label className="cursor-pointer text-sm font-semibold px-2" title="Importar uma cópia da campanha">
-            Importar cópia<input className="sr-only" type="file" accept="application/json,.json" onChange={event => {
-              const file = event.target.files?.[0]; if (file) void importBackup(file); event.target.value = "";
-            }} /></label>}
-          <Button size="sm" variant="ghost" onClick={() => void fetch("/api/auth", { method: "DELETE" }).then(() => window.location.assign("/"))}>Sair</Button>
           {role === "mestre" && <Button size="sm" className="topbar-preview-button" variant={playerPreview ? "default" : "outline"}
             aria-label={playerPreview ? "Desativar prévia dos jogadores" : "Ativar prévia dos jogadores"}
             title={playerPreview ? "Desativar prévia dos jogadores" : "Ativar prévia dos jogadores"}
             onClick={() => setPlayerPreview(value => !value)}>
             {playerPreview ? <Eye size={16} /> : <EyeOff size={16} />}<span>{playerPreview ? "Prévia ativa" : "Prévia dos jogadores"}</span>
           </Button>}
-          {!playerPreview && <RollDialog game={game} edit={edit} />}
+          {!playerPreview && <span className="topbar-roll"><RollDialog game={game} edit={edit} /></span>}
+          <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" variant="outline" aria-label="Abrir opções da campanha"><MoreHorizontal size={17} /><span className="topbar-options-label">Opções</span></Button></DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-52">
+              <DropdownMenuItem onSelect={downloadBackup}><Download size={16} />Baixar cópia</DropdownMenuItem>
+              {role === "mestre" && <DropdownMenuItem onSelect={() => importInput.current?.click()}><Upload size={16} />Importar cópia</DropdownMenuItem>}
+              <DropdownMenuItem onSelect={() => window.location.assign("/")}><BookOpen size={16} />Meus dossiês</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => void fetch("/api/auth", { method: "DELETE" }).then(() => window.location.assign("/"))}><LogOut size={16} />Sair</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {role === "mestre" && <input ref={importInput} className="sr-only" type="file" accept="application/json,.json" aria-label="Importar cópia da campanha" onChange={event => {
+            const file = event.target.files?.[0]; if (file) void importBackup(file); event.target.value = "";
+          }} />}
         </div>
       </header>
       {readOnlyPreview && <div className="player-preview-banner" role="status">
