@@ -2,7 +2,7 @@ import { env } from "cloudflare:workers";
 
 const COOKIE = "zm_session";
 const SESSION_DAYS = 30;
-const ITERATIONS = 210_000;
+const ITERATIONS = 100_000;
 const encoder = new TextEncoder();
 
 function database() {
