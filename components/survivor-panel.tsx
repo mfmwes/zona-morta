@@ -46,6 +46,17 @@ function SectionHeading({ index, title, aside }: { index: string; title: string;
   return <div className="character-section-heading"><div><span>{index}</span><h3>{title}</h3></div>{aside}</div>;
 }
 
+function DamageThresholds({ major, severe }: { major: number; severe: number }) {
+  return <div className="character-thresholds" role="group" aria-label={`Limiares de dano: leve abaixo de ${major}, maior a partir de ${major}, severo a partir de ${severe}`}>
+    <span className="character-thresholds-title">LIMIARES DE DANO</span>
+    <div className="character-thresholds-track">
+      <span className="character-threshold-light"><small>LEVE</small><strong>&lt; {major}</strong></span>
+      <span className="character-threshold-major"><small>MAIOR</small><strong>≥ {major}</strong></span>
+      <span className="character-threshold-severe"><small>SEVERO</small><strong>≥ {severe}</strong></span>
+    </div>
+  </div>;
+}
+
 function Portrait({ survivor, editable, onUpload, onClear }: {
   survivor: Survivor; editable: boolean; onUpload: (event: ChangeEvent<HTMLInputElement>) => void;
   onClear: () => void;
@@ -378,11 +389,10 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false }:
               <ResourceControl label="Esperança" icon={Sparkles} current={selected.hope} max={6} onChange={value => change(selected.id, s => { s.hope = value; })} tone="hope" />
               <ResourceControl label="Armadura livre" icon={Shield} current={Math.max(0, stats.armor-(selected.armorMarked ?? 0))} max={stats.armor} onChange={value => change(selected.id, s => { s.armorMarked = Math.max(0, (s.armorMarked ?? 0) + Math.max(0, stats.armor - (s.armorMarked ?? 0)) - value); })} tone="armor" reverse />
             </section>
-            <section className="character-surface"><SectionHeading index="01" title="Ataque e proteção" /><div className="character-combat-metrics">
-              <div><Crosshair size={17} aria-hidden="true" /><span>Evasão</span><b>{stats.evasion}</b></div>
-              <div><Shield size={17} aria-hidden="true" /><span>Armadura</span><b>{Math.max(0, stats.armor - (selected.armorMarked ?? 0))}/{stats.armor}</b></div>
-              <div><Zap size={17} aria-hidden="true" /><span>Limiar maior</span><b>{stats.major}</b></div>
-              <div><HeartPulse size={17} aria-hidden="true" /><span>Limiar severo</span><b>{stats.severe}</b></div>
+            <section className="character-surface"><SectionHeading index="01" title="Ataque e proteção" /><div className="character-defense-overview">
+              <div className="character-defense-card"><ShieldCheck size={21} aria-hidden="true" /><span>Evasão<small>para evitar ataques</small></span><strong>{stats.evasion}</strong></div>
+              <div className="character-defense-card"><Shield size={21} aria-hidden="true" /><span>Armadura livre<small>espaços disponíveis</small></span><strong>{Math.max(0, stats.armor - (selected.armorMarked ?? 0))}<small>/{stats.armor}</small></strong></div>
+              <DamageThresholds major={stats.major} severe={stats.severe} />
             </div>
               <div className="character-proficiency"><ShieldCheck size={18} aria-hidden="true" /><span>Proficiência registrada</span>{playerMode ? <b>{selected.proficiency ?? 1}</b> : <Counter compact label="Proficiência" value={selected.proficiency ?? 1} min={1} max={9} onChange={value => change(selected.id, s => { s.proficiency = value; })} />}</div>
             </section>
@@ -506,7 +516,11 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false }:
             <ResourceControl label="Estresse" icon={Zap} current={selected.stress} max={6} onChange={value => change(selected.id, s => { s.stress = value; })} tone="stress" />
             <ResourceControl label="Esperança" icon={Sparkles} current={selected.hope} max={6} onChange={value => change(selected.id, s => { s.hope = value; })} tone="hope" />
             <ResourceControl label="Armadura livre" icon={Shield} current={Math.max(0, stats.armor-(selected.armorMarked ?? 0))} max={stats.armor} onChange={value => change(selected.id, s => { s.armorMarked = Math.max(0, (s.armorMarked ?? 0) + Math.max(0, stats.armor - (s.armorMarked ?? 0)) - value); })} tone="armor" reverse />
-            <div className="character-quick-defenses"><span><Crosshair size={16} aria-hidden="true" /> Evasão <b>{stats.evasion}</b></span><span>Proficiência <b>{selected.proficiency ?? 1}</b></span><span>Maior <b>{stats.major}</b></span><span>Severo <b>{stats.severe}</b></span></div>
+            <div className="character-quick-defenses">
+              <div className="character-quick-stat"><ShieldCheck size={20} aria-hidden="true" /><span>Evasão<small>evitar ataques</small></span><strong>{stats.evasion}</strong></div>
+              <div className="character-quick-stat"><Dice5 size={20} aria-hidden="true" /><span>Proficiência<small>dados de dano</small></span><strong>{selected.proficiency ?? 1}</strong></div>
+              <DamageThresholds major={stats.major} severe={stats.severe} />
+            </div>
             <div className="character-quick-attack"><span><Swords size={17} aria-hidden="true" /> ATAQUE PRONTO</span><strong>{selected.primary || "Sem arma principal"}</strong><small>{primary ? `${primary.damage} · ${primary.range}` : "Veja o kit de combate"}</small><div><span>Munição</span><b>{selected.ammo} carga(s)</b></div></div>
             <div className="character-quick-rolls"><button type="button" onClick={() => setRollRequest({ survivorId: selected.id, kind: "action" })}><Dice5 size={16} aria-hidden="true" /> Teste</button><button type="button" disabled={!primary} onClick={() => setRollRequest({ survivorId: selected.id, kind: "attack", weapon: "primary" })}><Crosshair size={16} aria-hidden="true" /> Ataque</button></div>
           </div>
