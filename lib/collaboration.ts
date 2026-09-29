@@ -2,6 +2,10 @@ import { addLog, type GameState, type Survivor } from "./game";
 
 export function projectPlayerGame(game: GameState, survivorId: string): GameState {
   const visible = structuredClone(game);
+  visible.log = visible.log.map(entry => {
+    const actor = entry.actorId ? game.survivors.find(person => person.id === entry.actorId) : null;
+    return actor ? { ...entry, actorName: entry.actorName ?? actor.name, actorPortrait: entry.actorPortrait ?? actor.portrait } : entry;
+  });
   visible.survivors = visible.survivors.filter(person => person.id === survivorId);
   visible.shelter.notes = "";
   visible.formerShelters = [];
