@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { BookOpen, Clock3, Dice5, Download, Eye, EyeOff, House, LogOut, Map, MoreHorizontal, Package, RotateCcw, Upload, Users, Volume2 } from "lucide-react";
+import { BookOpen, Clock3, Download, Eye, EyeOff, House, LogOut, Map, MessageSquare, MoreHorizontal, Package, RotateCcw, Upload, Users, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -342,7 +342,7 @@ export default function CampaignApp() {
   </section></main>;
 
   const readOnlyPreview = playerPreview || role === "jogador";
-  const title = { mapa: "Exploração", sobreviventes: "Sobreviventes", rolagens: "Central de rolagens", abrigo: "Abrigo e reservas",
+  const title = { mapa: "Exploração", sobreviventes: "Sobreviventes", abrigo: "Abrigo e reservas",
     referencias: "Arquivo de campo", jogadores: "Jogadores e acessos" }[tab] || "Campanha";
   const nav = [
     { value: "mapa", label: "Mapa e hexes", icon: Map },
@@ -417,7 +417,6 @@ export default function CampaignApp() {
           <div><p className="eyebrow">Daggerheart / Zona Morta</p><h1 className="page-title mt-1">{title}</h1>
             <p className="intro-line mt-2">{tab === "mapa" ? "Explore a partir do que o grupo avista. Registre apenas o que a ficção tornou real." :
               tab === "sobreviventes" ? "Históricos, arquétipos e recursos prontos para jogar." :
-              tab === "rolagens" ? "Acompanhe as jogadas da mesa, Hope, Fear, críticos e dano em um único registro." :
               tab === "abrigo" ? "Organize reservas e descanso. Estabeleça um abrigo quando o grupo encontrar um lugar." :
               tab === "jogadores" ? "Compartilhe a campanha e acompanhe quem entrou na mesa." :
               "Consulte itens, adversários e procedimentos durante a sessão."}</p></div>
@@ -514,6 +513,8 @@ export default function CampaignApp() {
         </section>}
       </main>
     </div>
+    {chatOpen && <button type="button" className="table-chat-backdrop" aria-label="Fechar chat" onClick={() => setChatOpen(false)} />}
+    <div id="table-chat"><TableChat game={game} edit={edit} role={role} survivorId={survivorId} readOnly={playerPreview} onClose={() => setChatOpen(false)} /></div>
     </SidebarProvider>
   </Tabs>;
 }
