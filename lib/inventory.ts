@@ -93,10 +93,12 @@ function completedFacility(game: GameState, ...keys: string[]) {
 function ownerHolder(game: GameState, ownerId: string) {
   return ownerId === "shared" ? game.shelter : game.survivors.find(person => person.id === ownerId);
 }
-function availableWater(game: GameState, ownerId: string) {
+function availableWater(game: GameState, ownerId: string, excludeItemId?: string) {
   const holder = ownerHolder(game, ownerId);
-  let total = holder ? (holder.water ?? 0) + physicalProvisionPortions(holder.inventory, "water", true) : 0;
-  if (ownerId !== "shared" && atSharedStorage(game, ownerId)) total += game.shelter.water + physicalProvisionPortions(game.shelter.inventory, "water", true);
+  const ready = (items: InventoryItem[] | undefined) => physicalProvisionPortions(
+    excludeItemId ? items?.filter(item => item.id !== excludeItemId) : items, "water", true);
+  let total = holder ? (holder.water ?? 0) + ready(holder.inventory) : 0;
+  if (ownerId !== "shared" && atSharedStorage(game, ownerId)) total += game.shelter.water + ready(game.shelter.inventory);
   return total;
 }
 function hasPan(game: GameState, ownerId: string) {
@@ -176,11 +178,16 @@ function removeNamedUnits(game: GameState, ownerId: string, name: string, quanti
   }
   return remaining === 0;
 }
-function consumeHolderWater(holder: { water: number; provisionLots?: any[]; inventory?: InventoryItem[] }, quantity: number) {
+function consumeHolderWater(holder: { water: number; provisionLots?: any[]; inventory?: InventoryItem[] }, quantity: number, excludeItemId?: string) {
   let remaining = quantity;
   const loose = Math.min(remaining, Math.max(0, holder.water ?? 0));
   if (loose > 0) { withdrawPortions(holder as any, "water", loose); remaining -= loose; }
-  if (remaining > 0) remaining -= consumeReadyProvisionPortions(holder.inventory, "water", remaining).consumed;
+  while (remaining > 0) {
+    const candidate = (holder.inventory ?? []).find(item => item.id !== excludeItemId && provisionItemInfo(item).resource === "water"
+      && provisionItemInfo(item).ready && provisionItemInfo(item).remaining > 0);
+    if (!candidate || !consumeProvisionPortionFromItems(holder.inventory ?? [], candidate.id)) break;
+    remaining -= 1;
+  }
   return remaining;
 }
 function payPreparationCosts(game: GameState, ownerId: string, check: PreparationCheck) {
@@ -215,7 +222,7 @@ export function reusableContainerOptions(game: GameState, ownerId: string, item:
     amount,
     waterCapacity: resource && resource !== "water" ? 0 : Math.max(0, 4 - amount),
     fuelCapacity: resource && resource !== "fuel" ? 0 : Math.max(0, 1 - amount),
-    waterAvailable: availableWater(game, ownerId),
+    waterAvailable: availableWater(game, ownerId, item.id),
     fuelAvailable: accessibleFuel(game, ownerId),
     canUnloadAtStorage: Boolean(resource && amount > 0 && (ownerId === "shared" || atSharedStorage(game, ownerId))),
   };
@@ -242,12 +249,12 @@ export function fillReusableContainer(game: GameState, ownerId: string, itemId: 
   if (count < 1) return null;
 
   if (resource === "water") {
-    if (availableWater(game, ownerId) < count) return null;
+    if (availableWater(game, ownerId, item.id) < count) return null;
     let remaining = count;
     const holder = ownerHolder(game, ownerId);
-    if (holder) remaining = consumeHolderWater(holder, remaining);
+    if (holder) remaining = consumeHolderWater(holder, remaining, item.id);
     if (ownerId !== "shared" && remaining > 0 && atSharedStorage(game, ownerId))
-      remaining = consumeHolderWater(game.shelter, remaining);
+      remaining = consumeHolderWater(game.shelter, remaining, item.id);
     if (remaining > 0) return null;
   } else {
     if (accessibleFuel(game, ownerId) < count) return null;
