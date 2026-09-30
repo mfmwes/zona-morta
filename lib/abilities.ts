@@ -1,4 +1,4 @@
-import { addLog, survivorStats, type GameState } from "./game";
+import { addLog, survivorHex, survivorStats, type GameState } from "./game";
 import { rollDie } from "./rolls";
 
 export type AbilityCost = "free" | "hope1" | "hope3" | "stress1" | "armor1";
@@ -73,7 +73,7 @@ export function abilityAvailable(game: GameState, survivorId: string, abilityId:
   const period = abilityPeriod(effect);
   if (period === "patient" && !context.trim()) return false;
   const key = usageKey(game, period, effect);
-  return !key || person.abilityUses?.[instanceKey(abilityId, period, context, game.partyHex)] !== key;
+  return !key || person.abilityUses?.[instanceKey(abilityId, period, context, survivorHex(game, person))] !== key;
 }
 
 export function recordAbilityUse(game: GameState, survivorId: string, abilityId: string, name: string, effect: string,
@@ -94,7 +94,7 @@ export function recordAbilityUse(game: GameState, survivorId: string, abilityId:
   }
   const period = abilityPeriod(effect);
   const key = usageKey(game, period, effect);
-  if (key) { person.abilityUses ??= {}; person.abilityUses[instanceKey(abilityId, period, context, game.partyHex)] = key; }
+  if (key) { person.abilityUses ??= {}; person.abilityUses[instanceKey(abilityId, period, context, survivorHex(game, person))] = key; }
   addLog(game, "habilidade", `${person.name} usou ${name}${context.trim() ? ` (${context.trim()})` : ""}; custo registrado: ${costLabels[cost]}. Resolva o efeito descrito na cena.`, person.id);
   return true;
 }
@@ -121,16 +121,23 @@ export function resolveGroupRest(game: GameState, kind: RestKind, selections: Re
   const selectionBySurvivor = new Map(selections.map(selection => [selection.survivorId, selection]));
   if (selectionBySurvivor.size !== game.survivors.length || game.survivors.some(person => {
     const choices = selectionBySurvivor.get(person.id)?.choices;
-    return !choices || choices.length !== 2 || choices.some(choice => !validActions.has(choice.action)
-      || !game.survivors.some(target => target.id === choice.targetId));
-  })) return { ok: false as const, message: "Cada sobrevivente precisa de duas ações válidas." };
+    return !choices || choices.length !== 2 || choices.some(choice => {
+      const target = game.survivors.find(candidate => candidate.id === choice.targetId);
+      return !validActions.has(choice.action) || !target || survivorHex(game, target) !== survivorHex(game, person);
+    });
+  })) return { ok: false as const, message: "Cada sobrevivente precisa de duas ações válidas com alvos presentes no mesmo hex." };
 
-  const preparedBy = new Set(game.survivors.filter(person => selectionBySurvivor.get(person.id)!.choices.some(choice => choice.action === "prepare")).map(person => person.id));
-  const prepareGain = preparedBy.size >= 2 ? 2 : 1;
+  const preparedByHex = new Map<string, number>();
+  for (const person of game.survivors) {
+    if (!selectionBySurvivor.get(person.id)!.choices.some(choice => choice.action === "prepare")) continue;
+    const hex = survivorHex(game, person);
+    preparedByHex.set(hex, (preparedByHex.get(hex) ?? 0) + 1);
+  }
   const summaries: string[] = [];
 
   for (const person of game.survivors) {
     const choices = selectionBySurvivor.get(person.id)!.choices;
+    const prepareGain = (preparedByHex.get(survivorHex(game, person)) ?? 0) >= 2 ? 2 : 1;
     const results: string[] = [];
     for (const choice of choices) {
       const target = game.survivors.find(candidate => candidate.id === choice.targetId)!;
