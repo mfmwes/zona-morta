@@ -2,7 +2,7 @@ import { ammunitionTypes, content, setShelterAmmoCount, shelterAmmoCount, surviv
 import { getPrimary, getProtection, getSecondary, weaponAmmoType } from "./equipment";
 import { createId } from "./id";
 import { transferPortionLots, withdrawPortions } from "./provisions";
-import { hydrateProvisionItem, physicalProvisionPortions, provisionItemInfo, type ProvisionResource } from "./provision-items";
+import { groupedProvisionPortions, hydrateProvisionItem, physicalProvisionPortions, provisionItemInfo, type ProvisionResource } from "./provision-items";
 
 type CatalogEntry = (typeof content.catalog)[number];
 export const inventoryCategories = [...new Set(content.catalog
@@ -318,6 +318,8 @@ export function addStack(items: InventoryItem[], incoming: InventoryItem) {
     && batteryStateFor(item) === batteryStateFor(incoming)
     && item.storedResource === incoming.storedResource
     && item.storedAmount === incoming.storedAmount
+    && item.cartDeployed === incoming.cartDeployed
+    && JSON.stringify(item.cartItems ?? []) === JSON.stringify(incoming.cartItems ?? [])
     && (item.armorMarked ?? 0) === (incoming.armorMarked ?? 0)
     && item.qty + incoming.qty <= 99);
   if (match) match.qty += incoming.qty;
@@ -357,6 +359,7 @@ export function transferItem(game: GameState, from: string, to: string, itemId: 
   const item = source?.find(entry => entry.id === itemId);
   const count = Math.trunc(quantity);
   if (!source || !target || !item || count < 1 || count > item.qty) return false;
+  if (item.name === "Carrinho dobrável" && (item.cartDeployed || (item.cartItems?.length ?? 0) > 0)) return false;
   addStack(target, { ...item, qty: count });
   item.qty -= count;
   if (item.qty === 0) source.splice(source.indexOf(item), 1);
@@ -368,6 +371,7 @@ export function discardItem(game: GameState, from: string, itemId: string, quant
   const item = source?.find(entry => entry.id === itemId);
   const count = Math.trunc(quantity);
   if (!source || !item || count < 1 || count > item.qty) return false;
+  if (item.name === "Carrinho dobrável" && (item.cartDeployed || (item.cartItems?.length ?? 0) > 0)) return false;
   item.qty -= count;
   if (item.qty === 0) source.splice(source.indexOf(item), 1);
   return true;
@@ -386,14 +390,13 @@ export function compatibleSlots(item: InventoryItem): EquipmentSlot[] {
   if (getProtection(name)) slots.push("protection");
   if (item.category === "Trajes e acessórios" || catalogForItem(item)?.category === "Trajes e acessórios") slots.push("outfit");
   if (["Bolsa tiracolo", "Mochila urbana", "Mochila de trilha", "Mochila cargueira"].includes(name)) slots.push("bag");
-  if (name === "Carrinho dobrável") slots.push("transport");
   if (content.personal.some(x => x.name === name) && !slots.includes("bag")) slots.push("personal");
   if (pocketEligible(item)) slots.push("pocket1", "pocket2");
   return slots;
 }
 export const slotLabels: Record<EquipmentSlot, string> = {
   primary: "Arma principal", secondary: "Arma secundária", protection: "Proteção", outfit: "Traje vestido",
-  personal: "Item pessoal", bag: "Bolsa/mochila", transport: "Transporte ativo", pocket1: "Bolso 1", pocket2: "Bolso 2",
+  personal: "Item pessoal", bag: "Bolsa/mochila", pocket1: "Bolso 1", pocket2: "Bolso 2",
 };
 export function storedLoad(name: string, slot: EquipmentSlot) {
   const record = slot === "primary" ? getPrimary(name)
@@ -406,8 +409,7 @@ export function storedLoad(name: string, slot: EquipmentSlot) {
   }
   const entry = content.catalog.find(x => x.name === name
     && (slot !== "bag" || x.category === "Abrigo, transporte e mochilas")
-    && (slot !== "outfit" || x.category === "Trajes e acessórios")
-    && (slot !== "transport" || x.category === "Abrigo, transporte e mochilas"));
+    && (slot !== "outfit" || x.category === "Trajes e acessórios"));
   const field = entry?.fields.find(x => ["Guarda", "Carga", "Carga em viagem"].includes(x.label))?.value;
   return Number(field?.match(/^\d+/)?.[0] ?? 1);
 }
@@ -417,8 +419,7 @@ export function stowSlot(s: Survivor, slot: EquipmentSlot) {
   if (slot === "personal" && s.bag === name) return stowSlot(s, "bag");
   const entry = content.catalog.find(x => x.name === name
     && (slot !== "bag" || x.category === "Abrigo, transporte e mochilas")
-    && (slot !== "outfit" || x.category === "Trajes e acessórios")
-    && (slot !== "transport" || x.category === "Abrigo, transporte e mochilas"));
+    && (slot !== "outfit" || x.category === "Trajes e acessórios"));
   const previous = s.equippedItems?.[slot];
   addStack(s.inventory, { id: createId(), name, load: storedLoad(name, slot),
     condition: s.kitCondition?.[slot] ?? "Íntegro", catalogKey: entry ? catalogKey(entry) : undefined,
@@ -437,6 +438,67 @@ export function stowSlot(s: Survivor, slot: EquipmentSlot) {
   if (s.equippedItems) delete s.equippedItems[slot];
   return true;
 }
+export function activeCart(s: Survivor) {
+  return s.inventory.find(item => item.name === "Carrinho dobrável" && item.cartDeployed) ?? null;
+}
+
+export function cartStoredLoad(items: InventoryItem[] = []) {
+  const regular = items.filter(item => !item.provisionResource)
+    .reduce((sum, item) => sum + Math.max(0, item.load) * Math.max(0, item.qty), 0);
+  const food = Math.ceil(groupedProvisionPortions(items, "food") / 4);
+  const water = Math.ceil(groupedProvisionPortions(items, "water") / 4);
+  return regular + food + water;
+}
+
+export function deployCart(s: Survivor, itemId: string) {
+  if (activeCart(s)) return false;
+  const item = s.inventory.find(entry => entry.id === itemId);
+  if (!item || item.name !== "Carrinho dobrável" || item.cartDeployed) return false;
+  if (s.primary) stowSlot(s, "primary");
+  if (s.secondary) stowSlot(s, "secondary");
+  if (item.qty > 1) {
+    item.qty -= 1;
+    s.inventory.push({ ...item, id: createId(), qty: 1, cartDeployed: true, cartItems: [] });
+  } else {
+    item.cartDeployed = true;
+    item.cartItems ??= [];
+  }
+  return true;
+}
+
+export function foldCart(s: Survivor, itemId: string) {
+  const item = s.inventory.find(entry => entry.id === itemId);
+  if (!item || item.name !== "Carrinho dobrável" || !item.cartDeployed || (item.cartItems?.length ?? 0) > 0) return false;
+  item.cartDeployed = false;
+  return true;
+}
+
+export function storeInCart(s: Survivor, itemId: string, quantity = 1) {
+  const cart = activeCart(s);
+  const item = s.inventory.find(entry => entry.id === itemId);
+  const count = Math.trunc(quantity);
+  if (!cart || !item || item.id === cart.id || count < 1 || count > item.qty) return false;
+  const incoming = { ...item, qty: count };
+  const next = [...(cart.cartItems ?? []).map(entry => ({ ...entry })), incoming];
+  if (cartStoredLoad(next) > 4) return false;
+  cart.cartItems ??= [];
+  addStack(cart.cartItems, incoming);
+  item.qty -= count;
+  if (item.qty === 0) s.inventory.splice(s.inventory.indexOf(item), 1);
+  return true;
+}
+
+export function removeFromCart(s: Survivor, cartId: string, itemId: string, quantity = 1) {
+  const cart = s.inventory.find(entry => entry.id === cartId && entry.name === "Carrinho dobrável" && entry.cartDeployed);
+  const item = cart?.cartItems?.find(entry => entry.id === itemId);
+  const count = Math.trunc(quantity);
+  if (!cart || !item || count < 1 || count > item.qty) return false;
+  addStack(s.inventory, { ...item, qty: count });
+  item.qty -= count;
+  if (item.qty === 0) cart.cartItems!.splice(cart.cartItems!.indexOf(item), 1);
+  return true;
+}
+
 export function displacedSlots(s: Survivor, item: InventoryItem, slot: EquipmentSlot): EquipmentSlot[] {
   const slots: EquipmentSlot[] = s[slot] ? [slot] : [];
   if (slot === "primary" && getPrimary(item.name)?.hands === "Duas" && s.secondary) slots.push("secondary");
