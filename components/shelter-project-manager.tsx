@@ -130,8 +130,9 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
   const selectedProgress = selectedProject ? projectProgress(selectedProject) : null;
   const selectedIntegrity = selectedProject ? projectIntegrity(selectedProject) : null;
   const selectedBenefits = projectMechanicalBenefits(selectedDefinition.key);
-  const selectedCanOperateWork = Boolean(selectedProject && selectedDefinition.operationWork
-    && ["Concluído", "Danificado"].includes(selectedProject.state) && projectOperational(game, shelter, selectedProject));
+  const selectedOperationAvailable = Boolean(selectedProject && selectedDefinition.operationWork
+    && ["Concluído", "Danificado"].includes(selectedProject.state) && projectIntegrity(selectedProject) >= 2);
+  const selectedCanOperateWork = Boolean(selectedOperationAvailable && selectedProject && projectOperational(game, shelter, selectedProject));
   const selectedPreview = !playerSurvivorId && selectedProject && (selectedProject.state === "Em construção" || selectedCanOperateWork)
     ? projectWorkPreview(game, shelter, selectedProject) : null;
   const selectedRepairPlan = selectedProject && ["Danificado", "Inoperante", "Destruído"].includes(selectedProject.state)
@@ -681,7 +682,7 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
                 <span><b>{selectedCanOperateWork ? `${selectedDefinition.operationWork?.label ?? "Operação"} · 4h` : "Turno de 4h"}</b><small>{playerWork?.issue ?? `+${playerWork?.points ?? 1} progresso previsto${playerWork?.matches?.length ? ` · bônus por ${playerWork.matches.join(" + ")}` : ""}`}</small></span>
                 <Button size="sm" disabled={Boolean(playerWork?.issue)} onClick={() => schedulePlayerShift(selectedProject)}><Clock3 size={14} /> Trabalhar 4h</Button>
               </div>}
-              {!playerJoined && (["Planejado", "Em construção"].includes(selectedProject.state) || selectedCanOperateWork) && <Button size="sm" onClick={() => joinAsPlayer(selectedProject)}>
+              {!playerJoined && (["Planejado", "Em construção"].includes(selectedProject.state) || selectedOperationAvailable) && <Button size="sm" onClick={() => joinAsPlayer(selectedProject)}>
                 <Users size={14} /> Quero ajudar nesta obra
               </Button>}
               {playerJoined && <Button size="sm" variant="ghost" onClick={() => leaveAsPlayer(selectedProject)}>Sair da equipe</Button>}
