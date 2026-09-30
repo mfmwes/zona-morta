@@ -484,22 +484,25 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
         <span className="tag">Dia {game.day} · {displayTime(game.minutes)}</span>
       </div>
       {activeProjects.length === 0
-        ? <div className="construction-empty"><Hammer size={20} /><span>Nenhuma obra ativa. Escolha uma melhoria no catálogo abaixo.</span></div>
+        ? <div className="construction-empty"><Hammer size={20} /><span>Nenhuma obra, dano ou reparo pendente. Use Nova construção quando quiser ampliar o abrigo.</span></div>
         : <div className="construction-active-grid">{activeProjects.map(project => {
           const progress = projectProgress(project);
+          const damagePending = ["Danificado", "Inoperante", "Destruído"].includes(project.state);
           const preview = project.state === "Em construção" ? projectWorkPreview(game, shelter, project) : null;
           return <button type="button" key={project.id} className={`construction-active-card ${selectedKey === project.key ? "is-selected" : ""}`} onClick={() => setSelectedKey(project.key)}>
             <div className="construction-active-top"><span className={`construction-state is-${projectStateTone(project)}`}>{projectStateLabel(project)}</span><ChevronRight size={16} /></div>
             <b>{project.name}</b>
-            <div className="construction-mini-progress"><span style={{ width: `${Math.min(100, progress.value / progress.required * 100)}%` }} /></div>
-            <small>{progress.value}/{progress.required} progresso{progress.repairing ? " de reparo" : ""}</small>
+            {damagePending ? <div className="construction-integrity-card"><span>{integrityGlyph(project)}</span><b>{projectIntegrity(project)}/3</b></div> : <>
+              <div className="construction-mini-progress"><span style={{ width: `${Math.min(100, progress.value / progress.required * 100)}%` }} /></div>
+              <small>{progress.value}/{progress.required} progresso{progress.repairing ? " de reparo" : ""}</small>
+            </>}
             <small>{project.workShift
               ? `⏱ Equipe NPC até ${displayTime(project.workShift.startMinute + project.workShift.durationMinutes)} · +${project.workShift.points} previsto`
               : project.volunteerShifts?.length
                 ? `⏱ ${project.volunteerShifts.length} turno(s) de jogador · próximo até ${displayTime(Math.min(...project.volunteerShifts.map(shift => shift.startMinute + shift.durationMinutes)))}`
                 : preview?.issue ? `⏸ ${preview.issue}`
                 : preview ? `Pronto para agendar: +${preview.points} em 4h`
-                : project.state === "Danificado" ? "Aguardando reparo"
+                : damagePending ? `${projectIntegrityLabel(project)} · reparo pendente`
                 : projectPlacementIssue(shelter, project) ?? "Aguardando início"}</small>
           </button>;
         })}</div>}
