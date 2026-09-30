@@ -177,7 +177,7 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
         <div className="grid gap-2 mt-3">
           {([ ["food", "Comida"], ["water", "Água"],
             ["medications", "Medicamentos"], ["fuel", "Combustível"], ["parts", "Peças"] ] as const).map(([key, label]) =>
-            <div key={key} className="shared-inventory-row"><div><b>{label}</b><span>{visitedCache[key]} {key === "pistolAmmo" ? "carga(s)" : "porção(ões)"}</span></div>
+            <div key={key} className="shared-inventory-row"><div><b>{label}</b><span>{visitedCache[key]} {key === "food" || key === "water" ? "porção(ões)" : key === "fuel" ? "carga(s)" : "unidade(s)"}</span></div>
               {visitedCache[key] > 0 && recipient && !playerPreview && <div className="flex gap-1 flex-wrap">
                 <Button size="sm" variant="outline" onClick={() => edit(d => {
                   if (!recoverFormerStock(d, visitedCache.hex!, recipient.id, key, 1)) toast.error("Não foi possível retirar. Verifique o limite do contador.");
