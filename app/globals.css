@@ -157,8 +157,11 @@ button { cursor: pointer; } button:disabled { cursor: not-allowed; }
 .character-identity-meta { display:flex; flex-wrap:wrap; gap:5px 11px; margin-top:13px; color:#e4ece7; font-size:.83rem; }
 .character-identity-meta span + span::before { content:"/"; margin-right:11px; color:#b7b48e; }
 .character-hero-status { z-index:1; display:flex; align-self:stretch; flex-direction:column; align-items:flex-end; justify-content:space-between; gap:10px; flex:none; }
+.character-hero-condition-block { display:grid; justify-items:end; gap:5px; }
 .character-condition { display:inline-flex; align-items:center; gap:7px; padding:7px 9px; border:1px solid #e4bc9580; border-radius:4px; background:#6b3d32a6; color:#fff1df; font:700 .75rem var(--font-mono); }
 .character-condition.healthy { border-color:#94baaa80; background:#2f665da6; color:#e7f8eb; }
+.character-condition-detail { color:#e8c5b5; font:700 .62rem var(--font-mono); letter-spacing:.03em; text-align:right; }
+.character-condition-detail b { color:#fff0df; }
 .character-hero-code { font:700 .65rem var(--font-mono); color:#b5cdc4; letter-spacing:.08em; white-space:nowrap; }
 .character-layout { display:grid; grid-template-columns:minmax(0,1fr) 300px; align-items:start; gap:15px; min-width:0; }
 .character-main { min-width:0; }
@@ -178,9 +181,17 @@ button { cursor: pointer; } button:disabled { cursor: not-allowed; }
 .character-tab[data-state=active]::after { display:none; }
 .character-tab-content { display:grid; gap:12px; margin-top:12px; min-width:0; }
 .character-tab-content[hidden],.character-tab-content[data-state=inactive] { display:none; }
-.character-summary-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.character-summary-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; align-items:start; }
 .character-surface { min-width:0; padding:18px 20px; border:1px solid #bdcbc4; border-radius:10px; background:#fcfcf8; box-shadow:0 1px 2px #102b2c0d,0 8px 20px #102b2c0a; }
-.character-rest-panel { display:grid; align-content:start; }
+.character-summary-action,.character-summary-resources { height:100%; }
+.character-summary-specialties { grid-column:1 / -1; }
+.character-specialties-layout { display:grid; grid-template-columns:minmax(0,.95fr) minmax(300px,1.05fr); gap:16px; align-items:stretch; }
+.character-specialties-experiences { display:grid; align-content:start; }
+.character-summary-specialties .character-hope-teaser { margin-top:0; height:100%; min-height:88px; }
+.character-specialties-footer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px 16px; margin-top:12px; padding-top:10px; border-top:1px solid #e0e6df; }
+.character-specialties-footer .character-technique-preview { margin-top:0; flex:1; }
+.character-specialties-footer .character-text-link { flex:none; margin-top:0; }
+.character-rest-panel { grid-column:1 / -1; display:grid; align-content:start; }
 .character-rest-panel .character-section-intro { margin-bottom:14px; }
 .character-rest-actions { display:flex; flex-wrap:wrap; gap:8px; }
 .character-rest-readonly { margin:0; padding:10px 11px; border-left:3px solid #77a196; background:#edf4f0; color:#45625d; font-size:.82rem; line-height:1.45; }
@@ -253,9 +264,6 @@ button { cursor: pointer; } button:disabled { cursor: not-allowed; }
 }
 .character-technique-preview { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
 .character-technique-preview > span { display:inline-flex; align-items:center; gap:6px; padding:4px 8px 4px 4px; border-radius:5px; background:#e8f0e7; color:#3c6053; font-size:.78rem; font-weight:700; }
-.character-status-card { align-self:start; min-height:0; }
-.character-status-card .character-section-heading { margin-bottom:10px; }
-.character-status-card .character-text-link { margin-top:8px; }
 .character-status-line { display:flex; align-items:center; gap:7px; font-size:1rem; }
 .character-status-dot { width:9px; height:9px; border-radius:50%; background:#ac5a42; box-shadow:0 0 0 3px #f6e5db; }
 .character-status-dot.healthy { background:#3d9478; box-shadow:0 0 0 3px #e1f2e9; }
@@ -493,6 +501,10 @@ button { cursor: pointer; } button:disabled { cursor: not-allowed; }
   .character-identity h2 { font-size:1.5rem; }
   .character-hero-code { display:none; }
   .character-summary-grid { grid-template-columns:1fr; }
+  .character-summary-specialties,.character-rest-panel { grid-column:auto; }
+  .character-specialties-layout { grid-template-columns:1fr; gap:10px; }
+  .character-summary-specialties .character-hope-teaser { height:auto; min-height:74px; }
+  .character-specialties-footer { align-items:flex-start; flex-direction:column; }
   .character-combat-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 @media (max-width: 540px) {
