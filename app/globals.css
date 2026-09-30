@@ -1034,3 +1034,39 @@ button { cursor: pointer; } button:disabled { cursor: not-allowed; }
 @media (hover:none) {
   .map-cell,.survivor-context-target { cursor:pointer; }
 }
+
+
+/* Split travel groups */
+.hex-presence-card { display:flex; align-items:flex-start; gap:9px; padding:10px 12px; border:1px solid #b9d2ca; border-radius:7px; background:#edf4f0; color:#315c59; }
+.hex-presence-card > svg { flex:none; margin-top:1px; }
+.hex-presence-card > div { display:grid; gap:2px; min-width:0; }
+.hex-presence-card b { font-size:.82rem; }
+.hex-presence-card span { color:#58706d; font-size:.76rem; line-height:1.35; }
+.map-group-summary { display:flex; flex-wrap:wrap; gap:6px; margin-top:9px; }
+.map-group-summary > span { display:inline-flex; align-items:center; gap:5px; padding:4px 7px; border:1px solid #b9cbc5; border-radius:999px; background:#f1f5f1; color:#3d6060; font-size:.71rem; font-weight:700; }
+
+.survivor-move-dialog { width:min(720px,calc(100vw - 24px)); max-width:min(720px,calc(100vw - 24px)); }
+.survivor-move-route { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:12px; padding:12px; border:1px solid #c8d8d1; border-radius:8px; background:#f2f6f2; }
+.survivor-move-route > div { display:grid; gap:2px; min-width:0; }
+.survivor-move-route > div:last-child { text-align:right; justify-items:end; }
+.survivor-move-route span { color:#5f7774; font:800 .65rem var(--font-mono); letter-spacing:.09em; }
+.survivor-move-route b { color:#254f50; overflow-wrap:anywhere; }
+.survivor-move-route small { color:#657977; font-size:.73rem; }
+.survivor-move-route > svg { color:#6a9087; }
+.survivor-move-members { display:grid; gap:7px; }
+.survivor-move-members-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.survivor-move-person { display:grid; grid-template-columns:auto 38px minmax(0,1fr) auto; align-items:center; gap:9px; padding:8px 10px; border:1px solid #d2ddd7; border-radius:7px; background:#fbfcf8; cursor:pointer; }
+.survivor-move-person:has(input:checked) { border-color:#73a39a; background:#eaf3ee; }
+.survivor-move-person input { width:16px; height:16px; accent-color:#276b68; }
+.survivor-move-person > span:nth-of-type(2) { display:grid; gap:1px; min-width:0; }
+.survivor-move-person b { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.84rem; }
+.survivor-move-person small { color:#647876; font-size:.7rem; }
+.survivor-move-avatar { width:36px; height:36px; overflow:hidden; display:grid; place-items:center; border-radius:5px; background:#2b585b; color:#e0f0e9; font:800 .78rem var(--font-mono); }
+.survivor-move-avatar img { width:100%; height:100%; object-fit:cover; }
+@media (max-width:560px) {
+  .survivor-move-route { grid-template-columns:1fr; }
+  .survivor-move-route > svg { transform:rotate(90deg); justify-self:center; }
+  .survivor-move-route > div:last-child { text-align:left; justify-items:start; }
+  .survivor-move-person { grid-template-columns:auto 34px minmax(0,1fr); }
+  .survivor-move-person > small:last-child { grid-column:3; }
+}
