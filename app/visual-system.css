@@ -334,6 +334,24 @@ html[data-theme="dark"] .next-step-card .dossier-title { color: #91c4b8; }
 html[data-theme="dark"] .next-step-card .subtle { color: #c0d0c9; }
 html[data-theme="dark"] .gm-tools-trigger { color: #91c9bd; }
 html[data-theme="dark"] .gm-tools-trigger:hover { color: #c9e7de; }
+html[data-theme="dark"] .hex-presence-card,
+html[data-theme="dark"] .survivor-move-route,
+html[data-theme="dark"] .survivor-move-person,
+html[data-theme="dark"] .map-group-summary > span {
+  border-color: #405650;
+  background: #202d2c;
+  color: #d9e5df;
+}
+html[data-theme="dark"] .hex-presence-card span,
+html[data-theme="dark"] .survivor-move-route small,
+html[data-theme="dark"] .survivor-move-person small { color: #aebfba; }
+html[data-theme="dark"] .survivor-move-route b { color: #e2eee8; }
+html[data-theme="dark"] .survivor-move-route span { color: #8fbdb2; }
+html[data-theme="dark"] .survivor-move-person:has(input:checked) {
+  border-color: #68968c;
+  background: #263a37;
+}
+html[data-theme="dark"] .map-group-summary > span { color: #bdd4cd; }
 html[data-theme="dark"] .table-chat { border-color: #354846; background: #131b1c; color: #e2ebe5; }
 html[data-theme="dark"] .table-chat-header,
 html[data-theme="dark"] .table-chat-composer { border-color: #354846; background: #192324; }
