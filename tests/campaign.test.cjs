@@ -1221,6 +1221,94 @@ test('projetos persistentes derivam estado do abrigo, exigem operador e sobreviv
   assert.equal(previous.projects.find(project => project.key === 'barricades').state, 'Concluído');
 });
 
+
+test('turno de construção avança obras simultâneas com equipes distintas e consome tempo', () => {
+  const g = campaign();
+  assert.equal(require('../lib/game.ts').establishShelter(g, '0,0'), true);
+  g.shelter.parts = 5;
+  const joao = { id:'builder-1', name:'João', role:'Pedreiro', description:'', notes:'', hex:'0,0', home:'0,0', status:'Bem', infection:'Saudável', disposition:'Aliado', skills:['Construção'], active:true };
+  const bia = { id:'builder-2', name:'Bia', role:'Marceneira', description:'', notes:'', hex:'0,0', home:'0,0', status:'Bem', infection:'Saudável', disposition:'Aliado', skills:['Construção'], active:true };
+  g.npcs.push(joao, bia);
+
+  const barricades = shelterProjects.createShelterProject('barricades');
+  const collector = shelterProjects.createShelterProject('rain-collector');
+  barricades.responsibleId = joao.id;
+  collector.responsibleId = bia.id;
+  g.shelter.projects.push(barricades, collector);
+  assert.equal(shelterProjects.startProject(g.shelter, barricades), null);
+  assert.equal(shelterProjects.startProject(g.shelter, collector), null);
+
+  const before = g.minutes;
+  const result = shelterProjects.runShelterWorkShift(g, 4);
+  assert.equal(result.ok, true);
+  assert.equal(g.minutes, before + 240);
+  assert.equal(barricades.state, 'Concluído');
+  assert.equal(collector.state, 'Concluído');
+  assert.equal(result.results.length, 2);
+});
+
+test('dependências, energia e desligamento manual controlam estruturas condicionais', () => {
+  const g = campaign();
+  assert.equal(require('../lib/game.ts').establishShelter(g, '0,0'), true);
+  g.shelter.parts = 20; g.shelter.fuel = 10;
+
+  const battery = shelterProjects.createShelterProject('battery-bank', 'utility-a');
+  g.shelter.projects.push(battery);
+  assert.match(shelterProjects.startProject(g.shelter, battery), /Requer uma destas estruturas/);
+  g.shelter.projects.splice(g.shelter.projects.indexOf(battery), 1);
+
+  const mechanic = { id:'mechanic', name:'Mara', role:'Mecânica', description:'', notes:'', hex:'0,0', home:'0,0', status:'Bem', infection:'Saudável', disposition:'Aliado', skills:['Mecânica'], active:true };
+  g.npcs.push(mechanic);
+  const generator = shelterProjects.createShelterProject('generator', 'utility-a');
+  generator.state = 'Concluído'; generator.progress = generator.requiredProgress; generator.responsibleId = mechanic.id;
+  const lighting = shelterProjects.createShelterProject('interior-lighting');
+  lighting.state = 'Concluído'; lighting.progress = lighting.requiredProgress;
+  const fridge = shelterProjects.createShelterProject('refrigeration', 'utility-b');
+  fridge.state = 'Concluído'; fridge.progress = fridge.requiredProgress;
+  g.shelter.projects.push(generator, lighting, fridge);
+
+  let power = shelterProjects.shelterPower(g, g.shelter);
+  assert.equal(power.production, 1);
+  assert.equal(power.consumption, 2);
+  assert.equal(power.balance, -1);
+  assert.equal(shelterProjects.projectOperational(g, g.shelter, lighting), false);
+
+  g.shelter.disabledProjectKeys = ['refrigeration'];
+  power = shelterProjects.shelterPower(g, g.shelter);
+  assert.equal(power.balance, 0);
+  assert.equal(shelterProjects.projectOperational(g, g.shelter, lighting), true);
+  assert.equal(shelterProjects.projectOperational(g, g.shelter, fridge), false);
+});
+
+test('reparo usa custo e progresso próprios sem apagar construção concluída', () => {
+  const g = campaign();
+  assert.equal(require('../lib/game.ts').establishShelter(g, '0,0'), true);
+  g.shelter.parts = 5;
+  const builder = { id:'repair-builder', name:'Ravi', role:'Construtor', description:'', notes:'', hex:'0,0', home:'0,0', status:'Bem', infection:'Saudável', disposition:'Aliado', skills:['Construção'], active:true };
+  g.npcs.push(builder);
+
+  const barricades = shelterProjects.createShelterProject('barricades');
+  barricades.state = 'Concluído'; barricades.progress = barricades.requiredProgress; barricades.responsibleId = builder.id;
+  g.shelter.projects.push(barricades);
+  assert.equal(shelterProjects.markProjectDamaged(barricades), true);
+  assert.equal(barricades.state, 'Danificado');
+  const beforeParts = g.shelter.parts;
+  assert.equal(shelterProjects.startRepair(g.shelter, barricades), null);
+  assert.equal(g.shelter.parts, beforeParts - 1);
+  assert.equal(barricades.progress, barricades.requiredProgress);
+  const result = shelterProjects.runShelterWorkShift(g, 4);
+  assert.equal(result.ok, true);
+  assert.equal(barricades.state, 'Concluído');
+  assert.equal(barricades.progress, barricades.requiredProgress);
+});
+
+test('instalações podem guardar posição física na planta do abrigo', () => {
+  const infirmary = shelterProjects.createShelterProject('infirmary', 'room-b');
+  assert.equal(infirmary.slotId, 'room-b');
+  assert.equal(shelterProjects.projectDefinition('infirmary').kind, 'facility');
+  assert.ok(shelterProjects.shelterBlueprintSlots.some(slot => slot.id === 'room-b' && slot.zone === 'interior'));
+});
+
 test('NPC em campo só consome provisão portada por sobrevivente do mesmo hex', () => {
   const g = campaign(); const [ana, bia] = g.survivors;
   assert.equal(require('../lib/game.ts').establishShelter(g, '0,0'), true);
