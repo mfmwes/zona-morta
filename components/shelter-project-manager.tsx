@@ -677,11 +677,11 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
               <Button size="sm" variant="outline" onClick={() => cancelPlayerShift(selectedProject)}>Cancelar meu turno</Button>
             </div> : <>
               {playerJoined && selectedProject.state === "Planejado" && <p className="construction-next-step">Você se ofereceu para esta obra. O mestre ainda precisa iniciar a construção.</p>}
-              {playerJoined && selectedProject.state === "Em construção" && <div className="construction-player-preview">
-                <span><b>Turno de 4h</b><small>{playerWork?.issue ?? `+${playerWork?.points ?? 1} progresso previsto${playerWork?.matches?.length ? ` · bônus por ${playerWork.matches.join(" + ")}` : ""}`}</small></span>
+              {playerJoined && (selectedProject.state === "Em construção" || selectedCanOperateWork) && <div className="construction-player-preview">
+                <span><b>{selectedCanOperateWork ? `${selectedDefinition.operationWork?.label ?? "Operação"} · 4h` : "Turno de 4h"}</b><small>{playerWork?.issue ?? `+${playerWork?.points ?? 1} progresso previsto${playerWork?.matches?.length ? ` · bônus por ${playerWork.matches.join(" + ")}` : ""}`}</small></span>
                 <Button size="sm" disabled={Boolean(playerWork?.issue)} onClick={() => schedulePlayerShift(selectedProject)}><Clock3 size={14} /> Trabalhar 4h</Button>
               </div>}
-              {!playerJoined && ["Planejado", "Em construção"].includes(selectedProject.state) && <Button size="sm" onClick={() => joinAsPlayer(selectedProject)}>
+              {!playerJoined && (["Planejado", "Em construção"].includes(selectedProject.state) || selectedCanOperateWork) && <Button size="sm" onClick={() => joinAsPlayer(selectedProject)}>
                 <Users size={14} /> Quero ajudar nesta obra
               </Button>}
               {playerJoined && <Button size="sm" variant="ghost" onClick={() => leaveAsPlayer(selectedProject)}>Sair da equipe</Button>}
@@ -689,8 +689,8 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
           </section>}
 
           {selectedProject && !playerPreview && !selectedProject.workShift && <div className="construction-team">
-            <b>{selectedProject.state === "Concluído" ? "Equipe de operação" : "2 · Defina a equipe"}</b>
-            <p className="construction-team-help">{selectedProject.state === "Concluído"
+            <b>{["Concluído", "Danificado"].includes(selectedProject.state) ? "Equipe de operação" : "2 · Defina a equipe"}</b>
+            <p className="construction-team-help">{["Concluído", "Danificado"].includes(selectedProject.state)
               ? "A operação usa as capacidades indicadas acima."
               : "NPCs são coordenados pelo mestre. Jogadores podem se oferecer diretamente pela própria interface e cumprem turnos individuais."}</p>
             <Pick label="Responsável NPC" value={selectedProject.responsibleId ?? ""} options={[
@@ -713,7 +713,7 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
             <Clock3 size={16} /><span><b>Equipe ocupada até {displayTime(selectedProject.workShift.startMinute + selectedProject.workShift.durationMinutes)}</b><small>Cancele o turno antes de trocar responsáveis ou ajudantes.</small></span>
           </div>}
 
-          {selectedProject?.state === "Concluído" && selectedDefinition.requiresPower && <div className="construction-power-toggle">
+          {selectedProject && ["Concluído", "Danificado"].includes(selectedProject.state) && selectedDefinition.requiresPower && <div className="construction-power-toggle">
             <div><BatteryCharging size={17} /><span><b>Rede de energia</b><small>{(shelter.disabledProjectKeys ?? []).includes(selectedProject.key) ? "Desligado manualmente" : projectOperational(game, shelter, selectedProject) ? "Ligado" : "Sem energia suficiente"}</small></span></div>
             {!playerPreview && <Button size="sm" variant="outline" onClick={() => togglePower(selectedProject.key)}>{(shelter.disabledProjectKeys ?? []).includes(selectedProject.key) ? <><Play size={14} /> Ligar</> : <><PauseCircle size={14} /> Desligar</>}</Button>}
           </div>}
@@ -736,17 +736,17 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
             {selectedProject?.state === "Planejado" && !placementIssue && Boolean(selectedProject.responsibleId || (selectedProject.helperIds ?? []).length || (selectedProject.survivorWorkerIds ?? []).length)
               && <Button onClick={() => begin(selectedProject)}><Hammer size={15} /> 3 · Iniciar obra e pagar custos</Button>}
 
-            {selectedProject?.state === "Em construção" && !selectedProject.workShift
-              && <Button onClick={() => scheduleShift(selectedProject)}><Clock3 size={15} /> 4 · Programar turno de 4h</Button>}
+            {selectedProject && (selectedProject.state === "Em construção" || selectedCanOperateWork) && !selectedProject.workShift
+              && <Button onClick={() => scheduleShift(selectedProject)}><Clock3 size={15} /> {selectedCanOperateWork ? `Trabalhar 4h · ${selectedDefinition.operationWork?.label ?? "Operação"}` : "4 · Programar turno de 4h"}</Button>}
 
             {selectedProject?.workShift && <Button variant="outline" onClick={() => cancelShift(selectedProject)}><PauseCircle size={15} /> Cancelar turno</Button>}
 
-            {selectedProject?.state === "Danificado" && <Button onClick={() => repair(selectedProject)}><Wrench size={15} /> Iniciar reparo</Button>}
+            {selectedProject && ["Danificado", "Inoperante", "Destruído"].includes(selectedProject.state) && <Button onClick={() => repair(selectedProject)}><Wrench size={15} /> {selectedProject.state === "Destruído" ? "Iniciar restauração" : "Iniciar reparo"}</Button>}
 
-            {selectedProject?.state === "Concluído" && <Button variant="outline" onClick={() => edit(draft => {
+            {selectedProject && ["Concluído", "Danificado", "Inoperante"].includes(selectedProject.state) && <Button variant="outline" onClick={() => edit(draft => {
               const target = projectFor(draft.shelter, selectedProject.key);
-              if (target && markProjectDamaged(target)) addLog(draft, "abrigo", `${target.name} foi marcado como danificado.`);
-            })}><AlertTriangle size={15} /> Marcar danificado</Button>}
+              if (target && markProjectDamaged(target)) addLog(draft, "abrigo", `${target.name} sofreu 1 dano estrutural e ficou com Integridade ${projectIntegrity(target)}/3.`);
+            })}><AlertTriangle size={15} /> Aplicar 1 dano</Button>}
           </div>}
         </div>
       </aside>
