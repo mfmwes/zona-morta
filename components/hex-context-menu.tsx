@@ -40,6 +40,7 @@ export function HexContextMenu({
   onCreatePoint,
   onOpenMasterTools,
   onRelocateShelter,
+  activeGroupHex,
   onMoveSurvivors,
   children,
 }: {
@@ -52,6 +53,7 @@ export function HexContextMenu({
   onCreatePoint: () => void;
   onOpenMasterTools: () => void;
   onRelocateShelter: () => void;
+  activeGroupHex: string;
   onMoveSurvivors: () => void;
   children: ReactElement;
 }) {
@@ -59,6 +61,8 @@ export function HexContextMenu({
   if (!options) return children;
 
   const { record } = options;
+  const activeSourceCanReach = options.sources.some(group => group.hex === activeGroupHex);
+  const activeIsMain = activeGroupHex === game.partyHex;
   const title = record.discovery === "desconhecido"
     ? "Fora do horizonte"
     : record.sector?.name ?? `Hex ${hexId}`;
@@ -86,14 +90,14 @@ export function HexContextMenu({
 
       <ContextMenuItem onSelect={onOpenDetails}><MapPin /> Abrir detalhes</ContextMenuItem>
 
-      {!playerPreview && options.canObserve &&
-        <ContextMenuItem onSelect={() => run({ type: "observe" })}><Eye /> Avistar setor</ContextMenuItem>}
+      {!playerPreview && record.discovery === "desconhecido" && activeSourceCanReach &&
+        <ContextMenuItem onSelect={() => run({ type: "observe" })}><Eye /> Avistar com o grupo ativo</ContextMenuItem>}
 
-      {!playerPreview && options.canTravel &&
+      {!playerPreview && activeIsMain && options.canTravel &&
         <ContextMenuItem onSelect={() => run({ type: "travel" })}><Route /> Mover grupo principal · {record.routeHours} h</ContextMenuItem>}
 
-      {!playerPreview && options.canMoveSurvivors &&
-        <ContextMenuItem onSelect={onMoveSurvivors}><Footprints /> Mover sobreviventes…</ContextMenuItem>}
+      {!playerPreview && record.discovery !== "desconhecido" && activeSourceCanReach &&
+        <ContextMenuItem onSelect={onMoveSurvivors}><Footprints /> Mover grupo ativo…</ContextMenuItem>}
 
       {!playerPreview && options.canEstablish &&
         <ContextMenuItem onSelect={() => run({ type: "establish" })}><House /> Estabelecer abrigo aqui</ContextMenuItem>}
