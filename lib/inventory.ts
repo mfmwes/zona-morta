@@ -307,6 +307,8 @@ export function addStack(items: InventoryItem[], incoming: InventoryItem) {
     && item.prepared === incoming.prepared && item.verified === incoming.verified
     && item.opened === incoming.opened && item.expiresDay === incoming.expiresDay
     && batteryStateFor(item) === batteryStateFor(incoming)
+    && item.storedResource === incoming.storedResource
+    && item.storedAmount === incoming.storedAmount
     && (item.armorMarked ?? 0) === (incoming.armorMarked ?? 0)
     && item.qty + incoming.qty <= 99);
   if (match) match.qty += incoming.qty;
