@@ -108,7 +108,7 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
   const selectedDefinition = projectDefinition(selectedKey) ?? shelterProjectCatalog[0];
   const selectedProject = projectFor(shelter, selectedDefinition.key);
   const selectedProgress = selectedProject ? projectProgress(selectedProject) : null;
-  const selectedPreview = selectedProject?.state === "Em construção" ? projectWorkPreview(game, shelter, selectedProject) : null;
+  const selectedPreview = !playerSurvivorId && selectedProject?.state === "Em construção" ? projectWorkPreview(game, shelter, selectedProject) : null;
   const playerSurvivor = playerSurvivorId ? game.survivors.find(person => person.id === playerSurvivorId) : undefined;
   const playerJoined = Boolean(selectedProject && playerSurvivorId && (selectedProject.survivorWorkerIds ?? []).includes(playerSurvivorId));
   const playerShift = selectedProject && playerSurvivorId
@@ -394,11 +394,13 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
             <div className="construction-mini-progress"><span style={{ width: `${Math.min(100, progress.value / progress.required * 100)}%` }} /></div>
             <small>{progress.value}/{progress.required} progresso{progress.repairing ? " de reparo" : ""}</small>
             <small>{project.workShift
-              ? `⏱ Trabalhando até ${displayTime(project.workShift.startMinute + project.workShift.durationMinutes)} · +${project.workShift.points} previsto`
-              : preview?.issue ? `⏸ ${preview.issue}`
-              : preview ? `Pronto para agendar: +${preview.points} em 4h`
-              : project.state === "Danificado" ? "Aguardando reparo"
-              : projectPlacementIssue(shelter, project) ?? "Aguardando início"}</small>
+              ? `⏱ Equipe NPC até ${displayTime(project.workShift.startMinute + project.workShift.durationMinutes)} · +${project.workShift.points} previsto`
+              : project.volunteerShifts?.length
+                ? `⏱ ${project.volunteerShifts.length} turno(s) de jogador · próximo até ${displayTime(Math.min(...project.volunteerShifts.map(shift => shift.startMinute + shift.durationMinutes)))}`
+                : preview?.issue ? `⏸ ${preview.issue}`
+                : preview ? `Pronto para agendar: +${preview.points} em 4h`
+                : project.state === "Danificado" ? "Aguardando reparo"
+                : projectPlacementIssue(shelter, project) ?? "Aguardando início"}</small>
           </button>;
         })}</div>}
     </section>
