@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import { defaultState, type GameState } from "@/lib/game";
 import { preserveKnownSectors } from "@/lib/sectors";
+import { normalizeShelter } from "@/lib/shelter-projects";
 import { randomToken, tokenHash } from "@/lib/auth";
 
 type Row = { revision: number; body: string };
@@ -97,7 +98,14 @@ export async function readCampaign(campaignId: string) {
     ).bind(campaignId).first<Row>();
   }
   if (!row) throw new Error("Falha ao iniciar campanha.");
-  return { revision: row.revision, state: preserveKnownSectors(JSON.parse(row.body) as GameState) };
+  const state = preserveKnownSectors(JSON.parse(row.body) as GameState);
+  normalizeShelter(state.shelter);
+  for (const site of state.formerShelters ?? []) normalizeShelter(site);
+  for (const survivor of state.survivors) {
+    survivor.outfit ??= "";
+    survivor.transport ??= "";
+  }
+  return { revision: row.revision, state };
 }
 
 export async function writeCampaign(campaignId: string, state: GameState, expectedRevision: number) {
