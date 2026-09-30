@@ -20,7 +20,10 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
   visible.shelter.projects = (visible.shelter.projects ?? []).map(project => ({
     id: project.id, key: project.key, name: project.name, category: project.category, state: project.state,
     progress: project.progress, requiredProgress: project.requiredProgress,
-    requiredCapabilities: project.requiredCapabilities, effects: project.effects, costs: {}, helperIds: [],
+    buildCapabilities: project.buildCapabilities, requiredCapabilities: project.requiredCapabilities,
+    operationMode: project.operationMode, slotId: project.slotId,
+    repairProgress: project.repairProgress, requiredRepairProgress: project.requiredRepairProgress,
+    effects: project.effects, costs: {}, helperIds: [],
   }));
   visible.shelter.posts = [];
   visible.shelter.manualAdjustments = { security: 0, energy: 0, comfort: 0 };
