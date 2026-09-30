@@ -101,6 +101,11 @@ function projectLocation(project?: ShelterProject) {
   return shelterBlueprintSlots.find(slot => slot.id === project.slotId)?.label ?? project.slotId;
 }
 
+function integrityGlyph(project: ShelterProject) {
+  const value = projectIntegrity(project);
+  return `${"●".repeat(value)}${"○".repeat(Math.max(0, 3 - value))}`;
+}
+
 export function ShelterProjectsManager({ game, edit, playerPreview, playerSurvivorId }: { game: GameState; edit: Edit; playerPreview: boolean; playerSurvivorId?: string | null }) {
   const shelter = game.shelter;
   const recommendations = shelterRecommendations(game, shelter);
@@ -385,6 +390,7 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
       {occupant ? <>
         <b>{occupant.name}</b>
         <span className={`construction-state is-${projectStateTone(occupant)}`}>{projectStateLabel(occupant)}</span>
+        {["Concluído", "Danificado", "Inoperante", "Destruído"].includes(occupant.state) && <small className="construction-integrity-mini">{integrityGlyph(occupant)} · {projectIntegrity(occupant)}/3</small>}
         {(occupant.workShift || occupant.volunteerShifts?.length) && <small><Clock3 size={12} /> até {displayTime(Math.min(
           ...(occupant.workShift ? [occupant.workShift.startMinute + occupant.workShift.durationMinutes] : []),
           ...(occupant.volunteerShifts ?? []).map(shift => shift.startMinute + shift.durationMinutes),
