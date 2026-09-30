@@ -2,23 +2,22 @@
 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ChevronDown, Compass, Dice5, Eye, Footprints, House, MapPin, Package, Plus, Route, Search, ZoomIn, ZoomOut } from "lucide-react";
+import { ChevronDown, Compass, Dice5, Eye, Footprints, House, MapPin, Package, Route, Search, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ShelterMoveDialog } from "@/components/shelter-move";
 import { HexContextMenu } from "@/components/hex-context-menu";
+import { HexGeneratorDialog, type HexGeneratorKind, type HexGeneratorRequest } from "@/components/hex-generator-dialog";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { Counter, Field, Pick } from "@/components/game-controls";
-import { addLog, content, establishShelter, hexDistance, hexKey, type GameState, type Point } from "@/lib/game";
-import { createId } from "@/lib/id";
+import { content, establishShelter, hexDistance, hexKey, type GameState, type Point } from "@/lib/game";
 import { revealSector } from "@/lib/sectors";
 import { rollDie } from "@/lib/rolls";
 import { normalizedSector, recordSearch, searchError, type SearchInput } from "@/lib/exploration";
 import { performHexAction, type HexQuickAction } from "@/lib/hex-actions";
 
 type Edit = (fn: (draft: GameState) => void) => void;
-type Generator = "locais" | "comercios" | "eventos";
 
 function labelLines(name: string) {
   if (name.length <= 13) return [name];
@@ -38,23 +37,11 @@ function dice12() {
   return rollDie(12);
 }
 
-function pointFromResult(text: string) {
-  const first = text.indexOf(".");
-  return first >= 0 ? { name: text.slice(0, first).trim(), signal: text.slice(first+1).trim() }
-    : { name: text, signal: "" };
-}
-
 export function HexExplorer({ game, edit, playerPreview }: { game: GameState; edit: Edit; playerPreview: boolean }) {
   const [selected, setSelected] = useState(game.partyHex);
   const [signsDraft, setSignsDraft] = useState<{ key: string; source: string; value: string } | null>(null);
   const [notesDraft, setNotesDraft] = useState<{ key: string; source: string; value: string } | null>(null);
-  const [generated, setGenerated] = useState<{ kind: Generator; roll: number; text: string } | null>(null);
-  const [pointName, setPointName] = useState("");
-  const [pointSignal, setPointSignal] = useState("");
-  const [pointAccess, setPointAccess] = useState("");
-  const [pointNotes, setPointNotes] = useState("");
-  const [pointRevealed, setPointRevealed] = useState(true);
-  const [showPointForm, setShowPointForm] = useState(false);
+  const [generatorRequest, setGeneratorRequest] = useState<HexGeneratorRequest | null>(null);
   const [searchId, setSearchId] = useState<string | null>(null);
   const [searchMode, setSearchMode] = useState<"specific" | "open">("specific");
   const [searchWhat, setSearchWhat] = useState("");
@@ -64,8 +51,6 @@ export function HexExplorer({ game, edit, playerPreview }: { game: GameState; ed
   const [searchResult, setSearchResult] = useState("");
   const [lootTable, setLootTable] = useState("");
   const [rolledLoot, setRolledLoot] = useState<{ table: string; roll: number } | null>(null);
-  const [eventTrigger, setEventTrigger] = useState("");
-  const [eventRevealed, setEventRevealed] = useState(true);
   const [gmOpen, setGmOpen] = useState(false);
   const [compact, setCompact] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -96,7 +81,7 @@ export function HexExplorer({ game, edit, playerPreview }: { game: GameState; ed
   function selectHex(id: string) {
     if (id !== selected) {
       setSelected(id);
-      setGenerated(null); setShowPointForm(false); setSearchId(null);
+      setSearchId(null);
       setSignsDraft(null); setNotesDraft(null);
     }
     if (compact) setSheetOpen(true);
@@ -109,33 +94,6 @@ export function HexExplorer({ game, edit, playerPreview }: { game: GameState; ed
   const notes = notesDraft?.key === selected && notesDraft.source === record.notes ? notesDraft.value : record.notes;
   const setSigns = (value: string) => setSignsDraft({ key: selected, source: record.signs, value });
   const setNotes = (value: string) => setNotesDraft({ key: selected, source: record.notes, value });
-
-  function generate(kind: Generator) {
-    const roll = dice100();
-    const row = content.generators[kind].find(entry => entry.roll === roll)!;
-    setGenerated({ kind, roll, text: row.text });
-    if (kind === "eventos") { setEventTrigger(""); }
-    else {
-      const point = pointFromResult(row.text);
-      setPointName(point.name); setPointSignal(point.signal);
-      setPointAccess(""); setPointNotes(""); setShowPointForm(true);
-    }
-  }
-
-  function savePoint() {
-    if (!pointName.trim()) return;
-    const point: Point = {
-      id: createId(), name: pointName.trim(),
-      kind: generated?.kind === "comercios" ? "comércio" : "local",
-      signal: pointSignal.trim(), access: pointAccess.trim(), notes: pointNotes.trim(),
-      revealed: pointRevealed, searches: [],
-    };
-    edit(draft => {
-      draft.hexes[selected].points.push(point);
-      addLog(draft, "descoberta", `${draft.hexes[selected].sector?.name ?? `Hex ${selected}`}: ${point.name} registrado.`);
-    });
-    setGenerated(null); setShowPointForm(false); setPointName(""); setPointSignal(""); setPointAccess(""); setPointNotes("");
-  }
 
   function startSearch(point: Point) {
     if (searchId === point.id) { setSearchId(null); return; }
@@ -195,25 +153,16 @@ export function HexExplorer({ game, edit, playerPreview }: { game: GameState; ed
 
   function observe() { runHexAction(selected, { type: "observe" }); }
 
-  function openGenerator(id: string, kind: Generator) {
+  function openGenerator(id: string, kind: HexGeneratorKind) {
     selectHex(id);
     const roll = dice100();
     const row = content.generators[kind].find(entry => entry.roll === roll)!;
-    setGenerated({ kind, roll, text: row.text });
-    if (kind === "eventos") {
-      setEventTrigger("");
-      setShowPointForm(false);
-    } else {
-      const point = pointFromResult(row.text);
-      setPointName(point.name); setPointSignal(point.signal);
-      setPointAccess(""); setPointNotes(""); setShowPointForm(true);
-    }
+    setGeneratorRequest({ hexId: id, kind, roll, text: row.text });
   }
 
   function openManualPoint(id: string) {
     selectHex(id);
-    setGenerated(null); setPointName(""); setPointSignal(""); setPointAccess(""); setPointNotes("");
-    setShowPointForm(true);
+    setGeneratorRequest({ hexId: id, kind: "manual" });
   }
 
   function openMasterTools(id: string) {
@@ -298,41 +247,9 @@ export function HexExplorer({ game, edit, playerPreview }: { game: GameState; ed
             <Button size="sm" variant="outline" onClick={() => edit(draft => { draft.hexes[selected].signs = signs.trim(); draft.hexes[selected].notes = notes.trim(); })}>Salvar anotações</Button>
           </div>
           <div className="divider" />
-          <h3 className="section-title">O que existe aqui?</h3>
-          <p className="intro-line mt-1">{record.discovery === "desconhecido"
-            ? "Avista o setor primeiro. Depois, B1 e B2 podem criar lugares e B3 responder a uma mudança concreta."
-            : "Role só para uma pergunta em aberto. B1 e B2 criam lugares; B3 responde a um acontecimento."}</p>
-          <div className="flex flex-wrap gap-2 mt-3">
-            <Button size="sm" variant="outline" disabled={record.discovery === "desconhecido"} onClick={() => generate("locais")}><Dice5 /> B1 Local</Button>
-            <Button size="sm" variant="outline" disabled={record.discovery === "desconhecido"} onClick={() => generate("comercios")}><Dice5 /> B2 Comércio</Button>
-            <Button size="sm" variant="outline" disabled={record.discovery === "desconhecido"} onClick={() => generate("eventos")}><Dice5 /> B3 Evento</Button>
-            <Button size="sm" variant="outline" disabled={record.discovery === "desconhecido"} onClick={() => { setGenerated(null); setPointName(""); setPointSignal(""); setPointAccess(""); setPointNotes(""); setShowPointForm(true); }}><Plus /> Criar ponto</Button>
+          <div className="character-rule-note">
+            <b>Tabelas de conteúdo movidas para o mapa.</b> Use o botão direito do mouse em um hex revelado para abrir B1 Local, B2 Comércio, B3 Evento ou criar um ponto manualmente.
           </div>
-          {generated && <div className="list-card mt-4 text-sm leading-relaxed" aria-live="polite">
-            <span className="tag">{generated.kind.toUpperCase()} · {String(generated.roll).padStart(2,"0")}</span>
-            <p className="mt-2">{generated.text}</p>
-            <p className="text-xs subtle mt-2">O resultado é uma proposta. Adapte à ficção antes de registrar.</p>
-          </div>}
-          {generated?.kind === "eventos" && <div className="grid gap-2 mt-3">
-            <Field label="Gatilho que tornou o evento pertinente" value={eventTrigger} onChange={setEventTrigger} placeholder="Barulho, horário, retorno, abertura..." />
-            <label className="flex items-center gap-2 text-sm"><Switch checked={eventRevealed} onCheckedChange={setEventRevealed} /> Revelar aos jogadores</label>
-            <Button size="sm" disabled={!eventTrigger.trim()} onClick={() => {
-              edit(draft => {
-                draft.hexes[selected].events.push({ id: createId(), text: generated.text, trigger: eventTrigger.trim(), revealed: eventRevealed });
-                addLog(draft, "evento", `${draft.hexes[selected].sector?.name ?? `Hex ${selected}`}: ${generated.text}`);
-              }); setGenerated(null);
-            }}>Registrar evento</Button>
-          </div>}
-          {showPointForm && generated?.kind !== "eventos" && <div className="grid gap-3 mt-4 rounded-md border bg-[#f1f6f2] p-4">
-            <h4 className="font-extrabold">Novo ponto de interesse</h4>
-            <Field label="Lugar" value={pointName} onChange={setPointName} placeholder="Nome do ponto" />
-            <Field label="Primeiro sinal" value={pointSignal} onChange={setPointSignal} multiline placeholder="O que se percebe antes de entrar?" />
-            <Field label="Acesso e impedimento" value={pointAccess} onChange={setPointAccess} placeholder="Porta, rota, ocupação, obstáculo..." />
-            <Field label="Notas do mestre" value={pointNotes} onChange={setPointNotes} multiline placeholder="Estoque e interiores continuam em aberto se você não os fixar." />
-            <label className="flex items-center gap-2 text-sm"><Switch checked={pointRevealed} onCheckedChange={setPointRevealed} /> Visível na prévia dos jogadores</label>
-            <div className="flex gap-2"><Button size="sm" disabled={!pointName.trim()} onClick={savePoint}>Registrar ponto</Button>
-              <Button size="sm" variant="ghost" onClick={() => { setShowPointForm(false); setGenerated(null); }}>Cancelar</Button></div>
-          </div>}
             </CollapsibleContent>
           </Collapsible>
         </>}
@@ -488,11 +405,13 @@ export function HexExplorer({ game, edit, playerPreview }: { game: GameState; ed
           <span className="flex items-center gap-1"><MapPin size={15} /> Número = pontos</span>
         </div>
       </div>
-      <p className="map-pan-hint text-sm subtle mt-2">Toque em um hex para abrir os detalhes. {mapOverview
+      <p className="map-pan-hint text-sm subtle mt-2">Toque em um hex para abrir os detalhes. No computador, clique com o botão direito para abrir as ações e tabelas daquele hex. {mapOverview
         ? "Use “Ampliar” para ler os setores no mapa." : "Deslize o mapa para os lados ou use “Ver tudo” para conferir a cidade inteira."}</p>
       <p className="intro-line mt-4">O setor ganha nome e sinais quando é avistado. Um hex pode conter vários pontos; seus interiores continuam em aberto até a exploração.</p>
     </section>
 
+    {generatorRequest && <HexGeneratorDialog game={game} edit={edit} request={generatorRequest}
+      onOpenChange={open => { if (!open) setGeneratorRequest(null); }} />}
     {relocateDestination && <ShelterMoveDialog game={game} edit={edit} mode="relocate" destination={relocateDestination}
       open={relocateOpen} onOpenChange={setRelocateOpen} hideTrigger />}
     {compact ? <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
