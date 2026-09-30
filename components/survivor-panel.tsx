@@ -600,7 +600,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
                 <Button size="sm" variant="outline" disabled={selected.water < 1 || selected.waterConsumedDay === game.day} onClick={() => edit(draft => {
                   if (consumeDailyProvision(draft, selected.id, "water")) toast.success("Água solta de hoje registrada.");
                 })}><Droplets size={15} /> {selected.waterConsumedDay === game.day ? "Água de hoje registrada" : "Beber 1 porção solta"}</Button></div>
-              <p className="roll-hint">Para consumir uma porção de um alimento ou bebida específico, use <b>Ações → Consumir</b> no item. Ele só desaparece quando suas porções acabam.</p>
+              <p className="roll-hint">Para registrar alimentação/hidratação do dia, use <b>Comer/Beber</b> ou <b>Ações → Consumir</b> no item. Alterar o contador manualmente corrige o estoque, mas não registra que o personagem consumiu.</p>
               <div className="character-provision-actions">{!playerMode && <ProvisionTransferDialog key={selected.id} game={game} edit={edit} survivorId={selected.id} />}<Pick label="Tipo de munição" value={ammoTypeFor(selected)} options={ammoTypes} onChange={value => change(selected.id, s => { s.ammoType = value; })} /></div>
             </section>
             <section className="character-surface"><SectionHeading index="02" title="Kit ativo" />
