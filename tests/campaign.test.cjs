@@ -744,3 +744,37 @@ test('jogador não pode alterar a própria posição diretamente pelo payload da
   const after = { ...structuredClone(ana), hex:'1,0' };
   assert.equal(collaboration.applyPlayerChange(g, ana.id, before, after, 0, []), null);
 });
+
+
+test('descanso entre grupos separados só permite alvos no mesmo hex', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  ana.hex = '0,0'; bia.hex = '1,0';
+  const invalid = abilities.resolveGroupRest(g, 'short', [
+    { survivorId: ana.id, choices: [{ action:'stress', targetId:bia.id }, { action:'prepare', targetId:ana.id }] },
+    { survivorId: bia.id, choices: [{ action:'stress', targetId:bia.id }, { action:'prepare', targetId:bia.id }] },
+  ], () => 2);
+  assert.equal(invalid.ok, false);
+});
+
+test('preparo em descanso só recebe bônus de equipe com sobreviventes no mesmo hex', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  ana.hex = '0,0'; bia.hex = '1,0';
+  ana.hope = 2; bia.hope = 2;
+  const result = abilities.resolveGroupRest(g, 'short', [
+    { survivorId: ana.id, choices: [{ action:'prepare', targetId:ana.id }, { action:'fiction', targetId:ana.id }] },
+    { survivorId: bia.id, choices: [{ action:'prepare', targetId:bia.id }, { action:'fiction', targetId:bia.id }] },
+  ], () => 1);
+  assert.equal(result.ok, true);
+  assert.equal(ana.hope, 3);
+  assert.equal(bia.hope, 3);
+});
+
+test('habilidade limitada por local usa o hex real do sobrevivente', () => {
+  const g = campaign(); const ana = g.survivors[0];
+  ana.hex = '0,0';
+  const effect = 'Uma vez por hex, faça algo útil.';
+  assert.equal(abilities.recordAbilityUse(g, ana.id, 'teste-local', 'Teste local', effect, 'free'), true);
+  assert.equal(abilities.abilityAvailable(g, ana.id, 'teste-local', effect), false);
+  ana.hex = '1,0';
+  assert.equal(abilities.abilityAvailable(g, ana.id, 'teste-local', effect), true);
+});
