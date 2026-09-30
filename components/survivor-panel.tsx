@@ -104,7 +104,7 @@ function RestPlanner({ game, edit, selected, playerMode, playerPreview, restPeer
   const [kind, setKind] = useState<RestKind>("short");
   const [choices, setChoices] = useState<Record<string, [RestChoice, RestChoice]>>({});
   const canResolve = !playerPreview && !playerMode;
-  const canChoose = !playerPreview;
+  const canChoose = playerMode || !playerPreview;
   const actors = playerMode ? [selected] : game.survivors;
   const peers = playerMode
     ? (restPeers.some(person => person.id === selected.id) ? restPeers : [{ id: selected.id, name: selected.name }, ...restPeers])
@@ -160,7 +160,7 @@ function RestPlanner({ game, edit, selected, playerMode, playerPreview, restPeer
 
   return <section className="character-surface character-rest-panel"><SectionHeading index="05" title={playerMode ? "Seu descanso" : "Descanso da mesa"} aside={<span className="character-micro">2 AÇÕES POR PESSOA</span>} />
     <p className="character-section-intro">Curto recupera recursos com d4+1; longo limpa o recurso escolhido. Cada ação pode beneficiar você ou outra pessoa da equipe. Preparar concede Hope automaticamente.</p>
-    {!canChoose ? <p className="character-rest-readonly">Cada jogador registra as próprias escolhas nesta ficha; o mestre conclui o descanso da mesa e aplica os resultados.</p>
+    {!canChoose ? <p className="character-rest-readonly">Esta prévia do mestre é somente leitura. No acesso real de jogador, cada pessoa pode registrar as próprias duas ações; o mestre continua responsável por concluir o descanso da mesa.</p>
       : <><div className="character-rest-actions"><Button size="sm" variant="outline" disabled={!actors.length} onClick={() => begin("short")}><Moon size={16} /> Descanso curto</Button>
         <Button size="sm" disabled={!actors.length} onClick={() => begin("long")}><Moon size={16} /> Descanso longo</Button></div>
         {playerMode && selected.restPlan && <p className="character-rest-status">Escolhas de descanso {selected.restPlan.kind === "short" ? "curto" : "longo"} registradas. Você pode alterá-las antes da conclusão.</p>}</>}
@@ -170,8 +170,11 @@ function RestPlanner({ game, edit, selected, playerMode, playerPreview, restPeer
         const selectedChoices = choices[person.id] ?? defaultChoices(person, kind);
         const options = restActionsFor(kind).map(action => ({ value: action, label: restActionLabels[action] }));
         return <div className="rest-planner-row" key={person.id}><b>{person.name}</b><div className="rest-planner-choices">
-          {[0, 1].map(index => <div className="rest-planner-action" key={index}><Pick label={`${index === 0 ? "Primeira" : "Segunda"} ação`} value={selectedChoices[index as 0 | 1].action} options={options} onChange={value => updateChoice(person.id, index as 0 | 1, "action", value)} />
-            <Pick label="Beneficia" value={selectedChoices[index as 0 | 1].targetId} options={targetOptions} onChange={value => updateChoice(person.id, index as 0 | 1, "targetId", value)} /></div>)}
+          {[0, 1].map(index => <div className="rest-planner-action" key={index}>
+            <span className="rest-planner-action-title">{index === 0 ? "AÇÃO 1" : "AÇÃO 2"}</span>
+            <Pick label="O que fazer" value={selectedChoices[index as 0 | 1].action} options={options} onChange={value => updateChoice(person.id, index as 0 | 1, "action", value)} />
+            <Pick label="Quem recebe o benefício" value={selectedChoices[index as 0 | 1].targetId} options={targetOptions} onChange={value => updateChoice(person.id, index as 0 | 1, "targetId", value)} />
+          </div>)}
         </div></div>;
       })}</div>
       <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button><Button onClick={canResolve ? resolve : savePersonalPlan}>{canResolve ? "Aplicar descanso" : "Registrar escolhas"}</Button></DialogFooter>
