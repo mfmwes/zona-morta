@@ -20,7 +20,10 @@ export const protections = entries("Proteções").map(entry => {
   return { name: entry.name, major, severe, armor: Number(field(entry, "Armadura (espaços)")),
     stored: stored(entry), effect: field(entry, "Efeito") };
 });
-export const getPrimary = (name: string) => primaryWeapons.find(item => item.name === name);
+const primaryAliases: Record<string, string> = {
+  "Pá dobrável": "Pá curta",
+};
+export const getPrimary = (name: string) => primaryWeapons.find(item => item.name === (primaryAliases[name] ?? name));
 export const getSecondary = (name: string) => secondaryWeapons.find(item => item.name === name);
 export const getProtection = (name: string) => protections.find(item => item.name === name);
 
