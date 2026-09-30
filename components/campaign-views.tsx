@@ -11,11 +11,12 @@ import { AddItemDialog, ItemActionsDialog } from "@/components/inventory-workflo
 import { ItemContextMenu } from "@/components/item-context-menu";
 import { ItemArt } from "@/components/item-art";
 import { ShelterMoveDialog } from "@/components/shelter-move";
-import { content, establishShelter, recoverFormerStock, type GameState } from "@/lib/game";
+import { content, establishShelter, recoverFormerStock, residentNpcs, shelterPopulation, type GameState } from "@/lib/game";
 import { atSharedStorage, catalogForItem } from "@/lib/inventory";
 import { provisionBreakdown, provisionDisplay, provisionItemInfo } from "@/lib/provision-items";
 import { closeDay, eveningNeeds } from "@/lib/survival";
 import { adjustProvisionCount } from "@/lib/provisions";
+import { createId } from "@/lib/id";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 
@@ -26,6 +27,9 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
   const [shelterNotes, setShelterNotes] = useState(game.shelter.notes);
   const [shelterName, setShelterName] = useState(game.shelter.name);
   const [cacheRecipient, setCacheRecipient] = useState("");
+  const [convertOpen, setConvertOpen] = useState(false);
+  const [convertName, setConvertName] = useState("");
+  const [convertRole, setConvertRole] = useState("");
   const s = game.shelter;
   const hasShelter = s.hex !== null;
   const sharedAccessible = atSharedStorage(game);
@@ -35,6 +39,8 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
   const recipient = game.survivors.find(person => person.id === cacheRecipient) ?? game.survivors[0];
   const shelterFood = provisionBreakdown(s, "food");
   const shelterWater = provisionBreakdown(s, "water");
+  const namedResidents = residentNpcs(game);
+  const population = shelterPopulation(game);
   useEffect(() => { setShelterNotes(s.notes); }, [s.notes]);
   useEffect(() => { setShelterName(s.name); }, [s.name]);
   const stocks: { key: keyof typeof s; label: string; unit: string; max: number }[] = [
@@ -62,7 +68,7 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
           <p className="intro-line mt-2">{hasShelter
             ? `Situado em ${homeSector}. O grupo está em ${currentSector}.`
             : `O grupo está em ${currentSector}. Ainda não há base fixa; escolha um lugar explorado para estabelecer uma.`}</p></div>
-        {hasShelter && <span className="tag">{s.residents + game.survivors.length}/{s.capacity} pessoas</span>}
+        {hasShelter && <span className="tag">{population}/{s.capacity} pessoas</span>}
       </div>
       {!hasShelter && !playerPreview && <div className="mt-5 list-card">
         <p className="text-sm">O setor atual já foi explorado. Estabelecer uma base aqui não consome tempo automaticamente: resolva segurança, acesso e transporte na ficção.</p>
@@ -88,7 +94,7 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
               }}>Salvar nome</Button></div>
           <div className="grid gap-3"><Counter compact label="Capacidade" value={s.capacity} min={1} max={99}
             onChange={value => edit(draft => { draft.shelter.capacity = value; })} />
-            <Counter compact label="Outros moradores" value={s.residents} max={99}
+            <Counter compact label="Moradores não identificados" value={s.residents} max={99}
               onChange={value => edit(draft => { draft.shelter.residents = value; })} /></div>
         </div>}
       </>}
@@ -157,11 +163,11 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
             setFoodConsumers(String(needs.food)); setWaterConsumers(String(needs.water));
           }}><Moon /> Fechar dia</Button></DialogTrigger>
           <DialogContent><DialogHeader><DialogTitle>Passar para o próximo amanhecer</DialogTitle>
-            <DialogDescription>Os valores sugeridos incluem moradores e sobreviventes presentes que ainda não registraram consumo pessoal hoje. Ajuste se alguém comeu de outra fonte. Confira privação, vigia e descanso com o grupo.</DialogDescription></DialogHeader>
+            <DialogDescription>Os valores sugeridos incluem moradores não identificados, NPCs presentes nas reservas e sobreviventes presentes que ainda não registraram consumo pessoal hoje. Ajuste se alguém comeu de outra fonte. Confira privação, vigia e descanso com o grupo.</DialogDescription></DialogHeader>
             <div className="inventory-search"><Field label="Comida das reservas · porções" value={foodConsumers} onChange={setFoodConsumers} type="number" />
               <Field label="Água das reservas · porções" value={waterConsumers} onChange={setWaterConsumers} type="number" /></div>
-            {!atSharedStorage(game) && <p className="character-rule-note">O grupo está fora da base. As fichas precisam registrar provisões usadas durante a expedição; a sugestão inclui apenas os moradores do abrigo.</p>}
-            <p className="text-sm subtle">Faltas serão registradas; aplique Stress a quem ficou sem mantimentos. Itens físicos ainda guardados não entram nesta conta até virarem porções.</p>
+            {!atSharedStorage(game) && <p className="character-rule-note">O grupo está fora da base. A sugestão continua incluindo moradores e NPCs que ficaram na base; pessoas em campo precisam ter outra fonte registrada.</p>}
+            <p className="text-sm subtle">Faltas ficam registradas no diário; o sistema não aplica novas penalidades automáticas. Itens físicos prontos nas reservas entram no total.</p>
             {!consumptionValid && <p className="inventory-danger" role="alert">Informe quantidades inteiras entre 0 e 999.</p>}
             <DialogFooter><Button variant="outline" onClick={() => setCloseOpen(false)}>Cancelar</Button><Button disabled={!consumptionValid} onClick={nextMorning}>Confirmar anoitecer</Button></DialogFooter>
           </DialogContent>
@@ -170,7 +176,13 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
       </section>
       {hasShelter && <section className="panel panel-pad">
         <p className="dossier-title">Pessoas e necessidades</p>
-        <p className="text-sm mt-3">{s.residents} outro(s) morador(es) registrados. Defina nomes, relações e necessidades nas notas do abrigo.</p>
+        <p className="text-sm mt-3">{s.residents} morador(es) não identificado(s) e {namedResidents.length} pessoa(s) identificada(s) pertencem a esta base.</p>
+        {namedResidents.length > 0 && <div className="mt-3 grid gap-2">{namedResidents.map(npc => <div className="list-card text-sm" key={npc.id}><b>{npc.name}</b>{npc.role && <span className="subtle"> · {npc.role}</span>}{npc.duty && <p className="mt-1 text-xs subtle">Função: {npc.duty}</p>}</div>)}</div>}
+        {!playerPreview && s.residents > 0 && <Dialog open={convertOpen} onOpenChange={setConvertOpen}><DialogTrigger asChild><Button size="sm" variant="outline" className="mt-3" onClick={() => { setConvertName(""); setConvertRole(""); }}>Identificar um morador</Button></DialogTrigger>
+          <DialogContent><DialogHeader><DialogTitle>Converter morador em NPC</DialogTitle><DialogDescription>Isso reduz apenas a contagem sem nome e cria uma pessoa identificada; nenhum nome é inventado automaticamente.</DialogDescription></DialogHeader>
+            <div className="grid gap-3"><Field label="Nome" value={convertName} onChange={setConvertName} placeholder="Nome da pessoa" /><Field label="Função / papel" value={convertRole} onChange={setConvertRole} placeholder="Opcional" /></div>
+            <DialogFooter><Button variant="outline" onClick={() => setConvertOpen(false)}>Cancelar</Button><Button disabled={!convertName.trim()} onClick={() => { const name = convertName.trim(); edit(draft => { if (!draft.shelter.hex || draft.shelter.residents < 1) return; draft.shelter.residents -= 1; draft.npcs.push({ id: createId(), name, role: convertRole.trim(), description: "", notes: "", publicNotes: "", hex: draft.shelter.hex, home: draft.shelter.hex, status: "Bem", infection: "Saudável", disposition: "Neutro", skills: [], duty: "", active: true }); }); setConvertOpen(false); toast.success("Morador identificado", { description: `${name} agora tem uma ficha de NPC.` }); }}>Criar NPC</Button></DialogFooter>
+          </DialogContent></Dialog>}
         {s.notes && <p className="text-sm mt-4 leading-relaxed">{s.notes}</p>}
         {!playerPreview && <ShelterMoveDialog game={game} edit={edit} mode="abandon" />}
       </section>}

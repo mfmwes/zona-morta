@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ChevronDown, Compass, Dice5, Eye, Footprints, House, MapPin, Package, Plus, Route, Search, ZoomIn, ZoomOut } from "lucide-react";
+import { ChevronDown, Compass, Dice5, Eye, Footprints, House, MapPin, Package, Plus, Route, Search, Users, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ShelterMoveDialog } from "@/components/shelter-move";
@@ -446,6 +446,7 @@ export function HexExplorer({ game, edit, playerPreview }: { game: GameState; ed
             const shownPoints = playerPreview
               ? state.discovery === "desconhecido" ? 0 : state.points.filter(point => point.revealed).length
               : state.points.length;
+            const npcsHere = (game.npcs ?? []).filter(npc => npc.active && npc.status !== "Morto" && npc.status !== "Desaparecido" && npc.hex === id);
             const formerBase = (game.formerShelters ?? []).some(site => site.hex === id);
             const lines = discovered || observed ? labelLines(title) : ["?"];
             return <HexContextMenu key={id} game={game} edit={edit} hexId={id} playerPreview={playerPreview}
@@ -466,6 +467,9 @@ export function HexExplorer({ game, edit, playerPreview }: { game: GameState; ed
                 </text>
                 {shownPoints > 0 && <g aria-hidden="true"><circle cx={x+27} cy={y+27} r="10" fill="#eecb98" stroke="#173135" strokeWidth="2" />
                   <text x={x+27} y={y+31} textAnchor="middle" fontSize="11" fill="#173135" fontWeight="800">{shownPoints > 9 ? "9+" : shownPoints}</text></g>}
+                {npcsHere.length > 0 && <g aria-hidden="true"><circle cx={x-27} cy={y+27} r="10" fill="#c7d9e4" stroke="#173135" strokeWidth="2" />
+                  <Users x={x-34} y={y+20} width={14} height={14} stroke="#173135" strokeWidth={2.5} />
+                  {npcsHere.length > 1 && <text x={x-20} y={y+34} textAnchor="middle" fontSize="9" fill="#173135" fontWeight="800">{npcsHere.length > 9 ? "9+" : npcsHere.length}</text>}</g>}
                 {id === game.shelter.hex && <g aria-hidden="true"><circle cx={x+27} cy={y-29} r="13" fill="#a7e1d3" stroke="#173135" strokeWidth="2" />
                   <House x={x+18} y={y-38} width={18} height={18} stroke="#173135" strokeWidth={2.5} /></g>}
                 {formerBase && <g aria-hidden="true"><circle cx={x+27} cy={y-29} r="13" fill="#e7d3a2" stroke="#173135" strokeWidth="2" />
@@ -486,6 +490,7 @@ export function HexExplorer({ game, edit, playerPreview }: { game: GameState; ed
           {game.shelter.hex && <span className="flex items-center gap-1"><House size={15} /> Abrigo</span>}
           {(game.formerShelters ?? []).length > 0 && <span className="flex items-center gap-1"><Package size={15} /> Antiga base</span>}
           <span className="flex items-center gap-1"><MapPin size={15} /> Número = pontos</span>
+          {(game.npcs ?? []).length > 0 && <span className="flex items-center gap-1"><Users size={15} /> NPCs</span>}
         </div>
       </div>
       <p className="map-pan-hint text-sm subtle mt-2">Toque em um hex para abrir os detalhes. {mapOverview

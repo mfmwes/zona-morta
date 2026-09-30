@@ -26,6 +26,9 @@ function validState(value: unknown): value is GameState {
     && typeof state.partyHex === "string" && /^-?\d+,-?\d+$/.test(state.partyHex)
     && Boolean(state.hexes && typeof state.hexes === "object")
     && Array.isArray(state.survivors) && state.survivors.length <= 30
+    && (state.npcs === undefined || (Array.isArray(state.npcs) && state.npcs.length <= 300
+      && state.npcs.every(npc => npc && typeof npc.id === "string" && typeof npc.name === "string"
+        && typeof npc.hex === "string" && Array.isArray(npc.skills))))
     && state.survivors.every(s => Number.isInteger(s.armorMarked) && s.armorMarked >= 0 && s.armorMarked <= 20)
     && Boolean(shelter && typeof shelter === "object")
     && (shelter?.hex === undefined || shelter.hex === null ||

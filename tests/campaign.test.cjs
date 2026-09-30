@@ -431,6 +431,38 @@ test('jornada completa: provisões pessoais, ausência do abrigo e infecção ao
   assert.equal(b.terminalScenes, 3);
 });
 
+test('NPCs são globais, usam reservas conforme posição e mantêm privacidade na projeção do jogador', () => {
+  const g = defaultState({ withShelter: true });
+  g.survivors = [survivor(), survivor('Bia')];
+  g.shelter.residents = 2; g.shelter.food = 5; g.shelter.water = 5;
+  const maria = { id: 'maria', name: 'Maria Alves', role: 'Enfermeira', description: 'Cuida da enfermaria.', notes: 'Conhece a rota secreta.',
+    publicNotes: 'Está organizando remédios.', hex: '0,0', home: '0,0', status: 'Bem', infection: 'Saudável', disposition: 'Aliado', skills: ['Medicina'], duty: 'Enfermaria', active: true };
+  g.npcs.push(maria);
+  assert.equal(require('../lib/game.ts').shelterPopulation(g), 5);
+  assert.deepEqual(survival.eveningNeeds(g), { food: 5, water: 5 });
+  assert.equal(survival.closeDay(g, 5, 5), true);
+  assert.equal(maria.foodConsumedDay, 1); assert.equal(maria.waterConsumedDay, 1);
+  const player = collaboration.projectPlayerGame(g, g.survivors[0].id);
+  assert.equal(player.npcs[0].notes, undefined); assert.equal(player.npcs[0].home, undefined);
+  assert.equal(player.npcs[0].publicNotes, 'Está organizando remédios.');
+});
+
+test('NPC que fica em uma base antiga não é transportado sem ser selecionado', () => {
+  const g = defaultState({ withShelter: true });
+  const joel = { id: 'joel', name: 'Joel', role: 'Vigia', description: '', notes: '', hex: '0,0', home: '0,0', status: 'Bem', infection: 'Saudável', disposition: 'Neutro', skills: [], active: true };
+  g.npcs.push(joel); g.partyHex = '1,0'; g.hexes['1,0'].discovery = 'explorado';
+  assert.equal(require('../lib/game.ts').establishShelter(g, '1,0', {}), true);
+  assert.equal(joel.home, '0,0'); assert.equal(joel.hex, '0,0');
+  assert.equal(g.formerShelters[0].hex, '0,0');
+});
+
+test('NPC acompanhante segue o grupo quando o hex muda', () => {
+  const g = defaultState();
+  g.npcs.push({ id: 'rui', name: 'Rui', role: '', description: '', notes: '', hex: '0,0', status: 'Bem', infection: 'Saudável', disposition: 'Neutro', skills: [], active: true, accompaniesParty: true });
+  assert.equal(hexActions.performHexAction(g, '1,0', { type: 'travel' }).ok, true);
+  assert.equal(g.npcs[0].hex, '1,0');
+});
+
 test('144 pares de dualidade: críticos, Hope/Fear, recursos e dificuldade', () => {
   const counts = { critical: 0, hope: 0, fear: 0 };
   for (let hopeDie=1; hopeDie<=12; hopeDie++) for (let fearDie=1; fearDie<=12; fearDie++) {

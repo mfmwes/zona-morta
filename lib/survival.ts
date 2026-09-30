@@ -1,4 +1,4 @@
-import { absoluteMinutes, addLog, type GameState } from "./game";
+import { absoluteMinutes, addLog, type GameState, type NPC } from "./game";
 import { atSharedStorage, consumeReadyProvisionPortions } from "./inventory";
 import { provisionBreakdown } from "./provision-items";
 import { expirePhysicalFood, expirePortionLots, withdrawPortions } from "./provisions";
@@ -15,10 +15,34 @@ export function consumeDailyProvision(game: GameState, survivorId: string, resou
 
 export function eveningNeeds(game: GameState) {
   const present = atSharedStorage(game) ? game.survivors : [];
+  const npcPresent = sharedReserveNpcs(game);
   return {
-    food: game.shelter.residents + present.filter(s => s.foodConsumedDay !== game.day).length,
-    water: game.shelter.residents + present.filter(s => s.waterConsumedDay !== game.day).length,
+    food: game.shelter.residents + present.filter(s => s.foodConsumedDay !== game.day).length
+      + npcPresent.filter(npc => npc.foodConsumedDay !== game.day).length,
+    water: game.shelter.residents + present.filter(s => s.waterConsumedDay !== game.day).length
+      + npcPresent.filter(npc => npc.waterConsumedDay !== game.day).length,
   };
+}
+
+/** NPCs use shared reserves only when physically at the active base, or with the mobile group. */
+export function sharedReserveNpcs(game: GameState): NPC[] {
+  return (game.npcs ?? []).filter(npc => npc.active && npc.status !== "Morto" && npc.status !== "Desaparecido"
+    && (game.shelter.hex ? npc.hex === game.shelter.hex : npc.hex === game.partyHex));
+}
+
+function recordNpcProvision(game: GameState, resource: "food" | "water", portionsSupplied: number) {
+  const dayKey = resource === "food" ? "foodConsumedDay" : "waterConsumedDay";
+  // Legacy residents and PCs retain their established priority. NPCs are still
+  // individually recorded, so a shortage is visible without adding a penalty.
+  let remaining = Math.max(0, portionsSupplied - game.shelter.residents);
+  if (atSharedStorage(game)) remaining -= game.survivors.filter(person => person[dayKey] !== game.day).length;
+  const deprived: string[] = [];
+  for (const npc of sharedReserveNpcs(game)) {
+    if (npc[dayKey] === game.day) continue;
+    if (remaining > 0) { npc[dayKey] = game.day; remaining -= 1; }
+    else deprived.push(npc.name);
+  }
+  if (deprived.length) addLog(game, "provisões", `${deprived.join(", ")}: privação de ${resource === "food" ? "Comida" : "Água"} registrada no dia ${game.day}.`);
 }
 
 export function closeDay(game: GameState, food: number, water: number, expectedDay = game.day) {
@@ -39,6 +63,8 @@ export function closeDay(game: GameState, food: number, water: number, expectedD
   addLog(game, "provisões", `Anoitecer: ${food - foodMissing} porção(ões) de Comida e ${water - waterMissing} de Água foram consumidas das reservas compartilhadas. ` +
     (itemUse.length ? `Itens usados: ${itemUse.join(", ")}. ` : "") +
     (foodMissing ? `Faltaram ${foodMissing} de Comida. ` : "") + (waterMissing ? `Faltaram ${waterMissing} de Água.` : ""));
+  recordNpcProvision(game, "food", food - foodMissing);
+  recordNpcProvision(game, "water", water - waterMissing);
   game.day += 1;
   game.minutes = 480;
   game.noise = 0;

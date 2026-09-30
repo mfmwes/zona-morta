@@ -58,6 +58,20 @@ export function revealSector(state: GameState, key: string) {
 /** Keep names that were already visible before the map became procedural. */
 export function preserveKnownSectors(state: GameState) {
   if (!state.campaignId) state.campaignId = "campanha-anterior";
+  // NPCs were added after the original JSON campaign format. Missing data means
+  // an empty registry, never an inferred identity for legacy residents.
+  if (!Array.isArray(state.npcs)) state.npcs = [];
+  for (const npc of state.npcs) {
+    npc.skills ??= [];
+    npc.notes ??= "";
+    npc.description ??= "";
+    npc.role ??= "";
+    npc.hex ??= state.shelter?.hex ?? state.partyHex;
+    npc.status ??= "Bem";
+    npc.infection ??= "Saudável";
+    npc.disposition ??= "Neutro";
+    npc.active ??= true;
+  }
   // Older campaigns had a shelter in the central gym, without an explicit location.
   const previousShelter = state.shelter as GameState["shelter"] & { hex?: string | null };
   if (previousShelter && previousShelter.hex === undefined) previousShelter.hex = "0,0";

@@ -152,7 +152,9 @@ export function equipItem(s: Survivor, itemId: string, slot: EquipmentSlot) {
 export function provisionInfo(item: InventoryItem) {
   const info = provisionItemInfo(item);
   return {
-    type: info.resource,
+    // This legacy helper answers whether the item is usable as a provision;
+    // spoiled/contaminated food stays in the inventory for disposal only.
+    type: info.ready ? info.resource : null,
     portions: info.portionsPerUnit,
     remaining: info.remaining,
     preparation: info.preparation,

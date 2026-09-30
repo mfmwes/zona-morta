@@ -1,4 +1,4 @@
-import { addLog, type GameState, type Survivor } from "./game";
+import { addLog, type GameState, type NPC, type Survivor } from "./game";
 
 export function projectPlayerGame(game: GameState, survivorId: string): GameState {
   const visible = structuredClone(game);
@@ -7,13 +7,19 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
     return actor ? { ...entry, actorName: entry.actorName ?? actor.name, actorPortrait: entry.actorPortrait ?? actor.portrait } : entry;
   });
   visible.survivors = visible.survivors.filter(person => person.id === survivorId);
+  // The player projection intentionally omits private GM notes, the NPC's home
+  // and consumption bookkeeping. Public notes are the explicit sharing channel.
+  visible.npcs = (visible.npcs ?? []).map(npc => ({
+    id: npc.id, name: npc.name, portrait: npc.portrait, role: npc.role, description: npc.description,
+    publicNotes: npc.publicNotes, hex: npc.hex, status: npc.status, infection: npc.infection,
+    disposition: npc.disposition, skills: npc.skills, duty: npc.duty, active: npc.active,
+    accompaniesParty: npc.accompaniesParty,
+  } as NPC));
   visible.shelter.notes = "";
   visible.formerShelters = [];
-  // O jogador vê o próprio histórico e as rolagens públicas feitas por outros
-  // sobreviventes. Rolagens livres do mestre (sem actorId) continuam reservadas.
-  visible.log = visible.log.filter(entry => entry.kind === "chat"
-    || entry.actorId === survivorId
-    || (Boolean(entry.actorId) && ["dados", "dano"].includes(entry.kind)));
+  // A ficha do jogador mantém apenas o próprio histórico e o chat. Resultados
+  // de outra ficha não precisam ser enviados para que a mesa os narre.
+  visible.log = visible.log.filter(entry => entry.kind === "chat" || entry.actorId === survivorId);
   for (const hex of Object.values(visible.hexes)) {
     hex.notes = "";
     hex.infestation = null;

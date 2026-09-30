@@ -60,6 +60,9 @@ export function performHexAction(game: GameState, id: string, action: HexQuickAc
     if (!options.canTravel) return { ok: false, message: "" };
     game.minutes += options.travelMinutes;
     game.partyHex = id;
+    for (const npc of game.npcs ?? []) {
+      if (npc.active && npc.accompaniesParty && npc.status !== "Morto" && npc.status !== "Desaparecido") npc.hex = id;
+    }
     const destination = revealSector(game, id);
     game.hexes[id].discovery = "explorado";
     for (const neighbor of content.hexes) {

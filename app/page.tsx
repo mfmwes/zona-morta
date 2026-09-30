@@ -13,6 +13,7 @@ import { Sidebar, SidebarProvider } from "@/components/ui/sidebar";
 import { Counter, Field, Pick } from "@/components/game-controls";
 import { HexExplorer } from "@/components/hex-explorer";
 import { SurvivorPanel } from "@/components/survivor-panel";
+import { NpcPanel } from "@/components/npc-panel";
 import { ReferencePanel, ShelterPanel } from "@/components/campaign-views";
 import { PlayersPanel } from "@/components/players-panel";
 import { AuthPanel } from "@/components/auth-panel";
@@ -373,11 +374,12 @@ export default function CampaignApp() {
   </section></main>;
 
   const readOnlyPreview = playerPreview || role === "jogador";
-  const title = { mapa: "Exploração", sobreviventes: "Sobreviventes", abrigo: "Abrigo e reservas",
+  const title = { mapa: "Exploração", sobreviventes: "Sobreviventes", comunidade: "NPCs e comunidade", abrigo: "Abrigo e reservas",
     referencias: "Arquivo de campo", jogadores: "Jogadores e acessos" }[tab] || "Campanha";
   const nav = [
     { value: "mapa", label: "Mapa e hexes", icon: Map },
     { value: "sobreviventes", label: "Sobreviventes", icon: Users },
+    { value: "comunidade", label: "NPCs e comunidade", icon: Users },
     { value: "abrigo", label: "Abrigo e reservas", icon: House },
     { value: "referencias", label: "Regras e itens", icon: BookOpen },
     ...(role === "mestre" ? [{ value: "jogadores", label: "Jogadores", icon: Users }] : []),
@@ -447,6 +449,7 @@ export default function CampaignApp() {
           <div><p className="eyebrow">Daggerheart / Zona Morta</p><h1 className="page-title mt-1">{title}</h1>
             <p className="intro-line mt-2">{tab === "mapa" ? "Explore a partir do que o grupo avista. Registre apenas o que a ficção tornou real." :
               tab === "sobreviventes" ? "Históricos, arquétipos e recursos prontos para jogar." :
+              tab === "comunidade" ? "Acompanhe pessoas importantes, vínculos e a comunidade entre os hexes." :
               tab === "abrigo" ? "Organize reservas e descanso. Estabeleça um abrigo quando o grupo encontrar um lugar." :
               tab === "jogadores" ? "Compartilhe a campanha e acompanhe quem entrou na mesa." :
               "Consulte itens, adversários e procedimentos durante a sessão."}</p></div>
@@ -539,6 +542,7 @@ export default function CampaignApp() {
           </div>}
         </>}
         {tab === "sobreviventes" && <SurvivorPanel game={game} edit={edit} playerPreview={readOnlyPreview} playerMode={role === "jogador"} restPeers={restPeers} />}
+        {tab === "comunidade" && <NpcPanel game={game} edit={edit} playerPreview={readOnlyPreview} />}
         {tab === "abrigo" && <ShelterPanel game={game} edit={edit} playerPreview={readOnlyPreview} />}
         {tab === "referencias" && <ReferencePanel />}
         {tab === "jogadores" && role === "mestre" && <PlayersPanel game={game} ownerId={ownerId} />}

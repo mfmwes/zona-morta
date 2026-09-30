@@ -76,6 +76,34 @@ export type ShelterManifest = {
   stocks?: Partial<Pick<ShelterState, "food" | "water" | "medications" | "pistolAmmo" | "fuel" | "parts">>;
   itemIds?: string[];
   residents?: number;
+  /** NPCs identificados que viajam com o manifesto. */
+  npcIds?: string[];
+};
+
+export type NpcStatus = "Bem" | "Ferido" | "Grave" | "Morto" | "Desaparecido";
+export type NpcDisposition = "Hostil" | "Desconfiado" | "Neutro" | "Aliado" | "Leal";
+/** Uma ficha leve de personagem da campanha; não substitui uma ficha de sobrevivente. */
+export type NPC = {
+  id: string;
+  name: string;
+  portrait?: string;
+  role: string;
+  description: string;
+  notes: string;
+  publicNotes?: string;
+  hex: string;
+  /** Hex da base/comunidade a que pertence. Ausente quando está só em viagem. */
+  home?: string;
+  status: NpcStatus;
+  infection: Infection;
+  disposition: NpcDisposition;
+  skills: string[];
+  duty?: string;
+  foodConsumedDay?: number;
+  waterConsumedDay?: number;
+  active: boolean;
+  /** Quando marcado, acompanha automaticamente o grupo principal entre hexes. */
+  accompaniesParty?: boolean;
 };
 
 export type Survivor = {
@@ -137,6 +165,7 @@ export type GameState = {
   longRest?: number;
   hexes: Record<string, HexState>;
   survivors: Survivor[];
+  npcs: NPC[];
   shelter: ShelterState;
   formerShelters?: ShelterState[];
   log: { id: string; day: number; time: string; kind: string; text: string; actorId?: string; actorName?: string; actorPortrait?: string }[];
@@ -178,7 +207,7 @@ export function defaultState(options: { startSectorId?: string; withShelter?: bo
   const withShelter = options.withShelter === true;
   const state: GameState = {
     campaignId: createId(), day: 1, minutes: 480, partyHex: "0,0", fear: 0, noise: 0,
-    scene: 1, expedition: 1, shortRest: 1, longRest: 1, hexes, survivors: [], formerShelters: [],
+    scene: 1, expedition: 1, shortRest: 1, longRest: 1, hexes, survivors: [], npcs: [], formerShelters: [],
     shelter: { hex: withShelter ? "0,0" : null,
       name: startSector ? `Abrigo — ${startSector.name}` : "Abrigo",
       capacity: withShelter ? 8 : 0, residents: 0,
@@ -207,6 +236,7 @@ export function establishShelter(state: GameState, key: string, manifest: Shelte
     const recovered = state.formerShelters?.find(site => site.hex === key);
     const destination: ShelterState = recovered ? structuredClone(recovered) : emptyShelter(key, `Abrigo — ${sector.name}`);
     transportShelterStock(former, destination, manifest);
+    transportShelterNpcs(state, oldHex, key, manifest.npcIds ?? []);
     state.formerShelters = [...(state.formerShelters ?? []).filter(site => site.hex !== key && site.hex !== oldHex), former];
     state.shelter = destination;
   } else {
@@ -216,7 +246,9 @@ export function establishShelter(state: GameState, key: string, manifest: Shelte
       transportShelterStock(state.shelter, destination, { stocks: {
         food: state.shelter.food, water: state.shelter.water, medications: state.shelter.medications,
         pistolAmmo: state.shelter.pistolAmmo, fuel: state.shelter.fuel, parts: state.shelter.parts,
-      }, itemIds: (state.shelter.inventory ?? []).map(item => item.id), residents: state.shelter.residents });
+      }, itemIds: (state.shelter.inventory ?? []).map(item => item.id), residents: state.shelter.residents,
+        npcIds: residentNpcs(state, null).map(npc => npc.id) });
+      transportShelterNpcs(state, null, key, residentNpcs(state, null).map(npc => npc.id));
       state.shelter = destination;
       state.formerShelters = (state.formerShelters ?? []).filter(site => site.hex !== key);
     } else {
@@ -261,11 +293,33 @@ function transportShelterStock(source: ShelterState, target: ShelterState, manif
   }
 }
 
+/** Identified residents are separate from the legacy numeric residents counter. */
+export function residentNpcs(state: GameState, home: string | null = state.shelter.hex) {
+  return (state.npcs ?? []).filter(npc => npc.active && npc.status !== "Morto" && npc.home === (home ?? undefined));
+}
+
+export function shelterPopulation(state: GameState) {
+  const shelterHex = state.shelter.hex;
+  const survivorsPresent = shelterHex && state.partyHex === shelterHex ? state.survivors.length : 0;
+  return state.shelter.residents + residentNpcs(state).length + survivorsPresent;
+}
+
+function transportShelterNpcs(state: GameState, sourceHome: string | null, destinationHex: string | null, npcIds: string[]) {
+  const selected = new Set(npcIds);
+  for (const npc of state.npcs ?? []) {
+    if (!selected.has(npc.id) || !npc.active || npc.status === "Morto" || npc.home !== (sourceHome ?? undefined)) continue;
+    npc.home = destinationHex ?? undefined;
+    npc.hex = destinationHex ?? state.partyHex;
+    npc.accompaniesParty = destinationHex === null;
+  }
+}
+
 export function abandonShelter(state: GameState, manifest: ShelterManifest = {}) {
   if (!state.shelter.hex || !validManifest(state.shelter, manifest)) return false;
   const former = structuredClone(state.shelter);
   const mobile = emptyShelter(null, "Reservas do grupo");
   transportShelterStock(former, mobile, manifest);
+  transportShelterNpcs(state, state.shelter.hex, null, manifest.npcIds ?? []);
   // Residents travelling without a base are tracked in notes rather than counted as shelter occupants.
   if (mobile.residents) mobile.notes = `${mobile.residents} morador(es) acompanharam o grupo.`;
   state.formerShelters = [...(state.formerShelters ?? []).filter(site => site.hex !== former.hex), former];
