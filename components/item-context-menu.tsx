@@ -173,6 +173,19 @@ export function ItemContextMenu({
           </ContextMenuSubContent>
         </ContextMenuSub>
 
+        {options.containerOptions && Math.min(options.containerOptions.waterCapacity, options.containerOptions.waterAvailable) > 0 &&
+          <ContextMenuItem onSelect={() => run({ type: "fill-container", resource: "water",
+            quantity: Math.min(options.containerOptions!.waterCapacity, options.containerOptions!.waterAvailable) })}>
+            <Droplets /> Encher com Água
+          </ContextMenuItem>}
+        {options.containerOptions && Math.min(options.containerOptions.fuelCapacity, options.containerOptions.fuelAvailable) > 0 &&
+          <ContextMenuItem onSelect={() => run({ type: "fill-container", resource: "fuel", quantity: 1 })}>
+            <Package /> Guardar Combustível
+          </ContextMenuItem>}
+        {options.containerOptions?.canUnloadAtStorage && <ContextMenuItem onSelect={() => run({ type: "empty-container" })}>
+          <Package /> Guardar conteúdo nas reservas
+        </ContextMenuItem>}
+
         {options.canMedication && quantitySubmenu(
           "Registrar como Medicamentos",
           <Pill />,
