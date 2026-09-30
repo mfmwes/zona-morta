@@ -266,6 +266,7 @@ html[data-theme="dark"] .reference-category,
 html[data-theme="dark"] .character-attribute span,
 html[data-theme="dark"] .character-defense-card > span,
 html[data-theme="dark"] .character-defense-card > strong { color: #dce7e1; }
+html[data-theme="dark"] .character-provision-grid b { color: #dce7e1; }
 html[data-theme="dark"] .reference-category:hover,
 html[data-theme="dark"] .character-attribute:hover,
 html[data-theme="dark"] .character-experience-list button:hover { border-color: #69988d; background: #293b38; }
