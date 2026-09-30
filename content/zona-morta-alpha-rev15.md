@@ -473,7 +473,7 @@ Ferramentas **habilitam a tentativa** que seria impossível sem instrumento. Ela
 | Mochila urbana | 1 | Vestida, **+2 espaços de carga**. Cabe uma peça longa presa externamente. |
 | Mochila de trilha | 2 | Vestida, **+3 espaços de carga**. Exige ajuste, cabe uma peça longa externa. |
 | Mochila cargueira | 2 | Vestida, **+4 espaços de carga**. Cheia, atrapalha vãos estreitos e natação. |
-| Carrinho dobrável | 1 | Guardado ocupa 1. Aberto leva até **4 espaços** no piso acessível. Não atravessa escada sem esforço. |
+| Carrinho dobrável | 1 | Guardado ocupa 1 espaço. Aberto funciona como um contêiner próprio de até **4 espaços** no piso acessível, deixa de contar como carga pessoal e exige **as duas mãos livres** para ser empurrado. Não atravessa escada sem esforço. |
 | Cobertor | 1 | Ajuda a estabelecer um lugar de descanso plausível. Não torna a rua segura. |
 | Saco de dormir | 1 | Protege do frio durante descanso em abrigo protegido. |
 | Filtro portátil | 0 | Permite tentar tornar água suspeita utilizável com tempo e verificação. Não cria Água. |
@@ -1598,7 +1598,7 @@ As variantes das tabelas de busca (por exemplo, mapa de entregas, kit médico de
 | Mochila urbana | Vestida, **+2 espaços de carga**. Cabe uma peça longa presa externamente. | 1 |
 | Mochila de trilha | Vestida, **+3 espaços de carga**. Exige ajuste, cabe uma peça longa externa. | 2 |
 | Mochila cargueira | Vestida, **+4 espaços de carga**. Cheia, atrapalha vãos estreitos e natação. | 2 |
-| Carrinho dobrável | Guardado ocupa 1. Aberto leva até **4 espaços** no piso acessível. Não atravessa escada sem esforço. | 1 |
+| Carrinho dobrável | Guardado ocupa 1 espaço. Aberto funciona como um contêiner próprio de até **4 espaços** no piso acessível, deixa de contar como carga pessoal e exige **as duas mãos livres** para ser empurrado. Não atravessa escada sem esforço. | 1 |
 | Cobertor | Ajuda a estabelecer um lugar de descanso plausível. Não torna a rua segura. | 1 |
 | Saco de dormir | Protege do frio durante descanso em abrigo protegido. | 1 |
 | Filtro portátil | Permite tentar tornar água suspeita utilizável com tempo e verificação. Não cria Água. | 0 |
@@ -1709,7 +1709,7 @@ Suco, chá e leite **lacrados** são D; após abertos, R. Café pronto é R. Ág
 | Preparar munição | **Uma** carga pronta na arma ativa ocupa 0. Cada reserva ocupa 1 e tem tipo específico. |
 | Avaliar saque | Pergunte **o que procuram, para quê e onde**. Busca específica responde ao objetivo se houver fonte; busca aberta usa **um d12** por setor. Nada se duplica depois de vasculhado. |
 | Identificar alimento | Marque o **amanhecer de vencimento** do lote: F vence no segundo seguinte, R no próximo. Ingrediente seco D bem guardado continua D após aberto; comida preparada ou úmida aberta vira R. C exige frio comprovado. |
-| Escolher transporte | Bolsa não empilha com outra. Carrinho aberto leva 4 espaços, carro 3, moto 1, van 6. Tudo precisa caber na rota. |
+| Escolher transporte | Bolsa não empilha com outra. Carrinho aberto é um contêiner próprio de 4 espaços, exige duas mãos e só acompanha o sobrevivente enquanto a rota permitir; carro 3, moto 1 e van 6 usam a capacidade do veículo. |
 | No abrigo | Transfira porções sem duplicá-las. Desconte comida e água ao anoitecer. No amanhecer, descarte apenas os lotes cujo prazo venceu fora do frio. |
 
 **Regra de bolso:** vista uma bolsa, conte as reservas e decida **antes** de entrar onde ficará o espólio. Se houver pouca capacidade, os personagens podem voltar, negociar o transporte ou deixar um objeto marcado no mapa. Nenhum resultado da tabela de busca desaparece somente porque a mochila está cheia.
