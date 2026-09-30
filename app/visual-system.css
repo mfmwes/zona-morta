@@ -1068,3 +1068,31 @@ html[data-theme="dark"] .text-zinc-500,
 html[data-theme="dark"] .text-zinc-600 {
   color: #a7b8b2 !important;
 }
+
+
+/* Final pass for secondary surfaces found by the contrast audit. */
+html[data-theme="dark"] .players-avatar {
+  background: #263a37;
+  color: #a9d5c9;
+}
+html[data-theme="dark"] .character-micro {
+  color: #9eb3ad;
+}
+html[data-theme="dark"] .character-hope-feature-foot button {
+  border-color: #53654b;
+  background: #293328;
+  color: #dce9d3;
+}
+html[data-theme="dark"] .character-hope-feature-foot button:hover {
+  background: #344032;
+  color: #f0f6ea;
+}
+html[data-theme="dark"] .shelter-move-section > b {
+  color: #e0eae5;
+}
+html[data-theme="dark"] .shelter-move-items label small {
+  color: #aebfba;
+}
+html[data-theme="dark"] .project-helpers {
+  border-color: #405650;
+}
