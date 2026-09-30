@@ -1,4 +1,4 @@
-import { addLog, ammunitionTypes, type AmmunitionType, type GameState, type NPC, type Survivor } from "./game";
+import { addLog, ammunitionTypes, type AmmunitionType, type GameState, type InventoryItem, type NPC, type Survivor } from "./game";
 
 export function projectPlayerGame(game: GameState, survivorId: string): GameState {
   const visible = structuredClone(game);
@@ -51,7 +51,30 @@ const editable = ["portrait", "primary", "secondary", "protection", "outfit", "p
   "ammo", "ammoType", "ammoSpentScene", "ammoSpentType", "ammoSpentTypes", "inventory", "notes", "abilityUses", "restPlan"] as const;
 const allowedKeys = new Set<string>([...immutable, ...editable]);
 const allowedItemKeys = new Set(["id", "name", "load", "qty", "condition", "catalogKey", "category", "armorMarked", "foundDay",
-  "provisionResource", "portionsPerUnit", "portionsRemaining", "prepared", "verified", "opened", "expiresDay", "battery", "storedResource", "storedAmount"]);
+  "provisionResource", "portionsPerUnit", "portionsRemaining", "prepared", "verified", "opened", "expiresDay", "battery", "storedResource", "storedAmount", "cartDeployed", "cartItems"]);
+function validInventoryItem(item: InventoryItem, nested = false): boolean {
+  return Boolean(item && typeof item.id === "string" && typeof item.name === "string"
+    && Object.keys(item).every(key => allowedItemKeys.has(key))
+    && item.name.length <= 100 && Number.isInteger(item.qty) && item.qty >= 1 && item.qty <= 99
+    && Number.isInteger(item.load) && item.load >= 0 && item.load <= 9
+    && (item.provisionResource === undefined || ["food", "water"].includes(item.provisionResource))
+    && (item.portionsPerUnit === undefined || (Number.isInteger(item.portionsPerUnit) && item.portionsPerUnit >= 1 && item.portionsPerUnit <= 99))
+    && (item.portionsRemaining === undefined || (Number.isInteger(item.portionsRemaining) && item.portionsRemaining >= 1
+      && item.portionsRemaining <= (item.portionsPerUnit ?? 99) && item.qty === 1))
+    && (item.prepared === undefined || typeof item.prepared === "boolean")
+    && (item.verified === undefined || typeof item.verified === "boolean")
+    && (item.opened === undefined || typeof item.opened === "boolean")
+    && (item.expiresDay === undefined || (Number.isInteger(item.expiresDay) && item.expiresDay >= 1 && item.expiresDay <= 9999))
+    && (item.battery === undefined || ["Carregada", "Descarregada"].includes(item.battery))
+    && (item.storedResource === undefined || ["water", "fuel"].includes(item.storedResource))
+    && (item.storedAmount === undefined || (Number.isInteger(item.storedAmount) && item.storedAmount >= 1 && item.storedAmount <= 4))
+    && (item.storedResource !== "fuel" || (item.storedAmount ?? 0) <= 1)
+    && ((item.storedResource === undefined) === (item.storedAmount === undefined))
+    && (item.cartDeployed === undefined || (!nested && item.name === "Carrinho dobrável" && typeof item.cartDeployed === "boolean"))
+    && (item.cartItems === undefined || (!nested && item.name === "Carrinho dobrável" && Array.isArray(item.cartItems)
+      && item.cartItems.length <= 40 && item.cartItems.every(child => validInventoryItem(child, true)))));
+}
+
 export type PlayerLog = { kind: string; text: string };
 
 const restActions = new Set(["hp", "stress", "armor", "prepare", "fiction", "hp-full", "stress-full", "armor-full"]);
@@ -107,23 +130,7 @@ export function applyPlayerChange(game: GameState, survivorId: string, before: S
       || after.ammoSpentTypes.length > ammunitionTypes.length
       || after.ammoSpentTypes.some(type => !ammunitionTypes.includes(type as AmmunitionType))))
     || !Array.isArray(after.inventory) || after.inventory.length > 120
-    || after.inventory.some(item => !item || typeof item.id !== "string" || typeof item.name !== "string"
-      || !Object.keys(item).every(key => allowedItemKeys.has(key))
-      || item.name.length > 100 || !Number.isInteger(item.qty) || item.qty < 1 || item.qty > 99
-      || !Number.isInteger(item.load) || item.load < 0 || item.load > 9
-      || (item.provisionResource !== undefined && !["food", "water"].includes(item.provisionResource))
-      || (item.portionsPerUnit !== undefined && (!Number.isInteger(item.portionsPerUnit) || item.portionsPerUnit < 1 || item.portionsPerUnit > 99))
-      || (item.portionsRemaining !== undefined && (!Number.isInteger(item.portionsRemaining) || item.portionsRemaining < 1
-        || item.portionsRemaining > (item.portionsPerUnit ?? 99) || item.qty !== 1))
-      || (item.prepared !== undefined && typeof item.prepared !== "boolean")
-      || (item.verified !== undefined && typeof item.verified !== "boolean")
-      || (item.opened !== undefined && typeof item.opened !== "boolean")
-      || (item.expiresDay !== undefined && (!Number.isInteger(item.expiresDay) || item.expiresDay < 1 || item.expiresDay > 9999))
-      || (item.battery !== undefined && !["Carregada", "Descarregada"].includes(item.battery))
-      || (item.storedResource !== undefined && !["water", "fuel"].includes(item.storedResource))
-      || (item.storedAmount !== undefined && (!Number.isInteger(item.storedAmount) || item.storedAmount < 1 || item.storedAmount > 4))
-      || (item.storedResource === "fuel" && (item.storedAmount ?? 0) > 1)
-      || ((item.storedResource === undefined) !== (item.storedAmount === undefined)))
+    || after.inventory.some(item => !validInventoryItem(item))
     || typeof after.notes !== "string" || after.notes.length > 4000
     || !validRestPlan(after.restPlan, game.survivors, after, game.partyHex)
     || logs.some(log => !log || !["chat", "dados", "dano", "inventário", "habilidade", "provisões", "tratamento"].includes(log.kind)
