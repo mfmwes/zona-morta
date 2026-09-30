@@ -420,6 +420,16 @@ export function consumeProvisionPortionFromItems(items: InventoryItem[], itemId:
   const info = provisionItemInfo(item);
   if (!info.resource || !info.ready || info.remaining < 1) return null;
 
+  if (item.name === "Galão vazio" && item.storedResource === "water" && (item.storedAmount ?? 0) > 0) {
+    item.storedAmount = Math.max(0, (item.storedAmount ?? 0) - 1);
+    const remainingInOpenedUnit = item.storedAmount;
+    if (item.storedAmount === 0) {
+      delete item.storedResource;
+      delete item.storedAmount;
+    }
+    return { resource: "water" as const, name: item.name, remainingInOpenedUnit };
+  }
+
   let remainingInOpenedUnit = 0;
   if (item.portionsRemaining !== undefined) {
     item.portionsRemaining = Math.max(0, item.portionsRemaining - 1);
