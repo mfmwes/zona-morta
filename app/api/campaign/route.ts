@@ -49,7 +49,9 @@ function validState(value: unknown): value is GameState {
       && (s.outfit === undefined || typeof s.outfit === "string")
       && (s.transport === undefined || typeof s.transport === "string")
       && (s.ammoSpentScene === undefined || (Number.isInteger(s.ammoSpentScene) && s.ammoSpentScene >= 1))
-      && (s.ammoSpentType === undefined || typeof s.ammoSpentType === "string"))
+      && (s.ammoSpentType === undefined || typeof s.ammoSpentType === "string")
+      && (s.ammoSpentTypes === undefined || (Array.isArray(s.ammoSpentTypes) && s.ammoSpentTypes.length <= ammunitionTypes.length
+        && s.ammoSpentTypes.every(type => ammunitionTypes.includes(type as typeof ammunitionTypes[number])))))
     && Boolean(shelter && typeof shelter === "object")
     && (shelter?.ammoStocks === undefined || (typeof shelter.ammoStocks === "object" && shelter.ammoStocks !== null
       && Object.entries(shelter.ammoStocks).every(([key, value]) =>
