@@ -24,7 +24,7 @@ import { createId } from "@/lib/id";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 
-export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; edit: Edit; playerPreview: boolean }) {
+export function ShelterPanel({ game, edit, playerPreview, playerSurvivorId }: { game: GameState; edit: Edit; playerPreview: boolean; playerSurvivorId?: string | null }) {
   const [shelterNotes, setShelterNotes] = useState(game.shelter.notes);
   const [shelterName, setShelterName] = useState(game.shelter.name);
   const [cacheRecipient, setCacheRecipient] = useState("");
@@ -275,7 +275,7 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
 
       <TabsContent value="construction" className="shelter-tab-content">
         <RuntimeErrorBoundary title="A seção Construção encontrou um problema">
-          <ShelterProjectsManager game={game} edit={edit} playerPreview={playerPreview} />
+          <ShelterProjectsManager game={game} edit={edit} playerPreview={playerPreview} playerSurvivorId={playerSurvivorId} />
         </RuntimeErrorBoundary>
       </TabsContent>
 
