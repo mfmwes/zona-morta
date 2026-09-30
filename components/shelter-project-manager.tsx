@@ -115,6 +115,10 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
     ? (selectedProject.volunteerShifts ?? []).find(shift => shift.survivorId === playerSurvivorId)
     : undefined;
   const playerWork = selectedProject && playerSurvivorId ? survivorWorkPreview(game, selectedProject, playerSurvivorId) : null;
+  const playerCapabilities = playerSurvivor ? survivorShelterCapabilities(playerSurvivor) : [];
+  const volunteerPlayers = selectedProject
+    ? (selectedProject.survivorWorkerIds ?? []).map(id => game.survivors.find(person => person.id === id)).filter(Boolean)
+    : [];
   const dependencyIssue = projectDependencyIssue(shelter, selectedDefinition.key);
   const placementIssue = selectedProject ? projectPlacementIssue(shelter, selectedProject) : null;
   const peopleAtBase = game.npcs.filter(npc => npc.active && npc.status !== "Morto" && npc.status !== "Desaparecido" && npc.hex === shelter.hex);
@@ -486,7 +490,7 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
         <div className="construction-detail-scroll">
           <div className="construction-flow-steps" aria-label="Etapas da construção">
             <span className={selectedDefinition.kind !== "facility" || selectedProject?.slotId ? "is-done" : "is-current"}><i>1</i><b>{selectedDefinition.kind === "facility" ? "Local" : "Plano"}</b></span>
-            <span className={selectedProject && (selectedProject.responsibleId || (selectedProject.helperIds ?? []).length) ? "is-done" : selectedProject ? "is-current" : ""}><i>2</i><b>Equipe</b></span>
+            <span className={selectedProject && (selectedProject.responsibleId || (selectedProject.helperIds ?? []).length || (selectedProject.survivorWorkerIds ?? []).length) ? "is-done" : selectedProject ? "is-current" : ""}><i>2</i><b>Equipe</b></span>
             <span className={selectedProject && selectedProject.state !== "Planejado" ? "is-done" : selectedProject ? "is-current" : ""}><i>3</i><b>Iniciar</b></span>
             <span className={selectedProject?.workShift ? "is-current" : selectedProject?.state === "Concluído" ? "is-done" : ""}><i>4</i><b>Trabalho</b></span>
           </div>
