@@ -524,17 +524,56 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
                 ?? `Próximo turno de 4h: +${selectedPreview.points} com ${selectedPreview.workers.map(worker => worker.name).join(", ")}${selectedPreview.missingCapabilities.length ? ` · sem especialista em ${selectedPreview.missingCapabilities.join(" + ")}` : ""}`}</small>}
           </div>}
 
+          {selectedProject && playerSurvivorId && playerSurvivor && <section className="construction-player-work">
+            <div className="construction-player-work-head">
+              <Users size={17} />
+              <span><b>Seu trabalho no abrigo</b><small>{playerSurvivor.name}</small></span>
+              <span className={`construction-state ${playerShift ? "is-building" : playerJoined ? "is-planned" : "is-available"}`}>
+                {playerShift ? "Em turno" : playerJoined ? "Na equipe" : "Disponível"}
+              </span>
+            </div>
+
+            <p>{playerCapabilities.length
+              ? `Experiências relacionadas: ${playerCapabilities.join(", ")}.`
+              : "Seu personagem pode ajudar mesmo sem experiência específica; uma experiência relacionada concede +1 progresso ao turno."}</p>
+
+            {playerShift ? <div className="construction-player-shift">
+              <Clock3 size={16} />
+              <span><b>{displayTime(playerShift.startMinute)} → {displayTime(playerShift.startMinute + playerShift.durationMinutes)}</b>
+                <small>+{playerShift.points} progresso previsto. Enquanto este turno estiver ativo, seu personagem não pode viajar para outro hex.</small></span>
+              <Button size="sm" variant="outline" onClick={() => cancelPlayerShift(selectedProject)}>Cancelar meu turno</Button>
+            </div> : <>
+              {playerJoined && selectedProject.state === "Planejado" && <p className="construction-next-step">Você se ofereceu para esta obra. O mestre ainda precisa iniciar a construção.</p>}
+              {playerJoined && selectedProject.state === "Em construção" && <div className="construction-player-preview">
+                <span><b>Turno de 4h</b><small>{playerWork?.issue ?? `+${playerWork?.points ?? 1} progresso previsto${playerWork?.matches?.length ? ` · bônus por ${playerWork.matches.join(" + ")}` : ""}`}</small></span>
+                <Button size="sm" disabled={Boolean(playerWork?.issue)} onClick={() => schedulePlayerShift(selectedProject)}><Clock3 size={14} /> Trabalhar 4h</Button>
+              </div>}
+              {!playerJoined && ["Planejado", "Em construção"].includes(selectedProject.state) && <Button size="sm" onClick={() => joinAsPlayer(selectedProject)}>
+                <Users size={14} /> Quero ajudar nesta obra
+              </Button>}
+              {playerJoined && <Button size="sm" variant="ghost" onClick={() => leaveAsPlayer(selectedProject)}>Sair da equipe</Button>}
+            </>}
+          </section>}
+
           {selectedProject && !playerPreview && !selectedProject.workShift && <div className="construction-team">
             <b>{selectedProject.state === "Concluído" ? "Equipe de operação" : "2 · Defina a equipe"}</b>
             <p className="construction-team-help">{selectedProject.state === "Concluído"
               ? "A operação usa as capacidades indicadas acima."
-              : "Escolha quem ficará responsável pela obra. Especialistas aumentam o progresso do turno."}</p>
-            <Pick label="Responsável" value={selectedProject.responsibleId ?? ""} options={[
+              : "NPCs são coordenados pelo mestre. Jogadores podem se oferecer diretamente pela própria interface e cumprem turnos individuais."}</p>
+            <Pick label="Responsável NPC" value={selectedProject.responsibleId ?? ""} options={[
               { value: "", label: "Sem responsável" },
               ...peopleAtBase.filter(npc => canVolunteer(npc, true)).map(npc => ({ value: npc.id, label: `${npc.name} · ${npc.skills.join(", ") || "sem capacidade"}` })),
             ]} onChange={id => setProjectResponsible(selectedProject, id)} />
             {peopleAtBase.length > 0 && <div className="construction-helper-list">{peopleAtBase.filter(npc => npc.id !== selectedProject.responsibleId).map(npc =>
               <label key={npc.id}><input type="checkbox" checked={(selectedProject.helperIds ?? []).includes(npc.id)} onChange={event => toggleProjectHelper(selectedProject, npc.id, event.target.checked)} /><span>{npc.name}<small>{npc.skills.join(", ") || "sem capacidade"}</small></span></label>)}</div>}
+            {volunteerPlayers.length > 0 && <div className="construction-player-volunteers">
+              <span>Jogadores voluntários</span>
+              {volunteerPlayers.map(person => person && <div key={person.id}>
+                <b>{person.name}</b>
+                <small>{survivorShelterCapabilities(person).join(", ") || "sem experiência relacionada"}</small>
+                {(selectedProject.volunteerShifts ?? []).some(shift => shift.survivorId === person.id) && <em>turno ativo</em>}
+              </div>)}
+            </div>}
           </div>}
 
           {selectedProject?.workShift && !playerPreview && <div className="construction-team-locked">
@@ -558,10 +597,10 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
               <Plus size={15} /> 1 · Definir local na planta
             </Button>}
 
-            {selectedProject?.state === "Planejado" && (!selectedProject.responsibleId && !(selectedProject.helperIds ?? []).length)
-              && <p className="construction-next-step">Próximo passo: escolha ao menos uma pessoa para a equipe.</p>}
+            {selectedProject?.state === "Planejado" && (!selectedProject.responsibleId && !(selectedProject.helperIds ?? []).length && !(selectedProject.survivorWorkerIds ?? []).length)
+              && <p className="construction-next-step">Próximo passo: escolha um NPC ou aguarde um jogador se oferecer para a equipe.</p>}
 
-            {selectedProject?.state === "Planejado" && !placementIssue && Boolean(selectedProject.responsibleId || (selectedProject.helperIds ?? []).length)
+            {selectedProject?.state === "Planejado" && !placementIssue && Boolean(selectedProject.responsibleId || (selectedProject.helperIds ?? []).length || (selectedProject.survivorWorkerIds ?? []).length)
               && <Button onClick={() => begin(selectedProject)}><Hammer size={15} /> 3 · Iniciar obra e pagar custos</Button>}
 
             {selectedProject?.state === "Em construção" && !selectedProject.workShift
