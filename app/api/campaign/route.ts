@@ -1,7 +1,7 @@
 import { campaignExists, campaignOwnerId, findPlayer, readCampaign, wasRevoked, writeCampaign } from "@/db/state";
 import { sameOrigin, siteUser } from "@/lib/auth";
 import { applyPlayerChange, projectPlayerGame, type PlayerLog } from "@/lib/collaboration";
-import type { GameState, Survivor } from "@/lib/game";
+import { survivorStats, type GameState, type Survivor } from "@/lib/game";
 import { preserveKnownSectors } from "@/lib/sectors";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +12,21 @@ function requestedCampaign(request: Request) {
 }
 
 function restPeers(state: GameState) {
-  return state.survivors.map(person => ({ id: person.id, name: person.name }));
+  return state.survivors.map(person => {
+    const stats = survivorStats(person);
+    return {
+      id: person.id,
+      name: person.name,
+      portrait: person.portrait,
+      archetype: person.archetype,
+      specialty: person.specialty,
+      infection: person.infection,
+      hp: Math.max(0, stats.hp - person.hp),
+      hpMax: stats.hp,
+      stress: person.stress,
+      hope: person.hope,
+    };
+  });
 }
 
 function validState(value: unknown): value is GameState {
