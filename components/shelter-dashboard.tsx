@@ -81,6 +81,29 @@ export function ShelterVisualDashboard({ game }: { game: GameState }) {
     { label: "Medicamentos", value: shelter.medications, note: "tratamentos", icon: Cross },
   ];
 
+  function renderOverviewSlot(slot: (typeof shelterBlueprintSlots)[number]) {
+    const project = occupied.get(slot.id);
+    const state = projectState(game, project);
+    const Icon = projectIcon(project);
+    const progress = project ? projectProgress(project) : null;
+    return <button type="button" key={slot.id} disabled={!project}
+      className={`architectural-slot shelter-overview-slot is-${slot.zone} ${project ? "is-occupied" : "is-empty"} ${project?.key === selectedProject?.key ? "is-selected" : ""}`}
+      aria-pressed={project?.key === selectedProject?.key}
+      onClick={() => project && setSelectedKey(project.key)}>
+      <span className="architectural-slot-number">{slot.label}</span>
+      {project ? <>
+        <Icon size={18} aria-hidden />
+        <b>{project.name}</b>
+        <span className={`shelter-detail-state is-${state.tone}`}>{state.label}</span>
+        {project.workShift && <small><span>⏱</span> até {displayTime(project.workShift.startMinute + project.workShift.durationMinutes)}</small>}
+        {project.state === "Em construção" && progress && <span className="architectural-progress"><i style={{ width: `${Math.min(100, progress.value / progress.required * 100)}%` }} /></span>}
+      </> : <>
+        <span className="shelter-room-icon"><Boxes size={17} aria-hidden /></span>
+        <b>Espaço livre</b>
+      </>}
+    </button>;
+  }
+
   return <div className="shelter-visual-dashboard">
     <div className="shelter-status-strip" aria-label="Resumo do abrigo">
       {summary.map(item => {
@@ -99,35 +122,53 @@ export function ShelterVisualDashboard({ game }: { game: GameState }) {
           <span>Hex {shelter.hex}</span>
         </div>
 
-        <div className="construction-blueprint-grid shelter-overview-blueprint">
-          {shelterBlueprintSlots.map(slot => {
-            const project = occupied.get(slot.id);
-            const state = projectState(game, project);
-            const Icon = projectIcon(project);
-            const progress = project ? projectProgress(project) : null;
-            return <button type="button" key={slot.id} disabled={!project}
-              className={`construction-blueprint-slot shelter-overview-slot is-${slot.zone} ${project ? "is-occupied" : ""} ${project?.key === selectedProject?.key ? "is-selected" : ""}`}
-              aria-pressed={project?.key === selectedProject?.key}
-              onClick={() => project && setSelectedKey(project.key)}>
-              <small>{slot.label}</small>
-              {project ? <><Icon size={19} aria-hidden /><b>{project.name}</b><span className={`shelter-detail-state is-${state.tone}`}>{state.label}</span>
-                {project.state === "Em construção" && progress && <span className="shelter-room-progress"><span style={{ width: `${Math.min(100, progress.value / progress.required * 100)}%` }} /></span>}</>
-                : <><span className="shelter-room-icon"><Boxes size={18} aria-hidden /></span><span>Espaço livre</span></>}
-            </button>;
-          })}
-        </div>
+        <div className="architectural-site shelter-overview-architectural">
+          <div className="architectural-perimeter">
+            <div className="architectural-zone-label"><Shield size={14} /> Perímetro</div>
+            <div className="architectural-perimeter-items">
+              {upgrades.length ? upgrades.map(project => {
+                const state = projectState(game, project);
+                return <button type="button" key={project.id} className={project.key === selectedProject?.key ? "is-selected" : ""} onClick={() => setSelectedKey(project.key)}>
+                  <span className={`shelter-detail-state is-${state.tone}`}>{state.label}</span>
+                  <b>{project.name}</b>
+                </button>;
+              }) : <span className="architectural-empty-note">Nenhuma melhoria de perímetro instalada.</span>}
+            </div>
+          </div>
 
-        {(upgrades.length > 0 || unplaced.length > 0) && <div className="shelter-perimeter-strip">
-          {upgrades.map(project => {
-            const state = projectState(game, project);
-            return <button type="button" key={project.id} className={project.key === selectedProject?.key ? "is-selected" : ""} onClick={() => setSelectedKey(project.key)}>
-              <Shield size={14} /><span><b>{project.name}</b><small>{state.label}</small></span>
-            </button>;
-          })}
-          {unplaced.map(project => <button type="button" key={project.id} className={project.key === selectedProject?.key ? "is-selected" : ""} onClick={() => setSelectedKey(project.key)}>
-            <Package size={14} /><span><b>{project.name}</b><small>Instalação sem posição registrada</small></span>
-          </button>)}
-        </div>}
+          <div className="architectural-building-shell">
+            <div className="architectural-building-caption"><span>Bloco principal</span><small>interior do abrigo</small></div>
+            <div className="architectural-building-plan">
+              <div className="architectural-room architectural-room-a">{renderOverviewSlot(shelterBlueprintSlots.find(slot => slot.id === "room-a")!)}</div>
+              <div className="architectural-room architectural-room-b">{renderOverviewSlot(shelterBlueprintSlots.find(slot => slot.id === "room-b")!)}</div>
+              <div className="architectural-corridor"><span>CORREDOR</span><i /><i /><i /></div>
+              <div className="architectural-room architectural-room-c">{renderOverviewSlot(shelterBlueprintSlots.find(slot => slot.id === "room-c")!)}</div>
+              <div className="architectural-room architectural-room-d">{renderOverviewSlot(shelterBlueprintSlots.find(slot => slot.id === "room-d")!)}</div>
+              <div className="architectural-room architectural-room-e">{renderOverviewSlot(shelterBlueprintSlots.find(slot => slot.id === "room-e")!)}</div>
+              <div className="architectural-room architectural-room-f">{renderOverviewSlot(shelterBlueprintSlots.find(slot => slot.id === "room-f")!)}</div>
+            </div>
+            <div className="architectural-service-band">
+              <div className="architectural-zone-label"><Wrench size={14} /> Área técnica</div>
+              <div className="architectural-service-grid">
+                {shelterBlueprintSlots.filter(slot => slot.zone === "utility").map(renderOverviewSlot)}
+              </div>
+            </div>
+          </div>
+
+          <div className="architectural-yard">
+            <div className="architectural-zone-label"><span>↳</span> Pátio / área externa</div>
+            <div className="architectural-yard-grid">
+              {shelterBlueprintSlots.filter(slot => slot.zone === "exterior").map(renderOverviewSlot)}
+            </div>
+          </div>
+
+          {unplaced.length > 0 && <div className="shelter-unplaced-strip">
+            <span><Package size={14} /> Sem posição na planta</span>
+            <div>{unplaced.map(project => <button type="button" key={project.id} className={project.key === selectedProject?.key ? "is-selected" : ""} onClick={() => setSelectedKey(project.key)}>
+              <b>{project.name}</b><small>Defina o local na aba Construção</small>
+            </button>)}</div>
+          </div>}
+        </div>
 
         <div className="shelter-blueprint-legend">
           <span><i className="is-operational" /> Operacional</span>
