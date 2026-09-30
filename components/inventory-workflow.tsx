@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowLeftRight, Backpack, PackagePlus, Plus } from "lucide-react";
+import { ArrowLeftRight, Backpack, PackagePlus, Plus, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -12,7 +12,7 @@ import { createId } from "@/lib/id";
 import { addStack, ammoTypeFor, ammoTypes, atSharedStorage, batteryStateFor, batteryTargets, catalogForItem, catalogItemCanUse, catalogItemIsConsumable, catalogItems, catalogKey, compatibleSlots, conditions,
   container, countsAsMedication, displacedSlots, equipItem, inventoryCategories, itemFromCatalog,
   provisionInfo, provisionPreparationCheck, provisionTransferError, reusableContainerOptions, slotLabels, transferItem, transferProvisions } from "@/lib/inventory";
-import { performItemAction } from "@/lib/item-actions";
+import { itemActionOptions, performItemAction } from "@/lib/item-actions";
 import { provisionDisplay, provisionItemInfo, provisionShelfLabel } from "@/lib/provision-items";
 import { provisionConsumedToday, type DailyResource } from "@/lib/survival";
 
@@ -99,7 +99,7 @@ export function AddItemDialog({ game, edit, ownerId }: { game: GameState; edit: 
 
 export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection = false, selfOnly = false }: { game: GameState; edit: Edit; ownerId: string; item: InventoryItem; allowCorrection?: boolean; selfOnly?: boolean }) {
   const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<"transfer" | "equip" | "consume" | "prepare" | "medication" | "stock" | "use" | "recharge" | "fill-water" | "fill-fuel" | "empty-container" | "discard" | "edit">("transfer");
+  const [mode, setMode] = useState<"transfer" | "equip" | "consume" | "prepare" | "medication" | "stock" | "use" | "recharge" | "fill-water" | "fill-fuel" | "empty-container" | "cart" | "discard" | "edit">("transfer");
   const [targetId, setTargetId] = useState("");
   const [slot, setSlot] = useState<EquipmentSlot>("primary");
   const [amount, setAmount] = useState(1);
@@ -108,6 +108,7 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
   const [qtyDraft, setQtyDraft] = useState(item.qty);
   const [loadDraft, setLoadDraft] = useState(item.load);
   const slots = ownerId === "shared" ? [] : compatibleSlots(item);
+  const actionOptions = itemActionOptions(game, ownerId, item, selfOnly);
   const provision = provisionInfo(item);
   const bearer = game.survivors.find(s => s.id === ownerId);
   const targets = selfOnly ? [] : [
@@ -157,7 +158,7 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
   function openDialog(value: boolean) {
     if (!value) { close(); return; }
     setConditionDraft(item.condition || "Íntegro"); setQtyDraft(item.qty); setLoadDraft(item.load);
-    setMode(containerOptions?.canUnloadAtStorage ? "empty-container" : fillWaterMax > 0 ? "fill-water" : fillFuelMax > 0 ? "fill-fuel"
+    setMode(item.name === "Carrinho dobrável" ? "cart" : containerOptions?.canUnloadAtStorage ? "empty-container" : fillWaterMax > 0 ? "fill-water" : fillFuelMax > 0 ? "fill-fuel"
       : rechargeTargets.length ? "recharge" : slots.length ? "equip" : provisionState.resource
       ? (provisionState.ready ? "consume" : (provisionState.requiresPreparation || provisionState.requiresVerification) ? "prepare" : "edit")
       : targets.length ? "transfer" : "edit");
@@ -197,6 +198,10 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
                   ? performItemAction(draft, ownerId, item.id, { type: "fill-container", resource: "fuel", quantity: Math.min(amount, fillFuelMax) })
                 : mode === "empty-container"
                   ? performItemAction(draft, ownerId, item.id, { type: "empty-container" })
+                : mode === "cart"
+                  ? item.name === "Carrinho dobrável"
+                    ? performItemAction(draft, ownerId, item.id, { type: item.cartDeployed ? "fold-cart" : "deploy-cart" })
+                    : performItemAction(draft, ownerId, item.id, { type: "cart-store", quantity: count })
                 : mode === "medication"
                   ? performItemAction(draft, ownerId, item.id, { type: "medication", quantity: count })
                   : mode === "stock"
@@ -230,6 +235,7 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
         {fillWaterMax > 0 && <button type="button" aria-pressed={mode === "fill-water"} onClick={() => { setAmount(fillWaterMax); setMode("fill-water"); }}>Encher Água</button>}
         {fillFuelMax > 0 && <button type="button" aria-pressed={mode === "fill-fuel"} onClick={() => { setAmount(1); setMode("fill-fuel"); }}>Encher Combustível</button>}
         {containerOptions?.canUnloadAtStorage && <button type="button" aria-pressed={mode === "empty-container"} onClick={() => setMode("empty-container")}>Guardar conteúdo</button>}
+        {(item.name === "Carrinho dobrável" || actionOptions.canStoreInCart) && <button type="button" aria-pressed={mode === "cart"} onClick={() => setMode("cart")}>Carrinho</button>}
         <button type="button" aria-pressed={mode === "edit"} onClick={() => setMode("edit")}>Editar</button>
         <button type="button" aria-pressed={mode === "discard"} onClick={() => { setMode("discard"); setConfirmDiscard(false); }}>Deixar</button>
       </div>
@@ -265,10 +271,26 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
         <p className="inventory-hint">O galão comporta até 4 porções de Água verificada. O recipiente continua ocupando apenas 1 espaço de carga.</p></>}
       {mode === "fill-fuel" && <p className="inventory-hint">Guarda 1 unidade de Combustível no galão. O conteúdo não adiciona carga além do recipiente.</p>}
       {mode === "empty-container" && <p className="inventory-hint">Devolve {containerOptions?.amount ?? 0} {containerOptions?.resource === "water" ? "porção(ões) de Água" : "unidade(s) de Combustível"} às reservas compartilhadas e mantém o galão vazio.</p>}
+      {mode === "cart" && item.name === "Carrinho dobrável" && <div className="grid gap-3">
+        <p className="inventory-hint">{item.cartDeployed
+          ? item.cartItems?.length
+            ? "O carrinho está aberto e usa as duas mãos. Retire todo o conteúdo antes de dobrá-lo."
+            : "O carrinho está aberto e usa as duas mãos. Dobrá-lo faz o item voltar a ocupar 1 espaço."
+          : "Abrir o carrinho guarda automaticamente armas empunhadas e passa a exigir as duas mãos enquanto ele estiver sendo conduzido."}</p>
+        {item.cartDeployed && (item.cartItems?.length ?? 0) > 0 && <div className="grid gap-2">
+          {item.cartItems!.map(nested => <div className="shared-inventory-row" key={nested.id}><div><b>{nested.qty}× {nested.name}</b><span>{nested.load} espaço(s) por unidade</span></div>
+            <Button size="sm" variant="outline" onClick={() => {
+              let result: ReturnType<typeof performItemAction> | null = null;
+              edit(draft => { result = performItemAction(draft, ownerId, item.id, { type: "cart-remove", nestedItemId: nested.id, quantity: nested.qty }); });
+              if (result?.ok) toast.success(result.message); else toast.error("Não foi possível retirar o item do carrinho.");
+            }}>Retirar</Button></div>)}
+        </div>}
+      </div>}
+      {mode === "cart" && item.name !== "Carrinho dobrável" && <p className="inventory-hint">Coloca {count}× {item.name} no carrinho aberto. O carrinho comporta até 4 espaços e sua carga é acompanhada separadamente da mochila.</p>}
       {mode === "medication" && <p className="inventory-hint">Cada unidade vira 1 Medicamentos nas reservas compartilhadas. Bolsa e estojo de antissepsia são consumidos; Caixa clínica completa deixa um Kit médico de campo reutilizável.</p>}
       {mode === "stock" && <p className="inventory-hint">Cada unidade física vira uma unidade nas reservas compartilhadas. O objeto sai do inventário para evitar contagem dupla.</p>}
       {mode === "discard" && <p className="inventory-hint inventory-danger">{confirmDiscard ? "Confirmar: as unidades serão retiradas da ficha e o descarte aparecerá no registro." : "Deixar para trás retira o item sem criar uma reserva nova no mapa."}</p>}
-      {!["equip", "edit", "consume", "recharge", "fill-water", "fill-fuel", "empty-container"].includes(mode) && !(mode === "use" && !catalogItemIsConsumable(item)) &&
+      {!["equip", "edit", "consume", "recharge", "fill-water", "fill-fuel", "empty-container"].includes(mode) && !(mode === "cart" && item.name === "Carrinho dobrável") && !(mode === "use" && !catalogItemIsConsumable(item)) &&
         <Counter label="Unidades" value={count} min={1} max={item.qty} onChange={setAmount} compact />}
       {mode === "transfer" && destination && <p className="roll-hint">{count}× {item.name} → {ownerName(game, destination)}. Permanecem {item.qty - count} na origem.</p>}
       <DialogFooter><Button variant="outline" onClick={close}>Cancelar</Button>
@@ -280,9 +302,12 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
           || (mode === "recharge" && !rechargeTargetId)
           || (mode === "fill-water" && fillWaterMax < 1)
           || (mode === "fill-fuel" && fillFuelMax < 1)
-          || (mode === "empty-container" && !containerOptions?.canUnloadAtStorage)} onClick={perform}>
+          || (mode === "empty-container" && !containerOptions?.canUnloadAtStorage)
+          || (mode === "cart" && item.name === "Carrinho dobrável" && item.cartDeployed && (item.cartItems?.length ?? 0) > 0)
+          || (mode === "cart" && item.name !== "Carrinho dobrável" && !actionOptions.canStoreInCart)} onClick={perform}>
           {mode === "edit" ? "Salvar alterações" : mode === "transfer" ? "Transferir" : mode === "equip" ? "Equipar"
             : mode === "consume" ? "Consumir 1 porção" : mode === "prepare" ? (provisionState.requiresVerification ? "Confirmar verificação" : "Confirmar preparo")
+            : mode === "cart" ? item.name === "Carrinho dobrável" ? (item.cartDeployed ? "Dobrar carrinho" : "Abrir carrinho") : "Colocar no carrinho"
             : mode === "medication" ? "Registrar Medicamentos" : mode === "stock" ? "Guardar nas reservas" : mode === "use" ? "Usar" : mode === "recharge" ? "Recarregar" : mode === "fill-water" ? "Encher galão" : mode === "fill-fuel" ? "Guardar combustível" : mode === "empty-container" ? "Guardar conteúdo" : confirmDiscard ? "Confirmar descarte" : "Deixar para trás"}</Button></DialogFooter>
     </DialogContent>
   </Dialog>;
