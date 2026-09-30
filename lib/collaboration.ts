@@ -1,4 +1,5 @@
 import { addLog, ammunitionTypes, type AmmunitionType, type GameState, type InventoryItem, type NPC, type Survivor } from "./game";
+import { projectBaseOperational } from "./shelter-projects";
 
 export function projectPlayerGame(game: GameState, survivorId: string): GameState {
   const visible = structuredClone(game);
@@ -21,7 +22,7 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
     id: project.id, key: project.key, name: project.name, category: project.category, state: project.state,
     progress: project.progress, requiredProgress: project.requiredProgress,
     buildCapabilities: project.buildCapabilities, requiredCapabilities: project.requiredCapabilities,
-    operationMode: project.operationMode, slotId: project.slotId,
+    operationMode: project.operationMode, operatorReady: projectBaseOperational(game, game.shelter, project), slotId: project.slotId,
     repairProgress: project.repairProgress, requiredRepairProgress: project.requiredRepairProgress,
     effects: project.effects, costs: {}, helperIds: [],
   }));
