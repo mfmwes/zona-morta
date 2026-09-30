@@ -802,3 +802,139 @@ test('encerrar o dia é independente de descanso longo', () => {
   assert.equal(g.shortRest, shortRestBeforeDayClose);
   assert.equal(g.longRest, longRestBeforeDayClose);
 });
+
+
+test('encerramento do dia monta fontes individuais por posição e consumo já registrado', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  g.shelter.hex = '0,0'; g.shelter.residents = 1; g.shelter.food = 6; g.shelter.water = 6;
+  ana.hex = '0,0'; bia.hex = '1,0';
+  ana.foodConsumedDay = g.day;
+  bia.food = 1; bia.water = 0;
+
+  const plan = survival.defaultDayClosePlan(g);
+  const anaPlan = plan.survivors.find(row => row.survivorId === ana.id);
+  const biaPlan = plan.survivors.find(row => row.survivorId === bia.id);
+  assert.equal(anaPlan.food, 'already');
+  assert.equal(anaPlan.water, 'shared');
+  assert.equal(biaPlan.food, 'personal');
+  assert.equal(biaPlan.water, 'none');
+  assert.equal(plan.residentsFood, 1);
+  assert.equal(plan.residentsWater, 1);
+});
+
+test('encerrar dia consome porções pessoais em campo sem cobrar novamente quem já consumiu', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  g.shelter.hex = '0,0'; g.shelter.residents = 0; g.shelter.food = 2; g.shelter.water = 2;
+  ana.hex = '0,0'; bia.hex = '1,0';
+  ana.foodConsumedDay = g.day;
+  bia.food = 1; bia.water = 1;
+
+  const plan = {
+    expectedDay: g.day, residentsFood: 0, residentsWater: 0,
+    survivors: [
+      { survivorId: ana.id, food:'already', water:'shared' },
+      { survivorId: bia.id, food:'personal', water:'personal' },
+    ],
+  };
+  const result = survival.closeDayWithPlan(g, plan);
+  assert.equal(result.ok, true);
+  assert.equal(result.deprivations.length, 0);
+  assert.equal(g.shelter.food, 2);
+  assert.equal(g.shelter.water, 1);
+  assert.equal(bia.food, 0);
+  assert.equal(bia.water, 0);
+  assert.equal(ana.foodConsumedDay, 1);
+  assert.equal(ana.waterConsumedDay, 1);
+  assert.equal(bia.foodConsumedDay, 1);
+  assert.equal(bia.waterConsumedDay, 1);
+  assert.equal(g.day, 2);
+});
+
+test('encerramento registra privação nominal e impede uso remoto das reservas', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  g.shelter.hex = '0,0'; g.shelter.residents = 0; g.shelter.food = 5; g.shelter.water = 5;
+  ana.hex = '0,0'; bia.hex = '1,0';
+
+  const plan = {
+    expectedDay: g.day, residentsFood: 0, residentsWater: 0,
+    survivors: [
+      { survivorId: ana.id, food:'other', water:'other' },
+      { survivorId: bia.id, food:'shared', water:'other' },
+    ],
+  };
+  const result = survival.closeDayWithPlan(g, plan);
+  assert.equal(result.ok, true);
+  assert.equal(g.shelter.food, 5);
+  assert.ok(result.deprivations.some(row => row.survivorId === bia.id && row.resource === 'food' && row.reason === 'remote'));
+  assert.ok(g.log.some(row => row.kind === 'privação' && row.actorId === bia.id && /sem registrar alimentação/.test(row.text)));
+  assert.equal(bia.foodConsumedDay, undefined);
+  assert.equal(bia.waterConsumedDay, 1);
+});
+
+test('moradores usam uma conta separada e faltas ficam registradas sem aplicar efeito automático', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  g.shelter.residents = 3; g.shelter.food = 1; g.shelter.water = 2;
+  const plan = {
+    expectedDay: g.day, residentsFood: 3, residentsWater: 3,
+    survivors: [
+      { survivorId: ana.id, food:'other', water:'other' },
+      { survivorId: bia.id, food:'other', water:'other' },
+    ],
+  };
+  const result = survival.closeDayWithPlan(g, plan);
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.residentMissing, { food:2, water:1 });
+  assert.equal(g.shelter.food, 0); assert.equal(g.shelter.water, 0);
+  assert.ok(g.log.some(row => row.kind === 'privação' && /Moradores do abrigo/.test(row.text)));
+  assert.equal(ana.stress, 0); assert.equal(bia.stress, 0);
+});
+
+test('encerramento prioriza provisão física perecível antes de porção solta durável', () => {
+  const g = campaign();
+  g.shelter.food = 1;
+  g.shelter.provisionLots = [];
+  g.shelter.inventory = [item('Fruta firme')];
+  const fruitId = g.shelter.inventory[0].id;
+
+  const used = survival.consumeBestProvision(g.shelter, 'food');
+  assert.equal(used.consumed, 1);
+  assert.equal(used.source, 'item');
+  assert.equal(g.shelter.food, 1);
+  assert.equal(g.shelter.inventory.some(entry => entry.id === fruitId), false);
+});
+
+test('consumo por item físico já registrado não é cobrado novamente ao encerrar o dia', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  ana.food = 0; ana.inventory = [item('Barra de cereal')];
+  const cereal = ana.inventory[0];
+  const consumed = inventory.consumeProvisionItem(g, ana.id, cereal.id, ana.id);
+  assert.ok(consumed);
+  assert.equal(ana.foodConsumedDay, g.day);
+
+  g.shelter.food = 5; g.shelter.water = 5;
+  const plan = survival.defaultDayClosePlan(g);
+  assert.equal(plan.survivors.find(row => row.survivorId === ana.id).food, 'already');
+  const beforeFood = g.shelter.food;
+  const result = survival.closeDayWithPlan(g, plan);
+  assert.equal(result.ok, true);
+  assert.equal(g.shelter.food <= beforeFood, true);
+  assert.equal(result.deprivations.some(row => row.survivorId === ana.id && row.resource === 'food'), false);
+});
+
+test('outra fonte satisfaz a necessidade sem gastar provisões', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  g.shelter.food = 4; g.shelter.water = 4;
+  const plan = {
+    expectedDay: g.day, residentsFood: 0, residentsWater: 0,
+    survivors: [
+      { survivorId: ana.id, food:'other', water:'other' },
+      { survivorId: bia.id, food:'other', water:'other' },
+    ],
+  };
+  const result = survival.closeDayWithPlan(g, plan);
+  assert.equal(result.ok, true);
+  assert.equal(result.deprivations.length, 0);
+  assert.equal(g.shelter.food, 4); assert.equal(g.shelter.water, 4);
+  assert.equal(ana.foodConsumedDay, 1); assert.equal(ana.waterConsumedDay, 1);
+  assert.equal(bia.foodConsumedDay, 1); assert.equal(bia.waterConsumedDay, 1);
+});
