@@ -11,7 +11,7 @@ import { AddItemDialog, ItemActionsDialog } from "@/components/inventory-workflo
 import { ItemContextMenu } from "@/components/item-context-menu";
 import { ItemArt } from "@/components/item-art";
 import { ShelterMoveDialog } from "@/components/shelter-move";
-import { content, establishShelter, recoverFormerStock, survivorsAtHex, type GameState } from "@/lib/game";
+import { content, establishShelter, recoverFormerStock, survivorPositionGroups, survivorsAtHex, type GameState } from "@/lib/game";
 import { atSharedStorage, catalogForItem } from "@/lib/inventory";
 import { provisionBreakdown, provisionDisplay, provisionItemInfo } from "@/lib/provision-items";
 import { closeDay, eveningNeeds } from "@/lib/survival";
@@ -37,6 +37,7 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
   const recipient = cacheVisitors.find(person => person.id === cacheRecipient) ?? cacheVisitors[0];
   const shelterFood = provisionBreakdown(s, "food");
   const shelterWater = provisionBreakdown(s, "water");
+  const travelGroups = survivorPositionGroups(game);
   useEffect(() => { setShelterNotes(s.notes); }, [s.notes]);
   useEffect(() => { setShelterName(s.name); }, [s.name]);
   const stocks: { key: keyof typeof s; label: string; unit: string; max: number }[] = [
@@ -62,8 +63,9 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
         <div><p className="dossier-title">{hasShelter ? `Base / hex ${s.hex}` : `Grupo / hex ${game.partyHex}`}</p>
           <h2 className="page-title mt-1">{hasShelter ? s.name : "Sem abrigo"}</h2>
           <p className="intro-line mt-2">{hasShelter
-            ? `Situado em ${homeSector}. O grupo está em ${currentSector}.`
-            : `O grupo está em ${currentSector}. Ainda não há base fixa; escolha um lugar explorado para estabelecer uma.`}</p></div>
+            ? `Situado em ${homeSector}. O grupo principal está em ${currentSector}.`
+            : `O grupo principal está em ${currentSector}. Ainda não há base fixa; escolha um lugar explorado para estabelecer uma.`}</p>
+          {travelGroups.length > 1 && <p className="text-xs subtle mt-2">Grupos em campo: {travelGroups.map(group => `Hex ${group.hex} — ${group.members.map(person => person.name).join(", ")}`).join(" · ")}</p>}</div>
         {hasShelter && <span className="tag">{s.residents + survivorsAtShelter.length}/{s.capacity} pessoas presentes</span>}
       </div>
       {!hasShelter && !playerPreview && <div className="mt-5 list-card">
@@ -179,7 +181,7 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
       {visitedCache && <section className="panel panel-pad">
         <p className="dossier-title">Hex {visitedCache.hex} / Depósito antigo</p>
         <h3 className="section-title mt-1">{visitedCache.name}</h3>
-        <p className="intro-line mt-2">O grupo está neste local. Retire os mantimentos e itens desejados e confira a carga do sobrevivente.</p>
+        <p className="intro-line mt-2">Há sobreviventes neste local. Retire os mantimentos e itens desejados apenas com quem está presente neste hex.</p>
         {!playerPreview && recipient && <Pick label="Quem vai carregar" value={recipient.id} options={cacheVisitors.map(person => ({ value: person.id, label: person.name }))} onChange={setCacheRecipient} />}
         <div className="grid gap-2 mt-3">
           {([ ["food", "Comida"], ["water", "Água"], ["pistolAmmo", "Munição de pistola"],
