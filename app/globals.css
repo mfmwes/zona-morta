@@ -1131,20 +1131,40 @@ button { cursor: pointer; } button:disabled { cursor: not-allowed; }
 .map-group-chip small { color:#6b7e7a; font:700 .59rem var(--font-mono); }
 .map-group-chip.is-active small { color:#7b6747; }
 
-.map-group-marker { cursor:pointer; outline:none; }
+.map-group-marker { cursor:pointer; outline:none; filter:drop-shadow(0 3px 4px rgba(4,18,20,.35)); }
 .map-group-marker:focus-visible .map-group-active-ring { stroke-width:3; }
 .map-group-active-ring { fill:none; stroke:#f1cc7b; stroke-width:2.5; vector-effect:non-scaling-stroke; }
-.map-group-main-disc { fill:#f1c481; stroke:#173135; stroke-width:2; }
-.map-group-marker-main > svg { stroke:#173135; }
-.map-group-avatar-shadow { fill:#173135; opacity:.95; }
-.map-group-avatar-fallback { fill:#8fc0b5; }
-.map-group-avatar-border { fill:none; stroke:#f4f5ec; stroke-width:1.6; vector-effect:non-scaling-stroke; }
-.map-group-avatar-initial { fill:#173135; font:900 8px var(--font-mono); pointer-events:none; }
-.map-group-overflow { fill:#173135; stroke:#f4f5ec; stroke-width:1.4; vector-effect:non-scaling-stroke; }
-.map-group-overflow-text { fill:#f4f5ec; font:900 7px var(--font-mono); pointer-events:none; }
-.map-group-marker:hover .map-group-avatar-border,
-.map-group-marker:hover .map-group-main-disc { stroke:#f1cc7b; }
 
+/* Grupo principal: marcador próprio, fácil de reconhecer mesmo sem a legenda. */
+.map-group-main-pointer { fill:#d89b42; stroke:#173135; stroke-width:1.6; vector-effect:non-scaling-stroke; }
+.map-group-main-disc { fill:#f0bd68; stroke:#173135; stroke-width:2; vector-effect:non-scaling-stroke; }
+.map-group-main-inner { fill:#f6d392; opacity:.75; }
+.map-group-marker-main > svg { stroke:#173135; }
+.map-group-marker-main:hover .map-group-main-disc { stroke:#fff0c5; }
+
+/* Sobrevivente isolado/subgrupos: retratos ganham fundo próprio e deixam de parecer contadores. */
+.map-group-stack-backdrop { fill:#183234; stroke:#dce9e4; stroke-width:1.2; opacity:.96; vector-effect:non-scaling-stroke; }
+.map-group-single-pointer { fill:#8fc0b5; stroke:#173135; stroke-width:1.3; vector-effect:non-scaling-stroke; }
+.map-group-avatar-shadow { fill:#102426; opacity:.98; }
+.map-group-avatar-fallback { fill:#86b7ad; }
+.map-group-avatar-border { fill:none; stroke:#f4f5ec; stroke-width:1.8; vector-effect:non-scaling-stroke; }
+.map-group-avatar-initial { fill:#173135; font:900 8px var(--font-mono); pointer-events:none; }
+.map-group-overflow { fill:#203d3f; stroke:#f4f5ec; stroke-width:1.4; vector-effect:non-scaling-stroke; }
+.map-group-overflow-text { fill:#f4f5ec; font:900 7px var(--font-mono); pointer-events:none; }
+.map-group-marker:hover .map-group-avatar-border { stroke:#f1cc7b; }
+
+/* Abrigo atual: marcador de casa com ponteiro, separado visualmente de grupos e pontos. */
+.map-shelter-marker { filter:drop-shadow(0 3px 4px rgba(4,18,20,.35)); }
+.map-shelter-marker > path { fill:#75bfae; stroke:#173135; stroke-width:1.5; vector-effect:non-scaling-stroke; }
+.map-shelter-marker > circle:first-of-type { fill:#9bd6c8; stroke:#173135; stroke-width:2; vector-effect:non-scaling-stroke; }
+.map-shelter-marker .map-shelter-inner { fill:#c3e9df; opacity:.72; }
+.map-shelter-marker > svg { stroke:#173135; }
+
+/* Locais descobertos: pin + quantidade, em vez de um círculo numérico solto. */
+.map-point-marker { filter:drop-shadow(0 2px 3px rgba(4,18,20,.32)); }
+.map-point-marker rect { fill:#e6bf83; stroke:#173135; stroke-width:1.7; vector-effect:non-scaling-stroke; }
+.map-point-marker svg { stroke:#173135; }
+.map-point-marker text { fill:#173135; font-family:var(--font-mono); }
 
 .survivor-move-dialog { width:min(720px,calc(100vw - 24px)); max-width:min(720px,calc(100vw - 24px)); }
 .survivor-move-route { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:12px; padding:12px; border:1px solid #c8d8d1; border-radius:8px; background:#f2f6f2; }
