@@ -127,7 +127,6 @@ export function normalizeShelter(shelter: ShelterState) {
   normalizeShelterAmmo(shelter);
   shelter.projects ??= [];
   shelter.posts ??= [];
-  shelter.disabledProjectKeys ??= [];
   const baseSecurity = shelter.hex ? 1 : 0;
   shelter.manualAdjustments ??= {
     security: (shelter.security ?? baseSecurity) - baseSecurity,
