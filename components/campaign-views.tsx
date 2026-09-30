@@ -14,6 +14,7 @@ import { ShelterMoveDialog } from "@/components/shelter-move";
 import { DayCloseDialog } from "@/components/day-close-dialog";
 import { FormerShelterProjects, ShelterProjectsManager } from "@/components/shelter-project-manager";
 import { ShelterVisualDashboard } from "@/components/shelter-dashboard";
+import { RuntimeErrorBoundary } from "@/components/runtime-error-boundary";
 import { ammunitionTypes, content, establishShelter, recoverFormerAmmo, recoverFormerStock, setShelterAmmoCount, shelterAmmoCount, shelterPopulationBreakdown, survivorPositionGroups, survivorsAtHex, type GameState } from "@/lib/game";
 import { shelterMetrics } from "@/lib/shelter-projects";
 import { atSharedStorage, batteryStateFor, catalogForItem } from "@/lib/inventory";
@@ -273,7 +274,9 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
       </TabsContent>
 
       <TabsContent value="construction" className="shelter-tab-content">
-        <ShelterProjectsManager game={game} edit={edit} playerPreview={playerPreview} />
+        <RuntimeErrorBoundary title="A seção Construção encontrou um problema">
+          <ShelterProjectsManager game={game} edit={edit} playerPreview={playerPreview} />
+        </RuntimeErrorBoundary>
       </TabsContent>
 
       <TabsContent value="routine" className="shelter-tab-content">
