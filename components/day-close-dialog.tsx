@@ -11,15 +11,15 @@ import {
   closeDayWithPlan,
   defaultDayClosePlan,
   inspectDayClosePlan,
+  fieldNpcs,
   provisionConsumedToday,
-  sharedReserveNpcs,
   type DailyResource,
   type DayClosePlan,
   type DayCloseResult,
   type DayProvisionSource,
 } from "@/lib/survival";
 import { provisionBreakdown } from "@/lib/provision-items";
-import { survivorHex, type GameState, type Survivor } from "@/lib/game";
+import { survivorHex, type GameState, type NPC, type Survivor } from "@/lib/game";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 
@@ -60,7 +60,8 @@ export function DayCloseDialog({
     || inspection.residentMissing.food > 0
     || inspection.residentMissing.water > 0;
   const residents = Math.max(0, Math.trunc(game.shelter.residents));
-  const npcsAtReserve = sharedReserveNpcs(game);
+  const fieldNpcList = fieldNpcs(game);
+  const npcsAtReserve = (game.npcs ?? []).filter(npc => npc.active && npc.status !== "Morto" && npc.status !== "Desaparecido" && npc.hex === storageHex);
 
   function prepare() {
     setPlan(defaultDayClosePlan(game));
@@ -89,6 +90,26 @@ export function DayCloseDialog({
     });
   }
 
+  function updateNpcSource(npcId: string, resource: DailyResource, source: DayProvisionSource) {
+    setPlan(current => {
+      const next = structuredClone(current ?? defaultDayClosePlan(game));
+      const entry = next.npcs.find(row => row.npcId === npcId);
+      if (entry) entry[resource] = source;
+      return next;
+    });
+  }
+  function updateCarrier(npcId: string, resource: DailyResource, carrierId: string) {
+    setPlan(current => {
+      const next = structuredClone(current ?? defaultDayClosePlan(game));
+      const entry = next.npcs.find(row => row.npcId === npcId);
+      if (entry) {
+        if (resource === "food") entry.foodCarrierId = carrierId || undefined;
+        else entry.waterCarrierId = carrierId || undefined;
+      }
+      return next;
+    });
+  }
+
   function sourceOptions(person: Survivor, resource: DailyResource) {
     if (provisionConsumedToday(game, person, resource))
       return [{ value: "already", label: sourceLabels.already }];
@@ -110,9 +131,25 @@ export function DayCloseDialog({
     return currentPlan.survivors.find(row => row.survivorId === person.id)
       ?? { survivorId: person.id, food: "none" as const, water: "none" as const };
   }
+  function npcPlanFor(npc: NPC) {
+    return currentPlan.npcs.find(row => row.npcId === npc.id)
+      ?? { npcId: npc.id, food: "none" as const, water: "none" as const };
+  }
 
   function warningFor(person: Survivor, resource: DailyResource) {
     return inspection.deprivations.find(row => row.survivorId === person.id && row.resource === resource);
+  }
+  function npcWarningFor(npc: NPC, resource: DailyResource) {
+    return inspection.deprivations.find(row => row.npcId === npc.id && row.resource === resource);
+  }
+  function npcSourceOptions(npc: NPC, resource: DailyResource) {
+    const options: { value: string; label: string }[] = [];
+    if (npc.hex === storageHex && provisionBreakdown(game.shelter, resource).total > 0)
+      options.push({ value: "shared", label: `${sourceLabels.shared} · ${provisionBreakdown(game.shelter, resource).total} disponível(is)` });
+    if (game.survivors.some(person => survivorHex(game, person) === npc.hex))
+      options.push({ value: "personal", label: "Provisão portada por alguém do grupo" });
+    options.push({ value: "other", label: sourceLabels.other }, { value: "none", label: sourceLabels.none });
+    return options;
   }
 
   function nextMorning() {
@@ -187,12 +224,6 @@ export function DayCloseDialog({
         </p>}
       </section>
 
-      {npcsAtReserve.length > 0 && <section className="day-close-section">
-        <div className="day-close-section-heading"><div><small>NPCS IDENTIFICADOS</small><b>{npcsAtReserve.length} junto às reservas</b></div>
-          <span>O consumo é registrado individualmente.</span></div>
-        <p className="text-xs subtle">{npcsAtReserve.map(npc => npc.name).join(", ")} usam as reservas compartilhadas por estarem neste hex. Se faltar recurso, a privação ficará registrada no diário sem penalidade automática.</p>
-      </section>}
-
       <section className="day-close-section">
         <div className="day-close-section-heading">
           <div><small>SOBREVIVENTES</small><b>Prestação de contas individual</b></div>
@@ -239,6 +270,28 @@ export function DayCloseDialog({
           {game.survivors.length === 0 && <p className="character-rule-note">Nenhum sobrevivente registrado. Apenas o consumo dos moradores será processado.</p>}
         </div>
       </section>
+
+      {(npcsAtReserve.length > 0 || fieldNpcList.length > 0) && <section className="day-close-section">
+        <div className="day-close-section-heading"><div><small>NPCS IDENTIFICADOS</small><b>{npcsAtReserve.length} junto às reservas · {fieldNpcList.length} em campo</b></div>
+          <span>Todo consumo é nominal e auditável.</span></div>
+        <p className="text-xs subtle mb-3">NPCs no abrigo podem usar reservas compartilhadas. Quem está em campo só pode usar uma porção portada por sobrevivente no mesmo hex, outra fonte declarada pelo mestre ou terá a privação registrada.</p>
+        <div className="day-close-people">{[...npcsAtReserve, ...fieldNpcList].map(npc => {
+          const entry = npcPlanFor(npc);
+          const carriers = game.survivors.filter(person => survivorHex(game, person) === npc.hex);
+          return <article className={`day-close-person ${npcWarningFor(npc, "food") || npcWarningFor(npc, "water") ? "has-warning" : ""}`} key={npc.id}><header>
+            <span className="day-close-avatar">{npc.portrait ? <img src={npc.portrait} alt="" /> : npc.name.charAt(0).toUpperCase()}</span><span><b>{npc.name}</b><small><MapPin size={12} /> Hex {npc.hex} · {npc.hex === storageHex ? "junto às reservas" : "em campo"}</small></span>
+          </header><div className="day-close-person-resources">{(["food", "water"] as const).map(resource => {
+            const warning = npcWarningFor(npc, resource);
+            const consumed = (resource === "food" ? npc.foodConsumedDay : npc.waterConsumedDay) === game.day;
+            const carrierId = resource === "food" ? entry.foodCarrierId : entry.waterCarrierId;
+            return <div className="day-close-resource-row" key={resource}><span className="day-close-resource-label">{resource === "food" ? <Utensils size={15} /> : <Droplets size={15} />}<b>{resourceName(resource)}</b>{consumed && <small className="is-ok"><CheckCircle2 size={12} /> já registrado</small>}</span>
+              {consumed ? <span className="day-close-consumed">Já consumiu hoje</span> : <div className="grid gap-2"><Pick label={`Fonte de ${resourceName(resource).toLowerCase()}`} value={entry[resource]} options={npcSourceOptions(npc, resource)} onChange={value => updateNpcSource(npc.id, resource, value as DayProvisionSource)} />
+                {entry[resource] === "personal" && <Pick label="Quem porta a porção" value={carrierId ?? ""} options={[{ value: "", label: "Selecione a pessoa" }, ...carriers.map(person => ({ value: person.id, label: `${person.name} · ${provisionBreakdown(person, resource).total} porção(ões)` }))]} onChange={value => updateCarrier(npc.id, resource, value)} />}</div>}
+              {warning && <small className="day-close-inline-warning"><AlertTriangle size={12} />{warning.reason === "remote" ? "Reserva remota; escolha uma pessoa deste hex." : warning.reason === "unavailable" ? "A fonte escolhida não tem porção disponível." : "Sem consumo registrado para o dia."}</small>}
+            </div>;
+          })}</div></article>;
+        })}</div>
+      </section>}
 
       <p className="character-rule-note">
         O sistema consome primeiro as provisões com maior risco de perda: unidades abertas e recursos que vencem antes. Se alguém ficar sem comida ou água, a privação será registrada no diário, mas nenhuma consequência mecânica nova será aplicada automaticamente.

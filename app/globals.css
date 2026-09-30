@@ -1124,6 +1124,32 @@ button { cursor: pointer; } button:disabled { cursor: not-allowed; }
 .npc-dialog textarea { min-height:76px; width:100%; resize:vertical; }
 .npc-toggle-row { display:flex; flex-wrap:wrap; gap:10px 16px; font-size:.82rem; }
 .npc-toggle-row label { display:flex; align-items:center; gap:6px; }
+.npc-companion-list { display:flex; flex-wrap:wrap; gap:7px 12px; margin-top:6px; font-size:.78rem; }
+.npc-companion-list label { display:flex; align-items:center; gap:5px; }
+
+/* Abrigo: estruturas persistentes, postos e origem dos indicadores. */
+.shelter-community-counts { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; }
+.shelter-community-counts span { display:grid; gap:2px; padding:8px; border:1px solid color-mix(in srgb,var(--border) 84%,#6f9e93); border-radius:7px; background:color-mix(in srgb,var(--card) 92%,#e3eee9); color:var(--muted-foreground); font-size:.68rem; }
+.shelter-community-counts b { color:var(--foreground); font-size:1.05rem; }
+.shelter-projects { display:grid; gap:16px; }
+.shelter-project-category { display:grid; gap:8px; }
+.shelter-project-category > h4 { color:var(--muted-foreground); font:800 .69rem var(--font-mono); letter-spacing:.09em; text-transform:uppercase; }
+.shelter-project-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:10px; }
+.shelter-project-card,.shelter-post-card { padding:12px; border:1px solid color-mix(in srgb,var(--border) 86%,#74a59a); border-radius:8px; background:color-mix(in srgb,var(--card) 96%,#dcebe5); }
+.shelter-project-card b,.shelter-post-card b { color:var(--foreground); }
+.shelter-project-state,.shelter-post-state { display:inline-flex; align-items:center; gap:4px; flex:none; padding:3px 6px; border-radius:999px; background:#e5ebe7; color:#536561; font-size:.64rem; font-weight:800; white-space:nowrap; }
+.shelter-project-state.is-em-construção { background:#f1e7ce; color:#765d34; }
+.shelter-project-state.is-concluído,.shelter-post-state.is-operational { background:#dcece3; color:#2e6755; }
+.shelter-project-state.is-danificado { background:#f3ddd6; color:#8a4d40; }
+.project-progress { height:6px; overflow:hidden; margin-top:11px; border-radius:99px; background:color-mix(in srgb,var(--muted) 35%,transparent); }
+.project-progress span { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,#6d9b8e,#a8cdbf); transition:width .2s ease; }
+.project-helpers { display:flex; flex-wrap:wrap; gap:5px 10px; padding:8px; border:1px solid color-mix(in srgb,var(--border) 85%,transparent); border-radius:6px; font-size:.72rem; }
+.project-helpers small { width:100%; color:var(--muted-foreground); font-weight:800; text-transform:uppercase; letter-spacing:.05em; }
+.project-helpers label { display:flex; align-items:center; gap:4px; }
+.shelter-posts { display:grid; gap:8px; }
+.shelter-post-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:10px; }
+.former-shelter-projects { display:grid; gap:4px; margin-top:13px; padding:10px; border-left:3px solid #90aaa2; background:color-mix(in srgb,var(--muted) 24%,transparent); font-size:.75rem; }
+.former-shelter-projects span { color:var(--muted-foreground); }
 
 @media (prefers-color-scheme: dark) {
   .npc-card { border-color:#416562; background:#173336; }
@@ -1131,6 +1157,20 @@ button { cursor: pointer; } button:disabled { cursor: not-allowed; }
   .npc-status { background:#254c4b; color:#bfe3d6; }
   .npc-status-ferido,.npc-status-grave { background:#5a3730; color:#f0c1ae; }
   .npc-status-morto,.npc-status-desaparecido { background:#3e3c3a; color:#d3cbc5; }
+  .shelter-community-counts span { border-color:#3f615d; background:#183638; color:#9db8b2; }
+  .shelter-community-counts b { color:#e6efea; }
+  .shelter-project-card,.shelter-post-card { border-color:#416460; background:#173437; }
+  .shelter-project-state,.shelter-post-state { background:#263f3e; color:#c0d3cd; }
+  .shelter-project-state.is-em-construção { background:#53452e; color:#f0d8a3; }
+  .shelter-project-state.is-concluído,.shelter-post-state.is-operational { background:#244a40; color:#bce2d1; }
+  .shelter-project-state.is-danificado { background:#563a35; color:#f1beb1; }
+  .project-helpers { border-color:#365653; }
+  .former-shelter-projects { border-color:#79a89b; background:#183537; }
+}
+
+@media (max-width:560px) {
+  .shelter-community-counts { grid-template-columns:1fr; }
+  .shelter-project-grid,.shelter-post-grid { grid-template-columns:1fr; }
 }
 
 @media (hover:none) {

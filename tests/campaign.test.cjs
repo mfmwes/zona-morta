@@ -20,6 +20,8 @@ const { explicitItemArtFor, itemArtFor } = require('../lib/item-art.ts');
 const exploration = require('../lib/exploration.ts');
 const { revealSector, preserveKnownSectors } = require('../lib/sectors.ts');
 const { parseWeaponDamage, resolveActionRoll, resolveRollResources } = require('../lib/rolls.ts');
+const shelterProjects = require('../lib/shelter-projects.ts');
+const npcGenerator = require('../lib/npc-generator.ts');
 
 function survivor(name = 'Ana') {
   return initialSurvivor({ name, origin: content.origins[0].name, past: '', archetype: content.archetypes[0].name,
@@ -969,4 +971,74 @@ test('outra fonte satisfaz a necessidade sem gastar provisões', () => {
   assert.equal(g.shelter.food, 4); assert.equal(g.shelter.water, 4);
   assert.equal(ana.foodConsumedDay, 1); assert.equal(ana.waterConsumedDay, 1);
   assert.equal(bia.foodConsumedDay, 1); assert.equal(bia.waterConsumedDay, 1);
+});
+
+test('projetos persistentes derivam estado do abrigo, exigem operador e sobrevivem em snapshots', () => {
+  const g = campaign();
+  assert.equal(require('../lib/game.ts').establishShelter(g, '0,0'), true);
+  g.shelter.parts = 2;
+  const barricades = shelterProjects.createShelterProject('barricades');
+  g.shelter.projects.push(barricades);
+  assert.equal(shelterProjects.startProject(g.shelter, barricades), null);
+  assert.equal(g.shelter.parts, 1);
+  assert.equal(shelterProjects.advanceProject(barricades), true);
+  assert.equal(shelterProjects.advanceProject(barricades), true);
+  assert.equal(barricades.state, 'Concluído');
+  assert.equal(shelterProjects.shelterMetrics(g.shelter).security, 2);
+
+  const infirmary = shelterProjects.createShelterProject('infirmary');
+  infirmary.state = 'Concluído'; infirmary.progress = infirmary.requiredProgress;
+  const medic = { id: 'npc-medic', name: 'Luana', role: 'Enfermeira', description: '', notes: '', hex: '0,0', home: '0,0', status: 'Bem', infection: 'Saudável', disposition: 'Aliado', skills: ['Medicina'], active: true };
+  g.shelter.projects.push(infirmary); g.npcs.push(medic);
+  assert.equal(shelterProjects.projectOperational(g, g.shelter, infirmary), false);
+  infirmary.responsibleId = medic.id;
+  assert.equal(shelterProjects.projectOperational(g, g.shelter, infirmary), true);
+  const previous = structuredClone(g.shelter);
+  assert.equal(previous.projects.find(project => project.key === 'barricades').state, 'Concluído');
+});
+
+test('NPC em campo só consome provisão portada por sobrevivente do mesmo hex', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  assert.equal(require('../lib/game.ts').establishShelter(g, '0,0'), true);
+  ana.hex = '1,0'; bia.hex = '0,0'; ana.food = 2; ana.water = 2;
+  g.shelter.food = 7; g.shelter.water = 7;
+  const npc = { id: 'npc-field', name: 'Rui', role: 'Guia', description: '', notes: '', hex: '1,0', status: 'Bem', infection: 'Saudável', disposition: 'Neutro', skills: ['Logística'], active: true };
+  g.npcs.push(npc);
+  const plan = survival.defaultDayClosePlan(g);
+  const anaPlan = plan.survivors.find(entry => entry.survivorId === ana.id);
+  const biaPlan = plan.survivors.find(entry => entry.survivorId === bia.id);
+  anaPlan.food = 'other'; anaPlan.water = 'other';
+  biaPlan.food = 'other'; biaPlan.water = 'other';
+  const npcPlan = plan.npcs.find(entry => entry.npcId === npc.id);
+  npcPlan.food = 'personal'; npcPlan.water = 'personal'; npcPlan.foodCarrierId = ana.id; npcPlan.waterCarrierId = ana.id;
+  const result = survival.closeDayWithPlan(g, plan);
+  assert.equal(result.ok, true);
+  assert.equal(g.shelter.food, 7); assert.equal(g.shelter.water, 7);
+  assert.equal(ana.food, 1); assert.equal(ana.water, 1);
+  assert.equal(npc.foodConsumedDay, 1); assert.equal(npc.waterConsumedDay, 1);
+});
+
+test('NPC pode acompanhar um subgrupo nomeado sem arrastar quem ficou para trás', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  const npc = { id: 'npc-subgroup', name: 'Cris', role: 'Batedora', description: '', notes: '', hex: '0,0', status: 'Bem', infection: 'Saudável', disposition: 'Neutro', skills: ['Vigilância'], active: true, accompaniesSurvivorIds: [ana.id] };
+  g.npcs.push(npc);
+  const moved = hexActions.moveSurvivors(g, '1,0', [ana.id]);
+  assert.equal(moved.ok, true);
+  assert.equal(ana.hex, '1,0'); assert.equal(bia.hex ?? g.partyHex, '0,0');
+  assert.equal(npc.hex, '1,0');
+});
+
+test('gerador de encontro é local e a projeção pública não revela seus segredos nem equipe interna', () => {
+  const drafts = npcGenerator.generateNpcDrafts({ quantity: 3, context: 'Hospitalar', tone: 'Tenso', hex: '0,0' }, () => .12);
+  assert.equal(drafts.length, 3);
+  assert.ok(drafts.every(npc => npc.name && npc.role && npc.publicNotes && npc.notes.includes('Segredo gerado')));
+  assert.ok(drafts.some(npc => npc.skills.includes('Medicina')));
+  const g = campaign();
+  g.npcs.push({ ...drafts[0], id: 'generated' });
+  g.shelter.projects.push({ ...shelterProjects.createShelterProject('barricades'), responsibleId: 'generated', helperIds: ['generated'] });
+  const view = collaboration.projectPlayerGame(g, g.survivors[0].id);
+  assert.equal('notes' in view.npcs[0], false);
+  assert.equal('immediateNeed' in view.npcs[0], false);
+  assert.deepEqual(view.shelter.projects[0].helperIds, []);
+  assert.equal(view.shelter.projects[0].responsibleId, undefined);
 });

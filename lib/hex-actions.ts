@@ -62,12 +62,17 @@ export function moveSurvivors(game: GameState, destination: string, survivorIds:
   const travelMinutes = record.routeHours * 60;
   if (game.minutes + travelMinutes >= 1440) return { ok: false, message: "" };
 
+  const wholeSourceGroup = people.length === survivorsAtHex(game, sourceHex).length;
   game.minutes += travelMinutes;
   for (const person of people) person.hex = destination;
-  if (sourceHex === game.partyHex) {
-    for (const npc of game.npcs ?? []) {
-      if (npc.active && npc.accompaniesParty && npc.status !== "Morto" && npc.status !== "Desaparecido") npc.hex = destination;
-    }
+  for (const npc of game.npcs ?? []) {
+    if (!npc.active || npc.status === "Morto" || npc.status === "Desaparecido" || npc.hex !== sourceHex) continue;
+    const companions = npc.accompaniesSurvivorIds ?? [];
+    // An NPC assigned to a subgroup moves only when that named group moves as a
+    // whole. The GM can always relocate an NPC directly from the community panel.
+    const followsCompanions = companions.length > 0 && companions.every(id => ids.includes(id));
+    const followsMain = sourceHex === game.partyHex && npc.accompaniesParty && wholeSourceGroup;
+    if (followsCompanions || followsMain) npc.hex = destination;
   }
 
   if (sourceHex === game.partyHex && survivorsAtHex(game, sourceHex).length === 0) game.partyHex = destination;

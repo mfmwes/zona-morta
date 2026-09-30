@@ -12,6 +12,7 @@ import {
 import { consumeProvisionPortionFromItems } from "./inventory";
 import { provisionBreakdown, provisionItemInfo } from "./provision-items";
 import { expirePhysicalFood, expirePortionLots, provisionDeadline, withdrawPortions } from "./provisions";
+import { shelterMetrics } from "./shelter-projects";
 
 export type DailyResource = "food" | "water";
 export type DayProvisionSource = "already" | "shared" | "personal" | "other" | "none";
@@ -20,11 +21,20 @@ export type DayCloseSurvivorPlan = {
   food: DayProvisionSource;
   water: DayProvisionSource;
 };
+export type DayCloseNpcPlan = {
+  npcId: string;
+  food: DayProvisionSource;
+  water: DayProvisionSource;
+  /** NPCs do not have a hidden inventory: field provisions are charged to this carrier. */
+  foodCarrierId?: string;
+  waterCarrierId?: string;
+};
 export type DayClosePlan = {
   expectedDay: number;
   residentsFood: number;
   residentsWater: number;
   survivors: DayCloseSurvivorPlan[];
+  npcs: DayCloseNpcPlan[];
 };
 export type DayCloseDeprivation = {
   survivorId?: string;
@@ -137,6 +147,12 @@ export function sharedReserveNpcs(game: GameState): NPC[] {
     && npc.hex === (game.shelter.hex ?? game.partyHex));
 }
 
+/** Active NPCs outside the only shared reserve must be accounted for by their field group. */
+export function fieldNpcs(game: GameState): NPC[] {
+  const storageHex = game.shelter.hex ?? game.partyHex;
+  return (game.npcs ?? []).filter(npc => npc.active && npc.status !== "Morto" && npc.status !== "Desaparecido" && npc.hex !== storageHex);
+}
+
 function recordLegacyNpcProvision(game: GameState, resource: DailyResource, portionsSupplied: number) {
   const storageHex = game.shelter.hex ?? game.partyHex;
   let remaining = Math.max(0, portionsSupplied - game.shelter.residents
@@ -163,10 +179,8 @@ export function eveningNeeds(game: GameState) {
 
 export function defaultDayClosePlan(game: GameState): DayClosePlan {
   const sharedRemaining: Record<DailyResource, number> = {
-    food: Math.max(0, provisionBreakdown(game.shelter, "food").total - game.shelter.residents
-      - sharedReserveNpcs(game).filter(npc => !npcConsumedToday(game, npc, "food")).length),
-    water: Math.max(0, provisionBreakdown(game.shelter, "water").total - game.shelter.residents
-      - sharedReserveNpcs(game).filter(npc => !npcConsumedToday(game, npc, "water")).length),
+    food: Math.max(0, provisionBreakdown(game.shelter, "food").total - game.shelter.residents),
+    water: Math.max(0, provisionBreakdown(game.shelter, "water").total - game.shelter.residents),
   };
   const storageHex = game.shelter.hex ?? game.partyHex;
 
@@ -180,14 +194,29 @@ export function defaultDayClosePlan(game: GameState): DayClosePlan {
     return "none";
   }
 
+  const survivors = game.survivors.map(person => ({
+    survivorId: person.id,
+    food: sourceFor(person, "food"),
+    water: sourceFor(person, "water"),
+  }));
+  function carrierFor(npc: NPC, resource: DailyResource) {
+    return game.survivors.find(person => survivorHex(game, person) === npc.hex
+      && provisionBreakdown(person, resource).total > 0)?.id;
+  }
+  function npcSource(npc: NPC, resource: DailyResource): DayProvisionSource {
+    if (npcConsumedToday(game, npc, resource)) return "already";
+    if (npc.hex === storageHex && sharedRemaining[resource] > 0) { sharedRemaining[resource] -= 1; return "shared"; }
+    return carrierFor(npc, resource) ? "personal" : "none";
+  }
   return {
     expectedDay: game.day,
     residentsFood: game.shelter.residents,
     residentsWater: game.shelter.residents,
-    survivors: game.survivors.map(person => ({
-      survivorId: person.id,
-      food: sourceFor(person, "food"),
-      water: sourceFor(person, "water"),
+    survivors,
+    npcs: (game.npcs ?? []).filter(npc => npc.active && npc.status !== "Morto" && npc.status !== "Desaparecido").map(npc => ({
+      npcId: npc.id,
+      food: npcSource(npc, "food"), water: npcSource(npc, "water"),
+      foodCarrierId: carrierFor(npc, "food"), waterCarrierId: carrierFor(npc, "water"),
     })),
   };
 }
@@ -198,6 +227,7 @@ function validResidentCount(value: number) {
 function planEntry(plan: DayClosePlan, survivorId: string) {
   return plan.survivors.find(entry => entry.survivorId === survivorId);
 }
+function npcPlanEntry(plan: DayClosePlan, npcId: string) { return plan.npcs?.find(entry => entry.npcId === npcId); }
 
 export function inspectDayClosePlan(game: GameState, plan: DayClosePlan): DayCloseInspection {
   const available: Record<DailyResource, number> = {
@@ -218,6 +248,17 @@ export function inspectDayClosePlan(game: GameState, plan: DayClosePlan): DayClo
 
   const storageHex = game.shelter.hex ?? game.partyHex;
   const deprivations: DayCloseDeprivation[] = [];
+  const personalRemaining = new Map(game.survivors.map(person => [person.id, {
+    food: provisionBreakdown(person, "food").total,
+    water: provisionBreakdown(person, "water").total,
+  }]));
+  function takePersonal(carrierId: string | undefined, hex: string, resource: DailyResource) {
+    const carrier = carrierId ? game.survivors.find(person => person.id === carrierId) : undefined;
+    const remainingPersonal = carrier ? personalRemaining.get(carrier.id) : undefined;
+    if (!carrier || survivorHex(game, carrier) !== hex || !remainingPersonal || remainingPersonal[resource] < 1) return false;
+    remainingPersonal[resource] -= 1;
+    return true;
+  }
   for (const person of game.survivors) {
     const entry = planEntry(plan, person.id);
     for (const resource of ["food", "water"] as const) {
@@ -225,7 +266,7 @@ export function inspectDayClosePlan(game: GameState, plan: DayClosePlan): DayClo
       const source = entry?.[resource] ?? "none";
       if (source === "other") continue;
       if (source === "personal") {
-        if (provisionBreakdown(person, resource).total < 1)
+        if (!takePersonal(person.id, survivorHex(game, person), resource))
           deprivations.push({ survivorId: person.id, name: person.name, resource, reason: "unavailable" });
         continue;
       }
@@ -242,11 +283,24 @@ export function inspectDayClosePlan(game: GameState, plan: DayClosePlan): DayClo
       deprivations.push({ survivorId: person.id, name: person.name, resource, reason: "none" });
     }
   }
-  for (const npc of sharedReserveNpcs(game)) {
+  for (const npc of (game.npcs ?? []).filter(npc => npc.active && npc.status !== "Morto" && npc.status !== "Desaparecido")) {
+    const entry = npcPlanEntry(plan, npc.id);
     for (const resource of ["food", "water"] as const) {
       if (npcConsumedToday(game, npc, resource)) continue;
-      if (remaining[resource] > 0) remaining[resource] -= 1;
-      else deprivations.push({ npcId: npc.id, name: npc.name, resource, reason: "unavailable" });
+      const source = entry?.[resource] ?? "none";
+      const carrierId = resource === "food" ? entry?.foodCarrierId : entry?.waterCarrierId;
+      if (source === "other") continue;
+      if (source === "personal") {
+        if (!takePersonal(carrierId, npc.hex, resource)) deprivations.push({ npcId: npc.id, name: npc.name, resource, reason: "unavailable" });
+        continue;
+      }
+      if (source === "shared") {
+        if (npc.hex !== storageHex) deprivations.push({ npcId: npc.id, name: npc.name, resource, reason: "remote" });
+        else if (remaining[resource] > 0) remaining[resource] -= 1;
+        else deprivations.push({ npcId: npc.id, name: npc.name, resource, reason: "unavailable" });
+        continue;
+      }
+      deprivations.push({ npcId: npc.id, name: npc.name, resource, reason: "none" });
     }
   }
 
@@ -257,9 +311,14 @@ export function inspectDayClosePlan(game: GameState, plan: DayClosePlan): DayClo
       && survivorHex(game, person) === storageHex
       && !provisionConsumedToday(game, person, resource));
   }).length;
+  const npcSharedDemand = (resource: DailyResource) => (game.npcs ?? []).filter(npc => {
+    const entry = npcPlanEntry(plan, npc.id);
+    return npc.active && npc.status !== "Morto" && npc.status !== "Desaparecido" && npc.hex === storageHex
+      && entry?.[resource] === "shared" && !npcConsumedToday(game, npc, resource);
+  }).length;
   const demand: Record<DailyResource, number> = {
-    food: residentDemand.food + sharedDemand("food") + sharedReserveNpcs(game).filter(npc => !npcConsumedToday(game, npc, "food")).length,
-    water: residentDemand.water + sharedDemand("water") + sharedReserveNpcs(game).filter(npc => !npcConsumedToday(game, npc, "water")).length,
+    food: residentDemand.food + sharedDemand("food") + npcSharedDemand("food"),
+    water: residentDemand.water + sharedDemand("water") + npcSharedDemand("water"),
   };
 
   return {
@@ -280,11 +339,11 @@ function advanceMorning(game: GameState) {
   game.scene = (game.scene ?? 1) + 1;
   const morning = absoluteMinutes(game);
   const lostAtBase = [...expirePortionLots(game.shelter, game.day),
-    ...expirePhysicalFood(game, game.shelter.inventory ?? [], Boolean(game.shelter.coldStorage && game.shelter.energy > 0))];
+    ...expirePhysicalFood(game, game.shelter.inventory ?? [], Boolean(game.shelter.coldStorage && shelterMetrics(game.shelter).energy > 0))];
   if (lostAtBase.length) addLog(game, "provisões", `Ao amanhecer, estragou nas reservas: ${lostAtBase.join(", ")}.`);
   for (const site of game.formerShelters ?? []) {
     const spoiled = [...expirePortionLots(site, game.day),
-      ...expirePhysicalFood(game, site.inventory ?? [], Boolean(site.coldStorage && site.energy > 0))];
+      ...expirePhysicalFood(game, site.inventory ?? [], Boolean(site.coldStorage && shelterMetrics(site).energy > 0))];
     if (spoiled.length) addLog(game, "provisões", `Na antiga base do hex ${site.hex}, estragou ${spoiled.join(", ")}.`);
   }
   for (const person of game.survivors) {
@@ -358,17 +417,45 @@ export function closeDayWithPlan(game: GameState, plan: DayClosePlan): DayCloseR
       actualDeprivations.push({ survivorId: person.id, name: person.name, resource, reason: "none" });
     }
   }
-  for (const npc of sharedReserveNpcs(game)) {
+  for (const npc of (game.npcs ?? []).filter(npc => npc.active && npc.status !== "Morto" && npc.status !== "Desaparecido")) {
+    const entry = npcPlanEntry(plan, npc.id);
     for (const resource of ["food", "water"] as const) {
       const key = dayKey(resource);
       if (npc[key] === game.day) continue;
-      const result = consumeBestProvision(game.shelter, resource);
-      if (result.consumed) {
+      const source = entry?.[resource] ?? "none";
+      const carrierId = resource === "food" ? entry?.foodCarrierId : entry?.waterCarrierId;
+      if (source === "other") {
         npc[key] = game.day;
-        addLog(game, "provisões", `${npc.name} consumiu 1 porção de ${resourceLabel(resource)} das reservas compartilhadas${result.label ? ` (${result.label})` : ""}.`);
-      } else {
-        actualDeprivations.push({ npcId: npc.id, name: npc.name, resource, reason: "unavailable" });
+        addLog(game, "provisões", `${npc.name}: ${resourceLabel(resource)} registrada por outra fonte/decisão do mestre.`);
+        continue;
       }
+      if (source === "personal") {
+        const carrier = carrierId ? game.survivors.find(person => person.id === carrierId) : undefined;
+        if (!carrier || survivorHex(game, carrier) !== npc.hex) {
+          actualDeprivations.push({ npcId: npc.id, name: npc.name, resource, reason: "remote" });
+          continue;
+        }
+        const result = consumeBestProvision(carrier, resource);
+        if (result.consumed) {
+          npc[key] = game.day;
+          addLog(game, "provisões", `${npc.name} consumiu 1 porção de ${resourceLabel(resource)} portada por ${carrier.name}${result.label ? ` (${result.label})` : ""}.`, carrier.id);
+        } else actualDeprivations.push({ npcId: npc.id, name: npc.name, resource, reason: "unavailable" });
+        continue;
+      }
+      if (source === "shared") {
+        if (npc.hex !== storageHex) {
+          actualDeprivations.push({ npcId: npc.id, name: npc.name, resource, reason: "remote" });
+          continue;
+        }
+        const result = consumeBestProvision(game.shelter, resource);
+        if (result.consumed) {
+          npc[key] = game.day;
+          addLog(game, "provisões", `${npc.name} consumiu 1 porção de ${resourceLabel(resource)} das reservas compartilhadas${result.label ? ` (${result.label})` : ""}.`);
+        } else actualDeprivations.push({ npcId: npc.id, name: npc.name, resource, reason: "unavailable" });
+        continue;
+      }
+      if (source === "already" && npc[key] === game.day) continue;
+      actualDeprivations.push({ npcId: npc.id, name: npc.name, resource, reason: "none" });
     }
   }
 

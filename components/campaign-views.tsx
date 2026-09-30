@@ -12,7 +12,9 @@ import { ItemContextMenu } from "@/components/item-context-menu";
 import { ItemArt } from "@/components/item-art";
 import { ShelterMoveDialog } from "@/components/shelter-move";
 import { DayCloseDialog } from "@/components/day-close-dialog";
-import { content, establishShelter, recoverFormerStock, residentNpcs, survivorPositionGroups, survivorsAtHex, type GameState } from "@/lib/game";
+import { FormerShelterProjects, ShelterProjectsManager } from "@/components/shelter-project-manager";
+import { content, establishShelter, recoverFormerStock, shelterPopulationBreakdown, survivorPositionGroups, survivorsAtHex, type GameState } from "@/lib/game";
+import { shelterMetrics } from "@/lib/shelter-projects";
 import { atSharedStorage, catalogForItem } from "@/lib/inventory";
 import { provisionBreakdown, provisionDisplay, provisionItemInfo } from "@/lib/provision-items";
 import { adjustProvisionCount } from "@/lib/provisions";
@@ -32,15 +34,16 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
   const sharedAccessible = atSharedStorage(game);
   const currentSector = game.hexes[game.partyHex]?.sector?.name ?? `Hex ${game.partyHex}`;
   const homeSector = s.hex ? game.hexes[s.hex]?.sector?.name ?? `Hex ${s.hex}` : null;
-  const survivorsAtShelter = s.hex ? survivorsAtHex(game, s.hex) : survivorsAtHex(game, game.partyHex);
   const visitedCache = (game.formerShelters ?? []).find(site => Boolean(site.hex && survivorsAtHex(game, site.hex).length > 0));
   const cacheVisitors = visitedCache?.hex ? survivorsAtHex(game, visitedCache.hex) : [];
+  const cacheResidents = visitedCache?.hex ? game.npcs.filter(npc => npc.active && npc.status !== "Morto" && npc.status !== "Desaparecido" && npc.home === visitedCache.hex) : [];
   const recipient = cacheVisitors.find(person => person.id === cacheRecipient) ?? cacheVisitors[0];
   const shelterFood = provisionBreakdown(s, "food");
   const shelterWater = provisionBreakdown(s, "water");
-  const namedResidents = residentNpcs(game);
+  const population = shelterPopulationBreakdown(game);
+  const namedResidents = population.namedResidents;
+  const metrics = shelterMetrics(s);
   const travelGroups = survivorPositionGroups(game);
-  const population = s.residents + namedResidents.length + survivorsAtShelter.length;
   useEffect(() => { setShelterNotes(s.notes); }, [s.notes]);
   useEffect(() => { setShelterName(s.name); }, [s.name]);
   const stocks: { key: keyof typeof s; label: string; unit: string; max: number }[] = [
@@ -61,7 +64,7 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
             ? `Situado em ${homeSector}. O grupo principal está em ${currentSector}.`
             : `O grupo principal está em ${currentSector}. Ainda não há base fixa; escolha um lugar explorado para estabelecer uma.`}</p>
           {travelGroups.length > 1 && <p className="text-xs subtle mt-2">Grupos em campo: {travelGroups.map(group => `Hex ${group.hex} — ${group.members.map(person => person.name).join(", ")}`).join(" · ")}</p>}</div>
-        {hasShelter && <span className="tag">{population}/{s.capacity} pessoas presentes</span>}
+        {hasShelter && <span className="tag">{population.present}/{metrics.capacity} pessoas presentes</span>}
       </div>
       {!hasShelter && !playerPreview && <div className="mt-5 list-card">
         <p className="text-sm">O setor atual já foi explorado. Estabelecer uma base aqui não consome tempo automaticamente: resolva segurança, acesso e transporte na ficção.</p>
@@ -74,8 +77,8 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
       </div>}
       {hasShelter && <>
         <div className="grid gap-3 mt-6 sm:grid-cols-3">
-          {[ ["Segurança",s.security,"0–3"], ["Energia",s.energy,"0–2"], ["Conforto",s.comfort,"0–2"] ].map(([name,val,range]) =>
-            <div className="metric" key={String(name)}><span className="smallcaps subtle">{name} · {range}</span><strong>{val}</strong></div>)}
+          {[["Segurança", metrics.security, `+${metrics.base.security} estrutura básica · +${metrics.structures.security} estruturas · ${metrics.corrections.security >= 0 ? "+" : ""}${metrics.corrections.security} ajuste`], ["Energia", metrics.energy, `+${metrics.base.energy} base · ${metrics.structures.energy >= 0 ? "+" : ""}${metrics.structures.energy} estruturas · ${metrics.corrections.energy >= 0 ? "+" : ""}${metrics.corrections.energy} ajuste`], ["Conforto", metrics.comfort, `+${metrics.base.comfort} base · +${metrics.structures.comfort} estruturas · ${metrics.corrections.comfort >= 0 ? "+" : ""}${metrics.corrections.comfort} ajuste`]].map(([name,val,origin]) =>
+            <div className="metric" key={String(name)}><span className="smallcaps subtle">{name}</span><strong>{val}</strong><p className="text-xs subtle mt-1">{origin}</p></div>)}
         </div>
         {!playerPreview && <div className="grid gap-3 mt-4 sm:grid-cols-2">
           <div><Field label="Nome do abrigo" value={shelterName} onChange={setShelterName} placeholder="Ex.: Escola das Mangueiras" />
@@ -85,8 +88,8 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
                 edit(draft => { draft.shelter.name = name; });
                 toast.success("Nome do abrigo atualizado", { description: name });
               }}>Salvar nome</Button></div>
-          <div className="grid gap-3"><Counter compact label="Capacidade" value={s.capacity} min={1} max={99}
-            onChange={value => edit(draft => { draft.shelter.capacity = value; })} />
+          <div className="grid gap-3"><Counter compact label="Capacidade-base" value={s.baseCapacity ?? s.capacity} min={1} max={99}
+            onChange={value => edit(draft => { draft.shelter.baseCapacity = value; draft.shelter.capacity = value; })} />
             <Counter compact label="Moradores não identificados" value={s.residents} max={99}
               onChange={value => edit(draft => { draft.shelter.residents = value; })} /></div>
         </div>}
@@ -121,25 +124,15 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
       </div>
       {(s.inventory ?? []).length > 0 && sharedAccessible && !playerPreview && <p className="roll-hint inventory-context-hint">No computador, clique com o botão direito em um item para usar ações rápidas.</p>}
       {hasShelter && !playerPreview && <div className="mt-5 grid gap-3 sm:grid-cols-3">
-        <Counter label="Segurança" value={s.security} max={3} onChange={value=>edit(d=>{d.shelter.security=value;})} />
-        <Counter label="Energia" value={s.energy} max={2} onChange={value=>edit(d=>{d.shelter.energy=value;})} />
-        <Counter label="Conforto" value={s.comfort} max={2} onChange={value=>edit(d=>{d.shelter.comfort=value;})} />
+        <Counter label="Ajuste manual · Segurança" value={s.manualAdjustments?.security ?? 0} min={-3} max={9} onChange={value=>edit(d=>{d.shelter.manualAdjustments ??= { security: 0, energy: 0, comfort: 0 }; d.shelter.manualAdjustments.security=value; d.shelter.security=(d.shelter.hex ? 1 : 0) + value;})} />
+        <Counter label="Ajuste manual · Energia" value={s.manualAdjustments?.energy ?? 0} min={-3} max={9} onChange={value=>edit(d=>{d.shelter.manualAdjustments ??= { security: 0, energy: 0, comfort: 0 }; d.shelter.manualAdjustments.energy=value; d.shelter.energy=value;})} />
+        <Counter label="Ajuste manual · Conforto" value={s.manualAdjustments?.comfort ?? 0} min={-3} max={9} onChange={value=>edit(d=>{d.shelter.manualAdjustments ??= { security: 0, energy: 0, comfort: 0 }; d.shelter.manualAdjustments.comfort=value; d.shelter.comfort=value;})} />
       </div>}
-      {hasShelter && !playerPreview && <label className="inventory-ready mt-3"><input type="checkbox" checked={Boolean(s.coldStorage)} disabled={s.energy < 1}
+      {hasShelter && !playerPreview && <label className="inventory-ready mt-3"><input type="checkbox" checked={Boolean(s.coldStorage)} disabled={metrics.energy < 1}
         onChange={event => edit(d => { d.shelter.coldStorage = event.target.checked; })} />
         <span>Refrigeração funcional: há equipamento de frio e Energia 1+. Conserva refeições congeladas físicas no depósito; depois do preparo, as porções vencem no próximo amanhecer.</span></label>}
       {hasShelter && <><div className="divider" />
-      <h3 className="section-title">Projetos disponíveis</h3>
-      <div className="grid gap-2 mt-3 sm:grid-cols-2">
-        {[
-          ["Barricadas","1 Peças · projeto 2","Segurança +1"],
-          ["Cisterna","2 Peças · projeto 3 · captação","1 Água/dia só com fonte limpa"],
-          ["Enfermaria","1 Peças + 1 Medicamentos · projeto 2","Tratamentos complexos"],
-          ["Rádio fixo","1 Peças · projeto 2 · energia","Comunicação com sinal identificado"],
-          ["Horta","2 Peças · projeto 4 · água","1 Comida a cada 3 dias após amadurecer"],
-          ["Garagem","1 Peças · projeto 2","Reparos permanentes de veículos"],
-        ].map(([name,cost,effect]) => <div className="list-card text-sm" key={name}><b>{name}</b><p className="subtle mt-1">{cost}</p><p className="mt-1">{effect}</p></div>)}
-      </div>
+      <ShelterProjectsManager game={game} edit={edit} playerPreview={playerPreview} />
       {!playerPreview && <div className="mt-5"><Field label="Notas do abrigo" value={shelterNotes} onChange={setShelterNotes} multiline />
         <Button size="sm" variant="outline" className="mt-2" onClick={() => {
           edit(draft => { draft.shelter.notes = shelterNotes.trim(); });
@@ -155,8 +148,9 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
       </section>
       {hasShelter && <section className="panel panel-pad">
         <p className="dossier-title">Pessoas e necessidades</p>
-        <p className="text-sm mt-3">{s.residents} morador(es) não identificado(s) e {namedResidents.length} pessoa(s) identificada(s) pertencem a esta base.</p>
-        {namedResidents.length > 0 && <div className="mt-3 grid gap-2">{namedResidents.map(npc => <div className="list-card text-sm" key={npc.id}><b>{npc.name}</b>{npc.role && <span className="subtle"> · {npc.role}</span>}{npc.duty && <p className="mt-1 text-xs subtle">Função: {npc.duty}</p>}</div>)}</div>}
+        <div className="shelter-community-counts mt-3"><span><b>{population.residents}</b> residentes</span><span><b>{population.present}</b> presentes agora</span><span><b>{population.field}</b> residente(s) em campo</span></div>
+        <p className="text-sm mt-3">{population.unidentifiedResidents} morador(es) não identificado(s) e {namedResidents.length} pessoa(s) identificada(s) pertencem a esta base. Pessoas mortas ou desaparecidas não entram nas contagens ativas.</p>
+        {namedResidents.length > 0 && <div className="mt-3 grid gap-2">{namedResidents.map(npc => <div className="list-card text-sm" key={npc.id}><b>{npc.name}</b>{npc.role && <span className="subtle"> · {npc.role}</span>}{npc.hex !== s.hex && <p className="mt-1 text-xs subtle">Em campo no hex {npc.hex}</p>}{npc.duty && <p className="mt-1 text-xs subtle">Função livre: {npc.duty}</p>}</div>)}</div>}
         {!playerPreview && s.residents > 0 && <Dialog open={convertOpen} onOpenChange={setConvertOpen}><DialogTrigger asChild><Button size="sm" variant="outline" className="mt-3" onClick={() => { setConvertName(""); setConvertRole(""); }}>Identificar um morador</Button></DialogTrigger>
           <DialogContent><DialogHeader><DialogTitle>Converter morador em NPC</DialogTitle><DialogDescription>Isso reduz apenas a contagem sem nome e cria uma pessoa identificada; nenhum nome é inventado automaticamente.</DialogDescription></DialogHeader>
             <div className="grid gap-3"><Field label="Nome" value={convertName} onChange={setConvertName} placeholder="Nome da pessoa" /><Field label="Função / papel" value={convertRole} onChange={setConvertRole} placeholder="Opcional" /></div>
@@ -188,6 +182,8 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
             })}>Retirar</Button>}</div>)}
         </div>
         <p className="text-sm subtle mt-3">Peças, combustível e medicamentos retirados viram itens de carga 1 no inventário. Ao chegar à base ativa, use Ações → Guardar nas reservas para converter de volta.</p>
+        <FormerShelterProjects shelter={visitedCache} />
+        {cacheResidents.length > 0 && <div className="former-shelter-projects"><b>Comunidade que ficou nesta base</b>{cacheResidents.map(npc => <span key={npc.id}>{npc.name}{npc.role ? ` · ${npc.role}` : ""}{npc.hex !== visitedCache.hex ? ` · em campo no hex ${npc.hex}` : ""}</span>)}</div>}
       </section>}
     </aside>
   </div>;
