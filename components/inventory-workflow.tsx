@@ -107,19 +107,11 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
   const [conditionDraft, setConditionDraft] = useState(item.condition || "Íntegro");
   const [qtyDraft, setQtyDraft] = useState(item.qty);
   const [loadDraft, setLoadDraft] = useState(item.load);
-  const slots = ownerId === "shared" ? [] : compatibleSlots(item);
   const actionOptions = itemActionOptions(game, ownerId, item, selfOnly);
+  const slots = actionOptions.slots;
   const provision = provisionInfo(item);
   const bearer = game.survivors.find(s => s.id === ownerId);
-  const targets = selfOnly ? [] : [
-    ...game.survivors
-      .filter(person => person.id !== ownerId)
-      .filter(person => ownerId === "shared"
-        ? atSharedStorage(game, person.id)
-        : Boolean(bearer && survivorHex(game, person) === survivorHex(game, bearer)))
-      .map(person => ({ value: person.id, label: person.name })),
-    ...(ownerId !== "shared" && atSharedStorage(game, ownerId) ? [{ value: "shared", label: ownerName(game, "shared") }] : []),
-  ];
+  const targets = actionOptions.targets;
   const destination = targets.some(x => x.value === targetId) ? targetId : targets[0]?.value ?? "";
   const selectedSlot = slots.includes(slot) ? slot : slots[0];
   const count = Math.max(1, Math.min(item.qty, amount));
@@ -237,7 +229,7 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
         {containerOptions?.canUnloadAtStorage && <button type="button" aria-pressed={mode === "empty-container"} onClick={() => setMode("empty-container")}>Guardar conteúdo</button>}
         {(item.name === "Carrinho dobrável" || actionOptions.canStoreInCart) && <button type="button" aria-pressed={mode === "cart"} onClick={() => setMode("cart")}>Carrinho</button>}
         <button type="button" aria-pressed={mode === "edit"} onClick={() => setMode("edit")}>Editar</button>
-        <button type="button" aria-pressed={mode === "discard"} onClick={() => { setMode("discard"); setConfirmDiscard(false); }}>Deixar</button>
+        {actionOptions.canDiscard && <button type="button" aria-pressed={mode === "discard"} onClick={() => { setMode("discard"); setConfirmDiscard(false); }}>Deixar</button>}
       </div>
       {mode === "edit" && <><Pick label="Estado do item" value={conditionDraft} options={conditions} onChange={setConditionDraft} />
         {allowCorrection && <div className="inventory-corrections"><Counter compact label="Quantidade total" value={qtyDraft} min={1} max={99} onChange={setQtyDraft} />
