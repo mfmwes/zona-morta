@@ -332,6 +332,35 @@ html[data-theme="dark"] .next-step-card {
 }
 html[data-theme="dark"] .next-step-card .dossier-title { color: #91c4b8; }
 html[data-theme="dark"] .next-step-card .subtle { color: #c0d0c9; }
+
+/* Hex item search: keep this nested workflow on the same dark reading surface. */
+html[data-theme="dark"] .hex-search-panel {
+  border-color: #405650 !important;
+  background: #1a2526 !important;
+  color: #dce7e1;
+}
+html[data-theme="dark"] .hex-search-panel .field label,
+html[data-theme="dark"] .hex-search-panel .field-label,
+html[data-theme="dark"] .hex-search-panel .font-bold {
+  color: #dce7e1;
+}
+html[data-theme="dark"] .hex-search-panel .subtle {
+  color: #aebfba;
+}
+html[data-theme="dark"] .hex-search-panel .hex-search-sector-link {
+  color: #8fc9bd !important;
+}
+html[data-theme="dark"] .hex-search-panel .hex-search-sector-link:hover {
+  color: #c1e4dc !important;
+}
+html[data-theme="dark"] .hex-search-panel .text-red-700 {
+  color: #f0a39a !important;
+}
+html[data-theme="dark"] .hex-search-panel button:disabled {
+  border-color: #344744;
+  background: #263332;
+  color: #7f918c;
+}
 html[data-theme="dark"] .gm-tools-trigger { color: #91c9bd; }
 html[data-theme="dark"] .gm-tools-trigger:hover { color: #c9e7de; }
 html[data-theme="dark"] .hex-presence-card,
