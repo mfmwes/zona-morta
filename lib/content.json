@@ -754,7 +754,7 @@
         },
         {
           "roll": 3,
-          "text": "Suco em caixa (1 porção de Água)."
+          "text": "Suco em caixa fechado (1 porção de Água)."
         },
         {
           "roll": 4,
@@ -770,7 +770,7 @@
         },
         {
           "roll": 7,
-          "text": "Mapa de entregas com um endereço próximo."
+          "text": "Mapa de bairro com um endereço de entrega anotado."
         },
         {
           "roll": 8,
@@ -839,7 +839,7 @@
         },
         {
           "roll": 11,
-          "text": "Bebida isotônica (1 porção de Água)."
+          "text": "Bebida isotônica lacrada (1 porção de Água)."
         },
         {
           "roll": 12,
@@ -896,7 +896,7 @@
         },
         {
           "roll": 12,
-          "text": "Saco de raízes conservadas (1 Comida após preparo)."
+          "text": "Raízes colhidas (2 porções após preparo)."
         }
       ]
     },
@@ -1382,7 +1382,7 @@
       "entries": [
         {
           "roll": 1,
-          "text": "Documento com endereço de entrega."
+          "text": "Documento ou crachá com endereço de entrega."
         },
         {
           "roll": 2,
@@ -3190,7 +3190,7 @@
         },
         {
           "label": "Dano",
-          "value": "d6+2"
+          "value": "d6+1"
         },
         {
           "label": "Mãos",
@@ -3326,7 +3326,7 @@
         },
         {
           "label": "Dano",
-          "value": "d10+1"
+          "value": "d10+2"
         },
         {
           "label": "Mãos",
@@ -3394,7 +3394,7 @@
         },
         {
           "label": "Dano",
-          "value": "d8+1"
+          "value": "d10+1"
         },
         {
           "label": "Mãos",
@@ -3838,7 +3838,7 @@
         },
         {
           "label": "Guarda",
-          "value": "1"
+          "value": "0"
         }
       ]
     },
@@ -3886,7 +3886,7 @@
         },
         {
           "label": "Efeito",
-          "value": "+1 ao valor de Armadura enquanto íntegro e empunhado."
+          "value": "+2 ao valor de Armadura enquanto íntegro e empunhado."
         },
         {
           "label": "Guarda",
@@ -4040,11 +4040,11 @@
         },
         {
           "label": "Armadura (espaços)",
-          "value": "3"
+          "value": "4"
         },
         {
           "label": "Efeito",
-          "value": "Tecido fechado. Cobertura depende da área exposta"
+          "value": "Tecido fechado e resistente; cobertura depende da área exposta."
         },
         {
           "label": "Guarda",
@@ -4586,7 +4586,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Repõe energia de um aparelho pequeno durante uma expedição. Uma utilização."
+          "value": "Consumível: repõe a bateria plausível de um aparelho pequeno durante uma expedição. Uma utilização."
         },
         {
           "label": "Carga",
@@ -4782,7 +4782,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Guardado ocupa 1. Aberto leva até 4 espaços no piso acessível. Não atravessa escada sem esforço."
+          "value": "Guardado ocupa 1. Aberto e conduzido, usa o espaço Transporte e concede +4 espaços de carga em piso acessível. Não atravessa escada sem esforço."
         },
         {
           "label": "Guarda",
@@ -4838,7 +4838,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Uma utilização para até 4 porções de água encontrada. Acesso e verificação ainda importam."
+          "value": "Consumível: uma utilização trata até 4 porções de água encontrada. Acesso e verificação ainda importam."
         },
         {
           "label": "Guarda",
@@ -4936,7 +4936,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Uma utilização: ilumina e revela posição. +2 Barulho quando acionado."
+          "value": "Consumível: uma utilização; ilumina e revela posição. +2 Barulho quando acionado."
         },
         {
           "label": "Guarda",
@@ -5013,6 +5013,10 @@
         {
           "label": "Carga",
           "value": "0/1"
+        },
+        {
+          "label": "Requisitos",
+          "value": "Verificação plausível da origem/qualidade. Não exige tratamento adicional se o mestre confirmar que está segura."
         }
       ]
     },
@@ -5049,6 +5053,10 @@
         {
           "label": "Carga",
           "value": "0/1"
+        },
+        {
+          "label": "Requisitos",
+          "value": "Filtro portátil, Pastilhas de purificação ou fervura com Panela leve e fonte de calor."
         }
       ]
     },
@@ -5067,6 +5075,10 @@
         {
           "label": "Carga",
           "value": "0/1"
+        },
+        {
+          "label": "Requisitos",
+          "value": "Filtro portátil, Pastilhas de purificação ou fervura com Panela leve e fonte de calor."
         }
       ]
     },
@@ -5229,6 +5241,10 @@
         {
           "label": "Carga",
           "value": "0/1"
+        },
+        {
+          "label": "Requisitos",
+          "value": "Identificar o conteúdo e a segurança antes de registrar como Água. Não trate automaticamente um líquido desconhecido."
         }
       ]
     },
@@ -5359,6 +5375,10 @@
         {
           "label": "Carga",
           "value": "0/1"
+        },
+        {
+          "label": "Requisitos",
+          "value": "1 porção de Água limpa por unidade para lavar."
         }
       ]
     },
@@ -5385,6 +5405,10 @@
         {
           "label": "Carga",
           "value": "0/1"
+        },
+        {
+          "label": "Requisitos",
+          "value": "Panela leve e fonte de calor funcional."
         }
       ]
     },
@@ -5541,6 +5565,10 @@
         {
           "label": "Carga",
           "value": "1"
+        },
+        {
+          "label": "Requisitos",
+          "value": "1 porção de Água por unidade, Panela leve e fonte de calor funcional."
         }
       ]
     },
@@ -5567,6 +5595,10 @@
         {
           "label": "Carga",
           "value": "1"
+        },
+        {
+          "label": "Requisitos",
+          "value": "1 porção de Água por unidade, Panela leve e fonte de calor funcional."
         }
       ]
     },
@@ -5593,6 +5625,10 @@
         {
           "label": "Carga",
           "value": "0/1"
+        },
+        {
+          "label": "Requisitos",
+          "value": "1 porção de Água limpa por unidade."
         }
       ]
     },
@@ -5619,6 +5655,10 @@
         {
           "label": "Carga",
           "value": "0/1"
+        },
+        {
+          "label": "Requisitos",
+          "value": "1 porção de Água por unidade, Panela leve e fonte de calor funcional."
         }
       ]
     },
@@ -5697,6 +5737,10 @@
         {
           "label": "Carga",
           "value": "0/1"
+        },
+        {
+          "label": "Requisitos",
+          "value": "1 porção de Água limpa por unidade."
         }
       ]
     },
@@ -5775,6 +5819,10 @@
         {
           "label": "Carga",
           "value": "0/1"
+        },
+        {
+          "label": "Requisitos",
+          "value": "Panela leve e fonte de calor funcional."
         }
       ]
     },
@@ -6136,7 +6184,7 @@
         },
         {
           "label": "Regra de transporte",
-          "value": "Uma carga pronta na arma ativa ocupa 0. Cada reserva, 1. Anote o tipo."
+          "value": "Uma carga pronta na arma ativa ocupa 0 durante a cena. Cada reserva ocupa 1 e tem tipo específico: Pistola, Espingarda, Carabina, Flechas, Virotes, Chumbinhos ou Outra."
         }
       ]
     },
@@ -6174,7 +6222,7 @@
       "fields": [
         {
           "label": "Pergunta de conferência",
-          "value": "Qual arma, secundária possível, proteção, traje e uma bolsa estão ativos (0 espaço)?"
+          "value": "Qual arma, secundária possível, proteção, traje, bolsa e transporte estão ativos? Itens vestidos/empunhados e o carrinho aberto não contam novamente como carga guardada."
         }
       ]
     },
@@ -6194,7 +6242,7 @@
       "fields": [
         {
           "label": "Pergunta de conferência",
-          "value": "Até 2 Comida e 2 Água pessoais em bolso cabem sem espaço. Grupos extras de até 4 porções ocupam 1."
+          "value": "Até 2 Comida e 2 Água pessoais cabem sem espaço. A partir da 3ª porção, cada grupo adicional de até 4 porções ocupa 1."
         }
       ]
     },
@@ -6234,7 +6282,7 @@
       "fields": [
         {
           "label": "Pergunta de conferência",
-          "value": "Bolsa não empilha com outra. Carrinho aberto leva 4 espaços, carro 3, moto 1, van 6. Tudo precisa caber na rota."
+          "value": "Bolsa não empilha com outra. Carrinho aberto concede +4 espaços enquanto a rota permitir; carro 3, moto 1 e van 6 são capacidade de carga do veículo e continuam sob controle do mestre até haver ficha própria de veículo."
         }
       ]
     },
