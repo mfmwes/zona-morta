@@ -1,5 +1,6 @@
 import { addLog, survivorHex, survivorStats, type GameState } from "./game";
 import { rollDie } from "./rolls";
+import { consumeShelterComfortRest } from "./shelter-projects";
 
 export type AbilityCost = "free" | "hope1" | "hope3" | "stress1" | "armor1";
 export type AbilityPeriod = "scene" | "day" | "expedition" | "shortRest" | "longRest" | "rest" | "place" | "patient" | null;
@@ -173,10 +174,12 @@ export function resolveGroupRest(game: GameState, kind: RestKind, selections: Re
   }
 
   const fearDie = Math.max(1, Math.min(4, Math.trunc(roll(4))));
-  const fearGain = fearDie + (kind === "long" ? game.survivors.length : 0);
+  const comfortReduction = consumeShelterComfortRest(game);
+  const rawFear = fearDie + (kind === "long" ? game.survivors.length : 0);
+  const fearGain = Math.max(0, rawFear - comfortReduction);
   const actualFear = Math.min(12 - game.fear, fearGain);
   game.fear += actualFear;
-  addLog(game, "descanso", `Descanso ${kind === "short" ? "curto" : "longo"}: Fear +${actualFear}${kind === "long" ? ` (d4 ${fearDie} + ${game.survivors.length} PC${game.survivors.length === 1 ? "" : "s"})` : ` (d4 ${fearDie})`}.`);
+  addLog(game, "descanso", `Descanso ${kind === "short" ? "curto" : "longo"}: Fear +${actualFear}${kind === "long" ? ` (d4 ${fearDie} + ${game.survivors.length} PC${game.survivors.length === 1 ? "" : "s"}` : ` (d4 ${fearDie}`}${comfortReduction ? ` − ${comfortReduction} Conforto do abrigo` : ""}).`);
   registerRest(game, kind);
   return { ok: true as const, fear: actualFear, summaries };
 }
