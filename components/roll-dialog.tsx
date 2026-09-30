@@ -7,8 +7,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Field, Pick } from "@/components/game-controls";
 import { addLog, content, traits, type GameState } from "@/lib/game";
-import { equipmentModifiers, getPrimary, getSecondary, weaponAmmoType } from "@/lib/equipment";
-import { ammoTypeFor } from "@/lib/inventory";
+import { equipmentModifiers, getPrimary, getSecondary } from "@/lib/equipment";
+import { applyAttackResources, attackResourceState } from "@/lib/combat-resources";
 import { parseWeaponDamage, resolveActionRoll, resolveAttackHit, resolveRollResources, resolveWeaponDamage, rollDie, type ActionOutcome, type Edge, type RollKind } from "@/lib/rolls";
 
 type Edit = (fn: (draft: GameState) => void) => void;
@@ -49,10 +49,10 @@ function RollForm({ game, edit, request }: { game: GameState; edit: Edit; reques
   const modifiers = survivor ? equipmentModifiers(survivor) : null;
   const rollTrait = kind === "attack" ? weapon?.trait ?? trait : trait;
   const equipmentBonus = modifiers?.traits[rollTrait] ?? 0;
-  const ammoNeeded = kind === "attack" && weapon ? weaponAmmoType(weapon.name) : null;
-  const sceneId = game.scene ?? 1;
-  const ammoCovered = Boolean(ammoNeeded && survivor && survivor.ammoSpentScene === sceneId && survivor.ammoSpentType === ammoNeeded);
-  const ammoReady = !ammoNeeded || ammoCovered || Boolean(survivor && survivor.ammo > 0 && ammoTypeFor(survivor) === ammoNeeded);
+  const attackResources = attackResourceState(game, survivor, kind === "attack" ? weapon?.name : undefined,
+    kind === "attack" && weapon && "noise" in weapon ? weapon.noise : 0);
+  const ammoNeeded = attackResources.ammoType;
+  const ammoReady = attackResources.ammoReady;
   const ammoWarning = ammoNeeded && !ammoReady
     ? `Sem carga de ${ammoNeeded} pronta para esta cena. A primeira ação de disparo da cena consome 1 carga compatível.` : "";
   const target = difficulty.trim() === "" ? null : Number(difficulty);
@@ -108,9 +108,8 @@ function RollForm({ game, edit, request }: { game: GameState; edit: Edit; reques
       experienceCost: used.length, reaction: kind === "reaction", outcome: result,
     });
     const damage = kind === "attack" ? calculateDamage(result.critical) : null;
-    const attackNoise = kind === "attack" && weapon && "noise" in weapon
-      ? Math.max(0, Number(String(weapon.noise).replace("+", "")) || 0) : 0;
-    const spendsAmmo = Boolean(ammoNeeded && !ammoCovered);
+    const attackNoise = kind === "attack" ? attackResources.noise : 0;
+    const spendsAmmo = kind === "attack" && attackResources.spendsAmmo;
     const damageStatus = result.success === false ? "Falha: dano rolado, não aplicado."
       : result.success === null ? "Dano potencial; acerto pendente de confirmação."
       : "Dano do acerto.";
@@ -119,19 +118,12 @@ function RollForm({ game, edit, request }: { game: GameState; edit: Edit; reques
       if (actor) {
         actor.hope = resourcePreview.hope!;
         actor.stress = resourcePreview.stress!;
-        if (kind === "attack" && ammoNeeded) {
-          const currentScene = draft.scene ?? 1;
-          const covered = actor.ammoSpentScene === currentScene && actor.ammoSpentType === ammoNeeded;
-          if (!covered) {
-            if (actor.ammo < 1 || ammoTypeFor(actor) !== ammoNeeded) return;
-            actor.ammo -= 1;
-            actor.ammoSpentScene = currentScene;
-            actor.ammoSpentType = ammoNeeded;
-          }
-        }
       }
       draft.fear = resourcePreview.fear;
-      if (kind === "attack" && attackNoise > 0) draft.noise = Math.min(5, draft.noise + attackNoise);
+      const spent = kind === "attack" && weapon && actor
+        ? applyAttackResources(draft, actor.id, weapon.name, "noise" in weapon ? weapon.noise : 0)
+        : null;
+      if (kind === "attack" && spent && !spent.ok) return;
       if (damage) addLog(draft, "dano", damageLog(damage, damageStatus), actor?.id);
       addLog(draft, "dados", text +
         (spendsAmmo ? ` · 1 carga de ${ammoNeeded} consumida para a cena.` : ammoNeeded ? ` · carga de ${ammoNeeded} já aberta nesta cena.` : "") +
