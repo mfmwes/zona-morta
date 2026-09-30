@@ -36,7 +36,7 @@ function item(name, qty = 1, category) {
   assert.ok(entry, name);
   return inventory.itemFromCatalog(entry, qty, 'Íntegro', 1);
 }
-function physicalCount(s) { return s.inventory.reduce((sum, x) => sum + x.qty, 0) + ['primary','secondary','protection','outfit','bag','transport','personal','pocket1','pocket2'].filter(key => s[key] && !(key === 'personal' && s.personal === s.bag)).length; }
+function physicalCount(s) { return s.inventory.reduce((sum, x) => sum + x.qty, 0) + ['primary','secondary','protection','outfit','bag','personal','pocket1','pocket2'].filter(key => s[key] && !(key === 'personal' && s.personal === s.bag)).length; }
 
 test('jogador cria ficha válida sem poder injetar recursos ou escolhas fora do arquétipo', () => {
   const archetype = content.archetypes[0];
@@ -572,25 +572,66 @@ test('dois bolsos aceitam objetos compactos e conservam o item ao guardar', () =
   assert.ok(s.inventory.some(entry => entry.name === 'Rádio portátil'));
 });
 
-test('traje vestido, carrinho ativo e cassetete curto seguem a carga descrita no catálogo', () => {
+test('traje vestido, carrinho conduzido e cassetete curto seguem a carga descrita no catálogo', () => {
   const s = survivor(); s.inventory = [];
   const outfit = item('Capa de chuva leve');
   const cart = item('Carrinho dobrável');
   const baton = item('Cassetete curto');
-  s.inventory.push(outfit, cart, baton);
-  const base = survivorStats(s).capacity;
+  const crowbar = item('Pé de cabra');
+  s.inventory.push(outfit, cart, baton, crowbar);
+  const baseCapacity = survivorStats(s).capacity;
 
   assert.ok(inventory.compatibleSlots(outfit).includes('outfit'));
-  assert.ok(inventory.compatibleSlots(cart).includes('transport'));
+  assert.equal(inventory.compatibleSlots(cart).includes('transport'), false);
   assert.ok(inventory.compatibleSlots(baton).includes('pocket1'));
 
   assert.equal(inventory.equipItem(s, outfit.id, 'outfit'), true);
   assert.equal(s.outfit, 'Capa de chuva leve');
-  assert.equal(inventory.equipItem(s, cart.id, 'transport'), true);
-  assert.equal(s.transport, 'Carrinho dobrável');
-  assert.equal(survivorStats(s).capacity, base + 4);
+
+  assert.equal(inventory.deployCart(s, cart.id), true);
+  const active = inventory.activeCart(s);
+  assert.ok(active);
+  assert.equal(s.primary, '');
+  assert.equal(s.secondary, '');
+  assert.equal(survivorStats(s).capacity, baseCapacity);
+  assert.equal(survivorStats(s).cart.capacity, 4);
+  assert.equal(inventory.equipItem(s, baton.id, 'primary'), false);
+
+  assert.equal(inventory.storeInCart(s, crowbar.id, 1), true);
+  assert.equal(inventory.cartStoredLoad(active.cartItems), 1);
+  assert.equal(survivorStats(s).cart.carried, 1);
+  assert.equal(inventory.foldCart(s, active.id), false);
+  assert.equal(inventory.removeFromCart(s, active.id, active.cartItems[0].id, 1), true);
+  assert.equal(inventory.foldCart(s, active.id), true);
+  assert.equal(s.inventory.find(entry => entry.id === active.id).cartDeployed, false);
+
   assert.equal(inventory.stowSlot(s, 'outfit'), true);
   assert.ok(s.inventory.some(entry => entry.name === 'Capa de chuva leve'));
+});
+
+test('ações contextuais abrem, carregam e esvaziam o carrinho sem slot de transporte', () => {
+  const g = campaign(); const ana = g.survivors[0];
+  ana.inventory = [item('Carrinho dobrável'), item('Pé de cabra')];
+  const cart = ana.inventory.find(entry => entry.name === 'Carrinho dobrável');
+  const crowbar = ana.inventory.find(entry => entry.name === 'Pé de cabra');
+
+  let options = itemActions.itemActionOptions(g, ana.id, cart, false);
+  assert.equal(options.canDeployCart, true);
+  let result = itemActions.performItemAction(g, ana.id, cart.id, { type: 'deploy-cart' });
+  assert.equal(result.ok, true);
+
+  options = itemActions.itemActionOptions(g, ana.id, crowbar, false);
+  assert.equal(options.canStoreInCart, true);
+  result = itemActions.performItemAction(g, ana.id, crowbar.id, { type: 'cart-store', quantity: 1 });
+  assert.equal(result.ok, true);
+
+  const active = inventory.activeCart(ana);
+  assert.ok(active);
+  assert.equal(active.cartItems.length, 1);
+  result = itemActions.performItemAction(g, ana.id, active.id, { type: 'cart-remove', nestedItemId: active.cartItems[0].id, quantity: 1 });
+  assert.equal(result.ok, true);
+  result = itemActions.performItemAction(g, ana.id, active.id, { type: 'fold-cart' });
+  assert.equal(result.ok, true);
 });
 
 test('pá dobrável pode ser empunhada usando os dados de Pá curta', () => {
