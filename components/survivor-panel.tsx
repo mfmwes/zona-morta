@@ -324,7 +324,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
   }, [selected, inventoryQuery, inventoryCategory]);
   const categoryOptions = ["Todas", ...new Set(selected?.inventory.map(item => catalogForItem(item)?.category ?? item.category ?? "Outros"))];
   const medicineSources = [
-    ...(!playerMode && atSharedStorage(game) && game.shelter.medications > 0 ? [{ value: "shared", label: "Reservas compartilhadas · " + game.shelter.medications }] : []),
+    ...(!playerMode && selected && atSharedStorage(game, selected.id) && game.shelter.medications > 0 ? [{ value: "shared", label: "Reservas compartilhadas · " + game.shelter.medications }] : []),
     ...(selected?.inventory.filter(item => countsAsMedication(item)).map(item => ({ value: item.id, label: item.name + " · " + item.qty })) ?? []),
   ];
   const chosenMedicine = medicineSources.some(option => option.value === treatmentSource) ? treatmentSource : medicineSources[0]?.value ?? "";
@@ -390,7 +390,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
           (s.exposureDeadline ?? 0) < absoluteMinutes(draft)) return;
       let sourceLabel = "";
       if (chosenMedicine === "shared") {
-        if (!atSharedStorage(draft) || draft.shelter.medications < 1) return;
+        if (!atSharedStorage(draft, s.id) || draft.shelter.medications < 1) return;
         draft.shelter.medications -= 1;
         sourceLabel = "reservas compartilhadas";
       } else {
