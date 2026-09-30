@@ -2350,3 +2350,416 @@ button { cursor: pointer; } button:disabled { cursor: not-allowed; }
   .construction-unplaced-alert > div:last-child { justify-content:flex-start; }
   .construction-flow-steps { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
+
+
+/* Abrigo / Construção v3 — planta arquitetônica modular. */
+.construction-workspace {
+  grid-template-columns:minmax(0,1.45fr) minmax(330px,.55fr);
+  align-items:stretch;
+}
+.construction-blueprint-architectural {
+  overflow:hidden;
+  background:#0f2729;
+  border-color:#3c5d58;
+}
+.architectural-plan-heading {
+  padding:13px 15px;
+  border-bottom:1px solid #365652;
+  background:linear-gradient(180deg,#183638,#153033);
+  color:#edf3ed;
+}
+.architectural-plan-heading .dossier-title { color:#91b9ae; }
+.architectural-plan-heading .section-title { color:#f2f5ee; }
+.architectural-plan-actions {
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  gap:7px;
+}
+
+.architectural-site {
+  position:relative;
+  display:grid;
+  gap:12px;
+  padding:14px;
+  background:
+    linear-gradient(rgba(139,181,169,.08) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(139,181,169,.08) 1px,transparent 1px),
+    radial-gradient(circle at 50% 40%,rgba(72,121,108,.13),transparent 48%),
+    #0d2225;
+  background-size:20px 20px,20px 20px,auto,auto;
+}
+
+.architectural-zone-label {
+  display:flex;
+  align-items:center;
+  gap:6px;
+  color:#91aaa4;
+  font:800 .58rem var(--font-mono);
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.architectural-empty-note {
+  color:#76918b;
+  font-size:.61rem;
+  font-style:italic;
+}
+
+.architectural-perimeter {
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  align-items:center;
+  gap:12px;
+  min-height:48px;
+  padding:8px 10px;
+  border:1px dashed #55756d;
+  border-radius:7px;
+  background:rgba(16,42,42,.68);
+}
+.architectural-perimeter-items {
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+}
+.architectural-perimeter-items button {
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:5px 7px;
+  border:1px solid #476b64;
+  border-radius:5px;
+  background:#183735;
+  color:#dce8e2;
+  font-size:.61rem;
+  text-align:left;
+}
+.architectural-perimeter-items button.is-selected {
+  border-color:#8fc0b3;
+  background:#255049;
+  box-shadow:0 0 0 1px rgba(143,192,179,.12);
+}
+.architectural-perimeter-items button b { font-size:.62rem; }
+
+.architectural-building-shell {
+  position:relative;
+  overflow:hidden;
+  border:3px solid #76958d;
+  border-radius:3px;
+  background:#122d2f;
+  box-shadow:
+    inset 0 0 0 2px rgba(8,25,26,.58),
+    0 8px 24px rgba(0,0,0,.16);
+}
+.architectural-building-caption {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:7px 10px;
+  border-bottom:2px solid #5f7d76;
+  background:#173638;
+  color:#c7d9d3;
+  font:800 .59rem var(--font-mono);
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.architectural-building-caption small {
+  color:#78958e;
+  font-size:.54rem;
+  letter-spacing:.04em;
+}
+
+.architectural-building-plan {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 62px minmax(0,1fr);
+  grid-template-areas:
+    "rooma corridor roomb"
+    "roomc corridor roomd"
+    "roome corridor roomf";
+  min-height:355px;
+  background:
+    linear-gradient(90deg,rgba(255,255,255,.018),rgba(255,255,255,0)),
+    #10282a;
+}
+.architectural-room-a { grid-area:rooma; }
+.architectural-room-b { grid-area:roomb; }
+.architectural-room-c { grid-area:roomc; }
+.architectural-room-d { grid-area:roomd; }
+.architectural-room-e { grid-area:roome; }
+.architectural-room-f { grid-area:roomf; }
+
+.architectural-room {
+  position:relative;
+  min-width:0;
+  min-height:112px;
+  border:1px solid #55736d;
+  background:rgba(19,48,48,.64);
+}
+.architectural-room:nth-of-type(1),
+.architectural-room:nth-of-type(2) { border-top:0; }
+.architectural-room:nth-last-of-type(-n+2) { border-bottom:0; }
+
+.architectural-room::after {
+  content:"";
+  position:absolute;
+  top:50%;
+  width:12px;
+  height:28px;
+  margin-top:-14px;
+  background:#10282a;
+  border-top:1px solid #7a9991;
+  border-bottom:1px solid #7a9991;
+  z-index:2;
+  pointer-events:none;
+}
+.architectural-room-a::after,
+.architectural-room-c::after,
+.architectural-room-e::after { right:-2px; }
+.architectural-room-b::after,
+.architectural-room-d::after,
+.architectural-room-f::after { left:-2px; }
+
+.architectural-corridor {
+  grid-area:corridor;
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  border-left:2px solid #66877e;
+  border-right:2px solid #66877e;
+  background:
+    repeating-linear-gradient(180deg,rgba(126,160,151,.06) 0 8px,transparent 8px 16px),
+    #0d2224;
+}
+.architectural-corridor > span {
+  writing-mode:vertical-rl;
+  transform:rotate(180deg);
+  color:#607e77;
+  font:800 .52rem var(--font-mono);
+  letter-spacing:.18em;
+}
+.architectural-corridor i {
+  position:absolute;
+  left:50%;
+  width:18px;
+  height:1px;
+  transform:translateX(-50%);
+  background:#54756d;
+  opacity:.55;
+}
+.architectural-corridor i:nth-of-type(1) { top:25%; }
+.architectural-corridor i:nth-of-type(2) { top:50%; }
+.architectural-corridor i:nth-of-type(3) { top:75%; }
+
+.architectural-slot {
+  position:relative;
+  display:grid;
+  place-items:center;
+  align-content:center;
+  gap:5px;
+  width:100%;
+  height:100%;
+  min-height:108px;
+  padding:17px 10px 12px;
+  border:0;
+  background:transparent;
+  color:#e4ece7;
+  text-align:center;
+  transition:background .15s ease,box-shadow .15s ease,filter .15s ease;
+}
+.architectural-slot:not(:disabled) { cursor:pointer; }
+.architectural-slot:hover:not(:disabled) {
+  background:rgba(70,112,101,.19);
+}
+.architectural-slot.is-selected {
+  background:rgba(76,132,118,.22);
+  box-shadow:inset 0 0 0 2px rgba(143,191,178,.5);
+}
+.architectural-slot.is-compatible {
+  background:rgba(81,139,121,.27);
+  box-shadow:inset 0 0 0 2px rgba(149,209,190,.62),inset 0 0 28px rgba(87,167,143,.14);
+}
+.architectural-slot.is-compatible:hover {
+  background:rgba(91,156,136,.36);
+}
+.architectural-slot.is-empty {
+  color:#87a19a;
+}
+.architectural-slot.is-empty > svg {
+  opacity:.7;
+}
+.architectural-slot > b {
+  max-width:100%;
+  color:#ecf2ed;
+  font-size:.74rem;
+  line-height:1.2;
+  overflow-wrap:anywhere;
+}
+.architectural-slot.is-empty > b {
+  color:#9ab0aa;
+  font-weight:700;
+}
+.architectural-slot > small {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  color:#8aa39d;
+  font-size:.57rem;
+  line-height:1.25;
+}
+.architectural-slot-number {
+  position:absolute;
+  top:6px;
+  left:7px;
+  color:#6f8e86;
+  font:750 .5rem var(--font-mono);
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+.architectural-progress {
+  position:absolute;
+  right:8px;
+  bottom:7px;
+  left:8px;
+  height:4px;
+  overflow:hidden;
+  border-radius:999px;
+  background:rgba(0,0,0,.26);
+}
+.architectural-progress > i {
+  display:block;
+  height:100%;
+  border-radius:inherit;
+  background:#c4a260;
+}
+
+.architectural-service-band {
+  border-top:3px solid #76958d;
+  background:#102729;
+}
+.architectural-service-band > .architectural-zone-label {
+  padding:6px 9px 4px;
+  background:#132f31;
+}
+.architectural-service-grid {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+}
+.architectural-service-grid > .architectural-slot {
+  min-height:92px;
+  border-top:1px solid #4d6a64;
+  border-right:1px solid #4d6a64;
+}
+.architectural-service-grid > .architectural-slot:last-child {
+  border-right:0;
+}
+
+.architectural-yard {
+  display:grid;
+  gap:6px;
+  padding:9px;
+  border:1px dashed #547160;
+  border-radius:7px;
+  background:
+    radial-gradient(circle at 14% 30%,rgba(93,124,84,.12),transparent 20%),
+    rgba(17,42,35,.6);
+}
+.architectural-yard-grid {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:6px;
+}
+.architectural-yard-grid > .architectural-slot {
+  min-height:84px;
+  border:1px solid #506f5c;
+  border-radius:4px;
+  background:rgba(30,61,46,.28);
+}
+.architectural-yard-grid > .architectural-slot.is-compatible {
+  background:rgba(69,119,83,.34);
+}
+
+.architectural-legend {
+  padding:8px 13px;
+  border-top:1px solid #35514f;
+  background:#142e30;
+}
+
+.construction-active-section {
+  padding:11px 12px;
+}
+.construction-active-grid {
+  grid-template-columns:none;
+  grid-auto-flow:column;
+  grid-auto-columns:minmax(205px,255px);
+  overflow-x:auto;
+  padding-bottom:3px;
+  scrollbar-width:thin;
+}
+.construction-active-card {
+  min-height:118px;
+}
+
+.construction-catalog-drawer {
+  max-height:370px;
+  overflow:auto;
+  box-shadow:0 12px 30px rgba(0,0,0,.12);
+}
+.construction-catalog-recommendations {
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-top:10px;
+  padding:7px 8px;
+  border:1px solid var(--border);
+  border-radius:7px;
+  background:color-mix(in srgb,var(--card) 94%,#6f9d91);
+}
+.construction-catalog-recommendations > span {
+  display:flex;
+  align-items:center;
+  gap:5px;
+  margin-right:2px;
+  color:var(--muted-foreground);
+  font-size:.61rem;
+  font-weight:800;
+}
+.construction-catalog-recommendations button {
+  padding:4px 7px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  background:var(--card);
+  color:var(--foreground);
+  font-size:.59rem;
+  font-weight:750;
+}
+
+@media (max-width:1180px) {
+  .construction-workspace { grid-template-columns:1fr; }
+  .architectural-building-plan { min-height:330px; }
+}
+@media (max-width:760px) {
+  .architectural-perimeter { grid-template-columns:1fr; }
+  .architectural-building-plan {
+    grid-template-columns:1fr 42px 1fr;
+    min-height:390px;
+  }
+  .architectural-service-grid,
+  .architectural-yard-grid { grid-template-columns:1fr; }
+  .architectural-service-grid > .architectural-slot { border-right:0; border-bottom:1px solid #4d6a64; }
+  .architectural-slot { min-height:98px; padding-inline:6px; }
+  .architectural-site { padding:9px; }
+}
+@media (max-width:520px) {
+  .architectural-building-plan {
+    grid-template-columns:1fr;
+    grid-template-areas:
+      "rooma" "roomb" "roomc" "roomd" "roome" "roomf";
+  }
+  .architectural-corridor { display:none; }
+  .architectural-room { border-bottom:1px solid #55736d !important; }
+  .architectural-room::after { display:none; }
+}
