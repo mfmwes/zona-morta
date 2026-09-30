@@ -685,6 +685,70 @@ test('consumíveis genéricos somem após uso e itens reutilizáveis permanecem'
   assert.equal(inventory.batteryStateFor(phone), 'Carregada');
 });
 
+test('galão transporta água sem carga duplicada e mantém o recipiente ao consumir', () => {
+  const g = campaign(); const ana = g.survivors[0];
+  ana.water = 6;
+  ana.inventory = [item('Galão vazio')];
+  const gallon = ana.inventory[0];
+
+  let options = inventory.reusableContainerOptions(g, ana.id, gallon);
+  assert.equal(options.waterAvailable, 6);
+  assert.equal(options.waterCapacity, 4);
+  const filled = inventory.fillReusableContainer(g, ana.id, gallon.id, 'water', 4);
+  assert.ok(filled);
+  assert.equal(ana.water, 2);
+  assert.equal(filled.storedResource, 'water');
+  assert.equal(filled.storedAmount, 4);
+  assert.equal(filled.load, 1);
+  assert.equal(require('../lib/provision-items.ts').provisionItemInfo(filled).remaining, 4);
+
+  const consumed = inventory.consumeProvisionPortionFromItems(ana.inventory, filled.id);
+  assert.ok(consumed);
+  assert.equal(filled.storedAmount, 3);
+  assert.ok(ana.inventory.some(entry => entry.id === filled.id));
+
+  g.shelter.hex = g.partyHex;
+  assert.equal(inventory.emptyReusableContainerToReserves(g, ana.id, filled.id), true);
+  assert.equal(g.shelter.water, 3);
+  assert.equal(filled.storedResource, undefined);
+  assert.equal(filled.storedAmount, undefined);
+  assert.equal(filled.load, 1);
+});
+
+test('galão não mistura recursos, combustível ocupa uma unidade e conteúdo próprio não completa água', () => {
+  const g = campaign(); const ana = g.survivors[0];
+  ana.water = 2;
+  ana.inventory = [item('Galão vazio'), item('Combustível (1 unidade)', 1, 'Suprimentos abstratos')];
+  const gallon = ana.inventory.find(entry => entry.name === 'Galão vazio');
+
+  assert.ok(inventory.fillReusableContainer(g, ana.id, gallon.id, 'water', 2));
+  assert.equal(ana.water, 0);
+  assert.equal(inventory.reusableContainerOptions(g, ana.id, gallon).waterAvailable, 0);
+  assert.equal(inventory.fillReusableContainer(g, ana.id, gallon.id, 'water', 1), null);
+  assert.equal(inventory.fillReusableContainer(g, ana.id, gallon.id, 'fuel', 1), null);
+
+  g.shelter.hex = g.partyHex;
+  assert.equal(inventory.emptyReusableContainerToReserves(g, ana.id, gallon.id), true);
+  assert.equal(g.shelter.water, 2);
+
+  assert.ok(inventory.fillReusableContainer(g, ana.id, gallon.id, 'fuel', 1));
+  assert.equal(gallon.storedResource, 'fuel');
+  assert.equal(gallon.storedAmount, 1);
+  assert.equal(ana.inventory.some(entry => entry.name === 'Combustível (1 unidade)'), false);
+  assert.equal(inventory.fillReusableContainer(g, ana.id, gallon.id, 'fuel', 1), null);
+});
+
+test('galões com conteúdos diferentes não são empilhados', () => {
+  const empty = item('Galão vazio');
+  const water = item('Galão vazio');
+  water.storedResource = 'water'; water.storedAmount = 4;
+  const items = [empty];
+  inventory.addStack(items, water);
+  assert.equal(items.length, 2);
+  assert.equal(items.some(entry => entry.storedAmount === 4), true);
+});
+
+
 test('alimentos e água prontos são identificados para contagem automática de porções', () => {
   const cereal = item('Barra de cereal');
   const biscuits = item('Pacote de bolachas');
