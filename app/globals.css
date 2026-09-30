@@ -2763,3 +2763,49 @@ button { cursor: pointer; } button:disabled { cursor: not-allowed; }
   .architectural-room { border-bottom:1px solid #55736d !important; }
   .architectural-room::after { display:none; }
 }
+
+
+.shelter-overview-architectural {
+  padding:12px;
+}
+.shelter-overview-architectural .architectural-slot:disabled {
+  cursor:default;
+  opacity:1;
+}
+.shelter-unplaced-strip {
+  display:grid;
+  gap:7px;
+  padding:9px 10px;
+  border:1px solid #7c614c;
+  border-radius:7px;
+  background:rgba(75,49,35,.32);
+}
+.shelter-unplaced-strip > span {
+  display:flex;
+  align-items:center;
+  gap:6px;
+  color:#d2b5a0;
+  font:800 .58rem var(--font-mono);
+  text-transform:uppercase;
+}
+.shelter-unplaced-strip > div {
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+}
+.shelter-unplaced-strip button {
+  display:grid;
+  gap:2px;
+  padding:6px 8px;
+  border:1px solid #765c49;
+  border-radius:5px;
+  background:#30231f;
+  color:#eaded6;
+  text-align:left;
+}
+.shelter-unplaced-strip button.is-selected {
+  border-color:#bd8f70;
+  background:#493128;
+}
+.shelter-unplaced-strip button b { font-size:.63rem; }
+.shelter-unplaced-strip button small { color:#bda89a; font-size:.54rem; }
