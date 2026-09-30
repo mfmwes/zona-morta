@@ -158,7 +158,7 @@ function RestPlanner({ game, edit, selected, playerMode, playerPreview, restPeer
     setOpen(false);
   }
 
-  return <section className="character-surface character-rest-panel"><SectionHeading index="05" title={personalPlanning ? "Seu descanso" : "Descanso da mesa"} aside={<span className="character-micro">2 AÇÕES POR PESSOA</span>} />
+  return <section className="character-surface character-rest-panel"><SectionHeading index="04" title={personalPlanning ? "Seu descanso" : "Descanso da mesa"} aside={<span className="character-micro">2 AÇÕES POR PESSOA</span>} />
     <p className="character-section-intro">Curto recupera recursos com d4+1; longo limpa o recurso escolhido. Cada ação pode beneficiar você ou outra pessoa da equipe. Preparar concede Hope automaticamente.</p>
     <div className="character-rest-actions"><Button size="sm" variant="outline" disabled={!actors.length} onClick={() => begin("short")}><Moon size={16} /> Descanso curto</Button>
       <Button size="sm" disabled={!actors.length} onClick={() => begin("long")}><Moon size={16} /> Descanso longo</Button></div>
@@ -414,7 +414,13 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
           <h2>{selected.name}</h2>
           <div className="character-identity-meta"><span>{selected.origin}</span><span>{selected.archetype} · {selected.specialty}</span><span>Nível {selected.level ?? 1}</span></div>
         </div>
-        <div className="character-hero-status"><span className={selected.infection === "Saudável" ? "character-condition healthy" : "character-condition at-risk"}><Activity size={15} aria-hidden="true" /> {selected.infection}</span><span className="character-hero-code">REGISTRO {selected.id.slice(0, 6).toUpperCase()}</span></div>
+        <div className="character-hero-status">
+          <div className="character-hero-condition-block">
+            <span className={selected.infection === "Saudável" ? "character-condition healthy" : "character-condition at-risk"}><Activity size={15} aria-hidden="true" /> {selected.infection}</span>
+            {selected.infection === "Exposto" && <span className="character-condition-detail">{selected.treatmentAttempted ? "Tratamento já tentado" : <>Tratamento até <b>{deadlineLabel(selected.exposureDeadline)}</b></>}</span>}
+          </div>
+          <span className="character-hero-code">REGISTRO {selected.id.slice(0, 6).toUpperCase()}</span>
+        </div>
       </header>
       {portraitError && <p className="character-portrait-error" role="alert">{portraitError}</p>}
 
@@ -423,7 +429,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
           <div className="character-tabs-scroll"><TabsList className="character-tabs" aria-label="Áreas da ficha">{tabs.map(tab => <TabsTrigger key={tab.id} value={tab.id} className="character-tab"><tab.icon size={16} aria-hidden="true" />{tab.label}</TabsTrigger>)}</TabsList></div>
           <TabsContent value="resumo" className="character-tab-content">
             <div className="character-summary-grid">
-              <section className="character-surface"><SectionHeading index="01" title="Pronto para agir" aside={<span className="character-micro">KIT ATIVO</span>} />
+              <section className="character-surface character-summary-action"><SectionHeading index="01" title="Pronto para agir" aside={<span className="character-micro">KIT ATIVO</span>} />
                 <div className="character-active-weapon">{selected.primary ? <ItemArt name={selected.primary} category="Armas primárias" /> : <EmptyItemArt />}<div><span>Arma principal</span><strong>{selected.primary || "Sem arma principal"}</strong><small>{primary ? `${primary.damage} · ${primary.range} · ${primary.trait}` : "Dados da arma no kit"}</small></div>
                   <Button size="sm" variant="outline" className="character-weapon-roll" onClick={() => setRollRequest({ survivorId: selected.id, kind: "attack", weapon: "primary" })}><Dice5 size={16} /> Atacar</Button></div>
                 {selected.secondary && <div className="character-info-row"><ItemArt name={selected.secondary} category="Armas secundárias" size="small" /><span>Secundária</span><b>{selected.secondary}</b></div>}
@@ -431,7 +437,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
                 <div className="character-info-row">{selected.personal ? <ItemArt name={selected.personal} category="Abrigo, transporte e mochilas" size="small" /> : <EmptyItemArt />}<span>Item pessoal</span><b>{selected.personal || "Nenhum item pessoal"}</b></div>
                 <button className="character-text-link" type="button" onClick={() => setActiveTab("combate")}>Abrir detalhes de combate <span aria-hidden="true">↗</span></button>
               </section>
-              <section className="character-surface"><SectionHeading index="02" title="Recursos de campo" />
+              <section className="character-surface character-summary-resources"><SectionHeading index="02" title="Recursos de campo" />
                 <div className="character-provision-grid">
                   <span><Utensils size={18} aria-hidden="true" /><b>{selected.food}</b><small>Comida</small></span>
                   <span><Droplets size={18} aria-hidden="true" /><b>{selected.water}</b><small>Água</small></span>
@@ -442,20 +448,21 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
                 {stats.carried > stats.capacity && <p className="character-alert">Acima da capacidade. Redistribua antes de atravessar.</p>}
                 <button className="character-text-link" type="button" onClick={() => setActiveTab("inventario")}>Abrir inventário <span aria-hidden="true">↗</span></button>
               </section>
-              <section className="character-surface"><SectionHeading index="03" title="Especialidades" />
-                <div className="character-experience"><b>{origin?.experience || selected.origin}</b><span>Experience de origem · +2 por 1 Hope</span></div>
-                <div className="character-experience"><b>{selected.freeExperience}</b><span>Experience livre · +2 por 1 Hope</span></div>
-                <button className="character-hope-teaser" type="button" onClick={() => setActiveTab("habilidades")}
-                  aria-label={`Ler habilidade de Hope: ${hopeName}`}>
-                  <AbilityArt abilityId={`hope:${selected.archetype}`} /><span className="character-hope-teaser-copy"><small>HABILIDADE DE HOPE</small><b>{hopeName}</b></span><strong>3 Hope</strong>
-                </button>
-                <div className="character-technique-preview">{selected.techniques.map(name => <span key={name}><AbilityArt abilityId={`technique:${name}`} size="tiny" />{name}</span>)}</div>
-                <button className="character-text-link" type="button" onClick={() => setActiveTab("habilidades")}>Consultar habilidades <span aria-hidden="true">↗</span></button>
-              </section>
-              <section className="character-surface character-status-card"><SectionHeading index="04" title="Situação atual" />
-                <div className="character-status-line"><span className={selected.infection === "Saudável" ? "character-status-dot healthy" : "character-status-dot"} /><b>{selected.infection}</b></div>
-                {selected.infection === "Exposto" ? <p>Janela de tratamento até <b>{deadlineLabel(selected.exposureDeadline)}</b>. {selected.treatmentAttempted ? "Tentativa já usada." : "Uma tentativa disponível."}</p> : <p>{selected.past || "Passado e vínculos ainda não registrados."}</p>}
-                <button className="character-text-link" type="button" onClick={() => setActiveTab(selected.infection === "Saudável" ? "historia" : "condicoes")}>Ver {selected.infection === "Saudável" ? "história" : "condições"} <span aria-hidden="true">↗</span></button>
+              <section className="character-surface character-summary-specialties"><SectionHeading index="03" title="Especialidades" />
+                <div className="character-specialties-layout">
+                  <div className="character-specialties-experiences">
+                    <div className="character-experience"><b>{origin?.experience || selected.origin}</b><span>Experience de origem · +2 por 1 Hope</span></div>
+                    <div className="character-experience"><b>{selected.freeExperience}</b><span>Experience livre · +2 por 1 Hope</span></div>
+                  </div>
+                  <button className="character-hope-teaser" type="button" onClick={() => setActiveTab("habilidades")}
+                    aria-label={`Ler habilidade de Hope: ${hopeName}`}>
+                    <AbilityArt abilityId={`hope:${selected.archetype}`} /><span className="character-hope-teaser-copy"><small>HABILIDADE DE HOPE</small><b>{hopeName}</b></span><strong>3 Hope</strong>
+                  </button>
+                </div>
+                <div className="character-specialties-footer">
+                  <div className="character-technique-preview">{selected.techniques.map(name => <span key={name}><AbilityArt abilityId={`technique:${name}`} size="tiny" />{name}</span>)}</div>
+                  <button className="character-text-link" type="button" onClick={() => setActiveTab("habilidades")}>Consultar habilidades <span aria-hidden="true">↗</span></button>
+                </div>
               </section>
               <RestPlanner game={game} edit={edit} selected={selected} playerMode={playerMode} playerPreview={playerPreview} restPeers={restPeers} />
             </div>
