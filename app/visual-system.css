@@ -406,6 +406,50 @@ html[data-theme="dark"] .day-close-summary span,
 html[data-theme="dark"] .day-close-summary small { color:#aebfba; }
 html[data-theme="dark"] .day-close-summary b { color:#e2eee8; }
 html[data-theme="dark"] .day-close-summary > svg { color:#96bdb4; }
+html[data-theme="dark"] .day-close-reserve-summary > div,
+html[data-theme="dark"] .day-close-section,
+html[data-theme="dark"] .day-close-resident-controls > div,
+html[data-theme="dark"] .day-close-person,
+html[data-theme="dark"] .day-close-resource-row {
+  border-color:#3d5350;
+  background:#202c2c;
+  color:#dce7e1;
+}
+html[data-theme="dark"] .day-close-section-heading { border-color:#344744; }
+html[data-theme="dark"] .day-close-section-heading small,
+html[data-theme="dark"] .day-close-section-heading > span,
+html[data-theme="dark"] .day-close-reserve-summary small,
+html[data-theme="dark"] .day-close-person > header small,
+html[data-theme="dark"] .day-close-resource-label > small,
+html[data-theme="dark"] .day-close-resource-row .field-label { color:#aebfba; }
+html[data-theme="dark"] .day-close-section-heading b,
+html[data-theme="dark"] .day-close-person > header b,
+html[data-theme="dark"] .day-close-resource-label,
+html[data-theme="dark"] .day-close-reserve-summary > div { color:#e2eee8; }
+html[data-theme="dark"] .day-close-person.has-warning {
+  border-color:#80514a;
+  background:#302725;
+}
+html[data-theme="dark"] .day-close-avatar { background:#315b5b; color:#ecf6f1; }
+html[data-theme="dark"] .day-close-consumed {
+  border-color:#3e655c;
+  background:#263a36;
+  color:#a9d9cb;
+}
+html[data-theme="dark"] .day-close-warning {
+  border-color:#805149;
+  background:#352725;
+  color:#efb1a7;
+}
+html[data-theme="dark"] .day-close-inline-warning { color:#efaaa1; }
+html[data-theme="dark"] .day-close-resource-row [data-slot="select-trigger"] {
+  border-color:#455a57;
+  background:#172121 !important;
+  color:#dce7e1;
+}
+html[data-theme="dark"] .day-close-reserve-summary .is-ok,
+html[data-theme="dark"] .day-close-resource-label > small.is-ok { color:#91c9b8; }
+html[data-theme="dark"] .day-close-reserve-summary .is-warning { color:#efa79e; }
 html[data-theme="dark"] .table-chat { border-color: #354846; background: #131b1c; color: #e2ebe5; }
 html[data-theme="dark"] .table-chat-header,
 html[data-theme="dark"] .table-chat-composer { border-color: #354846; background: #192324; }
