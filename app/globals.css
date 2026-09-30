@@ -2141,3 +2141,47 @@ button { cursor: pointer; } button:disabled { cursor: not-allowed; }
   .construction-power-manager { align-items:flex-start; flex-direction:column; }
   .construction-power-manager > div:last-child { justify-content:flex-start; }
 }
+
+
+.shelter-overview-blueprint { min-height:360px; }
+.shelter-overview-slot.is-selected {
+  border-color:#9dc0b6;
+  box-shadow:inset 0 0 0 1px rgba(157,192,182,.2),0 0 18px rgba(86,145,131,.12);
+}
+.shelter-overview-slot:disabled { cursor:default; }
+.shelter-perimeter-strip {
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  padding:9px 12px;
+  border-top:1px solid #35514f;
+  background:#142e30;
+}
+.shelter-perimeter-strip button {
+  display:flex;
+  align-items:center;
+  gap:6px;
+  min-width:0;
+  padding:6px 8px;
+  border:1px solid #466660;
+  border-radius:6px;
+  background:#193735;
+  color:#d9e5df;
+  text-align:left;
+}
+.shelter-perimeter-strip button.is-selected { border-color:#8fb6ab; background:#234a45; }
+.shelter-perimeter-strip button span { display:grid; min-width:0; }
+.shelter-perimeter-strip button b { font-size:.65rem; }
+.shelter-perimeter-strip button small { color:#8ea9a2; font-size:.54rem; }
+.shelter-detail-empty {
+  display:grid;
+  place-items:center;
+  align-content:center;
+  gap:7px;
+  min-height:360px;
+  padding:24px;
+  color:#9fb6b0;
+  text-align:center;
+}
+.shelter-detail-empty b { color:#e8efea; font-size:.88rem; }
+.shelter-detail-empty p { max-width:30ch; font-size:.68rem; line-height:1.45; }
