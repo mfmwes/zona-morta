@@ -12,7 +12,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sidebar, SidebarProvider } from "@/components/ui/sidebar";
 import { Counter, Field, Pick } from "@/components/game-controls";
 import { HexExplorer } from "@/components/hex-explorer";
-import { SurvivorPanel } from "@/components/survivor-panel";
+import { SurvivorPanel, type RestPeer } from "@/components/survivor-panel";
 import { ReferencePanel, ShelterPanel } from "@/components/campaign-views";
 import { PlayersPanel } from "@/components/players-panel";
 import { AuthPanel } from "@/components/auth-panel";
@@ -26,7 +26,7 @@ import { adjustProvisionCount } from "@/lib/provisions";
 import { beginExpedition, beginScene } from "@/lib/abilities";
 import { playerEditPayload } from "@/lib/collaboration";
 
-type CampaignResponse = { revision?: number; state?: GameState; role: "mestre" | "jogador" | "convidado"; ownerId: string; survivorId?: string | null; restPeers?: { id: string; name: string }[] };
+type CampaignResponse = { revision?: number; state?: GameState; role: "mestre" | "jogador" | "convidado"; ownerId: string; survivorId?: string | null; restPeers?: RestPeer[] };
 type SaveStatus = "salvo" | "salvando" | "erro" | "conflito";
 type ModelTool = {
   name: string; title: string; description: string; inputSchema: object;
@@ -52,7 +52,7 @@ export default function CampaignApp() {
   const [role, setRole] = useState<"mestre" | "jogador" | "convidado">("mestre");
   const [ownerId, setOwnerId] = useState("");
   const [survivorId, setSurvivorId] = useState<string | null>(null);
-  const [restPeers, setRestPeers] = useState<{ id: string; name: string }[]>([]);
+  const [restPeers, setRestPeers] = useState<RestPeer[]>([]);
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState("");
   const [startWithShelter, setStartWithShelter] = useState(false);
@@ -161,7 +161,7 @@ export default function CampaignApp() {
             body: JSON.stringify(player && before ? playerEditPayload(before, snapshot)
               : { revision: revision.current, state: snapshot }),
           });
-          const result = await response.json() as { error?: string; revision?: number; state?: GameState; restPeers?: { id: string; name: string }[] };
+          const result = await response.json() as { error?: string; revision?: number; state?: GameState; restPeers?: RestPeer[] };
           if (!response.ok) {
             pending.current = current.current;
             pendingBefore.current = before;
