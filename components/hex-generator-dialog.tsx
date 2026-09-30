@@ -65,7 +65,7 @@ export function HexGeneratorDialog({
   const generated = request.kind !== "manual";
 
   function reroll() {
-    if (!generated) return;
+    if (request.kind === "manual") return;
     const nextRoll = rollDie(100);
     const row = gameContent.generators[request.kind].find(entry => entry.roll === nextRoll);
     if (!row) return;
