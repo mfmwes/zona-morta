@@ -6,9 +6,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Field } from "@/components/game-controls";
-import { atSharedStorage } from "@/lib/inventory";
 import { closeDay, eveningNeeds } from "@/lib/survival";
-import type { GameState } from "@/lib/game";
+import { survivorHex, type GameState } from "@/lib/game";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 
@@ -34,6 +33,8 @@ export function DayCloseDialog({
   const consumptionValid = [foodConsumers, waterConsumers].every(value =>
     value.trim() !== "" && Number.isInteger(Number(value)) && Number(value) >= 0 && Number(value) <= 999
   );
+  const storageHex = game.shelter.hex ?? game.partyHex;
+  const survivorsAway = game.survivors.filter(person => survivorHex(game, person) !== storageHex);
 
   function prepare() {
     const needs = eveningNeeds(game);
@@ -62,7 +63,7 @@ export function DayCloseDialog({
   return <Dialog open={open} onOpenChange={setOpen}>
     <DialogTrigger asChild>
       <Button size={size} variant={variant} className={className} onClick={prepare}>
-        <Moon size={16} /> {label}
+        <Moon size={16} /><span className="day-close-label">{label}</span>
       </Button>
     </DialogTrigger>
     <DialogContent className="day-close-dialog">
@@ -88,8 +89,8 @@ export function DayCloseDialog({
         <Field label="Água das reservas · porções" value={waterConsumers} onChange={setWaterConsumers} type="number" />
       </div>
 
-      {!atSharedStorage(game) && <p className="character-rule-note">
-        Nem todos estão nas reservas compartilhadas. A sugestão considera moradores e sobreviventes presentes no local das reservas; provisões pessoais usadas por grupos em campo devem estar registradas nas respectivas fichas.
+      {survivorsAway.length > 0 && <p className="character-rule-note">
+        Há sobreviventes longe das reservas compartilhadas: {survivorsAway.map(person => person.name).join(", ")}. A sugestão considera apenas moradores e sobreviventes presentes no local das reservas; provisões pessoais usadas por grupos em campo devem estar registradas nas respectivas fichas.
       </p>}
 
       <p className="text-sm subtle">
