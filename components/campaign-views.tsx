@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BookOpen, ChevronLeft, ChevronRight, House, LayoutGrid, List, Moon, Package, ShieldAlert } from "lucide-react";
+import { BookOpen, ChevronLeft, ChevronRight, House, LayoutGrid, List, Package, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -11,18 +11,15 @@ import { AddItemDialog, ItemActionsDialog } from "@/components/inventory-workflo
 import { ItemContextMenu } from "@/components/item-context-menu";
 import { ItemArt } from "@/components/item-art";
 import { ShelterMoveDialog } from "@/components/shelter-move";
+import { DayCloseDialog } from "@/components/day-close-dialog";
 import { content, establishShelter, recoverFormerStock, survivorPositionGroups, survivorsAtHex, type GameState } from "@/lib/game";
 import { atSharedStorage, catalogForItem } from "@/lib/inventory";
 import { provisionBreakdown, provisionDisplay, provisionItemInfo } from "@/lib/provision-items";
-import { closeDay, eveningNeeds } from "@/lib/survival";
 import { adjustProvisionCount } from "@/lib/provisions";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 
 export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; edit: Edit; playerPreview: boolean }) {
-  const [closeOpen, setCloseOpen] = useState(false);
-  const [foodConsumers, setFoodConsumers] = useState(String(game.shelter.residents));
-  const [waterConsumers, setWaterConsumers] = useState(String(game.shelter.residents));
   const [shelterNotes, setShelterNotes] = useState(game.shelter.notes);
   const [shelterName, setShelterName] = useState(game.shelter.name);
   const [cacheRecipient, setCacheRecipient] = useState("");
@@ -48,14 +45,6 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
     {key:"fuel",label:"Combustível",unit:"cargas",max:99},
     {key:"parts",label:"Peças",unit:"unidades",max:99},
   ];
-
-  function nextMorning() {
-    if (!consumptionValid) return;
-    edit(draft => { closeDay(draft, Number(foodConsumers), Number(waterConsumers), game.day); });
-    toast.success("Novo amanhecer registrado", { description: `Dia ${game.day + 1}. Consumo e progressão diária foram processados.` });
-    setCloseOpen(false);
-  }
-  const consumptionValid = [foodConsumers, waterConsumers].every(value => value.trim() !== "" && Number.isInteger(Number(value)) && Number(value) >= 0 && Number(value) <= 999);
 
   return <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
     <section className="panel panel-pad">
@@ -155,21 +144,7 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
       <section className="panel panel-pad">
         <p className="dossier-title">Rotina / sobrevivência</p><h3 className="section-title mt-1">Anoitecer e provisões</h3>
         <p className="intro-line mt-3">Cada pessoa precisa de uma porção de Comida e uma de Água por dia. O consumo pessoal registrado na ficha é excluído da sugestão. Ao fechar o dia, o sistema usa porções soltas e, se necessário, itens físicos prontos das reservas compartilhadas.</p>
-        {!playerPreview && <Dialog open={closeOpen} onOpenChange={setCloseOpen}>
-          <DialogTrigger asChild><Button className="mt-4 w-full" onClick={() => {
-            const needs = eveningNeeds(game);
-            setFoodConsumers(String(needs.food)); setWaterConsumers(String(needs.water));
-          }}><Moon /> Fechar dia</Button></DialogTrigger>
-          <DialogContent><DialogHeader><DialogTitle>Passar para o próximo amanhecer</DialogTitle>
-            <DialogDescription>Os valores sugeridos incluem moradores e sobreviventes presentes que ainda não registraram consumo pessoal hoje. Ajuste se alguém comeu de outra fonte. Confira privação, vigia e descanso com o grupo.</DialogDescription></DialogHeader>
-            <div className="inventory-search"><Field label="Comida das reservas · porções" value={foodConsumers} onChange={setFoodConsumers} type="number" />
-              <Field label="Água das reservas · porções" value={waterConsumers} onChange={setWaterConsumers} type="number" /></div>
-            {!atSharedStorage(game) && <p className="character-rule-note">O grupo está fora da base. As fichas precisam registrar provisões usadas durante a expedição; a sugestão inclui apenas os moradores do abrigo.</p>}
-            <p className="text-sm subtle">Faltas serão registradas; aplique Stress a quem ficou sem mantimentos. Itens físicos ainda guardados não entram nesta conta até virarem porções.</p>
-            {!consumptionValid && <p className="inventory-danger" role="alert">Informe quantidades inteiras entre 0 e 999.</p>}
-            <DialogFooter><Button variant="outline" onClick={() => setCloseOpen(false)}>Cancelar</Button><Button disabled={!consumptionValid} onClick={nextMorning}>Confirmar anoitecer</Button></DialogFooter>
-          </DialogContent>
-        </Dialog>}
+        {!playerPreview && <DayCloseDialog game={game} edit={edit} label="Encerrar dia" className="mt-4 w-full" />}
         <p className="text-xs subtle mt-2">As escolhas e os efeitos de descanso ficam na ficha de cada sobrevivente, inclusive quando a campanha ainda não tem abrigo.</p>
       </section>
       {hasShelter && <section className="panel panel-pad">
