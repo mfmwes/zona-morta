@@ -38,6 +38,7 @@ import {
 import { itemActionOptions, performItemAction, type ItemAction } from "@/lib/item-actions";
 import { slotLabels } from "@/lib/inventory";
 import { provisionDisplay } from "@/lib/provision-items";
+import { provisionConsumedToday, type DailyResource } from "@/lib/survival";
 import type { GameState, InventoryItem } from "@/lib/game";
 
 type Edit = (fn: (draft: GameState) => void) => void;
@@ -65,6 +66,9 @@ export function ItemContextMenu({
   const options = itemActionOptions(game, ownerId, item, selfOnly);
   const quantityChoices = item.qty > 1 ? [1, item.qty] : [1];
   const provisionText = provisionDisplay(item);
+  const owner = game.survivors.find(person => person.id === ownerId);
+  const ownerAlreadyConsumed = Boolean(owner && options.provision.resource
+    && provisionConsumedToday(game, owner, options.provision.resource as DailyResource));
 
   function run(action: ItemAction) {
     let result: ReturnType<typeof performItemAction> | null = null;
@@ -108,14 +112,14 @@ export function ItemContextMenu({
                 {game.survivors.length
                   ? game.survivors.map(person =>
                       <ContextMenuItem key={person.id} onSelect={() => run({ type: "consume", consumerId: person.id })}>
-                        <Utensils /> {person.name}
+                        <Utensils /> {person.name}{options.provision.resource && provisionConsumedToday(game, person, options.provision.resource as DailyResource) ? " · já consumiu hoje" : ""}
                       </ContextMenuItem>)
                   : <ContextMenuItem disabled>Nenhum sobrevivente</ContextMenuItem>}
               </ContextMenuSubContent>
             </ContextMenuSub>
           : <ContextMenuItem onSelect={() => run({ type: "consume", consumerId: ownerId })}>
               {options.provision.resource === "water" ? <Droplets /> : <Utensils />}
-              Consumir 1 porção
+              {ownerAlreadyConsumed ? "Consumir outra porção" : "Consumir 1 porção"}
             </ContextMenuItem>)}
 
         {options.provision.resource && !options.provision.ready
