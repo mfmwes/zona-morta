@@ -22,6 +22,7 @@ const { revealSector, preserveKnownSectors } = require('../lib/sectors.ts');
 const { parseWeaponDamage, resolveActionRoll, resolveRollResources } = require('../lib/rolls.ts');
 const shelterProjects = require('../lib/shelter-projects.ts');
 const npcGenerator = require('../lib/npc-generator.ts');
+const combatResources = require('../lib/combat-resources.ts');
 
 function survivor(name = 'Ana') {
   return initialSurvivor({ name, origin: content.origins[0].name, past: '', archetype: content.archetypes[0].name,
@@ -35,7 +36,7 @@ function item(name, qty = 1, category) {
   assert.ok(entry, name);
   return inventory.itemFromCatalog(entry, qty, 'Íntegro', 1);
 }
-function physicalCount(s) { return s.inventory.reduce((sum, x) => sum + x.qty, 0) + ['primary','secondary','protection','bag','personal','pocket1','pocket2'].filter(key => s[key] && !(key === 'personal' && s.personal === s.bag)).length; }
+function physicalCount(s) { return s.inventory.reduce((sum, x) => sum + x.qty, 0) + ['primary','secondary','protection','outfit','bag','transport','personal','pocket1','pocket2'].filter(key => s[key] && !(key === 'personal' && s.personal === s.bag)).length; }
 
 test('jogador cria ficha válida sem poder injetar recursos ou escolhas fora do arquétipo', () => {
   const archetype = content.archetypes[0];
@@ -356,10 +357,10 @@ test('limiares acompanham nível e ausência de proteção; modificadores do kit
   s.primary = 'Pistola'; assert.equal(equipment.equipmentModifiers(s).primaryDamage, 0);
   s.secondary = 'Escudo improvisado'; s.kitCondition = { secondary: 'Danificado' };
   assert.equal(equipment.equipmentModifiers(s).armor, 0);
-  s.kitCondition.secondary = 'Íntegro'; assert.equal(equipment.equipmentModifiers(s).armor, 1);
+  s.kitCondition.secondary = 'Íntegro'; assert.equal(equipment.equipmentModifiers(s).armor, 2);
 });
 
-test('tipo de munição não se mistura e um contador vazio recebe o tipo da origem', () => {
+test('tipo de munição não se mistura e o abrigo mantém estoques separados', () => {
   const g = campaign(); const [a,b] = g.survivors;
   a.ammo = 3; a.ammoType = 'Espingarda'; b.ammo = 2; b.ammoType = 'Pistola';
   const before = JSON.stringify(g);
@@ -368,11 +369,13 @@ test('tipo de munição não se mistura e um contador vazio recebe o tipo da ori
   b.ammo = 0;
   assert.equal(inventory.transferProvisions(g, a.id, b.id, 'ammo', 2), true);
   assert.equal(b.ammoType, 'Espingarda'); assert.equal(b.ammo, 2); assert.equal(a.ammo, 1);
-  assert.equal(inventory.transferProvisions(g, b.id, 'shared', 'ammo', 1), false);
-  assert.equal(g.shelter.pistolAmmo, 0);
-  b.ammo = 0; g.shelter.pistolAmmo = 2;
-  assert.equal(inventory.transferProvisions(g, 'shared', b.id, 'ammo', 1), true);
-  assert.equal(b.ammoType, 'Pistola'); assert.equal(g.shelter.pistolAmmo, 1);
+  assert.equal(inventory.transferProvisions(g, b.id, 'shared', 'ammo', 1), true);
+  assert.equal(require('../lib/game.ts').shelterAmmoCount(g.shelter, 'Espingarda'), 1);
+  assert.equal(require('../lib/game.ts').shelterAmmoCount(g.shelter, 'Pistola'), 0);
+  b.ammo = 0;
+  require('../lib/game.ts').setShelterAmmoCount(g.shelter, 'Pistola', 2);
+  assert.equal(inventory.transferProvisions(g, 'shared', b.id, 'ammo', 1, 'Pistola'), true);
+  assert.equal(b.ammoType, 'Pistola'); assert.equal(require('../lib/game.ts').shelterAmmoCount(g.shelter, 'Pistola'), 1);
 });
 
 test('munição de armas encontradas é reconhecida no cálculo da carga', () => {
@@ -524,25 +527,25 @@ test('tabelas e criação: cobertura completa dos dados, 30 origens e habilidade
   }
 });
 
-test('carga de provisões só aumenta a cada quatro porções completas', () => {
+test('duas porções pessoais são livres e excedentes ocupam grupos de até quatro', () => {
   const s = survivor();
   s.inventory = [];
-  s.food = 3; s.water = 3;
+  s.food = 2; s.water = 2;
   let stats = survivorStats(s);
   assert.equal(stats.load.food, 0);
   assert.equal(stats.load.water, 0);
 
-  s.food = 4; s.water = 4;
+  s.food = 3; s.water = 3;
+  stats = survivorStats(s);
+  assert.equal(stats.load.food, 1);
+  assert.equal(stats.load.water, 1);
+
+  s.food = 6; s.water = 6;
   stats = survivorStats(s);
   assert.equal(stats.load.food, 1);
   assert.equal(stats.load.water, 1);
 
   s.food = 7; s.water = 7;
-  stats = survivorStats(s);
-  assert.equal(stats.load.food, 1);
-  assert.equal(stats.load.water, 1);
-
-  s.food = 8; s.water = 8;
   stats = survivorStats(s);
   assert.equal(stats.load.food, 2);
   assert.equal(stats.load.water, 2);
@@ -567,6 +570,82 @@ test('dois bolsos aceitam objetos compactos e conservam o item ao guardar', () =
   assert.equal(inventory.stowSlot(s, 'pocket1'), true);
   assert.equal(s.pocket1, '');
   assert.ok(s.inventory.some(entry => entry.name === 'Rádio portátil'));
+});
+
+test('traje vestido, carrinho ativo e cassetete curto seguem a carga descrita no catálogo', () => {
+  const s = survivor(); s.inventory = [];
+  const outfit = item('Capa de chuva leve');
+  const cart = item('Carrinho dobrável');
+  const baton = item('Cassetete curto');
+  s.inventory.push(outfit, cart, baton);
+  const base = survivorStats(s).capacity;
+
+  assert.ok(inventory.compatibleSlots(outfit).includes('outfit'));
+  assert.ok(inventory.compatibleSlots(cart).includes('transport'));
+  assert.ok(inventory.compatibleSlots(baton).includes('pocket1'));
+
+  assert.equal(inventory.equipItem(s, outfit.id, 'outfit'), true);
+  assert.equal(s.outfit, 'Capa de chuva leve');
+  assert.equal(inventory.equipItem(s, cart.id, 'transport'), true);
+  assert.equal(s.transport, 'Carrinho dobrável');
+  assert.equal(survivorStats(s).capacity, base + 4);
+  assert.equal(inventory.stowSlot(s, 'outfit'), true);
+  assert.ok(s.inventory.some(entry => entry.name === 'Capa de chuva leve'));
+});
+
+test('água insegura exige método de tratamento e pastilhas são consumidas', () => {
+  const g = campaign(); const ana = g.survivors[0];
+  ana.inventory = [item('Água de chuva coletada')];
+  const rain = ana.inventory[0];
+  let check = inventory.provisionPreparationCheck(g, ana.id, rain, 1);
+  assert.equal(check.ok, false);
+
+  ana.inventory.push(item('Pastilhas de purificação'));
+  check = inventory.provisionPreparationCheck(g, ana.id, rain, 1);
+  assert.equal(check.ok, true);
+  const prepared = inventory.prepareProvisionItem(g, ana.id, rain.id, 1);
+  assert.ok(prepared);
+  assert.equal(ana.inventory.some(entry => entry.name === 'Pastilhas de purificação'), false);
+  assert.equal(require('../lib/provision-items.ts').provisionItemInfo(rain).ready, true);
+});
+
+test('cozinhar alimento complexo exige água, panela e calor e consome os recursos', () => {
+  const g = campaign(); const ana = g.survivors[0];
+  ana.water = 1;
+  ana.inventory = [item('Arroz cru'), item('Panela leve'), item('Fogareiro'), item('Combustível (1 unidade)', 1, 'Suprimentos abstratos')];
+  const rice = ana.inventory.find(entry => entry.name === 'Arroz cru');
+  const check = inventory.provisionPreparationCheck(g, ana.id, rice, 1);
+  assert.equal(check.ok, true);
+  assert.ok(inventory.prepareProvisionItem(g, ana.id, rice.id, 1));
+  assert.equal(ana.water, 0);
+  assert.equal(ana.inventory.some(entry => entry.name === 'Combustível (1 unidade)'), false);
+});
+
+test('recursos de ataque gastam uma carga por tipo na cena e aplicam Barulho em todo disparo', () => {
+  const g = campaign(); const a = g.survivors[0];
+  a.primary = 'Pistola'; a.ammoType = 'Pistola'; a.ammo = 2; g.scene = 3; g.noise = 0;
+  let state = combatResources.attackResourceState(g, a, 'Pistola', '+2');
+  assert.equal(state.ammoReady, true); assert.equal(state.spendsAmmo, true);
+  assert.equal(combatResources.applyAttackResources(g, a.id, 'Pistola', '+2').ok, true);
+  assert.equal(a.ammo, 1); assert.equal(g.noise, 2);
+  assert.equal(combatResources.applyAttackResources(g, a.id, 'Pistola', '+2').ok, true);
+  assert.equal(a.ammo, 1); assert.equal(g.noise, 4);
+
+  a.primary = 'Carabina'; a.ammoType = 'Carabina'; a.ammo = 1;
+  assert.equal(combatResources.applyAttackResources(g, a.id, 'Carabina', '+3').ok, true);
+  assert.equal(a.ammo, 0); assert.equal(g.noise, 5);
+  a.primary = 'Pistola'; a.ammoType = 'Pistola';
+  assert.equal(combatResources.attackResourceState(g, a, 'Pistola', '+2').covered, true);
+});
+
+test('caixa clínica vira Medicamentos sem apagar o estojo reutilizável', () => {
+  const g = campaign(); const ana = g.survivors[0];
+  ana.inventory = [item('Caixa clínica completa')];
+  const box = ana.inventory[0];
+  const result = itemActions.performItemAction(g, ana.id, box.id, { type: 'medication', quantity: 1 });
+  assert.equal(result.ok, true);
+  assert.equal(g.shelter.medications, 1);
+  assert.ok(ana.inventory.some(entry => entry.name === 'Kit médico de campo'));
 });
 
 test('alimentos e água prontos são identificados para contagem automática de porções', () => {
@@ -608,13 +687,14 @@ test('ações contextuais reutilizam as mesmas regras de inventário', () => {
   assert.ok(bia.inventory.some(entry => entry.name === 'Pacote de bolachas'));
 });
 
-test('menu contextual respeita preparo e descarte confirmado pelas regras centrais', () => {
+test('menu contextual respeita preparo, custos materiais e descarte', () => {
   const g = campaign(); const ana = g.survivors[0];
-  ana.food = 0; ana.inventory = [item('Aveia'), item('Pé de cabra')];
+  ana.food = 0; ana.water = 1; ana.inventory = [item('Aveia'), item('Pé de cabra')];
 
   const oats = ana.inventory.find(entry => entry.name === 'Aveia');
   let result = itemActions.performItemAction(g, ana.id, oats.id, { type: 'prepare', quantity: 1 });
   assert.equal(result.ok, true);
+  assert.equal(ana.water, 0);
   assert.equal(require('../lib/provision-items.ts').provisionItemInfo(ana.inventory.find(entry => entry.name === 'Aveia')).ready, true);
 
   const crowbar = ana.inventory.find(entry => entry.name === 'Pé de cabra');
