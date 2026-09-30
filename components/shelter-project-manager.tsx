@@ -217,6 +217,17 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
 
     {power.balance < 0 && <div className="construction-alert"><AlertTriangle size={17} /><div><b>Energia insuficiente</b><span>Produção {power.production} · consumo {power.consumption}. Desligue consumidores menos prioritários até o saldo voltar a zero.</span></div></div>}
 
+    {(power.consumers.length > 0 || power.disabled.length > 0) && <section className="construction-power-manager">
+      <div><Zap size={16} /><span><b>Prioridade de energia</b><small>Produção {power.production} · consumo {power.consumption} · saldo {power.balance >= 0 ? "+" : ""}{power.balance}</small></span></div>
+      <div>{[...new Set([...power.consumers, ...power.disabled])].map(key => {
+        const project = projectFor(shelter, key);
+        const off = (shelter.disabledProjectKeys ?? []).includes(key);
+        return <button type="button" key={key} disabled={playerPreview} className={off ? "is-off" : ""} onClick={() => togglePower(key)}>
+          <span>{project?.name ?? key}</span><b>{off ? "Desligado" : "Ligado"}</b>
+        </button>;
+      })}</div>
+    </section>}
+
     <section className="construction-active-section">
       <div className="construction-section-heading">
         <div><p className="dossier-title">Agora</p><h3 className="section-title">Projetos ativos</h3></div>
