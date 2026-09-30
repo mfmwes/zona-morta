@@ -81,7 +81,7 @@ export const communityCapabilities = [
   "Vigilância", "Comunicação", "Logística",
 ] as const;
 export type CommunityCapability = typeof communityCapabilities[number];
-export type ShelterProjectState = "Planejado" | "Em construção" | "Concluído" | "Danificado";
+export type ShelterProjectState = "Planejado" | "Em construção" | "Concluído" | "Danificado" | "Inoperante" | "Destruído";
 export type ShelterProjectCategory = "Segurança" | "Sobrevivência" | "Saúde" | "Energia e infraestrutura"
   | "Comunicação" | "Produção e manutenção" | "Comunidade";
 export type ShelterProjectCost = Partial<Record<"parts" | "medications" | "fuel", number>>;
@@ -116,10 +116,15 @@ export type ShelterProject = {
   responsibleId?: string;
   helperIds?: string[];
   effects: ShelterProjectEffect[];
+  /** Integridade estrutural: 3 íntegra, 2 danificada, 1 inoperante, 0 destruída. */
+  integrity?: number;
+  /** Progresso de tarefas recorrentes da instalação, como cultivo. */
+  operationProgress?: number;
   /** Reparos usam progresso próprio sem apagar o histórico de construção. */
   repairProgress?: number;
   requiredRepairProgress?: number;
   repairCostsPaid?: boolean;
+  repairFromIntegrity?: number;
   /** Sobreviventes jogadores que se ofereceram para a equipe da obra. */
   survivorWorkerIds?: string[];
   /** Turnos pessoais dos sobreviventes jogadores. São independentes do turno dos NPCs. */
@@ -131,6 +136,7 @@ export type ShelterProject = {
     endAbsoluteMinute: number;
     points: number;
     repairing: boolean;
+    purpose?: "project" | "operation";
   }[];
   /** Turno de trabalho já programado para a equipe de NPCs. O relógio geral conclui automaticamente. */
   workShift?: {
@@ -141,6 +147,7 @@ export type ShelterProject = {
     points: number;
     workerIds: string[];
     repairing: boolean;
+    purpose?: "project" | "operation";
   };
 };
 export type ShelterPost = {
@@ -167,6 +174,10 @@ export type ShelterState = StockHolder & {
   baseCapacity?: number;
   /** Estruturas energizadas podem ser desligadas manualmente para priorizar a rede. */
   disabledProjectKeys?: string[];
+  /** Benefícios diários consumidos por sistemas do abrigo. */
+  comfortRestDay?: number;
+  alarmTriggeredDay?: number;
+  maintenanceDiscountDay?: number;
 };
 export type ShelterManifest = {
   stocks?: Partial<Pick<ShelterState, "food" | "water" | "medications" | "pistolAmmo" | "fuel" | "parts">>;
