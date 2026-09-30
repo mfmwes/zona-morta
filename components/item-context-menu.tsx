@@ -171,7 +171,7 @@ export function ItemContextMenu({
               <Check /> {target.name}
             </ContextMenuItem>)}
           </ContextMenuSubContent>
-        </ContextMenuSub>
+        </ContextMenuSub>}
 
         {options.containerOptions && Math.min(options.containerOptions.waterCapacity, options.containerOptions.waterAvailable) > 0 &&
           <ContextMenuItem onSelect={() => run({ type: "fill-container", resource: "water",
