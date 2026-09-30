@@ -14,6 +14,7 @@ import { addStack, ammoTypeFor, atSharedStorage, catalogForItem, catalogItems, c
   provisionInfo, provisionTransferError, slotLabels, transferItem, transferProvisions } from "@/lib/inventory";
 import { performItemAction } from "@/lib/item-actions";
 import { provisionDisplay, provisionItemInfo } from "@/lib/provision-items";
+import { provisionConsumedToday, type DailyResource } from "@/lib/survival";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 const normalizeSearch = (text: string) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
@@ -128,6 +129,9 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
   const consumerId = ownerId === "shared"
     ? (sharedConsumers.some(person => person.id === targetId) ? targetId : sharedConsumers[0]?.id ?? "")
     : ownerId;
+  const consumer = game.survivors.find(person => person.id === consumerId);
+  const alreadyConsumed = Boolean(consumer && provisionState.resource
+    && provisionConsumedToday(game, consumer, provisionState.resource as DailyResource));
   const canUse = current?.category === "Medicamentos e cuidado"
     && !["Kit médico de campo", "Termômetro", "Tala e faixa", "Máscara respiratória com filtro"].includes(item.name);
   const stockResource = item.category === "Suprimentos abstratos"
@@ -219,7 +223,11 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
       {loadPreview && <div className={`inventory-preview ${loadPreview.carried > loadPreview.capacity ? "inventory-danger" : ""}`}><Backpack size={19} aria-hidden="true" /><span><b>{loadPreview.name} após a ação</b><small>{loadPreview.carried > loadPreview.capacity ? "Acima da capacidade — redistribua antes de viajar." : "Carga dentro da capacidade."}</small></span><strong>{loadPreview.carried}/{loadPreview.capacity}</strong></div>}
       {provisionState.resource && <div className="inventory-preview"><span><b>{provisionDisplay(item)}</b><small>{provisionState.expiresDay ? `Vence no amanhecer do dia ${provisionState.expiresDay}.` : provisionState.shelf ? `Prazo do catálogo: ${provisionState.shelf}.` : "Sem prazo específico registrado."}</small></span></div>}
       {mode === "consume" && <><p className="inventory-hint">Consome apenas <b>1 porção</b>. O item continua no inventário enquanto ainda tiver conteúdo.</p>
-        {ownerId === "shared" && sharedConsumers.length > 0 && <Pick label="Quem consome" value={consumerId} options={sharedConsumers.map(s => ({ value: s.id, label: s.name }))} onChange={setTargetId} />}</>}
+        {ownerId === "shared" && sharedConsumers.length > 0 && <Pick label="Quem consome" value={consumerId} options={sharedConsumers.map(s => ({
+          value: s.id,
+          label: s.name + (provisionState.resource && provisionConsumedToday(game, s, provisionState.resource as DailyResource) ? " · já consumiu hoje" : ""),
+        }))} onChange={setTargetId} />}
+        {alreadyConsumed && <p className="inventory-hint inventory-warning">A necessidade diária deste recurso já foi registrada para {consumer?.name}. Consumir novamente gastará uma porção extra.</p>}</>}
       {mode === "prepare" && <p className="inventory-hint">{provisionState.requiresVerification
         ? "Registre apenas depois de identificar/tratar a água na ficção. O recipiente continua no inventário."
         : `Preparo: ${provision.preparation ?? "resolver em cena"}. Depois de preparado, o alimento continua físico; quando aplicável, passa a vencer no próximo amanhecer.`}</p>}
