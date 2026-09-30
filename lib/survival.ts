@@ -1,4 +1,4 @@
-import { absoluteMinutes, addLog, type GameState } from "./game";
+import { absoluteMinutes, addLog, survivorsAtHex, type GameState } from "./game";
 import { atSharedStorage, consumeReadyProvisionPortions } from "./inventory";
 import { provisionBreakdown } from "./provision-items";
 import { expirePhysicalFood, expirePortionLots, withdrawPortions } from "./provisions";
@@ -14,7 +14,8 @@ export function consumeDailyProvision(game: GameState, survivorId: string, resou
 }
 
 export function eveningNeeds(game: GameState) {
-  const present = atSharedStorage(game) ? game.survivors : [];
+  const storageHex = game.shelter.hex ?? game.partyHex;
+  const present = atSharedStorage(game) ? survivorsAtHex(game, storageHex) : [];
   return {
     food: game.shelter.residents + present.filter(s => s.foodConsumedDay !== game.day).length,
     water: game.shelter.residents + present.filter(s => s.waterConsumedDay !== game.day).length,
