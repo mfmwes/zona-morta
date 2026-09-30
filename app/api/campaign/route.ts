@@ -20,6 +20,7 @@ function restPeers(state: GameState) {
       portrait: person.portrait,
       archetype: person.archetype,
       specialty: person.specialty,
+      hex: person.hex ?? state.partyHex,
       infection: person.infection,
       hp: Math.max(0, stats.hp - person.hp),
       hpMax: stats.hp,
@@ -40,7 +41,8 @@ function validState(value: unknown): value is GameState {
     && typeof state.partyHex === "string" && /^-?\d+,-?\d+$/.test(state.partyHex)
     && Boolean(state.hexes && typeof state.hexes === "object")
     && Array.isArray(state.survivors) && state.survivors.length <= 30
-    && state.survivors.every(s => Number.isInteger(s.armorMarked) && s.armorMarked >= 0 && s.armorMarked <= 20)
+    && state.survivors.every(s => Number.isInteger(s.armorMarked) && s.armorMarked >= 0 && s.armorMarked <= 20
+      && (s.hex === undefined || (typeof s.hex === "string" && Boolean(state.hexes?.[s.hex]))))
     && Boolean(shelter && typeof shelter === "object")
     && (shelter?.hex === undefined || shelter.hex === null ||
       (typeof shelter.hex === "string" && state.hexes?.[shelter.hex]?.discovery === "explorado"))
