@@ -24,6 +24,12 @@ const shelterProjects = require('../lib/shelter-projects.ts');
 const npcGenerator = require('../lib/npc-generator.ts');
 const combatResources = require('../lib/combat-resources.ts');
 
+test('painel de construção não sombreia o Map nativo com ícone', () => {
+  const source = fs.readFileSync(require.resolve('../components/shelter-project-manager.tsx'), 'utf8');
+  assert.equal(/\bMap,\s*\n/.test(source), false);
+  assert.match(source, /new globalThis\.Map\(/);
+});
+
 function survivor(name = 'Ana') {
   return initialSurvivor({ name, origin: content.origins[0].name, past: '', archetype: content.archetypes[0].name,
     specialty: content.archetypes[0].specialties[0].name, freeExperience: 'Resgates', techniques: [],
