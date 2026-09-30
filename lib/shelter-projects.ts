@@ -119,7 +119,8 @@ export function placeShelterProject(shelter: ShelterState, project: ShelterProje
   if (definition.zone && slot.zone !== definition.zone) return `Escolha uma área ${definition.zone === "interior" ? "interna" : definition.zone === "utility" ? "técnica" : "externa"}.`;
   const conflict = shelter.projects?.find(other => other.id !== project.id && other.slotId === slotId);
   if (conflict) return `${slot.label} já está ocupado por ${conflict.name}.`;
-  if (project.state !== "Planejado") return "Só é possível reposicionar uma instalação antes do início da obra.";
+  if (project.slotId && project.slotId !== slotId && project.state !== "Planejado")
+    return "Só é possível mover uma instalação já posicionada antes do início da obra.";
   project.slotId = slotId;
   return null;
 }
@@ -267,6 +268,7 @@ export function projectOperational(game: GameState, shelter: ShelterState, proje
 }
 
 export function projectAssignmentIssue(game: GameState, shelter: ShelterState, project: ShelterProject, npcId: string, responsible: boolean) {
+  if (project.workShift) return "Cancele o turno em andamento antes de alterar a equipe.";
   const npc = game.npcs.find(candidate => candidate.id === npcId);
   if (!npc || !activePresent(game, shelter, npcId)) return "A pessoa precisa estar presente no abrigo.";
   if (npc.disposition === "Desconfiado" && !responsible && (project.buildCapabilities?.length ?? 0) === 0 && project.requiredCapabilities.length === 0) return null;
@@ -367,6 +369,8 @@ export function projectWorkPreview(game: GameState, shelter: ShelterState, proje
 
 export function scheduleShelterWorkShift(game: GameState, project: ShelterProject, hours = 4) {
   if (project.state !== "Em construção") return { ok: false, message: "Inicie a obra antes de programar um turno." };
+  const placementIssue = projectPlacementIssue(game.shelter, project);
+  if (placementIssue) return { ok: false, message: placementIssue };
   if (project.workShift) return { ok: false, message: "Já existe um turno de trabalho programado para este projeto." };
   if (!Number.isInteger(hours) || hours < 1 || hours > 8) return { ok: false, message: "Duração de turno inválida." };
   if (game.minutes + hours * 60 >= 1440) return { ok: false, message: "Este turno terminaria depois do fim do dia. Encerre o dia ou escolha outro horário." };
