@@ -253,6 +253,9 @@ button { cursor: pointer; } button:disabled { cursor: not-allowed; }
 }
 .character-technique-preview { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
 .character-technique-preview > span { display:inline-flex; align-items:center; gap:6px; padding:4px 8px 4px 4px; border-radius:5px; background:#e8f0e7; color:#3c6053; font-size:.78rem; font-weight:700; }
+.character-status-card { align-self:start; min-height:0; }
+.character-status-card .character-section-heading { margin-bottom:10px; }
+.character-status-card .character-text-link { margin-top:8px; }
 .character-status-line { display:flex; align-items:center; gap:7px; font-size:1rem; }
 .character-status-dot { width:9px; height:9px; border-radius:50%; background:#ac5a42; box-shadow:0 0 0 3px #f6e5db; }
 .character-status-dot.healthy { background:#3d9478; box-shadow:0 0 0 3px #e1f2e9; }
