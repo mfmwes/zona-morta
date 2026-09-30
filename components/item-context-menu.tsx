@@ -163,6 +163,16 @@ export function ItemContextMenu({
           <Pill /> {catalogItemIsConsumable(item) ? "Usar 1 unidade" : "Usar"}
         </ContextMenuItem>}
 
+        {options.rechargeTargets.length > 0 && <ContextMenuSub>
+          <ContextMenuSubTrigger><Wrench /> Recarregar aparelho</ContextMenuSubTrigger>
+          <ContextMenuSubContent className="inventory-context-submenu">
+            {options.rechargeTargets.map(target => <ContextMenuItem key={target.id}
+              onSelect={() => run({ type: "recharge", targetId: target.id })}>
+              <Check /> {target.name}
+            </ContextMenuItem>)}
+          </ContextMenuSubContent>
+        </ContextMenuSub>
+
         {options.canMedication && quantitySubmenu(
           "Registrar como Medicamentos",
           <Pill />,
