@@ -118,6 +118,10 @@ export type Survivor = {
   ammo: number;
   inventory: InventoryItem[];
   notes: string;
+  restPlan?: {
+    kind: "short" | "long";
+    choices: { action: string; targetId: string }[];
+  };
 };
 
 export type GameState = {

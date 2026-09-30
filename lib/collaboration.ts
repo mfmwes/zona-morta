@@ -33,11 +33,23 @@ const immutable = ["id", "name", "level", "proficiency", "origin", "past", "arch
   "attributes", "freeExperience", "techniques", "infection", "exposureDeadline", "treatmentAttempted", "terminalScenes"] as const;
 const editable = ["portrait", "primary", "secondary", "protection", "personal", "bag", "pocket1", "pocket2", "equippedItems", "kitCondition",
   "hp", "armorMarked", "stress", "hope", "food", "water", "foodConsumedDay", "waterConsumedDay", "provisionLots",
-  "ammo", "ammoType", "inventory", "notes", "abilityUses"] as const;
+  "ammo", "ammoType", "inventory", "notes", "abilityUses", "restPlan"] as const;
 const allowedKeys = new Set<string>([...immutable, ...editable]);
 const allowedItemKeys = new Set(["id", "name", "load", "qty", "condition", "catalogKey", "category", "armorMarked", "foundDay",
   "provisionResource", "portionsPerUnit", "portionsRemaining", "prepared", "verified", "opened", "expiresDay"]);
 export type PlayerLog = { kind: string; text: string };
+
+const restActions = new Set(["hp", "stress", "armor", "prepare", "fiction", "hp-full", "stress-full", "armor-full"]);
+function validRestPlan(plan: Survivor["restPlan"], survivors: Survivor[]) {
+  if (plan === undefined) return true;
+  const validActions = plan.kind === "short"
+    ? new Set(["hp", "stress", "armor", "prepare", "fiction"])
+    : new Set(["hp-full", "stress-full", "armor-full", "prepare", "fiction"]);
+  return Boolean(plan && (plan.kind === "short" || plan.kind === "long") && Array.isArray(plan.choices) && plan.choices.length === 2
+    && plan.choices.every(choice => choice && Object.keys(choice).every(key => key === "action" || key === "targetId")
+      && typeof choice.action === "string" && restActions.has(choice.action) && validActions.has(choice.action)
+      && typeof choice.targetId === "string" && survivors.some(person => person.id === choice.targetId)));
+}
 
 export function playerEditPayload(before: GameState, after: GameState) {
   const rest = (state: GameState) => JSON.stringify({ ...state, survivors: [], fear: 0, log: [] });
@@ -78,6 +90,7 @@ export function applyPlayerChange(game: GameState, survivorId: string, before: S
       || (item.opened !== undefined && typeof item.opened !== "boolean")
       || (item.expiresDay !== undefined && (!Number.isInteger(item.expiresDay) || item.expiresDay < 1 || item.expiresDay > 9999)))
     || typeof after.notes !== "string" || after.notes.length > 4000
+    || !validRestPlan(after.restPlan, game.survivors)
     || logs.some(log => !log || !["chat", "dados", "dano", "inventário", "habilidade", "provisões", "tratamento"].includes(log.kind)
       || typeof log.text !== "string" || log.text.length > 600)) return null;
   const next = structuredClone(game);

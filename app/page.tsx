@@ -26,7 +26,7 @@ import { adjustProvisionCount } from "@/lib/provisions";
 import { beginExpedition, beginScene } from "@/lib/abilities";
 import { playerEditPayload } from "@/lib/collaboration";
 
-type CampaignResponse = { revision?: number; state?: GameState; role: "mestre" | "jogador" | "convidado"; ownerId: string; survivorId?: string | null };
+type CampaignResponse = { revision?: number; state?: GameState; role: "mestre" | "jogador" | "convidado"; ownerId: string; survivorId?: string | null; restPeers?: { id: string; name: string }[] };
 type SaveStatus = "salvo" | "salvando" | "erro" | "conflito";
 type ModelTool = {
   name: string; title: string; description: string; inputSchema: object;
@@ -52,6 +52,7 @@ export default function CampaignApp() {
   const [role, setRole] = useState<"mestre" | "jogador" | "convidado">("mestre");
   const [ownerId, setOwnerId] = useState("");
   const [survivorId, setSurvivorId] = useState<string | null>(null);
+  const [restPeers, setRestPeers] = useState<{ id: string; name: string }[]>([]);
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState("");
   const [startWithShelter, setStartWithShelter] = useState(false);
@@ -96,6 +97,7 @@ export default function CampaignApp() {
       setRole(data.role);
       setOwnerId(data.ownerId);
       setSurvivorId(data.survivorId ?? null);
+      setRestPeers(data.restPeers ?? []);
       if (data.role === "jogador") setTab("sobreviventes");
       current.current = data.state ?? null;
       pending.current = null;
@@ -132,6 +134,7 @@ export default function CampaignApp() {
         if (!response.ok) return;
         const data = await response.json() as CampaignResponse;
         if (data.role === "jogador" && data.survivorId !== survivorId) setSurvivorId(data.survivorId ?? null);
+        if (data.restPeers) setRestPeers(data.restPeers);
         if (data.revision !== revision.current && data.state && !pending.current && !sending.current) {
           revision.current = data.revision ?? 0;
           current.current = data.state;
@@ -158,7 +161,7 @@ export default function CampaignApp() {
             body: JSON.stringify(player && before ? playerEditPayload(before, snapshot)
               : { revision: revision.current, state: snapshot }),
           });
-          const result = await response.json() as { error?: string; revision?: number; state?: GameState };
+          const result = await response.json() as { error?: string; revision?: number; state?: GameState; restPeers?: { id: string; name: string }[] };
           if (!response.ok) {
             pending.current = current.current;
             pendingBefore.current = before;
@@ -173,6 +176,7 @@ export default function CampaignApp() {
             current.current = result.state;
             setGame(result.state);
           }
+          if (player && result.restPeers) setRestPeers(result.restPeers);
           if (!pending.current) { setStatus("salvo"); setSaveError(""); }
         } catch {
           pending.current = current.current;
@@ -534,7 +538,7 @@ export default function CampaignApp() {
             </Dialog>
           </div>}
         </>}
-        {tab === "sobreviventes" && <SurvivorPanel game={game} edit={edit} playerPreview={readOnlyPreview} playerMode={role === "jogador"} />}
+        {tab === "sobreviventes" && <SurvivorPanel game={game} edit={edit} playerPreview={readOnlyPreview} playerMode={role === "jogador"} restPeers={restPeers} />}
         {tab === "abrigo" && <ShelterPanel game={game} edit={edit} playerPreview={readOnlyPreview} />}
         {tab === "referencias" && <ReferencePanel />}
         {tab === "jogadores" && role === "mestre" && <PlayersPanel game={game} ownerId={ownerId} />}

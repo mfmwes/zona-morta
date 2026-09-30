@@ -291,6 +291,7 @@ html[data-theme="dark"] .character-story-grid > div,
 html[data-theme="dark"] .character-empty-list { background: #222d2d; color: #d2ddd7; }
 html[data-theme="dark"] .character-rest-readonly,
 html[data-theme="dark"] .rest-planner-row { border-color: #405650; background: #202d2c; color: #d9e5df; }
+html[data-theme="dark"] .character-rest-status { color: #b6cec5; }
 html[data-theme="dark"] .character-hope-teaser { border-color: #8a6b14; background: var(--hope-surface); color: #fff0b8; box-shadow: none; }
 html[data-theme="dark"] .character-hope-teaser:hover { background: #51420d; }
 html[data-theme="dark"] .character-hope-teaser strong { background: #6b5510; color: #ffe995; }

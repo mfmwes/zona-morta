@@ -5,7 +5,8 @@ export type AbilityCost = "free" | "hope1" | "hope3" | "stress1" | "armor1";
 export type AbilityPeriod = "scene" | "day" | "expedition" | "shortRest" | "longRest" | "rest" | "place" | "patient" | null;
 export type RestKind = "short" | "long";
 export type RestAction = "hp" | "stress" | "armor" | "prepare" | "fiction" | "hp-full" | "stress-full" | "armor-full";
-export type RestSelection = { survivorId: string; choices: RestAction[] };
+export type RestChoice = { action: RestAction; targetId: string };
+export type RestSelection = { survivorId: string; choices: RestChoice[] };
 
 export const restActionLabels: Record<RestAction, string> = {
   hp: "Recuperar Vida", stress: "Aliviar Estresse", armor: "Reparar Armadura", prepare: "Preparar", fiction: "Ação de ficção",
@@ -115,17 +116,16 @@ export function registerRest(game: GameState, kind: RestKind) {
 
 export function resolveGroupRest(game: GameState, kind: RestKind, selections: RestSelection[], roll = rollDie) {
   if (!game.survivors.length || selections.length !== game.survivors.length) return { ok: false as const, message: "Defina duas ações para cada sobrevivente." };
-  if (kind === "long" && (!game.shelter.hex || game.shelter.hex !== game.partyHex))
-    return { ok: false as const, message: "O descanso longo exige que o grupo esteja no abrigo." };
 
   const validActions = new Set(restActionsFor(kind));
   const selectionBySurvivor = new Map(selections.map(selection => [selection.survivorId, selection]));
   if (selectionBySurvivor.size !== game.survivors.length || game.survivors.some(person => {
     const choices = selectionBySurvivor.get(person.id)?.choices;
-    return !choices || choices.length !== 2 || choices.some(choice => !validActions.has(choice));
+    return !choices || choices.length !== 2 || choices.some(choice => !validActions.has(choice.action)
+      || !game.survivors.some(target => target.id === choice.targetId));
   })) return { ok: false as const, message: "Cada sobrevivente precisa de duas ações válidas." };
 
-  const preparedBy = new Set(game.survivors.filter(person => selectionBySurvivor.get(person.id)!.choices.includes("prepare")).map(person => person.id));
+  const preparedBy = new Set(game.survivors.filter(person => selectionBySurvivor.get(person.id)!.choices.some(choice => choice.action === "prepare")).map(person => person.id));
   const prepareGain = preparedBy.size >= 2 ? 2 : 1;
   const summaries: string[] = [];
 
@@ -133,33 +133,36 @@ export function resolveGroupRest(game: GameState, kind: RestKind, selections: Re
     const choices = selectionBySurvivor.get(person.id)!.choices;
     const results: string[] = [];
     for (const choice of choices) {
-      if (choice === "hp") {
+      const target = game.survivors.find(candidate => candidate.id === choice.targetId)!;
+      const targetPrefix = target.id === person.id ? "" : `Para ${target.name}: `;
+      if (choice.action === "hp") {
         const rolled = Math.max(2, Math.min(5, Math.trunc(roll(4)) + 1));
-        const recovered = Math.min(person.hp, rolled); person.hp -= recovered;
-        results.push(`Vida +${recovered} (d4+1 = ${rolled})`);
-      } else if (choice === "stress") {
+        const recovered = Math.min(target.hp, rolled); target.hp -= recovered;
+        results.push(`${targetPrefix}Vida +${recovered} (d4+1 = ${rolled})`);
+      } else if (choice.action === "stress") {
         const rolled = Math.max(2, Math.min(5, Math.trunc(roll(4)) + 1));
-        const recovered = Math.min(person.stress, rolled); person.stress -= recovered;
-        results.push(`Estresse −${recovered} (d4+1 = ${rolled})`);
-      } else if (choice === "armor") {
+        const recovered = Math.min(target.stress, rolled); target.stress -= recovered;
+        results.push(`${targetPrefix}Estresse −${recovered} (d4+1 = ${rolled})`);
+      } else if (choice.action === "armor") {
         const rolled = Math.max(2, Math.min(5, Math.trunc(roll(4)) + 1));
-        const repaired = Math.min(person.armorMarked ?? 0, rolled); person.armorMarked = Math.max(0, (person.armorMarked ?? 0) - repaired);
-        results.push(`Armadura −${repaired} (d4+1 = ${rolled})`);
-      } else if (choice === "hp-full") {
-        const recovered = person.hp; person.hp = 0; results.push(`Vida +${recovered}`);
-      } else if (choice === "stress-full") {
-        const recovered = person.stress; person.stress = 0; results.push(`Estresse −${recovered}`);
-      } else if (choice === "armor-full") {
-        const repaired = person.armorMarked ?? 0; person.armorMarked = 0; results.push(`Armadura −${repaired}`);
-      } else if (choice === "prepare") {
-        const gained = Math.min(6 - person.hope, prepareGain); person.hope += gained;
-        results.push(`Hope +${gained}${prepareGain === 2 ? " (preparo em equipe)" : ""}`);
+        const repaired = Math.min(target.armorMarked ?? 0, rolled); target.armorMarked = Math.max(0, (target.armorMarked ?? 0) - repaired);
+        results.push(`${targetPrefix}Armadura −${repaired} (d4+1 = ${rolled})`);
+      } else if (choice.action === "hp-full") {
+        const recovered = target.hp; target.hp = 0; results.push(`${targetPrefix}Vida +${recovered}`);
+      } else if (choice.action === "stress-full") {
+        const recovered = target.stress; target.stress = 0; results.push(`${targetPrefix}Estresse −${recovered}`);
+      } else if (choice.action === "armor-full") {
+        const repaired = target.armorMarked ?? 0; target.armorMarked = 0; results.push(`${targetPrefix}Armadura −${repaired}`);
+      } else if (choice.action === "prepare") {
+        const gained = Math.min(6 - target.hope, prepareGain); target.hope += gained;
+        results.push(`${targetPrefix}Hope +${gained}${prepareGain === 2 ? " (preparo em equipe)" : ""}`);
       } else {
-        results.push("Ação de ficção registrada");
+        results.push(`${targetPrefix}Ação de ficção registrada`);
       }
     }
     summaries.push(`${person.name}: ${results.join("; ")}.`);
     addLog(game, "descanso", `${person.name} — ${results.join("; ")}.`, person.id);
+    delete person.restPlan;
   }
 
   const fearDie = Math.max(1, Math.min(4, Math.trunc(roll(4))));

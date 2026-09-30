@@ -11,6 +11,10 @@ function requestedCampaign(request: Request) {
   return new URL(request.url).searchParams.get("campanha")?.trim() ?? "";
 }
 
+function restPeers(state: GameState) {
+  return state.survivors.map(person => ({ id: person.id, name: person.name }));
+}
+
 function validState(value: unknown): value is GameState {
   if (!value || typeof value !== "object") return false;
   const state = value as Partial<GameState>;
@@ -52,7 +56,7 @@ export async function GET(request: Request) {
     const data = await readCampaign(campaignId);
     const characterId = member.survivor_id && data.state.survivors.some(s => s.id === member.survivor_id) ? member.survivor_id : null;
     return Response.json({ revision: data.revision, state: projectPlayerGame(data.state, characterId ?? ""),
-      role: "jogador", ownerId: campaignId, survivorId: characterId }, { headers: noStore });
+      role: "jogador", ownerId: campaignId, survivorId: characterId, restPeers: restPeers(data.state) }, { headers: noStore });
   } catch (error) {
     console.error("Falha ao ler campanha", error);
     return Response.json({ error: "Não foi possível carregar o registro. Tente novamente." }, { status: 503 });
@@ -103,7 +107,7 @@ export async function PATCH(request: Request) {
         payload.fearDelta ?? 0, payload.logs);
       if (!next) return Response.json({ error: "Sua ficha mudou em outra janela ou esta ação precisa ser registrada pelo mestre. Recarregue antes de tentar novamente." }, { status: 409 });
       const revision = await writeCampaign(campaignId, next, data.revision);
-      if (revision !== null) return Response.json({ revision, state: projectPlayerGame(next, member.survivor_id) }, { headers: noStore });
+      if (revision !== null) return Response.json({ revision, state: projectPlayerGame(next, member.survivor_id), restPeers: restPeers(next) }, { headers: noStore });
     }
     return Response.json({ error: "A campanha foi atualizada durante esta ação. Tente salvar novamente." }, { status: 409 });
   } catch (error) {

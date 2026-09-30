@@ -129,6 +129,18 @@ test('jogador não consegue salvar alterações de mapa, outra ficha ou campos d
     { ...g.survivors[0], hp: 1 }, 0, [{ kind:'evento', text:'Segredo falso' }]), null);
   assert.equal(collaboration.applyPlayerChange(g, own.survivors[0].id, g.survivors[0],
     { ...g.survivors[0], hp: 1 }, 1, []), null);
+
+  const plan = structuredClone(view);
+  plan.survivors[0].restPlan = { kind: 'long', choices: [
+    { action: 'hp-full', targetId: g.survivors[1].id },
+    { action: 'prepare', targetId: g.survivors[0].id },
+  ] };
+  assert.ok(collaboration.playerEditPayload(view, plan));
+  const planned = collaboration.applyPlayerChange(g, g.survivors[0].id, g.survivors[0], plan.survivors[0], 0, []);
+  assert.equal(planned.survivors[0].restPlan.choices[0].targetId, g.survivors[1].id);
+  const invalidPlan = structuredClone(plan.survivors[0]);
+  invalidPlan.restPlan.choices[0].targetId = 'inexistente';
+  assert.equal(collaboration.applyPlayerChange(g, g.survivors[0].id, g.survivors[0], invalidPlan, 0, []), null);
 });
 
 test('perecíveis mantêm prazo em transferência, consumo e amanhecer; estoque durável sobrevive', () => {
@@ -243,10 +255,10 @@ test('habilidades gastam recursos, respeitam cena, expedição e alvo sem repeti
 test('descanso da mesa aplica duas escolhas por sobrevivente e registra Fear automaticamente', () => {
   const g = campaign(); const [ana, bia] = g.survivors;
   ana.hp = 4; ana.stress = 4; ana.armorMarked = 2; ana.hope = 0;
-  bia.hope = 0;
+  bia.hp = 4; bia.hope = 0;
   const short = abilities.resolveGroupRest(g, 'short', [
-    { survivorId: ana.id, choices: ['hp', 'stress'] },
-    { survivorId: bia.id, choices: ['prepare', 'prepare'] },
+    { survivorId: ana.id, choices: [{ action: 'hp', targetId: ana.id }, { action: 'stress', targetId: ana.id }] },
+    { survivorId: bia.id, choices: [{ action: 'prepare', targetId: bia.id }, { action: 'prepare', targetId: bia.id }] },
   ], () => 3);
   assert.equal(short.ok, true);
   assert.equal(ana.hp, 0);
@@ -256,11 +268,10 @@ test('descanso da mesa aplica duas escolhas por sobrevivente e registra Fear aut
   assert.equal(g.shortRest, 2);
   assert.equal(g.log.filter(entry => entry.kind === 'descanso').length, 4);
 
-  g.shelter.hex = g.partyHex;
   ana.hp = 3; ana.armorMarked = 2; bia.stress = 5; bia.hope = 0;
   const long = abilities.resolveGroupRest(g, 'long', [
-    { survivorId: ana.id, choices: ['hp-full', 'prepare'] },
-    { survivorId: bia.id, choices: ['stress-full', 'prepare'] },
+    { survivorId: ana.id, choices: [{ action: 'hp-full', targetId: ana.id }, { action: 'prepare', targetId: ana.id }] },
+    { survivorId: bia.id, choices: [{ action: 'stress-full', targetId: bia.id }, { action: 'prepare', targetId: bia.id }] },
   ], () => 2);
   assert.equal(long.ok, true);
   assert.equal(ana.hp, 0);
@@ -269,6 +280,14 @@ test('descanso da mesa aplica duas escolhas por sobrevivente e registra Fear aut
   assert.equal(bia.hope, 2);
   assert.equal(g.fear, 7);
   assert.equal(g.longRest, 2);
+
+  ana.hp = 0; bia.hp = 5;
+  const help = abilities.resolveGroupRest(g, 'short', [
+    { survivorId: ana.id, choices: [{ action: 'hp', targetId: bia.id }, { action: 'fiction', targetId: ana.id }] },
+    { survivorId: bia.id, choices: [{ action: 'fiction', targetId: bia.id }, { action: 'fiction', targetId: bia.id }] },
+  ], () => 4);
+  assert.equal(help.ok, true);
+  assert.equal(bia.hp, 0);
 });
 
 test('todo o catálogo de armas e proteções pode ser equipado, consultado e calculado', () => {
