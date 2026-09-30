@@ -1373,6 +1373,98 @@ test('instalações podem guardar posição física na planta do abrigo', () => 
   assert.ok(shelterProjects.shelterBlueprintSlots.some(slot => slot.id === 'room-b' && slot.zone === 'interior'));
 });
 
+
+test('jogador pode se voluntariar, trabalhar quatro horas e concluir obra pelo relógio global', () => {
+  const g = campaign(); const ana = g.survivors[0];
+  assert.equal(require('../lib/game.ts').establishShelter(g, '0,0'), true);
+  g.shelter.parts = 5;
+  ana.hex = '0,0';
+  ana.freeExperience = 'Eletricista de manutenção';
+
+  const workshop = shelterProjects.createShelterProject('electrical-workshop', 'utility-a');
+  g.shelter.projects.push(workshop);
+  assert.equal(shelterProjects.joinShelterProjectAsSurvivor(g, workshop, ana.id), null);
+  assert.ok(workshop.survivorWorkerIds.includes(ana.id));
+  assert.equal(shelterProjects.startProject(g.shelter, workshop), null);
+
+  const preview = shelterProjects.survivorWorkPreview(g, workshop, ana.id);
+  assert.equal(preview.issue, null);
+  assert.equal(preview.points, 2);
+  assert.ok(preview.matches.includes('Eletricidade'));
+
+  const before = g.minutes;
+  const scheduled = shelterProjects.scheduleSurvivorWorkShift(g, workshop, ana.id, 4);
+  assert.equal(scheduled.ok, true);
+  assert.equal(g.minutes, before);
+  assert.equal(workshop.volunteerShifts.length, 1);
+
+  const result = campaignTime.advanceCampaignTime(g, 240);
+  assert.equal(result.ok, true);
+  assert.equal(workshop.state, 'Concluído');
+  assert.equal(workshop.volunteerShifts.length, 0);
+  assert.equal(g.minutes, before + 240);
+});
+
+test('sobrevivente em turno no abrigo não pode viajar até o trabalho terminar', () => {
+  const g = campaign(); const ana = g.survivors[0];
+  assert.equal(require('../lib/game.ts').establishShelter(g, '0,0'), true);
+  g.shelter.parts = 5;
+  ana.hex = '0,0';
+
+  const barricades = shelterProjects.createShelterProject('barricades');
+  g.shelter.projects.push(barricades);
+  assert.equal(shelterProjects.joinShelterProjectAsSurvivor(g, barricades, ana.id), null);
+  assert.equal(shelterProjects.startProject(g.shelter, barricades), null);
+  assert.equal(shelterProjects.scheduleSurvivorWorkShift(g, barricades, ana.id, 4).ok, true);
+
+  const blocked = hexActions.moveSurvivors(g, '1,0', [ana.id]);
+  assert.equal(blocked.ok, false);
+  assert.match(blocked.message, /trabalhando em Barricadas/);
+
+  assert.equal(campaignTime.advanceCampaignTime(g, 240).ok, true);
+  const moved = hexActions.moveSurvivors(g, '1,0', [ana.id]);
+  assert.equal(moved.ok, true);
+});
+
+test('payload do jogador aceita apenas sua própria participação em obra do abrigo', () => {
+  let g = campaign(); const ana = g.survivors[0]; const bia = g.survivors[1];
+  assert.equal(require('../lib/game.ts').establishShelter(g, '0,0'), true);
+  g.shelter.parts = 5;
+  ana.hex = '0,0'; bia.hex = '0,0';
+  const barricades = shelterProjects.createShelterProject('barricades');
+  g.shelter.projects.push(barricades);
+
+  const beforeView = collaboration.projectPlayerGame(g, ana.id);
+  const joinView = structuredClone(beforeView);
+  const projected = joinView.shelter.projects[0];
+  assert.equal(shelterProjects.joinShelterProjectAsSurvivor(joinView, projected, ana.id), null);
+  const joinPayload = collaboration.playerEditPayload(beforeView, joinView);
+  assert.ok(joinPayload);
+  assert.deepEqual(joinPayload.shelterWorkActions, [{ type:'join', projectId:barricades.id }]);
+
+  g = collaboration.applyPlayerChange(g, ana.id, g.survivors[0], joinPayload.after, 0, [], 0, joinPayload.shelterWorkActions);
+  assert.ok(g);
+  assert.ok(g.shelter.projects[0].survivorWorkerIds.includes(ana.id));
+
+  const maliciousBefore = collaboration.projectPlayerGame(g, ana.id);
+  const maliciousAfter = structuredClone(maliciousBefore);
+  maliciousAfter.shelter.projects[0].survivorWorkerIds.push(bia.id);
+  assert.equal(collaboration.playerEditPayload(maliciousBefore, maliciousAfter), null);
+
+  assert.equal(shelterProjects.startProject(g.shelter, g.shelter.projects[0]), null);
+  const scheduleBefore = collaboration.projectPlayerGame(g, ana.id);
+  const scheduleAfter = structuredClone(scheduleBefore);
+  assert.equal(shelterProjects.scheduleSurvivorWorkShift(scheduleAfter, scheduleAfter.shelter.projects[0], ana.id, 4).ok, true);
+  const schedulePayload = collaboration.playerEditPayload(scheduleBefore, scheduleAfter);
+  assert.ok(schedulePayload);
+  assert.deepEqual(schedulePayload.shelterWorkActions, [{ type:'schedule', projectId:barricades.id }]);
+
+  const fullBefore = structuredClone(g.survivors[0]);
+  g = collaboration.applyPlayerChange(g, ana.id, fullBefore, schedulePayload.after, 0, [], 0, schedulePayload.shelterWorkActions);
+  assert.ok(g);
+  assert.equal(g.shelter.projects[0].volunteerShifts[0].survivorId, ana.id);
+});
+
 test('NPC em campo só consome provisão portada por sobrevivente do mesmo hex', () => {
   const g = campaign(); const [ana, bia] = g.survivors;
   assert.equal(require('../lib/game.ts').establishShelter(g, '0,0'), true);
