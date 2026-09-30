@@ -447,6 +447,12 @@ function assignedPeople(game: GameState, shelter: ShelterState, project: Shelter
     .filter((npc): npc is NPC => Boolean(npc && activePresent(game, shelter, npc.id) && canVolunteer(npc, npc.id === project.responsibleId)));
 }
 
+function assignedSurvivors(game: GameState, shelter: ShelterState, project: ShelterProject) {
+  return (project.survivorWorkerIds ?? [])
+    .map(id => game.survivors.find(person => person.id === id))
+    .filter((person): person is Survivor => Boolean(person && shelter.hex && survivorHex(game, person) === shelter.hex));
+}
+
 export function projectBaseOperational(game: GameState, shelter: ShelterState, project: ShelterProject) {
   if (!["Concluído", "Danificado"].includes(project.state) || projectIntegrity(project) < 2 || projectDependencyIssue(shelter, project)) return false;
   if (project.operatorReady !== undefined) return project.operatorReady;
@@ -456,7 +462,9 @@ export function projectBaseOperational(game: GameState, shelter: ShelterState, p
   const requirements = project.requiredCapabilities ?? definition?.requiredCapabilities ?? [];
   if (!requirements.length) return true;
   const people = assignedPeople(game, shelter, project);
-  return requirements.every(capability => people.some(npc => hasCapability(npc, capability)));
+  const survivors = assignedSurvivors(game, shelter, project);
+  return requirements.every(capability => people.some(npc => hasCapability(npc, capability))
+    || survivors.some(person => survivorShelterCapabilities(person).includes(capability)));
 }
 
 function energyDelta(project: ShelterProject) {
@@ -612,7 +620,7 @@ export function projectAssignmentIssue(game: GameState, shelter: ShelterState, p
     if (conflict) return `${npc.name} já está trabalhando em ${conflict.name}.`;
   }
 
-  const requirements = project.state === "Concluído"
+  const requirements = ["Concluído", "Danificado"].includes(project.state)
     ? project.requiredCapabilities
     : (project.buildCapabilities ?? projectDefinition(project.key)?.buildCapabilities ?? []);
   if (responsible && requirements.length && !requirements.some(capability => hasCapability(npc, capability)))
