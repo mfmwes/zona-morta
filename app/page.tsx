@@ -597,7 +597,7 @@ export default function CampaignApp() {
         </>}
         {tab === "sobreviventes" && <SurvivorPanel game={game} edit={edit} playerPreview={readOnlyPreview} playerMode={role === "jogador"} restPeers={restPeers} />}
         {tab === "comunidade" && <NpcPanel game={game} edit={edit} playerPreview={readOnlyPreview} />}
-        {tab === "abrigo" && <ShelterPanel game={game} edit={edit} playerPreview={readOnlyPreview} />}
+        {tab === "abrigo" && <ShelterPanel game={game} edit={edit} playerPreview={readOnlyPreview} playerSurvivorId={role === "jogador" ? survivorId : null} />}
         {tab === "referencias" && <ReferencePanel />}
         {tab === "jogadores" && role === "mestre" && <PlayersPanel game={game} ownerId={ownerId} />}
         {tab === "mapa" && !readOnlyPreview && <section className="panel panel-pad mt-5">
