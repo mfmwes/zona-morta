@@ -14,7 +14,7 @@ import {
   Zap,
 } from "lucide-react";
 import { provisionBreakdown } from "@/lib/provision-items";
-import { shelterPopulationBreakdown, type GameState, type ShelterProject } from "@/lib/game";
+import { displayTime, shelterPopulationBreakdown, type GameState, type ShelterProject } from "@/lib/game";
 import {
   projectDefinition,
   projectDisplayCosts,
@@ -46,6 +46,7 @@ function projectState(game: GameState, project?: ShelterProject) {
     if (definition?.requiresPower) return { label: "Sem energia", tone: "waiting" };
     return { label: "Sem operador", tone: "waiting" };
   }
+  if (project.workShift) return { label: `Trabalhando até ${displayTime(project.workShift.startMinute + project.workShift.durationMinutes)}`, tone: "building" };
   if (project.state === "Em construção") return { label: project.repairProgress !== undefined ? "Em reparo" : "Em construção", tone: "building" };
   if (project.state === "Danificado") return { label: "Danificado", tone: "damaged" };
   return { label: "Planejado", tone: "planned" };
