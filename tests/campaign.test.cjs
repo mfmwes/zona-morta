@@ -663,10 +663,14 @@ test('consumíveis genéricos somem após uso e itens reutilizáveis permanecem'
   assert.equal(g.noise, 3);
   assert.ok(ana.inventory.some(entry => entry.name === 'Apito'));
 
+  ana.inventory.push(item('Telefone descarregado'));
   const batteries = ana.inventory.find(entry => entry.name === 'Kit de pilhas');
-  result = itemActions.performItemAction(g, ana.id, batteries.id, { type: 'use', quantity: 1 });
+  const phone = ana.inventory.find(entry => entry.name === 'Telefone descarregado');
+  assert.equal(inventory.batteryStateFor(phone), 'Descarregada');
+  result = itemActions.performItemAction(g, ana.id, batteries.id, { type: 'recharge', targetId: phone.id });
   assert.equal(result.ok, true);
   assert.equal(ana.inventory.some(entry => entry.name === 'Kit de pilhas'), false);
+  assert.equal(inventory.batteryStateFor(phone), 'Carregada');
 });
 
 test('alimentos e água prontos são identificados para contagem automática de porções', () => {
