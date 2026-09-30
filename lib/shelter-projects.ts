@@ -654,7 +654,12 @@ export function projectWorkPreview(game: GameState, shelter: ShelterState, proje
 }
 
 export function scheduleShelterWorkShift(game: GameState, project: ShelterProject, hours = 4) {
-  if (project.state !== "Em construção") return { ok: false, message: "Inicie a obra antes de programar um turno." };
+  const definition = projectDefinition(project.key);
+  const operation = definition?.operationWork;
+  const canOperate = Boolean(operation && ["Concluído", "Danificado"].includes(project.state)
+    && projectOperational(game, game.shelter, project));
+  if (project.state !== "Em construção" && !canOperate)
+    return { ok: false, message: "Inicie a obra/reparo ou escolha uma instalação com tarefa operacional disponível." };
   const placementIssue = projectPlacementIssue(game.shelter, project);
   if (placementIssue) return { ok: false, message: placementIssue };
   if (project.workShift) return { ok: false, message: "Já existe um turno de trabalho programado para este projeto." };
@@ -672,9 +677,30 @@ export function scheduleShelterWorkShift(game: GameState, project: ShelterProjec
     points: preview.points,
     workerIds: preview.workers.map(worker => worker.id),
     repairing: Boolean(project.repairProgress !== undefined),
+    purpose: preview.purpose,
   };
-  addLog(game, "abrigo", `Turno programado em ${project.name}: ${displayTime(game.minutes)}–${displayTime(game.minutes + durationMinutes)}, equipe ${preview.workers.map(worker => worker.name).join(", ")}.`);
+  addLog(game, "abrigo", `Turno programado em ${project.name}: ${displayTime(game.minutes)}–${displayTime(game.minutes + durationMinutes)}, equipe ${preview.workers.map(worker => worker.name).join(", ")}${preview.purpose === "operation" ? " em tarefa operacional" : ""}.`);
   return { ok: true, message: `Turno programado até ${displayTime(game.minutes + durationMinutes)}.`, preview };
+}
+
+export function advanceProjectOperation(game: GameState, project: ShelterProject, points: number) {
+  const operation = projectDefinition(project.key)?.operationWork;
+  if (!operation || !["Concluído", "Danificado"].includes(project.state) || !projectOperational(game, game.shelter, project)
+    || !Number.isInteger(points) || points < 1) return { applied: 0, cycles: 0, output: {} as Record<string, number> };
+  project.operationProgress = Math.max(0, project.operationProgress ?? 0) + points;
+  const cycles = Math.floor(project.operationProgress / operation.requiredProgress);
+  if (!cycles) return { applied: points, cycles: 0, output: {} as Record<string, number> };
+  project.operationProgress -= cycles * operation.requiredProgress;
+  const output: Record<string, number> = {};
+  for (const [resource, quantity] of Object.entries(operation.output)) {
+    const total = Math.max(0, Math.trunc(Number(quantity) * cycles));
+    if (!total) continue;
+    if (resource === "food" || resource === "water" || resource === "parts") {
+      game.shelter[resource] += total;
+      output[resource] = total;
+    }
+  }
+  return { applied: points, cycles, output };
 }
 
 export function cancelShelterWorkShift(game: GameState, project: ShelterProject) {
