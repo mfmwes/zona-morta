@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element -- survivor portraits are existing small data URLs. */
 
 import { useEffect, useMemo, useState } from "react";
 import { Footprints, Users } from "lucide-react";
@@ -39,7 +40,7 @@ export function SurvivorMoveDialog({
     const first = sources[0];
     setSourceHex(first?.hex ?? "");
     setSelectedIds(first?.members.map(person => person.id) ?? []);
-  }, [open, destination]); // sources is intentionally read when the dialog opens.
+  }, [open, destination, sources]);
 
   function changeSource(value: string) {
     const next = sources.find(group => group.hex === value);
