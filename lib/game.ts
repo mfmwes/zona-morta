@@ -103,10 +103,21 @@ export type ShelterProject = {
   requiredProgress: number;
   costs: ShelterProjectCost;
   costsPaid?: boolean;
+  /** Capacidades exigidas da equipe durante a obra. */
+  buildCapabilities?: string[];
+  /** Capacidades exigidas quando a estrutura precisa de operação humana. */
   requiredCapabilities: string[];
+  /** Passiva funciona ao concluir; staffed exige equipe; powered exige energia disponível. */
+  operationMode?: "passive" | "staffed" | "powered";
+  /** Espaço físico da planta usado por instalações; melhorias de perímetro não precisam de sala. */
+  slotId?: string;
   responsibleId?: string;
   helperIds?: string[];
   effects: ShelterProjectEffect[];
+  /** Reparos usam progresso próprio sem apagar o histórico de construção. */
+  repairProgress?: number;
+  requiredRepairProgress?: number;
+  repairCostsPaid?: boolean;
 };
 export type ShelterPost = {
   key: string;
@@ -130,6 +141,8 @@ export type ShelterState = StockHolder & {
   manualAdjustments?: ShelterManualAdjustments;
   /** Capacity before dormitories or other real structures are counted. */
   baseCapacity?: number;
+  /** Estruturas energizadas podem ser desligadas manualmente para priorizar a rede. */
+  disabledProjectKeys?: string[];
 };
 export type ShelterManifest = {
   stocks?: Partial<Pick<ShelterState, "food" | "water" | "medications" | "pistolAmmo" | "fuel" | "parts">>;
