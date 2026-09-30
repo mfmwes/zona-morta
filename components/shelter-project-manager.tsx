@@ -232,7 +232,7 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
     edit(draft => {
       const target = projectFor(draft.shelter, project.key);
       if (!target) return;
-      issue = startRepair(draft.shelter, target);
+      issue = startRepair(draft, target);
       if (!issue) addLog(draft, "abrigo", `Reparo iniciado: ${target.name}.`);
     });
     if (issue) toast.error("Reparo não iniciado", { description: issue });
@@ -255,6 +255,32 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
       if (target) cancelShelterWorkShift(draft, target);
     });
     toast("Turno cancelado.");
+  }
+
+  function toggleIncidentTarget(id: string) {
+    setIncidentTargets(current => current.includes(id) ? current.filter(entry => entry !== id) : [...current, id]);
+  }
+
+  function registerIncident() {
+    let result: ReturnType<typeof applyShelterIncident> | null = null;
+    edit(draft => {
+      result = applyShelterIncident(draft, {
+        kind: incidentKind,
+        impact: incidentImpact,
+        targetProjectIds: incidentTargets,
+        catastrophic: incidentCatastrophic,
+      });
+    });
+    if (!result?.ok) {
+      toast.error("Incidente não aplicado", { description: result?.message ?? "Revise o Impacto e os alvos." });
+      return;
+    }
+    const damaged = result.damaged.map(row => `${row.name} ${row.integrity}/3`).join(" · ");
+    toast.warning(`${incidentKind} registrado`, {
+      description: `Impacto ${result.impact} · mitigado ${result.mitigation.amount}${damaged ? ` · ${damaged}` : " · sem dano estrutural"}${result.unassignedImpact ? ` · ${result.unassignedImpact} sem alvo` : ""}`,
+    });
+    setIncidentOpen(false);
+    setIncidentTargets([]);
   }
 
   function joinAsPlayer(project: ShelterProject) {
