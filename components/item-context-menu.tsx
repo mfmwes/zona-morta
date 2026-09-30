@@ -36,7 +36,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { itemActionOptions, performItemAction, type ItemAction } from "@/lib/item-actions";
-import { slotLabels } from "@/lib/inventory";
+import { atSharedStorage, slotLabels } from "@/lib/inventory";
 import { provisionDisplay } from "@/lib/provision-items";
 import { provisionConsumedToday, type DailyResource } from "@/lib/survival";
 import type { GameState, InventoryItem } from "@/lib/game";
@@ -109,12 +109,12 @@ export function ItemContextMenu({
           ? <ContextMenuSub>
               <ContextMenuSubTrigger><Utensils /> Consumir 1 porção</ContextMenuSubTrigger>
               <ContextMenuSubContent className="inventory-context-submenu">
-                {game.survivors.length
-                  ? game.survivors.map(person =>
+                {game.survivors.some(person => atSharedStorage(game, person.id))
+                  ? game.survivors.filter(person => atSharedStorage(game, person.id)).map(person =>
                       <ContextMenuItem key={person.id} onSelect={() => run({ type: "consume", consumerId: person.id })}>
                         <Utensils /> {person.name}{options.provision.resource && provisionConsumedToday(game, person, options.provision.resource as DailyResource) ? " · já consumiu hoje" : ""}
                       </ContextMenuItem>)
-                  : <ContextMenuItem disabled>Nenhum sobrevivente</ContextMenuItem>}
+                  : <ContextMenuItem disabled>Nenhum sobrevivente junto às reservas</ContextMenuItem>}
               </ContextMenuSubContent>
             </ContextMenuSub>
           : <ContextMenuItem onSelect={() => run({ type: "consume", consumerId: ownerId })}>
