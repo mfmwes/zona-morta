@@ -1,13 +1,16 @@
-import { addLog, survivorHex, type EquipmentSlot, type GameState, type InventoryItem } from "./game";
+import { addLog, content, survivorHex, type EquipmentSlot, type GameState, type InventoryItem } from "./game";
 import {
+  addStack,
   atSharedStorage,
   catalogForItem,
+  catalogItemIsConsumable,
   compatibleSlots,
   consumeProvisionItem,
   countsAsMedication,
   discardItem,
   displacedSlots,
   equipItem,
+  itemFromCatalog,
   prepareProvisionItem,
   transferItem,
 } from "./inventory";
@@ -56,8 +59,7 @@ export function itemActionOptions(game: GameState, ownerId: string, item: Invent
   ];
   const provision = provisionItemInfo(item);
   const current = catalogForItem(item);
-  const canUse = current?.category === "Medicamentos e cuidado"
-    && !["Kit médico de campo", "Termômetro", "Tala e faixa", "Máscara respiratória com filtro"].includes(item.name);
+  const canUse = catalogItemIsConsumable(item);
   const stockResource = stockResourceFor(item);
 
   return {
@@ -108,7 +110,8 @@ export function performItemAction(game: GameState, ownerId: string, itemId: stri
     if (prepared) {
       message = `${owner}: ${count}× ${item.name} ` +
         (before.requiresVerification ? "foi verificado/tratado" : "foi preparado") +
-        " e permanece como item físico no inventário.";
+        " e permanece como item físico no inventário." +
+        (prepared.requirements?.length ? ` Requisitos usados: ${prepared.requirements.join(", ")}.` : "");
     }
   } else if (action.type === "use") {
     const count = Math.max(1, Math.min(item.qty, Math.trunc(action.quantity)));
@@ -120,7 +123,12 @@ export function performItemAction(game: GameState, ownerId: string, itemId: stri
     if (countsAsMedication(item) && (ownerId === "shared" ? atSharedStorage(game) : atSharedStorage(game, ownerId)) && game.shelter.medications + count <= 99
       && discardItem(game, ownerId, item.id, count)) {
       game.shelter.medications += count;
-      message = `${owner} guardou ${count}× ${item.name} como ${count} unidade(s) de Medicamentos nas reservas compartilhadas.`;
+      if (item.name === "Caixa clínica completa") {
+        const kit = content.catalog.find(entry => entry.category === "Medicamentos e cuidado" && entry.name === "Kit médico de campo");
+        if (kit) addStack(source, itemFromCatalog(kit, count, "Íntegro", game.day));
+      }
+      message = `${owner} guardou ${count}× ${item.name} como ${count} unidade(s) de Medicamentos nas reservas compartilhadas.` +
+        (item.name === "Caixa clínica completa" ? " O estojo reutilizável permaneceu como Kit médico de campo." : "");
     }
   } else if (action.type === "stock") {
     const count = Math.max(1, Math.min(item.qty, Math.trunc(action.quantity)));
