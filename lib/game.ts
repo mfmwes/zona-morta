@@ -109,6 +109,8 @@ export type ShelterProject = {
   requiredCapabilities: string[];
   /** Passiva funciona ao concluir; staffed exige equipe; powered exige energia disponível. */
   operationMode?: "passive" | "staffed" | "powered";
+  /** Estado de operação já calculado em projeções de jogador, sem expor identidades da equipe. */
+  operatorReady?: boolean;
   /** Espaço físico da planta usado por instalações; melhorias de perímetro não precisam de sala. */
   slotId?: string;
   responsibleId?: string;
