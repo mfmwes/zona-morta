@@ -366,8 +366,15 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
         </header>
 
         <div className="construction-detail-scroll">
+          <div className="construction-flow-steps" aria-label="Etapas da construção">
+            <span className={selectedDefinition.kind !== "facility" || selectedProject?.slotId ? "is-done" : "is-current"}><i>1</i><b>{selectedDefinition.kind === "facility" ? "Local" : "Plano"}</b></span>
+            <span className={selectedProject && (selectedProject.responsibleId || (selectedProject.helperIds ?? []).length) ? "is-done" : selectedProject ? "is-current" : ""}><i>2</i><b>Equipe</b></span>
+            <span className={selectedProject && selectedProject.state !== "Planejado" ? "is-done" : selectedProject ? "is-current" : ""}><i>3</i><b>Iniciar</b></span>
+            <span className={selectedProject?.workShift ? "is-current" : selectedProject?.state === "Concluído" ? "is-done" : ""}><i>4</i><b>Trabalho</b></span>
+          </div>
+
           <dl className="construction-detail-facts">
-            <div><dt>Tipo</dt><dd>{selectedDefinition.kind === "facility" ? "Instalação física" : "Melhoria do abrigo"}</dd></div>
+            <div><dt>Tipo</dt><dd>{selectedDefinition.kind === "facility" ? "Instalação física · ocupa espaço na planta" : "Melhoria · não ocupa sala"}</dd></div>
             <div><dt>Custo</dt><dd>{projectDisplayCosts(selectedDefinition.costs)}</dd></div>
             <div><dt>Trabalho</dt><dd>{selectedDefinition.requiredProgress} progresso</dd></div>
             {selectedDefinition.kind === "facility" && <div><dt>Local</dt><dd>{projectLocation(selectedProject)}</dd></div>}
@@ -380,16 +387,26 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
           <div className="construction-effect-box"><span>Efeito</span><p>{selectedDefinition.effects.map(item => item.label).join(" · ")}</p></div>
 
           {dependencyIssue && !selectedProject && <div className="construction-inline-warning"><AlertTriangle size={15} /> {dependencyIssue}</div>}
+          {selectedProject && placementIssue && <div className="construction-inline-warning"><AlertTriangle size={15} /><span><b>Local ainda não definido.</b> {placementIssue}</span></div>}
 
           {selectedProject && <div className="construction-project-progress">
             <div><span>{selectedProgress?.repairing ? "Reparo" : "Progresso"}</span><b>{selectedProgress?.value}/{selectedProgress?.required}</b></div>
             <div className="construction-mini-progress"><span style={{ width: `${Math.min(100, (selectedProgress?.value ?? 0) / Math.max(1, selectedProgress?.required ?? 1) * 100)}%` }} /></div>
-            {selectedPreview && <small className={selectedPreview.issue || selectedPreview.missingCapabilities.length ? "is-warning" : ""}>{selectedPreview.issue
-              ?? `Turno de 4h: +${selectedPreview.points} com ${selectedPreview.workers.map(worker => worker.name).join(", ")}${selectedPreview.missingCapabilities.length ? ` · sem especialista em ${selectedPreview.missingCapabilities.join(" + ")}` : ""}`}</small>}
+            {selectedProject.workShift
+              ? <div className="construction-shift-status">
+                  <Clock3 size={16} />
+                  <span><b>Turno em andamento</b><small>{displayTime(selectedProject.workShift.startMinute)} → {displayTime(selectedProject.workShift.startMinute + selectedProject.workShift.durationMinutes)} · +{selectedProject.workShift.points} previsto</small>
+                    <small>Você pode sair desta tela. Viagens, buscas e qualquer avanço do relógio concluem o turno automaticamente quando o horário final for alcançado.</small></span>
+                </div>
+              : selectedPreview && <small className={selectedPreview.issue || selectedPreview.missingCapabilities.length ? "is-warning" : ""}>{selectedPreview.issue
+                ?? `Próximo turno de 4h: +${selectedPreview.points} com ${selectedPreview.workers.map(worker => worker.name).join(", ")}${selectedPreview.missingCapabilities.length ? ` · sem especialista em ${selectedPreview.missingCapabilities.join(" + ")}` : ""}`}</small>}
           </div>}
 
-          {selectedProject && !playerPreview && <div className="construction-team">
-            <b>{selectedProject.state === "Concluído" ? "Equipe de operação" : "Equipe da obra"}</b>
+          {selectedProject && !playerPreview && !selectedProject.workShift && <div className="construction-team">
+            <b>{selectedProject.state === "Concluído" ? "Equipe de operação" : "2 · Defina a equipe"}</b>
+            <p className="construction-team-help">{selectedProject.state === "Concluído"
+              ? "A operação usa as capacidades indicadas acima."
+              : "Escolha quem ficará responsável pela obra. Especialistas aumentam o progresso do turno."}</p>
             <Pick label="Responsável" value={selectedProject.responsibleId ?? ""} options={[
               { value: "", label: "Sem responsável" },
               ...peopleAtBase.filter(npc => canVolunteer(npc, true)).map(npc => ({ value: npc.id, label: `${npc.name} · ${npc.skills.join(", ") || "sem capacidade"}` })),
@@ -398,15 +415,40 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
               <label key={npc.id}><input type="checkbox" checked={(selectedProject.helperIds ?? []).includes(npc.id)} onChange={event => toggleProjectHelper(selectedProject, npc.id, event.target.checked)} /><span>{npc.name}<small>{npc.skills.join(", ") || "sem capacidade"}</small></span></label>)}</div>}
           </div>}
 
+          {selectedProject?.workShift && !playerPreview && <div className="construction-team-locked">
+            <Clock3 size={16} /><span><b>Equipe ocupada até {displayTime(selectedProject.workShift.startMinute + selectedProject.workShift.durationMinutes)}</b><small>Cancele o turno antes de trocar responsáveis ou ajudantes.</small></span>
+          </div>}
+
           {selectedProject?.state === "Concluído" && selectedDefinition.requiresPower && <div className="construction-power-toggle">
             <div><BatteryCharging size={17} /><span><b>Rede de energia</b><small>{(shelter.disabledProjectKeys ?? []).includes(selectedProject.key) ? "Desligado manualmente" : projectOperational(game, shelter, selectedProject) ? "Ligado" : "Sem energia suficiente"}</small></span></div>
             {!playerPreview && <Button size="sm" variant="outline" onClick={() => togglePower(selectedProject.key)}>{(shelter.disabledProjectKeys ?? []).includes(selectedProject.key) ? <><Play size={14} /> Ligar</> : <><PauseCircle size={14} /> Desligar</>}</Button>}
           </div>}
 
           {!playerPreview && <div className="construction-detail-actions">
-            {!selectedProject && <Button disabled={Boolean(dependencyIssue)} onClick={() => addProject(selectedDefinition.key)}><Plus size={15} /> {selectedDefinition.kind === "facility" ? "Planejar na planta" : "Planejar"}</Button>}
-            {selectedProject?.state === "Planejado" && <Button onClick={() => begin(selectedProject)}><Hammer size={15} /> Iniciar obra</Button>}
+            {!selectedProject && selectedDefinition.kind === "facility" && <Button disabled={Boolean(dependencyIssue)} onClick={() => { setPlanningKey(selectedDefinition.key); setPlanningSlotId(null); }}>
+              <Plus size={15} /> 1 · Escolher local na planta
+            </Button>}
+            {!selectedProject && selectedDefinition.kind === "upgrade" && <Button disabled={Boolean(dependencyIssue)} onClick={() => addProject(selectedDefinition.key)}>
+              <Plus size={15} /> Planejar melhoria
+            </Button>}
+
+            {selectedProject && selectedDefinition.kind === "facility" && !selectedProject.slotId && <Button onClick={() => { setPlanningKey(selectedProject.key); setPlanningSlotId(null); }}>
+              <Plus size={15} /> 1 · Definir local na planta
+            </Button>}
+
+            {selectedProject?.state === "Planejado" && (!selectedProject.responsibleId && !(selectedProject.helperIds ?? []).length)
+              && <p className="construction-next-step">Próximo passo: escolha ao menos uma pessoa para a equipe.</p>}
+
+            {selectedProject?.state === "Planejado" && !placementIssue && Boolean(selectedProject.responsibleId || (selectedProject.helperIds ?? []).length)
+              && <Button onClick={() => begin(selectedProject)}><Hammer size={15} /> 3 · Iniciar obra e pagar custos</Button>}
+
+            {selectedProject?.state === "Em construção" && !selectedProject.workShift
+              && <Button onClick={() => scheduleShift(selectedProject)}><Clock3 size={15} /> 4 · Programar turno de 4h</Button>}
+
+            {selectedProject?.workShift && <Button variant="outline" onClick={() => cancelShift(selectedProject)}><PauseCircle size={15} /> Cancelar turno</Button>}
+
             {selectedProject?.state === "Danificado" && <Button onClick={() => repair(selectedProject)}><Wrench size={15} /> Iniciar reparo</Button>}
+
             {selectedProject?.state === "Concluído" && <Button variant="outline" onClick={() => edit(draft => {
               const target = projectFor(draft.shelter, selectedProject.key);
               if (target && markProjectDamaged(target)) addLog(draft, "abrigo", `${target.name} foi marcado como danificado.`);
