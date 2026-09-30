@@ -450,6 +450,7 @@ html[data-theme="dark"] .day-close-resource-row [data-slot="select-trigger"] {
 html[data-theme="dark"] .day-close-reserve-summary .is-ok,
 html[data-theme="dark"] .day-close-resource-label > small.is-ok { color:#91c9b8; }
 html[data-theme="dark"] .day-close-reserve-summary .is-warning { color:#efa79e; }
+html[data-theme="dark"] .inventory-warning { border-left-color:#9b7b45; background:#322c21; color:#e3c995; }
 html[data-theme="dark"] .table-chat { border-color: #354846; background: #131b1c; color: #e2ebe5; }
 html[data-theme="dark"] .table-chat-header,
 html[data-theme="dark"] .table-chat-composer { border-color: #354846; background: #192324; }
