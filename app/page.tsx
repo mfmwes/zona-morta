@@ -519,7 +519,7 @@ export default function CampaignApp() {
               <p className="text-xs subtle">Comida e Água em porções (4 = 1 unidade); Peças em unidades. Sem abrigo, registre apenas o que o grupo consegue transportar.</p>
             </section>
           </div>}
-          <HexExplorer key={game.campaignId} game={game} edit={edit} playerPreview={readOnlyPreview} />
+          <HexExplorer key={game.campaignId} game={game} edit={edit} playerPreview={readOnlyPreview} teamPeers={restPeers} />
           {!readOnlyPreview && <div className="panel panel-pad mt-5 flex flex-wrap items-center gap-3">
             <div className="mr-auto"><b>Relógio da expedição</b><p className="text-xs subtle">Ao anoitecer, registre o descanso na ficha, mesmo sem abrigo.</p></div>
             {[30,60,120].map(amount=><Button key={amount} size="sm" variant="outline" disabled={game.minutes+amount>=1440}
