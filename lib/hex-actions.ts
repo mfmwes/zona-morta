@@ -115,7 +115,7 @@ export function hexActionOptions(game: GameState, id: string) {
 export function performHexAction(game: GameState, id: string, action: HexQuickAction) {
   const options = hexActionOptions(game, id);
   if (!options) return { ok: false, message: "" };
-  const { area, record } = options;
+  const { record } = options;
 
   if (action.type === "observe") {
     if (!options.canObserve) return { ok: false, message: "" };
