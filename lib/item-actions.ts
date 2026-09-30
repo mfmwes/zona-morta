@@ -2,6 +2,7 @@ import { addLog, content, survivorHex, type EquipmentSlot, type GameState, type 
 import {
   addStack,
   atSharedStorage,
+  batteryTargets,
   catalogForItem,
   catalogItemCanUse,
   catalogItemIsConsumable,
@@ -13,6 +14,7 @@ import {
   equipItem,
   itemFromCatalog,
   prepareProvisionItem,
+  setBatteryState,
   transferItem,
 } from "./inventory";
 import { provisionItemInfo } from "./provision-items";
@@ -23,6 +25,7 @@ export type ItemAction =
   | { type: "consume"; consumerId?: string }
   | { type: "prepare"; quantity: number }
   | { type: "use"; quantity: number }
+  | { type: "recharge"; targetId: string }
   | { type: "medication"; quantity: number }
   | { type: "stock"; quantity: number }
   | { type: "discard"; quantity: number };
@@ -60,13 +63,17 @@ export function itemActionOptions(game: GameState, ownerId: string, item: Invent
   ];
   const provision = provisionItemInfo(item);
   const current = catalogForItem(item);
-  const canUse = catalogItemCanUse(item);
+  const rechargeTargets = item.name === "Kit de pilhas"
+    ? batteryTargets(game, ownerId).filter(target => target.battery === "Descarregada")
+    : [];
+  const canUse = catalogItemCanUse(item) && item.name !== "Kit de pilhas";
   const stockResource = stockResourceFor(item);
 
   return {
     slots,
     targets,
     provision,
+    rechargeTargets,
     canUse,
     canMedication: !selfOnly && countsAsMedication(item) && (ownerId === "shared" ? atSharedStorage(game) : atSharedStorage(game, ownerId)),
     canStock: !selfOnly && Boolean(stockResource) && (ownerId === "shared" ? atSharedStorage(game) : atSharedStorage(game, ownerId)),
@@ -125,6 +132,12 @@ export function performItemAction(game: GameState, ownerId: string, itemId: stri
       message = `${owner} usou ${consumable && count > 1 ? `${count}× ` : ""}${item.name}.` +
         (consumable ? " A unidade foi consumida." : " O item permanece disponível.") +
         (noise ? ` Barulho +${noise}.` : " Aplicar o efeito indicado pelo item em cena.");
+    }
+  } else if (action.type === "recharge") {
+    const target = batteryTargets(game, ownerId).find(candidate => candidate.id === action.targetId && candidate.battery === "Descarregada");
+    if (item.name === "Kit de pilhas" && target && discardItem(game, ownerId, item.id, 1)
+      && setBatteryState(game, ownerId, target.id, "Carregada")) {
+      message = `${owner} usou Kit de pilhas em ${target.name}. Bateria registrada como carregada.`;
     }
   } else if (action.type === "medication") {
     const count = Math.max(1, Math.min(item.qty, Math.trunc(action.quantity)));
