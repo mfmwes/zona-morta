@@ -38,12 +38,15 @@ export function equipmentModifiers(kit: Kit) {
   const effect = getProtection(kit.protection)?.effect ?? "";
   const adjustment = (name: string) => Number(effect.match(new RegExp(`([+−-]\\d+) (?:em )?${name}`))?.[1]?.replace("−", "-") ?? 0);
   const secondaryActive = getPrimary(kit.primary)?.hands !== "Duas";
-  const shield = secondaryActive && (kit.secondary === "Tampa resistente" ||
-    (kit.secondary === "Escudo improvisado" && (kit.kitCondition?.secondary ?? "Íntegro") === "Íntegro"));
+  const secondary = secondaryActive ? getSecondary(kit.secondary) : undefined;
+  const secondaryUsable = secondary && (kit.secondary !== "Escudo improvisado" || (kit.kitCondition?.secondary ?? "Íntegro") === "Íntegro");
+  const secondaryArmor = secondaryUsable
+    ? Number(secondary.effect.match(/([+−-]\d+) ao valor de Armadura/i)?.[1]?.replace("−", "-") ?? 0)
+    : 0;
   return {
     evasion: adjustment("Evasion"),
     traits: { Agilidade: adjustment("Agilidade"), Finesse: adjustment("Finesse") } as Record<string, number>,
-    armor: shield ? 1 : 0,
+    armor: secondaryArmor,
     primaryDamage: secondaryActive && kit.secondary === "Faca pequena" && getPrimary(kit.primary)?.range === "Corpo a corpo" ? 1 : 0,
   };
 }
