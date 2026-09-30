@@ -79,7 +79,8 @@ export async function GET(request: Request) {
     if (!ownerId) return Response.json({ error: "Campanha não encontrada." }, { status: 404 });
     if (ownerId === user.id) {
       const data = await readCampaign(campaignId);
-      return Response.json({ ...data, role: "mestre", ownerId: campaignId }, { headers: noStore });
+      const state = preserveKnownSectors(data.state);
+      return Response.json({ ...data, state, role: "mestre", ownerId: campaignId }, { headers: noStore });
     }
     const member = await findPlayer(campaignId, user.id, user.email);
     if (!member) {
@@ -90,9 +91,10 @@ export async function GET(request: Request) {
       return Response.json({ error: "Campanha não encontrada." }, { status: 404 });
     }
     const data = await readCampaign(campaignId);
-    const characterId = member.survivor_id && data.state.survivors.some(s => s.id === member.survivor_id) ? member.survivor_id : null;
-    return Response.json({ revision: data.revision, state: projectPlayerGame(data.state, characterId ?? ""),
-      role: "jogador", ownerId: campaignId, survivorId: characterId, restPeers: restPeers(data.state) }, { headers: noStore });
+    const state = preserveKnownSectors(data.state);
+    const characterId = member.survivor_id && state.survivors.some(s => s.id === member.survivor_id) ? member.survivor_id : null;
+    return Response.json({ revision: data.revision, state: projectPlayerGame(state, characterId ?? ""),
+      role: "jogador", ownerId: campaignId, survivorId: characterId, restPeers: restPeers(state) }, { headers: noStore });
   } catch (error) {
     console.error("Falha ao ler campanha", error);
     return Response.json({ error: "Não foi possível carregar o registro. Tente novamente." }, { status: 503 });
