@@ -120,7 +120,7 @@ export type ShelterProject = {
   repairProgress?: number;
   requiredRepairProgress?: number;
   repairCostsPaid?: boolean;
-  /** NPCs designados pelo mestre para a equipe da obra. */
+  /** Sobreviventes jogadores que se ofereceram para a equipe da obra. */
   survivorWorkerIds?: string[];
   /** Turnos pessoais dos sobreviventes jogadores. São independentes do turno dos NPCs. */
   volunteerShifts?: {
