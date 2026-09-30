@@ -1,7 +1,7 @@
 import { campaignExists, campaignOwnerId, findPlayer, readCampaign, wasRevoked, writeCampaign } from "@/db/state";
 import { sameOrigin, siteUser } from "@/lib/auth";
 import { applyPlayerChange, projectPlayerGame, type PlayerLog } from "@/lib/collaboration";
-import { survivorStats, type GameState, type Survivor } from "@/lib/game";
+import { ammunitionTypes, survivorStats, type GameState, type Survivor } from "@/lib/game";
 import { preserveKnownSectors } from "@/lib/sectors";
 
 export const dynamic = "force-dynamic";
@@ -45,8 +45,16 @@ function validState(value: unknown): value is GameState {
       && state.npcs.every(npc => npc && typeof npc.id === "string" && typeof npc.name === "string"
         && typeof npc.hex === "string" && Array.isArray(npc.skills))))
     && state.survivors.every(s => Number.isInteger(s.armorMarked) && s.armorMarked >= 0 && s.armorMarked <= 20
-      && (s.hex === undefined || (typeof s.hex === "string" && Boolean(state.hexes?.[s.hex]))))
+      && (s.hex === undefined || (typeof s.hex === "string" && Boolean(state.hexes?.[s.hex])))
+      && (s.outfit === undefined || typeof s.outfit === "string")
+      && (s.transport === undefined || typeof s.transport === "string")
+      && (s.ammoSpentScene === undefined || (Number.isInteger(s.ammoSpentScene) && s.ammoSpentScene >= 1))
+      && (s.ammoSpentType === undefined || typeof s.ammoSpentType === "string"))
     && Boolean(shelter && typeof shelter === "object")
+    && (shelter?.ammoStocks === undefined || (typeof shelter.ammoStocks === "object" && shelter.ammoStocks !== null
+      && Object.entries(shelter.ammoStocks).every(([key, value]) =>
+        ammunitionTypes.includes(key as typeof ammunitionTypes[number])
+        && Number.isInteger(value) && Number(value) >= 0 && Number(value) <= 99)))
     && (shelter?.hex === undefined || shelter.hex === null ||
       (typeof shelter.hex === "string" && state.hexes?.[shelter.hex]?.discovery === "explorado"))
     && (shelter?.projects === undefined || (Array.isArray(shelter.projects) && shelter.projects.length <= 80
