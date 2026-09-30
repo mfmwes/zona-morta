@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { BookOpen, Clock3, Download, Eye, EyeOff, House, LogOut, Map, MessageSquare, MoreHorizontal, Package, RotateCcw, Upload, Users, Volume2 } from "lucide-react";
+import { BookOpen, Brain, Clock3, Download, Droplets, Ear, Eye, EyeOff, House, LogOut, Map, MessageSquare, MoreHorizontal, Package, RotateCcw, Settings, Upload, Users, Utensils, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -493,32 +493,69 @@ export default function CampaignApp() {
           <b>As alterações ainda estão nesta tela.</b> {saveError} Baixe uma cópia antes de recarregar, se precisar.
         </div>}
         {tab === "mapa" && <>
-          {!readOnlyPreview && <div className="panel panel-pad mb-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
-            <section className="grid gap-3 content-start">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2"><Volume2 size={19} /><b>Pressão da cena</b></div>
-                <div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => {
-                  edit(beginScene);
-                  toast.success("Nova cena iniciada", { description: "Barulho voltou a 0 e habilidades por cena foram renovadas." });
-                }}>Nova cena</Button>
+          {!readOnlyPreview && <div className="panel scene-control-panel mb-5">
+            <section className="scene-control-section scene-pressure-section">
+              <div className="scene-control-heading">
+                <div className="scene-control-title"><Volume2 size={20} /><b>Pressão da cena</b></div>
+                <div className="scene-control-actions">
+                  <Button size="sm" variant="outline" onClick={() => {
+                    edit(beginScene);
+                    toast.success("Nova cena iniciada", { description: "Barulho voltou a 0 e habilidades por cena foram renovadas." });
+                  }}>Nova cena</Button>
                   <Button size="sm" variant="outline" onClick={() => {
                     edit(beginExpedition);
                     toast.success("Nova expedição iniciada", { description: "Habilidades por expedição foram renovadas." });
-                  }}>Nova expedição</Button></div>
+                  }}>Nova expedição</Button>
+                </div>
               </div>
-              <div className="flex flex-wrap gap-x-6 gap-y-3"><Counter compact label="Barulho · 0–5" value={game.noise} max={5} onChange={value=>edit(d=>{d.noise=value;})} />
-                <Counter compact tone="fear" label="Fear · 0–12" value={game.fear} max={12} onChange={value=>edit(d=>{d.fear=value;})} /></div>
+
+              <div className="scene-pressure-grid">
+                <div className="scene-meter scene-meter-noise">
+                  <div className="scene-meter-identity">
+                    <Ear size={28} aria-hidden="true" />
+                    <span><b>Barulho</b><small>0–5</small></span>
+                  </div>
+                  <div className="scene-meter-control">
+                    <Counter compact label="Barulho" value={game.noise} max={5} onChange={value=>edit(d=>{d.noise=value;})} />
+                  </div>
+                </div>
+                <div className="scene-meter scene-meter-fear">
+                  <div className="scene-meter-identity">
+                    <Brain size={28} aria-hidden="true" />
+                    <span><b>Fear</b><small>0–12</small></span>
+                  </div>
+                  <div className="scene-meter-control">
+                    <Counter compact tone="fear" label="Fear" value={game.fear} max={12} onChange={value=>edit(d=>{d.fear=value;})} />
+                  </div>
+                </div>
+              </div>
             </section>
-            <section className="grid gap-3 content-start border-t pt-4 xl:border-t-0 xl:border-l xl:pl-5 xl:pt-0">
-              <div className="flex items-center gap-2"><Package size={19} /><b>{game.shelter.hex ? "Suprimentos do abrigo" : "Reservas do grupo"}</b></div>
-              <div className="flex flex-wrap gap-x-6 gap-y-3">
-                {([ ["food","Comida"], ["water","Água"], ["parts","Peças"] ] as const).map(([key,label]) =>
-                  <Counter key={key} compact label={label} value={game.shelter[key]} max={key === "parts" ? 99 : 999}
-                    editable quickStep={key === "parts" ? undefined : 4}
-                    onChange={value=>edit(d=>{ if (key === "parts") d.shelter.parts = value;
-                      else adjustProvisionCount(d.shelter, key, value); })} />)}
+
+            <section className="scene-control-section scene-supplies-section">
+              <div className="scene-control-heading">
+                <div className="scene-control-title"><Package size={20} /><b>{game.shelter.hex ? "Suprimentos do abrigo" : "Reservas do grupo"}</b></div>
               </div>
-              <p className="text-xs subtle">Comida e Água em porções (4 = 1 unidade); Peças em unidades. Sem abrigo, registre apenas o que o grupo consegue transportar.</p>
+
+              <div className="scene-supplies-grid">
+                {([
+                  ["food","Comida",Utensils,"food"],
+                  ["water","Água",Droplets,"water"],
+                  ["parts","Peças",Settings,"parts"],
+                ] as const).map(([key,label,Icon,tone]) =>
+                  <div className={`scene-supply scene-supply-${tone}`} key={key}>
+                    <div className="scene-supply-identity">
+                      <Icon size={25} aria-hidden="true" />
+                      <b>{label}</b>
+                    </div>
+                    <div className="scene-supply-control">
+                      <Counter compact label={label} value={game.shelter[key]} max={key === "parts" ? 99 : 999}
+                        editable quickStep={key === "parts" ? undefined : 4}
+                        onChange={value=>edit(d=>{ if (key === "parts") d.shelter.parts = value;
+                          else adjustProvisionCount(d.shelter, key, value); })} />
+                    </div>
+                  </div>)}
+              </div>
+              <p className="scene-supplies-note">Comida e Água em porções (4 = 1 unidade); Peças em unidades. Sem abrigo, registre apenas o que o grupo consegue transportar.</p>
             </section>
           </div>}
           <HexExplorer key={game.campaignId} game={game} edit={edit} playerPreview={readOnlyPreview} teamPeers={restPeers} />
