@@ -1,6 +1,7 @@
 import { addLog, content, survivorHex, type EquipmentSlot, type GameState, type InventoryItem } from "./game";
 import {
   addStack,
+  activeCart,
   atSharedStorage,
   batteryTargets,
   catalogForItem,
@@ -10,14 +11,18 @@ import {
   consumeProvisionItem,
   countsAsMedication,
   discardItem,
+  deployCart,
   displacedSlots,
   emptyReusableContainerToReserves,
   equipItem,
   fillReusableContainer,
+  foldCart,
   itemFromCatalog,
   prepareProvisionItem,
+  removeFromCart,
   reusableContainerOptions,
   setBatteryState,
+  storeInCart,
   transferItem,
 } from "./inventory";
 import { provisionItemInfo } from "./provision-items";
@@ -31,6 +36,10 @@ export type ItemAction =
   | { type: "recharge"; targetId: string }
   | { type: "fill-container"; resource: "water" | "fuel"; quantity: number }
   | { type: "empty-container" }
+  | { type: "deploy-cart" }
+  | { type: "fold-cart" }
+  | { type: "cart-store"; quantity: number }
+  | { type: "cart-remove"; nestedItemId: string; quantity: number }
   | { type: "medication"; quantity: number }
   | { type: "stock"; quantity: number }
   | { type: "discard"; quantity: number };
@@ -74,6 +83,11 @@ export function itemActionOptions(game: GameState, ownerId: string, item: Invent
   const containerOptions = reusableContainerOptions(game, ownerId, item);
   const canUse = catalogItemCanUse(item) && item.name !== "Kit de pilhas";
   const stockResource = stockResourceFor(item);
+  const cart = owner ? activeCart(owner) : null;
+  const cartContents = item.name === "Carrinho dobrável" ? item.cartItems ?? [] : [];
+  const cartLoad = item.name === "Carrinho dobrável"
+    ? cartContents.reduce((sum, entry) => sum + Math.max(0, entry.load) * Math.max(0, entry.qty), 0)
+    : 0;
 
   return {
     slots,
@@ -82,6 +96,12 @@ export function itemActionOptions(game: GameState, ownerId: string, item: Invent
     rechargeTargets,
     containerOptions,
     canUse,
+    canDeployCart: Boolean(owner && item.name === "Carrinho dobrável" && !item.cartDeployed && !cart),
+    canFoldCart: Boolean(owner && item.name === "Carrinho dobrável" && item.cartDeployed && cartContents.length === 0),
+    cartFoldBlocked: Boolean(owner && item.name === "Carrinho dobrável" && item.cartDeployed && cartContents.length > 0),
+    canStoreInCart: Boolean(owner && cart && cart.id !== item.id),
+    cart,
+    cartLoad,
     canMedication: !selfOnly && countsAsMedication(item) && (ownerId === "shared" ? atSharedStorage(game) : atSharedStorage(game, ownerId)),
     canStock: !selfOnly && Boolean(stockResource) && (ownerId === "shared" ? atSharedStorage(game) : atSharedStorage(game, ownerId)),
     stockResource,
@@ -106,6 +126,27 @@ export function performItemAction(game: GameState, ownerId: string, itemId: stri
     const displaced = displacedSlots(person, item, action.slot).map(slot => person[slot]).filter(Boolean);
     if (equipItem(person, item.id, action.slot)) {
       message = `${person.name} equipou ${item.name}.${displaced.length ? ` Guardou: ${displaced.join(", ")}.` : ""}`;
+    }
+  } else if (action.type === "deploy-cart" && person) {
+    if (deployCart(person, item.id)) {
+      message = `${person.name} abriu o Carrinho dobrável e liberou as duas mãos para conduzi-lo. Armas empunhadas foram guardadas.`;
+    }
+  } else if (action.type === "fold-cart" && person) {
+    if (foldCart(person, item.id)) {
+      message = `${person.name} dobrou o Carrinho dobrável. Guardado, ele volta a ocupar 1 espaço de carga.`;
+    }
+  } else if (action.type === "cart-store" && person) {
+    const count = Math.max(1, Math.min(item.qty, Math.trunc(action.quantity)));
+    if (storeInCart(person, item.id, count)) {
+      message = `${person.name} colocou ${count}× ${item.name} no Carrinho dobrável.`;
+    }
+  } else if (action.type === "cart-remove" && person) {
+    const cart = source.find(entry => entry.id === item.id && entry.name === "Carrinho dobrável");
+    const nested = cart?.cartItems?.find(entry => entry.id === action.nestedItemId);
+    const count = nested ? Math.max(1, Math.min(nested.qty, Math.trunc(action.quantity))) : 0;
+    const nestedName = nested?.name ?? "item";
+    if (count > 0 && removeFromCart(person, item.id, action.nestedItemId, count)) {
+      message = `${person.name} retirou ${count}× ${nestedName} do Carrinho dobrável.`;
     }
   } else if (action.type === "consume") {
     const consumed = consumeProvisionItem(game, ownerId, item.id, action.consumerId);
