@@ -1,4 +1,4 @@
-import { addLog, type GameState, type NPC, type Survivor } from "./game";
+import { addLog, ammunitionTypes, type GameState, type NPC, type Survivor } from "./game";
 
 export function projectPlayerGame(game: GameState, survivorId: string): GameState {
   const visible = structuredClone(game);
@@ -99,6 +99,13 @@ export function applyPlayerChange(game: GameState, survivorId: string, before: S
     || !Number.isInteger(after.stress) || after.stress < 0 || after.stress > 6
     || !Number.isInteger(after.hope) || after.hope < 0 || after.hope > 6
     || ![after.food, after.water, after.ammo].every(value => Number.isInteger(value) && value >= 0 && value <= 99)
+    || (after.outfit !== undefined && typeof after.outfit !== "string")
+    || (after.transport !== undefined && typeof after.transport !== "string")
+    || (after.ammoSpentScene !== undefined && (!Number.isInteger(after.ammoSpentScene) || after.ammoSpentScene < 1))
+    || (after.ammoSpentType !== undefined && typeof after.ammoSpentType !== "string")
+    || (after.ammoSpentTypes !== undefined && (!Array.isArray(after.ammoSpentTypes)
+      || after.ammoSpentTypes.length > ammunitionTypes.length
+      || after.ammoSpentTypes.some(type => !ammunitionTypes.includes(type as typeof ammunitionTypes[number]))))
     || !Array.isArray(after.inventory) || after.inventory.length > 120
     || after.inventory.some(item => !item || typeof item.id !== "string" || typeof item.name !== "string"
       || !Object.keys(item).every(key => allowedItemKeys.has(key))
