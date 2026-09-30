@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   AlertTriangle,
   BatteryCharging,
@@ -108,13 +108,12 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
   const occupiedSlots = new Map((shelter.projects ?? []).filter(project => project.slotId).map(project => [project.slotId!, project]));
   const buildLog = game.log.filter(entry => entry.kind === "abrigo").slice(0, 12);
 
-  const catalog = useMemo(() => {
-    if (filter === "Recomendados") {
-      const keys = new Set(recommendations.map(item => item.key));
-      return shelterProjectCatalog.filter(definition => keys.has(definition.key));
-    }
-    return shelterProjectCatalog.filter(definition => definition.category === filter);
-  }, [filter, recommendations]);
+  const catalog = filter === "Recomendados"
+    ? (() => {
+        const keys = new Set(recommendations.map(item => item.key));
+        return shelterProjectCatalog.filter(definition => keys.has(definition.key));
+      })()
+    : shelterProjectCatalog.filter(definition => definition.category === filter);
 
   function addProject(key: string, slotId?: string) {
     const definition = projectDefinition(key);
