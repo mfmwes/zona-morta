@@ -397,6 +397,15 @@ html[data-theme="dark"] .map-active-group {
   background:#1f2c2b;
 }
 html[data-theme="dark"] .map-active-group-icon { background:#2d403d; color:#b6d9cf; }
+html[data-theme="dark"] .day-close-summary {
+  border-color:#405650;
+  background:#202d2c;
+  color:#d9e5df;
+}
+html[data-theme="dark"] .day-close-summary span,
+html[data-theme="dark"] .day-close-summary small { color:#aebfba; }
+html[data-theme="dark"] .day-close-summary b { color:#e2eee8; }
+html[data-theme="dark"] .day-close-summary > svg { color:#96bdb4; }
 html[data-theme="dark"] .table-chat { border-color: #354846; background: #131b1c; color: #e2ebe5; }
 html[data-theme="dark"] .table-chat-header,
 html[data-theme="dark"] .table-chat-composer { border-color: #354846; background: #192324; }
