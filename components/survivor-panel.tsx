@@ -21,7 +21,7 @@ import { EmptyItemArt, ItemArt } from "@/components/item-art";
 import { AbilityArt } from "@/components/ability-art";
 import { RollDialog, type RollRequest } from "@/components/roll-dialog";
 import { Counter, Field, Pick } from "@/components/game-controls";
-import { absoluteMinutes, addLog, content, survivorStats, traits, type EquipmentSlot, type GameState, type Infection, type Survivor } from "@/lib/game";
+import { absoluteMinutes, addLog, content, survivorHex, survivorStats, traits, type EquipmentSlot, type GameState, type Infection, type Survivor } from "@/lib/game";
 import { ammoTypeFor, ammoTypes, atSharedStorage, catalogForItem, countsAsMedication, discardItem, stowSlot } from "@/lib/inventory";
 import { provisionBreakdown, provisionDisplay, provisionItemInfo } from "@/lib/provision-items";
 import { equipmentModifiers, getPrimary, getProtection, getSecondary } from "@/lib/equipment";
@@ -426,7 +426,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
                 <span className="character-roster-avatar">{own.portrait ? <img src={own.portrait} alt="" /> : own.name.charAt(0).toUpperCase()}</span>
                 <span><b>{own.name}</b>
                   <small><Heart size={12} aria-hidden="true" /> {st.hp-own.hp}/{st.hp}<span aria-hidden="true"> · </span>{own.archetype}</small>
-                  <small className="character-roster-state"><Activity size={11} aria-hidden="true" /> {own.infection}<span aria-hidden="true"> · </span>Estresse {own.stress}<span aria-hidden="true"> · </span>Hope {own.hope}</small>
+                  <small className="character-roster-state"><Activity size={11} aria-hidden="true" /> {own.infection}<span aria-hidden="true"> · </span>Hex {survivorHex(game, own)}<span aria-hidden="true"> · </span>Estresse {own.stress}<span aria-hidden="true"> · </span>Hope {own.hope}</small>
                 </span>
               </button>
             </SurvivorContextMenu>;
@@ -445,7 +445,8 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
           <button type="button" onClick={() => openSurvivor(s.id)}
             aria-current={selected?.id === s.id ? "true" : undefined} className="character-roster-person survivor-context-target">
             <span className="character-roster-avatar">{s.portrait ? <img src={s.portrait} alt="" /> : s.name.charAt(0).toUpperCase()}</span>
-            <span><b>{s.name}</b><small><Heart size={12} aria-hidden="true" /> {st.hp-s.hp}/{st.hp}<span aria-hidden="true"> · </span>{s.archetype}</small></span>
+            <span><b>{s.name}</b><small><Heart size={12} aria-hidden="true" /> {st.hp-s.hp}/{st.hp}<span aria-hidden="true"> · </span>{s.archetype}</small>
+              <small className="character-roster-state"><Footprints size={11} aria-hidden="true" /> Hex {survivorHex(game, s)}<span aria-hidden="true"> · </span>{s.infection}</small></span>
           </button>
         </SurvivorContextMenu>; })}
         {rosterCount === 0 && <span className="character-roster-empty">Nenhum dossiê aberto. Crie o primeiro sobrevivente.</span>}
