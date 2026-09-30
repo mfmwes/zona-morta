@@ -11,9 +11,12 @@ import {
   countsAsMedication,
   discardItem,
   displacedSlots,
+  emptyReusableContainerToReserves,
   equipItem,
+  fillReusableContainer,
   itemFromCatalog,
   prepareProvisionItem,
+  reusableContainerOptions,
   setBatteryState,
   transferItem,
 } from "./inventory";
@@ -26,6 +29,8 @@ export type ItemAction =
   | { type: "prepare"; quantity: number }
   | { type: "use"; quantity: number }
   | { type: "recharge"; targetId: string }
+  | { type: "fill-container"; resource: "water" | "fuel"; quantity: number }
+  | { type: "empty-container" }
   | { type: "medication"; quantity: number }
   | { type: "stock"; quantity: number }
   | { type: "discard"; quantity: number };
@@ -66,6 +71,7 @@ export function itemActionOptions(game: GameState, ownerId: string, item: Invent
   const rechargeTargets = item.name === "Kit de pilhas"
     ? batteryTargets(game, ownerId).filter(target => target.battery === "Descarregada")
     : [];
+  const containerOptions = reusableContainerOptions(game, ownerId, item);
   const canUse = catalogItemCanUse(item) && item.name !== "Kit de pilhas";
   const stockResource = stockResourceFor(item);
 
@@ -74,6 +80,7 @@ export function itemActionOptions(game: GameState, ownerId: string, item: Invent
     targets,
     provision,
     rechargeTargets,
+    containerOptions,
     canUse,
     canMedication: !selfOnly && countsAsMedication(item) && (ownerId === "shared" ? atSharedStorage(game) : atSharedStorage(game, ownerId)),
     canStock: !selfOnly && Boolean(stockResource) && (ownerId === "shared" ? atSharedStorage(game) : atSharedStorage(game, ownerId)),
@@ -138,6 +145,18 @@ export function performItemAction(game: GameState, ownerId: string, itemId: stri
     if (item.name === "Kit de pilhas" && target && discardItem(game, ownerId, item.id, 1)
       && setBatteryState(game, ownerId, target.id, "Carregada")) {
       message = `${owner} usou Kit de pilhas em ${target.name}. Bateria registrada como carregada.`;
+    }
+  } else if (action.type === "fill-container") {
+    const filled = fillReusableContainer(game, ownerId, item.id, action.resource, action.quantity);
+    if (filled) {
+      const label = action.resource === "water" ? "Água" : "Combustível";
+      message = `${owner} colocou ${action.quantity} ${action.resource === "water" ? "porção(ões)" : "unidade(s)"} de ${label} em ${filled.name}. O conteúdo não adiciona carga além do recipiente.`;
+    }
+  } else if (action.type === "empty-container") {
+    const resource = item.storedResource;
+    const amount = item.storedAmount ?? 0;
+    if (emptyReusableContainerToReserves(game, ownerId, item.id)) {
+      message = `${owner} devolveu ${amount} ${resource === "water" ? "porção(ões) de Água" : "unidade(s) de Combustível"} às reservas compartilhadas; o galão ficou vazio.`;
     }
   } else if (action.type === "medication") {
     const count = Math.max(1, Math.min(item.qty, Math.trunc(action.quantity)));
