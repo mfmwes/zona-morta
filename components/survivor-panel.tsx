@@ -447,7 +447,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
                 <div className="character-experience"><b>{selected.freeExperience}</b><span>Experience livre · +2 por 1 Hope</span></div>
                 <button className="character-hope-teaser" type="button" onClick={() => setActiveTab("habilidades")}
                   aria-label={`Ler habilidade de Hope: ${hopeName}`}>
-                  <AbilityArt abilityId={`hope:${selected.archetype}`} size="small" /><span><small>HABILIDADE DE HOPE</small><b>{hopeName}</b></span><strong>3 Hope</strong>
+                  <AbilityArt abilityId={`hope:${selected.archetype}`} /><span className="character-hope-teaser-copy"><small>HABILIDADE DE HOPE</small><b>{hopeName}</b></span><strong>3 Hope</strong>
                 </button>
                 <div className="character-technique-preview">{selected.techniques.map(name => <span key={name}><AbilityArt abilityId={`technique:${name}`} size="tiny" />{name}</span>)}</div>
                 <button className="character-text-link" type="button" onClick={() => setActiveTab("habilidades")}>Consultar habilidades <span aria-hidden="true">↗</span></button>
