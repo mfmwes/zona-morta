@@ -11,6 +11,7 @@ import {
 } from "./game";
 import { revealSector } from "./sectors";
 import { advanceCampaignTime } from "./time";
+import { survivorActiveShelterShift } from "./shelter-projects";
 
 export type HexQuickAction =
   | { type: "observe" }
@@ -53,6 +54,8 @@ export function moveSurvivors(game: GameState, destination: string, survivorIds:
   const members = ids.map(id => game.survivors.find(person => person.id === id));
   if (members.some(member => !member)) return { ok: false, message: "" };
   const people = members.filter(Boolean) as NonNullable<(typeof members)[number]>[];
+  const busy = people.map(person => ({ person, work: survivorActiveShelterShift(game, person.id) })).find(entry => entry.work);
+  if (busy?.work) return { ok: false, message: `${busy.person.name} está trabalhando em ${busy.work.project.name} até ${String(Math.floor((busy.work.shift.startMinute + busy.work.shift.durationMinutes) / 60)).padStart(2, "0")}:${String((busy.work.shift.startMinute + busy.work.shift.durationMinutes) % 60).padStart(2, "0")}.` };
   const sourceHex = survivorHex(game, people[0]);
   if (!people.every(person => survivorHex(game, person) === sourceHex)) return { ok: false, message: "" };
 
