@@ -8,7 +8,10 @@ export type AdvanceTimeResult = {
 
 function dueWorkBefore(game: GameState, targetAbsolute: number) {
   return (game.shelter.projects ?? [])
-    .map(project => project.workShift?.endAbsoluteMinute)
+    .flatMap(project => [
+      project.workShift?.endAbsoluteMinute,
+      ...(project.volunteerShifts ?? []).map(shift => shift.endAbsoluteMinute),
+    ])
     .filter((value): value is number => Number.isFinite(value) && value <= targetAbsolute)
     .sort((a, b) => a - b)[0];
 }
