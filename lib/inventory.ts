@@ -35,6 +35,11 @@ export function catalogItemIsConsumable(item: InventoryItem) {
   return entry.category === "Medicamentos e cuidado" && !reusableCare.has(item.name) && !countsAsMedication(item);
 }
 
+const reusableActions = new Set(["Apito"]);
+export function catalogItemCanUse(item: InventoryItem) {
+  return catalogItemIsConsumable(item) || reusableActions.has(item.name);
+}
+
 type PreparationCheck = { ok: boolean; message: string; details: string[]; waterCost: number; tabletCost: number; fuelCost: number };
 function accessContainers(game: GameState, ownerId: string) {
   const primary = ownerId === "shared" ? game.shelter.inventory ?? [] : game.survivors.find(person => person.id === ownerId)?.inventory ?? [];
