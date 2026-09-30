@@ -622,6 +622,8 @@ test('ações contextuais abrem, carregam e esvaziam o carrinho sem slot de tran
 
   options = itemActions.itemActionOptions(g, ana.id, crowbar, false);
   assert.equal(options.canStoreInCart, true);
+  assert.equal(options.slots.includes('primary'), false);
+  assert.equal(options.slots.includes('secondary'), false);
   result = itemActions.performItemAction(g, ana.id, crowbar.id, { type: 'cart-store', quantity: 1 });
   assert.equal(result.ok, true);
 
