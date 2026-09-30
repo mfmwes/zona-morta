@@ -9,7 +9,7 @@ import { Counter, Field, Pick } from "@/components/game-controls";
 import { ItemArt } from "@/components/item-art";
 import { addLog, shelterAmmoCount, survivorHex, survivorStats, type AmmunitionType, type EquipmentSlot, type GameState, type InventoryItem } from "@/lib/game";
 import { createId } from "@/lib/id";
-import { addStack, ammoTypeFor, ammoTypes, atSharedStorage, catalogForItem, catalogItemCanUse, catalogItemIsConsumable, catalogItems, catalogKey, compatibleSlots, conditions,
+import { addStack, ammoTypeFor, ammoTypes, atSharedStorage, batteryStateFor, batteryTargets, catalogForItem, catalogItemCanUse, catalogItemIsConsumable, catalogItems, catalogKey, compatibleSlots, conditions,
   container, countsAsMedication, displacedSlots, equipItem, inventoryCategories, itemFromCatalog,
   provisionInfo, provisionPreparationCheck, provisionTransferError, slotLabels, transferItem, transferProvisions } from "@/lib/inventory";
 import { performItemAction } from "@/lib/item-actions";
@@ -99,7 +99,7 @@ export function AddItemDialog({ game, edit, ownerId }: { game: GameState; edit: 
 
 export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection = false, selfOnly = false }: { game: GameState; edit: Edit; ownerId: string; item: InventoryItem; allowCorrection?: boolean; selfOnly?: boolean }) {
   const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<"transfer" | "equip" | "consume" | "prepare" | "medication" | "stock" | "use" | "discard" | "edit">("transfer");
+  const [mode, setMode] = useState<"transfer" | "equip" | "consume" | "prepare" | "medication" | "stock" | "use" | "recharge" | "discard" | "edit">("transfer");
   const [targetId, setTargetId] = useState("");
   const [slot, setSlot] = useState<EquipmentSlot>("primary");
   const [amount, setAmount] = useState(1);
@@ -132,7 +132,11 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
   const consumer = game.survivors.find(person => person.id === consumerId);
   const alreadyConsumed = Boolean(consumer && provisionState.resource
     && provisionConsumedToday(game, consumer, provisionState.resource as DailyResource));
-  const canUse = catalogItemCanUse(item);
+  const canUse = catalogItemCanUse(item) && item.name !== "Kit de pilhas";
+  const rechargeTargets = item.name === "Kit de pilhas"
+    ? batteryTargets(game, ownerId).filter(target => target.battery === "Descarregada")
+    : [];
+  const rechargeTargetId = rechargeTargets.some(target => target.id === targetId) ? targetId : rechargeTargets[0]?.id ?? "";
   const preparationCheck = provisionState.resource && !provisionState.ready
     ? provisionPreparationCheck(game, ownerId, item, count) : null;
   const stockResource = item.category === "Suprimentos abstratos"
@@ -150,7 +154,7 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
   function openDialog(value: boolean) {
     if (!value) { close(); return; }
     setConditionDraft(item.condition || "Íntegro"); setQtyDraft(item.qty); setLoadDraft(item.load);
-    setMode(slots.length ? "equip" : provisionState.resource
+    setMode(rechargeTargets.length ? "recharge" : slots.length ? "equip" : provisionState.resource
       ? (provisionState.ready ? "consume" : (provisionState.requiresPreparation || provisionState.requiresVerification) ? "prepare" : "edit")
       : targets.length ? "transfer" : "edit");
     setOpen(true);
@@ -181,6 +185,8 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
               ? performItemAction(draft, ownerId, item.id, { type: "prepare", quantity: count })
               : mode === "use"
                 ? performItemAction(draft, ownerId, item.id, { type: "use", quantity: count })
+                : mode === "recharge" && rechargeTargetId
+                  ? performItemAction(draft, ownerId, item.id, { type: "recharge", targetId: rechargeTargetId })
                 : mode === "medication"
                   ? performItemAction(draft, ownerId, item.id, { type: "medication", quantity: count })
                   : mode === "stock"
@@ -198,7 +204,7 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
   return <Dialog open={open} onOpenChange={openDialog}>
     <DialogTrigger asChild><Button size="sm" variant="outline" aria-label={`Ações de ${item.name}`}><ArrowLeftRight size={15} /> Ações</Button></DialogTrigger>
     <DialogContent className="inventory-dialog"><DialogHeader><DialogTitle className="inventory-action-title"><ItemArt name={item.name} category={current?.category ?? item.category} size="small" />{item.name}</DialogTitle>
-      <DialogDescription>{ownerName(game, ownerId)} · {item.qty} unidade(s) · {item.load} espaço(s) por unidade · {item.condition ?? "Estado não registrado"}</DialogDescription></DialogHeader>
+      <DialogDescription>{ownerName(game, ownerId)} · {item.qty} unidade(s) · {item.load} espaço(s) por unidade · {item.condition ?? "Estado não registrado"}{batteryStateFor(item) ? ` · bateria ${batteryStateFor(item)?.toLowerCase()}` : ""}</DialogDescription></DialogHeader>
       {current && <details className="inventory-reference"><summary>Consultar efeito e prazo</summary>
         <dl>{current.fields.map(field => <div key={field.label}><dt>{field.label}</dt><dd>{field.value}</dd></div>)}</dl></details>}
       <div className="inventory-action-tabs">
@@ -210,6 +216,7 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
         {!selfOnly && countsAsMedication(item) && (ownerId === "shared" ? atSharedStorage(game) : atSharedStorage(game, ownerId)) && <button type="button" aria-pressed={mode === "medication"} onClick={() => setMode("medication")}>Medicamentos</button>}
         {!selfOnly && stockResource && (ownerId === "shared" ? atSharedStorage(game) : atSharedStorage(game, ownerId)) && <button type="button" aria-pressed={mode === "stock"} onClick={() => setMode("stock")}>Guardar nas reservas</button>}
         {canUse && <button type="button" aria-pressed={mode === "use"} onClick={() => setMode("use")}>Usar</button>}
+        {rechargeTargets.length > 0 && <button type="button" aria-pressed={mode === "recharge"} onClick={() => setMode("recharge")}>Recarregar</button>}
         <button type="button" aria-pressed={mode === "edit"} onClick={() => setMode("edit")}>Editar</button>
         <button type="button" aria-pressed={mode === "discard"} onClick={() => { setMode("discard"); setConfirmDiscard(false); }}>Deixar</button>
       </div>
@@ -238,10 +245,13 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
       {mode === "use" && <p className="inventory-hint">{catalogItemIsConsumable(item)
         ? "Consumível: desconta a unidade ao confirmar. O efeito indicado no catálogo é aplicado em cena."
         : "Uso reutilizável: o item permanece no inventário. Efeitos mecânicos explícitos, como Barulho do apito, são registrados automaticamente."}</p>}
+      {mode === "recharge" && rechargeTargetId && <><Pick label="Aparelho" value={rechargeTargetId}
+        options={rechargeTargets.map(target => ({ value: target.id, label: `${target.name} · bateria descarregada` }))} onChange={setTargetId} />
+        <p className="inventory-hint">Consome 1 Kit de pilhas e registra a bateria do aparelho escolhido como carregada.</p></>}
       {mode === "medication" && <p className="inventory-hint">Cada unidade vira 1 Medicamentos nas reservas compartilhadas. Bolsa e estojo de antissepsia são consumidos; Caixa clínica completa deixa um Kit médico de campo reutilizável.</p>}
       {mode === "stock" && <p className="inventory-hint">Cada unidade física vira uma unidade nas reservas compartilhadas. O objeto sai do inventário para evitar contagem dupla.</p>}
       {mode === "discard" && <p className="inventory-hint inventory-danger">{confirmDiscard ? "Confirmar: as unidades serão retiradas da ficha e o descarte aparecerá no registro." : "Deixar para trás retira o item sem criar uma reserva nova no mapa."}</p>}
-      {!["equip", "edit", "consume"].includes(mode) && !(mode === "use" && !catalogItemIsConsumable(item)) &&
+      {!["equip", "edit", "consume", "recharge"].includes(mode) && !(mode === "use" && !catalogItemIsConsumable(item)) &&
         <Counter label="Unidades" value={count} min={1} max={item.qty} onChange={setAmount} compact />}
       {mode === "transfer" && destination && <p className="roll-hint">{count}× {item.name} → {ownerName(game, destination)}. Permanecem {item.qty - count} na origem.</p>}
       <DialogFooter><Button variant="outline" onClick={close}>Cancelar</Button>
@@ -249,10 +259,11 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
           || (mode === "consume" && (!provisionState.ready || (ownerId === "shared" && !consumerId)))
           || (mode === "prepare" && (!(provisionState.requiresPreparation || provisionState.requiresVerification) || preparationCheck?.ok === false))
           || (mode === "medication" && game.shelter.medications + count > 99)
-          || (mode === "stock" && (!stockResource || game.shelter[stockResource] + count > 99))} onClick={perform}>
+          || (mode === "stock" && (!stockResource || game.shelter[stockResource] + count > 99))
+          || (mode === "recharge" && !rechargeTargetId)} onClick={perform}>
           {mode === "edit" ? "Salvar alterações" : mode === "transfer" ? "Transferir" : mode === "equip" ? "Equipar"
             : mode === "consume" ? "Consumir 1 porção" : mode === "prepare" ? (provisionState.requiresVerification ? "Confirmar verificação" : "Confirmar preparo")
-            : mode === "medication" ? "Registrar Medicamentos" : mode === "stock" ? "Guardar nas reservas" : mode === "use" ? "Usar" : confirmDiscard ? "Confirmar descarte" : "Deixar para trás"}</Button></DialogFooter>
+            : mode === "medication" ? "Registrar Medicamentos" : mode === "stock" ? "Guardar nas reservas" : mode === "use" ? "Usar" : mode === "recharge" ? "Recarregar" : confirmDiscard ? "Confirmar descarte" : "Deixar para trás"}</Button></DialogFooter>
     </DialogContent>
   </Dialog>;
 }
