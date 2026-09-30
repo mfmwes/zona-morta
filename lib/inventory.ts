@@ -247,8 +247,8 @@ export function compatibleSlots(item: InventoryItem): EquipmentSlot[] {
   return slots;
 }
 export const slotLabels: Record<EquipmentSlot, string> = {
-  primary: "Arma principal", secondary: "Arma secundária", protection: "Proteção", personal: "Item pessoal",
-  bag: "Bolsa/mochila", pocket1: "Bolso 1", pocket2: "Bolso 2",
+  primary: "Arma principal", secondary: "Arma secundária", protection: "Proteção", outfit: "Traje vestido",
+  personal: "Item pessoal", bag: "Bolsa/mochila", transport: "Transporte ativo", pocket1: "Bolso 1", pocket2: "Bolso 2",
 };
 export function storedLoad(name: string, slot: EquipmentSlot) {
   const record = slot === "primary" ? getPrimary(name)
@@ -355,9 +355,10 @@ export function prepareProvisionItem(game: GameState, ownerId: string, itemId: s
   const count = Math.max(1, Math.min(item.qty, Math.trunc(quantity)));
   const check = provisionPreparationCheck(game, ownerId, item, count);
   if (!check.ok) return null;
-  // Split only after all requirements are known; costs are paid immediately before state changes.
+  // Split only after all requirements are known. A partially opened unit cannot be batch-prepared.
+  if (item.portionsRemaining !== undefined || !payPreparationCosts(game, ownerId, check)) return null;
   const target = splitInventoryUnits(items, item, count);
-  if (!target || !payPreparationCosts(game, ownerId, check)) return null;
+  if (!target) return null;
   if (before.requiresPreparation) {
     target.prepared = true;
     target.expiresDay = game.day + 1;
