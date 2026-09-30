@@ -124,7 +124,7 @@ export function ShelterVisualDashboard({ game }: { game: GameState }) {
 
         <div className="architectural-site shelter-overview-architectural">
           <div className="architectural-perimeter">
-            <div className="architectural-zone-label"><Shield size={14} /> Perímetro</div>
+            <div className="architectural-zone-label"><Shield size={14} /> Melhorias / perímetro</div>
             <div className="architectural-perimeter-items">
               {upgrades.length ? upgrades.map(project => {
                 const state = projectState(game, project);
