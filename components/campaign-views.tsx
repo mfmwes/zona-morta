@@ -11,7 +11,7 @@ import { AddItemDialog, ItemActionsDialog } from "@/components/inventory-workflo
 import { ItemContextMenu } from "@/components/item-context-menu";
 import { ItemArt } from "@/components/item-art";
 import { ShelterMoveDialog } from "@/components/shelter-move";
-import { content, establishShelter, recoverFormerStock, type GameState } from "@/lib/game";
+import { content, establishShelter, recoverFormerStock, survivorsAtHex, type GameState } from "@/lib/game";
 import { atSharedStorage, catalogForItem } from "@/lib/inventory";
 import { provisionBreakdown, provisionDisplay, provisionItemInfo } from "@/lib/provision-items";
 import { closeDay, eveningNeeds } from "@/lib/survival";
@@ -31,8 +31,10 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
   const sharedAccessible = atSharedStorage(game);
   const currentSector = game.hexes[game.partyHex]?.sector?.name ?? `Hex ${game.partyHex}`;
   const homeSector = s.hex ? game.hexes[s.hex]?.sector?.name ?? `Hex ${s.hex}` : null;
-  const visitedCache = (game.formerShelters ?? []).find(site => site.hex === game.partyHex);
-  const recipient = game.survivors.find(person => person.id === cacheRecipient) ?? game.survivors[0];
+  const survivorsAtShelter = s.hex ? survivorsAtHex(game, s.hex) : survivorsAtHex(game, game.partyHex);
+  const visitedCache = (game.formerShelters ?? []).find(site => Boolean(site.hex && survivorsAtHex(game, site.hex).length > 0));
+  const cacheVisitors = visitedCache?.hex ? survivorsAtHex(game, visitedCache.hex) : [];
+  const recipient = cacheVisitors.find(person => person.id === cacheRecipient) ?? cacheVisitors[0];
   const shelterFood = provisionBreakdown(s, "food");
   const shelterWater = provisionBreakdown(s, "water");
   useEffect(() => { setShelterNotes(s.notes); }, [s.notes]);
@@ -62,7 +64,7 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
           <p className="intro-line mt-2">{hasShelter
             ? `Situado em ${homeSector}. O grupo está em ${currentSector}.`
             : `O grupo está em ${currentSector}. Ainda não há base fixa; escolha um lugar explorado para estabelecer uma.`}</p></div>
-        {hasShelter && <span className="tag">{s.residents + game.survivors.length}/{s.capacity} pessoas</span>}
+        {hasShelter && <span className="tag">{s.residents + survivorsAtShelter.length}/{s.capacity} pessoas presentes</span>}
       </div>
       {!hasShelter && !playerPreview && <div className="mt-5 list-card">
         <p className="text-sm">O setor atual já foi explorado. Estabelecer uma base aqui não consome tempo automaticamente: resolva segurança, acesso e transporte na ficção.</p>
@@ -178,22 +180,22 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
         <p className="dossier-title">Hex {visitedCache.hex} / Depósito antigo</p>
         <h3 className="section-title mt-1">{visitedCache.name}</h3>
         <p className="intro-line mt-2">O grupo está neste local. Retire os mantimentos e itens desejados e confira a carga do sobrevivente.</p>
-        {!playerPreview && recipient && <Pick label="Quem vai carregar" value={recipient.id} options={game.survivors.map(person => ({ value: person.id, label: person.name }))} onChange={setCacheRecipient} />}
+        {!playerPreview && recipient && <Pick label="Quem vai carregar" value={recipient.id} options={cacheVisitors.map(person => ({ value: person.id, label: person.name }))} onChange={setCacheRecipient} />}
         <div className="grid gap-2 mt-3">
           {([ ["food", "Comida"], ["water", "Água"], ["pistolAmmo", "Munição de pistola"],
             ["medications", "Medicamentos"], ["fuel", "Combustível"], ["parts", "Peças"] ] as const).map(([key, label]) =>
             <div key={key} className="shared-inventory-row"><div><b>{label}</b><span>{visitedCache[key]} {key === "pistolAmmo" ? "carga(s)" : "porção(ões)"}</span></div>
               {visitedCache[key] > 0 && recipient && !playerPreview && <div className="flex gap-1 flex-wrap">
                 <Button size="sm" variant="outline" onClick={() => edit(d => {
-                  if (!recoverFormerStock(d, game.partyHex, recipient.id, key, 1)) toast.error("Não foi possível retirar. Verifique o limite do contador.");
+                  if (!recoverFormerStock(d, visitedCache.hex!, recipient.id, key, 1)) toast.error("Não foi possível retirar. Verifique o limite do contador.");
                 })}>Retirar 1</Button>
                 {visitedCache[key] > 1 && <Button size="sm" variant="outline" onClick={() => edit(d => {
-                  if (!recoverFormerStock(d, game.partyHex, recipient.id, key, visitedCache[key])) toast.error("Não coube no contador deste sobrevivente.");
+                  if (!recoverFormerStock(d, visitedCache.hex!, recipient.id, key, visitedCache[key])) toast.error("Não coube no contador deste sobrevivente.");
                 })}>Retirar tudo</Button>}
               </div>}</div>)}
           {(visitedCache.inventory ?? []).map(item => <div key={item.id} className="shared-inventory-row"><div className="shared-inventory-entry"><ItemArt name={item.name} category={item.category} /><div><b>{item.qty}× {item.name}</b><span>{item.load * item.qty} carga</span></div></div>
             {recipient && !playerPreview && <Button size="sm" variant="outline" onClick={() => edit(d => {
-              if (!recoverFormerStock(d, game.partyHex, recipient.id, "food", 0, item.id)) toast.error("O item já não está neste depósito.");
+              if (!recoverFormerStock(d, visitedCache.hex!, recipient.id, "food", 0, item.id)) toast.error("O item já não está neste depósito.");
             })}>Retirar</Button>}</div>)}
         </div>
         <p className="text-sm subtle mt-3">Peças, combustível e medicamentos retirados viram itens de carga 1 no inventário. Ao chegar à base ativa, use Ações → Guardar nas reservas para converter de volta.</p>
