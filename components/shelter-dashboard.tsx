@@ -46,7 +46,13 @@ function projectState(game: GameState, project?: ShelterProject) {
     if (definition?.requiresPower) return { label: "Sem energia", tone: "waiting" };
     return { label: "Sem operador", tone: "waiting" };
   }
-  if (project.workShift) return { label: `Trabalhando até ${displayTime(project.workShift.startMinute + project.workShift.durationMinutes)}`, tone: "building" };
+  if (project.workShift || project.volunteerShifts?.length) {
+    const ends = [
+      ...(project.workShift ? [project.workShift.startMinute + project.workShift.durationMinutes] : []),
+      ...(project.volunteerShifts ?? []).map(shift => shift.startMinute + shift.durationMinutes),
+    ];
+    return { label: `Trabalhando até ${displayTime(Math.min(...ends))}`, tone: "building" };
+  }
   if (project.state === "Em construção") return { label: project.repairProgress !== undefined ? "Em reparo" : "Em construção", tone: "building" };
   if (project.state === "Danificado") return { label: "Danificado", tone: "damaged" };
   return { label: "Planejado", tone: "planned" };
@@ -95,7 +101,10 @@ export function ShelterVisualDashboard({ game }: { game: GameState }) {
         <Icon size={18} aria-hidden />
         <b>{project.name}</b>
         <span className={`shelter-detail-state is-${state.tone}`}>{state.label}</span>
-        {project.workShift && <small><span>⏱</span> até {displayTime(project.workShift.startMinute + project.workShift.durationMinutes)}</small>}
+        {(project.workShift || project.volunteerShifts?.length) && <small><span>⏱</span> até {displayTime(Math.min(
+          ...(project.workShift ? [project.workShift.startMinute + project.workShift.durationMinutes] : []),
+          ...(project.volunteerShifts ?? []).map(shift => shift.startMinute + shift.durationMinutes),
+        ))}</small>}
         {project.state === "Em construção" && progress && <span className="architectural-progress"><i style={{ width: `${Math.min(100, progress.value / progress.required * 100)}%` }} /></span>}
       </> : <>
         <span className="shelter-room-icon"><Boxes size={17} aria-hidden /></span>
