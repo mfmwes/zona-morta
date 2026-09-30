@@ -614,12 +614,37 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
               : selectedDefinition.requiresPower ? "Automática com energia" : "Passiva"}</dd></div>
           </dl>
 
-          <div className="construction-effect-box"><span>Efeito</span><p>{selectedDefinition.effects.map(item => item.label).join(" · ")}</p></div>
+          <div className="construction-effect-box"><span>Efeito estrutural</span><p>{selectedDefinition.effects.map(item => item.label).join(" · ")}</p></div>
+          {selectedBenefits.length > 0 && <div className="construction-benefit-box">
+            <span>Benefícios mecânicos</span>
+            <ul>{selectedBenefits.map(benefit => <li key={benefit}>{benefit}</li>)}</ul>
+          </div>}
+
+          {selectedProject && !["Planejado"].includes(selectedProject.state) && <div className={`construction-integrity-panel is-${projectStateTone(selectedProject)}`}>
+            <div><span>Integridade</span><strong>{integrityGlyph(selectedProject)}</strong></div>
+            <div><b>{selectedIntegrity}/3 · {projectIntegrityLabel(selectedProject)}</b>
+              <small>{selectedIntegrity === 3 ? "Estrutura íntegra."
+                : selectedIntegrity === 2 ? "Continua funcional, mas está vulnerável a novo dano."
+                : selectedIntegrity === 1 ? "Inoperante: benefícios suspensos até o reparo."
+                : "Destruída: exige restauração antes de voltar a funcionar."}</small></div>
+          </div>}
+
+          {selectedRepairPlan && <div className="construction-repair-plan">
+            <Wrench size={17} />
+            <span><b>{selectedRepairPlan.label}</b><small>{projectDisplayCosts(selectedRepairPlan.costs)} · {selectedRepairPlan.requiredProgress} trabalho
+              {selectedRepairPlan.workshopDiscount ? " · Oficina aplicará desconto de 1 Peça" : ""}</small></span>
+          </div>}
+
+          {selectedDefinition.operationWork && selectedProject && ["Concluído", "Danificado"].includes(selectedProject.state) && <div className="construction-operation-progress">
+            <div><span>{selectedDefinition.operationWork.label}</span><b>{selectedProject.operationProgress ?? 0}/{selectedDefinition.operationWork.requiredProgress}</b></div>
+            <div className="construction-mini-progress"><span style={{ width: `${Math.min(100, (selectedProject.operationProgress ?? 0) / selectedDefinition.operationWork.requiredProgress * 100)}%` }} /></div>
+            <small>Ao completar o ciclo: {Object.entries(selectedDefinition.operationWork.output).map(([key, value]) => `${value} ${key === "food" ? "Comida" : key === "water" ? "Água" : "Peças"}`).join(" · ")}.</small>
+          </div>}
 
           {dependencyIssue && !selectedProject && <div className="construction-inline-warning"><AlertTriangle size={15} /> {dependencyIssue}</div>}
           {selectedProject && placementIssue && <div className="construction-inline-warning"><AlertTriangle size={15} /><span><b>Local ainda não definido.</b> {placementIssue}</span></div>}
 
-          {selectedProject && <div className="construction-project-progress">
+          {selectedProject && ["Planejado", "Em construção"].includes(selectedProject.state) && <div className="construction-project-progress">
             <div><span>{selectedProgress?.repairing ? "Reparo" : "Progresso"}</span><b>{selectedProgress?.value}/{selectedProgress?.required}</b></div>
             <div className="construction-mini-progress"><span style={{ width: `${Math.min(100, (selectedProgress?.value ?? 0) / Math.max(1, selectedProgress?.required ?? 1) * 100)}%` }} /></div>
             {selectedProject.workShift
