@@ -474,7 +474,7 @@ export default function CampaignApp() {
                   }}>Nova expedição</Button></div>
               </div>
               <div className="flex flex-wrap gap-x-6 gap-y-3"><Counter compact label="Barulho · 0–5" value={game.noise} max={5} onChange={value=>edit(d=>{d.noise=value;})} />
-                <Counter compact label="Fear · 0–12" value={game.fear} max={12} onChange={value=>edit(d=>{d.fear=value;})} /></div>
+                <Counter compact tone="fear" label="Fear · 0–12" value={game.fear} max={12} onChange={value=>edit(d=>{d.fear=value;})} /></div>
             </section>
             <section className="grid gap-3 content-start border-t pt-4 xl:border-t-0 xl:border-l xl:pl-5 xl:pt-0">
               <div className="flex items-center gap-2"><Package size={19} /><b>{game.shelter.hex ? "Suprimentos do abrigo" : "Reservas do grupo"}</b></div>

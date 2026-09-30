@@ -157,24 +157,24 @@
   margin: 0;
   padding: 13px;
   border: 1px solid #cddbd4;
-  border-left: 3px solid #5e9188;
+  border-left: 3px solid var(--hope);
   border-radius: 6px;
   background: #fffefa;
 }
-.table-chat-roll-card.is-fear { border-left-color: #a9665c; }
-.table-chat-roll-card.is-critical { border-left-color: #b38b4e; }
+.table-chat-roll-card.is-fear { border-left-color: var(--fear); }
+.table-chat-roll-card.is-critical { border-left-color: var(--hope); box-shadow: inset 4px 0 0 var(--fear); }
 .table-chat-roll-kicker {
   display: flex;
   align-items: center;
   gap: 5px;
   margin: 0;
-  color: #507c76;
+  color: var(--hope-ink);
   font: 700 .63rem var(--font-mono);
   letter-spacing: .09em;
   text-transform: uppercase;
 }
-.table-chat-roll-card.is-fear .table-chat-roll-kicker { color: #93564e; }
-.table-chat-roll-card.is-critical .table-chat-roll-kicker { color: #886a37; }
+.table-chat-roll-card.is-fear .table-chat-roll-kicker { color: var(--fear-ink); }
+.table-chat-roll-card.is-critical .table-chat-roll-kicker { color: var(--fear-ink); }
 .table-chat-roll-card h3 {
   margin: 5px 0 10px;
   color: #29474a;
@@ -198,15 +198,15 @@
   align-items: baseline;
   gap: 7px;
   margin: 2px 0 10px;
-  color: #245c5c;
+  color: var(--hope-ink);
   font: 800 1.7rem var(--font-mono);
   line-height: 1;
 }
-.table-chat-roll-total small { color: #486e6a; font: 700 .69rem var(--font-sans); letter-spacing: .01em; }
-.table-chat-roll-card.is-fear .table-chat-roll-total { color: #914c46; }
-.table-chat-roll-card.is-fear .table-chat-roll-total small { color: #835f59; }
-.table-chat-roll-card.is-critical .table-chat-roll-total { color: #846a35; }
-.table-chat-roll-card.is-critical .table-chat-roll-total small { color: #79683f; }
+.table-chat-roll-total small { color: #735f28; font: 700 .69rem var(--font-sans); letter-spacing: .01em; }
+.table-chat-roll-card.is-fear .table-chat-roll-total { color: var(--fear-ink); }
+.table-chat-roll-card.is-fear .table-chat-roll-total small { color: #715783; }
+.table-chat-roll-card.is-critical .table-chat-roll-total { color: var(--fear-ink); }
+.table-chat-roll-card.is-critical .table-chat-roll-total small { color: #6e5d85; }
 .table-chat-dice-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 8px 0; }
 .table-chat-dice-pair > span {
   display: flex;
@@ -217,8 +217,8 @@
   border-radius: 4px;
   font-size: .7rem;
 }
-.table-chat-dice-pair .hope { background: #eaf3ef; color: #326d65; }
-.table-chat-dice-pair .fear { background: #f7ece8; color: #8c564e; }
+.table-chat-dice-pair .hope { background: var(--hope-surface); color: var(--hope-ink); }
+.table-chat-dice-pair .fear { background: var(--fear-surface); color: var(--fear-ink); }
 .table-chat-dice-pair b { margin-left: auto; color: #243e40; font-family: var(--font-mono); }
 .table-chat-formula {
   display: flex;

@@ -12,6 +12,12 @@
   --ink-soft: #526a69;
   --accent-warm: #c89a62;
   --shadow-panel: 0 2px 4px #102b2c0a, 0 14px 34px #102b2c0b;
+  --hope: #f4c542;
+  --hope-ink: #725300;
+  --hope-surface: #fff2c7;
+  --fear: #70409f;
+  --fear-ink: #522477;
+  --fear-surface: #eee5f7;
 }
 
 html { scroll-behavior: smooth; }
@@ -155,4 +161,167 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
   html { scroll-behavior:auto; }
   .reference-item,.library-card,.reference-category { transition:none; }
   .reference-item:hover,.library-card:hover { transform:none; }
+}
+
+/* Theme control stays available before and after entering a campaign. */
+.theme-toggle {
+  position: fixed;
+  z-index: 90;
+  left: 15px;
+  bottom: 15px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 1px solid #53746e;
+  border-radius: 6px;
+  background: #163538;
+  color: #eef5ee;
+  box-shadow: 0 3px 12px #0d25273d;
+  font-size: .72rem;
+  font-weight: 800;
+}
+.theme-toggle:hover { background: #285052; }
+.theme-toggle-moon { display: none; }
+html[data-theme="dark"] .theme-toggle-sun { display: none; }
+html[data-theme="dark"] .theme-toggle-moon { display: block; color: var(--hope); }
+html[data-theme="dark"] .theme-toggle { border-color: #536264; background: #232b2d; color: #edf3ee; }
+html[data-theme="dark"] .theme-toggle:hover { background: #303c3d; }
+
+/* Night theme: system surfaces, inputs, campaign panels, and menus share the same neutral contrast scale. */
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #111819;
+  --foreground: #e4ece7;
+  --card: #192324;
+  --popover: #1c2728;
+  --border: #354846;
+  --input: #60746f;
+  --primary: #78afa3;
+  --primary-foreground: #10201f;
+  --secondary: #263534;
+  --secondary-foreground: #e0ebe4;
+  --muted: #24302f;
+  --muted-foreground: #aabbb6;
+  --accent: #243d3a;
+  --accent-foreground: #e7f1eb;
+  --sidebar: #0d1516;
+  --sidebar-foreground: #e9f0eb;
+  --sidebar-primary: #a8d4c9;
+  --sidebar-primary-foreground: #10201f;
+  --sidebar-accent: #253c3b;
+  --sidebar-accent-foreground: #fff;
+  --sidebar-border: #38514e;
+  --sidebar-ring: #9bc7bc;
+  --surface-soft: #202c2c;
+  --surface-raised: #1c2728;
+  --ink-soft: #aebdb8;
+  --accent-warm: #d4ad5e;
+  --shadow-panel: 0 2px 4px #00000035, 0 14px 34px #00000030;
+  --hope-ink: #ffe48a;
+  --hope-surface: #403307;
+  --fear-ink: #e6cefb;
+  --fear-surface: #332143;
+}
+html[data-theme="dark"] body { background: radial-gradient(circle at 72% -18%,#243534 0,transparent 42%),var(--background); }
+html[data-theme="dark"] .workspace,
+html[data-theme="dark"] .library-shell { background: var(--background); }
+html[data-theme="dark"] .topbar { border-color: var(--border); background: #182122e8; }
+html[data-theme="dark"] .panel,
+html[data-theme="dark"] .metric,
+html[data-theme="dark"] .list-card,
+html[data-theme="dark"] .reference-item,
+html[data-theme="dark"] .players-row,
+html[data-theme="dark"] .character-surface { border-color: var(--border); background: var(--card); color: var(--foreground); box-shadow: var(--shadow-panel); }
+html[data-theme="dark"] .field input,
+html[data-theme="dark"] .field textarea,
+html[data-theme="dark"] .field select,
+html[data-theme="dark"] .field-input,
+html[data-theme="dark"] .players-link-row input { border-color: var(--input); background: #121a1b; color: var(--foreground); }
+html[data-theme="dark"] .subtle,
+html[data-theme="dark"] .intro-line,
+html[data-theme="dark"] .reference-item-excerpt,
+html[data-theme="dark"] .reference-detail dd,
+html[data-theme="dark"] .players-person span { color: var(--muted-foreground); }
+html[data-theme="dark"] .tag,
+html[data-theme="dark"] .save-status { border-color: #46605b; background: #203735; color: #c8e2d9; }
+html[data-theme="dark"] .save-status.error,
+html[data-theme="dark"] .tag-danger { border-color: #8f5751; background: #402725; color: #f4c5bd; }
+html[data-theme="dark"] .reference-tabs,
+html[data-theme="dark"] .reference-category,
+html[data-theme="dark"] .character-attribute,
+html[data-theme="dark"] .character-experience-list button,
+html[data-theme="dark"] .character-provision-grid > span,
+html[data-theme="dark"] .character-defense-card { border-color: #3b514e; background: #202c2c; color: var(--foreground); }
+html[data-theme="dark"] .reference-category,
+html[data-theme="dark"] .character-attribute span,
+html[data-theme="dark"] .character-defense-card > span,
+html[data-theme="dark"] .character-defense-card > strong { color: #dce7e1; }
+html[data-theme="dark"] .reference-category:hover,
+html[data-theme="dark"] .character-attribute:hover,
+html[data-theme="dark"] .character-experience-list button:hover { border-color: #69988d; background: #293b38; }
+html[data-theme="dark"] .reference-detail dl > div,
+html[data-theme="dark"] .reference-pagination,
+html[data-theme="dark"] .character-section-heading,
+html[data-theme="dark"] .character-info-row,
+html[data-theme="dark"] .character-kit-line,
+html[data-theme="dark"] .character-equipment { border-color: #344744; }
+html[data-theme="dark"] .character-section-heading h3,
+html[data-theme="dark"] .character-equipment h4,
+html[data-theme="dark"] .character-item-name { color: #edf3ee; }
+html[data-theme="dark"] .character-section-intro,
+html[data-theme="dark"] .character-surface > p,
+html[data-theme="dark"] .character-surface .character-status-line + p,
+html[data-theme="dark"] .character-equipment p,
+html[data-theme="dark"] .character-info-row span,
+html[data-theme="dark"] .character-kit-line span { color: #b0c0bb; }
+html[data-theme="dark"] .character-rule-note,
+html[data-theme="dark"] .character-feature-callout,
+html[data-theme="dark"] .character-roll-history > div,
+html[data-theme="dark"] .character-story-grid > div,
+html[data-theme="dark"] .character-empty-list { background: #222d2d; color: #d2ddd7; }
+html[data-theme="dark"] .character-hope-teaser { border-color: #8a6b14; background: var(--hope-surface); color: #fff0b8; box-shadow: none; }
+html[data-theme="dark"] .character-hope-teaser:hover { background: #51420d; }
+html[data-theme="dark"] .character-hope-teaser strong { background: #6b5510; color: #ffe995; }
+html[data-theme="dark"] [data-slot="dialog-content"],
+html[data-theme="dark"] [data-slot="select-content"],
+html[data-theme="dark"] [data-slot="dropdown-menu-content"],
+html[data-theme="dark"] [data-slot="alert-dialog-content"] { border-color: var(--border); background: var(--popover); color: var(--foreground); }
+html[data-theme="dark"] .roll-modes,
+html[data-theme="dark"] .roll-experience,
+html[data-theme="dark"] .roll-result,
+html[data-theme="dark"] .roll-damage-panel { border-color: #3a504c; background: #1c2828; color: var(--foreground); }
+html[data-theme="dark"] .roll-edge button { border-color: #4b615d; background: #1c2727; color: #dce7e1; }
+html[data-theme="dark"] .roll-dice .total { background: #1d3b39; color: #bfe5dc; }
+html[data-theme="dark"] .roll-breakdown,
+html[data-theme="dark"] .roll-hint,
+html[data-theme="dark"] .roll-actions > span { color: #afbfba; }
+html[data-theme="dark"] .table-chat { border-color: #354846; background: #131b1c; color: #e2ebe5; }
+html[data-theme="dark"] .table-chat-header,
+html[data-theme="dark"] .table-chat-composer { border-color: #354846; background: #192324; }
+html[data-theme="dark"] .table-chat-header h2,
+html[data-theme="dark"] .table-chat-meta strong,
+html[data-theme="dark"] .table-chat-roll-author strong { color: #e4eee8; }
+html[data-theme="dark"] .table-chat-message { border-color: #293937; }
+html[data-theme="dark"] .table-chat-message-body > p { color: #cbd8d2; }
+html[data-theme="dark"] .table-chat-avatar { border-color: #52726b; background: #263b38; color: #c3e1d7; }
+html[data-theme="dark"] .table-chat-roll-card { border-color: #3c504d; background: #1a2425; }
+html[data-theme="dark"] .table-chat-roll-card h3 { color: #e0ebe5; }
+html[data-theme="dark"] .table-chat-roll-separator { background: #354846; }
+html[data-theme="dark"] .table-chat-roll-details { border-top-color: #354846; }
+html[data-theme="dark"] .table-chat-formula b,
+html[data-theme="dark"] .table-chat-roll-details p { color: #b3c4be; }
+html[data-theme="dark"] .table-chat-damage { background: #33291f; }
+html[data-theme="dark"] .table-chat-damage strong { color: #f0d7b2; }
+html[data-theme="dark"] .table-chat-rollbar button { border-color: #46605b; background: #233230; color: #c8ddd5; }
+html[data-theme="dark"] .table-chat-rollbar button:hover { border-color: #80a99d; background: #2b403c; color: #edf6f0; }
+html[data-theme="dark"] .table-chat-input textarea { border-color: #526863; background: #101718; color: #e5eee8; }
+html[data-theme="dark"] .table-chat-input textarea::placeholder { color: #849691; }
+html[data-theme="dark"] .table-chat-speaker,
+html[data-theme="dark"] .table-chat-speaker select { color: #b9ccc5; }
+
+@media (max-width: 620px) {
+  .theme-toggle { bottom: calc(68px + env(safe-area-inset-bottom)); left: 10px; min-width: 37px; padding: 8px; }
+  .theme-toggle span { display: none; }
 }

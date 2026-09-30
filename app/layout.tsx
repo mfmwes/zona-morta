@@ -3,6 +3,7 @@ import "./globals.css";
 import "./visual-system.css";
 import "./chat.css";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export const metadata: Metadata = {
   title: "Zona Morta | Aplicativo de campanha",
@@ -19,8 +20,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
-      <body className="antialiased">{children}<Toaster position="bottom-right" richColors closeButton /></body>
+    <html lang="pt-BR" suppressHydrationWarning>
+      <head><script dangerouslySetInnerHTML={{ __html: "try { const theme = localStorage.getItem('zona-morta-theme'); if (theme === 'dark' || theme === 'light') document.documentElement.dataset.theme = theme; } catch {}" }} /></head>
+      <body className="antialiased"><ThemeToggle />{children}<Toaster position="bottom-right" richColors closeButton /></body>
     </html>
   );
 }

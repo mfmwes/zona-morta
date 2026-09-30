@@ -24,11 +24,11 @@ export function Pick({ label, value, options, onChange, placeholder = "Escolha",
   </div>;
 }
 
-export function Counter({ label, value, max = 999, min = 0, onChange, compact = false, editable = false, quickStep }: {
+export function Counter({ label, value, max = 999, min = 0, onChange, compact = false, editable = false, quickStep, tone }: {
   label: string; value: number; max?: number; min?: number; onChange: (value: number) => void;
-  compact?: boolean; editable?: boolean; quickStep?: number;
+  compact?: boolean; editable?: boolean; quickStep?: number; tone?: "hope" | "fear";
 }) {
-  return <div className={`${compact ? "flex items-center justify-between gap-3" : "metric flex items-center justify-between gap-3"} flex-wrap`}>
+  return <div className={`${compact ? "flex items-center justify-between gap-3" : "metric flex items-center justify-between gap-3"} flex-wrap${tone ? ` counter--${tone}` : ""}`}>
     <span className="font-bold text-sm">{label}</span>
     <div className={`number-control ${editable ? "stock-control" : ""}`}>
       <button type="button" aria-label={`Diminuir ${label}`} disabled={value <= min} onClick={() => onChange(Math.max(min, value - 1))}>−</button>
