@@ -179,6 +179,7 @@ export function DayCloseDialog({
           <Counter compact editable label="Comida" value={currentPlan.residentsFood} min={0} max={residents} onChange={value => updateResident("food", value)} />
           <Counter compact editable label="Água" value={currentPlan.residentsWater} min={0} max={residents} onChange={value => updateResident("water", value)} />
         </div>
+        <p className="text-xs subtle">Moradores não incluídos nesses contadores são tratados como atendidos por outra fonte; o sistema não cria privação para eles automaticamente.</p>
         {(inspection.residentMissing.food > 0 || inspection.residentMissing.water > 0) && <p className="day-close-warning">
           <AlertTriangle size={15} /> As reservas não cobrem {inspection.residentMissing.food} porção(ões) de comida e {inspection.residentMissing.water} de água previstas para moradores.
         </p>}
