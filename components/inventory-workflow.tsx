@@ -9,7 +9,7 @@ import { Counter, Field, Pick } from "@/components/game-controls";
 import { ItemArt } from "@/components/item-art";
 import { addLog, shelterAmmoCount, survivorHex, survivorStats, type AmmunitionType, type EquipmentSlot, type GameState, type InventoryItem } from "@/lib/game";
 import { createId } from "@/lib/id";
-import { addStack, ammoTypeFor, ammoTypes, atSharedStorage, catalogForItem, catalogItemIsConsumable, catalogItems, catalogKey, compatibleSlots, conditions,
+import { addStack, ammoTypeFor, ammoTypes, atSharedStorage, catalogForItem, catalogItemCanUse, catalogItemIsConsumable, catalogItems, catalogKey, compatibleSlots, conditions,
   container, countsAsMedication, displacedSlots, equipItem, inventoryCategories, itemFromCatalog,
   provisionInfo, provisionPreparationCheck, provisionTransferError, slotLabels, transferItem, transferProvisions } from "@/lib/inventory";
 import { performItemAction } from "@/lib/item-actions";
@@ -132,7 +132,7 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
   const consumer = game.survivors.find(person => person.id === consumerId);
   const alreadyConsumed = Boolean(consumer && provisionState.resource
     && provisionConsumedToday(game, consumer, provisionState.resource as DailyResource));
-  const canUse = catalogItemIsConsumable(item);
+  const canUse = catalogItemCanUse(item);
   const preparationCheck = provisionState.resource && !provisionState.ready
     ? provisionPreparationCheck(game, ownerId, item, count) : null;
   const stockResource = item.category === "Suprimentos abstratos"
@@ -235,7 +235,9 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
           : `Preparo: ${provision.preparation ?? "resolver em cena"}. Água, utensílios e fonte de calor são descontados/verificados quando exigidos.`}</p>
         {preparationCheck && <p className={`inventory-hint ${preparationCheck.ok ? "" : "inventory-danger"}`} role="status">{preparationCheck.message}</p>}
       </div>}
-      {mode === "use" && <p className="inventory-hint">Consumível: desconta a unidade ao confirmar. Consulte o efeito no catálogo e aplique em cena; não cria outro recurso automaticamente.</p>}
+      {mode === "use" && <p className="inventory-hint">{catalogItemIsConsumable(item)
+        ? "Consumível: desconta a unidade ao confirmar. O efeito indicado no catálogo é aplicado em cena."
+        : "Uso reutilizável: o item permanece no inventário. Efeitos mecânicos explícitos, como Barulho do apito, são registrados automaticamente."}</p>}
       {mode === "medication" && <p className="inventory-hint">Cada unidade vira 1 Medicamentos nas reservas compartilhadas. Bolsa e estojo de antissepsia são consumidos; Caixa clínica completa deixa um Kit médico de campo reutilizável.</p>}
       {mode === "stock" && <p className="inventory-hint">Cada unidade física vira uma unidade nas reservas compartilhadas. O objeto sai do inventário para evitar contagem dupla.</p>}
       {mode === "discard" && <p className="inventory-hint inventory-danger">{confirmDiscard ? "Confirmar: as unidades serão retiradas da ficha e o descarte aparecerá no registro." : "Deixar para trás retira o item sem criar uma reserva nova no mapa."}</p>}
