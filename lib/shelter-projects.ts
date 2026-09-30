@@ -1,16 +1,16 @@
 import { createId } from "./id";
-import type {
-  GameState,
-  NPC,
-  ShelterManualAdjustments,
-  ShelterPost,
-  ShelterProject,
-  ShelterProjectCategory,
-  ShelterProjectCost,
-  ShelterProjectEffect,
-  ShelterState,
+import {
+  normalizeShelterAmmo,
+  type GameState,
+  type NPC,
+  type ShelterManualAdjustments,
+  type ShelterPost,
+  type ShelterProject,
+  type ShelterProjectCategory,
+  type ShelterProjectCost,
+  type ShelterProjectEffect,
+  type ShelterState,
 } from "./game";
-
 type ProjectDefinition = {
   key: string;
   name: string;
@@ -93,6 +93,7 @@ export function createShelterProject(key: string): ShelterProject | null {
 }
 
 export function normalizeShelter(shelter: ShelterState) {
+  normalizeShelterAmmo(shelter);
   shelter.projects ??= [];
   shelter.posts ??= [];
   const baseSecurity = shelter.hex ? 1 : 0;
