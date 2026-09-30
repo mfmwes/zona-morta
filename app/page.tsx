@@ -27,6 +27,7 @@ import { sectorProfiles } from "@/lib/sectors";
 import { adjustProvisionCount } from "@/lib/provisions";
 import { beginExpedition, beginScene } from "@/lib/abilities";
 import { playerEditPayload } from "@/lib/collaboration";
+import { advanceCampaignTime, setCampaignTime } from "@/lib/time";
 
 type CampaignResponse = { revision?: number; state?: GameState; role: "mestre" | "jogador" | "convidado"; ownerId: string; survivorId?: string | null; restPeers?: RestPeer[] };
 type SaveStatus = "salvo" | "salvando" | "erro" | "conflito";
@@ -232,13 +233,19 @@ export default function CampaignApp() {
       return;
     }
     let previous = "";
+    let completedWork: { name: string; points: number; completed: boolean }[] = [];
     edit(draft => {
       previous = displayTime(draft.minutes);
-      draft.minutes = hours * 60 + minutes;
+      const result = setCampaignTime(draft, hours * 60 + minutes);
+      completedWork = result.completedWork;
       addLog(draft, "tempo", `Horário ajustado pelo mestre: ${previous} → ${displayTime(draft.minutes)}.`);
     });
     setTimeEditorOpen(false);
-    toast.success("Horário ajustado", { description: `${previous} → ${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}.` });
+    toast.success("Horário ajustado", {
+      description: completedWork.length
+        ? `${previous} → ${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")} · ${completedWork.map(row => `${row.name} +${row.points}${row.completed ? " concluída" : ""}`).join(" · ")}`
+        : `${previous} → ${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}.`,
+    });
   }
 
   function downloadBackup() {
@@ -566,8 +573,16 @@ export default function CampaignApp() {
             <div className="mr-auto"><b>Relógio da expedição</b><p className="text-xs subtle">Ao anoitecer, registre o descanso na ficha, mesmo sem abrigo.</p></div>
             {[30,60,120].map(amount=><Button key={amount} size="sm" variant="outline" disabled={game.minutes+amount>=1440}
               onClick={() => {
-                edit(d=>{d.minutes+=amount;addLog(d,"tempo",`Passaram ${amount} minutos na expedição.`);});
-                toast("Tempo avançado", { description: `+${amount < 60 ? `${amount} min` : `${amount / 60} h`} na expedição.` });
+                let completedWork: { name: string; points: number; completed: boolean }[] = [];
+                edit(d => {
+                  const result = advanceCampaignTime(d, amount, `Passaram ${amount} minutos na expedição.`);
+                  completedWork = result.completedWork;
+                });
+                toast("Tempo avançado", {
+                  description: completedWork.length
+                    ? `+${amount < 60 ? `${amount} min` : `${amount / 60} h`} · ${completedWork.map(row => `${row.name} +${row.points}${row.completed ? " concluída" : ""}`).join(" · ")}`
+                    : `+${amount < 60 ? `${amount} min` : `${amount / 60} h`} na expedição.`,
+                });
               }}>
               +{amount<60?`${amount} min`:`${amount/60} h`}</Button>)}
             <Dialog open={timeEditorOpen} onOpenChange={setTimeEditorOpen}>
