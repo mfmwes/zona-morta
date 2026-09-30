@@ -13,6 +13,7 @@ import { consumeProvisionPortionFromItems } from "./inventory";
 import { provisionBreakdown, provisionItemInfo } from "./provision-items";
 import { expirePhysicalFood, expirePortionLots, provisionDeadline, withdrawPortions } from "./provisions";
 import { shelterMetrics } from "./shelter-projects";
+import { settleScheduledWorkBeforeMorning } from "./time";
 
 export type DailyResource = "food" | "water";
 export type DayProvisionSource = "already" | "shared" | "personal" | "other" | "none";
@@ -333,6 +334,7 @@ export function inspectDayClosePlan(game: GameState, plan: DayClosePlan): DayClo
 }
 
 function advanceMorning(game: GameState) {
+  settleScheduledWorkBeforeMorning(game);
   game.day += 1;
   game.minutes = 480;
   game.noise = 0;
