@@ -16,7 +16,7 @@ import { FormerShelterProjects, ShelterProjectsManager } from "@/components/shel
 import { ShelterVisualDashboard } from "@/components/shelter-dashboard";
 import { RuntimeErrorBoundary } from "@/components/runtime-error-boundary";
 import { ammunitionTypes, content, establishShelter, recoverFormerAmmo, recoverFormerStock, setShelterAmmoCount, shelterAmmoCount, shelterPopulationBreakdown, survivorPositionGroups, survivorsAtHex, type GameState } from "@/lib/game";
-import { shelterMetrics } from "@/lib/shelter-projects";
+import { shelterColdStorageActive, shelterMetrics } from "@/lib/shelter-projects";
 import { atSharedStorage, batteryStateFor, catalogForItem } from "@/lib/inventory";
 import { provisionBreakdown, provisionDisplay, provisionItemInfo, provisionShelfLabel } from "@/lib/provision-items";
 import { adjustProvisionCount } from "@/lib/provisions";
@@ -45,6 +45,8 @@ export function ShelterPanel({ game, edit, playerPreview, playerSurvivorId }: { 
   const population = shelterPopulationBreakdown(game);
   const namedResidents = population.namedResidents;
   const metrics = shelterMetrics(s, game);
+  const refrigerationInstalled = Boolean(s.projects?.some(project => project.key === "refrigeration"));
+  const coldStorageActive = shelterColdStorageActive(game, s);
   const travelGroups = survivorPositionGroups(game);
 
   useEffect(() => { setShelterNotes(s.notes); }, [s.notes]);
@@ -115,9 +117,13 @@ export function ShelterPanel({ game, edit, playerPreview, playerSurvivorId }: { 
         <Counter label="Ajuste manual · Energia" value={s.manualAdjustments?.energy ?? 0} min={-3} max={9} onChange={value => edit(d => { d.shelter.manualAdjustments ??= { security: 0, energy: 0, comfort: 0 }; d.shelter.manualAdjustments.energy = value; d.shelter.energy = value; })} />
         <Counter label="Ajuste manual · Conforto" value={s.manualAdjustments?.comfort ?? 0} min={-3} max={9} onChange={value => edit(d => { d.shelter.manualAdjustments ??= { security: 0, energy: 0, comfort: 0 }; d.shelter.manualAdjustments.comfort = value; d.shelter.comfort = value; })} />
       </div>
-      <label className="inventory-ready mt-3"><input type="checkbox" checked={Boolean(s.coldStorage)} disabled={metrics.energy < 1}
-        onChange={event => edit(d => { d.shelter.coldStorage = event.target.checked; })} />
-        <span>Refrigeração funcional: há equipamento de frio e Energia 1+. Conserva refeições congeladas físicas no depósito; depois do preparo, as porções vencem no próximo amanhecer.</span></label>
+      {refrigerationInstalled
+        ? <div className={`inventory-ready mt-3 ${coldStorageActive ? "" : "is-warning"}`}>
+            <span><b>Refrigeração estrutural: {coldStorageActive ? "ativa" : "inativa"}.</b> A instalação conserva automaticamente alimentos refrigeráveis enquanto estiver operacional e com energia suficiente.</span>
+          </div>
+        : <label className="inventory-ready mt-3"><input type="checkbox" checked={Boolean(s.coldStorage)} disabled={metrics.energy < 1}
+            onChange={event => edit(d => { d.shelter.coldStorage = event.target.checked; })} />
+            <span>Equipamento de frio legado: use este controle apenas em campanhas antigas sem a construção Refrigeração. Exige Energia positiva.</span></label>}
     </>}
   </>;
 
