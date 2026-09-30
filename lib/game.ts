@@ -210,6 +210,7 @@ export type Survivor = {
   /** Uma carga compatível cobre os disparos da mesma arma/tipo durante a cena. */
   ammoSpentScene?: number;
   ammoSpentType?: string;
+  ammoSpentTypes?: string[];
   inventory: InventoryItem[];
   notes: string;
   restPlan?: {
