@@ -51,7 +51,7 @@ const editable = ["portrait", "primary", "secondary", "protection", "outfit", "p
   "ammo", "ammoType", "ammoSpentScene", "ammoSpentType", "ammoSpentTypes", "inventory", "notes", "abilityUses", "restPlan"] as const;
 const allowedKeys = new Set<string>([...immutable, ...editable]);
 const allowedItemKeys = new Set(["id", "name", "load", "qty", "condition", "catalogKey", "category", "armorMarked", "foundDay",
-  "provisionResource", "portionsPerUnit", "portionsRemaining", "prepared", "verified", "opened", "expiresDay", "battery"]);
+  "provisionResource", "portionsPerUnit", "portionsRemaining", "prepared", "verified", "opened", "expiresDay", "battery", "storedResource", "storedAmount"]);
 export type PlayerLog = { kind: string; text: string };
 
 const restActions = new Set(["hp", "stress", "armor", "prepare", "fiction", "hp-full", "stress-full", "armor-full"]);
@@ -119,7 +119,11 @@ export function applyPlayerChange(game: GameState, survivorId: string, before: S
       || (item.verified !== undefined && typeof item.verified !== "boolean")
       || (item.opened !== undefined && typeof item.opened !== "boolean")
       || (item.expiresDay !== undefined && (!Number.isInteger(item.expiresDay) || item.expiresDay < 1 || item.expiresDay > 9999))
-      || (item.battery !== undefined && !["Carregada", "Descarregada"].includes(item.battery)))
+      || (item.battery !== undefined && !["Carregada", "Descarregada"].includes(item.battery))
+      || (item.storedResource !== undefined && !["water", "fuel"].includes(item.storedResource))
+      || (item.storedAmount !== undefined && (!Number.isInteger(item.storedAmount) || item.storedAmount < 1 || item.storedAmount > 4))
+      || (item.storedResource === "fuel" && (item.storedAmount ?? 0) > 1)
+      || ((item.storedResource === undefined) !== (item.storedAmount === undefined)))
     || typeof after.notes !== "string" || after.notes.length > 4000
     || !validRestPlan(after.restPlan, game.survivors, after, game.partyHex)
     || logs.some(log => !log || !["chat", "dados", "dano", "inventário", "habilidade", "provisões", "tratamento"].includes(log.kind)
