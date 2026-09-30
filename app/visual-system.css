@@ -245,6 +245,30 @@ html[data-theme="dark"] .number-control button { background: #233331; color: #d9
 html[data-theme="dark"] .number-control button:hover:not(:disabled) { background: #304642; }
 html[data-theme="dark"] .number-control output,
 html[data-theme="dark"] .number-control input { border-color: #4b625d; background: #182323; color: #e5eee9; }
+
+/* Campaign HUD */
+html[data-theme="dark"] .scene-supplies-section { border-color:#3b514e; }
+html[data-theme="dark"] .scene-control-title,
+html[data-theme="dark"] .scene-meter-identity b,
+html[data-theme="dark"] .scene-supply-identity b { color:#e2eee8; }
+html[data-theme="dark"] .scene-control-title svg,
+html[data-theme="dark"] .scene-meter-identity > svg { color:#a9c6bf; }
+html[data-theme="dark"] .scene-meter-fear .scene-meter-identity > svg { color:#d09ae8; }
+html[data-theme="dark"] .scene-meter-identity small,
+html[data-theme="dark"] .scene-supplies-note { color:#9fb2ad; }
+html[data-theme="dark"] .scene-meter + .scene-meter,
+html[data-theme="dark"] .scene-supplies-note { border-color:#344744; }
+html[data-theme="dark"] .scene-supply-food .scene-supply-identity svg { color:#e0a45f; }
+html[data-theme="dark"] .scene-supply-water .scene-supply-identity svg { color:#69b7e1; }
+html[data-theme="dark"] .scene-supply-parts .scene-supply-identity svg { color:#b1c2bd; }
+html[data-theme="dark"] .scene-control-actions button {
+  border-color:#516b65;
+  background:#20302f;
+  color:#eef5f1;
+}
+html[data-theme="dark"] .scene-control-actions button:hover { background:#2b403d; }
+html[data-theme="dark"] .scene-meter-control .number-control,
+html[data-theme="dark"] .scene-supply-control .number-control { background:#172121; }
 html[data-theme="dark"] .counter--fear > span,
 html[data-theme="dark"] .counter--fear .number-control output { color: var(--fear-ink); }
 html[data-theme="dark"] .subtle,
