@@ -2844,3 +2844,115 @@ button { cursor: pointer; } button:disabled { cursor: not-allowed; }
     padding:12px;
   }
 }
+
+
+/* Participação do jogador nas obras do abrigo. */
+.construction-player-work {
+  display:grid;
+  gap:9px;
+  padding:10px;
+  border:1px solid #54776f;
+  border-radius:8px;
+  background:color-mix(in srgb,var(--card) 88%,#31584f);
+}
+.construction-player-work-head {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+.construction-player-work-head > svg { flex:none; color:#8db7aa; }
+.construction-player-work-head > span:nth-child(2) {
+  display:grid;
+  min-width:0;
+  gap:1px;
+  flex:1;
+}
+.construction-player-work-head b { font-size:.72rem; }
+.construction-player-work-head small { color:var(--muted-foreground); font-size:.58rem; }
+.construction-player-work > p {
+  color:var(--muted-foreground);
+  font-size:.62rem;
+  line-height:1.45;
+}
+.construction-player-shift {
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+  padding:8px;
+  border:1px solid #678d82;
+  border-radius:7px;
+  background:color-mix(in srgb,var(--card) 80%,#456f63);
+}
+.construction-player-shift > svg { flex:none; margin-top:2px; }
+.construction-player-shift > span {
+  display:grid;
+  gap:2px;
+  min-width:0;
+  flex:1;
+}
+.construction-player-shift b { font-size:.68rem; }
+.construction-player-shift small {
+  color:var(--muted-foreground);
+  font-size:.58rem;
+  line-height:1.4;
+}
+.construction-player-preview {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:8px 9px;
+  border:1px solid var(--border);
+  border-radius:7px;
+  background:color-mix(in srgb,var(--card) 95%,var(--muted));
+}
+.construction-player-preview > span { display:grid; gap:2px; }
+.construction-player-preview b { font-size:.66rem; }
+.construction-player-preview small { color:var(--muted-foreground); font-size:.58rem; line-height:1.35; }
+
+.construction-player-volunteers {
+  display:grid;
+  gap:5px;
+  margin-top:2px;
+  padding-top:8px;
+  border-top:1px solid color-mix(in srgb,var(--border) 80%,transparent);
+}
+.construction-player-volunteers > span {
+  color:var(--muted-foreground);
+  font:800 .57rem var(--font-mono);
+  letter-spacing:.05em;
+  text-transform:uppercase;
+}
+.construction-player-volunteers > div {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:2px 8px;
+  padding:6px 7px;
+  border:1px solid var(--border);
+  border-radius:6px;
+  background:color-mix(in srgb,var(--card) 96%,var(--muted));
+}
+.construction-player-volunteers b { font-size:.64rem; }
+.construction-player-volunteers small {
+  grid-column:1;
+  color:var(--muted-foreground);
+  font-size:.55rem;
+}
+.construction-player-volunteers em {
+  grid-column:2;
+  grid-row:1 / span 2;
+  align-self:center;
+  color:#86b7a7;
+  font:800 .53rem var(--font-mono);
+  font-style:normal;
+  text-transform:uppercase;
+}
+
+@media (max-width:560px) {
+  .construction-player-shift,
+  .construction-player-preview {
+    align-items:stretch;
+    flex-direction:column;
+  }
+}
