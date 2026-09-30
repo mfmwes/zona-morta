@@ -60,7 +60,7 @@ export function ShelterVisualDashboard({ game }: { game: GameState }) {
   const firstExisting = roomSlots.find(slot => projectFor(game, slot.key))?.key ?? "common-area";
   const [selectedKey, setSelectedKey] = useState(firstExisting);
   const shelter = game.shelter;
-  const metrics = shelterMetrics(shelter);
+  const metrics = shelterMetrics(shelter, game);
   const population = shelterPopulationBreakdown(game);
   const food = provisionBreakdown(shelter, "food");
   const water = provisionBreakdown(shelter, "water");
