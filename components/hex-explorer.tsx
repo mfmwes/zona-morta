@@ -13,7 +13,7 @@ import { HexGeneratorDialog, type HexGeneratorKind, type HexGeneratorRequest } f
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { Counter, Field, Pick } from "@/components/game-controls";
-import { content, establishShelter, hexDistance, hexKey, survivorPositionGroups, survivorsAtHex, type GameState, type Point } from "@/lib/game";
+import { content, establishShelter, hexDistance, hexKey, survivorsAtHex, type GameState, type Point } from "@/lib/game";
 import { revealSector } from "@/lib/sectors";
 import { rollDie } from "@/lib/rolls";
 import { normalizedSector, recordSearch, searchError, type SearchInput } from "@/lib/exploration";
@@ -167,16 +167,14 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
     ?? publicGroups[0];
   const activeSourceHex = activeGroup?.hex ?? game.partyHex;
   const [activeQ, activeR] = activeSourceHex.split(",").map(Number);
-  const groupPositionsKey = publicGroups.map(group => group.hex).sort().join("|");
+  const activeAdjacentToSelected = hexDistance(area.q - activeQ, area.r - activeR) === 1;
+  const activeCanMoveSelected = activeAdjacentToSelected && record.discovery !== "desconhecido";
+  const activeGroupExists = positionHexes.includes(activeGroupHex);
+  const preferredGroupHex = positionHexes.includes(game.partyHex) ? game.partyHex : positionHexes[0] ?? game.partyHex;
 
   useEffect(() => {
-    if (!publicGroups.length) {
-      if (activeGroupHex !== game.partyHex) setActiveGroupHex(game.partyHex);
-      return;
-    }
-    if (!publicGroups.some(group => group.hex === activeGroupHex))
-      setActiveGroupHex(publicGroups.find(group => group.main)?.hex ?? publicGroups[0].hex);
-  }, [activeGroupHex, game.partyHex, groupPositionsKey]);
+    if (!activeGroupExists && activeGroupHex !== preferredGroupHex) setActiveGroupHex(preferredGroupHex);
+  }, [activeGroupExists, activeGroupHex, preferredGroupHex]);
 
   function selectGroup(hex: string) {
     setActiveGroupHex(hex);
@@ -250,22 +248,24 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div><p className="dossier-title">Próximo passo</p><p className="text-sm mt-1">
                 {actualMembersHere.length > 0
-                  ? `${actualMembersHere.length} sobrevivente(s) estão neste setor. Eles podem permanecer aqui enquanto outros grupos continuam a exploração.`
-                  : nearbyGroups.length > 0
+                  ? `${actualMembersHere.length} sobrevivente(s) estão neste setor. Selecione o grupo desejado no mapa para destacar sua rota.`
+                  : activeAdjacentToSelected
                     ? record.discovery === "desconhecido"
-                      ? "Há sobreviventes em um hex vizinho. Avistar não gasta tempo."
-                      : `Destino alcançável por ${nearbyGroups.length} grupo(s) vizinho(s) · ${record.routeHours} h de travessia.`
-                    : "Nenhum grupo está em um hex vizinho deste setor."}</p></div>
+                      ? "Este setor está ao lado do grupo ativo. Avistar não gasta tempo."
+                      : `O grupo ativo pode chegar aqui em ${record.routeHours} h de travessia.`
+                    : nearbyGroups.length > 0
+                      ? "Outro grupo está próximo. Selecione o marcador dele antes de planejar este deslocamento."
+                      : "Nenhum grupo está em um hex vizinho deste setor."}</p></div>
               <div className="flex flex-wrap gap-2">
-                {record.discovery === "desconhecido" && nearbyGroups.length > 0 && <Button size="sm" onClick={observe}>Avistar setor</Button>}
-                {record.discovery !== "desconhecido" && nearbyGroups.length > 0 &&
-                  <Button size="sm" disabled={game.minutes+travelMinutes>=1440} onClick={() => openMovement(selected)}><Footprints /> Mover sobreviventes</Button>}
-                {selected !== game.partyHex && canTravel && record.discovery !== "desconhecido" &&
+                {record.discovery === "desconhecido" && activeAdjacentToSelected && <Button size="sm" onClick={observe}>Avistar setor</Button>}
+                {activeCanMoveSelected &&
+                  <Button size="sm" disabled={game.minutes+travelMinutes>=1440} onClick={() => openMovement(selected)}><Footprints /> Mover grupo ativo</Button>}
+                {activeGroupHex === game.partyHex && selected !== game.partyHex && canTravel && record.discovery !== "desconhecido" &&
                   <Button size="sm" variant="outline" disabled={game.minutes+travelMinutes>=1440} onClick={travel}><Route /> Mover grupo principal</Button>}
                 {actualMembersHere.length > 0 && <span className="tag">Grupo presente</span>}
               </div>
             </div>
-            {nearbyGroups.length > 0 && record.discovery !== "desconhecido" && game.minutes+travelMinutes>=1440 && <p className="text-sm subtle mt-2">O trajeto cruzaria o fim do dia. Feche o dia ou ajuste a ficção antes de prosseguir.</p>}
+            {activeCanMoveSelected && game.minutes+travelMinutes>=1440 && <p className="text-sm subtle mt-2">O trajeto do grupo ativo cruzaria o fim do dia. Feche o dia ou ajuste a ficção antes de prosseguir.</p>}
           </div>
           {canMakeBase && (game.shelter.hex ? <ShelterMoveDialog game={game} edit={edit} mode="relocate" destination={selected} /> : <Button size="sm" variant="outline" className="mt-3" onClick={() => edit(draft => { establishShelter(draft, selected); })}>
             <House /> Estabelecer abrigo aqui</Button>)}
@@ -436,6 +436,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
               onCreatePoint={() => openManualPoint(id)}
               onOpenMasterTools={() => openMasterTools(id)}
               onRelocateShelter={() => openRelocation(id)}
+              activeGroupHex={activeGroupHex}
               onMoveSurvivors={() => openMovement(id)}>
               <g role="button" tabIndex={0} className="map-cell" aria-pressed={id === selected}
                 aria-label={`${id}: ${title}${nearby ? ", adjacente ao grupo ativo" : ""}${id === game.shelter.hex ? ", abrigo" : ""}${formerBase ? ", antiga base com depósito" : ""}${membersHere.length ? `, sobreviventes: ${membersHere.map(person => person.name).join(", ")}` : ""}`}
