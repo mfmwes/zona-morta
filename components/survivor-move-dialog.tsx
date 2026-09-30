@@ -18,12 +18,16 @@ export function SurvivorMoveDialog({
   destination,
   open,
   onOpenChange,
+  preferredSourceHex,
+  onMoved,
 }: {
   game: GameState;
   edit: Edit;
   destination: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  preferredSourceHex?: string;
+  onMoved?: (destination: string) => void;
 }) {
   const sources = useMemo(() => movementSources(game, destination), [game, destination]);
   const [sourceHex, setSourceHex] = useState("");
@@ -37,10 +41,10 @@ export function SurvivorMoveDialog({
 
   useEffect(() => {
     if (!open) return;
-    const first = sources[0];
+    const first = sources.find(group => group.hex === preferredSourceHex) ?? sources[0];
     setSourceHex(first?.hex ?? "");
     setSelectedIds(first?.members.map(person => person.id) ?? []);
-  }, [open, destination, sources]);
+  }, [open, destination, preferredSourceHex, sources]);
 
   function changeSource(value: string) {
     const next = sources.find(group => group.hex === value);
@@ -65,6 +69,7 @@ export function SurvivorMoveDialog({
       return;
     }
     toast.success("Deslocamento registrado", { description: result.message });
+    onMoved?.(destination);
     onOpenChange(false);
   }
 
