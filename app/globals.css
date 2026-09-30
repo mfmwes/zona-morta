@@ -2809,3 +2809,38 @@ button { cursor: pointer; } button:disabled { cursor: not-allowed; }
 }
 .shelter-unplaced-strip button b { font-size:.63rem; }
 .shelter-unplaced-strip button small { color:#bda89a; font-size:.54rem; }
+
+
+.construction-catalog-overlay {
+  position:fixed;
+  inset:0;
+  z-index:90;
+  display:grid;
+  place-items:center;
+  padding:24px;
+}
+.construction-catalog-backdrop {
+  position:absolute;
+  inset:0;
+  border:0;
+  background:rgba(4,12,13,.72);
+  backdrop-filter:blur(4px);
+}
+.construction-catalog-overlay .construction-catalog-drawer {
+  position:relative;
+  z-index:1;
+  width:min(980px,calc(100vw - 32px));
+  max-height:min(76vh,720px);
+  overflow:auto;
+  padding:16px;
+  border-color:#45655f;
+  box-shadow:0 24px 70px rgba(0,0,0,.34);
+}
+@media (max-width:640px) {
+  .construction-catalog-overlay { padding:10px; }
+  .construction-catalog-overlay .construction-catalog-drawer {
+    width:calc(100vw - 20px);
+    max-height:86vh;
+    padding:12px;
+  }
+}
