@@ -1,5 +1,6 @@
 import { addLog, content, survivorsAtHex, type GameState } from "./game";
 import { createId } from "./id";
+import { advanceCampaignTime } from "./time";
 
 export type SearchInput = {
   hex: string; pointId: string; sector: string; what: string; result: string; minutes: number;
@@ -24,7 +25,7 @@ export function recordSearch(game: GameState, input: SearchInput) {
   if (searchError(game, input)) return false;
   const hex = game.hexes[input.hex];
   const point = hex.points.find(p => p.id === input.pointId)!;
-  game.minutes += input.minutes;
+  if (!advanceCampaignTime(game, input.minutes).ok) return false;
   point.searches.push({ id: createId(), what: input.mode === "open" ? "Achado útil" : input.what.trim(), why: "",
     sector: input.sector.trim(), minutes: input.minutes, result: input.result.trim(), mode: input.mode,
     ...(input.mode === "open" ? { table: input.table, roll: input.roll } : {}) });
