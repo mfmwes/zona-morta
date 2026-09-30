@@ -217,7 +217,7 @@ export function prepareProvisionItem(game: GameState, ownerId: string, itemId: s
   return after.ready ? { item: target, info: after } : null;
 }
 
-function consumePortionFromItems(items: InventoryItem[], itemId: string) {
+export function consumeProvisionPortionFromItems(items: InventoryItem[], itemId: string) {
   const item = items.find(entry => entry.id === itemId);
   if (!item) return null;
   const info = provisionItemInfo(item);
@@ -251,7 +251,7 @@ export function consumeProvisionItem(game: GameState, ownerId: string, itemId: s
   if (ownerId === "shared" && (!atSharedStorage(game) || (consumerId && !atSharedStorage(game, consumerId)))) return null;
   const items = container(game, ownerId);
   if (!items) return null;
-  const result = consumePortionFromItems(items, itemId);
+  const result = consumeProvisionPortionFromItems(items, itemId);
   if (!result) return null;
   const consumer = consumerId ? game.survivors.find(person => person.id === consumerId)
     : game.survivors.find(person => person.id === ownerId);
@@ -280,7 +280,7 @@ export function consumeReadyProvisionPortions(items: InventoryItem[] | undefined
         || (a.foundDay ?? 999999) - (b.foundDay ?? 999999));
     const next = candidates[0];
     if (!next) break;
-    const result = consumePortionFromItems(items, next.id);
+    const result = consumeProvisionPortionFromItems(items, next.id);
     if (!result) break;
     labels.push(result.name);
     remaining -= 1;
