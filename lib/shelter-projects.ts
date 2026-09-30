@@ -192,8 +192,9 @@ function assignedPeople(game: GameState, shelter: ShelterState, project: Shelter
     .filter((npc): npc is NPC => Boolean(npc && activePresent(game, shelter, npc.id) && canVolunteer(npc, npc.id === project.responsibleId)));
 }
 
-function baseOperational(game: GameState, shelter: ShelterState, project: ShelterProject) {
+export function projectBaseOperational(game: GameState, shelter: ShelterState, project: ShelterProject) {
   if (project.state !== "Concluído" || projectDependencyIssue(shelter, project)) return false;
+  if (project.operatorReady !== undefined) return project.operatorReady;
   const definition = projectDefinition(project.key);
   const mode = project.operationMode ?? definition?.operationMode ?? "passive";
   if (mode === "passive") return true;
@@ -215,7 +216,7 @@ export function shelterPower(game: GameState, shelter: ShelterState) {
   const producers: string[] = [];
   const consumers: string[] = [];
   for (const project of shelter.projects ?? []) {
-    if (!baseOperational(game, shelter, project)) continue;
+    if (!projectBaseOperational(game, shelter, project)) continue;
     const delta = energyDelta(project);
     if (delta > 0) { production += delta; producers.push(project.key); }
     if (delta < 0 && !disabled.has(project.key)) { consumption += Math.abs(delta); consumers.push(project.key); }
@@ -224,7 +225,7 @@ export function shelterPower(game: GameState, shelter: ShelterState) {
 }
 
 export function projectOperational(game: GameState, shelter: ShelterState, project: ShelterProject) {
-  if (!baseOperational(game, shelter, project)) return false;
+  if (!projectBaseOperational(game, shelter, project)) return false;
   const definition = projectDefinition(project.key);
   if (!definition?.requiresPower) return true;
   if ((shelter.disabledProjectKeys ?? []).includes(project.key)) return false;
