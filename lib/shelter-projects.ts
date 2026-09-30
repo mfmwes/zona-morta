@@ -320,6 +320,9 @@ export function projectWorkPreview(game: GameState, shelter: ShelterState, proje
   if (project.state !== "Em construção") return { issue: "Projeto fora de construção.", workers: [] as NPC[], points: 0, missingCapabilities: [] as string[] };
   const workers = assignedPeople(game, shelter, project);
   if (!workers.length) return { issue: "Atribua pelo menos uma pessoa presente à equipe.", workers, points: 0, missingCapabilities: project.buildCapabilities ?? [] };
+  const sharedWorker = workers.find(worker => shelter.projects?.some(other => other.id !== project.id && other.state === "Em construção"
+    && (other.responsibleId === worker.id || (other.helperIds ?? []).includes(worker.id))));
+  if (sharedWorker) return { issue: `${sharedWorker.name} está atribuído a outra obra ativa.`, workers, points: 0, missingCapabilities: [] as string[] };
   const requirements = project.buildCapabilities ?? projectDefinition(project.key)?.buildCapabilities ?? [];
   const missingCapabilities = requirements.filter(capability => !workers.some(npc => hasCapability(npc, capability)));
   if (missingCapabilities.length) return {
