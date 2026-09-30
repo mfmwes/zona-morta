@@ -5,7 +5,7 @@ import { useMemo, useState, type ChangeEvent, type ReactNode } from "react";
 import {
   Activity, Backpack, BookOpen, Crosshair, Dice5, Droplets, Footprints, Heart, Search,
   HeartPulse, History, Minus, Plus, Shield, ShieldCheck, Sparkles,
-  Moon, Stethoscope, Swords, Upload, Utensils, Zap,
+  Moon, ShoppingCart, Stethoscope, Swords, Upload, Utensils, Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,7 @@ import { AbilityArt } from "@/components/ability-art";
 import { RollDialog, type RollRequest } from "@/components/roll-dialog";
 import { Counter, Field, Pick } from "@/components/game-controls";
 import { absoluteMinutes, addLog, content, survivorHex, survivorStats, traits, type EquipmentSlot, type GameState, type Infection, type Survivor } from "@/lib/game";
-import { ammoTypeFor, ammoTypes, atSharedStorage, batteryStateFor, catalogForItem, countsAsMedication, discardItem, stowSlot } from "@/lib/inventory";
+import { activeCart, ammoTypeFor, ammoTypes, atSharedStorage, batteryStateFor, cartStoredLoad, catalogForItem, countsAsMedication, discardItem, stowSlot } from "@/lib/inventory";
 import { provisionBreakdown, provisionDisplay, provisionItemInfo } from "@/lib/provision-items";
 import { equipmentModifiers, getPrimary, getProtection, getSecondary } from "@/lib/equipment";
 import { rollDie } from "@/lib/rolls";
@@ -291,6 +291,8 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
   const notes = notesDraft && selected && notesDraft.id === selected.id && notesDraft.source === selected.notes
     ? notesDraft.value : selected?.notes ?? "";
   const stats = selected ? survivorStats(selected) : null;
+  const cart = selected ? activeCart(selected) : null;
+  const cartLoad = cart ? cartStoredLoad(cart.cartItems ?? []) : 0;
   const origin = selected ? content.origins.find(o => o.name === selected.origin) : null;
   const archetype = selected ? content.archetypes.find(a => a.name === selected.archetype) : null;
   const hopeFeature = archetype?.hopeFeature ?? "";
@@ -493,7 +495,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
                 {selected.secondary && <div className="character-info-row"><ItemArt name={selected.secondary} category="Armas secundárias" size="small" /><span>Secundária</span><b>{selected.secondary}</b></div>}
                 <div className="character-info-row">{selected.protection ? <ItemArt name={selected.protection} category="Proteções" size="small" /> : <EmptyItemArt />}<span>Proteção</span><b>{selected.protection || "Sem proteção"}</b></div>
                 {selected.outfit && <div className="character-info-row"><ItemArt name={selected.outfit} category="Trajes e acessórios" size="small" /><span>Traje</span><b>{selected.outfit}</b></div>}
-                {selected.transport && <div className="character-info-row"><ItemArt name={selected.transport} category="Abrigo, transporte e mochilas" size="small" /><span>Transporte</span><b>{selected.transport}</b></div>}
+                {cart && <div className="character-info-row"><ShoppingCart size={18} aria-hidden="true" /><span>Carrinho</span><b>{cartLoad}/4 espaços · duas mãos</b></div>}
                 <div className="character-info-row">{selected.personal ? <ItemArt name={selected.personal} category="Abrigo, transporte e mochilas" size="small" /> : <EmptyItemArt />}<span>Item pessoal</span><b>{selected.personal || "Nenhum item pessoal"}</b></div>
                 <button className="character-text-link" type="button" onClick={() => setActiveTab("combate")}>Abrir detalhes de combate <span aria-hidden="true">↗</span></button>
               </section>
@@ -503,8 +505,9 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
                   <span><Droplets size={18} aria-hidden="true" /><b>{selected.water}</b><small>Água</small></span>
                   <span><Crosshair size={18} aria-hidden="true" /><b>{selected.ammo}</b><small>Munição</small></span>
                 </div>
-                <div className="character-load-line"><span><Backpack size={16} aria-hidden="true" /> Carga guardada</span><b>{stats.carried}/{stats.capacity}</b></div>
+                <div className="character-load-line"><span><Backpack size={16} aria-hidden="true" /> Carga pessoal</span><b>{stats.carried}/{stats.capacity}</b></div>
                 <Progress value={Math.min(100, stats.carried / Math.max(1, stats.capacity) * 100)} />
+                {cart && <div className="character-load-line"><span><ShoppingCart size={16} aria-hidden="true" /> Carrinho conduzido</span><b>{cartLoad}/4</b></div>}
                 {stats.carried > stats.capacity && <p className="character-alert">Acima da capacidade. Redistribua antes de atravessar.</p>}
                 <button className="character-text-link" type="button" onClick={() => setActiveTab("inventario")}>Abrir inventário <span aria-hidden="true">↗</span></button>
               </section>
@@ -558,14 +561,14 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
                 <Button size="sm" variant="outline" className="mt-2" onClick={() => setRollRequest({ survivorId: selected.id, kind: "attack", weapon: "secondary" })}><Dice5 size={16} /> Rolar secundária</Button></div></div>}
               <div className="character-equipment">{selected.protection ? <ItemArt name={selected.protection} category="Proteções" size="large" /> : <EmptyItemArt size="large" />}<div><span>PROTEÇÃO VESTIDA</span><h4>{selected.protection || "Sem proteção"}</h4>{protection && <><p>Limiar maior {stats.major} · severo {stats.severe} · {stats.armor} espaços de armadura</p><p>{protection.effect}</p></>}</div></div>
               {selected.outfit && <div className="character-equipment"><ItemArt name={selected.outfit} category="Trajes e acessórios" size="large" /><div><span>TRAJE VESTIDO</span><h4>{selected.outfit}</h4><p>Em uso · não conta novamente como carga guardada.</p></div></div>}
-              {selected.transport && <div className="character-equipment"><ItemArt name={selected.transport} category="Abrigo, transporte e mochilas" size="large" /><div><span>TRANSPORTE ATIVO</span><h4>{selected.transport}</h4><p>{selected.transport === "Carrinho dobrável" ? "+4 espaços de capacidade enquanto o piso permitir." : "Transporte pessoal em uso."}</p></div></div>}
+              {cart && <div className="character-equipment"><ItemArt name={cart.name} category="Abrigo, transporte e mochilas" size="large" /><div><span>CARRINHO EM USO</span><h4>Carrinho dobrável</h4><p><b>{cartLoad}/4 espaços</b> no carrinho · exige as duas mãos livres enquanto é conduzido.</p></div></div>}
               <div className="character-equipment">{selected.personal ? <ItemArt name={selected.personal} category="Abrigo, transporte e mochilas" size="large" /> : <EmptyItemArt size="large" />}<div><span>ITEM PESSOAL</span><h4>{selected.personal || "Nenhum item pessoal"}</h4>{personal && <p>{personal.effect} · Carga guardada {personal.load}</p>}</div></div>
               {(["pocket1", "pocket2"] as const).map((slot, index) => {
                 const pocketItem = selected.equippedItems?.[slot];
                 return <div className="character-equipment" key={slot}>{selected[slot] ? <ItemArt name={selected[slot]!} category={pocketItem?.category} size="large" /> : <EmptyItemArt size="large" />}<div><span>BOLSO {index + 1}</span><h4>{selected[slot] || "Bolso vazio"}</h4><p>{selected[slot] ? "Item de acesso rápido · 0 carga enquanto ativo." : "Aceita objetos compactos marcados com Carga/Guarda 0."}</p></div></div>;
               })}
             </section>
-            <p className="character-rule-note">Uma carga de munição compatível é consumida automaticamente na primeira ação de disparo daquele tipo na cena. Armas, proteção e traje em uso não ocupam espaço guardado. Carrinho ativo acrescenta capacidade; os dois bolsos aceitam objetos compactos compatíveis.</p>
+            <p className="character-rule-note">Uma carga de munição compatível é consumida automaticamente na primeira ação de disparo daquele tipo na cena. Armas, proteção e traje em uso não ocupam espaço guardado. O Carrinho dobrável é um contêiner separado de 4 espaços e exige as duas mãos enquanto é conduzido; os dois bolsos aceitam objetos compactos compatíveis.</p>
           </TabsContent>
           <TabsContent value="habilidades" className="character-tab-content">
             <section className="character-hope-feature" aria-labelledby="hope-feature-title">
@@ -591,7 +594,8 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
               <div className="character-load-meter"><Progress value={Math.min(100, stats.carried / Math.max(1, stats.capacity) * 100)} />{stats.carried > stats.capacity && <p className="character-alert">Acima da capacidade. Redistribua a carga antes de uma travessia.</p>}</div>
               <div className="character-inventory-top"><div><Backpack size={19} aria-hidden="true" /><span>{selected.bag || "Sem bolsa ou mochila"}</span></div>{selected.bag && <Button size="sm" variant="outline" onClick={() => storeActive("bag")}>Guardar mochila</Button>}</div>
               <details className="character-load-details"><summary>Como esta carga foi calculada</summary><dl><div><dt>Itens guardados</dt><dd>{stats.load.items}</dd></div><div><dt>Comida e água</dt><dd>{stats.load.food + stats.load.water}</dd></div><div><dt>Munição de reserva</dt><dd>{stats.load.ammo}</dd></div><div><dt>Kit pessoal</dt><dd>{stats.load.personal}</dd></div></dl>
-                <p>Até 2 porções pessoais de Comida e até 2 de Água não ocupam espaço. Da 3ª em diante, cada grupo adicional de até 4 porções ocupa 1. O item físico continua identificado no inventário e seu conteúdo restante entra automaticamente no total disponível.</p><p>Itens que exigem preparo ou verificação só entram no total <b>disponível</b> depois de resolvidos. Traje vestido não conta novamente como carga; Carrinho dobrável ativo acrescenta +4 de capacidade enquanto a rota permitir.</p></details>
+                <p>Até 2 porções pessoais de Comida e até 2 de Água não ocupam espaço. Da 3ª em diante, cada grupo adicional de até 4 porções ocupa 1. O item físico continua identificado no inventário e seu conteúdo restante entra automaticamente no total disponível.</p><p>Itens que exigem preparo ou verificação só entram no total <b>disponível</b> depois de resolvidos. Traje vestido não conta novamente como carga. O Carrinho dobrável aberto deixa de contar como carga pessoal e passa a armazenar até 4 espaços separadamente.</p></details>
+              {cart && <div className="character-rule-note"><b>Carrinho em uso:</b> {cartLoad}/4 espaços · duas mãos ocupadas. Coloque e retire itens pelo menu <b>Ações</b> ou pelo clique direito no inventário.</div>}
               <div className="character-stock-grid">
                 <div className="metric"><span className="smallcaps subtle">Comida disponível</span><strong>{foodProvision?.total ?? selected.food}</strong><p className="text-xs subtle mt-2">{foodProvision?.loose ?? selected.food} soltas · {foodProvision?.itemsReady ?? 0} em itens{foodProvision?.itemsWaiting ? ` · ${foodProvision.itemsWaiting} aguardando preparo/verificação` : ""}</p><Counter compact label="Porções soltas" value={selected.food} max={99} onChange={value => change(selected.id, s => { adjustProvisionCount(s, "food", value); })} /></div>
                 <div className="metric"><span className="smallcaps subtle">Água disponível</span><strong>{waterProvision?.total ?? selected.water}</strong><p className="text-xs subtle mt-2">{waterProvision?.loose ?? selected.water} soltas · {waterProvision?.itemsReady ?? 0} em itens{waterProvision?.itemsWaiting ? ` · ${waterProvision.itemsWaiting} aguardando verificação` : ""}</p><Counter compact label="Porções soltas" value={selected.water} max={99} onChange={value => change(selected.id, s => { adjustProvisionCount(s, "water", value); })} /></div>
@@ -608,7 +612,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
               <div className="character-provision-actions">{!playerMode && <ProvisionTransferDialog key={selected.id} game={game} edit={edit} survivorId={selected.id} />}<Pick label="Tipo de munição" value={ammoTypeFor(selected)} options={["Indefinida", ...ammoTypes]} onChange={value => change(selected.id, s => { s.ammoType = value; })} /></div>
             </section>
             <section className="character-surface"><SectionHeading index="02" title="Kit ativo" />
-              {([ ["primary","Arma principal","Armas primárias"], ["secondary","Arma secundária","Armas secundárias"], ["protection","Proteção","Proteções"], ["outfit","Traje vestido","Trajes e acessórios"], ["personal","Item pessoal","Abrigo, transporte e mochilas"], ["bag","Bolsa / mochila","Abrigo, transporte e mochilas"], ["transport","Transporte ativo","Abrigo, transporte e mochilas"] ] as const)
+              {([ ["primary","Arma principal","Armas primárias"], ["secondary","Arma secundária","Armas secundárias"], ["protection","Proteção","Proteções"], ["outfit","Traje vestido","Trajes e acessórios"], ["personal","Item pessoal","Abrigo, transporte e mochilas"], ["bag","Bolsa / mochila","Abrigo, transporte e mochilas"] ] as const)
                 .filter(([slot]) => slot !== "personal" || selected.personal !== selected.bag)
                 .map(([slot,label,category]) =>
                 <div className="character-kit-line" key={slot}>{selected[slot] ? <ItemArt name={selected[slot]} category={category} size="small" /> : <EmptyItemArt />}<span>{label}</span><b>{selected[slot] || "Vazio"}</b>{selected[slot] && <Button size="sm" variant="ghost" aria-label={`Guardar ${selected[slot]}`} onClick={() => storeActive(slot)}>Guardar</Button>}</div>)}
@@ -616,7 +620,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
                 const pocketItem = selected.equippedItems?.[slot];
                 return <div className="character-kit-line" key={slot}>{selected[slot] ? <ItemArt name={selected[slot]!} category={pocketItem?.category} size="small" /> : <EmptyItemArt />}<span>Bolso {index + 1} · 0 carga</span><b>{selected[slot] || "Vazio"}</b>{selected[slot] && <Button size="sm" variant="ghost" aria-label={`Guardar ${selected[slot]}`} onClick={() => storeActive(slot)}>Guardar</Button>}</div>;
               })}
-              <p className="roll-hint">Para trocar o kit, use <b>Ações → Equipar</b>. Trajes vestidos e transporte ativo saem da carga guardada; Carrinho dobrável ativo concede +4 espaços. Objetos com Carga/Guarda 0 podem ocupar os bolsos.</p>
+              <p className="roll-hint">Para trocar o kit, use <b>Ações → Equipar</b>. Trajes vestidos saem da carga guardada. O Carrinho dobrável não ocupa um slot: aberto, exige duas mãos e leva até 4 espaços próprios. Objetos com Carga/Guarda 0 podem ocupar os bolsos.</p>
             </section>
             </div>
             <section className="character-surface"><SectionHeading index="03" title="Itens guardados" aside={<AddItemDialog game={game} edit={edit} ownerId={selected.id} />} />
@@ -630,6 +634,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
                   </ItemContextMenu>
                   <AccordionContent className="character-item-detail"><div className="character-chips"><span>{category}</span><span>Estado: {item.condition || "Sem registro"}</span>{provisionState.resource ? <><span>{provisionState.remaining} porção(ões) restantes</span><span>{provisionState.status}</span>{item.opened && <span>Aberto</span>}{item.expiresDay && <span>Vence no dia {item.expiresDay}</span>}</> : <span>{item.load + " espaço(s) por unidade"}</span>}{item.armorMarked ? <span>Armadura marcada: {item.armorMarked}</span> : null}{batteryStateFor(item) && <span>Bateria: {batteryStateFor(item)}</span>}{item.foundDay && <span>Encontrado no dia {item.foundDay}</span>}</div>
                     {catalog && <dl>{catalog.fields.map(field => <div key={field.label}><dt>{field.label}</dt><dd>{field.value}</dd></div>)}</dl>}
+                    {item.name === "Carrinho dobrável" && <div className="character-rule-note mt-3"><b>{item.cartDeployed ? "Aberto e sendo conduzido" : "Dobrado"}</b>{item.cartDeployed ? ` · ${cartStoredLoad(item.cartItems ?? [])}/4 espaços · exige duas mãos` : " · ocupa 1 espaço de carga"}{(item.cartItems?.length ?? 0) > 0 && <span> · Conteúdo: {item.cartItems!.map(entry => `${entry.qty}× ${entry.name}`).join(", ")}</span>}</div>}
                   </AccordionContent>
                 </AccordionItem>; })}</Accordion>
               </div>)}
