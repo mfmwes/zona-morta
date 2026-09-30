@@ -608,7 +608,9 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
               <div className="character-provision-actions">{!playerMode && <ProvisionTransferDialog key={selected.id} game={game} edit={edit} survivorId={selected.id} />}<Pick label="Tipo de munição" value={ammoTypeFor(selected)} options={["Indefinida", ...ammoTypes]} onChange={value => change(selected.id, s => { s.ammoType = value; })} /></div>
             </section>
             <section className="character-surface"><SectionHeading index="02" title="Kit ativo" />
-              {([ ["primary","Arma principal","Armas primárias"], ["secondary","Arma secundária","Armas secundárias"], ["protection","Proteção","Proteções"], ["outfit","Traje vestido","Trajes e acessórios"], ["personal","Item pessoal","Abrigo, transporte e mochilas"], ["bag","Bolsa / mochila","Abrigo, transporte e mochilas"], ["transport","Transporte ativo","Abrigo, transporte e mochilas"] ] as const).map(([slot,label,category]) =>
+              {([ ["primary","Arma principal","Armas primárias"], ["secondary","Arma secundária","Armas secundárias"], ["protection","Proteção","Proteções"], ["outfit","Traje vestido","Trajes e acessórios"], ["personal","Item pessoal","Abrigo, transporte e mochilas"], ["bag","Bolsa / mochila","Abrigo, transporte e mochilas"], ["transport","Transporte ativo","Abrigo, transporte e mochilas"] ] as const)
+                .filter(([slot]) => slot !== "personal" || selected.personal !== selected.bag)
+                .map(([slot,label,category]) =>
                 <div className="character-kit-line" key={slot}>{selected[slot] ? <ItemArt name={selected[slot]} category={category} size="small" /> : <EmptyItemArt />}<span>{label}</span><b>{selected[slot] || "Vazio"}</b>{selected[slot] && <Button size="sm" variant="ghost" aria-label={`Guardar ${selected[slot]}`} onClick={() => storeActive(slot)}>Guardar</Button>}</div>)}
               {(["pocket1", "pocket2"] as const).map((slot, index) => {
                 const pocketItem = selected.equippedItems?.[slot];
