@@ -345,7 +345,7 @@ export function survivorShelterWorkIssue(game: GameState, project: ShelterProjec
   const operation = projectDefinition(project.key)?.operationWork;
   const acceptsProjectWork = ["Planejado", "Em construção"].includes(project.state);
   const acceptsOperationWork = Boolean(operation && ["Concluído", "Danificado"].includes(project.state)
-    && projectOperational(game, game.shelter, project));
+    && projectIntegrity(project) >= 2 && !projectDependencyIssue(game.shelter, project));
   if (!acceptsProjectWork && !acceptsOperationWork) return "Esta estrutura não está aceitando trabalhadores agora.";
   const active = survivorActiveShelterShift(game, survivorId);
   if (active && active.project.id !== project.id) return `Você já está trabalhando em ${active.project.name} até ${displayTime(active.shift.startMinute + active.shift.durationMinutes)}.`;
@@ -455,7 +455,7 @@ function assignedSurvivors(game: GameState, shelter: ShelterState, project: Shel
 
 export function projectBaseOperational(game: GameState, shelter: ShelterState, project: ShelterProject) {
   if (!["Concluído", "Danificado"].includes(project.state) || projectIntegrity(project) < 2 || projectDependencyIssue(shelter, project)) return false;
-  if (project.operatorReady !== undefined) return project.operatorReady;
+  if (project.operatorReady === true) return true;
   const definition = projectDefinition(project.key);
   const mode = project.operationMode ?? definition?.operationMode ?? "passive";
   if (mode === "passive") return true;
