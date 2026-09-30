@@ -115,13 +115,14 @@ export function performItemAction(game: GameState, ownerId: string, itemId: stri
         (prepared.requirements?.length ? ` Requisitos usados: ${prepared.requirements.join(", ")}.` : "");
     }
   } else if (action.type === "use") {
-    const count = Math.max(1, Math.min(item.qty, Math.trunc(action.quantity)));
     const consumable = catalogItemIsConsumable(item);
+    const count = consumable ? Math.max(1, Math.min(item.qty, Math.trunc(action.quantity))) : 1;
     const used = consumable ? discardItem(game, ownerId, item.id, count) : catalogItemCanUse(item);
     if (used) {
-      const noise = item.name === "Sinalizador de mão" ? 2 : item.name === "Apito" ? 1 : 0;
+      const noisePerUse = item.name === "Sinalizador de mão" ? 2 : item.name === "Apito" ? 1 : 0;
+      const noise = noisePerUse * (consumable ? count : 1);
       if (noise) game.noise = Math.min(5, game.noise + noise);
-      message = `${owner} usou ${count}× ${item.name}.` +
+      message = `${owner} usou ${consumable && count > 1 ? `${count}× ` : ""}${item.name}.` +
         (consumable ? " A unidade foi consumida." : " O item permanece disponível.") +
         (noise ? ` Barulho +${noise}.` : " Aplicar o efeito indicado pelo item em cena.");
     }
