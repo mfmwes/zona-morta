@@ -13,7 +13,7 @@ import { addStack, ammoTypeFor, ammoTypes, atSharedStorage, catalogForItem, cata
   container, countsAsMedication, displacedSlots, equipItem, inventoryCategories, itemFromCatalog,
   provisionInfo, provisionPreparationCheck, provisionTransferError, slotLabels, transferItem, transferProvisions } from "@/lib/inventory";
 import { performItemAction } from "@/lib/item-actions";
-import { provisionDisplay, provisionItemInfo } from "@/lib/provision-items";
+import { provisionDisplay, provisionItemInfo, provisionShelfLabel } from "@/lib/provision-items";
 import { provisionConsumedToday, type DailyResource } from "@/lib/survival";
 
 type Edit = (fn: (draft: GameState) => void) => void;
@@ -222,7 +222,7 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
       {mode === "equip" && selectedSlot && <><Pick label="Espaço do kit" value={selectedSlot} options={slots.map(value => ({ value, label: slotLabels[value] }))} onChange={value => setSlot(value as EquipmentSlot)} />
         <p className="inventory-hint">{displaced.length ? `Vai para os itens guardados: ${displaced.join(" e ")}.` : "O espaço está livre."} Armas de duas mãos exigem a outra mão livre. Proteções conservam a armadura marcada.</p></>}
       {loadPreview && <div className={`inventory-preview ${loadPreview.carried > loadPreview.capacity ? "inventory-danger" : ""}`}><Backpack size={19} aria-hidden="true" /><span><b>{loadPreview.name} após a ação</b><small>{loadPreview.carried > loadPreview.capacity ? "Acima da capacidade — redistribua antes de viajar." : "Carga dentro da capacidade."}</small></span><strong>{loadPreview.carried}/{loadPreview.capacity}</strong></div>}
-      {provisionState.resource && <div className="inventory-preview"><span><b>{provisionDisplay(item)}</b><small>{provisionState.expiresDay ? `Vence no amanhecer do dia ${provisionState.expiresDay}.` : provisionState.shelf ? `Prazo do catálogo: ${provisionState.shelf}.` : "Sem prazo específico registrado."}</small></span></div>}
+      {provisionState.resource && <div className="inventory-preview"><span><b>{provisionDisplay(item)}</b><small>{provisionState.expiresDay ? `Vence no amanhecer do dia ${provisionState.expiresDay}.` : provisionState.shelf ? `Validade: ${provisionShelfLabel(provisionState.shelf)}.` : "Sem prazo específico registrado."}</small></span></div>}
       {mode === "consume" && <><p className="inventory-hint">Consome apenas <b>1 porção</b>. O item continua no inventário enquanto ainda tiver conteúdo.</p>
         {ownerId === "shared" && sharedConsumers.length > 0 && <Pick label="Quem consome" value={consumerId} options={sharedConsumers.map(s => ({
           value: s.id,
