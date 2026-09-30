@@ -95,7 +95,18 @@ function ResourceControl({ label, icon: Icon, current, max, onChange, tone, reve
   </div>;
 }
 
-type RestPeer = { id: string; name: string };
+export type RestPeer = {
+  id: string;
+  name: string;
+  portrait?: string;
+  archetype?: string;
+  specialty?: string;
+  infection?: Infection;
+  hp?: number;
+  hpMax?: number;
+  stress?: number;
+  hope?: number;
+};
 
 function RestPlanner({ game, edit, selected, playerMode, playerPreview, restPeers = [] }: {
   game: GameState; edit: Edit; selected: Survivor; playerMode: boolean; playerPreview: boolean; restPeers?: RestPeer[];
@@ -285,6 +296,19 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
   const personal = selected ? content.personal.find(a => a.name === selected.personal) : null;
   const recentRolls = selected ? game.log.filter(entry => ["dados", "dano"].includes(entry.kind) &&
     (entry.actorId === selected.id || (!entry.actorId && entry.text.startsWith(`${selected.name}:`)))).slice(0, 4) : [];
+  const teamPeers = playerMode
+    ? (restPeers.length ? restPeers : game.survivors.map(person => {
+        const personStats = survivorStats(person);
+        return {
+          id: person.id, name: person.name, portrait: person.portrait, archetype: person.archetype,
+          specialty: person.specialty, infection: person.infection,
+          hp: Math.max(0, personStats.hp - person.hp), hpMax: personStats.hp,
+          stress: person.stress, hope: person.hope,
+        } satisfies RestPeer;
+      }))
+    : [];
+  const rosterCount = playerMode ? teamPeers.length : game.survivors.length;
+
   const inventoryGroups = useMemo(() => {
     if (!selected) return [];
     const grouped = new Map<string, typeof selected.inventory>();
@@ -385,10 +409,35 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
   }
 
   return <div className="character-sheet">
-    <div className="character-roster" aria-label="Sobreviventes da campanha" title="No computador, clique com o botão direito em um sobrevivente para ações rápidas.">
-      <div className="character-roster-label"><span>Equipe</span><b>{game.survivors.length.toString().padStart(2, "0")}</b></div>
+    <div className="character-roster" aria-label="Sobreviventes da campanha" title={playerMode ? "A equipe mostra a situação pública de todos os sobreviventes. Sua própria ficha continua sendo a única editável." : "No computador, clique com o botão direito em um sobrevivente para ações rápidas."}>
+      <div className="character-roster-label"><span>Equipe</span><b>{rosterCount.toString().padStart(2, "0")}</b></div>
       <div className="character-roster-scroll">
-        {game.survivors.map(s => { const st = survivorStats(s); const canControl = !playerPreview || playerMode; const masterMode = !playerPreview && !playerMode; return <SurvivorContextMenu key={s.id}
+        {playerMode ? teamPeers.map(peer => {
+          const own = game.survivors.find(person => person.id === peer.id);
+          if (own) {
+            const st = survivorStats(own);
+            return <SurvivorContextMenu key={own.id}
+              game={game} edit={edit} survivor={own} canControl masterMode={false}
+              onOpenTab={tab => openSurvivor(own.id, tab)}
+              onRoll={request => { openSurvivor(own.id, request.kind === "attack" ? "combate" : "atributos"); setRollRequest(request); }}>
+              <button type="button" onClick={() => openSurvivor(own.id)}
+                aria-current={selected?.id === own.id ? "true" : undefined} className="character-roster-person survivor-context-target">
+                <span className="character-roster-avatar">{own.portrait ? <img src={own.portrait} alt="" /> : own.name.charAt(0).toUpperCase()}</span>
+                <span><b>{own.name}</b>
+                  <small><Heart size={12} aria-hidden="true" /> {st.hp-own.hp}/{st.hp}<span aria-hidden="true"> · </span>{own.archetype}</small>
+                  <small className="character-roster-state"><Activity size={11} aria-hidden="true" /> {own.infection}<span aria-hidden="true"> · </span>Estresse {own.stress}<span aria-hidden="true"> · </span>Hope {own.hope}</small>
+                </span>
+              </button>
+            </SurvivorContextMenu>;
+          }
+          return <div key={peer.id} className="character-roster-person character-roster-peer" title={`${peer.name}: ficha de outro jogador, exibida apenas como resumo da equipe.`}>
+            <span className="character-roster-avatar">{peer.portrait ? <img src={peer.portrait} alt="" /> : peer.name.charAt(0).toUpperCase()}</span>
+            <span><b>{peer.name}</b>
+              <small><Heart size={12} aria-hidden="true" /> {peer.hp ?? "—"}/{peer.hpMax ?? "—"}<span aria-hidden="true"> · </span>{peer.archetype ?? "Sobrevivente"}</small>
+              <small className={`character-roster-state ${peer.infection && peer.infection !== "Saudável" ? "at-risk" : ""}`}><Activity size={11} aria-hidden="true" /> {peer.infection ?? "Estado não informado"}<span aria-hidden="true"> · </span>Estresse {peer.stress ?? "—"}<span aria-hidden="true"> · </span>Hope {peer.hope ?? "—"}</small>
+            </span>
+          </div>;
+        }) : game.survivors.map(s => { const st = survivorStats(s); const canControl = !playerPreview; const masterMode = !playerPreview; return <SurvivorContextMenu key={s.id}
           game={game} edit={edit} survivor={s} canControl={canControl} masterMode={masterMode}
           onOpenTab={tab => openSurvivor(s.id, tab)}
           onRoll={request => { openSurvivor(s.id, request.kind === "attack" ? "combate" : "atributos"); setRollRequest(request); }}>
@@ -398,7 +447,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
             <span><b>{s.name}</b><small><Heart size={12} aria-hidden="true" /> {st.hp-s.hp}/{st.hp}<span aria-hidden="true"> · </span>{s.archetype}</small></span>
           </button>
         </SurvivorContextMenu>; })}
-        {game.survivors.length === 0 && <span className="character-roster-empty">Nenhum dossiê aberto. Crie o primeiro sobrevivente.</span>}
+        {rosterCount === 0 && <span className="character-roster-empty">Nenhum dossiê aberto. Crie o primeiro sobrevivente.</span>}
       </div>
       {!playerPreview && <CharacterWizard onCreate={survivor => {
         edit(draft => { draft.survivors.push(survivor); addLog(draft, "sobrevivente", `${survivor.name} entrou para a equipe.`); });
