@@ -40,8 +40,13 @@ export type DayCloseInspection = {
 export type DayCloseResult = DayCloseInspection & { ok: boolean };
 
 type ProvisionHolder = StockHolder & { inventory?: InventoryItem[] };
+type ProvisionConsumption = {
+  consumed: number;
+  source: "item" | "loose" | "none";
+  label?: string;
+};
 
-function dayKey(resource: DailyResource) {
+function dayKey(resource: DailyResource): "foodConsumedDay" | "waterConsumedDay" {
   return resource === "food" ? "foodConsumedDay" : "waterConsumedDay";
 }
 function resourceLabel(resource: DailyResource) {
@@ -89,7 +94,7 @@ function earliestLooseExpiry(holder: ProvisionHolder, resource: DailyResource) {
 
 /** Consumes the source most at risk of being wasted. Loose expiring lots and
  * physical ready items compete by expiry; durable loose portions remain last. */
-export function consumeBestProvision(holder: ProvisionHolder, resource: DailyResource) {
+export function consumeBestProvision(holder: ProvisionHolder, resource: DailyResource): ProvisionConsumption {
   const physical = bestPhysical(holder.inventory, resource);
   const physicalDeadline = physical ? physicalExpiry(physical) : Number.POSITIVE_INFINITY;
   const looseDeadline = holder[resource] > 0 ? earliestLooseExpiry(holder, resource) : Number.POSITIVE_INFINITY;
