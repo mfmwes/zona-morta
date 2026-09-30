@@ -244,7 +244,7 @@ export function HexExplorer({ game, edit, playerPreview }: { game: GameState; ed
         </div>}
         {record.signs && <p className="mt-3 text-sm"><b>Outros sinais:</b> {record.signs}</p>}
         {!playerPreview && <>
-          <div className="mt-4 rounded-md border border-[#b6cfca] bg-[#f1f7f4] p-3">
+          <div className="next-step-card mt-4 rounded-md border p-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div><p className="dossier-title">Próximo passo</p><p className="text-sm mt-1">
                 {selected === game.partyHex ? "O grupo está neste setor. Explore os pontos ou escolha um hex vizinho."
@@ -262,7 +262,7 @@ export function HexExplorer({ game, edit, playerPreview }: { game: GameState; ed
           {canMakeBase && (game.shelter.hex ? <ShelterMoveDialog game={game} edit={edit} mode="relocate" destination={selected} /> : <Button size="sm" variant="outline" className="mt-3" onClick={() => edit(draft => { establishShelter(draft, selected); })}>
             <House /> Estabelecer abrigo aqui</Button>)}
           <Collapsible open={gmOpen} onOpenChange={setGmOpen} className="mt-4 border-t pt-3">
-            <CollapsibleTrigger asChild><Button variant="ghost" className="w-full justify-between text-[#1b6569]">
+            <CollapsibleTrigger asChild><Button variant="ghost" className="gm-tools-trigger w-full justify-between">
               <span className="flex items-center gap-2"><Compass size={18} /> Ferramentas do mestre</span>
               <ChevronDown size={18} className={gmOpen ? "rotate-180" : ""} />
             </Button></CollapsibleTrigger>

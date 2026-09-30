@@ -305,6 +305,15 @@ html[data-theme="dark"] .roll-dice .total { background: #1d3b39; color: #bfe5dc;
 html[data-theme="dark"] .roll-breakdown,
 html[data-theme="dark"] .roll-hint,
 html[data-theme="dark"] .roll-actions > span { color: #afbfba; }
+html[data-theme="dark"] .next-step-card {
+  border-color: #48605b;
+  background: #1b2929;
+  color: #dce7e1;
+}
+html[data-theme="dark"] .next-step-card .dossier-title { color: #91c4b8; }
+html[data-theme="dark"] .next-step-card .subtle { color: #c0d0c9; }
+html[data-theme="dark"] .gm-tools-trigger { color: #91c9bd; }
+html[data-theme="dark"] .gm-tools-trigger:hover { color: #c9e7de; }
 html[data-theme="dark"] .table-chat { border-color: #354846; background: #131b1c; color: #e2ebe5; }
 html[data-theme="dark"] .table-chat-header,
 html[data-theme="dark"] .table-chat-composer { border-color: #354846; background: #192324; }
@@ -318,10 +327,18 @@ html[data-theme="dark"] .table-chat-roll-card { border-color: #3c504d; backgroun
 html[data-theme="dark"] .table-chat-roll-card h3 { color: #e0ebe5; }
 html[data-theme="dark"] .table-chat-roll-separator { background: #354846; }
 html[data-theme="dark"] .table-chat-roll-details { border-top-color: #354846; }
+html[data-theme="dark"] .table-chat-roll-label,
+html[data-theme="dark"] .table-chat-formula { color: #9fb2ac; }
 html[data-theme="dark"] .table-chat-formula b,
-html[data-theme="dark"] .table-chat-roll-details p { color: #b3c4be; }
-html[data-theme="dark"] .table-chat-damage { background: #33291f; }
-html[data-theme="dark"] .table-chat-damage strong { color: #f0d7b2; }
+html[data-theme="dark"] .table-chat-roll-details p { color: #c4d1cb; }
+html[data-theme="dark"] .table-chat-damage { border-left-color: #6d9b91; background: #1c2b2a; }
+html[data-theme="dark"] .table-chat-damage > span { color: #a7cbc1; }
+html[data-theme="dark"] .table-chat-damage strong { color: #e1ece6; }
+html[data-theme="dark"] .table-chat-damage strong small,
+html[data-theme="dark"] .table-chat-damage > small { color: #b8cbc4; }
+html[data-theme="dark"] .table-chat-roll--damage .table-chat-roll-card { border-left-color: #6d9b91; }
+html[data-theme="dark"] .table-chat-roll--damage .table-chat-roll-card h3,
+html[data-theme="dark"] .table-chat-roll--damage .table-chat-roll-total { color: #dceae4; }
 html[data-theme="dark"] .table-chat-rollbar button { border-color: #46605b; background: #233230; color: #c8ddd5; }
 html[data-theme="dark"] .table-chat-rollbar button:hover { border-color: #80a99d; background: #2b403c; color: #edf6f0; }
 html[data-theme="dark"] .table-chat-input textarea { border-color: #526863; background: #101718; color: #e5eee8; }
