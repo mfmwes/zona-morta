@@ -1,5 +1,6 @@
 "use client";
 
+import type { KeyboardEvent, MouseEvent } from "react";
 import { Footprints } from "lucide-react";
 
 type Member = { id: string; name: string; portrait?: string };
@@ -32,7 +33,7 @@ export function MapGroupMarker({
   const names = members.map(member => member.name).join(", ");
   const label = `${main ? "Grupo principal" : "Subgrupo"} no hex ${hexId}: ${names}. Clique para selecionar este grupo.`;
 
-  function select(event: React.MouseEvent<SVGGElement> | React.KeyboardEvent<SVGGElement>) {
+  function select(event: MouseEvent<SVGGElement> | KeyboardEvent<SVGGElement>) {
     event.stopPropagation();
     onSelect();
   }
