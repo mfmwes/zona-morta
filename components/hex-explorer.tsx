@@ -490,7 +490,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
           <span><b>{group.main ? "Principal" : group.members.length === 1 ? group.members[0].name : group.members.map(person => person.name.split(" ")[0]).join(" · ")}</b><small>Hex {group.hex}</small></span>
         </button>)}
       </div>
-      <p className="map-pan-hint text-sm subtle mt-2">Toque em um hex para abrir os detalhes. No computador, clique com o botão direito para abrir as ações e tabelas daquele hex. {mapOverview
+      <p className="map-pan-hint text-sm subtle mt-2">Clique ou toque nas pegadas/retratos para escolher o grupo ativo; apenas os hexes adjacentes a ele ficam destacados. Clique em um hex para abrir os detalhes e, no computador, use o botão direito para ações rápidas. {mapOverview
         ? "Use “Ampliar” para ler os setores no mapa." : "Deslize o mapa para os lados ou use “Ver tudo” para conferir a cidade inteira."}</p>
       <p className="intro-line mt-4">O setor ganha nome e sinais quando é avistado. Um hex pode conter vários pontos; seus interiores continuam em aberto até a exploração.</p>
     </section>
