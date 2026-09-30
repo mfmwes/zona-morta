@@ -363,7 +363,7 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
 
         <div className="architectural-site">
           <div className="architectural-perimeter">
-            <div className="architectural-zone-label"><ShieldCheck size={14} /> Perímetro</div>
+            <div className="architectural-zone-label"><ShieldCheck size={14} /> Melhorias / perímetro</div>
             <div className="architectural-perimeter-items">
               {perimeterProjects.length ? perimeterProjects.map(project => <button type="button" key={project.id}
                 className={project.key === selectedKey ? "is-selected" : ""}
@@ -522,7 +522,9 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
       </aside>
     </div>
 
-    {catalogOpen && !playerPreview && <section className="construction-catalog construction-catalog-drawer">
+    {catalogOpen && !playerPreview && <div className="construction-catalog-overlay">
+      <button type="button" className="construction-catalog-backdrop" aria-label="Fechar catálogo" onClick={() => setCatalogOpen(false)} />
+      <section className="construction-catalog construction-catalog-drawer" role="dialog" aria-modal="true" aria-label="Nova construção">
       <div className="construction-section-heading">
         <div><p className="dossier-title">Nova construção</p><h3 className="section-title">Escolha o que deseja adicionar ao abrigo</h3></div>
         <Button size="sm" variant="outline" onClick={() => setCatalogOpen(false)}>Fechar</Button>
@@ -530,7 +532,7 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
 
       {recommendations.length > 0 && <div className="construction-catalog-recommendations">
         <span><Lightbulb size={14} /> Sugestões</span>
-        {recommendations.map(item => <button type="button" key={item.key} onClick={() => { setSelectedKey(item.key); setFilter("Recomendados"); }}>
+        {recommendations.map(item => <button type="button" key={item.key} onClick={() => { const definition = projectDefinition(item.key); setSelectedKey(item.key); setFilter("Recomendados"); if (definition?.kind === "facility" && !projectFor(shelter, item.key)?.slotId) { setPlanningKey(item.key); setPlanningSlotId(null); } setCatalogOpen(false); }}>
           {projectDefinition(item.key)?.name}
         </button>)}
       </div>}
@@ -557,7 +559,8 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
             {locked && <small className="is-warning">Dependência pendente</small>}
           </button>;
         })}</div>}
-    </section>}
+</section>
+    </div>}
 
     {completedProjects.length > 0 && <details className="construction-collapsible">
       <summary><CheckCircle2 size={16} /> Estruturas concluídas <span>{completedProjects.length}</span></summary>
