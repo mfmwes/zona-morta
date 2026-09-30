@@ -55,6 +55,9 @@ export type InventoryItem = {
   expiresDay?: number;
   /** Estado simples para aparelhos pequenos que dependem de bateria. */
   battery?: "Carregada" | "Descarregada";
+  /** Conteúdo de recipientes reutilizáveis, como o galão. */
+  storedResource?: "water" | "fuel";
+  storedAmount?: number;
 };
 
 export type ProvisionLot = {
