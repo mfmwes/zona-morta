@@ -1,4 +1,4 @@
-import { addLog, normalizeShelterAmmo, type GameState, type NPC, type ShelterManualAdjustments, type ShelterPost, type ShelterProject, type ShelterProjectCategory, type ShelterProjectCost, type ShelterProjectEffect, type ShelterState } from "./game";
+import { absoluteMinutes, addLog, displayTime, normalizeShelterAmmo, type GameState, type NPC, type ShelterManualAdjustments, type ShelterPost, type ShelterProject, type ShelterProjectCategory, type ShelterProjectCost, type ShelterProjectEffect, type ShelterState } from "./game";
 import { createId } from "./id";
 
 export type ShelterProjectKind = "facility" | "upgrade";
@@ -97,6 +97,34 @@ export const shelterPostCatalog = [
 
 export function projectDefinition(key: string) { return shelterProjectCatalog.find(project => project.key === key); }
 
+export function projectPlacementIssue(shelter: ShelterState, projectOrKey: ShelterProject | string) {
+  const project = typeof projectOrKey === "string" ? shelter.projects?.find(entry => entry.key === projectOrKey) : projectOrKey;
+  const key = typeof projectOrKey === "string" ? projectOrKey : projectOrKey.key;
+  const definition = projectDefinition(key);
+  if (!definition || definition.kind !== "facility") return null;
+  if (!project?.slotId) return "Escolha um local na planta antes de iniciar esta instalação.";
+  const slot = shelterBlueprintSlots.find(entry => entry.id === project.slotId);
+  if (!slot) return "O local salvo para esta instalação não existe mais na planta.";
+  if (definition.zone && slot.zone !== definition.zone) return `Esta instalação precisa de uma área ${definition.zone === "interior" ? "interna" : definition.zone === "utility" ? "técnica" : "externa"}.`;
+  const conflict = shelter.projects?.find(other => other.id !== project.id && other.slotId === project.slotId);
+  if (conflict) return `${slot.label} já está ocupado por ${conflict.name}.`;
+  return null;
+}
+
+export function placeShelterProject(shelter: ShelterState, project: ShelterProject, slotId: string) {
+  const definition = projectDefinition(project.key);
+  const slot = shelterBlueprintSlots.find(entry => entry.id === slotId);
+  if (!definition || definition.kind !== "facility") return "Esta melhoria não ocupa um espaço da planta.";
+  if (!slot) return "Espaço da planta inválido.";
+  if (definition.zone && slot.zone !== definition.zone) return `Escolha uma área ${definition.zone === "interior" ? "interna" : definition.zone === "utility" ? "técnica" : "externa"}.`;
+  const conflict = shelter.projects?.find(other => other.id !== project.id && other.slotId === slotId);
+  if (conflict) return `${slot.label} já está ocupado por ${conflict.name}.`;
+  if (project.state !== "Planejado") return "Só é possível reposicionar uma instalação antes do início da obra.";
+  project.slotId = slotId;
+  return null;
+}
+
+
 export function projectDisplayCosts(costs: ShelterProjectCost) {
   const labels = (["parts", "medications", "fuel"] as const).flatMap(key => costs[key]
     ? [`${costs[key]} ${key === "parts" ? "Peças" : key === "medications" ? "Medicamentos" : "Combustível"}`] : []);
@@ -147,6 +175,12 @@ export function normalizeShelter(shelter: ShelterState) {
     project.operationMode ??= definition?.operationMode ?? "passive";
     project.effects ??= structuredClone(definition?.effects ?? []);
     project.helperIds ??= [];
+    if (project.workShift) {
+      project.workShift.durationMinutes = Math.max(60, Math.trunc(project.workShift.durationMinutes ?? 240));
+      project.workShift.points = Math.max(1, Math.trunc(project.workShift.points ?? 1));
+      project.workShift.workerIds ??= [];
+      project.workShift.repairing = Boolean(project.workShift.repairing);
+    }
     if (project.repairProgress !== undefined) project.repairProgress = Math.max(0, Math.trunc(project.repairProgress));
     if (project.requiredRepairProgress !== undefined) project.requiredRepairProgress = Math.max(1, Math.trunc(project.requiredRepairProgress));
   }
@@ -255,6 +289,8 @@ export function projectAssignmentIssue(game: GameState, shelter: ShelterState, p
 
 export function startProject(shelter: ShelterState, project: ShelterProject) {
   if (project.state !== "Planejado") return "O projeto já foi iniciado.";
+  const placementIssue = projectPlacementIssue(shelter, project);
+  if (placementIssue) return placementIssue;
   const dependencyIssue = projectDependencyIssue(shelter, project);
   if (dependencyIssue) return dependencyIssue;
   for (const [key, quantity] of Object.entries(project.costs) as [keyof ShelterProjectCost, number][]) {
@@ -327,6 +363,58 @@ export function projectWorkPreview(game: GameState, shelter: ShelterState, proje
   const missingCapabilities = requirements.filter(capability => !workers.some(npc => hasCapability(npc, capability)));
   const specialistBonus = requirements.length > 0 && missingCapabilities.length === 0 ? 1 : 0;
   return { issue: null, workers, points: Math.max(1, workers.length + specialistBonus), missingCapabilities };
+}
+
+export function scheduleShelterWorkShift(game: GameState, project: ShelterProject, hours = 4) {
+  if (project.state !== "Em construção") return { ok: false, message: "Inicie a obra antes de programar um turno." };
+  if (project.workShift) return { ok: false, message: "Já existe um turno de trabalho programado para este projeto." };
+  if (!Number.isInteger(hours) || hours < 1 || hours > 8) return { ok: false, message: "Duração de turno inválida." };
+  if (game.minutes + hours * 60 >= 1440) return { ok: false, message: "Este turno terminaria depois do fim do dia. Encerre o dia ou escolha outro horário." };
+  const preview = projectWorkPreview(game, game.shelter, project);
+  if (preview.issue || preview.points < 1) return { ok: false, message: preview.issue ?? "A equipe não consegue trabalhar neste projeto." };
+  const start = absoluteMinutes(game);
+  const durationMinutes = hours * 60;
+  project.workShift = {
+    startDay: game.day,
+    startMinute: game.minutes,
+    durationMinutes,
+    endAbsoluteMinute: start + durationMinutes,
+    points: preview.points,
+    workerIds: preview.workers.map(worker => worker.id),
+    repairing: Boolean(project.repairProgress !== undefined),
+  };
+  addLog(game, "abrigo", `Turno programado em ${project.name}: ${displayTime(game.minutes)}–${displayTime(game.minutes + durationMinutes)}, equipe ${preview.workers.map(worker => worker.name).join(", ")}.`);
+  return { ok: true, message: `Turno programado até ${displayTime(game.minutes + durationMinutes)}.`, preview };
+}
+
+export function cancelShelterWorkShift(game: GameState, project: ShelterProject) {
+  if (!project.workShift) return false;
+  delete project.workShift;
+  addLog(game, "abrigo", `Turno de trabalho cancelado em ${project.name}.`);
+  return true;
+}
+
+export function processScheduledShelterWork(game: GameState) {
+  const now = absoluteMinutes(game);
+  const due = (game.shelter.projects ?? [])
+    .filter(project => project.workShift && project.workShift.endAbsoluteMinute <= now)
+    .sort((a, b) => (a.workShift?.endAbsoluteMinute ?? 0) - (b.workShift?.endAbsoluteMinute ?? 0));
+  const completed: { key: string; name: string; points: number; completed: boolean }[] = [];
+  for (const project of due) {
+    const shift = project.workShift;
+    if (!shift) continue;
+    const before = projectProgress(project);
+    const points = Math.max(0, Math.min(shift.points, before.required - before.value));
+    if (points > 0) advanceProject(project, points);
+    const finished = project.state === "Concluído";
+    const workers = shift.workerIds.map(id => game.npcs.find(npc => npc.id === id)?.name).filter(Boolean);
+    delete project.workShift;
+    completed.push({ key: project.key, name: project.name, points, completed: finished });
+    addLog(game, "abrigo", finished
+      ? `${project.name} foi ${shift.repairing ? "reparado" : "concluído"} ao fim do turno programado${workers.length ? ` com ${workers.join(", ")}` : ""}.`
+      : `${project.name}: +${points} progresso no turno programado (${projectProgress(project).value}/${projectProgress(project).required}).`);
+  }
+  return completed;
 }
 
 export function runShelterWorkShift(game: GameState, hours = 4) {
