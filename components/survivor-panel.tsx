@@ -103,9 +103,9 @@ function RestPlanner({ game, edit, selected, playerMode, playerPreview, restPeer
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<RestKind>("short");
   const [choices, setChoices] = useState<Record<string, [RestChoice, RestChoice]>>({});
-  const canResolve = !playerPreview && !playerMode;
-  const canChoose = playerMode || !playerPreview;
-  const actors = playerMode ? [selected] : game.survivors;
+  const personalPlanning = playerMode || playerPreview;
+  const canResolve = !personalPlanning;
+  const actors = personalPlanning ? [selected] : game.survivors;
   const peers = playerMode
     ? (restPeers.some(person => person.id === selected.id) ? restPeers : [{ id: selected.id, name: selected.name }, ...restPeers])
     : game.survivors.map(person => ({ id: person.id, name: person.name }));
@@ -158,14 +158,14 @@ function RestPlanner({ game, edit, selected, playerMode, playerPreview, restPeer
     setOpen(false);
   }
 
-  return <section className="character-surface character-rest-panel"><SectionHeading index="05" title={playerMode ? "Seu descanso" : "Descanso da mesa"} aside={<span className="character-micro">2 AÇÕES POR PESSOA</span>} />
+  return <section className="character-surface character-rest-panel"><SectionHeading index="05" title={personalPlanning ? "Seu descanso" : "Descanso da mesa"} aside={<span className="character-micro">2 AÇÕES POR PESSOA</span>} />
     <p className="character-section-intro">Curto recupera recursos com d4+1; longo limpa o recurso escolhido. Cada ação pode beneficiar você ou outra pessoa da equipe. Preparar concede Hope automaticamente.</p>
-    {!canChoose ? <p className="character-rest-readonly">Esta prévia do mestre é somente leitura. No acesso real de jogador, cada pessoa pode registrar as próprias duas ações; o mestre continua responsável por concluir o descanso da mesa.</p>
-      : <><div className="character-rest-actions"><Button size="sm" variant="outline" disabled={!actors.length} onClick={() => begin("short")}><Moon size={16} /> Descanso curto</Button>
-        <Button size="sm" disabled={!actors.length} onClick={() => begin("long")}><Moon size={16} /> Descanso longo</Button></div>
-        {playerMode && selected.restPlan && <p className="character-rest-status">Escolhas de descanso {selected.restPlan.kind === "short" ? "curto" : "longo"} registradas. Você pode alterá-las antes da conclusão.</p>}</>}
-    <Dialog open={open} onOpenChange={setOpen}><DialogContent className="rest-planner-dialog"><DialogHeader><DialogTitle>{playerMode ? "Escolher seu" : "Organizar"} descanso {kind === "short" ? "curto" : "longo"}</DialogTitle>
-      <DialogDescription>{playerMode ? "Defina as suas duas ações e quem receberá cada benefício. O mestre conclui o descanso para toda a mesa." : "As escolhas já registradas pelos jogadores aparecem aqui. Ajuste apenas se necessário e conclua uma vez para aplicar valores, Fear e renovação de habilidades."}</DialogDescription></DialogHeader>
+    <div className="character-rest-actions"><Button size="sm" variant="outline" disabled={!actors.length} onClick={() => begin("short")}><Moon size={16} /> Descanso curto</Button>
+      <Button size="sm" disabled={!actors.length} onClick={() => begin("long")}><Moon size={16} /> Descanso longo</Button></div>
+    {personalPlanning && selected.restPlan && <p className="character-rest-status">Escolhas de descanso {selected.restPlan.kind === "short" ? "curto" : "longo"} registradas. Você pode alterá-las antes da conclusão.</p>}
+    {playerPreview && !playerMode && <p className="character-rest-preview-note">Prévia interativa: as escolhas são registradas para o sobrevivente selecionado, como aconteceria no acesso do jogador.</p>}
+    <Dialog open={open} onOpenChange={setOpen}><DialogContent className="rest-planner-dialog"><DialogHeader><DialogTitle>{personalPlanning ? "Escolher seu" : "Organizar"} descanso {kind === "short" ? "curto" : "longo"}</DialogTitle>
+      <DialogDescription>{personalPlanning ? "Defina as duas ações e quem receberá cada benefício. O mestre conclui o descanso para toda a mesa." : "As escolhas já registradas pelos jogadores aparecem aqui. Ajuste apenas se necessário e conclua uma vez para aplicar valores, Fear e renovação de habilidades."}</DialogDescription></DialogHeader>
       <div className="rest-planner-list">{actors.map(person => {
         const selectedChoices = choices[person.id] ?? defaultChoices(person, kind);
         const options = restActionsFor(kind).map(action => ({ value: action, label: restActionLabels[action] }));
