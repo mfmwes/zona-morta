@@ -87,4 +87,11 @@ jobs:
             exit 1
           fi
 
-          echo "Smoke test concluído: Worker iniciou e a página inicial respondeu."
+          API_STATUS="$(curl --silent --show-error --max-time 5 --output "${RUNNER_TEMP}/zona-morta-api.json"             --write-out "%{http_code}" http://127.0.0.1:8787/api/campaigns || true)"
+          if [ -z "$API_STATUS" ] || [ "$API_STATUS" -ge 500 ]; then
+            echo "A API principal falhou no runtime local (HTTP ${API_STATUS:-sem resposta})."
+            cat "$LOG_FILE"
+            exit 1
+          fi
+
+          echo "Smoke test concluído: Worker, página inicial e API principal responderam sem erro 5xx."
