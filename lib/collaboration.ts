@@ -24,6 +24,7 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
     buildCapabilities: project.buildCapabilities, requiredCapabilities: project.requiredCapabilities,
     operationMode: project.operationMode, operatorReady: projectBaseOperational(game, game.shelter, project), slotId: project.slotId,
     repairProgress: project.repairProgress, requiredRepairProgress: project.requiredRepairProgress,
+    workShift: project.workShift ? { ...project.workShift, workerIds: [] } : undefined,
     effects: project.effects, costs: {}, helperIds: [],
   }));
   visible.shelter.posts = [];
