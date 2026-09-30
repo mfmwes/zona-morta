@@ -15,6 +15,15 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
     disposition: npc.disposition, skills: npc.skills, duty: npc.duty, active: npc.active,
     accompaniesParty: npc.accompaniesParty,
   } as NPC));
+  // Improvements are public infrastructure, but staff assignments, paid costs
+  // and any future private annotations stay on the GM projection.
+  visible.shelter.projects = (visible.shelter.projects ?? []).map(project => ({
+    id: project.id, key: project.key, name: project.name, category: project.category, state: project.state,
+    progress: project.progress, requiredProgress: project.requiredProgress,
+    requiredCapabilities: project.requiredCapabilities, effects: project.effects, costs: {}, helperIds: [],
+  }));
+  visible.shelter.posts = [];
+  visible.shelter.manualAdjustments = { security: 0, energy: 0, comfort: 0 };
   visible.shelter.notes = "";
   visible.formerShelters = [];
   // A ficha do jogador mantém apenas o próprio histórico e o chat. Resultados

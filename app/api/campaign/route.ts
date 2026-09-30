@@ -49,6 +49,13 @@ function validState(value: unknown): value is GameState {
     && Boolean(shelter && typeof shelter === "object")
     && (shelter?.hex === undefined || shelter.hex === null ||
       (typeof shelter.hex === "string" && state.hexes?.[shelter.hex]?.discovery === "explorado"))
+    && (shelter?.projects === undefined || (Array.isArray(shelter.projects) && shelter.projects.length <= 80
+      && shelter.projects.every(project => project && typeof project.id === "string" && typeof project.key === "string"
+        && typeof project.name === "string" && typeof project.state === "string"
+        && Number.isInteger(project.progress) && Number.isInteger(project.requiredProgress)
+        && Array.isArray(project.requiredCapabilities) && Array.isArray(project.effects))))
+    && (shelter?.posts === undefined || (Array.isArray(shelter.posts) && shelter.posts.length <= 20
+      && shelter.posts.every(post => post && typeof post.key === "string" && (post.helperIds === undefined || Array.isArray(post.helperIds)))))
     && Array.isArray(state.log) && state.log.length <= 200;
 }
 

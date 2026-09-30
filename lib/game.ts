@@ -65,12 +65,58 @@ export type StockHolder = {
   food: number; water: number; provisionLots?: ProvisionLot[];
 };
 
+export const communityCapabilities = [
+  "Medicina", "Mecânica", "Construção", "Eletricidade", "Cultivo", "Cozinha",
+  "Vigilância", "Comunicação", "Logística",
+] as const;
+export type CommunityCapability = typeof communityCapabilities[number];
+export type ShelterProjectState = "Planejado" | "Em construção" | "Concluído" | "Danificado";
+export type ShelterProjectCategory = "Segurança" | "Sobrevivência" | "Saúde" | "Energia e infraestrutura"
+  | "Comunicação" | "Produção e manutenção" | "Comunidade";
+export type ShelterProjectCost = Partial<Record<"parts" | "medications" | "fuel", number>>;
+/** Effects are concrete facilities first; numeric fields are only the visible shelter-state contribution. */
+export type ShelterProjectEffect = {
+  label: string;
+  security?: number;
+  energy?: number;
+  comfort?: number;
+  capacity?: number;
+};
+export type ShelterProject = {
+  id: string;
+  key: string;
+  name: string;
+  category: ShelterProjectCategory;
+  state: ShelterProjectState;
+  progress: number;
+  requiredProgress: number;
+  costs: ShelterProjectCost;
+  costsPaid?: boolean;
+  requiredCapabilities: string[];
+  responsibleId?: string;
+  helperIds?: string[];
+  effects: ShelterProjectEffect[];
+};
+export type ShelterPost = {
+  key: string;
+  responsibleId?: string;
+  helperIds?: string[];
+};
+export type ShelterManualAdjustments = { security: number; energy: number; comfort: number };
+
 export type ShelterState = StockHolder & {
   hex: string | null; name: string; capacity: number; residents: number;
   medications: number; pistolAmmo: number; fuel: number; parts: number;
   security: number; energy: number; comfort: number; notes: string;
   inventory?: InventoryItem[];
   coldStorage?: boolean;
+  /** Persistent improvements and named operating posts. Old bases keep this snapshot too. */
+  projects?: ShelterProject[];
+  posts?: ShelterPost[];
+  /** Deliberate GM corrections, kept apart from facilities that generate the visible state. */
+  manualAdjustments?: ShelterManualAdjustments;
+  /** Capacity before dormitories or other real structures are counted. */
+  baseCapacity?: number;
 };
 export type ShelterManifest = {
   stocks?: Partial<Pick<ShelterState, "food" | "water" | "medications" | "pistolAmmo" | "fuel" | "parts">>;
@@ -104,6 +150,12 @@ export type NPC = {
   active: boolean;
   /** Quando marcado, acompanha automaticamente o grupo principal entre hexes. */
   accompaniesParty?: boolean;
+  /** Pessoas que formam o grupo de campo que este NPC acompanha. */
+  accompaniesSurvivorIds?: string[];
+  /** Dados de encontro do mestre; nunca seguem para a projeção dos jogadores. */
+  immediateNeed?: string;
+  concern?: string;
+  offer?: string;
 };
 
 export type Survivor = {
@@ -232,7 +284,8 @@ export function defaultState(options: { startSectorId?: string; withShelter?: bo
       name: startSector ? `Abrigo — ${startSector.name}` : "Abrigo",
       capacity: withShelter ? 8 : 0, residents: 0,
       food: 0, water: 0, medications: 0, pistolAmmo: 0, fuel: 0, parts: 0,
-      security: withShelter ? 1 : 0, energy: 0, comfort: 0, notes: "", inventory: [] },
+      security: withShelter ? 1 : 0, energy: 0, comfort: 0, notes: "", inventory: [],
+      projects: [], posts: [], manualAdjustments: { security: 0, energy: 0, comfort: 0 }, baseCapacity: withShelter ? 8 : 0 },
     log: [],
   };
   const center = revealSector(state, "0,0");
@@ -274,7 +327,8 @@ export function establishShelter(state: GameState, key: string, manifest: Shelte
       state.formerShelters = (state.formerShelters ?? []).filter(site => site.hex !== key);
     } else {
       state.shelter = { ...state.shelter, hex: key, name: `Abrigo — ${sector.name}`,
-        capacity: 8, security: 1, energy: 0, comfort: 0, notes: "" };
+        capacity: 8, security: 1, energy: 0, comfort: 0, notes: "", projects: [], posts: [],
+        manualAdjustments: { security: 0, energy: 0, comfort: 0 }, baseCapacity: 8 };
     }
   }
   addLog(state, "abrigo", oldHex
@@ -287,7 +341,8 @@ const stockKeys = ["food", "water", "medications", "pistolAmmo", "fuel", "parts"
 function emptyShelter(hex: string | null, name: string): ShelterState {
   return { hex, name, capacity: hex ? 8 : 0, residents: 0, food: 0, water: 0,
     medications: 0, pistolAmmo: 0, fuel: 0, parts: 0, security: hex ? 1 : 0,
-    energy: 0, comfort: 0, notes: "", inventory: [], provisionLots: [] };
+    energy: 0, comfort: 0, notes: "", inventory: [], provisionLots: [], projects: [], posts: [],
+    manualAdjustments: { security: 0, energy: 0, comfort: 0 }, baseCapacity: hex ? 8 : 0 };
 }
 function validManifest(source: ShelterState, manifest: ShelterManifest) {
   return stockKeys.every(key => {
@@ -316,13 +371,33 @@ function transportShelterStock(source: ShelterState, target: ShelterState, manif
 
 /** Identified residents are separate from the legacy numeric residents counter. */
 export function residentNpcs(state: GameState, home: string | null = state.shelter.hex) {
-  return (state.npcs ?? []).filter(npc => npc.active && npc.status !== "Morto" && npc.home === (home ?? undefined));
+  return (state.npcs ?? []).filter(npc => npc.active && npc.status !== "Morto" && npc.status !== "Desaparecido" && npc.home === (home ?? undefined));
 }
 
 export function shelterPopulation(state: GameState) {
   const shelterHex = state.shelter.hex;
   const survivorsPresent = shelterHex ? survivorsAtHex(state, shelterHex).length : survivorsAtHex(state, state.partyHex).length;
-  return state.shelter.residents + residentNpcs(state).length + survivorsPresent;
+  const namedPresent = (state.npcs ?? []).filter(npc => npc.active && npc.status !== "Morto" && npc.status !== "Desaparecido"
+    && npc.hex === (shelterHex ?? state.partyHex)).length;
+  return state.shelter.residents + namedPresent + survivorsPresent;
+}
+
+/** Community membership, current presence and field workers are intentionally distinct. */
+export function shelterPopulationBreakdown(state: GameState, shelter: ShelterState = state.shelter) {
+  const hex = shelter.hex;
+  const living = (npc: NPC) => npc.active && npc.status !== "Morto" && npc.status !== "Desaparecido";
+  const namedResidents = (state.npcs ?? []).filter(npc => living(npc) && npc.home === (hex ?? undefined));
+  const namedPresent = (state.npcs ?? []).filter(npc => living(npc) && npc.hex === (hex ?? state.partyHex));
+  const survivorsPresent = survivorsAtHex(state, hex ?? state.partyHex);
+  return {
+    residents: shelter.residents + namedResidents.length,
+    unidentifiedResidents: shelter.residents,
+    namedResidents,
+    present: shelter.residents + namedPresent.length + survivorsPresent.length,
+    namedPresent,
+    survivorsPresent,
+    field: namedResidents.filter(npc => npc.hex !== hex).length,
+  };
 }
 
 function transportShelterNpcs(state: GameState, sourceHome: string | null, destinationHex: string | null, npcIds: string[]) {

@@ -1,5 +1,6 @@
 import content from "./content.json";
 import type { GameState, HexState } from "./game";
+import { normalizeShelter } from "./shelter-projects";
 
 export type Sector = { id: string; name: string; border: string; invites: string[] };
 
@@ -71,10 +72,13 @@ export function preserveKnownSectors(state: GameState) {
     npc.infection ??= "Saudável";
     npc.disposition ??= "Neutro";
     npc.active ??= true;
+    npc.accompaniesSurvivorIds ??= [];
   }
   // Older campaigns had a shelter in the central gym, without an explicit location.
   const previousShelter = state.shelter as GameState["shelter"] & { hex?: string | null };
   if (previousShelter && previousShelter.hex === undefined) previousShelter.hex = "0,0";
+  if (state.shelter) normalizeShelter(state.shelter);
+  for (const shelter of state.formerShelters ?? []) normalizeShelter(shelter);
   for (const area of content.hexes) {
     const key = `${area.q},${area.r}`;
     const hex = state.hexes[key];
