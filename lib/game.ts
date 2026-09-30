@@ -487,8 +487,10 @@ export function recoverFormerStock(state: GameState, hex: string, receiverId: st
       if (receiver[key] + quantity > 99) return false;
       transferPortionLots(site, receiver, key, quantity);
     } else if (key === "pistolAmmo") {
-      if (receiver.ammo + quantity > 99 || (receiver.ammo > 0 && receiver.ammoType !== "Pistola")) return false;
-      site.pistolAmmo -= quantity; receiver.ammo += quantity; receiver.ammoType = "Pistola";
+      if (receiver.ammo + quantity > 99 || (receiver.ammo > 0 && receiver.ammoType !== "Pistola")
+        || shelterAmmoCount(site, "Pistola") < quantity) return false;
+      setShelterAmmoCount(site, "Pistola", shelterAmmoCount(site, "Pistola") - quantity);
+      receiver.ammo += quantity; receiver.ammoType = "Pistola";
     } else {
       const names = { parts: "Peças (1 unidade)", medications: "Medicamentos (1 unidade)", fuel: "Combustível (1 unidade)" };
       if (!(key in names)) return false;
