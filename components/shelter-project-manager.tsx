@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Pick } from "@/components/game-controls";
 import { addLog, displayTime, type GameState, type ShelterProject, type ShelterState } from "@/lib/game";
 import {
+  cancelShelterWorkShift,
   canVolunteer,
   createShelterProject,
   markProjectDamaged,
@@ -30,10 +31,12 @@ import {
   projectDefinition,
   projectDependencyIssue,
   projectDisplayCosts,
+  placeShelterProject,
   projectOperational,
+  projectPlacementIssue,
   projectProgress,
   projectWorkPreview,
-  runShelterWorkShift,
+  scheduleShelterWorkShift,
   shelterBlueprintSlots,
   shelterMetrics,
   shelterPosts,
@@ -64,6 +67,7 @@ function projectFor(shelter: ShelterState, key: string) {
 
 function projectStateLabel(project?: ShelterProject) {
   if (!project) return "Disponível";
+  if (project.workShift) return "Turno agendado";
   if (project.state === "Em construção" && project.repairProgress !== undefined) return "Em reparo";
   return project.state;
 }
@@ -87,10 +91,10 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
   const [filter, setFilter] = useState<CatalogFilter>("Recomendados");
   const [selectedKey, setSelectedKey] = useState<string>(recommendations[0]?.key ?? shelter.projects?.[0]?.key ?? shelterProjectCatalog[0].key);
   const [planningKey, setPlanningKey] = useState<string | null>(null);
+  const [planningSlotId, setPlanningSlotId] = useState<string | null>(null);
 
   if (!shelter.hex) return null;
 
-  const metrics = shelterMetrics(shelter, game);
   const power = shelterPower(game, shelter);
   const activeProjects = (shelter.projects ?? []).filter(project => project.state !== "Concluído");
   const completedProjects = (shelter.projects ?? []).filter(project => project.state === "Concluído");
@@ -99,13 +103,20 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
   const selectedProgress = selectedProject ? projectProgress(selectedProject) : null;
   const selectedPreview = selectedProject?.state === "Em construção" ? projectWorkPreview(game, shelter, selectedProject) : null;
   const dependencyIssue = projectDependencyIssue(shelter, selectedDefinition.key);
+  const placementIssue = selectedProject ? projectPlacementIssue(shelter, selectedProject) : null;
   const peopleAtBase = game.npcs.filter(npc => npc.active && npc.status !== "Morto" && npc.status !== "Desaparecido" && npc.hex === shelter.hex);
   const workersBusy = new Set((shelter.projects ?? []).filter(project => project.state === "Em construção")
     .flatMap(project => [project.responsibleId, ...(project.helperIds ?? [])]).filter(Boolean));
   const availableWorkers = peopleAtBase.filter(npc => !workersBusy.has(npc.id)).length;
   const planningDefinition = planningKey ? projectDefinition(planningKey) : null;
+  const planningSlot = planningSlotId ? shelterBlueprintSlots.find(slot => slot.id === planningSlotId) : null;
   const occupiedSlots = new globalThis.Map((shelter.projects ?? []).filter(project => project.slotId).map(project => [project.slotId!, project]));
   const buildLog = game.log.filter(entry => entry.kind === "abrigo").slice(0, 12);
+  const scheduledProjects = (shelter.projects ?? []).filter(project => Boolean(project.workShift));
+  const slotChoices = planningSlot
+    ? shelterProjectCatalog.filter(definition => definition.kind === "facility" && definition.zone === planningSlot.zone
+      && (!projectFor(shelter, definition.key) || !projectFor(shelter, definition.key)?.slotId))
+    : [];
 
   const catalog = filter === "Recomendados"
     ? (() => {
@@ -117,11 +128,35 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
   function addProject(key: string, slotId?: string) {
     const definition = projectDefinition(key);
     if (!definition) return;
+    const existing = projectFor(shelter, key);
     if (definition.kind === "facility" && !slotId) {
       setPlanningKey(key);
+      setPlanningSlotId(null);
       setSelectedKey(key);
       return;
     }
+
+    let issue: string | null = null;
+    if (existing && slotId && !existing.slotId) {
+      edit(draft => {
+        const target = projectFor(draft.shelter, key);
+        if (!target) return;
+        issue = placeShelterProject(draft.shelter, target, slotId);
+        if (!issue) addLog(draft, "abrigo", `${target.name} foi posicionada em ${shelterBlueprintSlots.find(slot => slot.id === slotId)?.label ?? slotId}.`);
+      });
+      if (issue) toast.error("Local inválido", { description: issue });
+      else toast.success("Local definido.");
+      setPlanningKey(null);
+      setPlanningSlotId(null);
+      setSelectedKey(key);
+      return;
+    }
+
+    if (existing) {
+      setSelectedKey(key);
+      return;
+    }
+
     const created = createShelterProject(key, slotId);
     if (!created) return;
     edit(draft => {
@@ -131,10 +166,15 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
       addLog(draft, "abrigo", `${created.name} foi planejado(a)${slotId ? ` em ${shelterBlueprintSlots.find(slot => slot.id === slotId)?.label ?? slotId}` : ""} para ${draft.shelter.name}.`);
     });
     setPlanningKey(null);
+    setPlanningSlotId(null);
     setSelectedKey(key);
   }
 
   function begin(project: ShelterProject) {
+    if (!project.responsibleId && !(project.helperIds ?? []).length) {
+      toast.error("Defina a equipe primeiro", { description: "Escolha ao menos uma pessoa para trabalhar nesta obra antes de iniciá-la." });
+      return;
+    }
     let issue: string | null = null;
     edit(draft => {
       const target = projectFor(draft.shelter, project.key);
@@ -143,7 +183,7 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
       if (!issue) addLog(draft, "abrigo", `Construção iniciada: ${target.name}. Custos pagos: ${projectDisplayCosts(target.costs)}.`);
     });
     if (issue) toast.error("Projeto não iniciado", { description: issue });
-    else toast.success("Construção iniciada.");
+    else toast.success("Construção iniciada", { description: "Agora programe um turno. O relógio geral concluirá o trabalho automaticamente quando chegar ao horário final." });
   }
 
   function repair(project: ShelterProject) {
@@ -158,14 +198,22 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
     else toast.success("Reparo iniciado.");
   }
 
-  function runShift() {
-    let result: ReturnType<typeof runShelterWorkShift> | null = null;
-    edit(draft => { result = runShelterWorkShift(draft, 4); });
-    if (!result?.ok) {
-      toast.error("Turno não iniciado", { description: result?.message ?? "Não foi possível registrar o trabalho." });
-      return;
-    }
-    toast.success(result.message, { description: result.results.map(row => `${row.name}: +${row.points}${row.completed ? " · concluído" : ""}`).join(" · ") });
+  function scheduleShift(project: ShelterProject) {
+    let result: ReturnType<typeof scheduleShelterWorkShift> | null = null;
+    edit(draft => {
+      const target = projectFor(draft.shelter, project.key);
+      if (target) result = scheduleShelterWorkShift(draft, target, 4);
+    });
+    if (!result?.ok) toast.error("Turno não programado", { description: result?.message ?? "Verifique a equipe e o horário." });
+    else toast.success("Turno programado", { description: result.message });
+  }
+
+  function cancelShift(project: ShelterProject) {
+    edit(draft => {
+      const target = projectFor(draft.shelter, project.key);
+      if (target) cancelShelterWorkShift(draft, target);
+    });
+    toast("Turno cancelado.");
   }
 
   function setProjectResponsible(project: ShelterProject, id: string) {
