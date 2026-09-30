@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ChevronDown, Compass, Dice5, Eye, Footprints, House, MapPin, Package, Route, Search, ZoomIn, ZoomOut } from "lucide-react";
+import { ChevronDown, Compass, Dice5, Eye, Footprints, House, MapPin, Package, Route, Search, Users, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ShelterMoveDialog } from "@/components/shelter-move";
 import { SurvivorMoveDialog } from "@/components/survivor-move-dialog";
+import { MapGroupMarker } from "@/components/map-group-marker";
 import { HexContextMenu } from "@/components/hex-context-menu";
 import { HexGeneratorDialog, type HexGeneratorKind, type HexGeneratorRequest } from "@/components/hex-generator-dialog";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -42,7 +43,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
   game: GameState;
   edit: Edit;
   playerPreview: boolean;
-  teamPeers?: { id: string; name: string; hex?: string }[];
+  teamPeers?: { id: string; name: string; hex?: string; portrait?: string }[];
 }) {
   const [selected, setSelected] = useState(game.partyHex);
   const [signsDraft, setSignsDraft] = useState<{ key: string; source: string; value: string } | null>(null);
@@ -65,6 +66,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
   const [relocateDestination, setRelocateDestination] = useState<string | null>(null);
   const [moveOpen, setMoveOpen] = useState(false);
   const [moveDestination, setMoveDestination] = useState<string | null>(null);
+  const [activeGroupHex, setActiveGroupHex] = useState(game.partyHex);
   const mapViewport = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -152,9 +154,34 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
   const canMakeBase = actualMembersHere.length > 0 && record.discovery === "explorado" && game.shelter.hex !== selected;
   const publicPositions = playerPreview && teamPeers.length > 0
     ? teamPeers
-    : game.survivors.map(person => ({ id: person.id, name: person.name, hex: person.hex ?? game.partyHex }));
+    : game.survivors.map(person => ({ id: person.id, name: person.name, portrait: person.portrait, hex: person.hex ?? game.partyHex }));
   const positionHexes = [...new Set(publicPositions.map(person => person.hex ?? game.partyHex))];
+  const publicGroups = positionHexes.map(hex => ({
+    hex,
+    members: publicPositions.filter(person => (person.hex ?? game.partyHex) === hex),
+    main: hex === game.partyHex,
+  }));
   const publicMembersHere = publicPositions.filter(person => (person.hex ?? game.partyHex) === selected);
+  const activeGroup = publicGroups.find(group => group.hex === activeGroupHex)
+    ?? publicGroups.find(group => group.main)
+    ?? publicGroups[0];
+  const activeSourceHex = activeGroup?.hex ?? game.partyHex;
+  const [activeQ, activeR] = activeSourceHex.split(",").map(Number);
+  const groupPositionsKey = publicGroups.map(group => group.hex).sort().join("|");
+
+  useEffect(() => {
+    if (!publicGroups.length) {
+      if (activeGroupHex !== game.partyHex) setActiveGroupHex(game.partyHex);
+      return;
+    }
+    if (!publicGroups.some(group => group.hex === activeGroupHex))
+      setActiveGroupHex(publicGroups.find(group => group.main)?.hex ?? publicGroups[0].hex);
+  }, [activeGroupHex, game.partyHex, groupPositionsKey]);
+
+  function selectGroup(hex: string) {
+    setActiveGroupHex(hex);
+    selectHex(hex);
+  }
 
   function runHexAction(id: string, action: HexQuickAction) {
     let result: ReturnType<typeof performHexAction> | null = null;
@@ -207,8 +234,8 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
           {selected === game.shelter.hex && <span className="tag">Abrigo</span>}</div>
       </div>
       {publicMembersHere.length > 0 && <div className="hex-presence-card mt-3">
-        <Footprints size={17} aria-hidden="true" />
-        <div><b>{publicMembersHere.length === 1 ? "1 sobrevivente neste hex" : `${publicMembersHere.length} sobreviventes neste hex`}</b>
+        {selected === game.partyHex ? <Footprints size={17} aria-hidden="true" /> : <Users size={17} aria-hidden="true" />}
+        <div><b>{selected === game.partyHex ? "Grupo principal" : publicMembersHere.length === 1 ? "Sobrevivente isolado" : "Subgrupo neste hex"}</b>
           <span>{publicMembersHere.map(person => person.name).join(", ")}</span></div>
       </div>}
       {(game.formerShelters ?? []).some(site => site.hex === selected) && visible && <p className="character-rule-note mt-3"><Package size={15} aria-hidden="true" className="inline mr-1" /> Antiga base registrada. Sobreviventes presentes neste hex podem abrir Abrigo para retirar suprimentos.</p>}
@@ -371,6 +398,11 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
           <Button size="sm" variant="outline" className="map-zoom-toggle" onClick={() => setMapOverview(value => !value)}
             aria-pressed={mapOverview}>{mapOverview ? <ZoomIn /> : <ZoomOut />}{mapOverview ? "Ampliar" : "Ver tudo"}</Button></div>
       </div>
+      {activeGroup && <div className="map-active-group" role="status" aria-live="polite">
+        <span className="map-active-group-icon">{activeGroup.main ? <Footprints size={16} /> : <Users size={16} />}</span>
+        <span><small>GRUPO ATIVO</small><b>{activeGroup.members.map(person => person.name).join(", ")}</b></span>
+        <em>Hex {activeGroup.hex}</em>
+      </div>}
       <div className="map-surface">
         <div ref={mapViewport} className={`map-viewport ${mapOverview ? "overview" : ""}`}>
         <svg viewBox="0 0 600 485" aria-label="Mapa de dezenove hexágonos da campanha" role="img">
@@ -389,10 +421,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
             }).join(" ");
             const discovered = state.discovery === "explorado";
             const observed = state.discovery === "avistado";
-            const nearby = positionHexes.some(position => {
-              const [sourceQ, sourceR] = position.split(",").map(Number);
-              return hexDistance(hex.q-sourceQ, hex.r-sourceR) === 1;
-            });
+            const nearby = hexDistance(hex.q-activeQ, hex.r-activeR) === 1;
             const fill = discovered ? "#35686a" : observed ? "url(#setor-avistado)" : "#17282d";
             const title = discovered || observed ? state.sector?.name ?? "Setor sem nome" : "Fora do horizonte";
             const shownPoints = playerPreview
@@ -409,7 +438,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
               onRelocateShelter={() => openRelocation(id)}
               onMoveSurvivors={() => openMovement(id)}>
               <g role="button" tabIndex={0} className="map-cell" aria-pressed={id === selected}
-                aria-label={`${id}: ${title}${nearby ? ", adjacente a sobreviventes" : ""}${id === game.shelter.hex ? ", abrigo" : ""}${formerBase ? ", antiga base com depósito" : ""}${membersHere.length ? `, ${membersHere.length} sobrevivente(s): ${membersHere.map(person => person.name).join(", ")}` : ""}`}
+                aria-label={`${id}: ${title}${nearby ? ", adjacente ao grupo ativo" : ""}${id === game.shelter.hex ? ", abrigo" : ""}${formerBase ? ", antiga base com depósito" : ""}${membersHere.length ? `, sobreviventes: ${membersHere.map(person => person.name).join(", ")}` : ""}`}
                 onClick={() => selectHex(id)} onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectHex(id); } }}>
                 <title>{title} · Hex {id}</title>
                 <polygon points={polygon} className={`map-hex ${id === selected ? "selected" : ""} ${nearby ? "nearby" : ""}`}
@@ -424,10 +453,15 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
                   <House x={x+18} y={y-38} width={18} height={18} stroke="#173135" strokeWidth={2.5} /></g>}
                 {formerBase && <g aria-hidden="true"><circle cx={x+27} cy={y-29} r="13" fill="#e7d3a2" stroke="#173135" strokeWidth="2" />
                   <Package x={x+18} y={y-38} width={18} height={18} stroke="#173135" strokeWidth={2.5} /></g>}
-                {membersHere.length > 0 && <g aria-hidden="true">
-                  <circle cx={x-27} cy={y-29} r="13" fill={id === game.partyHex ? "#f1c481" : "#9bc9c2"} stroke="#173135" strokeWidth="2" />
-                  <text x={x-27} y={y-25} textAnchor="middle" fontSize="11" fill="#173135" fontWeight="900">{membersHere.length}</text>
-                </g>}
+                {membersHere.length > 0 && <MapGroupMarker
+                  hexId={id}
+                  x={x}
+                  y={y}
+                  members={membersHere}
+                  main={id === game.partyHex}
+                  active={activeGroupHex === id}
+                  onSelect={() => selectGroup(id)}
+                />}
               </g>
             </HexContextMenu>;
           })}
@@ -438,19 +472,22 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
           <span><i className="legend-swatch legend-observed" /> Avistado</span>
           <span><i className="legend-swatch" style={{background:"#17282d"}} /> Desconhecido</span>
           <span><i className="legend-swatch legend-nearby" /> Adjacente</span>
-          <span className="flex items-center gap-1"><Footprints size={15} /> Sobreviventes · número no marcador</span>
+          <span className="flex items-center gap-1"><Footprints size={15} /> Pegadas = grupo principal</span>
+          <span className="flex items-center gap-1"><Users size={15} /> Retratos = subgrupos</span>
           {game.shelter.hex && <span className="flex items-center gap-1"><House size={15} /> Abrigo</span>}
           {(game.formerShelters ?? []).length > 0 && <span className="flex items-center gap-1"><Package size={15} /> Antiga base</span>}
           <span className="flex items-center gap-1"><MapPin size={15} /> Número = pontos</span>
         </div>
       </div>
-      <div className="map-group-summary">
-        {(playerPreview && teamPeers.length > 0
-          ? [...new Set(publicPositions.map(person => person.hex ?? game.partyHex))].map(hex => ({
-              hex, names: publicPositions.filter(person => (person.hex ?? game.partyHex) === hex).map(person => person.name),
-            }))
-          : survivorPositionGroups(game).map(group => ({ hex: group.hex, names: group.members.map(person => person.name) }))
-        ).map(group => <span key={group.hex}><Footprints size={13} /> Hex {group.hex}: {group.names.join(", ")}</span>)}
+      <div className="map-group-summary" aria-label="Selecionar grupo ativo">
+        {publicGroups.map(group => <button type="button" key={group.hex}
+          className={`map-group-chip ${activeGroupHex === group.hex ? "is-active" : ""}`}
+          aria-pressed={activeGroupHex === group.hex}
+          onClick={() => selectGroup(group.hex)}
+          title={`${group.main ? "Grupo principal" : "Subgrupo"} · Hex ${group.hex}: ${group.members.map(person => person.name).join(", ")}`}>
+          {group.main ? <Footprints size={13} /> : <Users size={13} />}
+          <span><b>{group.main ? "Principal" : group.members.length === 1 ? group.members[0].name : group.members.map(person => person.name.split(" ")[0]).join(" · ")}</b><small>Hex {group.hex}</small></span>
+        </button>)}
       </div>
       <p className="map-pan-hint text-sm subtle mt-2">Toque em um hex para abrir os detalhes. No computador, clique com o botão direito para abrir as ações e tabelas daquele hex. {mapOverview
         ? "Use “Ampliar” para ler os setores no mapa." : "Deslize o mapa para os lados ou use “Ver tudo” para conferir a cidade inteira."}</p>
@@ -460,7 +497,9 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
     {generatorRequest && <HexGeneratorDialog game={game} edit={edit} request={generatorRequest}
       onOpenChange={open => { if (!open) setGeneratorRequest(null); }} />}
     {moveDestination && <SurvivorMoveDialog game={game} edit={edit} destination={moveDestination}
-      open={moveOpen} onOpenChange={setMoveOpen} />}
+      open={moveOpen} onOpenChange={setMoveOpen}
+      preferredSourceHex={activeGroupHex}
+      onMoved={destination => { setActiveGroupHex(destination); setSelected(destination); }} />}
     {relocateDestination && <ShelterMoveDialog game={game} edit={edit} mode="relocate" destination={relocateDestination}
       open={relocateOpen} onOpenChange={setRelocateOpen} hideTrigger />}
     {compact ? <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
