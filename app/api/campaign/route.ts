@@ -124,13 +124,13 @@ export async function PATCH(request: Request) {
     if (!member.survivor_id) return Response.json({ error: "Crie seu sobrevivente antes de editar a ficha." }, { status: 409 });
     const raw = await request.text();
     if (raw.length > 150_000) return Response.json({ error: "Alteração grande demais." }, { status: 413 });
-    const payload = JSON.parse(raw) as { before?: Survivor; after?: Survivor; fearDelta?: number; logs?: PlayerLog[] };
+    const payload = JSON.parse(raw) as { before?: Survivor; after?: Survivor; fearDelta?: number; noiseDelta?: number; logs?: PlayerLog[] };
     if (!payload.before || !payload.after || !Array.isArray(payload.logs))
       return Response.json({ error: "Alteração incompleta." }, { status: 400 });
     for (let attempt = 0; attempt < 4; attempt++) {
       const data = await readCampaign(campaignId);
       const next = applyPlayerChange(data.state, member.survivor_id, payload.before, payload.after,
-        payload.fearDelta ?? 0, payload.logs);
+        payload.fearDelta ?? 0, payload.logs, payload.noiseDelta ?? 0);
       if (!next) return Response.json({ error: "Sua ficha mudou em outra janela ou esta ação precisa ser registrada pelo mestre. Recarregue antes de tentar novamente." }, { status: 409 });
       const revision = await writeCampaign(campaignId, next, data.revision);
       if (revision !== null) return Response.json({ revision, state: projectPlayerGame(next, member.survivor_id), restPeers: restPeers(next) }, { headers: noStore });
