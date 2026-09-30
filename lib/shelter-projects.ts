@@ -341,7 +341,11 @@ export function survivorShelterWorkIssue(game: GameState, project: ShelterProjec
   const survivor = game.survivors.find(person => person.id === survivorId);
   if (!survivor) return "Sobrevivente não encontrado.";
   if (!game.shelter.hex || survivorHex(game, survivor) !== game.shelter.hex) return "Seu personagem precisa estar no abrigo para trabalhar aqui.";
-  if (!["Planejado", "Em construção"].includes(project.state)) return "Esta estrutura não está aceitando trabalhadores agora.";
+  const operation = projectDefinition(project.key)?.operationWork;
+  const acceptsProjectWork = ["Planejado", "Em construção"].includes(project.state);
+  const acceptsOperationWork = Boolean(operation && ["Concluído", "Danificado"].includes(project.state)
+    && projectOperational(game, game.shelter, project));
+  if (!acceptsProjectWork && !acceptsOperationWork) return "Esta estrutura não está aceitando trabalhadores agora.";
   const active = survivorActiveShelterShift(game, survivorId);
   if (active && active.project.id !== project.id) return `Você já está trabalhando em ${active.project.name} até ${displayTime(active.shift.startMinute + active.shift.durationMinutes)}.`;
   return null;
@@ -365,14 +369,24 @@ export function leaveShelterProjectAsSurvivor(game: GameState, project: ShelterP
 export function survivorWorkPreview(game: GameState, project: ShelterProject, survivorId: string) {
   const issue = survivorShelterWorkIssue(game, project, survivorId);
   const survivor = game.survivors.find(person => person.id === survivorId);
-  if (issue || !survivor) return { issue: issue ?? "Sobrevivente não encontrado.", points: 0, capabilities: [] as string[], matches: [] as string[] };
-  if (project.state !== "Em construção") return { issue: "A obra ainda precisa ser iniciada pelo mestre.", points: 0, capabilities: survivorShelterCapabilities(survivor), matches: [] as string[] };
+  if (issue || !survivor) return { issue: issue ?? "Sobrevivente não encontrado.", points: 0, capabilities: [] as string[], matches: [] as string[], purpose: "project" as const };
   if (!(project.survivorWorkerIds ?? []).includes(survivorId))
-    return { issue: "Entre na equipe desta obra antes de programar um turno.", points: 0, capabilities: survivorShelterCapabilities(survivor), matches: [] as string[] };
+    return { issue: "Entre na equipe desta estrutura antes de programar um turno.", points: 0, capabilities: survivorShelterCapabilities(survivor), matches: [] as string[], purpose: "project" as const };
+
   const capabilities = survivorShelterCapabilities(survivor);
-  const requirements = project.buildCapabilities ?? projectDefinition(project.key)?.buildCapabilities ?? [];
+  const definition = projectDefinition(project.key);
+  const operation = definition?.operationWork;
+  if (operation && ["Concluído", "Danificado"].includes(project.state)) {
+    const requirements = operation.capability ? [operation.capability] : [];
+    const matches = requirements.filter(capability => capabilities.includes(capability));
+    return { issue: null, points: 1 + (matches.length ? 1 : 0), capabilities, matches, purpose: "operation" as const };
+  }
+  if (project.state !== "Em construção")
+    return { issue: "A obra ainda precisa ser iniciada pelo mestre.", points: 0, capabilities, matches: [] as string[], purpose: "project" as const };
+  const requirements = project.buildCapabilities ?? definition?.buildCapabilities ?? [];
   const matches = requirements.filter(capability => capabilities.includes(capability));
-  return { issue: null, points: 1 + (matches.length ? 1 : 0), capabilities, matches };
+  const repairBonus = repairWorkBonus(game, project);
+  return { issue: null, points: 1 + (matches.length ? 1 : 0) + repairBonus.points, capabilities, matches, purpose: "project" as const, repairBonus };
 }
 
 export function scheduleSurvivorWorkShift(game: GameState, project: ShelterProject, survivorId: string, hours = 4) {
@@ -392,6 +406,7 @@ export function scheduleSurvivorWorkShift(game: GameState, project: ShelterProje
     endAbsoluteMinute: absoluteMinutes(game) + durationMinutes,
     points: preview.points,
     repairing: Boolean(project.repairProgress !== undefined),
+    purpose: preview.purpose,
   });
   return { ok: true, message: `Seu turno foi programado até ${displayTime(game.minutes + durationMinutes)}.`, preview };
 }
@@ -616,16 +631,26 @@ export function advanceProject(project: ShelterProject, points = 1) {
 }
 
 export function projectWorkPreview(game: GameState, shelter: ShelterState, project: ShelterProject) {
-  if (project.state !== "Em construção") return { issue: "Projeto fora de construção.", workers: [] as NPC[], points: 0, missingCapabilities: [] as string[] };
+  const definition = projectDefinition(project.key);
+  const operation = definition?.operationWork;
+  const operating = Boolean(operation && ["Concluído", "Danificado"].includes(project.state)
+    && projectOperational(game, shelter, project));
+  if (project.state !== "Em construção" && !operating)
+    return { issue: "Projeto fora de construção ou operação.", workers: [] as NPC[], points: 0, missingCapabilities: [] as string[], purpose: "project" as const };
+
   const workers = assignedPeople(game, shelter, project);
-  if (!workers.length) return { issue: "Atribua pelo menos uma pessoa presente à equipe.", workers, points: 0, missingCapabilities: project.buildCapabilities ?? [] };
-  const sharedWorker = workers.find(worker => shelter.projects?.some(other => other.id !== project.id && other.state === "Em construção"
-    && (other.responsibleId === worker.id || (other.helperIds ?? []).includes(worker.id))));
-  if (sharedWorker) return { issue: `${sharedWorker.name} está atribuído a outra obra ativa.`, workers, points: 0, missingCapabilities: [] as string[] };
-  const requirements = project.buildCapabilities ?? projectDefinition(project.key)?.buildCapabilities ?? [];
+  const requirements = operating
+    ? (operation?.capability ? [operation.capability] : [])
+    : (project.buildCapabilities ?? definition?.buildCapabilities ?? []);
+  if (!workers.length) return { issue: "Atribua pelo menos uma pessoa presente à equipe.", workers, points: 0, missingCapabilities: requirements, purpose: operating ? "operation" as const : "project" as const };
+  const sharedWorker = workers.find(worker => shelter.projects?.some(other => other.id !== project.id
+    && Boolean(other.workShift) && (other.responsibleId === worker.id || (other.helperIds ?? []).includes(worker.id))));
+  if (sharedWorker) return { issue: `${sharedWorker.name} já tem um turno programado em ${sharedWorker.name === project.name ? "outra tarefa" : "outra estrutura"}.`, workers, points: 0, missingCapabilities: [] as string[], purpose: operating ? "operation" as const : "project" as const };
   const missingCapabilities = requirements.filter(capability => !workers.some(npc => hasCapability(npc, capability)));
   const specialistBonus = requirements.length > 0 && missingCapabilities.length === 0 ? 1 : 0;
-  return { issue: null, workers, points: Math.max(1, workers.length + specialistBonus), missingCapabilities };
+  const repairBonus = operating ? { points: 0, sources: [] as string[] } : repairWorkBonus(game, project);
+  return { issue: null, workers, points: Math.max(1, workers.length + specialistBonus + repairBonus.points), missingCapabilities,
+    purpose: operating ? "operation" as const : "project" as const, repairBonus };
 }
 
 export function scheduleShelterWorkShift(game: GameState, project: ShelterProject, hours = 4) {
