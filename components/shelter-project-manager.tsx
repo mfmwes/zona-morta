@@ -10,7 +10,6 @@ import {
   Hammer,
   History,
   Lightbulb,
-  Map,
   PauseCircle,
   Play,
   Plus,
@@ -105,7 +104,7 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
     .flatMap(project => [project.responsibleId, ...(project.helperIds ?? [])]).filter(Boolean));
   const availableWorkers = peopleAtBase.filter(npc => !workersBusy.has(npc.id)).length;
   const planningDefinition = planningKey ? projectDefinition(planningKey) : null;
-  const occupiedSlots = new Map((shelter.projects ?? []).filter(project => project.slotId).map(project => [project.slotId!, project]));
+  const occupiedSlots = new globalThis.Map((shelter.projects ?? []).filter(project => project.slotId).map(project => [project.slotId!, project]));
   const buildLog = game.log.filter(entry => entry.kind === "abrigo").slice(0, 12);
 
   const catalog = filter === "Recomendados"
