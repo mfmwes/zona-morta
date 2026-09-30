@@ -56,7 +56,7 @@ export function CharacterWizard({ onCreate }: { onCreate: (survivor: Survivor) =
 
   return <Dialog open={open} onOpenChange={value => { if (!saving) setOpen(value); }}>
     <DialogTrigger asChild><Button><UserPlus /> Criar sobrevivente</Button></DialogTrigger>
-    <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[820px]" onInteractOutside={event => { if (saving) event.preventDefault(); }}>
+    <DialogContent className="character-wizard-dialog max-h-[92vh] overflow-y-auto sm:max-w-[820px]" onInteractOutside={event => { if (saving) event.preventDefault(); }}>
       <DialogHeader>
         <p className="dossier-title">Dossiê de sobrevivente / nível 1</p>
         <DialogTitle>Quem você era. Quem se tornou.</DialogTitle>
@@ -132,7 +132,7 @@ export function CharacterWizard({ onCreate }: { onCreate: (survivor: Survivor) =
               <div key={label}>{name ? <ItemArt name={name} category={category} /> : <EmptyItemArt />}<span><small>{label}</small><b>{name || "Vazio"}</b></span></div>)}
           </div>
           {primaryData && <p className="text-sm subtle">{primaryData.trait} · {primaryData.range} · {primaryData.damage} físico · Barulho {primaryData.noise}. {primaryData.hands === "Duas" ? "Exige duas mãos." : "Deixa uma mão para secundária."}</p>}
-          <div className="rounded-md bg-[#e7f1ed] p-3 text-sm leading-relaxed">
+          <div className="wizard-kit-note rounded-md bg-[#e7f1ed] p-3 text-sm leading-relaxed">
             O kit inclui 1 porção de Comida e 1 de Água. Arma de fogo recebe 1 carga de munição compatível além do item pessoal. A proteção vestida e a arma ativa ocupam 0 carga.
           </div>
         </section>

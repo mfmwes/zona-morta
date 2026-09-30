@@ -376,6 +376,75 @@ html[data-theme="dark"] .character-ability-preview { color: #b8c9c3; }
 html[data-theme="dark"] .character-ability-detail { border-top-color: #3b514e; }
 html[data-theme="dark"] .character-ability-detail p { color: #d3dfd9; }
 html[data-theme="dark"] .character-technique-preview > span { background: #263634; color: #bdd6cd; }
+
+/* Character creator: keep every nested surface readable in the night theme. */
+html[data-theme="dark"] .character-wizard-dialog {
+  color: var(--foreground);
+}
+html[data-theme="dark"] .character-wizard-dialog .field label,
+html[data-theme="dark"] .character-wizard-dialog .field-label {
+  color: #dce7e1;
+}
+html[data-theme="dark"] .character-wizard-dialog [data-slot="select-trigger"] {
+  border-color: #50645f;
+  background: #141d1e !important;
+  color: #e5eee9;
+}
+html[data-theme="dark"] .character-wizard-dialog [data-slot="select-trigger"][data-disabled] {
+  border-color: #394b48;
+  background: #182222 !important;
+  color: #7f918c;
+  opacity: 1;
+}
+html[data-theme="dark"] .character-wizard-dialog .wizard-kit-preview > div {
+  border-color: #40534f;
+  background: #202b2b;
+  color: #e2ece6;
+}
+html[data-theme="dark"] .character-wizard-dialog .wizard-kit-preview small {
+  color: #a8bbb5;
+}
+html[data-theme="dark"] .character-wizard-dialog .wizard-kit-preview b {
+  color: #edf4ef;
+}
+html[data-theme="dark"] .character-wizard-dialog .item-art--empty {
+  border-color: #49605b;
+  background: repeating-linear-gradient(135deg,#263331 0 5px,#202b2a 5px 10px);
+}
+html[data-theme="dark"] .character-wizard-dialog .wizard-kit-note {
+  border: 1px solid #405852;
+  background: #21302e !important;
+  color: #d7e4de;
+}
+html[data-theme="dark"] .character-wizard-dialog .wizard-ability-preview {
+  border-color: #40534f;
+  background: #202b2b;
+  color: #dce7e1;
+}
+html[data-theme="dark"] .character-wizard-dialog .wizard-ability-preview .subtle {
+  color: #aebfba;
+}
+html[data-theme="dark"] .character-wizard-dialog .wizard-specialty {
+  color: #d8e4de;
+}
+html[data-theme="dark"] .character-wizard-dialog .text-emerald-700 {
+  color: #88cdb1 !important;
+}
+html[data-theme="dark"] .character-wizard-dialog .text-red-700 {
+  color: #efa59a !important;
+}
+html[data-theme="dark"] .character-wizard-dialog section.border-t,
+html[data-theme="dark"] .character-wizard-dialog [data-slot="dialog-footer"] {
+  border-color: #40514e;
+}
+html[data-theme="dark"] .character-wizard-dialog .intro-line,
+html[data-theme="dark"] .character-wizard-dialog .subtle {
+  color: #b1c0bb;
+}
+html[data-theme="dark"] .character-wizard-dialog input::placeholder,
+html[data-theme="dark"] .character-wizard-dialog textarea::placeholder {
+  color: #7f918c;
+}
 html[data-theme="dark"] [data-slot="dialog-content"],
 html[data-theme="dark"] [data-slot="select-content"],
 html[data-theme="dark"] [data-slot="dropdown-menu-content"],
