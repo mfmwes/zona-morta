@@ -1,42 +1,141 @@
 "use client";
 
-import { AlertTriangle, CheckCircle2, Hammer, Plus } from "lucide-react";
+import { useMemo, useState } from "react";
+import {
+  AlertTriangle,
+  BatteryCharging,
+  CheckCircle2,
+  ChevronRight,
+  Clock3,
+  Hammer,
+  History,
+  Lightbulb,
+  Map,
+  PauseCircle,
+  Play,
+  Plus,
+  ShieldCheck,
+  Users,
+  Wrench,
+  Zap,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Pick } from "@/components/game-controls";
-import { addLog, type GameState, type ShelterProject, type ShelterState } from "@/lib/game";
+import { addLog, displayTime, type GameState, type ShelterProject, type ShelterState } from "@/lib/game";
 import {
-  advanceProject,
   canVolunteer,
   createShelterProject,
+  markProjectDamaged,
   projectAssignmentIssue,
+  projectDefinition,
+  projectDependencyIssue,
   projectDisplayCosts,
   projectOperational,
+  projectProgress,
+  projectWorkPreview,
+  runShelterWorkShift,
+  shelterBlueprintSlots,
+  shelterMetrics,
   shelterPosts,
+  shelterPower,
   shelterProjectCatalog,
+  shelterRecommendations,
   startProject,
+  startRepair,
 } from "@/lib/shelter-projects";
 
 type Edit = (fn: (draft: GameState) => void) => void;
+type CatalogFilter = "Recomendados" | "Segurança" | "Sobrevivência" | "Saúde" | "Energia e infraestrutura" | "Comunicação" | "Produção e manutenção" | "Comunidade";
 
-function projectFor(shelter: ShelterState, key: string) { return shelter.projects?.find(project => project.key === key); }
-function stateClass(project?: ShelterProject) { return `shelter-project-state ${project ? `is-${project.state.toLowerCase().replace(" ", "-")}` : ""}`; }
+const filters: CatalogFilter[] = [
+  "Recomendados",
+  "Segurança",
+  "Sobrevivência",
+  "Saúde",
+  "Energia e infraestrutura",
+  "Comunicação",
+  "Produção e manutenção",
+  "Comunidade",
+];
+
+function projectFor(shelter: ShelterState, key: string) {
+  return shelter.projects?.find(project => project.key === key);
+}
+
+function projectStateLabel(project?: ShelterProject) {
+  if (!project) return "Disponível";
+  if (project.state === "Em construção" && project.repairProgress !== undefined) return "Em reparo";
+  return project.state;
+}
+
+function projectStateTone(project?: ShelterProject) {
+  if (!project) return "available";
+  if (project.state === "Concluído") return "complete";
+  if (project.state === "Danificado") return "damaged";
+  if (project.state === "Em construção") return "building";
+  return "planned";
+}
+
+function projectLocation(project?: ShelterProject) {
+  if (!project?.slotId) return "Sem posição na planta";
+  return shelterBlueprintSlots.find(slot => slot.id === project.slotId)?.label ?? project.slotId;
+}
 
 export function ShelterProjectsManager({ game, edit, playerPreview }: { game: GameState; edit: Edit; playerPreview: boolean }) {
   const shelter = game.shelter;
-  if (!shelter.hex) return null;
-  const categories = [...new Set(shelterProjectCatalog.map(project => project.category))];
+  const recommendations = shelterRecommendations(game, shelter);
+  const [filter, setFilter] = useState<CatalogFilter>("Recomendados");
+  const [selectedKey, setSelectedKey] = useState<string>(recommendations[0]?.key ?? shelter.projects?.[0]?.key ?? shelterProjectCatalog[0].key);
+  const [planningKey, setPlanningKey] = useState<string | null>(null);
 
-  function addProject(key: string) {
-    const definition = createShelterProject(key);
+  if (!shelter.hex) return null;
+
+  const metrics = shelterMetrics(shelter, game);
+  const power = shelterPower(game, shelter);
+  const activeProjects = (shelter.projects ?? []).filter(project => project.state !== "Concluído");
+  const completedProjects = (shelter.projects ?? []).filter(project => project.state === "Concluído");
+  const selectedDefinition = projectDefinition(selectedKey) ?? shelterProjectCatalog[0];
+  const selectedProject = projectFor(shelter, selectedDefinition.key);
+  const selectedProgress = selectedProject ? projectProgress(selectedProject) : null;
+  const selectedPreview = selectedProject?.state === "Em construção" ? projectWorkPreview(game, shelter, selectedProject) : null;
+  const dependencyIssue = projectDependencyIssue(shelter, selectedDefinition.key);
+  const peopleAtBase = game.npcs.filter(npc => npc.active && npc.status !== "Morto" && npc.status !== "Desaparecido" && npc.hex === shelter.hex);
+  const workersBusy = new Set((shelter.projects ?? []).filter(project => project.state === "Em construção")
+    .flatMap(project => [project.responsibleId, ...(project.helperIds ?? [])]).filter(Boolean));
+  const availableWorkers = peopleAtBase.filter(npc => !workersBusy.has(npc.id)).length;
+  const planningDefinition = planningKey ? projectDefinition(planningKey) : null;
+  const occupiedSlots = new Map((shelter.projects ?? []).filter(project => project.slotId).map(project => [project.slotId!, project]));
+  const buildLog = game.log.filter(entry => entry.kind === "abrigo").slice(0, 12);
+
+  const catalog = useMemo(() => {
+    if (filter === "Recomendados") {
+      const keys = new Set(recommendations.map(item => item.key));
+      return shelterProjectCatalog.filter(definition => keys.has(definition.key));
+    }
+    return shelterProjectCatalog.filter(definition => definition.category === filter);
+  }, [filter, recommendations]);
+
+  function addProject(key: string, slotId?: string) {
+    const definition = projectDefinition(key);
     if (!definition) return;
+    if (definition.kind === "facility" && !slotId) {
+      setPlanningKey(key);
+      setSelectedKey(key);
+      return;
+    }
+    const created = createShelterProject(key, slotId);
+    if (!created) return;
     edit(draft => {
       draft.shelter.projects ??= [];
       if (draft.shelter.projects.some(project => project.key === key)) return;
-      draft.shelter.projects.push(definition);
-      addLog(draft, "abrigo", `${definition.name} foi planejado(a) para ${draft.shelter.name}.`);
+      draft.shelter.projects.push(created);
+      addLog(draft, "abrigo", `${created.name} foi planejado(a)${slotId ? ` em ${shelterBlueprintSlots.find(slot => slot.id === slotId)?.label ?? slotId}` : ""} para ${draft.shelter.name}.`);
     });
+    setPlanningKey(null);
+    setSelectedKey(key);
   }
+
   function begin(project: ShelterProject) {
     let issue: string | null = null;
     edit(draft => {
@@ -46,14 +145,31 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
       if (!issue) addLog(draft, "abrigo", `Construção iniciada: ${target.name}. Custos pagos: ${projectDisplayCosts(target.costs)}.`);
     });
     if (issue) toast.error("Projeto não iniciado", { description: issue });
+    else toast.success("Construção iniciada.");
   }
-  function work(project: ShelterProject) {
+
+  function repair(project: ShelterProject) {
+    let issue: string | null = null;
     edit(draft => {
       const target = projectFor(draft.shelter, project.key);
-      if (!target || !advanceProject(target)) return;
-      addLog(draft, "abrigo", target.state === "Concluído" ? `${target.name} foi concluído.` : `${target.name}: progresso ${target.progress}/${target.requiredProgress}.`);
+      if (!target) return;
+      issue = startRepair(draft.shelter, target);
+      if (!issue) addLog(draft, "abrigo", `Reparo iniciado: ${target.name}.`);
     });
+    if (issue) toast.error("Reparo não iniciado", { description: issue });
+    else toast.success("Reparo iniciado.");
   }
+
+  function runShift() {
+    let result: ReturnType<typeof runShelterWorkShift> | null = null;
+    edit(draft => { result = runShelterWorkShift(draft, 4); });
+    if (!result?.ok) {
+      toast.error("Turno não iniciado", { description: result?.message ?? "Não foi possível registrar o trabalho." });
+      return;
+    }
+    toast.success(result.message, { description: result.results.map(row => `${row.name}: +${row.points}${row.completed ? " · concluído" : ""}`).join(" · ") });
+  }
+
   function setProjectResponsible(project: ShelterProject, id: string) {
     let issue: string | null = null;
     edit(draft => {
@@ -64,45 +180,189 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
     });
     if (issue) toast.error("Não foi possível atribuir", { description: issue });
   }
+
   function toggleProjectHelper(project: ShelterProject, id: string, checked: boolean) {
     let issue: string | null = null;
     edit(draft => {
       const target = projectFor(draft.shelter, project.key);
       if (!target) return;
       issue = checked ? projectAssignmentIssue(draft, draft.shelter, target, id, false) : null;
-      if (!issue) target.helperIds = checked ? [...new Set([...(target.helperIds ?? []), id])] : (target.helperIds ?? []).filter(entry => entry !== id);
+      if (!issue) target.helperIds = checked
+        ? [...new Set([...(target.helperIds ?? []), id])]
+        : (target.helperIds ?? []).filter(entry => entry !== id);
     });
     if (issue) toast.error("Não foi possível atribuir", { description: issue });
   }
 
-  const peopleAtBase = game.npcs.filter(npc => npc.active && npc.status !== "Morto" && npc.status !== "Desaparecido" && npc.hex === shelter.hex);
-  return <section className="shelter-projects"><div className="flex items-start justify-between gap-3 flex-wrap"><div><h3 className="section-title">Projetos e estruturas</h3>
-    <p className="intro-line mt-2">Custos são pagos ao iniciar. Progresso é registrado por ação de trabalho; estruturas concluídas só operam quando a capacidade necessária está presente na base.</p></div><span className="tag">{(shelter.projects ?? []).filter(project => project.state === "Concluído").length} concluído(s)</span></div>
-    {categories.map(category => <div className="shelter-project-category" key={category}><h4>{category}</h4><div className="shelter-project-grid">{shelterProjectCatalog.filter(definition => definition.category === category).map(definition => {
-      const project = projectFor(shelter, definition.key);
-      const operational = project ? projectOperational(game, shelter, project) : false;
-      return <article className="shelter-project-card" key={definition.key}><div className="flex items-start justify-between gap-2"><div><b>{definition.name}</b><p className="text-xs subtle mt-1">{projectDisplayCosts(definition.costs)} · {definition.requiredProgress} progresso</p></div><span className={stateClass(project)}>{project?.state ?? "Disponível"}</span></div>
-        <p className="text-sm mt-3">{definition.effects.map(item => item.label).join(" · ")}</p>
-        {definition.requiredCapabilities?.length ? <p className="text-xs subtle mt-2">Requer: {definition.requiredCapabilities.join(" + ")}</p> : <p className="text-xs subtle mt-2">Sem operador obrigatório.</p>}
-        {project && <><div className="project-progress"><span style={{ width: `${Math.min(100, project.progress / project.requiredProgress * 100)}%` }} /></div><p className="text-xs subtle mt-1">{project.progress}/{project.requiredProgress} de progresso · {operational ? "operacional" : project.state === "Concluído" ? "aguarda operador presente" : "em preparação"}</p>
-          {!playerPreview && <div className="grid gap-2 mt-3"><Pick label="Responsável" value={project.responsibleId ?? ""} options={[{ value: "", label: "Sem responsável" }, ...peopleAtBase.map(npc => ({ value: npc.id, label: `${npc.name} · ${npc.skills.join(", ") || "sem capacidade"}` }))]} onChange={id => setProjectResponsible(project, id)} />
-            {peopleAtBase.length > 0 && <div className="project-helpers"><small>Ajudantes</small>{peopleAtBase.filter(npc => npc.id !== project.responsibleId).map(npc => <label key={npc.id}><input type="checkbox" checked={(project.helperIds ?? []).includes(npc.id)} onChange={event => toggleProjectHelper(project, npc.id, event.target.checked)} /> {npc.name}</label>)}</div>}
-          </div>}</>}
-        {!playerPreview && <div className="flex flex-wrap gap-2 mt-3">{!project && <Button size="sm" variant="outline" onClick={() => addProject(definition.key)}><Plus size={15} /> Planejar</Button>}
-          {project?.state === "Planejado" && <Button size="sm" onClick={() => begin(project)}><Hammer size={15} /> Iniciar</Button>}
-          {project?.state === "Em construção" && <Button size="sm" onClick={() => work(project)}><Hammer size={15} /> Registrar trabalho</Button>}
-          {project?.state === "Concluído" && <Button size="sm" variant="outline" onClick={() => edit(draft => { const target = projectFor(draft.shelter, project.key); if (target) { target.state = "Danificado"; addLog(draft, "abrigo", `${target.name} foi marcado como danificado.`); } })}><AlertTriangle size={15} /> Danificado</Button>}
-          {project?.state === "Danificado" && <Button size="sm" variant="outline" onClick={() => edit(draft => { const target = projectFor(draft.shelter, project.key); if (target) target.state = "Em construção"; })}><Hammer size={15} /> Reparar</Button>}
-        </div>}</article>;
-    })}</div></div>)}
-    <ShelterPostsManager game={game} edit={edit} playerPreview={playerPreview} />
-  </section>;
+  function togglePower(key: string) {
+    edit(draft => {
+      draft.shelter.disabledProjectKeys ??= [];
+      draft.shelter.disabledProjectKeys = draft.shelter.disabledProjectKeys.includes(key)
+        ? draft.shelter.disabledProjectKeys.filter(projectKey => projectKey !== key)
+        : [...draft.shelter.disabledProjectKeys, key];
+      const project = projectFor(draft.shelter, key);
+      addLog(draft, "abrigo", `${project?.name ?? key} foi ${draft.shelter.disabledProjectKeys.includes(key) ? "desligado" : "religado"} na rede de energia.`);
+    });
+  }
+
+  return <div className="construction-console">
+    <section className="construction-summary">
+      <div className="construction-summary-stat"><Hammer size={18} /><span><small>Em andamento</small><b>{activeProjects.length}</b></span></div>
+      <div className="construction-summary-stat"><CheckCircle2 size={18} /><span><small>Concluídas</small><b>{completedProjects.length}</b></span></div>
+      <div className="construction-summary-stat"><Wrench size={18} /><span><small>Peças</small><b>{shelter.parts}</b></span></div>
+      <div className="construction-summary-stat"><Users size={18} /><span><small>Equipe livre</small><b>{availableWorkers}/{peopleAtBase.length}</b></span></div>
+      <div className={`construction-summary-stat ${power.balance < 0 ? "is-warning" : ""}`}><Zap size={18} /><span><small>Energia</small><b>{power.production} / {power.consumption}</b></span></div>
+      {!playerPreview && <Button onClick={runShift} disabled={!activeProjects.some(project => project.state === "Em construção")}><Clock3 size={16} /> Executar turno · 4h</Button>}
+    </section>
+
+    {power.balance < 0 && <div className="construction-alert"><AlertTriangle size={17} /><div><b>Energia insuficiente</b><span>Produção {power.production} · consumo {power.consumption}. Desligue consumidores menos prioritários até o saldo voltar a zero.</span></div></div>}
+
+    <section className="construction-active-section">
+      <div className="construction-section-heading">
+        <div><p className="dossier-title">Agora</p><h3 className="section-title">Projetos ativos</h3></div>
+        <span className="tag">Dia {game.day} · {displayTime(game.minutes)}</span>
+      </div>
+      {activeProjects.length === 0
+        ? <div className="construction-empty"><Hammer size={20} /><span>Nenhuma obra ativa. Escolha uma melhoria no catálogo abaixo.</span></div>
+        : <div className="construction-active-grid">{activeProjects.map(project => {
+          const progress = projectProgress(project);
+          const preview = project.state === "Em construção" ? projectWorkPreview(game, shelter, project) : null;
+          return <button type="button" key={project.id} className={`construction-active-card ${selectedKey === project.key ? "is-selected" : ""}`} onClick={() => setSelectedKey(project.key)}>
+            <div className="construction-active-top"><span className={`construction-state is-${projectStateTone(project)}`}>{projectStateLabel(project)}</span><ChevronRight size={16} /></div>
+            <b>{project.name}</b>
+            <div className="construction-mini-progress"><span style={{ width: `${Math.min(100, progress.value / progress.required * 100)}%` }} /></div>
+            <small>{progress.value}/{progress.required} progresso{progress.repairing ? " de reparo" : ""}</small>
+            <small>{preview?.issue ? `⏸ ${preview.issue}` : preview ? `Próximo turno: +${preview.points}` : project.state === "Danificado" ? "Aguardando reparo" : "Aguardando início"}</small>
+          </button>;
+        })}</div>}
+    </section>
+
+    {recommendations.length > 0 && <section className="construction-recommendations">
+      <div><Lightbulb size={17} /><b>Sugestões para este abrigo</b></div>
+      <div>{recommendations.map(item => <button type="button" key={item.key} onClick={() => { setSelectedKey(item.key); setFilter("Recomendados"); }}>
+        <span>{projectDefinition(item.key)?.name}</span><small>{item.reason}</small>
+      </button>)}</div>
+    </section>}
+
+    <div className="construction-workspace">
+      <section className="construction-blueprint-panel">
+        <div className="construction-section-heading">
+          <div><p className="dossier-title">Planta</p><h3 className="section-title">{planningDefinition ? `Escolha onde construir ${planningDefinition.name}` : "Implantação física"}</h3></div>
+          {planningDefinition && <Button size="sm" variant="outline" onClick={() => setPlanningKey(null)}>Cancelar posição</Button>}
+        </div>
+        <div className="construction-blueprint-grid">
+          {shelterBlueprintSlots.map(slot => {
+            const occupant = occupiedSlots.get(slot.id);
+            const compatible = Boolean(planningDefinition && planningDefinition.zone === slot.zone && !occupant);
+            return <button type="button" key={slot.id}
+              disabled={Boolean(occupant) || Boolean(planningDefinition && !compatible) || playerPreview}
+              className={`construction-blueprint-slot is-${slot.zone} ${occupant ? "is-occupied" : ""} ${compatible ? "is-compatible" : ""}`}
+              onClick={() => planningDefinition && compatible && addProject(planningDefinition.key, slot.id)}>
+              <small>{slot.label}</small>
+              {occupant ? <><b>{occupant.name}</b><span className={`construction-state is-${projectStateTone(occupant)}`}>{projectStateLabel(occupant)}</span></> : <><Plus size={18} /><span>{planningDefinition && compatible ? "Construir aqui" : "Espaço livre"}</span></>}
+            </button>;
+          })}
+        </div>
+        <div className="construction-blueprint-legend"><span><i className="is-interior" /> Interior</span><span><i className="is-utility" /> Técnica</span><span><i className="is-exterior" /> Exterior</span></div>
+      </section>
+
+      <aside className="construction-detail-panel">
+        <header>
+          <div><p className="dossier-title">{selectedDefinition.category}</p><h3>{selectedDefinition.name}</h3></div>
+          <span className={`construction-state is-${projectStateTone(selectedProject)}`}>{projectStateLabel(selectedProject)}</span>
+        </header>
+
+        <div className="construction-detail-scroll">
+          <dl className="construction-detail-facts">
+            <div><dt>Tipo</dt><dd>{selectedDefinition.kind === "facility" ? "Instalação física" : "Melhoria do abrigo"}</dd></div>
+            <div><dt>Custo</dt><dd>{projectDisplayCosts(selectedDefinition.costs)}</dd></div>
+            <div><dt>Trabalho</dt><dd>{selectedDefinition.requiredProgress} progresso</dd></div>
+            {selectedDefinition.kind === "facility" && <div><dt>Local</dt><dd>{projectLocation(selectedProject)}</dd></div>}
+            <div><dt>Construção</dt><dd>{selectedDefinition.buildCapabilities?.length ? selectedDefinition.buildCapabilities.join(" + ") : "Sem especialidade obrigatória"}</dd></div>
+            <div><dt>Operação</dt><dd>{selectedDefinition.operationMode === "staffed"
+              ? selectedDefinition.requiredCapabilities?.join(" + ") || "Equipe"
+              : selectedDefinition.requiresPower ? "Automática com energia" : "Passiva"}</dd></div>
+          </dl>
+
+          <div className="construction-effect-box"><span>Efeito</span><p>{selectedDefinition.effects.map(item => item.label).join(" · ")}</p></div>
+
+          {dependencyIssue && !selectedProject && <div className="construction-inline-warning"><AlertTriangle size={15} /> {dependencyIssue}</div>}
+
+          {selectedProject && <div className="construction-project-progress">
+            <div><span>{selectedProgress?.repairing ? "Reparo" : "Progresso"}</span><b>{selectedProgress?.value}/{selectedProgress?.required}</b></div>
+            <div className="construction-mini-progress"><span style={{ width: `${Math.min(100, (selectedProgress?.value ?? 0) / Math.max(1, selectedProgress?.required ?? 1) * 100)}%` }} /></div>
+            {selectedPreview && <small className={selectedPreview.issue ? "is-warning" : ""}>{selectedPreview.issue ?? `Turno de 4h: +${selectedPreview.points} com ${selectedPreview.workers.map(worker => worker.name).join(", ")}`}</small>}
+          </div>}
+
+          {selectedProject && !playerPreview && <div className="construction-team">
+            <b>{selectedProject.state === "Concluído" ? "Equipe de operação" : "Equipe da obra"}</b>
+            <Pick label="Responsável" value={selectedProject.responsibleId ?? ""} options={[
+              { value: "", label: "Sem responsável" },
+              ...peopleAtBase.filter(npc => canVolunteer(npc, true)).map(npc => ({ value: npc.id, label: `${npc.name} · ${npc.skills.join(", ") || "sem capacidade"}` })),
+            ]} onChange={id => setProjectResponsible(selectedProject, id)} />
+            {peopleAtBase.length > 0 && <div className="construction-helper-list">{peopleAtBase.filter(npc => npc.id !== selectedProject.responsibleId).map(npc =>
+              <label key={npc.id}><input type="checkbox" checked={(selectedProject.helperIds ?? []).includes(npc.id)} onChange={event => toggleProjectHelper(selectedProject, npc.id, event.target.checked)} /><span>{npc.name}<small>{npc.skills.join(", ") || "sem capacidade"}</small></span></label>)}</div>}
+          </div>}
+
+          {selectedProject?.state === "Concluído" && selectedDefinition.requiresPower && <div className="construction-power-toggle">
+            <div><BatteryCharging size={17} /><span><b>Rede de energia</b><small>{(shelter.disabledProjectKeys ?? []).includes(selectedProject.key) ? "Desligado manualmente" : projectOperational(game, shelter, selectedProject) ? "Ligado" : "Sem energia suficiente"}</small></span></div>
+            {!playerPreview && <Button size="sm" variant="outline" onClick={() => togglePower(selectedProject.key)}>{(shelter.disabledProjectKeys ?? []).includes(selectedProject.key) ? <><Play size={14} /> Ligar</> : <><PauseCircle size={14} /> Desligar</>}</Button>}
+          </div>}
+
+          {!playerPreview && <div className="construction-detail-actions">
+            {!selectedProject && <Button disabled={Boolean(dependencyIssue)} onClick={() => addProject(selectedDefinition.key)}><Plus size={15} /> {selectedDefinition.kind === "facility" ? "Planejar na planta" : "Planejar"}</Button>}
+            {selectedProject?.state === "Planejado" && <Button onClick={() => begin(selectedProject)}><Hammer size={15} /> Iniciar obra</Button>}
+            {selectedProject?.state === "Danificado" && <Button onClick={() => repair(selectedProject)}><Wrench size={15} /> Iniciar reparo</Button>}
+            {selectedProject?.state === "Concluído" && <Button variant="outline" onClick={() => edit(draft => {
+              const target = projectFor(draft.shelter, selectedProject.key);
+              if (target && markProjectDamaged(target)) addLog(draft, "abrigo", `${target.name} foi marcado como danificado.`);
+            })}><AlertTriangle size={15} /> Marcar danificado</Button>}
+          </div>}
+        </div>
+      </aside>
+    </div>
+
+    <section className="construction-catalog">
+      <div className="construction-section-heading"><div><p className="dossier-title">Catálogo</p><h3 className="section-title">O que construir depois</h3></div></div>
+      <div className="construction-filter-row">{filters.map(value => <button type="button" key={value} className={filter === value ? "is-active" : ""} onClick={() => setFilter(value)}>{value}</button>)}</div>
+      {catalog.length === 0
+        ? <div className="construction-empty"><Lightbulb size={18} /><span>Nenhuma recomendação urgente. Explore uma categoria para ver todas as melhorias.</span></div>
+        : <div className="construction-catalog-grid">{catalog.map(definition => {
+          const project = projectFor(shelter, definition.key);
+          const locked = !project && Boolean(projectDependencyIssue(shelter, definition.key));
+          return <button type="button" key={definition.key} className={`construction-catalog-card ${selectedKey === definition.key ? "is-selected" : ""}`} onClick={() => setSelectedKey(definition.key)}>
+            <div><b>{definition.name}</b><span className={`construction-state is-${projectStateTone(project)}`}>{projectStateLabel(project)}</span></div>
+            <p>{definition.effects.map(item => item.label).join(" · ")}</p>
+            <small>{projectDisplayCosts(definition.costs)} · {definition.requiredProgress} trabalho</small>
+            {locked && <small className="is-warning">Dependência pendente</small>}
+          </button>;
+        })}</div>}
+    </section>
+
+    {completedProjects.length > 0 && <details className="construction-collapsible">
+      <summary><CheckCircle2 size={16} /> Estruturas concluídas <span>{completedProjects.length}</span></summary>
+      <div className="construction-completed-grid">{completedProjects.map(project => <button type="button" key={project.id} onClick={() => setSelectedKey(project.key)}>
+        <ShieldCheck size={16} /><span><b>{project.name}</b><small>{projectOperational(game, shelter, project) ? "Operacional" : "Aguardando requisito"}</small></span>
+      </button>)}</div>
+    </details>}
+
+    <details className="construction-collapsible">
+      <summary><Users size={16} /> Postos e operação</summary>
+      <ShelterPostsManager game={game} edit={edit} playerPreview={playerPreview} />
+    </details>
+
+    {buildLog.length > 0 && <details className="construction-collapsible">
+      <summary><History size={16} /> Histórico do abrigo</summary>
+      <div className="construction-history">{buildLog.map(entry => <div key={entry.id}><span>Dia {entry.day} · {entry.time}</span><p>{entry.text}</p></div>)}</div>
+    </details>}
+  </div>;
 }
 
 function ShelterPostsManager({ game, edit, playerPreview }: { game: GameState; edit: Edit; playerPreview: boolean }) {
   const shelter = game.shelter;
   const rows = shelterPosts(game, shelter);
   const people = game.npcs.filter(npc => npc.active && npc.status !== "Morto" && npc.status !== "Desaparecido" && npc.hex === shelter.hex);
+
   function updatePost(key: string, responsibleId: string) {
     edit(draft => {
       draft.shelter.posts ??= [];
@@ -111,6 +371,7 @@ function ShelterPostsManager({ game, edit, playerPreview }: { game: GameState; e
       post.responsibleId = responsibleId || undefined;
     });
   }
+
   function toggleHelper(key: string, id: string, checked: boolean) {
     edit(draft => {
       draft.shelter.posts ??= [];
@@ -119,17 +380,20 @@ function ShelterPostsManager({ game, edit, playerPreview }: { game: GameState; e
       post.helperIds = checked ? [...new Set([...(post.helperIds ?? []), id])] : (post.helperIds ?? []).filter(value => value !== id);
     });
   }
-  return <div className="shelter-posts"><div className="divider" /><h3 className="section-title">Postos e operação</h3><p className="intro-line mt-2">A função livre do NPC continua sendo uma anotação. Aqui, responsável e ajudantes mostram se um posto tem estrutura, capacidade e pessoas presentes para operar.</p>
-    <div className="shelter-post-grid mt-3">{rows.map(row => <article className="shelter-post-card" key={row.key}><div className="flex justify-between gap-2"><b>{row.name}</b><span className={`shelter-post-state ${row.operational ? "is-operational" : ""}`}>{row.operational ? <><CheckCircle2 size={14} /> Operacional</> : row.facilitiesReady ? "Sem operador" : "Estrutura pendente"}</span></div>
-      <p className="text-xs subtle mt-2">Capacidade: {row.capability}{row.projects.length ? ` · estrutura: ${row.projects.join(" ou ")}` : ""}</p>
-      {!playerPreview && <div className="grid gap-2 mt-3"><Pick label="Responsável" value={row.post.responsibleId ?? ""} options={[{ value: "", label: "Sem responsável" }, ...people.filter(npc => canVolunteer(npc, true)).map(npc => ({ value: npc.id, label: `${npc.name} · ${npc.skills.join(", ") || "sem capacidade"}` }))]} onChange={id => updatePost(row.key, id)} />
-        <div className="project-helpers"><small>Ajudantes</small>{people.filter(npc => npc.id !== row.post.responsibleId && canVolunteer(npc)).map(npc => <label key={npc.id}><input type="checkbox" checked={(row.post.helperIds ?? []).includes(npc.id)} onChange={event => toggleHelper(row.key, npc.id, event.target.checked)} /> {npc.name}</label>)}</div></div>}
-    </article>)}</div>
-  </div>;
+
+  return <div className="construction-post-grid">{rows.map(row => <article className="construction-post-card" key={row.key}>
+    <div><b>{row.name}</b><span className={row.operational ? "is-operational" : ""}>{row.operational ? "Operacional" : row.facilitiesReady ? "Sem operador" : "Estrutura pendente"}</span></div>
+    <small>{row.capability}{row.projects.length ? ` · ${row.projects.join(" ou ")}` : ""}</small>
+    {!playerPreview && <><Pick label="Responsável" value={row.post.responsibleId ?? ""} options={[{ value: "", label: "Sem responsável" }, ...people.filter(npc => canVolunteer(npc, true)).map(npc => ({ value: npc.id, label: `${npc.name} · ${npc.skills.join(", ") || "sem capacidade"}` }))]} onChange={id => updatePost(row.key, id)} />
+      <div className="construction-helper-list">{people.filter(npc => npc.id !== row.post.responsibleId && canVolunteer(npc)).map(npc => <label key={npc.id}><input type="checkbox" checked={(row.post.helperIds ?? []).includes(npc.id)} onChange={event => toggleHelper(row.key, npc.id, event.target.checked)} /><span>{npc.name}</span></label>)}</div></>}
+  </article>)}</div>;
 }
 
 export function FormerShelterProjects({ shelter }: { shelter: ShelterState }) {
   const projects = shelter.projects ?? [];
   if (!projects.length) return <p className="text-xs subtle mt-3">Nenhuma melhoria estrutural registrada nesta base antes de ela se tornar um depósito antigo.</p>;
-  return <div className="former-shelter-projects"><b>Estruturas preservadas</b>{projects.map(project => <span key={project.id}>{project.name} · {project.state} ({project.progress}/{project.requiredProgress})</span>)}</div>;
+  return <div className="former-shelter-projects"><b>Estruturas preservadas</b>{projects.map(project => {
+    const progress = projectProgress(project);
+    return <span key={project.id}>{project.name} · {projectStateLabel(project)} ({progress.value}/{progress.required})</span>;
+  })}</div>;
 }
