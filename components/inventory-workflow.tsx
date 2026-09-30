@@ -11,7 +11,7 @@ import { addLog, shelterAmmoCount, survivorHex, survivorStats, type AmmunitionTy
 import { createId } from "@/lib/id";
 import { addStack, ammoTypeFor, ammoTypes, atSharedStorage, batteryStateFor, batteryTargets, catalogForItem, catalogItemCanUse, catalogItemIsConsumable, catalogItems, catalogKey, compatibleSlots, conditions,
   container, countsAsMedication, displacedSlots, equipItem, inventoryCategories, itemFromCatalog,
-  provisionInfo, provisionPreparationCheck, provisionTransferError, slotLabels, transferItem, transferProvisions } from "@/lib/inventory";
+  provisionInfo, provisionPreparationCheck, provisionTransferError, reusableContainerOptions, slotLabels, transferItem, transferProvisions } from "@/lib/inventory";
 import { performItemAction } from "@/lib/item-actions";
 import { provisionDisplay, provisionItemInfo, provisionShelfLabel } from "@/lib/provision-items";
 import { provisionConsumedToday, type DailyResource } from "@/lib/survival";
@@ -99,7 +99,7 @@ export function AddItemDialog({ game, edit, ownerId }: { game: GameState; edit: 
 
 export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection = false, selfOnly = false }: { game: GameState; edit: Edit; ownerId: string; item: InventoryItem; allowCorrection?: boolean; selfOnly?: boolean }) {
   const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<"transfer" | "equip" | "consume" | "prepare" | "medication" | "stock" | "use" | "recharge" | "discard" | "edit">("transfer");
+  const [mode, setMode] = useState<"transfer" | "equip" | "consume" | "prepare" | "medication" | "stock" | "use" | "recharge" | "fill-water" | "fill-fuel" | "empty-container" | "discard" | "edit">("transfer");
   const [targetId, setTargetId] = useState("");
   const [slot, setSlot] = useState<EquipmentSlot>("primary");
   const [amount, setAmount] = useState(1);
@@ -137,6 +137,9 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
     ? batteryTargets(game, ownerId).filter(target => target.battery === "Descarregada")
     : [];
   const rechargeTargetId = rechargeTargets.some(target => target.id === targetId) ? targetId : rechargeTargets[0]?.id ?? "";
+  const containerOptions = reusableContainerOptions(game, ownerId, item);
+  const fillWaterMax = containerOptions ? Math.min(containerOptions.waterCapacity, containerOptions.waterAvailable) : 0;
+  const fillFuelMax = containerOptions ? Math.min(containerOptions.fuelCapacity, containerOptions.fuelAvailable) : 0;
   const preparationCheck = provisionState.resource && !provisionState.ready
     ? provisionPreparationCheck(game, ownerId, item, count) : null;
   const stockResource = item.category === "Suprimentos abstratos"
@@ -154,7 +157,8 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
   function openDialog(value: boolean) {
     if (!value) { close(); return; }
     setConditionDraft(item.condition || "Íntegro"); setQtyDraft(item.qty); setLoadDraft(item.load);
-    setMode(rechargeTargets.length ? "recharge" : slots.length ? "equip" : provisionState.resource
+    setMode(containerOptions?.canUnloadAtStorage ? "empty-container" : fillWaterMax > 0 ? "fill-water" : fillFuelMax > 0 ? "fill-fuel"
+      : rechargeTargets.length ? "recharge" : slots.length ? "equip" : provisionState.resource
       ? (provisionState.ready ? "consume" : (provisionState.requiresPreparation || provisionState.requiresVerification) ? "prepare" : "edit")
       : targets.length ? "transfer" : "edit");
     setOpen(true);
@@ -187,6 +191,12 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
                 ? performItemAction(draft, ownerId, item.id, { type: "use", quantity: count })
                 : mode === "recharge" && rechargeTargetId
                   ? performItemAction(draft, ownerId, item.id, { type: "recharge", targetId: rechargeTargetId })
+                : mode === "fill-water"
+                  ? performItemAction(draft, ownerId, item.id, { type: "fill-container", resource: "water", quantity: Math.min(amount, fillWaterMax) })
+                : mode === "fill-fuel"
+                  ? performItemAction(draft, ownerId, item.id, { type: "fill-container", resource: "fuel", quantity: Math.min(amount, fillFuelMax) })
+                : mode === "empty-container"
+                  ? performItemAction(draft, ownerId, item.id, { type: "empty-container" })
                 : mode === "medication"
                   ? performItemAction(draft, ownerId, item.id, { type: "medication", quantity: count })
                   : mode === "stock"
@@ -217,6 +227,9 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
         {!selfOnly && stockResource && (ownerId === "shared" ? atSharedStorage(game) : atSharedStorage(game, ownerId)) && <button type="button" aria-pressed={mode === "stock"} onClick={() => setMode("stock")}>Guardar nas reservas</button>}
         {canUse && <button type="button" aria-pressed={mode === "use"} onClick={() => setMode("use")}>Usar</button>}
         {rechargeTargets.length > 0 && <button type="button" aria-pressed={mode === "recharge"} onClick={() => setMode("recharge")}>Recarregar</button>}
+        {fillWaterMax > 0 && <button type="button" aria-pressed={mode === "fill-water"} onClick={() => { setAmount(fillWaterMax); setMode("fill-water"); }}>Encher Água</button>}
+        {fillFuelMax > 0 && <button type="button" aria-pressed={mode === "fill-fuel"} onClick={() => { setAmount(1); setMode("fill-fuel"); }}>Encher Combustível</button>}
+        {containerOptions?.canUnloadAtStorage && <button type="button" aria-pressed={mode === "empty-container"} onClick={() => setMode("empty-container")}>Guardar conteúdo</button>}
         <button type="button" aria-pressed={mode === "edit"} onClick={() => setMode("edit")}>Editar</button>
         <button type="button" aria-pressed={mode === "discard"} onClick={() => { setMode("discard"); setConfirmDiscard(false); }}>Deixar</button>
       </div>
@@ -248,10 +261,14 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
       {mode === "recharge" && rechargeTargetId && <><Pick label="Aparelho" value={rechargeTargetId}
         options={rechargeTargets.map(target => ({ value: target.id, label: `${target.name} · bateria descarregada` }))} onChange={setTargetId} />
         <p className="inventory-hint">Consome 1 Kit de pilhas e registra a bateria do aparelho escolhido como carregada.</p></>}
+      {mode === "fill-water" && <><Counter label={`Porções de Água · disponível ${containerOptions?.waterAvailable ?? 0}`} value={Math.min(amount, Math.max(1, fillWaterMax))} min={1} max={Math.max(1, fillWaterMax)} onChange={setAmount} compact />
+        <p className="inventory-hint">O galão comporta até 4 porções de Água verificada. O recipiente continua ocupando apenas 1 espaço de carga.</p></>}
+      {mode === "fill-fuel" && <p className="inventory-hint">Guarda 1 unidade de Combustível no galão. O conteúdo não adiciona carga além do recipiente.</p>}
+      {mode === "empty-container" && <p className="inventory-hint">Devolve {containerOptions?.amount ?? 0} {containerOptions?.resource === "water" ? "porção(ões) de Água" : "unidade(s) de Combustível"} às reservas compartilhadas e mantém o galão vazio.</p>}
       {mode === "medication" && <p className="inventory-hint">Cada unidade vira 1 Medicamentos nas reservas compartilhadas. Bolsa e estojo de antissepsia são consumidos; Caixa clínica completa deixa um Kit médico de campo reutilizável.</p>}
       {mode === "stock" && <p className="inventory-hint">Cada unidade física vira uma unidade nas reservas compartilhadas. O objeto sai do inventário para evitar contagem dupla.</p>}
       {mode === "discard" && <p className="inventory-hint inventory-danger">{confirmDiscard ? "Confirmar: as unidades serão retiradas da ficha e o descarte aparecerá no registro." : "Deixar para trás retira o item sem criar uma reserva nova no mapa."}</p>}
-      {!["equip", "edit", "consume", "recharge"].includes(mode) && !(mode === "use" && !catalogItemIsConsumable(item)) &&
+      {!["equip", "edit", "consume", "recharge", "fill-water", "fill-fuel", "empty-container"].includes(mode) && !(mode === "use" && !catalogItemIsConsumable(item)) &&
         <Counter label="Unidades" value={count} min={1} max={item.qty} onChange={setAmount} compact />}
       {mode === "transfer" && destination && <p className="roll-hint">{count}× {item.name} → {ownerName(game, destination)}. Permanecem {item.qty - count} na origem.</p>}
       <DialogFooter><Button variant="outline" onClick={close}>Cancelar</Button>
@@ -260,10 +277,13 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
           || (mode === "prepare" && (!(provisionState.requiresPreparation || provisionState.requiresVerification) || preparationCheck?.ok === false))
           || (mode === "medication" && game.shelter.medications + count > 99)
           || (mode === "stock" && (!stockResource || game.shelter[stockResource] + count > 99))
-          || (mode === "recharge" && !rechargeTargetId)} onClick={perform}>
+          || (mode === "recharge" && !rechargeTargetId)
+          || (mode === "fill-water" && fillWaterMax < 1)
+          || (mode === "fill-fuel" && fillFuelMax < 1)
+          || (mode === "empty-container" && !containerOptions?.canUnloadAtStorage)} onClick={perform}>
           {mode === "edit" ? "Salvar alterações" : mode === "transfer" ? "Transferir" : mode === "equip" ? "Equipar"
             : mode === "consume" ? "Consumir 1 porção" : mode === "prepare" ? (provisionState.requiresVerification ? "Confirmar verificação" : "Confirmar preparo")
-            : mode === "medication" ? "Registrar Medicamentos" : mode === "stock" ? "Guardar nas reservas" : mode === "use" ? "Usar" : mode === "recharge" ? "Recarregar" : confirmDiscard ? "Confirmar descarte" : "Deixar para trás"}</Button></DialogFooter>
+            : mode === "medication" ? "Registrar Medicamentos" : mode === "stock" ? "Guardar nas reservas" : mode === "use" ? "Usar" : mode === "recharge" ? "Recarregar" : mode === "fill-water" ? "Encher galão" : mode === "fill-fuel" ? "Guardar combustível" : mode === "empty-container" ? "Guardar conteúdo" : confirmDiscard ? "Confirmar descarte" : "Deixar para trás"}</Button></DialogFooter>
     </DialogContent>
   </Dialog>;
 }
