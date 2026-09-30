@@ -448,10 +448,17 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
                 <text x={x} y={lines.length > 1 ? y-1 : y+8} textAnchor="middle" fontSize={discovered || observed ? "11.5" : "17"} fontWeight="700" fill={discovered ? "#f5f8f2" : "#d1e0dc"}>
                   {lines.map((line,index) => <tspan key={index} x={x} dy={index ? 13 : 0}>{line}</tspan>)}
                 </text>
-                {shownPoints > 0 && <g aria-hidden="true"><circle cx={x+27} cy={y+27} r="10" fill="#eecb98" stroke="#173135" strokeWidth="2" />
-                  <text x={x+27} y={y+31} textAnchor="middle" fontSize="11" fill="#173135" fontWeight="800">{shownPoints > 9 ? "9+" : shownPoints}</text></g>}
-                {id === game.shelter.hex && <g aria-hidden="true"><circle cx={x+27} cy={y-29} r="13" fill="#a7e1d3" stroke="#173135" strokeWidth="2" />
-                  <House x={x+18} y={y-38} width={18} height={18} stroke="#173135" strokeWidth={2.5} /></g>}
+                {shownPoints > 0 && <g className="map-point-marker" aria-hidden="true">
+                  <rect x={x+13} y={y+19} width="30" height="18" rx="9" />
+                  <MapPin x={x+16} y={y+22} width={12} height={12} strokeWidth={2.4} />
+                  <text x={x+34} y={y+31.5} textAnchor="middle" fontSize="9.5" fontWeight="900">{shownPoints > 9 ? "9+" : shownPoints}</text>
+                </g>}
+                {id === game.shelter.hex && <g className="map-shelter-marker" aria-hidden="true">
+                  <path d={`M ${x+23} ${y-18} L ${x+27} ${y-12} L ${x+31} ${y-18} Z`} />
+                  <circle cx={x+27} cy={y-29} r="14" />
+                  <circle className="map-shelter-inner" cx={x+27} cy={y-29} r="10.5" />
+                  <House x={x+19} y={y-37} width={16} height={16} strokeWidth={2.4} />
+                </g>}
                 {formerBase && <g aria-hidden="true"><circle cx={x+27} cy={y-29} r="13" fill="#e7d3a2" stroke="#173135" strokeWidth="2" />
                   <Package x={x+18} y={y-38} width={18} height={18} stroke="#173135" strokeWidth={2.5} /></g>}
                 {membersHere.length > 0 && <MapGroupMarker
@@ -474,10 +481,10 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
           <span><i className="legend-swatch" style={{background:"#17282d"}} /> Desconhecido</span>
           <span><i className="legend-swatch legend-nearby" /> Adjacente</span>
           <span className="flex items-center gap-1"><Footprints size={15} /> Pegadas = grupo principal</span>
-          <span className="flex items-center gap-1"><Users size={15} /> Retratos = subgrupos</span>
-          {game.shelter.hex && <span className="flex items-center gap-1"><House size={15} /> Abrigo</span>}
+          <span className="flex items-center gap-1"><Users size={15} /> Retrato = sobrevivente ou subgrupo</span>
+          {game.shelter.hex && <span className="flex items-center gap-1"><House size={15} /> Casa = abrigo atual</span>}
           {(game.formerShelters ?? []).length > 0 && <span className="flex items-center gap-1"><Package size={15} /> Antiga base</span>}
-          <span className="flex items-center gap-1"><MapPin size={15} /> Número = pontos</span>
+          <span className="flex items-center gap-1"><MapPin size={15} /> Pin = locais descobertos</span>
         </div>
       </div>
       <div className="map-group-summary" aria-label="Selecionar grupo ativo">
