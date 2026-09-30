@@ -19,6 +19,7 @@ import { AuthPanel } from "@/components/auth-panel";
 import { CharacterWizard } from "@/components/character-wizard";
 import { CampaignLibrary, type CampaignSummary } from "@/components/campaign-library";
 import { TableChat } from "@/components/table-chat";
+import { DayCloseDialog } from "@/components/day-close-dialog";
 import { addLog, defaultState, displayTime, survivorHex, type GameState, type Point, type Survivor } from "@/lib/game";
 import { createId } from "@/lib/id";
 import { sectorProfiles } from "@/lib/sectors";
@@ -418,6 +419,7 @@ export default function CampaignApp() {
           {status === "conflito" && <Button size="sm" variant="outline" onClick={() => {
             if (window.confirm("Descarte as alterações desta tela e carregue a versão salva em outra janela?")) { setLoading(true); setLoadError(""); void loadCampaign(); }
           }}>Recarregar</Button>}
+          {role === "mestre" && <DayCloseDialog game={game} edit={edit} variant="outline" size="sm" className="topbar-day-close" />}
           {role === "mestre" && <Button size="sm" className="topbar-preview-button" variant={playerPreview ? "default" : "outline"}
             aria-label={playerPreview ? "Desativar prévia dos jogadores" : "Ativar prévia dos jogadores"}
             title={playerPreview ? "Desativar prévia dos jogadores" : "Ativar prévia dos jogadores"}
