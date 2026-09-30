@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Counter, Field, Pick } from "@/components/game-controls";
 import { ItemArt } from "@/components/item-art";
-import { addLog, survivorStats, type EquipmentSlot, type GameState, type InventoryItem } from "@/lib/game";
+import { addLog, survivorHex, survivorStats, type EquipmentSlot, type GameState, type InventoryItem } from "@/lib/game";
 import { createId } from "@/lib/id";
 import { addStack, ammoTypeFor, atSharedStorage, catalogForItem, catalogItems, catalogKey, compatibleSlots, conditions,
   container, countsAsMedication, displacedSlots, equipItem, inventoryCategories, itemFromCatalog,
@@ -108,17 +108,25 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
   const [loadDraft, setLoadDraft] = useState(item.load);
   const slots = ownerId === "shared" ? [] : compatibleSlots(item);
   const provision = provisionInfo(item);
-  const targets = selfOnly ? [] : [...game.survivors.filter(s => s.id !== ownerId).map(s => ({ value: s.id, label: s.name })),
-    ...(ownerId !== "shared" && atSharedStorage(game) ? [{ value: "shared", label: ownerName(game, "shared") }] : [])];
+  const bearer = game.survivors.find(s => s.id === ownerId);
+  const targets = selfOnly ? [] : [
+    ...game.survivors
+      .filter(person => person.id !== ownerId)
+      .filter(person => ownerId === "shared"
+        ? atSharedStorage(game, person.id)
+        : Boolean(bearer && survivorHex(game, person) === survivorHex(game, bearer)))
+      .map(person => ({ value: person.id, label: person.name })),
+    ...(ownerId !== "shared" && atSharedStorage(game, ownerId) ? [{ value: "shared", label: ownerName(game, "shared") }] : []),
+  ];
   const destination = targets.some(x => x.value === targetId) ? targetId : targets[0]?.value ?? "";
   const selectedSlot = slots.includes(slot) ? slot : slots[0];
   const count = Math.max(1, Math.min(item.qty, amount));
   const current = catalogForItem(item);
-  const bearer = game.survivors.find(s => s.id === ownerId);
   const displaced = mode === "equip" && bearer && selectedSlot ? displacedSlots(bearer, item, selectedSlot).map(key => bearer[key]) : [];
   const provisionState = provisionItemInfo(item);
+  const sharedConsumers = ownerId === "shared" ? game.survivors.filter(person => atSharedStorage(game, person.id)) : [];
   const consumerId = ownerId === "shared"
-    ? (game.survivors.some(person => person.id === targetId) ? targetId : game.survivors[0]?.id ?? "")
+    ? (sharedConsumers.some(person => person.id === targetId) ? targetId : sharedConsumers[0]?.id ?? "")
     : ownerId;
   const canUse = current?.category === "Medicamentos e cuidado"
     && !["Kit médico de campo", "Termômetro", "Tala e faixa", "Máscara respiratória com filtro"].includes(item.name);
@@ -194,8 +202,8 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
         {provisionState.resource && provisionState.ready && <button type="button" aria-pressed={mode === "consume"} onClick={() => setMode("consume")}>Consumir</button>}
         {provisionState.resource && !provisionState.ready && (provisionState.requiresPreparation || provisionState.requiresVerification) &&
           <button type="button" aria-pressed={mode === "prepare"} onClick={() => setMode("prepare")}>{provisionState.requiresVerification ? "Verificar" : "Preparar"}</button>}
-        {!selfOnly && countsAsMedication(item) && atSharedStorage(game) && <button type="button" aria-pressed={mode === "medication"} onClick={() => setMode("medication")}>Medicamentos</button>}
-        {!selfOnly && stockResource && atSharedStorage(game) && <button type="button" aria-pressed={mode === "stock"} onClick={() => setMode("stock")}>Guardar nas reservas</button>}
+        {!selfOnly && countsAsMedication(item) && (ownerId === "shared" ? atSharedStorage(game) : atSharedStorage(game, ownerId)) && <button type="button" aria-pressed={mode === "medication"} onClick={() => setMode("medication")}>Medicamentos</button>}
+        {!selfOnly && stockResource && (ownerId === "shared" ? atSharedStorage(game) : atSharedStorage(game, ownerId)) && <button type="button" aria-pressed={mode === "stock"} onClick={() => setMode("stock")}>Guardar nas reservas</button>}
         {canUse && <button type="button" aria-pressed={mode === "use"} onClick={() => setMode("use")}>Usar</button>}
         <button type="button" aria-pressed={mode === "edit"} onClick={() => setMode("edit")}>Editar</button>
         <button type="button" aria-pressed={mode === "discard"} onClick={() => { setMode("discard"); setConfirmDiscard(false); }}>Deixar</button>
@@ -211,7 +219,7 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
       {loadPreview && <div className={`inventory-preview ${loadPreview.carried > loadPreview.capacity ? "inventory-danger" : ""}`}><Backpack size={19} aria-hidden="true" /><span><b>{loadPreview.name} após a ação</b><small>{loadPreview.carried > loadPreview.capacity ? "Acima da capacidade — redistribua antes de viajar." : "Carga dentro da capacidade."}</small></span><strong>{loadPreview.carried}/{loadPreview.capacity}</strong></div>}
       {provisionState.resource && <div className="inventory-preview"><span><b>{provisionDisplay(item)}</b><small>{provisionState.expiresDay ? `Vence no amanhecer do dia ${provisionState.expiresDay}.` : provisionState.shelf ? `Prazo do catálogo: ${provisionState.shelf}.` : "Sem prazo específico registrado."}</small></span></div>}
       {mode === "consume" && <><p className="inventory-hint">Consome apenas <b>1 porção</b>. O item continua no inventário enquanto ainda tiver conteúdo.</p>
-        {ownerId === "shared" && game.survivors.length > 0 && <Pick label="Quem consome" value={consumerId} options={game.survivors.map(s => ({ value: s.id, label: s.name }))} onChange={setTargetId} />}</>}
+        {ownerId === "shared" && sharedConsumers.length > 0 && <Pick label="Quem consome" value={consumerId} options={sharedConsumers.map(s => ({ value: s.id, label: s.name }))} onChange={setTargetId} />}</>}
       {mode === "prepare" && <p className="inventory-hint">{provisionState.requiresVerification
         ? "Registre apenas depois de identificar/tratar a água na ficção. O recipiente continua no inventário."
         : `Preparo: ${provision.preparation ?? "resolver em cena"}. Depois de preparado, o alimento continua físico; quando aplicável, passa a vencer no próximo amanhecer.`}</p>}
