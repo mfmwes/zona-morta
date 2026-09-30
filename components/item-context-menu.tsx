@@ -224,7 +224,7 @@ export function ItemContextMenu({
         )}
 
         <ContextMenuSeparator />
-        {item.qty === 1
+        {options.canDiscard && (item.qty === 1
           ? <ContextMenuItem variant="destructive" onSelect={() => setDiscardCount(1)}>
               <Trash2 /> Deixar para trás…
             </ContextMenuItem>
@@ -236,7 +236,7 @@ export function ItemContextMenu({
                     <Trash2 /> {quantityLabel(quantity, item.qty)}
                   </ContextMenuItem>)}
               </ContextMenuSubContent>
-            </ContextMenuSub>}
+            </ContextMenuSub>)}
 
         <ContextMenuSeparator />
         <ContextMenuItem disabled className="inventory-context-help">
