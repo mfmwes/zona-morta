@@ -408,6 +408,50 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
       <div className={`construction-summary-stat ${power.balance < 0 ? "is-warning" : ""}`}><Zap size={18} /><span><small>Energia</small><b>{power.production} / {power.consumption}</b></span></div>
     </section>
 
+    {!playerPreview && <section className="construction-incident-launch">
+      <div><AlertTriangle size={17} /><span><b>Danos e incidentes</b><small>Registre invasões, acidentes e outros eventos que possam danificar estruturas.</small></span></div>
+      <Button size="sm" variant="outline" onClick={() => setIncidentOpen(value => !value)}>{incidentOpen ? "Fechar" : "Registrar incidente"}</Button>
+    </section>}
+
+    {incidentOpen && !playerPreview && <section className="construction-incident-panel">
+      <div className="construction-section-heading">
+        <div><p className="dossier-title">Incidente estrutural</p><h3 className="section-title">Impacto, mitigação e alvos</h3></div>
+        <span className="tag">Mitigação {incidentMitigation.amount}</span>
+      </div>
+      <div className="construction-incident-controls">
+        <Pick label="Tipo" value={incidentKind} options={incidentKinds.map(value => ({ value, label: value }))}
+          onChange={value => { setIncidentKind(value as ShelterIncidentKind); setIncidentTargets([]); }} />
+        <Counter compact editable label="Impacto" value={incidentImpact} min={1} max={9} onChange={setIncidentImpact} />
+        <label className="construction-incident-catastrophic"><input type="checkbox" checked={incidentCatastrophic}
+          onChange={event => setIncidentCatastrophic(event.target.checked)} /><span><b>Catastrófico</b><small>Permite concentrar até 2 danos na mesma estrutura.</small></span></label>
+      </div>
+      <div className="construction-incident-preview">
+        <span>Impacto bruto <b>{incidentImpact}</b></span>
+        <span>Mitigação <b>−{incidentMitigation.amount}</b></span>
+        <span>Impacto restante <b>{Math.max(0, incidentImpact - incidentMitigation.amount)}</b></span>
+      </div>
+      {incidentMitigation.sources.length > 0 && <p className="construction-team-help">Proteções aplicadas: {incidentMitigation.sources.join(" · ")}.</p>}
+      <div className="construction-incident-targets">
+        <span>Estruturas elegíveis</span>
+        {incidentCandidates.length
+          ? incidentCandidates.map(project => <label key={project.id} className={incidentTargets.includes(project.id) ? "is-selected" : ""}>
+              <input type="checkbox" checked={incidentTargets.includes(project.id)} onChange={() => toggleIncidentTarget(project.id)} />
+              <span><b>{project.name}</b><small>Integridade {projectIntegrity(project)}/3 · {projectIntegrityLabel(project)}</small></span>
+            </label>)
+          : <p>Nenhuma estrutura atual é um alvo compatível com este incidente.</p>}
+      </div>
+      <div className="construction-incident-actions">
+        <p>{Math.max(0, incidentImpact - incidentMitigation.amount) === 0
+          ? "As defesas atuais absorvem todo o Impacto."
+          : incidentCatastrophic
+            ? "Cada alvo pode receber até 2 danos."
+            : "Dano comum é distribuído: no máximo 1 por estrutura selecionada."}</p>
+        <Button disabled={Math.max(0, incidentImpact - incidentMitigation.amount) > 0 && incidentTargets.length === 0} onClick={registerIncident}>
+          <AlertTriangle size={15} /> Aplicar incidente
+        </Button>
+      </div>
+    </section>}
+
     {power.balance < 0 && <div className="construction-alert"><AlertTriangle size={17} /><div><b>Energia insuficiente</b><span>Produção {power.production} · consumo {power.consumption}. Desligue consumidores menos prioritários até o saldo voltar a zero.</span></div></div>}
 
     {(power.consumers.length > 0 || power.disabled.length > 0) && <section className="construction-power-manager">
