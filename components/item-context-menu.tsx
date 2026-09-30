@@ -9,6 +9,7 @@ import {
   Droplets,
   Package,
   Pill,
+  ShoppingCart,
   Trash2,
   Utensils,
   Wrench,
@@ -129,6 +130,30 @@ export function ItemContextMenu({
             <Wrench />,
             quantity => ({ type: "prepare", quantity })
           )}
+
+        {options.canDeployCart && <ContextMenuItem onSelect={() => run({ type: "deploy-cart" })}>
+          <ShoppingCart /> Abrir e conduzir carrinho
+        </ContextMenuItem>}
+        {options.canFoldCart && <ContextMenuItem onSelect={() => run({ type: "fold-cart" })}>
+          <ShoppingCart /> Dobrar carrinho
+        </ContextMenuItem>}
+        {options.cartFoldBlocked && <ContextMenuItem disabled>
+          <ShoppingCart /> Esvazie o carrinho para dobrar
+        </ContextMenuItem>}
+        {options.canStoreInCart && quantitySubmenu(
+          "Colocar no carrinho",
+          <ShoppingCart />,
+          quantity => ({ type: "cart-store", quantity })
+        )}
+        {item.name === "Carrinho dobrável" && item.cartDeployed && (item.cartItems?.length ?? 0) > 0 && <ContextMenuSub>
+          <ContextMenuSubTrigger><ShoppingCart /> Retirar do carrinho</ContextMenuSubTrigger>
+          <ContextMenuSubContent className="inventory-context-submenu">
+            {item.cartItems!.map(nested => <ContextMenuItem key={nested.id}
+              onSelect={() => run({ type: "cart-remove", nestedItemId: nested.id, quantity: nested.qty })}>
+              <Package /> {nested.qty}× {nested.name}
+            </ContextMenuItem>)}
+          </ContextMenuSubContent>
+        </ContextMenuSub>}
 
         {options.slots.length > 0 && <ContextMenuSub>
           <ContextMenuSubTrigger><Backpack /> Equipar</ContextMenuSubTrigger>
