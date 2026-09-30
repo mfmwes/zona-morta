@@ -302,7 +302,8 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
           {selectedProject && <div className="construction-project-progress">
             <div><span>{selectedProgress?.repairing ? "Reparo" : "Progresso"}</span><b>{selectedProgress?.value}/{selectedProgress?.required}</b></div>
             <div className="construction-mini-progress"><span style={{ width: `${Math.min(100, (selectedProgress?.value ?? 0) / Math.max(1, selectedProgress?.required ?? 1) * 100)}%` }} /></div>
-            {selectedPreview && <small className={selectedPreview.issue ? "is-warning" : ""}>{selectedPreview.issue ?? `Turno de 4h: +${selectedPreview.points} com ${selectedPreview.workers.map(worker => worker.name).join(", ")}`}</small>}
+            {selectedPreview && <small className={selectedPreview.issue || selectedPreview.missingCapabilities.length ? "is-warning" : ""}>{selectedPreview.issue
+              ?? `Turno de 4h: +${selectedPreview.points} com ${selectedPreview.workers.map(worker => worker.name).join(", ")}${selectedPreview.missingCapabilities.length ? ` · sem especialista em ${selectedPreview.missingCapabilities.join(" + ")}` : ""}`}</small>}
           </div>}
 
           {selectedProject && !playerPreview && <div className="construction-team">
