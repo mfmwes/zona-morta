@@ -53,6 +53,8 @@ export type InventoryItem = {
   verified?: boolean;
   opened?: boolean;
   expiresDay?: number;
+  /** Estado simples para aparelhos pequenos que dependem de bateria. */
+  battery?: "Carregada" | "Descarregada";
 };
 
 export type ProvisionLot = {
