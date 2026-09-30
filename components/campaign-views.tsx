@@ -271,7 +271,7 @@ export function ReferencePanel() {
             <p className="mt-2">Ao concluir, o mestre recebe 1d4 Fear. Após três descansos curtos seguidos, o próximo deve ser longo. Descanso interrompido não concede benefícios.</p></article>
           <article className="list-card leading-relaxed"><h2 className="section-title">Descanso longo</h2>
             <p className="mt-2">Requer refúgio seguro, vigia e água. Cada PC escolhe duas ações: limpar todos os HP, todo Stress ou toda Armadura; Preparar; trabalhar em projeto; ou executar uma ação de cenário. Projetos avançam um ponto por ação, com custos pagos ao iniciar.</p>
-            <p className="mt-2">Ao concluir, o mestre recebe 1d4 + número de PCs Fear. Porções de Comida e Água são descontadas só uma vez ao anoitecer, não a cada descanso. A janela de Exposição continua correndo.</p></article>
+            <p className="mt-2">Ao concluir, o mestre recebe 1d4 + número de PCs Fear. Descanso longo não encerra o dia nem avança o calendário. Porções de Comida e Água são descontadas só ao usar Encerrar dia; a janela de Exposição continua correndo.</p></article>
           <article className="list-card leading-relaxed"><h2 className="section-title">Carga e mochilas</h2>
             <p className="mt-2">Base 3 espaços. Bolsa tiracolo +1, mochila urbana +2, de trilha +3, cargueira +4; uma bolsa vestida por pessoa. Duas porções pessoais de cada recurso cabem nos bolsos; cada grupo extra de até quatro porções ocupa 1. Uma carga reserva de munição ocupa 1.</p>
             <p className="mt-2">Até dois espaços excedentes podem ir nas mãos, somando 1 hora por hex. Acima disso, faça outra viagem ou use carrinho/veículo.</p></article>
