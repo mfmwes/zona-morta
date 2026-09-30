@@ -67,8 +67,11 @@ export function container(game: GameState, id: string) {
 }
 export function transferItem(game: GameState, from: string, to: string, itemId: string, quantity: number) {
   const sharedSurvivor = sharedAccessSurvivor(from, to);
+  const fromPerson = from === "shared" ? null : game.survivors.find(person => person.id === from);
+  const toPerson = to === "shared" ? null : game.survivors.find(person => person.id === to);
   if (!Number.isInteger(quantity) || quantity < 1 || from === to
-    || (sharedSurvivor && !atSharedStorage(game, sharedSurvivor))) return false;
+    || (sharedSurvivor && !atSharedStorage(game, sharedSurvivor))
+    || (fromPerson && toPerson && survivorHex(game, fromPerson) !== survivorHex(game, toPerson))) return false;
   const source = container(game, from), target = container(game, to);
   const item = source?.find(entry => entry.id === itemId);
   const count = Math.trunc(quantity);
@@ -295,6 +298,9 @@ export function provisionTransferError(game: GameState, from: string, to: string
   const source = from === "shared" ? game.shelter : game.survivors.find(s => s.id === from);
   const target = to === "shared" ? game.shelter : game.survivors.find(s => s.id === to);
   if (!source || !target) return "Sobrevivente não encontrado.";
+  if (from !== "shared" && to !== "shared"
+    && survivorHex(game, source as Survivor) !== survivorHex(game, target as Survivor))
+    return "Os sobreviventes precisam estar no mesmo hex para transferir recursos.";
   const available = resource === "ammo" && "pistolAmmo" in source ? source.pistolAmmo : (source as Survivor)[resource];
   const receiving = resource === "ammo" && "pistolAmmo" in target ? target.pistolAmmo : (target as Survivor)[resource];
   if (available < quantity) return "A origem não tem essa quantidade disponível.";
