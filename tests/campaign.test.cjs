@@ -646,3 +646,101 @@ test('menu de sobrevivente pode transferir item pelas regras centrais já usadas
   assert.equal(ana.inventory.reduce((sum, entry) => sum + entry.qty, 0), 1);
   assert.equal(bia.inventory.some(entry => entry.name === 'Rádio portátil'), true);
 });
+
+
+test('movimento individual divide e reúne grupos sem perder a posição principal', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  const start = content.hexes.find(hex => `${hex.q},${hex.r}` === g.partyHex);
+  const neighbor = content.hexes.find(hex => require('../lib/game.ts').hexDistance(hex.q-start.q, hex.r-start.r) === 1);
+  assert.ok(neighbor);
+  const destination = `${neighbor.q},${neighbor.r}`;
+  const before = g.minutes;
+
+  let result = hexActions.moveSurvivors(g, destination, [ana.id]);
+  assert.equal(result.ok, true);
+  assert.equal(require('../lib/game.ts').survivorHex(g, ana), destination);
+  assert.equal(require('../lib/game.ts').survivorHex(g, bia), '0,0');
+  assert.equal(g.partyHex, '0,0');
+  assert.equal(g.minutes, before + g.hexes[destination].routeHours * 60);
+
+  result = hexActions.moveSurvivors(g, destination, [bia.id]);
+  assert.equal(result.ok, true);
+  assert.equal(require('../lib/game.ts').survivorHex(g, bia), destination);
+  assert.equal(g.partyHex, destination);
+  assert.equal(require('../lib/game.ts').survivorsAtHex(g, destination).length, 2);
+});
+
+test('um subgrupo pode seguir viagem enquanto outro permanece no hex anterior', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  const first = content.hexes.find(hex => require('../lib/game.ts').hexDistance(hex.q, hex.r) === 1);
+  const firstId = `${first.q},${first.r}`;
+  assert.equal(hexActions.moveSurvivors(g, firstId, [ana.id, bia.id]).ok, true);
+
+  const second = content.hexes.find(hex => {
+    const id = `${hex.q},${hex.r}`;
+    return id !== '0,0' && id !== firstId
+      && require('../lib/game.ts').hexDistance(hex.q-first.q, hex.r-first.r) === 1;
+  });
+  assert.ok(second);
+  const secondId = `${second.q},${second.r}`;
+  if (g.hexes[secondId].discovery === 'desconhecido') {
+    require('../lib/sectors.ts').revealSector(g, secondId);
+    g.hexes[secondId].discovery = 'avistado';
+  }
+  const result = hexActions.moveSurvivors(g, secondId, [ana.id]);
+  assert.equal(result.ok, true);
+  assert.equal(require('../lib/game.ts').survivorHex(g, ana), secondId);
+  assert.equal(require('../lib/game.ts').survivorHex(g, bia), firstId);
+  assert.equal(require('../lib/game.ts').survivorPositionGroups(g).length, 2);
+});
+
+test('campanhas antigas sem posição individual continuam usando partyHex', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  assert.equal(ana.hex, undefined); assert.equal(bia.hex, undefined);
+  assert.equal(require('../lib/game.ts').survivorHex(g, ana), g.partyHex);
+  g.partyHex = '1,0';
+  assert.equal(require('../lib/game.ts').survivorHex(g, ana), '1,0');
+  assert.equal(require('../lib/game.ts').survivorHex(g, bia), '1,0');
+});
+
+test('transferências e reservas exigem sobreviventes no mesmo local', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  g.shelter.hex = '0,0';
+  ana.hex = '1,0'; bia.hex = '0,0';
+  const radio = item('Rádio portátil'); ana.inventory.push(radio);
+  const tool = item('Alicate'); bia.inventory.push(tool);
+
+  assert.equal(inventory.atSharedStorage(g, ana.id), false);
+  assert.equal(inventory.atSharedStorage(g, bia.id), true);
+  assert.equal(inventory.transferItem(g, ana.id, bia.id, radio.id, 1), false);
+  assert.equal(inventory.transferItem(g, bia.id, 'shared', tool.id, 1), true);
+
+  ana.food = 2; bia.food = 0;
+  assert.equal(inventory.transferProvisions(g, ana.id, bia.id, 'food', 1), false);
+  assert.equal(inventory.transferProvisions(g, 'shared', ana.id, 'food', 1), false);
+});
+
+test('anoitecer conta nas reservas apenas quem está fisicamente na base', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  g.shelter.hex = '0,0'; g.shelter.residents = 1;
+  ana.hex = '0,0'; bia.hex = '1,0';
+  assert.deepEqual(survival.eveningNeeds(g), { food: 2, water: 2 });
+  ana.foodConsumedDay = g.day;
+  assert.deepEqual(survival.eveningNeeds(g), { food: 1, water: 2 });
+});
+
+test('depósito antigo só pode ser retirado por sobrevivente presente naquele hex', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  g.formerShelters = [{ ...structuredClone(g.shelter), hex:'1,0', food:2, inventory:[] }];
+  ana.hex = '1,0'; bia.hex = '0,0';
+  assert.equal(require('../lib/game.ts').recoverFormerStock(g, '1,0', bia.id, 'food', 1), false);
+  assert.equal(require('../lib/game.ts').recoverFormerStock(g, '1,0', ana.id, 'food', 1), true);
+  assert.equal(ana.food, 1);
+});
+
+test('jogador não pode alterar a própria posição diretamente pelo payload da ficha', () => {
+  const g = campaign(); const ana = g.survivors[0];
+  const before = structuredClone(ana);
+  const after = { ...structuredClone(ana), hex:'1,0' };
+  assert.equal(collaboration.applyPlayerChange(g, ana.id, before, after, 0, []), null);
+});
