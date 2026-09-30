@@ -5,7 +5,7 @@ import { useMemo, useState, type ChangeEvent, type ReactNode } from "react";
 import {
   Activity, Backpack, BookOpen, Crosshair, Dice5, Droplets, Heart, Search,
   HeartPulse, History, Minus, Plus, Shield, ShieldCheck, Sparkles,
-  Stethoscope, Swords, Upload, Utensils, Zap,
+  Moon, Stethoscope, Swords, Upload, Utensils, Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,7 @@ import { equipmentModifiers, getPrimary, getProtection, getSecondary } from "@/l
 import { rollDie } from "@/lib/rolls";
 import { consumeDailyProvision } from "@/lib/survival";
 import { adjustProvisionCount } from "@/lib/provisions";
-import { abilityAvailable, abilityCosts, abilityPeriod, costLabels, periodLabels, recordAbilityUse, type AbilityCost } from "@/lib/abilities";
+import { abilityAvailable, abilityCosts, abilityPeriod, costLabels, periodLabels, recordAbilityUse, resolveGroupRest, restActionLabels, restActionsFor, type AbilityCost, type RestAction, type RestKind } from "@/lib/abilities";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 const infectionStates: Infection[] = ["Saudável", "Exposto", "Infectado", "Sintomático", "Terminal"];
@@ -93,6 +93,62 @@ function ResourceControl({ label, icon: Icon, current, max, onChange, tone, reve
     </div>
     {reverse && <span className="sr-only">O valor exibido corresponde aos espaços disponíveis; os danos marcados são registrados automaticamente.</span>}
   </div>;
+}
+
+function RestPlanner({ game, edit, canResolve }: { game: GameState; edit: Edit; canResolve: boolean }) {
+  const [open, setOpen] = useState(false);
+  const [kind, setKind] = useState<RestKind>("short");
+  const [choices, setChoices] = useState<Record<string, [RestAction, RestAction]>>({});
+  const atShelter = game.shelter.hex === game.partyHex;
+
+  function begin(nextKind: RestKind) {
+    const defaults = restActionsFor(nextKind);
+    setKind(nextKind);
+    setChoices(Object.fromEntries(game.survivors.map(person => [person.id, [defaults[0]!, defaults[0]!]])) as Record<string, [RestAction, RestAction]>);
+    setOpen(true);
+  }
+  function updateChoice(survivorId: string, index: 0 | 1, value: string) {
+    const action = value as RestAction;
+    setChoices(current => {
+      const existing = current[survivorId] ?? [restActionsFor(kind)[0]!, restActionsFor(kind)[0]!] as [RestAction, RestAction];
+      const next: [RestAction, RestAction] = [...existing] as [RestAction, RestAction];
+      next[index] = action;
+      return { ...current, [survivorId]: next };
+    });
+  }
+  function resolve() {
+    let completed = false;
+    let failure = "Não foi possível aplicar este descanso.";
+    let fear = 0;
+    edit(draft => {
+      const result = resolveGroupRest(draft, kind, draft.survivors.map(person => ({ survivorId: person.id, choices: choices[person.id] ?? [] })));
+      if (result.ok) { completed = true; fear = result.fear; }
+      else failure = result.message;
+    });
+    if (!completed) { toast.error(failure); return; }
+    toast.success(`Descanso ${kind === "short" ? "curto" : "longo"} concluído`, { description: `As duas escolhas de cada sobrevivente foram aplicadas. Fear +${fear}.` });
+    setOpen(false);
+  }
+
+  return <section className="character-surface character-rest-panel"><SectionHeading index="05" title="Descanso da mesa" aside={<span className="character-micro">2 AÇÕES POR PESSOA</span>} />
+    <p className="character-section-intro">Descanso curto recupera recursos com d4+1. O longo limpa o recurso escolhido e exige que o grupo esteja no abrigo. Preparar concede Hope automaticamente.</p>
+    {!canResolve ? <p className="character-rest-readonly">O mestre confirma as escolhas da mesa aqui; os ganhos entram automaticamente nesta ficha quando o descanso termina.</p>
+      : <div className="character-rest-actions"><Button size="sm" variant="outline" disabled={!game.survivors.length} onClick={() => begin("short")}><Moon size={16} /> Descanso curto</Button>
+        <Button size="sm" disabled={!game.survivors.length || !atShelter} title={atShelter ? undefined : "O grupo precisa estar no abrigo"} onClick={() => begin("long")}><Moon size={16} /> Descanso longo</Button></div>}
+    {!atShelter && canResolve && <p className="text-xs subtle mt-3">O descanso longo fica disponível quando o grupo retorna ao abrigo.</p>}
+    <Dialog open={open} onOpenChange={setOpen}><DialogContent className="rest-planner-dialog"><DialogHeader><DialogTitle>Organizar descanso {kind === "short" ? "curto" : "longo"}</DialogTitle>
+      <DialogDescription>Escolha duas ações para cada pessoa. Repetir uma ação é permitido; os valores e Fear serão aplicados automaticamente ao concluir.</DialogDescription></DialogHeader>
+      <div className="rest-planner-list">{game.survivors.map(person => {
+        const selectedChoices = choices[person.id] ?? [restActionsFor(kind)[0]!, restActionsFor(kind)[0]!] as [RestAction, RestAction];
+        const options = restActionsFor(kind).map(action => ({ value: action, label: restActionLabels[action] }));
+        return <div className="rest-planner-row" key={person.id}><b>{person.name}</b><div className="rest-planner-choices">
+          <Pick label="Primeira ação" value={selectedChoices[0]} options={options} onChange={value => updateChoice(person.id, 0, value)} />
+          <Pick label="Segunda ação" value={selectedChoices[1]} options={options} onChange={value => updateChoice(person.id, 1, value)} />
+        </div></div>;
+      })}</div>
+      <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button><Button onClick={resolve}>Aplicar descanso</Button></DialogFooter>
+    </DialogContent></Dialog>
+  </section>;
 }
 
 function AbilityUseControl({ game, edit, survivorId, abilityId, name, effect, hopeFeature = false, buttonLabel }: {
@@ -370,6 +426,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false }:
                 {selected.infection === "Exposto" ? <p>Janela de tratamento até <b>{deadlineLabel(selected.exposureDeadline)}</b>. {selected.treatmentAttempted ? "Tentativa já usada." : "Uma tentativa disponível."}</p> : <p>{selected.past || "Passado e vínculos ainda não registrados."}</p>}
                 <button className="character-text-link" type="button" onClick={() => setActiveTab(selected.infection === "Saudável" ? "historia" : "condicoes")}>Ver {selected.infection === "Saudável" ? "história" : "condições"} <span aria-hidden="true">↗</span></button>
               </section>
+              <RestPlanner game={game} edit={edit} canResolve={!playerPreview && !playerMode} />
             </div>
           </TabsContent>
           <TabsContent value="atributos" className="character-tab-content">

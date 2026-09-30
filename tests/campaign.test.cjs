@@ -240,6 +240,37 @@ test('habilidades gastam recursos, respeitam cena, expedição e alvo sem repeti
   assert.equal(abilities.recordAbilityUse(g, a.id, 'maos:cena', 'Mãos firmes · cena', sceneCare, 'hope1', 'Bia'), false);
 });
 
+test('descanso da mesa aplica duas escolhas por sobrevivente e registra Fear automaticamente', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  ana.hp = 4; ana.stress = 4; ana.armorMarked = 2; ana.hope = 0;
+  bia.hope = 0;
+  const short = abilities.resolveGroupRest(g, 'short', [
+    { survivorId: ana.id, choices: ['hp', 'stress'] },
+    { survivorId: bia.id, choices: ['prepare', 'prepare'] },
+  ], () => 3);
+  assert.equal(short.ok, true);
+  assert.equal(ana.hp, 0);
+  assert.equal(ana.stress, 0);
+  assert.equal(bia.hope, 2);
+  assert.equal(g.fear, 3);
+  assert.equal(g.shortRest, 2);
+  assert.equal(g.log.filter(entry => entry.kind === 'descanso').length, 4);
+
+  g.shelter.hex = g.partyHex;
+  ana.hp = 3; ana.armorMarked = 2; bia.stress = 5; bia.hope = 0;
+  const long = abilities.resolveGroupRest(g, 'long', [
+    { survivorId: ana.id, choices: ['hp-full', 'prepare'] },
+    { survivorId: bia.id, choices: ['stress-full', 'prepare'] },
+  ], () => 2);
+  assert.equal(long.ok, true);
+  assert.equal(ana.hp, 0);
+  assert.equal(bia.stress, 0);
+  assert.equal(ana.hope, 2);
+  assert.equal(bia.hope, 2);
+  assert.equal(g.fear, 7);
+  assert.equal(g.longRest, 2);
+});
+
 test('todo o catálogo de armas e proteções pode ser equipado, consultado e calculado', () => {
   const categories = { 'Armas primárias': 'primary', 'Armas secundárias': 'secondary', 'Proteções': 'protection' };
   const candidates = content.catalog.filter(x => categories[x.category]);

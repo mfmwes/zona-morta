@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sidebar, SidebarProvider } from "@/components/ui/sidebar";
-import { Counter, Pick } from "@/components/game-controls";
+import { Counter, Field, Pick } from "@/components/game-controls";
 import { HexExplorer } from "@/components/hex-explorer";
 import { SurvivorPanel } from "@/components/survivor-panel";
 import { ReferencePanel, ShelterPanel } from "@/components/campaign-views";
@@ -45,6 +46,8 @@ export default function CampaignApp() {
   const [saveError, setSaveError] = useState("");
   const [tab, setTab] = useState("mapa");
   const [chatOpen, setChatOpen] = useState(true);
+  const [timeEditorOpen, setTimeEditorOpen] = useState(false);
+  const [manualTime, setManualTime] = useState("");
   const [playerPreview, setPlayerPreview] = useState(false);
   const [role, setRole] = useState<"mestre" | "jogador" | "convidado">("mestre");
   const [ownerId, setOwnerId] = useState("");
@@ -206,6 +209,30 @@ export default function CampaignApp() {
     paused.current = false;
     setStatus("salvando");
     void flush();
+  }
+
+  function openTimeEditor() {
+    if (!current.current) return;
+    setManualTime(displayTime(current.current.minutes));
+    setTimeEditorOpen(true);
+  }
+
+  function saveManualTime() {
+    const matched = /^(\d{2}):(\d{2})$/.exec(manualTime);
+    const hours = matched ? Number(matched[1]) : Number.NaN;
+    const minutes = matched ? Number(matched[2]) : Number.NaN;
+    if (!Number.isInteger(hours) || !Number.isInteger(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+      toast.error("Informe um horário entre 00:00 e 23:59.");
+      return;
+    }
+    let previous = "";
+    edit(draft => {
+      previous = displayTime(draft.minutes);
+      draft.minutes = hours * 60 + minutes;
+      addLog(draft, "tempo", `Horário ajustado pelo mestre: ${previous} → ${displayTime(draft.minutes)}.`);
+    });
+    setTimeEditorOpen(false);
+    toast.success("Horário ajustado", { description: `${previous} → ${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}.` });
   }
 
   function downloadBackup() {
@@ -490,13 +517,21 @@ export default function CampaignApp() {
           </div>}
           <HexExplorer key={game.campaignId} game={game} edit={edit} playerPreview={readOnlyPreview} />
           {!readOnlyPreview && <div className="panel panel-pad mt-5 flex flex-wrap items-center gap-3">
-            <div className="mr-auto"><b>Relógio da expedição</b><p className="text-xs subtle">Ao anoitecer, feche o dia na seção de descanso, mesmo sem abrigo.</p></div>
+            <div className="mr-auto"><b>Relógio da expedição</b><p className="text-xs subtle">Ao anoitecer, registre o descanso na ficha, mesmo sem abrigo.</p></div>
             {[30,60,120].map(amount=><Button key={amount} size="sm" variant="outline" disabled={game.minutes+amount>=1440}
               onClick={() => {
                 edit(d=>{d.minutes+=amount;addLog(d,"tempo",`Passaram ${amount} minutos na expedição.`);});
                 toast("Tempo avançado", { description: `+${amount < 60 ? `${amount} min` : `${amount / 60} h`} na expedição.` });
               }}>
               +{amount<60?`${amount} min`:`${amount/60} h`}</Button>)}
+            <Dialog open={timeEditorOpen} onOpenChange={setTimeEditorOpen}>
+              <DialogTrigger asChild><Button size="sm" variant="outline" onClick={openTimeEditor}><Clock3 size={16} /> Ajustar horário</Button></DialogTrigger>
+              <DialogContent><DialogHeader><DialogTitle>Ajustar horário do dia</DialogTitle>
+                <DialogDescription>Use esta correção quando a ficção pedir outro horário. A alteração fica registrada no diário da campanha.</DialogDescription></DialogHeader>
+                <Field label="Horário" type="time" value={manualTime} onChange={setManualTime} />
+                <DialogFooter><Button variant="outline" onClick={() => setTimeEditorOpen(false)}>Cancelar</Button><Button onClick={saveManualTime}>Salvar horário</Button></DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>}
         </>}
         {tab === "sobreviventes" && <SurvivorPanel game={game} edit={edit} playerPreview={readOnlyPreview} playerMode={role === "jogador"} />}

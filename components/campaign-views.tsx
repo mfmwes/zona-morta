@@ -16,7 +16,6 @@ import { atSharedStorage, catalogForItem } from "@/lib/inventory";
 import { provisionBreakdown, provisionDisplay, provisionItemInfo } from "@/lib/provision-items";
 import { closeDay, eveningNeeds } from "@/lib/survival";
 import { adjustProvisionCount } from "@/lib/provisions";
-import { registerRest } from "@/lib/abilities";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 
@@ -150,7 +149,7 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
     </section>
     <aside className="grid gap-5 self-start">
       <section className="panel panel-pad">
-        <p className="dossier-title">Rotina / sobrevivência</p><h3 className="section-title mt-1">Anoitecer e descanso</h3>
+        <p className="dossier-title">Rotina / sobrevivência</p><h3 className="section-title mt-1">Anoitecer e provisões</h3>
         <p className="intro-line mt-3">Cada pessoa precisa de uma porção de Comida e uma de Água por dia. O consumo pessoal registrado na ficha é excluído da sugestão. Ao fechar o dia, o sistema usa porções soltas e, se necessário, itens físicos prontos das reservas compartilhadas.</p>
         {!playerPreview && <Dialog open={closeOpen} onOpenChange={setCloseOpen}>
           <DialogTrigger asChild><Button className="mt-4 w-full" onClick={() => {
@@ -167,15 +166,7 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
             <DialogFooter><Button variant="outline" onClick={() => setCloseOpen(false)}>Cancelar</Button><Button disabled={!consumptionValid} onClick={nextMorning}>Confirmar anoitecer</Button></DialogFooter>
           </DialogContent>
         </Dialog>}
-        {!playerPreview && <div className="flex gap-2 flex-wrap mt-3"><Button size="sm" variant="outline" onClick={() => {
-          edit(d => registerRest(d, "short"));
-          toast.success("Descanso curto registrado", { description: "Habilidades correspondentes foram renovadas." });
-        }}>Registrar descanso curto</Button>
-          <Button size="sm" variant="outline" onClick={() => {
-            edit(d => registerRest(d, "long"));
-            toast.success("Descanso longo registrado", { description: "Habilidades de descanso curto e longo foram renovadas." });
-          }}>Registrar descanso longo</Button></div>}
-        <p className="text-xs subtle mt-2">Registre o descanso quando as ações forem concluídas; aplique recuperação de Vida, Estresse ou Armadura na ficha.</p>
+        <p className="text-xs subtle mt-2">As escolhas e os efeitos de descanso ficam na ficha de cada sobrevivente, inclusive quando a campanha ainda não tem abrigo.</p>
       </section>
       {hasShelter && <section className="panel panel-pad">
         <p className="dossier-title">Pessoas e necessidades</p>

@@ -1,7 +1,21 @@
 import { addLog, survivorStats, type GameState } from "./game";
+import { rollDie } from "./rolls";
 
 export type AbilityCost = "free" | "hope1" | "hope3" | "stress1" | "armor1";
 export type AbilityPeriod = "scene" | "day" | "expedition" | "shortRest" | "longRest" | "rest" | "place" | "patient" | null;
+export type RestKind = "short" | "long";
+export type RestAction = "hp" | "stress" | "armor" | "prepare" | "fiction" | "hp-full" | "stress-full" | "armor-full";
+export type RestSelection = { survivorId: string; choices: RestAction[] };
+
+export const restActionLabels: Record<RestAction, string> = {
+  hp: "Recuperar Vida", stress: "Aliviar Estresse", armor: "Reparar Armadura", prepare: "Preparar", fiction: "Ação de ficção",
+  "hp-full": "Limpar toda a Vida", "stress-full": "Limpar todo o Estresse", "armor-full": "Reparar toda a Armadura",
+};
+
+export function restActionsFor(kind: RestKind): RestAction[] {
+  return kind === "short" ? ["hp", "stress", "armor", "prepare", "fiction"]
+    : ["hp-full", "stress-full", "armor-full", "prepare", "fiction"];
+}
 
 export function abilityPeriod(effect: string): AbilityPeriod {
   const text = effect.toLocaleLowerCase("pt-BR");
@@ -93,8 +107,66 @@ export function beginExpedition(game: GameState) {
   game.expedition = (game.expedition ?? 1) + 1;
   addLog(game, "expedição", "Nova expedição: habilidades por expedição estão disponíveis.");
 }
-export function registerRest(game: GameState, kind: "short" | "long") {
+export function registerRest(game: GameState, kind: RestKind) {
   game.shortRest = (game.shortRest ?? 1) + 1;
   if (kind === "long") game.longRest = (game.longRest ?? 1) + 1;
-  addLog(game, "descanso", `Descanso ${kind === "short" ? "curto" : "longo"} concluído: habilidades correspondentes estão disponíveis. Registre recuperação de recursos conforme as ações escolhidas.`);
+  addLog(game, "descanso", `Descanso ${kind === "short" ? "curto" : "longo"} concluído: benefícios escolhidos e limites de habilidade foram atualizados.`);
+}
+
+export function resolveGroupRest(game: GameState, kind: RestKind, selections: RestSelection[], roll = rollDie) {
+  if (!game.survivors.length || selections.length !== game.survivors.length) return { ok: false as const, message: "Defina duas ações para cada sobrevivente." };
+  if (kind === "long" && (!game.shelter.hex || game.shelter.hex !== game.partyHex))
+    return { ok: false as const, message: "O descanso longo exige que o grupo esteja no abrigo." };
+
+  const validActions = new Set(restActionsFor(kind));
+  const selectionBySurvivor = new Map(selections.map(selection => [selection.survivorId, selection]));
+  if (selectionBySurvivor.size !== game.survivors.length || game.survivors.some(person => {
+    const choices = selectionBySurvivor.get(person.id)?.choices;
+    return !choices || choices.length !== 2 || choices.some(choice => !validActions.has(choice));
+  })) return { ok: false as const, message: "Cada sobrevivente precisa de duas ações válidas." };
+
+  const preparedBy = new Set(game.survivors.filter(person => selectionBySurvivor.get(person.id)!.choices.includes("prepare")).map(person => person.id));
+  const prepareGain = preparedBy.size >= 2 ? 2 : 1;
+  const summaries: string[] = [];
+
+  for (const person of game.survivors) {
+    const choices = selectionBySurvivor.get(person.id)!.choices;
+    const results: string[] = [];
+    for (const choice of choices) {
+      if (choice === "hp") {
+        const rolled = Math.max(2, Math.min(5, Math.trunc(roll(4)) + 1));
+        const recovered = Math.min(person.hp, rolled); person.hp -= recovered;
+        results.push(`Vida +${recovered} (d4+1 = ${rolled})`);
+      } else if (choice === "stress") {
+        const rolled = Math.max(2, Math.min(5, Math.trunc(roll(4)) + 1));
+        const recovered = Math.min(person.stress, rolled); person.stress -= recovered;
+        results.push(`Estresse −${recovered} (d4+1 = ${rolled})`);
+      } else if (choice === "armor") {
+        const rolled = Math.max(2, Math.min(5, Math.trunc(roll(4)) + 1));
+        const repaired = Math.min(person.armorMarked ?? 0, rolled); person.armorMarked = Math.max(0, (person.armorMarked ?? 0) - repaired);
+        results.push(`Armadura −${repaired} (d4+1 = ${rolled})`);
+      } else if (choice === "hp-full") {
+        const recovered = person.hp; person.hp = 0; results.push(`Vida +${recovered}`);
+      } else if (choice === "stress-full") {
+        const recovered = person.stress; person.stress = 0; results.push(`Estresse −${recovered}`);
+      } else if (choice === "armor-full") {
+        const repaired = person.armorMarked ?? 0; person.armorMarked = 0; results.push(`Armadura −${repaired}`);
+      } else if (choice === "prepare") {
+        const gained = Math.min(6 - person.hope, prepareGain); person.hope += gained;
+        results.push(`Hope +${gained}${prepareGain === 2 ? " (preparo em equipe)" : ""}`);
+      } else {
+        results.push("Ação de ficção registrada");
+      }
+    }
+    summaries.push(`${person.name}: ${results.join("; ")}.`);
+    addLog(game, "descanso", `${person.name} — ${results.join("; ")}.`, person.id);
+  }
+
+  const fearDie = Math.max(1, Math.min(4, Math.trunc(roll(4))));
+  const fearGain = fearDie + (kind === "long" ? game.survivors.length : 0);
+  const actualFear = Math.min(12 - game.fear, fearGain);
+  game.fear += actualFear;
+  addLog(game, "descanso", `Descanso ${kind === "short" ? "curto" : "longo"}: Fear +${actualFear}${kind === "long" ? ` (d4 ${fearDie} + ${game.survivors.length} PC${game.survivors.length === 1 ? "" : "s"})` : ` (d4 ${fearDie})`}.`);
+  registerRest(game, kind);
+  return { ok: true as const, fear: actualFear, summaries };
 }

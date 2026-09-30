@@ -289,6 +289,8 @@ html[data-theme="dark"] .character-feature-callout,
 html[data-theme="dark"] .character-roll-history > div,
 html[data-theme="dark"] .character-story-grid > div,
 html[data-theme="dark"] .character-empty-list { background: #222d2d; color: #d2ddd7; }
+html[data-theme="dark"] .character-rest-readonly,
+html[data-theme="dark"] .rest-planner-row { border-color: #405650; background: #202d2c; color: #d9e5df; }
 html[data-theme="dark"] .character-hope-teaser { border-color: #8a6b14; background: var(--hope-surface); color: #fff0b8; box-shadow: none; }
 html[data-theme="dark"] .character-hope-teaser:hover { background: #51420d; }
 html[data-theme="dark"] .character-hope-teaser strong { background: #6b5510; color: #ffe995; }
@@ -345,6 +347,10 @@ html[data-theme="dark"] .table-chat-input textarea { border-color: #526863; back
 html[data-theme="dark"] .table-chat-input textarea::placeholder { color: #849691; }
 html[data-theme="dark"] .table-chat-speaker,
 html[data-theme="dark"] .table-chat-speaker select { color: #b9ccc5; }
+
+@media (min-width: 1001px) {
+  .rail { padding-bottom: 72px; }
+}
 
 @media (max-width: 620px) {
   .theme-toggle { bottom: calc(68px + env(safe-area-inset-bottom)); left: 10px; min-width: 37px; padding: 8px; }
