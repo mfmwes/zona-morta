@@ -2,6 +2,16 @@ import content from "./content.json";
 import type { InventoryItem } from "./game";
 
 export type ProvisionResource = "food" | "water";
+
+export function provisionShelfLabel(code: string | undefined) {
+  switch (code?.trim().toUpperCase()) {
+    case "D": return "Durável";
+    case "F": return "Fresco · vence no segundo amanhecer";
+    case "R": return "Refrigerado/preparado · vence no próximo amanhecer";
+    case "C": return "Congelado · exige frio contínuo";
+    default: return code || "Sem prazo específico";
+  }
+}
 type CatalogEntry = (typeof content.catalog)[number];
 type ProvisionHolder = { food: number; water: number; inventory?: InventoryItem[] };
 
