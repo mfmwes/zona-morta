@@ -29,7 +29,7 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
   return visible;
 }
 
-const immutable = ["id", "name", "level", "proficiency", "origin", "past", "archetype", "specialty",
+const immutable = ["id", "name", "level", "proficiency", "origin", "past", "archetype", "specialty", "hex",
   "attributes", "freeExperience", "techniques", "infection", "exposureDeadline", "treatmentAttempted", "terminalScenes"] as const;
 const editable = ["portrait", "primary", "secondary", "protection", "personal", "bag", "pocket1", "pocket2", "equippedItems", "kitCondition",
   "hp", "armorMarked", "stress", "hope", "food", "water", "foodConsumedDay", "waterConsumedDay", "provisionLots",
