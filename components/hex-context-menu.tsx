@@ -68,7 +68,7 @@ export function HexContextMenu({
     edit(draft => { result = performHexAction(draft, hexId, action); });
     if (!result?.ok) {
       toast.error("A ação não pôde ser concluída.", {
-        description: "Confira a posição do grupo, o horário e o estado do setor.",
+        description: "Confira a posição dos sobreviventes, o horário e o estado do setor.",
       });
       return;
     }
