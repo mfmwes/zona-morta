@@ -21,6 +21,7 @@ const exploration = require('../lib/exploration.ts');
 const { revealSector, preserveKnownSectors } = require('../lib/sectors.ts');
 const { parseWeaponDamage, resolveActionRoll, resolveRollResources } = require('../lib/rolls.ts');
 const shelterProjects = require('../lib/shelter-projects.ts');
+const campaignTime = require('../lib/time.ts');
 const npcGenerator = require('../lib/npc-generator.ts');
 const combatResources = require('../lib/combat-resources.ts');
 
@@ -1227,6 +1228,63 @@ test('projetos persistentes derivam estado do abrigo, exigem operador e sobreviv
   assert.equal(previous.projects.find(project => project.key === 'barricades').state, 'Concluído');
 });
 
+
+test('instalação física exige local, inclusive para projeto legado sem posição', () => {
+  const g = campaign();
+  assert.equal(require('../lib/game.ts').establishShelter(g, '0,0'), true);
+  g.shelter.parts = 5;
+  const workshop = shelterProjects.createShelterProject('electrical-workshop');
+  g.shelter.projects.push(workshop);
+  assert.match(shelterProjects.startProject(g.shelter, workshop), /Escolha um local/);
+  assert.equal(shelterProjects.placeShelterProject(g.shelter, workshop, 'utility-a'), null);
+  assert.equal(workshop.slotId, 'utility-a');
+});
+
+test('turno agendado não avança o relógio sozinho e conclui quando tempo externo alcança o fim', () => {
+  const g = campaign();
+  assert.equal(require('../lib/game.ts').establishShelter(g, '0,0'), true);
+  g.shelter.parts = 5;
+  const worker = { id:'clock-builder', name:'Iara', role:'Construtora', description:'', notes:'', hex:'0,0', home:'0,0', status:'Bem', infection:'Saudável', disposition:'Aliado', skills:['Construção'], active:true };
+  g.npcs.push(worker);
+  const barricades = shelterProjects.createShelterProject('barricades');
+  barricades.responsibleId = worker.id;
+  g.shelter.projects.push(barricades);
+  assert.equal(shelterProjects.startProject(g.shelter, barricades), null);
+
+  const before = g.minutes;
+  const scheduled = shelterProjects.scheduleShelterWorkShift(g, barricades, 4);
+  assert.equal(scheduled.ok, true);
+  assert.equal(g.minutes, before);
+  assert.ok(barricades.workShift);
+
+  assert.equal(campaignTime.advanceCampaignTime(g, 120).ok, true);
+  assert.equal(barricades.progress, 0);
+  assert.ok(barricades.workShift);
+
+  const result = campaignTime.advanceCampaignTime(g, 120);
+  assert.equal(result.ok, true);
+  assert.equal(barricades.state, 'Concluído');
+  assert.equal(barricades.workShift, undefined);
+  assert.equal(g.minutes, before + 240);
+  assert.equal(result.completedWork.length, 1);
+});
+
+test('ajuste manual para frente também resolve turno programado', () => {
+  const g = campaign();
+  assert.equal(require('../lib/game.ts').establishShelter(g, '0,0'), true);
+  g.shelter.parts = 5;
+  const worker = { id:'manual-builder', name:'Lia', role:'Construtora', description:'', notes:'', hex:'0,0', home:'0,0', status:'Bem', infection:'Saudável', disposition:'Aliado', skills:['Construção'], active:true };
+  g.npcs.push(worker);
+  const barricades = shelterProjects.createShelterProject('barricades');
+  barricades.responsibleId = worker.id;
+  g.shelter.projects.push(barricades);
+  shelterProjects.startProject(g.shelter, barricades);
+  assert.equal(shelterProjects.scheduleShelterWorkShift(g, barricades, 4).ok, true);
+  const target = g.minutes + 240;
+  const result = campaignTime.setCampaignTime(g, target);
+  assert.equal(result.ok, true);
+  assert.equal(barricades.state, 'Concluído');
+});
 
 test('turno de construção avança obras simultâneas com equipes distintas e consome tempo', () => {
   const g = campaign();
