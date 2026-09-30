@@ -324,13 +324,7 @@ export function projectWorkPreview(game: GameState, shelter: ShelterState, proje
   if (sharedWorker) return { issue: `${sharedWorker.name} está atribuído a outra obra ativa.`, workers, points: 0, missingCapabilities: [] as string[] };
   const requirements = project.buildCapabilities ?? projectDefinition(project.key)?.buildCapabilities ?? [];
   const missingCapabilities = requirements.filter(capability => !workers.some(npc => hasCapability(npc, capability)));
-  if (missingCapabilities.length) return {
-    issue: `Falta capacidade na equipe: ${missingCapabilities.join(" + ")}.`,
-    workers,
-    points: 0,
-    missingCapabilities,
-  };
-  const specialistBonus = requirements.length ? 1 : 0;
+  const specialistBonus = requirements.length > 0 && missingCapabilities.length === 0 ? 1 : 0;
   return { issue: null, workers, points: Math.max(1, workers.length + specialistBonus), missingCapabilities };
 }
 
