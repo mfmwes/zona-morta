@@ -238,13 +238,19 @@ button { cursor: pointer; } button:disabled { cursor: not-allowed; }
 .character-alert { color:#9a4737; font-size:.77rem; font-weight:700; margin:8px 0 0; }
 .character-experience { display:grid; gap:2px; padding:8px 0; border-bottom:1px solid #e0e6df; font-size:.85rem; }
 .character-experience span { color:#526c6b; font-size:.78rem; }
-.character-hope-teaser { display:flex; align-items:center; gap:9px; width:100%; min-height:55px; margin-top:11px; padding:9px 11px; border:1px solid #e1c86c; border-left:4px solid var(--hope); border-radius:6px; background:var(--hope-surface); color:#514414; text-align:left; box-shadow:0 3px 9px #715d2810; }
+.character-hope-teaser { display:flex; align-items:center; gap:11px; width:100%; min-height:74px; margin-top:11px; padding:10px 12px; border:1px solid #e1c86c; border-left:4px solid var(--hope); border-radius:7px; background:var(--hope-surface); color:#514414; text-align:left; box-shadow:0 3px 9px #715d2810; }
 .character-hope-teaser:hover { background:#ffedab; }
 .character-hope-teaser > svg { flex:none; color:var(--hope-ink); }
-.character-hope-teaser > span { display:grid; gap:2px; min-width:0; flex:1; }
-.character-hope-teaser small { color:var(--hope-ink); font:700 .72rem var(--font-mono); letter-spacing:.07em; }
-.character-hope-teaser b { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.88rem; }
-.character-hope-teaser strong { flex:none; padding:5px 7px; border-radius:3px; background:#ffe69a; color:var(--hope-ink); font:800 .74rem var(--font-mono); }
+.character-hope-teaser > .ability-art { width:54px; height:54px; flex:0 0 54px; border-radius:7px; }
+.character-hope-teaser-copy { display:grid; gap:3px; min-width:0; flex:1 1 auto; align-content:center; }
+.character-hope-teaser small { color:var(--hope-ink); font:700 .7rem var(--font-mono); letter-spacing:.08em; }
+.character-hope-teaser b { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.92rem; line-height:1.25; }
+.character-hope-teaser strong { flex:none; align-self:center; padding:7px 9px; border-radius:4px; background:#ffe69a; color:var(--hope-ink); font:800 .74rem var(--font-mono); white-space:nowrap; }
+@media (max-width: 460px) {
+  .character-hope-teaser { align-items:flex-start; flex-wrap:wrap; }
+  .character-hope-teaser-copy { min-width:calc(100% - 70px); }
+  .character-hope-teaser strong { margin-left:65px; margin-top:-27px; }
+}
 .character-technique-preview { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
 .character-technique-preview > span { display:inline-flex; align-items:center; gap:6px; padding:4px 8px 4px 4px; border-radius:5px; background:#e8f0e7; color:#3c6053; font-size:.78rem; font-weight:700; }
 .character-status-line { display:flex; align-items:center; gap:7px; font-size:1rem; }
