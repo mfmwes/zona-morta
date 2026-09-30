@@ -712,7 +712,7 @@ export function cancelShelterWorkShift(game: GameState, project: ShelterProject)
 
 export function processScheduledShelterWork(game: GameState) {
   const now = absoluteMinutes(game);
-  const completed: { key: string; name: string; points: number; completed: boolean }[] = [];
+  const completed: { key: string; name: string; points: number; completed: boolean; operation?: string; output?: Record<string, number> }[] = [];
 
   const dueNpc = (game.shelter.projects ?? [])
     .filter(project => project.workShift && project.workShift.endAbsoluteMinute <= now)
@@ -720,12 +720,24 @@ export function processScheduledShelterWork(game: GameState) {
   for (const project of dueNpc) {
     const shift = project.workShift;
     if (!shift) continue;
+    const workers = shift.workerIds.map(id => game.npcs.find(npc => npc.id === id)?.name).filter(Boolean);
+    delete project.workShift;
+
+    if (shift.purpose === "operation") {
+      const operation = projectDefinition(project.key)?.operationWork;
+      const result = advanceProjectOperation(game, project, shift.points);
+      completed.push({ key: project.key, name: project.name, points: result.applied, completed: false,
+        operation: operation?.label, output: result.output });
+      const produced = Object.entries(result.output).map(([key, value]) =>
+        `${value} ${key === "food" ? "Comida" : key === "water" ? "Água" : "Peças"}`).join(" · ");
+      addLog(game, "abrigo", `${project.name}: +${result.applied} trabalho em ${operation?.label ?? "operação"}${produced ? `; produção: ${produced}` : ` (${project.operationProgress ?? 0}/${operation?.requiredProgress ?? 1})`}${workers.length ? ` com ${workers.join(", ")}` : ""}.`);
+      continue;
+    }
+
     const before = projectProgress(project);
     const points = project.state === "Em construção" ? Math.max(0, Math.min(shift.points, before.required - before.value)) : 0;
     if (points > 0) advanceProject(project, points);
     const finished = project.state === "Concluído";
-    const workers = shift.workerIds.map(id => game.npcs.find(npc => npc.id === id)?.name).filter(Boolean);
-    delete project.workShift;
     if (finished) project.volunteerShifts = [];
     completed.push({ key: project.key, name: project.name, points, completed: finished });
     addLog(game, "abrigo", finished
@@ -742,11 +754,23 @@ export function processScheduledShelterWork(game: GameState) {
   for (const { project, shift } of volunteerDue) {
     if (!(project.volunteerShifts ?? []).includes(shift)) continue;
     const survivor = game.survivors.find(person => person.id === shift.survivorId);
+    project.volunteerShifts = (project.volunteerShifts ?? []).filter(entry => entry !== shift);
+
+    if (shift.purpose === "operation") {
+      const operation = projectDefinition(project.key)?.operationWork;
+      const result = advanceProjectOperation(game, project, shift.points);
+      completed.push({ key: project.key, name: project.name, points: result.applied, completed: false,
+        operation: operation?.label, output: result.output });
+      const produced = Object.entries(result.output).map(([key, value]) =>
+        `${value} ${key === "food" ? "Comida" : key === "water" ? "Água" : "Peças"}`).join(" · ");
+      addLog(game, "abrigo", `${survivor?.name ?? "Um sobrevivente"} trabalhou em ${project.name}: +${result.applied} em ${operation?.label ?? "operação"}${produced ? `; produção: ${produced}` : ""}.`, survivor?.id);
+      continue;
+    }
+
     const before = projectProgress(project);
     const points = project.state === "Em construção" ? Math.max(0, Math.min(shift.points, before.required - before.value)) : 0;
     if (points > 0) advanceProject(project, points);
     const finished = project.state === "Concluído";
-    project.volunteerShifts = (project.volunteerShifts ?? []).filter(entry => entry !== shift);
     if (finished) {
       project.volunteerShifts = [];
       delete project.workShift;
