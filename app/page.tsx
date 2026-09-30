@@ -408,6 +408,7 @@ export default function CampaignApp() {
         <div className="topbar-context text-sm">
           <span className="tag">DIA {String(game.day).padStart(2,"0")}</span>
           <span className="font-mono font-extrabold flex items-center gap-1"><Clock3 size={16} /> {displayTime(game.minutes)}</span>
+          {role === "mestre" && <DayCloseDialog game={game} edit={edit} variant="outline" size="sm" className="topbar-day-close" />}
           <span className="hidden sm:inline text-[#c4cfcb]">/</span>
           <span className="subtle hidden sm:inline">{game.shelter.hex ? game.shelter.name : "Sem abrigo"}</span>
         </div>
@@ -419,7 +420,6 @@ export default function CampaignApp() {
           {status === "conflito" && <Button size="sm" variant="outline" onClick={() => {
             if (window.confirm("Descarte as alterações desta tela e carregue a versão salva em outra janela?")) { setLoading(true); setLoadError(""); void loadCampaign(); }
           }}>Recarregar</Button>}
-          {role === "mestre" && <DayCloseDialog game={game} edit={edit} variant="outline" size="sm" className="topbar-day-close" />}
           {role === "mestre" && <Button size="sm" className="topbar-preview-button" variant={playerPreview ? "default" : "outline"}
             aria-label={playerPreview ? "Desativar prévia dos jogadores" : "Ativar prévia dos jogadores"}
             title={playerPreview ? "Desativar prévia dos jogadores" : "Ativar prévia dos jogadores"}
