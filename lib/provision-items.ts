@@ -42,14 +42,17 @@ function definition(entry: CatalogEntry | undefined) {
 
 export function provisionItemInfo(item: InventoryItem) {
   const def = definition(catalogFor(item));
-  const resource = item.provisionResource ?? def?.resource ?? null;
-  const portionsPerUnit = Math.max(0, Math.trunc(item.portionsPerUnit ?? def?.portions ?? 0));
-  const requiresVerification = def?.requiresVerification ?? false;
-  const requiresPreparation = def?.requiresPreparation ?? false;
-  const prepared = item.prepared ?? !requiresPreparation;
-  const verified = item.verified ?? !requiresVerification;
-  const remaining = resource && portionsPerUnit > 0
-    ? Math.max(0, Math.trunc(item.portionsRemaining ?? item.qty * portionsPerUnit)) : 0;
+  const storedWater = item.name === "Galão vazio" && item.storedResource === "water" && (item.storedAmount ?? 0) > 0;
+  const resource = storedWater ? "water" as const : item.provisionResource ?? def?.resource ?? null;
+  const portionsPerUnit = Math.max(0, Math.trunc(storedWater ? 4 : item.portionsPerUnit ?? def?.portions ?? 0));
+  const requiresVerification = storedWater ? false : def?.requiresVerification ?? false;
+  const requiresPreparation = storedWater ? false : def?.requiresPreparation ?? false;
+  const prepared = storedWater ? true : item.prepared ?? !requiresPreparation;
+  const verified = storedWater ? true : item.verified ?? !requiresVerification;
+  const remaining = storedWater
+    ? Math.max(0, Math.min(4, Math.trunc(item.storedAmount ?? 0)))
+    : resource && portionsPerUnit > 0
+      ? Math.max(0, Math.trunc(item.portionsRemaining ?? item.qty * portionsPerUnit)) : 0;
   const spoiled = item.condition === "Estragado";
   const contaminated = item.condition === "Contaminado";
   const intactOk = !(def?.requiresIntact) || item.condition === "Íntegro";
