@@ -246,6 +246,46 @@ html[data-theme="dark"] .number-control button:hover:not(:disabled) { background
 html[data-theme="dark"] .number-control output,
 html[data-theme="dark"] .number-control input { border-color: #4b625d; background: #182323; color: #e5eee9; }
 
+/* Toasts: mesma linguagem do app, sem aparência de HUD. */
+html[data-theme="dark"] .toaster.group [data-sonner-toast].zm-toast {
+  --zm-toast-bg: #182322;
+  --zm-toast-border: #3d514c;
+  --zm-toast-text: #e7efea;
+  --zm-toast-muted: #a9b9b4;
+  box-shadow:
+    0 10px 24px rgba(0,0,0,.22),
+    0 2px 6px rgba(0,0,0,.16) !important;
+}
+
+html[data-theme="dark"] .toaster.group [data-sonner-toast][data-type="success"].zm-toast {
+  --zm-accent: #7eae8b;
+  --zm-toast-bg: #1b2923;
+  --zm-toast-border: #405c49;
+}
+
+html[data-theme="dark"] .toaster.group [data-sonner-toast][data-type="error"].zm-toast {
+  --zm-accent: #d88979;
+  --zm-toast-bg: #2b201e;
+  --zm-toast-border: #624941;
+}
+
+html[data-theme="dark"] .toaster.group [data-sonner-toast][data-type="warning"].zm-toast {
+  --zm-accent: #d2aa67;
+  --zm-toast-bg: #2b281f;
+  --zm-toast-border: #61583f;
+}
+
+html[data-theme="dark"] .toaster.group [data-sonner-toast][data-type="info"].zm-toast {
+  --zm-accent: #80b3bb;
+  --zm-toast-bg: #1b292b;
+  --zm-toast-border: #405a5f;
+}
+
+html[data-theme="dark"] .toaster.group .zm-toast-close:hover {
+  background: rgba(221,239,232,.08) !important;
+}
+
+
 /* Campaign HUD */
 html[data-theme="dark"] .scene-supplies-section { border-color:#3b514e; }
 html[data-theme="dark"] .scene-control-title,
