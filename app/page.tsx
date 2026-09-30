@@ -19,7 +19,7 @@ import { AuthPanel } from "@/components/auth-panel";
 import { CharacterWizard } from "@/components/character-wizard";
 import { CampaignLibrary, type CampaignSummary } from "@/components/campaign-library";
 import { TableChat } from "@/components/table-chat";
-import { addLog, defaultState, displayTime, type GameState, type Point, type Survivor } from "@/lib/game";
+import { addLog, defaultState, displayTime, survivorHex, type GameState, type Point, type Survivor } from "@/lib/game";
 import { createId } from "@/lib/id";
 import { sectorProfiles } from "@/lib/sectors";
 import { adjustProvisionCount } from "@/lib/provisions";
@@ -267,7 +267,7 @@ export default function CampaignApp() {
           return { day: state.day, time: displayTime(state.minutes), shelter: state.shelter.hex ? state.shelter.name : null,
             shelterHex: state.shelter.hex, partyHex: state.partyHex,
             food: state.shelter.food, water: state.shelter.water,
-            survivors: state.survivors.map(s => s.name),
+            survivors: state.survivors.map(s => ({ name: s.name, hex: survivorHex(state, s) })),
             explored: Object.values(state.hexes).filter(h => h.discovery === "explorado").length };
         },
       },
