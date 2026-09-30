@@ -36,7 +36,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { itemActionOptions, performItemAction, type ItemAction } from "@/lib/item-actions";
-import { atSharedStorage, slotLabels } from "@/lib/inventory";
+import { atSharedStorage, catalogItemIsConsumable, slotLabels } from "@/lib/inventory";
 import { provisionDisplay } from "@/lib/provision-items";
 import { provisionConsumedToday, type DailyResource } from "@/lib/survival";
 import type { GameState, InventoryItem } from "@/lib/game";
@@ -160,7 +160,7 @@ export function ItemContextMenu({
         </ContextMenuSub>}
 
         {options.canUse && <ContextMenuItem onSelect={() => run({ type: "use", quantity: 1 })}>
-          <Pill /> Usar 1 unidade
+          <Pill /> {catalogItemIsConsumable(item) ? "Usar 1 unidade" : "Usar"}
         </ContextMenuItem>}
 
         {options.canMedication && quantitySubmenu(
