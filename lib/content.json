@@ -361,11 +361,11 @@
         "Cuidados"
       ],
       "feature": "Abrir conversa",
-      "effect": "uma vez por cena, quando alguém disposto a conversar declarar o que quer, gaste 1 Hope para descobrir uma alternativa concreta que essa pessoa consideraria ou o limite que não pretende negociar. Se não houver abertura para nenhuma proposta, saiba disso antes do gasto. Saber a exigência declarada não custa Hope.",
+      "effect": "uma vez por cena, depois de alguns instantes conversando com uma pessoa disposta a responder, gaste 1 Hope e faça uma pergunta: “O que ela precisa agora?”, “O que ela teme perder?” ou “Em quem ou no que ela confia para decidir?”. O mestre responde de acordo com o que a pessoa sabe e demonstra. Isso revela uma pista para conduzir a conversa, mas não garante acordo nem substitui uma rolagem quando houver risco.",
       "specialties": [
         {
           "name": "Mediador",
-          "effect": "uma vez por cena, quando uma conversa tensa resultar em sucesso com Fear ou falha com Hope, escolha o custo social plausível: tempo adicional ou concessão pequena e explícita. Não transforma falha em sucesso; o mestre recebe Fear quando a rolagem disser que recebe."
+          "effect": "uma vez por cena, quando duas pessoas ou grupos com interesses conflitantes ainda aceitarem conversar, marque 1 Stress e apresente um compromisso concreto que ofereça algo relevante a ambos. A próxima rolagem feita para conseguir um acordo temporário entre esses lados recebe vantagem. Em caso de sucesso, o acordo dura enquanto suas condições forem respeitadas. Nenhum lado é obrigado a aceitar uma proposta que contradiga um limite já estabelecido."
         },
         {
           "name": "Líder de campo",
