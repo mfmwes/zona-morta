@@ -648,6 +648,27 @@ test('caixa clínica vira Medicamentos sem apagar o estojo reutilizável', () =>
   assert.ok(ana.inventory.some(entry => entry.name === 'Kit médico de campo'));
 });
 
+test('consumíveis genéricos somem após uso e itens reutilizáveis permanecem', () => {
+  const g = campaign(); const ana = g.survivors[0];
+  ana.inventory = [item('Sinalizador de mão'), item('Apito'), item('Kit de pilhas')];
+  let signal = ana.inventory.find(entry => entry.name === 'Sinalizador de mão');
+  let result = itemActions.performItemAction(g, ana.id, signal.id, { type: 'use', quantity: 1 });
+  assert.equal(result.ok, true);
+  assert.equal(g.noise, 2);
+  assert.equal(ana.inventory.some(entry => entry.name === 'Sinalizador de mão'), false);
+
+  const whistle = ana.inventory.find(entry => entry.name === 'Apito');
+  result = itemActions.performItemAction(g, ana.id, whistle.id, { type: 'use', quantity: 1 });
+  assert.equal(result.ok, true);
+  assert.equal(g.noise, 3);
+  assert.ok(ana.inventory.some(entry => entry.name === 'Apito'));
+
+  const batteries = ana.inventory.find(entry => entry.name === 'Kit de pilhas');
+  result = itemActions.performItemAction(g, ana.id, batteries.id, { type: 'use', quantity: 1 });
+  assert.equal(result.ok, true);
+  assert.equal(ana.inventory.some(entry => entry.name === 'Kit de pilhas'), false);
+});
+
 test('alimentos e água prontos são identificados para contagem automática de porções', () => {
   const cereal = item('Barra de cereal');
   const biscuits = item('Pacote de bolachas');
