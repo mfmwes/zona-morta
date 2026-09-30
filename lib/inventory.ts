@@ -21,6 +21,44 @@ export function catalogForItem(item: InventoryItem) {
     ?? content.catalog.find(entry => entry.name === item.name && (!item.category || entry.category === item.category));
 }
 
+const batteryDefaults: Record<string, "Carregada" | "Descarregada"> = {
+  "Lanterna pequena": "Carregada",
+  "Lanterna frontal": "Carregada",
+  "Lanterna pesada": "Carregada",
+  "Rádio portátil": "Carregada",
+  "Câmera com bateria": "Carregada",
+  "Telefone descarregado": "Descarregada",
+};
+export function batteryStateFor(item: InventoryItem) {
+  return item.battery ?? batteryDefaults[item.name] ?? null;
+}
+export function batteryTargets(game: GameState, ownerId: string) {
+  const found: { id: string; name: string; battery: "Carregada" | "Descarregada"; slot?: EquipmentSlot }[] = [];
+  for (const item of container(game, ownerId) ?? []) {
+    const battery = batteryStateFor(item);
+    if (battery) found.push({ id: item.id, name: item.name, battery });
+  }
+  if (ownerId !== "shared") {
+    const person = game.survivors.find(entry => entry.id === ownerId);
+    for (const [slot, equipped] of Object.entries(person?.equippedItems ?? {}) as [EquipmentSlot, InventoryItem][]) {
+      if (!equipped) continue;
+      const battery = batteryStateFor(equipped);
+      if (battery) found.push({ id: equipped.id, name: equipped.name, battery, slot });
+    }
+  }
+  return found;
+}
+export function setBatteryState(game: GameState, ownerId: string, itemId: string, battery: "Carregada" | "Descarregada") {
+  const loose = container(game, ownerId)?.find(item => item.id === itemId);
+  if (loose && batteryStateFor(loose)) { loose.battery = battery; return true; }
+  if (ownerId === "shared") return false;
+  const person = game.survivors.find(entry => entry.id === ownerId);
+  const equipped = Object.values(person?.equippedItems ?? {}).find(item => item?.id === itemId);
+  if (!equipped || !batteryStateFor(equipped)) return false;
+  equipped.battery = battery;
+  return true;
+}
+
 const explicitSingleUse = new Set([
   "Kit de pilhas", "Pastilhas de purificação", "Sinalizador de mão", "Luvas descartáveis", "Luvas de procedimento",
   "Solução de limpeza lacrada", "Soro fisiológico lacrado", "Curativo compressivo", "Analgésico genérico",
@@ -166,8 +204,10 @@ export function itemFromCatalog(entry: CatalogEntry, qty = 1, condition = "Ínte
   // "0/1" denotes a loose pocket item; food and drink share the portion load calculation.
   const load = field === "0/1" && ["Alimentos", "Bebidas"].includes(entry.category)
     ? 0 : Number(field.match(/^\d+/)?.[0] ?? 1);
+  const battery = batteryDefaults[entry.name];
   return hydrateProvisionItem({ id: createId(), name: entry.name, catalogKey: catalogKey(entry), category: entry.category,
-    load, qty, condition, ...(["Alimentos", "Bebidas"].includes(entry.category) && foundDay ? { foundDay } : {}) });
+    load, qty, condition, ...(battery ? { battery } : {}),
+    ...(["Alimentos", "Bebidas"].includes(entry.category) && foundDay ? { foundDay } : {}) });
 }
 export function addStack(items: InventoryItem[], incoming: InventoryItem) {
   const match = items.find(item => item.name === incoming.name && item.catalogKey === incoming.catalogKey
@@ -178,6 +218,7 @@ export function addStack(items: InventoryItem[], incoming: InventoryItem) {
     && item.portionsRemaining === incoming.portionsRemaining
     && item.prepared === incoming.prepared && item.verified === incoming.verified
     && item.opened === incoming.opened && item.expiresDay === incoming.expiresDay
+    && item.battery === incoming.battery
     && (item.armorMarked ?? 0) === (incoming.armorMarked ?? 0)
     && item.qty + incoming.qty <= 99);
   if (match) match.qty += incoming.qty;
