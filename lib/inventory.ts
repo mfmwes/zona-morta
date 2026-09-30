@@ -136,20 +136,22 @@ export function provisionPreparationCheck(game: GameState, ownerId: string, item
       return { ok: false, message: `Faltam ${waterCost} porção(ões) de Água acessível para preparar este item.`, details, waterCost, tabletCost, fuelCost };
   }
 
-  const needsPan = /Panela leve/i.test(requirement);
+  const alternativeWaterTreatment = info.requiresVerification
+    && ["Água de torneira sem verificação", "Água de chuva coletada"].includes(item.name);
+  const needsPan = !alternativeWaterTreatment && /Panela leve/i.test(requirement);
   if (needsPan) {
     details.push("Panela leve");
     if (!hasPan(game, ownerId)) return { ok: false, message: "É necessária uma Panela leve ou cozinha operacional.", details, waterCost, tabletCost, fuelCost };
   }
 
-  if (/fonte de calor/i.test(requirement)) {
+  if (!alternativeWaterTreatment && /fonte de calor/i.test(requirement)) {
     const heat = heatPlan(game, ownerId);
     details.push("fonte de calor");
     if (!heat.ok) return { ok: false, message: "Falta uma fonte de calor funcional: use uma cozinha operacional ou Fogareiro com Combustível.", details, waterCost, tabletCost, fuelCost };
     fuelCost = heat.fuelCost;
   }
 
-  if (info.requiresVerification && ["Água de torneira sem verificação", "Água de chuva coletada"].includes(item.name)) {
+  if (alternativeWaterTreatment) {
     if (completedFacility(game, "water-filter") || accessibleNamedQuantity(game, ownerId, "Filtro portátil") > 0) {
       details.push("filtragem");
     } else {
