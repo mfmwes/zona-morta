@@ -33,7 +33,9 @@ export type HexState = {
   events: { id: string; text: string; trigger: string; revealed: boolean }[];
 };
 
-export type EquipmentSlot = "primary" | "secondary" | "protection" | "personal" | "bag" | "pocket1" | "pocket2";
+export type EquipmentSlot = "primary" | "secondary" | "protection" | "outfit" | "personal" | "bag" | "transport" | "pocket1" | "pocket2";
+export const ammunitionTypes = ["Pistola", "Espingarda", "Carabina", "Flechas", "Virotes", "Chumbinhos", "Outra"] as const;
+export type AmmunitionType = typeof ammunitionTypes[number];
 export type InventoryItem = {
   id: string;
   name: string;
@@ -107,6 +109,8 @@ export type ShelterManualAdjustments = { security: number; energy: number; comfo
 export type ShelterState = StockHolder & {
   hex: string | null; name: string; capacity: number; residents: number;
   medications: number; pistolAmmo: number; fuel: number; parts: number;
+  /** Estoque tipado. pistolAmmo continua como espelho legado de Pistola. */
+  ammoStocks?: Partial<Record<AmmunitionType, number>>;
   security: number; energy: number; comfort: number; notes: string;
   inventory?: InventoryItem[];
   coldStorage?: boolean;
@@ -120,6 +124,7 @@ export type ShelterState = StockHolder & {
 };
 export type ShelterManifest = {
   stocks?: Partial<Pick<ShelterState, "food" | "water" | "medications" | "pistolAmmo" | "fuel" | "parts">>;
+  ammoStocks?: Partial<Record<AmmunitionType, number>>;
   itemIds?: string[];
   residents?: number;
   /** NPCs identificados que viajam com o manifesto. */
@@ -177,8 +182,12 @@ export type Survivor = {
   primary: string;
   secondary: string;
   protection: string;
+  /** Traje vestido não conta novamente como carga guardada. */
+  outfit?: string;
   personal: string;
   bag: string;
+  /** Transporte pessoal ativo, atualmente usado pelo carrinho dobrável. */
+  transport?: string;
   pocket1?: string;
   pocket2?: string;
   kitCondition?: Partial<Record<EquipmentSlot, string>>;
@@ -198,6 +207,9 @@ export type Survivor = {
   waterConsumedDay?: number;
   provisionLots?: ProvisionLot[];
   ammo: number;
+  /** Uma carga compatível cobre os disparos da mesma arma/tipo durante a cena. */
+  ammoSpentScene?: number;
+  ammoSpentType?: string;
   inventory: InventoryItem[];
   notes: string;
   restPlan?: {
@@ -284,6 +296,7 @@ export function defaultState(options: { startSectorId?: string; withShelter?: bo
       name: startSector ? `Abrigo — ${startSector.name}` : "Abrigo",
       capacity: withShelter ? 8 : 0, residents: 0,
       food: 0, water: 0, medications: 0, pistolAmmo: 0, fuel: 0, parts: 0,
+      ammoStocks: { Pistola: 0, Espingarda: 0, Carabina: 0, Flechas: 0, Virotes: 0, Chumbinhos: 0, Outra: 0 },
       security: withShelter ? 1 : 0, energy: 0, comfort: 0, notes: "", inventory: [],
       projects: [], posts: [], manualAdjustments: { security: 0, energy: 0, comfort: 0 }, baseCapacity: withShelter ? 8 : 0 },
     log: [],
@@ -320,7 +333,7 @@ export function establishShelter(state: GameState, key: string, manifest: Shelte
       transportShelterStock(state.shelter, destination, { stocks: {
         food: state.shelter.food, water: state.shelter.water, medications: state.shelter.medications,
         pistolAmmo: state.shelter.pistolAmmo, fuel: state.shelter.fuel, parts: state.shelter.parts,
-      }, itemIds: (state.shelter.inventory ?? []).map(item => item.id), residents: state.shelter.residents,
+      }, ammoStocks: Object.fromEntries(ammunitionTypes.map(type => [type, shelterAmmoCount(state.shelter, type)])) as Partial<Record<AmmunitionType, number>>, itemIds: (state.shelter.inventory ?? []).map(item => item.id), residents: state.shelter.residents,
         npcIds: residentNpcs(state, null).map(npc => npc.id) });
       transportShelterNpcs(state, null, key, residentNpcs(state, null).map(npc => npc.id));
       state.shelter = destination;
@@ -338,9 +351,30 @@ export function establishShelter(state: GameState, key: string, manifest: Shelte
 }
 
 const stockKeys = ["food", "water", "medications", "pistolAmmo", "fuel", "parts"] as const;
+
+export function shelterAmmoCount(shelter: ShelterState, type: AmmunitionType) {
+  if (type === "Pistola") return Math.max(0, Math.trunc(shelter.ammoStocks?.Pistola ?? shelter.pistolAmmo ?? 0));
+  return Math.max(0, Math.trunc(shelter.ammoStocks?.[type] ?? 0));
+}
+export function setShelterAmmoCount(shelter: ShelterState, type: AmmunitionType, value: number) {
+  const count = Math.max(0, Math.min(99, Math.trunc(value)));
+  shelter.ammoStocks ??= {};
+  shelter.ammoStocks[type] = count;
+  if (type === "Pistola") shelter.pistolAmmo = count;
+}
+export function normalizeShelterAmmo(shelter: ShelterState) {
+  shelter.ammoStocks ??= {};
+  for (const type of ammunitionTypes) {
+    if (shelter.ammoStocks[type] === undefined) shelter.ammoStocks[type] = type === "Pistola" ? Math.max(0, shelter.pistolAmmo ?? 0) : 0;
+  }
+  shelter.pistolAmmo = shelter.ammoStocks.Pistola ?? 0;
+  return shelter;
+}
 function emptyShelter(hex: string | null, name: string): ShelterState {
   return { hex, name, capacity: hex ? 8 : 0, residents: 0, food: 0, water: 0,
-    medications: 0, pistolAmmo: 0, fuel: 0, parts: 0, security: hex ? 1 : 0,
+    medications: 0, pistolAmmo: 0, fuel: 0, parts: 0,
+    ammoStocks: { Pistola: 0, Espingarda: 0, Carabina: 0, Flechas: 0, Virotes: 0, Chumbinhos: 0, Outra: 0 },
+    security: hex ? 1 : 0,
     energy: 0, comfort: 0, notes: "", inventory: [], provisionLots: [], projects: [], posts: [],
     manualAdjustments: { security: 0, energy: 0, comfort: 0 }, baseCapacity: hex ? 8 : 0 };
 }
@@ -348,6 +382,9 @@ function validManifest(source: ShelterState, manifest: ShelterManifest) {
   return stockKeys.every(key => {
     const qty = manifest.stocks?.[key] ?? 0;
     return Number.isInteger(qty) && qty >= 0 && qty <= source[key];
+  }) && ammunitionTypes.every(type => {
+    const qty = manifest.ammoStocks?.[type] ?? 0;
+    return Number.isInteger(qty) && qty >= 0 && qty <= shelterAmmoCount(source, type);
   }) && Number.isInteger(manifest.residents ?? 0) && (manifest.residents ?? 0) >= 0
     && (manifest.residents ?? 0) <= source.residents
     && (manifest.itemIds ?? []).every(id => source.inventory?.some(item => item.id === id));
@@ -356,7 +393,19 @@ function transportShelterStock(source: ShelterState, target: ShelterState, manif
   for (const key of stockKeys) {
     const qty = manifest.stocks?.[key] ?? 0;
     if (key === "food" || key === "water") transferPortionLots(source, target, key, qty);
-    else { source[key] -= qty; target[key] += qty; }
+    else if (key === "pistolAmmo") {
+      // Legacy manifests may still move pistolAmmo directly. New UI uses ammoStocks.
+      if (!manifest.ammoStocks?.Pistola && qty > 0) {
+        setShelterAmmoCount(source, "Pistola", shelterAmmoCount(source, "Pistola") - qty);
+        setShelterAmmoCount(target, "Pistola", shelterAmmoCount(target, "Pistola") + qty);
+      }
+    } else { source[key] -= qty; target[key] += qty; }
+  }
+  for (const type of ammunitionTypes) {
+    const qty = manifest.ammoStocks?.[type] ?? 0;
+    if (!qty) continue;
+    setShelterAmmoCount(source, type, shelterAmmoCount(source, type) - qty);
+    setShelterAmmoCount(target, type, shelterAmmoCount(target, type) + qty);
   }
   const residents = manifest.residents ?? 0;
   source.residents -= residents; target.residents += residents;
@@ -461,7 +510,8 @@ export function survivorStats(s: Survivor) {
   const modifiers = equipmentModifiers(s);
   const level = Math.max(1, Math.trunc(s.level ?? 1));
   const bagBonus: Record<string, number> = { "Bolsa tiracolo": 1, "Mochila urbana": 2, "Mochila de trilha": 3, "Mochila cargueira": 4 };
-  const capacity = 3 + (bagBonus[s.bag] ?? 0)
+  const transportBonus = s.transport === "Carrinho dobrável" ? 4 : 0;
+  const capacity = 3 + (bagBonus[s.bag] ?? 0) + transportBonus
     + (s.specialty === "Carregador" ? 1 : 0)
     + (s.techniques.includes("Carga bem distribuída") ? 1 : 0);
   const foodInItems = groupedProvisionPortions(s.inventory, "food");
@@ -470,8 +520,8 @@ export function survivorStats(s: Survivor) {
   const firearm = ammoType !== null && (s.ammoType ?? ammoType) === ammoType;
   const load = {
     items: s.inventory.reduce((sum, item) => sum + Math.max(0, item.load) * Math.max(0, item.qty), 0),
-    food: Math.floor(Math.max(0, s.food + foodInItems) / 4),
-    water: Math.floor(Math.max(0, s.water + waterInItems) / 4),
+    food: Math.max(0, Math.ceil((Math.max(0, s.food + foodInItems) - 2) / 4)),
+    water: Math.max(0, Math.ceil((Math.max(0, s.water + waterInItems) - 2) / 4)),
     ammo: Math.max(0, s.ammo - (firearm ? 1 : 0)),
     personal: s.personal === "Kit médico de campo" || s.personal === "Kit de ferramentas de trabalho" ? 1 : 0,
   };
@@ -487,7 +537,8 @@ export function initialSurvivor(input: Omit<Survivor,
   "id" | "portrait" | "level" | "proficiency" | "bag" | "hp" | "armorMarked" | "stress" | "hope" | "infection" | "exposureDeadline" | "treatmentAttempted" |
   "terminalScenes" | "food" | "water" | "ammo" | "inventory" | "notes">): Survivor {
   return { ...input, id: createId(), level: 1, proficiency: 1, bag: input.personal === "Mochila urbana" ? "Mochila urbana" : "",
-    ammoType: ["Pistola", "Revólver"].includes(input.primary) ? "Pistola" : ["Espingarda", "Carabina"].includes(input.primary) ? input.primary : "Indefinida",
+    outfit: input.outfit ?? "", transport: input.transport ?? "",
+    ammoType: weaponAmmoType(input.primary) ?? "Indefinida",
     hp: 0, armorMarked: 0, stress: 0, hope: 2,
     infection: "Saudável", exposureDeadline: null, treatmentAttempted: false,
     terminalScenes: 3, food: 1, water: 1,
