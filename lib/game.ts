@@ -120,7 +120,19 @@ export type ShelterProject = {
   repairProgress?: number;
   requiredRepairProgress?: number;
   repairCostsPaid?: boolean;
-  /** Turno de trabalho já programado. O relógio geral da campanha conclui o turno automaticamente. */
+  /** NPCs designados pelo mestre para a equipe da obra. */
+  survivorWorkerIds?: string[];
+  /** Turnos pessoais dos sobreviventes jogadores. São independentes do turno dos NPCs. */
+  volunteerShifts?: {
+    survivorId: string;
+    startDay: number;
+    startMinute: number;
+    durationMinutes: number;
+    endAbsoluteMinute: number;
+    points: number;
+    repairing: boolean;
+  }[];
+  /** Turno de trabalho já programado para a equipe de NPCs. O relógio geral conclui automaticamente. */
   workShift?: {
     startDay: number;
     startMinute: number;
