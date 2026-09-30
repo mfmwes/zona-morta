@@ -1,5 +1,6 @@
 import content from "./content.json";
-import type { GameState, HexState } from "./game";
+import type { GameState, HexState, InventoryItem, Survivor } from "./game";
+import { createId } from "./id";
 import { normalizeShelter } from "./shelter-projects";
 
 export type Sector = { id: string; name: string; border: string; invites: string[] };
@@ -74,6 +75,37 @@ export function preserveKnownSectors(state: GameState) {
     npc.active ??= true;
     npc.accompaniesSurvivorIds ??= [];
   }
+  for (const survivor of state.survivors ?? []) {
+    survivor.inventory ??= [];
+    const legacy = survivor as Survivor & {
+      transport?: string;
+      equippedItems?: Record<string, InventoryItem>;
+      kitCondition?: Record<string, string>;
+    };
+    if (legacy.transport === "Carrinho dobrável"
+      && !survivor.inventory.some(item => item.name === "Carrinho dobrável")) {
+      const previous = legacy.equippedItems?.transport;
+      survivor.inventory.push({
+        ...(previous ?? {}),
+        id: previous?.id ?? createId(),
+        name: "Carrinho dobrável",
+        load: 1,
+        qty: 1,
+        condition: previous?.condition ?? legacy.kitCondition?.transport ?? "Íntegro",
+        category: previous?.category ?? "Abrigo, transporte e mochilas",
+        cartDeployed: false,
+        cartItems: [],
+      });
+    }
+    delete legacy.transport;
+    if (legacy.equippedItems) delete legacy.equippedItems.transport;
+    if (legacy.kitCondition) delete legacy.kitCondition.transport;
+    for (const cart of survivor.inventory.filter(item => item.name === "Carrinho dobrável")) {
+      cart.cartDeployed ??= false;
+      cart.cartItems ??= [];
+    }
+  }
+
   // Older campaigns had a shelter in the central gym, without an explicit location.
   const previousShelter = state.shelter as GameState["shelter"] & { hex?: string | null };
   if (previousShelter && previousShelter.hex === undefined) previousShelter.hex = "0,0";
