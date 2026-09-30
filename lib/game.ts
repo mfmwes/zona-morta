@@ -504,6 +504,22 @@ export function recoverFormerStock(state: GameState, hex: string, receiverId: st
   return true;
 }
 
+
+export function recoverFormerAmmo(state: GameState, hex: string, receiverId: string, type: AmmunitionType, quantity: number) {
+  const site = state.formerShelters?.find(s => s.hex === hex);
+  const receiver = state.survivors.find(s => s.id === receiverId);
+  if (!site || !receiver || survivorHex(state, receiver) !== hex || !Number.isInteger(quantity) || quantity < 1) return false;
+  const available = shelterAmmoCount(site, type);
+  if (available < quantity || receiver.ammo + quantity > 99) return false;
+  const currentType = receiver.ammoType ?? "Indefinida";
+  if (receiver.ammo > 0 && currentType !== type) return false;
+  setShelterAmmoCount(site, type, available - quantity);
+  receiver.ammo += quantity;
+  receiver.ammoType = type;
+  addLog(state, "provisões", `${receiver.name} recuperou ${quantity} carga(s) de ${type} da antiga base no hex ${hex}.`, receiver.id);
+  return true;
+}
+
 export function survivorStats(s: Survivor) {
   const archetype = content.archetypes.find(a => a.name === s.archetype);
   const armor = getProtection(s.protection);
