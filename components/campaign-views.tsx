@@ -273,7 +273,7 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
       </TabsContent>
 
       <TabsContent value="construction" className="shelter-tab-content">
-        <section className="panel panel-pad"><ShelterProjectsManager game={game} edit={edit} playerPreview={playerPreview} /></section>
+        <ShelterProjectsManager game={game} edit={edit} playerPreview={playerPreview} />
       </TabsContent>
 
       <TabsContent value="routine" className="shelter-tab-content">
