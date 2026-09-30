@@ -24,8 +24,11 @@ import { Pick } from "@/components/game-controls";
 import { addLog, displayTime, type GameState, type ShelterProject, type ShelterState } from "@/lib/game";
 import {
   cancelShelterWorkShift,
+  cancelSurvivorWorkShift,
   canVolunteer,
   createShelterProject,
+  joinShelterProjectAsSurvivor,
+  leaveShelterProjectAsSurvivor,
   markProjectDamaged,
   projectAssignmentIssue,
   projectDefinition,
@@ -37,12 +40,15 @@ import {
   projectProgress,
   projectWorkPreview,
   scheduleShelterWorkShift,
+  scheduleSurvivorWorkShift,
   shelterBlueprintSlots,
   shelterMetrics,
   shelterPosts,
   shelterPower,
   shelterProjectCatalog,
   shelterRecommendations,
+  survivorShelterCapabilities,
+  survivorWorkPreview,
   startProject,
   startRepair,
 } from "@/lib/shelter-projects";
@@ -85,7 +91,7 @@ function projectLocation(project?: ShelterProject) {
   return shelterBlueprintSlots.find(slot => slot.id === project.slotId)?.label ?? project.slotId;
 }
 
-export function ShelterProjectsManager({ game, edit, playerPreview }: { game: GameState; edit: Edit; playerPreview: boolean }) {
+export function ShelterProjectsManager({ game, edit, playerPreview, playerSurvivorId }: { game: GameState; edit: Edit; playerPreview: boolean; playerSurvivorId?: string | null }) {
   const shelter = game.shelter;
   const recommendations = shelterRecommendations(game, shelter);
   const [filter, setFilter] = useState<CatalogFilter>("Recomendados");
@@ -103,6 +109,12 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
   const selectedProject = projectFor(shelter, selectedDefinition.key);
   const selectedProgress = selectedProject ? projectProgress(selectedProject) : null;
   const selectedPreview = selectedProject?.state === "Em construção" ? projectWorkPreview(game, shelter, selectedProject) : null;
+  const playerSurvivor = playerSurvivorId ? game.survivors.find(person => person.id === playerSurvivorId) : undefined;
+  const playerJoined = Boolean(selectedProject && playerSurvivorId && (selectedProject.survivorWorkerIds ?? []).includes(playerSurvivorId));
+  const playerShift = selectedProject && playerSurvivorId
+    ? (selectedProject.volunteerShifts ?? []).find(shift => shift.survivorId === playerSurvivorId)
+    : undefined;
+  const playerWork = selectedProject && playerSurvivorId ? survivorWorkPreview(game, selectedProject, playerSurvivorId) : null;
   const dependencyIssue = projectDependencyIssue(shelter, selectedDefinition.key);
   const placementIssue = selectedProject ? projectPlacementIssue(shelter, selectedProject) : null;
   const peopleAtBase = game.npcs.filter(npc => npc.active && npc.status !== "Morto" && npc.status !== "Desaparecido" && npc.hex === shelter.hex);
@@ -174,8 +186,8 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
   }
 
   function begin(project: ShelterProject) {
-    if (!project.responsibleId && !(project.helperIds ?? []).length) {
-      toast.error("Defina a equipe primeiro", { description: "Escolha ao menos uma pessoa para trabalhar nesta obra antes de iniciá-la." });
+    if (!project.responsibleId && !(project.helperIds ?? []).length && !(project.survivorWorkerIds ?? []).length) {
+      toast.error("Defina a equipe primeiro", { description: "Escolha um NPC ou aguarde um jogador se oferecer para trabalhar nesta obra." });
       return;
     }
     let issue: string | null = null;
@@ -217,6 +229,48 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
       if (target) cancelShelterWorkShift(draft, target);
     });
     toast("Turno cancelado.");
+  }
+
+  function joinAsPlayer(project: ShelterProject) {
+    if (!playerSurvivorId) return;
+    let issue: string | null = null;
+    edit(draft => {
+      const target = projectFor(draft.shelter, project.key);
+      if (target) issue = joinShelterProjectAsSurvivor(draft, target, playerSurvivorId);
+    });
+    if (issue) toast.error("Não foi possível entrar na equipe", { description: issue });
+    else toast.success("Você entrou na equipe", { description: `Agora você pode trabalhar em ${project.name} quando a obra estiver iniciada.` });
+  }
+
+  function leaveAsPlayer(project: ShelterProject) {
+    if (!playerSurvivorId) return;
+    let issue: string | null = null;
+    edit(draft => {
+      const target = projectFor(draft.shelter, project.key);
+      if (target) issue = leaveShelterProjectAsSurvivor(draft, target, playerSurvivorId);
+    });
+    if (issue) toast.error("Não foi possível sair da equipe", { description: issue });
+    else toast("Você saiu da equipe da obra.");
+  }
+
+  function schedulePlayerShift(project: ShelterProject) {
+    if (!playerSurvivorId) return;
+    let result: ReturnType<typeof scheduleSurvivorWorkShift> | null = null;
+    edit(draft => {
+      const target = projectFor(draft.shelter, project.key);
+      if (target) result = scheduleSurvivorWorkShift(draft, target, playerSurvivorId, 4);
+    });
+    if (!result?.ok) toast.error("Turno não programado", { description: result?.message ?? "Verifique sua posição e o horário." });
+    else toast.success("Seu turno foi programado", { description: result.message });
+  }
+
+  function cancelPlayerShift(project: ShelterProject) {
+    if (!playerSurvivorId) return;
+    edit(draft => {
+      const target = projectFor(draft.shelter, project.key);
+      if (target) cancelSurvivorWorkShift(target, playerSurvivorId);
+    });
+    toast("Seu turno foi cancelado.");
   }
 
   function setProjectResponsible(project: ShelterProject, id: string) {
