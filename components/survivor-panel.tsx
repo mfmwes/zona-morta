@@ -119,14 +119,19 @@ function RestPlanner({ game, edit, selected, playerMode, playerPreview, restPeer
   const canResolve = !personalPlanning;
   const actors = personalPlanning ? [selected] : game.survivors;
   const peers = playerMode
-    ? (restPeers.some(person => person.id === selected.id) ? restPeers : [{ id: selected.id, name: selected.name }, ...restPeers])
-    : game.survivors.map(person => ({ id: person.id, name: person.name }));
-  const targetOptions = peers.map(person => ({ value: person.id, label: person.name }));
+    ? (restPeers.some(person => person.id === selected.id)
+      ? restPeers
+      : [{ id: selected.id, name: selected.name, hex: survivorHex(game, selected) }, ...restPeers])
+    : game.survivors.map(person => ({ id: person.id, name: person.name, hex: survivorHex(game, person) }));
+  const targetsFor = (person: Survivor) => peers
+    .filter(peer => (peer.hex ?? game.partyHex) === survivorHex(game, person))
+    .map(peer => ({ value: peer.id, label: peer.name }));
 
   function defaultChoices(person: Survivor, nextKind: RestKind): [RestChoice, RestChoice] {
     const planned = person.restPlan;
+    const targetIds = new Set(targetsFor(person).map(option => option.value));
     if (planned?.kind === nextKind && planned.choices.length === 2 && planned.choices.every(choice =>
-      restActionsFor(nextKind).includes(choice.action as RestAction) && peers.some(peer => peer.id === choice.targetId))) {
+      restActionsFor(nextKind).includes(choice.action as RestAction) && targetIds.has(choice.targetId))) {
       return planned.choices as [RestChoice, RestChoice];
     }
     const action = restActionsFor(nextKind)[0]!;
@@ -171,7 +176,7 @@ function RestPlanner({ game, edit, selected, playerMode, playerPreview, restPeer
   }
 
   return <section className="character-surface character-rest-panel"><SectionHeading index="04" title={personalPlanning ? "Seu descanso" : "Descanso da mesa"} aside={<span className="character-micro">2 AÇÕES POR PESSOA</span>} />
-    <p className="character-section-intro">Curto recupera recursos com d4+1; longo limpa o recurso escolhido. Cada ação pode beneficiar você ou outra pessoa da equipe. Preparar concede Hope automaticamente.</p>
+    <p className="character-section-intro">Curto recupera recursos com d4+1; longo limpa o recurso escolhido. Cada ação pode beneficiar você ou outra pessoa no mesmo hex. Preparar concede Hope automaticamente.</p>
     <div className="character-rest-actions"><Button size="sm" variant="outline" disabled={!actors.length} onClick={() => begin("short")}><Moon size={16} /> Descanso curto</Button>
       <Button size="sm" disabled={!actors.length} onClick={() => begin("long")}><Moon size={16} /> Descanso longo</Button></div>
     {personalPlanning && selected.restPlan && <p className="character-rest-status">Escolhas de descanso {selected.restPlan.kind === "short" ? "curto" : "longo"} registradas. Você pode alterá-las antes da conclusão.</p>}
@@ -181,7 +186,8 @@ function RestPlanner({ game, edit, selected, playerMode, playerPreview, restPeer
       <div className="rest-planner-list">{actors.map(person => {
         const selectedChoices = choices[person.id] ?? defaultChoices(person, kind);
         const options = restActionsFor(kind).map(action => ({ value: action, label: restActionLabels[action] }));
-        return <div className="rest-planner-row" key={person.id}><b>{person.name}</b><div className="rest-planner-choices">
+        const targetOptions = targetsFor(person);
+        return <div className="rest-planner-row" key={person.id}><b>{person.name} · Hex {survivorHex(game, person)}</b><div className="rest-planner-choices">
           {[0, 1].map(index => <div className="rest-planner-action" key={index}>
             <span className="rest-planner-action-title">{index === 0 ? "AÇÃO 1" : "AÇÃO 2"}</span>
             <Pick label="O que fazer" value={selectedChoices[index as 0 | 1].action} options={options} onChange={value => updateChoice(person.id, index as 0 | 1, "action", value)} />
@@ -204,7 +210,8 @@ function AbilityUseControl({ game, edit, survivorId, abilityId, name, effect, ho
   const [context, setContext] = useState("");
   const person = game.survivors.find(s => s.id === survivorId);
   const placeOrPatient = period === "place" || period === "patient";
-  const target = period === "place" && !context.trim() ? `hex ${game.partyHex}` : context;
+  const currentHex = person ? survivorHex(game, person) : game.partyHex;
+  const target = period === "place" && !context.trim() ? `hex ${currentHex}` : context;
   const available = abilityAvailable(game, survivorId, abilityId, effect, target);
   const canPay = person && (cost === "free" || cost === "hope1" && person.hope >= 1 || cost === "hope3" && person.hope >= 3 ||
     cost === "stress1" && person.stress < 6 || cost === "armor1" && (person.armorMarked ?? 0) < survivorStats(person).armor);
@@ -226,7 +233,7 @@ function AbilityUseControl({ game, edit, survivorId, abilityId, name, effect, ho
       <p className="character-rule-note">{effect}</p>
       {period && <p className="inventory-hint"><b>Limite:</b> {periodLabels[period]}{period === "place" ? " identificado abaixo" : period === "patient" ? /durante um descanso curto/i.test(effect) ? " por descanso curto" : " por cena" : ""}.</p>}
       {placeOrPatient && <Field label={period === "patient" ? "Nome do paciente" : "Hex ou local da descoberta"} value={context}
-        onChange={setContext} placeholder={period === "patient" ? "Ex.: Joana" : `hex ${game.partyHex}`} />}
+        onChange={setContext} placeholder={period === "patient" ? "Ex.: Joana" : `hex ${currentHex}`} />}
       {costs.length > 1 && <Pick label="Custo desta opção" value={cost} options={costs.map(value => ({ value, label: costLabels[value] }))} onChange={value => setCost(value as AbilityCost)} />}
       {costs.length === 1 && <p className="inventory-hint"><b>Custo:</b> {costLabels[cost]}.</p>}
       {!available && <p className="inventory-danger" role="status">Esta habilidade já foi usada neste período ou neste alvo/local.</p>}
