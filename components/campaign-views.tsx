@@ -16,7 +16,7 @@ import { FormerShelterProjects, ShelterProjectsManager } from "@/components/shel
 import { ammunitionTypes, content, establishShelter, recoverFormerAmmo, recoverFormerStock, setShelterAmmoCount, shelterAmmoCount, shelterPopulationBreakdown, survivorPositionGroups, survivorsAtHex, type GameState } from "@/lib/game";
 import { shelterMetrics } from "@/lib/shelter-projects";
 import { atSharedStorage, catalogForItem } from "@/lib/inventory";
-import { provisionBreakdown, provisionDisplay, provisionItemInfo } from "@/lib/provision-items";
+import { provisionBreakdown, provisionDisplay, provisionItemInfo, provisionShelfLabel } from "@/lib/provision-items";
 import { adjustProvisionCount } from "@/lib/provisions";
 import { createId } from "@/lib/id";
 
@@ -253,7 +253,7 @@ export function ReferencePanel() {
             </button></DialogTrigger>
             <DialogContent className="reference-detail"><DialogHeader><p className="dossier-title">{item.category}</p><DialogTitle>{item.name}</DialogTitle>
               <DialogDescription>Dados completos do item no apêndice da campanha.</DialogDescription></DialogHeader>
-              <dl>{item.fields.filter(field => field.value).map((field,i) => <div key={i}><dt>{field.label}</dt><dd>{field.value}</dd></div>)}</dl>
+              <dl>{item.fields.filter(field => field.value).map((field,i) => <div key={i}><dt>{field.label}</dt><dd>{field.label === "Prazo" ? provisionShelfLabel(field.value) : field.value}</dd></div>)}</dl>
             </DialogContent>
           </Dialog>)}
         </div>
