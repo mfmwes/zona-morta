@@ -337,21 +337,37 @@ html[data-theme="dark"] .gm-tools-trigger:hover { color: #c9e7de; }
 html[data-theme="dark"] .hex-presence-card,
 html[data-theme="dark"] .survivor-move-route,
 html[data-theme="dark"] .survivor-move-person,
-html[data-theme="dark"] .map-group-summary > span {
+html[data-theme="dark"] .map-group-chip,
+html[data-theme="dark"] .map-active-group {
   border-color: #405650;
   background: #202d2c;
   color: #d9e5df;
 }
 html[data-theme="dark"] .hex-presence-card span,
 html[data-theme="dark"] .survivor-move-route small,
-html[data-theme="dark"] .survivor-move-person small { color: #aebfba; }
+html[data-theme="dark"] .survivor-move-person small,
+html[data-theme="dark"] .map-group-chip small,
+html[data-theme="dark"] .map-active-group small,
+html[data-theme="dark"] .map-active-group em { color: #aebfba; }
 html[data-theme="dark"] .survivor-move-route b { color: #e2eee8; }
 html[data-theme="dark"] .survivor-move-route span { color: #8fbdb2; }
 html[data-theme="dark"] .survivor-move-person:has(input:checked) {
   border-color: #68968c;
   background: #263a37;
 }
-html[data-theme="dark"] .map-group-summary > span { color: #bdd4cd; }
+html[data-theme="dark"] .map-group-chip:hover { border-color:#66847d; background:#263634; }
+html[data-theme="dark"] .map-group-chip.is-active {
+  border-color:#b28e55;
+  background:#3a3326;
+  color:#f1dfba;
+  box-shadow:0 0 0 2px #c49c5c24;
+}
+html[data-theme="dark"] .map-group-chip.is-active small { color:#d2ba8f; }
+html[data-theme="dark"] .map-active-group {
+  border-left-color:#c59b5c;
+  background:#1f2c2b;
+}
+html[data-theme="dark"] .map-active-group-icon { background:#2d403d; color:#b6d9cf; }
 html[data-theme="dark"] .table-chat { border-color: #354846; background: #131b1c; color: #e2ebe5; }
 html[data-theme="dark"] .table-chat-header,
 html[data-theme="dark"] .table-chat-composer { border-color: #354846; background: #192324; }
