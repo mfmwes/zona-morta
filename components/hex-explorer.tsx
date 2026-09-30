@@ -333,7 +333,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
             {!playerPreview && <>
               <Button size="sm" variant="ghost" className="mt-2" disabled={actualMembersHere.length === 0} onClick={() => startSearch(point)}><Search /> Buscar itens</Button>
               {actualMembersHere.length === 0 && <p className="text-xs subtle mt-1">É preciso haver pelo menos um sobrevivente neste hex para buscar. Os registros anteriores continuam disponíveis.</p>}
-              {searchId === point.id && <div className="grid gap-3 mt-3 rounded-md border border-[#bbd3ce] bg-[#edf3f0] p-4">
+              {searchId === point.id && <div className="hex-search-panel grid gap-3 mt-3 rounded-md border border-[#bbd3ce] bg-[#edf3f0] p-4">
                 <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Tipo de busca">
                   <Button size="sm" variant={searchMode === "specific" ? "default" : "outline"} aria-pressed={searchMode === "specific"}
                     onClick={() => { setSearchMode("specific"); setSearchResult(""); setRolledLoot(null); }}>Específica</Button>
@@ -363,7 +363,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
                     aria-pressed={searchMinutes === minutes} onClick={() => setSearchMinutes(minutes)}>
                     {minutes === 30 ? "30 min" : "1 hora"}</Button>)}
                 </div>
-                <div><button type="button" className="text-sm font-bold text-[#276f72] underline underline-offset-2"
+                <div><button type="button" className="hex-search-sector-link text-sm font-bold text-[#276f72] underline underline-offset-2"
                   onClick={() => { setOtherSector(value => !value); setSearchSector(""); }}>
                   {otherSector ? "Usar este ponto como setor" : "Buscar em outro setor deste ponto"}</button>
                   {otherSector && <div className="mt-2"><Field label="Qual setor diferente?" value={searchSector}
