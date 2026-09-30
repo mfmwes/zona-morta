@@ -7,11 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Counter, Field, Pick } from "@/components/game-controls";
 import { ItemArt } from "@/components/item-art";
-import { addLog, survivorHex, survivorStats, type EquipmentSlot, type GameState, type InventoryItem } from "@/lib/game";
+import { addLog, shelterAmmoCount, survivorHex, survivorStats, type AmmunitionType, type EquipmentSlot, type GameState, type InventoryItem } from "@/lib/game";
 import { createId } from "@/lib/id";
-import { addStack, ammoTypeFor, atSharedStorage, catalogForItem, catalogItems, catalogKey, compatibleSlots, conditions,
+import { addStack, ammoTypeFor, ammoTypes, atSharedStorage, catalogForItem, catalogItemIsConsumable, catalogItems, catalogKey, compatibleSlots, conditions,
   container, countsAsMedication, displacedSlots, equipItem, inventoryCategories, itemFromCatalog,
-  provisionInfo, provisionTransferError, slotLabels, transferItem, transferProvisions } from "@/lib/inventory";
+  provisionInfo, provisionPreparationCheck, provisionTransferError, slotLabels, transferItem, transferProvisions } from "@/lib/inventory";
 import { performItemAction } from "@/lib/item-actions";
 import { provisionDisplay, provisionItemInfo } from "@/lib/provision-items";
 import { provisionConsumedToday, type DailyResource } from "@/lib/survival";
@@ -132,8 +132,9 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
   const consumer = game.survivors.find(person => person.id === consumerId);
   const alreadyConsumed = Boolean(consumer && provisionState.resource
     && provisionConsumedToday(game, consumer, provisionState.resource as DailyResource));
-  const canUse = current?.category === "Medicamentos e cuidado"
-    && !["Kit médico de campo", "Termômetro", "Tala e faixa", "Máscara respiratória com filtro"].includes(item.name);
+  const canUse = catalogItemIsConsumable(item);
+  const preparationCheck = provisionState.resource && !provisionState.ready
+    ? provisionPreparationCheck(game, ownerId, item, count) : null;
   const stockResource = item.category === "Suprimentos abstratos"
     ? ({ "Medicamentos (1 unidade)": "medications", "Combustível (1 unidade)": "fuel", "Peças (1 unidade)": "parts" } as const)[item.name as "Medicamentos (1 unidade)" | "Combustível (1 unidade)" | "Peças (1 unidade)"] : undefined;
   let loadPreview: { name: string; carried: number; capacity: number } | null = null;
@@ -228,11 +229,14 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
           label: s.name + (provisionState.resource && provisionConsumedToday(game, s, provisionState.resource as DailyResource) ? " · já consumiu hoje" : ""),
         }))} onChange={setTargetId} />}
         {alreadyConsumed && <p className="inventory-hint inventory-warning">A necessidade diária deste recurso já foi registrada para {consumer?.name}. Consumir novamente gastará uma porção extra.</p>}</>}
-      {mode === "prepare" && <p className="inventory-hint">{provisionState.requiresVerification
-        ? "Registre apenas depois de identificar/tratar a água na ficção. O recipiente continua no inventário."
-        : `Preparo: ${provision.preparation ?? "resolver em cena"}. Depois de preparado, o alimento continua físico; quando aplicável, passa a vencer no próximo amanhecer.`}</p>}
-      {mode === "use" && <p className="inventory-hint">Desconta a unidade. Consulte o efeito no catálogo e aplique em cena; não adiciona Medicamentos abstratos ao estoque.</p>}
-      {mode === "medication" && <p className="inventory-hint">Cada unidade deste item vira 1 Medicamentos nas reservas compartilhadas. O objeto sai da lista para evitar contagem dupla.</p>}
+      {mode === "prepare" && <div className="grid gap-2">
+        <p className="inventory-hint">{provisionState.requiresVerification
+          ? "A verificação agora respeita o método indicado no catálogo; água insegura pode exigir filtro, pastilhas ou fervura."
+          : `Preparo: ${provision.preparation ?? "resolver em cena"}. Água, utensílios e fonte de calor são descontados/verificados quando exigidos.`}</p>
+        {preparationCheck && <p className={`inventory-hint ${preparationCheck.ok ? "" : "inventory-danger"}`} role="status">{preparationCheck.message}</p>}
+      </div>}
+      {mode === "use" && <p className="inventory-hint">Consumível: desconta a unidade ao confirmar. Consulte o efeito no catálogo e aplique em cena; não cria outro recurso automaticamente.</p>}
+      {mode === "medication" && <p className="inventory-hint">Cada unidade vira 1 Medicamentos nas reservas compartilhadas. Bolsa e estojo de antissepsia são consumidos; Caixa clínica completa deixa um Kit médico de campo reutilizável.</p>}
       {mode === "stock" && <p className="inventory-hint">Cada unidade física vira uma unidade nas reservas compartilhadas. O objeto sai do inventário para evitar contagem dupla.</p>}
       {mode === "discard" && <p className="inventory-hint inventory-danger">{confirmDiscard ? "Confirmar: as unidades serão retiradas da ficha e o descarte aparecerá no registro." : "Deixar para trás retira o item sem criar uma reserva nova no mapa."}</p>}
       {!["equip", "edit", "consume"].includes(mode) && <Counter label="Unidades" value={count} min={1} max={item.qty} onChange={setAmount} compact />}
@@ -240,7 +244,7 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
       <DialogFooter><Button variant="outline" onClick={close}>Cancelar</Button>
         <Button variant={mode === "discard" ? "destructive" : "default"} disabled={(mode === "transfer" && !destination) || (mode === "equip" && !selectedSlot)
           || (mode === "consume" && (!provisionState.ready || (ownerId === "shared" && !consumerId)))
-          || (mode === "prepare" && !(provisionState.requiresPreparation || provisionState.requiresVerification))
+          || (mode === "prepare" && (!(provisionState.requiresPreparation || provisionState.requiresVerification) || preparationCheck?.ok === false))
           || (mode === "medication" && game.shelter.medications + count > 99)
           || (mode === "stock" && (!stockResource || game.shelter[stockResource] + count > 99))} onClick={perform}>
           {mode === "edit" ? "Salvar alterações" : mode === "transfer" ? "Transferir" : mode === "equip" ? "Equipar"
@@ -251,6 +255,58 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
 }
 
 export function ProvisionTransferDialog({ game, edit, survivorId }: { game: GameState; edit: Edit; survivorId: string }) {
+  const [open, setOpen] = useState(false);
+  const [resource, setResource] = useState<"food" | "water" | "ammo">("food");
+  const [from, setFrom] = useState(survivorId);
+  const [to, setTo] = useState("shared");
+  const [amount, setAmount] = useState(1);
+  const [ammoKind, setAmmoKind] = useState<AmmunitionType>("Pistola");
+  const choices = [...game.survivors.map(s => ({ value: s.id, label: s.name })),
+    ...(atSharedStorage(game) ? [{ value: "shared", label: ownerName(game, "shared") }] : [])];
+  const sourceId = choices.some(x => x.value === from) ? from : survivorId;
+  const targetId = choices.some(x => x.value === to) && to !== sourceId ? to : choices.find(x => x.value !== sourceId)?.value ?? "";
+  const sourcePerson = game.survivors.find(s => s.id === sourceId);
+  const selectedAmmoType = (sourcePerson ? ammoTypeFor(sourcePerson) : ammoKind) as string;
+  const source = sourceId === "shared"
+    ? resource === "ammo" ? shelterAmmoCount(game.shelter, ammoKind) : game.shelter[resource]
+    : game.survivors.find(s => s.id === sourceId)?.[resource] ?? 0;
+  const count = Math.max(1, Math.min(99, amount));
+  const error = provisionTransferError(game, sourceId, targetId, resource, count, selectedAmmoType);
+  let loadPreview: ReturnType<typeof survivorStats> | null = null;
+  if (!error && targetId !== "shared") {
+    const preview = structuredClone(game);
+    transferProvisions(preview, sourceId, targetId, resource, count, selectedAmmoType);
+    const receiver = preview.survivors.find(s => s.id === targetId);
+    if (receiver) loadPreview = survivorStats(receiver);
+  }
+  function move() {
+    let moved = false;
+    edit(draft => {
+      moved = transferProvisions(draft, sourceId, targetId, resource, count, selectedAmmoType);
+      if (!moved) return;
+      addLog(draft, "provisões", ownerName(draft, sourceId) + " → " + ownerName(draft, targetId) + ": " + count + " " +
+        (resource === "ammo" ? `carga(s) de ${selectedAmmoType}` : resource === "food" ? "porção(ões) de comida" : "porção(ões) de água") + ".");
+    });
+    if (!moved) { toast.error("A transferência não foi concluída. Confira as reservas e tente novamente."); return; }
+    toast.success("Provisões transferidas.", { description: `${ownerName(game, sourceId)} → ${ownerName(game, targetId)}` });
+    setOpen(false); setAmount(1);
+  }
+  return <Dialog open={open} onOpenChange={setOpen}>
+    <DialogTrigger asChild><Button size="sm" variant="outline"><ArrowLeftRight size={16} /> Transferir provisões</Button></DialogTrigger>
+    <DialogContent className="inventory-dialog"><DialogHeader><DialogTitle>Transferir provisões</DialogTitle>
+      <DialogDescription>Move porções soltas ou cargas tipadas entre fichas e reservas compartilhadas. Itens físicos são transferidos pelas ações do próprio item.</DialogDescription></DialogHeader>
+      <Pick label="Recurso" value={resource} options={[{ value: "food", label: "Comida · porções soltas" }, { value: "water", label: "Água · porções soltas" }, { value: "ammo", label: "Munição · cargas" }]} onChange={value => setResource(value as typeof resource)} />
+      <div className="inventory-search"><Pick label="De" value={sourceId} options={choices} onChange={setFrom} />
+        <Pick label="Para" value={targetId} options={choices.filter(x => x.value !== sourceId)} onChange={setTo} /></div>
+      {resource === "ammo" && sourceId === "shared" && <Pick label="Tipo de munição" value={ammoKind} options={ammoTypes} onChange={value => setAmmoKind(value as AmmunitionType)} />}
+      <Counter label={"Quantidade · disponível " + source} value={count} min={1} max={Math.max(1, Math.min(99, source))} onChange={setAmount} compact />
+      {resource === "ammo" && <p className="inventory-hint">Tipo movimentado: <b>{selectedAmmoType}</b>. O depósito mantém contadores separados para cada tipo e não mistura cargas incompatíveis.</p>}
+      {error && <p className="inventory-hint inventory-danger" role="status">{error}</p>}
+      {loadPreview && <div className={`inventory-preview ${loadPreview.carried > loadPreview.capacity ? "inventory-danger" : ""}`}><Backpack size={19} aria-hidden="true" /><span><b>Carga no destino após a transferência</b><small>{loadPreview.carried > loadPreview.capacity ? "Acima da capacidade; redistribua antes de viajar." : "Dentro da capacidade."}</small></span><strong>{loadPreview.carried}/{loadPreview.capacity}</strong></div>}
+      <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button><Button disabled={Boolean(error)} onClick={move}>Transferir</Button></DialogFooter>
+    </DialogContent>
+  </Dialog>;
+}: { game: GameState; edit: Edit; survivorId: string }) {
   const [open, setOpen] = useState(false);
   const [resource, setResource] = useState<"food" | "water" | "ammo">("food");
   const [from, setFrom] = useState(survivorId);
