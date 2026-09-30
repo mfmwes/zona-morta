@@ -111,6 +111,7 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
   const planningDefinition = planningKey ? projectDefinition(planningKey) : null;
   const planningSlot = planningSlotId ? shelterBlueprintSlots.find(slot => slot.id === planningSlotId) : null;
   const occupiedSlots = new globalThis.Map((shelter.projects ?? []).filter(project => project.slotId).map(project => [project.slotId!, project]));
+  const unplacedFacilities = (shelter.projects ?? []).filter(project => projectDefinition(project.key)?.kind === "facility" && !project.slotId);
   const buildLog = game.log.filter(entry => entry.kind === "abrigo").slice(0, 12);
   const scheduledProjects = (shelter.projects ?? []).filter(project => Boolean(project.workShift));
   const slotChoices = planningSlot
@@ -274,6 +275,13 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
       })}</div>
     </section>}
 
+    {unplacedFacilities.length > 0 && <section className="construction-unplaced-alert">
+      <div><AlertTriangle size={18} /><span><b>{unplacedFacilities.length} instalação(ões) sem local definido</b><small>Essas estruturas existem na campanha, mas ainda precisam ser associadas a um espaço da planta.</small></span></div>
+      <div>{unplacedFacilities.map(project => <button type="button" key={project.id} onClick={() => { setSelectedKey(project.key); setPlanningKey(project.key); setPlanningSlotId(null); }}>
+        <span>{project.name}</span><b>Definir local</b>
+      </button>)}</div>
+    </section>}
+
     <section className="construction-active-section">
       <div className="construction-section-heading">
         <div><p className="dossier-title">Agora</p><h3 className="section-title">Projetos ativos</h3></div>
@@ -328,10 +336,14 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
             const compatible = Boolean(planningDefinition && planningDefinition.zone === slot.zone && !occupant);
             const selectedSlot = planningSlotId === slot.id;
             return <button type="button" key={slot.id}
-              disabled={Boolean(occupant) || playerPreview || Boolean(planningDefinition && !compatible)}
-              className={`construction-blueprint-slot is-${slot.zone} ${occupant ? "is-occupied" : ""} ${compatible ? "is-compatible" : ""} ${selectedSlot ? "is-selected" : ""}`}
+              disabled={Boolean(planningDefinition && (!compatible || occupant)) || Boolean(!occupant && playerPreview)}
+              className={`construction-blueprint-slot is-${slot.zone} ${occupant ? "is-occupied" : ""} ${compatible ? "is-compatible" : ""} ${selectedSlot || occupant?.key === selectedKey ? "is-selected" : ""}`}
               onClick={() => {
-                if (planningDefinition && compatible) addProject(planningDefinition.key, slot.id);
+                if (occupant && !planningDefinition) {
+                  setSelectedKey(occupant.key);
+                  setPlanningKey(null);
+                  setPlanningSlotId(null);
+                } else if (planningDefinition && compatible) addProject(planningDefinition.key, slot.id);
                 else if (!planningDefinition && !occupant) { setPlanningSlotId(slot.id); setPlanningKey(null); }
               }}>
               <small>{slot.label}</small>
