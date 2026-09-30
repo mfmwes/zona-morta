@@ -10,6 +10,7 @@ import {
   type GameState,
 } from "./game";
 import { revealSector } from "./sectors";
+import { advanceCampaignTime } from "./time";
 
 export type HexQuickAction =
   | { type: "observe" }
@@ -63,7 +64,7 @@ export function moveSurvivors(game: GameState, destination: string, survivorIds:
   if (game.minutes + travelMinutes >= 1440) return { ok: false, message: "" };
 
   const wholeSourceGroup = people.length === survivorsAtHex(game, sourceHex).length;
-  game.minutes += travelMinutes;
+  if (!advanceCampaignTime(game, travelMinutes).ok) return { ok: false, message: "" };
   for (const person of people) person.hex = destination;
   for (const npc of game.npcs ?? []) {
     if (!npc.active || npc.status === "Morto" || npc.status === "Desaparecido" || npc.hex !== sourceHex) continue;
@@ -142,7 +143,7 @@ export function performHexAction(game: GameState, id: string, action: HexQuickAc
     if (mainGroup.length > 0) return moveSurvivors(game, id, mainGroup.map(person => person.id));
 
     // Compatibilidade com campanhas sem sobreviventes criados.
-    game.minutes += options.travelMinutes;
+    if (!advanceCampaignTime(game, options.travelMinutes).ok) return { ok: false, message: "" };
     game.partyHex = id;
     for (const npc of game.npcs ?? []) {
       if (npc.active && npc.accompaniesParty && npc.status !== "Morto" && npc.status !== "Desaparecido") npc.hex = id;
