@@ -380,6 +380,8 @@ export function survivorWorkPreview(game: GameState, project: ShelterProject, su
   if (operation && ["Concluído", "Danificado"].includes(project.state)) {
     const requirements = operation.capability ? [operation.capability] : [];
     const matches = requirements.filter(capability => capabilities.includes(capability));
+    if (!projectOperational(game, game.shelter, project))
+      return { issue: `A operação exige ${requirements.join(" + ") || "uma equipe válida"} presente no abrigo.`, points: 0, capabilities, matches, purpose: "operation" as const };
     return { issue: null, points: 1 + (matches.length ? 1 : 0), capabilities, matches, purpose: "operation" as const };
   }
   if (project.state !== "Em construção")
