@@ -49,8 +49,15 @@ export function batteryTargets(game: GameState, ownerId: string) {
   return found;
 }
 export function setBatteryState(game: GameState, ownerId: string, itemId: string, battery: "Carregada" | "Descarregada") {
-  const loose = container(game, ownerId)?.find(item => item.id === itemId);
-  if (loose && batteryStateFor(loose)) { loose.battery = battery; return true; }
+  const items = container(game, ownerId);
+  const loose = items?.find(item => item.id === itemId);
+  if (loose && batteryStateFor(loose)) {
+    if (loose.qty > 1 && batteryStateFor(loose) !== battery) {
+      loose.qty -= 1;
+      items!.push({ ...loose, id: createId(), qty: 1, battery });
+    } else loose.battery = battery;
+    return true;
+  }
   if (ownerId === "shared") return false;
   const person = game.survivors.find(entry => entry.id === ownerId);
   const equipped = Object.values(person?.equippedItems ?? {}).find(item => item?.id === itemId);
