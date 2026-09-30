@@ -12,7 +12,8 @@ import { ItemContextMenu } from "@/components/item-context-menu";
 import { ItemArt } from "@/components/item-art";
 import { ShelterMoveDialog } from "@/components/shelter-move";
 import { DayCloseDialog } from "@/components/day-close-dialog";
-import { FormerShelterProjects, ShelterProjectsManager } from "@/components/shelter-project-manager";\nimport { ShelterVisualDashboard } from "@/components/shelter-dashboard";
+import { FormerShelterProjects, ShelterProjectsManager } from "@/components/shelter-project-manager";
+import { ShelterVisualDashboard } from "@/components/shelter-dashboard";
 import { ammunitionTypes, content, establishShelter, recoverFormerAmmo, recoverFormerStock, setShelterAmmoCount, shelterAmmoCount, shelterPopulationBreakdown, survivorPositionGroups, survivorsAtHex, type GameState } from "@/lib/game";
 import { shelterMetrics } from "@/lib/shelter-projects";
 import { atSharedStorage, batteryStateFor, catalogForItem } from "@/lib/inventory";
@@ -32,8 +33,8 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
   const s = game.shelter;
   const hasShelter = s.hex !== null;
   const sharedAccessible = atSharedStorage(game);
-  const currentSector = game.hexes[game.partyHex]?.sector?.name ?? \`Hex \${game.partyHex}\`;
-  const homeSector = s.hex ? game.hexes[s.hex]?.sector?.name ?? \`Hex \${s.hex}\` : null;
+  const currentSector = game.hexes[game.partyHex]?.sector?.name ?? `Hex ${game.partyHex}`;
+  const homeSector = s.hex ? game.hexes[s.hex]?.sector?.name ?? `Hex ${s.hex}` : null;
   const visitedCache = (game.formerShelters ?? []).find(site => Boolean(site.hex && survivorsAtHex(game, site.hex).length > 0));
   const cacheVisitors = visitedCache?.hex ? survivorsAtHex(game, visitedCache.hex) : [];
   const cacheResidents = visitedCache?.hex ? game.npcs.filter(npc => npc.active && npc.status !== "Morto" && npc.status !== "Desaparecido" && npc.home === visitedCache.hex) : [];
@@ -63,10 +64,10 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
       {stocks.map(stock => {
         const provision = stock.key === "food" ? shelterFood : stock.key === "water" ? shelterWater : null;
         return <div key={stock.key} className="metric shelter-resource-card">
-          {provision && <div><span className="smallcaps subtle">{stock.label} disponível</span><strong>{provision.total}</strong><p className="text-xs subtle mt-2">{provision.loose} soltas · {provision.itemsReady} em itens{provision.itemsWaiting ? \` · \${provision.itemsWaiting} aguardando preparo/verificação\` : ""}</p></div>}
+          {provision && <div><span className="smallcaps subtle">{stock.label} disponível</span><strong>{provision.total}</strong><p className="text-xs subtle mt-2">{provision.loose} soltas · {provision.itemsReady} em itens{provision.itemsWaiting ? ` · ${provision.itemsWaiting} aguardando preparo/verificação` : ""}</p></div>}
           {!provision && playerPreview && <div><span className="smallcaps subtle">{stock.label}</span><strong>{String(s[stock.key])}</strong></div>}
           {!playerPreview && <Counter compact editable quickStep={["food", "water"].includes(stock.key) ? 4 : undefined}
-            label={provision ? \`\${stock.label} solta\` : stock.label} value={Number(s[stock.key])} max={stock.max}
+            label={provision ? `${stock.label} solta` : stock.label} value={Number(s[stock.key])} max={stock.max}
             onChange={value => edit(draft => {
               if (stock.key === "food" || stock.key === "water") adjustProvisionCount(draft.shelter, stock.key, value);
               else (draft.shelter[stock.key] as number) = value;
@@ -87,7 +88,7 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
         <p className="text-xs subtle mt-2">carga(s)</p>
       </div>)}
     </div>
-    {(s.provisionLots ?? []).length > 0 && <p className="character-rule-note mt-3">Lotes com prazo: {s.provisionLots!.map(lot => \`\${lot.qty} \${lot.resource === "food" ? "comida" : "água"} (\${lot.label}) → amanhecer do dia \${lot.expiresDay}\`).join(" · ")}.</p>}
+    {(s.provisionLots ?? []).length > 0 && <p className="character-rule-note mt-3">Lotes com prazo: {s.provisionLots!.map(lot => `${lot.qty} ${lot.resource === "food" ? "comida" : "água"} (${lot.label}) → amanhecer do dia ${lot.expiresDay}`).join(" · ")}.</p>}
 
     <div className="divider" />
     <div className="flex items-center justify-between gap-3 flex-wrap"><h3 className="section-title">Itens compartilhados</h3>
@@ -98,7 +99,7 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
       {(s.inventory ?? []).length === 0 ? <p className="character-empty-list">Nenhum objeto guardado no depósito.</p>
         : (s.inventory ?? []).map(item => {
           const provisionState = provisionItemInfo(item);
-          const row = <div className={\`shared-inventory-row \${sharedAccessible && !playerPreview ? "inventory-context-target" : ""}\`}><div className="shared-inventory-entry"><ItemArt name={item.name} category={catalogForItem(item)?.category ?? item.category} /><div><b>{item.name}</b><span>{provisionState.resource ? provisionDisplay(item) : \`\${catalogForItem(item)?.category ?? item.category ?? "Outros"} · \${item.qty}× · carga \${item.load} cada · \${item.condition ?? "sem estado"}\${batteryStateFor(item) ? \` · bateria \${batteryStateFor(item)?.toLowerCase()}\` : ""}\`}</span></div></div>
+          const row = <div className={`shared-inventory-row ${sharedAccessible && !playerPreview ? "inventory-context-target" : ""}`}><div className="shared-inventory-entry"><ItemArt name={item.name} category={catalogForItem(item)?.category ?? item.category} /><div><b>{item.name}</b><span>{provisionState.resource ? provisionDisplay(item) : `${catalogForItem(item)?.category ?? item.category ?? "Outros"} · ${item.qty}× · carga ${item.load} cada · ${item.condition ?? "sem estado"}${batteryStateFor(item) ? ` · bateria ${batteryStateFor(item)?.toLowerCase()}` : ""}`}</span></div></div>
             {sharedAccessible && !playerPreview && <ItemActionsDialog game={game} edit={edit} ownerId="shared" item={item} allowCorrection />}</div>;
           return sharedAccessible && !playerPreview
             ? <ItemContextMenu key={item.id} game={game} edit={edit} ownerId="shared" item={item}>{row}</ItemContextMenu>
@@ -136,7 +137,7 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
             })}>Retirar tudo</Button>}
           </div>}</div>)}
       {ammunitionTypes.filter(type => shelterAmmoCount(visitedCache, type) > 0).map(type =>
-        <div key={\`ammo-\${type}\`} className="shared-inventory-row"><div><b>Munição · {type}</b><span>{shelterAmmoCount(visitedCache, type)} carga(s)</span></div>
+        <div key={`ammo-${type}`} className="shared-inventory-row"><div><b>Munição · {type}</b><span>{shelterAmmoCount(visitedCache, type)} carga(s)</span></div>
           {recipient && !playerPreview && <div className="flex gap-1 flex-wrap">
             <Button size="sm" variant="outline" onClick={() => edit(d => {
               if (!recoverFormerAmmo(d, visitedCache.hex!, recipient.id, type, 1)) toast.error("Não foi possível retirar. Verifique o tipo de munição e o contador do sobrevivente.");
@@ -153,7 +154,7 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
     </div>
     <p className="text-sm subtle mt-3">Peças, combustível e medicamentos retirados viram itens de carga 1 no inventário. Ao chegar à base ativa, use Ações → Guardar nas reservas para converter de volta.</p>
     <FormerShelterProjects shelter={visitedCache} />
-    {cacheResidents.length > 0 && <div className="former-shelter-projects"><b>Comunidade que ficou nesta base</b>{cacheResidents.map(npc => <span key={npc.id}>{npc.name}{npc.role ? \` · \${npc.role}\` : ""}{npc.hex !== visitedCache.hex ? \` · em campo no hex \${npc.hex}\` : ""}</span>)}</div>}
+    {cacheResidents.length > 0 && <div className="former-shelter-projects"><b>Comunidade que ficou nesta base</b>{cacheResidents.map(npc => <span key={npc.id}>{npc.name}{npc.role ? ` · ${npc.role}` : ""}{npc.hex !== visitedCache.hex ? ` · em campo no hex ${npc.hex}` : ""}</span>)}</div>}
   </section>;
 
   const communityContent = <section className="panel panel-pad">
@@ -172,7 +173,7 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
             draft.npcs.push({ id: createId(), name, role: convertRole.trim(), description: "", notes: "", publicNotes: "", hex: draft.shelter.hex, home: draft.shelter.hex, status: "Bem", infection: "Saudável", disposition: "Neutro", skills: [], duty: "", active: true });
           });
           setConvertOpen(false);
-          toast.success("Morador identificado", { description: \`\${name} agora tem uma ficha de NPC.\` });
+          toast.success("Morador identificado", { description: `${name} agora tem uma ficha de NPC.` });
         }}>Criar NPC</Button></DialogFooter>
       </DialogContent></Dialog>}
   </section>;
@@ -200,7 +201,7 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
         <Button className="mt-3" onClick={() => {
           let established = false;
           edit(draft => { established = establishShelter(draft, draft.partyHex); });
-          if (established) toast.success("Abrigo estabelecido", { description: \`Base registrada em \${currentSector}.\` });
+          if (established) toast.success("Abrigo estabelecido", { description: `Base registrada em ${currentSector}.` });
           else toast.error("Não foi possível estabelecer o abrigo.");
         }}><House /> Estabelecer abrigo aqui</Button>
       </div>}
@@ -216,7 +217,7 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
         <p className="dossier-title">Abrigo / hex {s.hex}</p>
         <h2 className="page-title">{s.name}</h2>
         <p>{homeSector}. Grupo principal em {currentSector}.</p>
-        {travelGroups.length > 1 && <small>Grupos em campo: {travelGroups.map(group => \`Hex \${group.hex} — \${group.members.map(person => person.name).join(", ")}\`).join(" · ")}</small>}
+        {travelGroups.length > 1 && <small>Grupos em campo: {travelGroups.map(group => `Hex ${group.hex} — ${group.members.map(person => person.name).join(", ")}`).join(" · ")}</small>}
       </div>
       <div className="shelter-hero-badges">
         <span className="tag">{population.present}/{metrics.capacity} pessoas</span>
