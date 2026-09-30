@@ -75,6 +75,8 @@ const filters: CatalogFilter[] = [
   "Comunidade",
 ];
 
+const incidentKinds: ShelterIncidentKind[] = ["Invasão", "Sabotagem", "Incêndio", "Tempestade", "Curto elétrico", "Inundação", "Outro"];
+
 function projectFor(shelter: ShelterState, key: string) {
   return shelter.projects?.find(project => project.key === key);
 }
