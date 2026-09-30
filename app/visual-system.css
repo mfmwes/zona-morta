@@ -624,3 +624,447 @@ html[data-theme="dark"] .table-chat-speaker select { color: #b9ccc5; }
   .theme-toggle { bottom: calc(68px + env(safe-area-inset-bottom)); left: 10px; min-width: 37px; padding: 8px; }
   .theme-toggle span { display: none; }
 }
+
+
+/* -------------------------------------------------------------------------
+   Night-theme contrast audit
+   Keep nested workflows on dark surfaces instead of inheriting light-only
+   backgrounds from globals.css. Prefer these semantic tokens for new UI.
+   ------------------------------------------------------------------------- */
+html[data-theme="dark"] {
+  --surface-inset: #141d1e;
+  --surface-soft-2: #202b2b;
+  --surface-hover: #293735;
+  --surface-selected: #29413d;
+  --border-soft: #40534f;
+  --text-strong: #edf4ef;
+  --text-soft: #b3c2bd;
+  --text-faint: #8fa19c;
+  --danger-surface: #352725;
+  --danger-border: #805149;
+  --danger-text: #efb1a7;
+  --warning-surface: #332d22;
+  --warning-border: #806a43;
+  --warning-text: #e4c78f;
+}
+
+/* Global form controls and labels. */
+html[data-theme="dark"] .field label,
+html[data-theme="dark"] .field-label,
+html[data-theme="dark"] .character-inventory-toolbar label,
+html[data-theme="dark"] .inventory-dialog .field-label,
+html[data-theme="dark"] .npc-dialog .field-label {
+  color: var(--text-strong);
+}
+html[data-theme="dark"] .field input::placeholder,
+html[data-theme="dark"] .field textarea::placeholder,
+html[data-theme="dark"] [data-slot="input"]::placeholder,
+html[data-theme="dark"] textarea::placeholder {
+  color: var(--text-faint);
+}
+html[data-theme="dark"] [data-slot="input"],
+html[data-theme="dark"] [data-slot="textarea"],
+html[data-theme="dark"] [data-slot="select-trigger"] {
+  border-color: #50645f;
+  background: var(--surface-inset) !important;
+  color: var(--foreground);
+}
+html[data-theme="dark"] [data-slot="select-trigger"][data-disabled],
+html[data-theme="dark"] [data-slot="input"]:disabled,
+html[data-theme="dark"] textarea:disabled {
+  border-color: #394b48;
+  background: #182222 !important;
+  color: #83958f;
+  opacity: 1;
+}
+html[data-theme="dark"] [data-slot="select-item"],
+html[data-theme="dark"] [data-slot="context-menu-item"],
+html[data-theme="dark"] [data-slot="context-menu-sub-trigger"] {
+  color: #dfe9e3;
+}
+html[data-theme="dark"] [data-slot="select-item"]:focus,
+html[data-theme="dark"] [data-slot="context-menu-item"]:focus,
+html[data-theme="dark"] [data-slot="context-menu-sub-trigger"]:focus,
+html[data-theme="dark"] [data-slot="context-menu-sub-trigger"][data-state="open"] {
+  background: #29413d;
+  color: #f2f7f4;
+}
+html[data-theme="dark"] [data-slot="context-menu-content"],
+html[data-theme="dark"] [data-slot="context-menu-sub-content"] {
+  border-color: var(--border);
+  background: var(--popover);
+  color: var(--foreground);
+}
+html[data-theme="dark"] [data-slot="dialog-description"] {
+  color: var(--text-soft);
+}
+
+/* Generic light-only surfaces that appear throughout campaign workflows. */
+html[data-theme="dark"] .eyebrow,
+html[data-theme="dark"] .dossier-title { color: #91c9bd; }
+html[data-theme="dark"] .faint { color: var(--text-faint); }
+html[data-theme="dark"] .player-preview-banner {
+  border-color: #46756f;
+  background: #203a37;
+  color: #d8ebe4;
+}
+html[data-theme="dark"] .library-create .field-input {
+  border-color: #50645f;
+  background: var(--surface-inset);
+  color: var(--foreground);
+}
+
+/* Survivor roster and status surfaces. */
+html[data-theme="dark"] .character-roster {
+  border-color: #40534f;
+  background: #182324;
+  box-shadow: none;
+}
+html[data-theme="dark"] .character-roster-label {
+  border-color: #40534f;
+  color: #9db4ae;
+}
+html[data-theme="dark"] .character-roster-label b { color: #d9ece5; }
+html[data-theme="dark"] .character-roster-person {
+  color: #dfe9e3;
+}
+html[data-theme="dark"] .character-roster-person:hover {
+  background: #243432;
+}
+html[data-theme="dark"] .character-roster-person[aria-current=true] {
+  border-color: #668f86;
+  background: #29413d;
+  box-shadow: inset 3px 0 #c9a45d;
+}
+html[data-theme="dark"] .character-roster-person small,
+html[data-theme="dark"] .character-roster-empty {
+  color: #a9bbb5;
+}
+html[data-theme="dark"] .character-roster-person .character-roster-state { color: #91c5b8; }
+html[data-theme="dark"] .character-roster-person .character-roster-state.at-risk { color: #e8a095; }
+html[data-theme="dark"] .character-roster-peer,
+html[data-theme="dark"] .character-roster-peer:hover {
+  border-color: #394c48;
+  background: #1b2727;
+}
+
+/* Inventory: this fixes the light expanded item surface visible in the screenshot. */
+html[data-theme="dark"] .character-inventory-group h4 {
+  color: #9cb3ad;
+}
+html[data-theme="dark"] .character-item {
+  border-color: #344744;
+}
+html[data-theme="dark"] .character-item-trigger {
+  color: #e3ece7;
+}
+html[data-theme="dark"] .character-item-trigger:hover {
+  background: #263533;
+}
+html[data-theme="dark"] .character-item-name small,
+html[data-theme="dark"] .character-item-meta {
+  color: #a9bbb5;
+}
+html[data-theme="dark"] .character-item-meta {
+  background: #253330;
+  border: 1px solid #3c514d;
+}
+html[data-theme="dark"] .character-item-detail {
+  border-left-color: #668d83;
+  background: #1c2727;
+  color: #dce7e1;
+}
+html[data-theme="dark"] .character-item-detail dl > div {
+  border-color: #344744;
+}
+html[data-theme="dark"] .character-item-detail dt {
+  color: #9eb2ac;
+}
+html[data-theme="dark"] .character-item-detail dd {
+  color: #e0e9e4;
+}
+html[data-theme="dark"] .character-chips span {
+  border: 1px solid #40534f;
+  background: #263331;
+  color: #c4d5cf;
+}
+html[data-theme="dark"] .character-item-actions {
+  border-color: #344744;
+}
+html[data-theme="dark"] .character-load-badge,
+html[data-theme="dark"] .character-text-link,
+html[data-theme="dark"] .character-load-details summary {
+  color: #8fcabd;
+}
+html[data-theme="dark"] .character-load-details,
+html[data-theme="dark"] .character-load-details dt {
+  color: #b3c2bd;
+}
+html[data-theme="dark"] .character-load-details dd {
+  color: #e0ebe5;
+}
+
+/* Inventory dialogs, catalogue picker and contextual help. */
+html[data-theme="dark"] .inventory-mode button,
+html[data-theme="dark"] .inventory-action-tabs button {
+  border-color: #40534f;
+  background: #1c2828;
+  color: #c4d4ce;
+}
+html[data-theme="dark"] .inventory-mode button:hover,
+html[data-theme="dark"] .inventory-action-tabs button:hover {
+  background: #293a37;
+  color: #eef5f1;
+}
+html[data-theme="dark"] .inventory-mode button[aria-pressed="true"],
+html[data-theme="dark"] .inventory-action-tabs button[aria-pressed="true"] {
+  border-color: #6a968b;
+  background: #29413d;
+  color: #e9f4ef;
+}
+html[data-theme="dark"] .inventory-catalog-results {
+  border-color: #40534f;
+  background: #151f20;
+}
+html[data-theme="dark"] .inventory-catalog-results button {
+  color: #dce7e1;
+}
+html[data-theme="dark"] .inventory-catalog-results button:hover,
+html[data-theme="dark"] .inventory-catalog-results button:focus-visible {
+  border-color: #4f6d66;
+  background: #253633;
+}
+html[data-theme="dark"] .inventory-catalog-results button small,
+html[data-theme="dark"] .inventory-catalog-results p {
+  color: #9fb1ab;
+}
+html[data-theme="dark"] .inventory-catalog-results button strong {
+  color: #94c9bd;
+}
+html[data-theme="dark"] .inventory-selection,
+html[data-theme="dark"] .inventory-hint,
+html[data-theme="dark"] .inventory-reference,
+html[data-theme="dark"] .inventory-ready,
+html[data-theme="dark"] .inventory-preview {
+  border-color: #40534f;
+  background: #202d2c;
+  color: #d7e3dd;
+}
+html[data-theme="dark"] .inventory-selection p,
+html[data-theme="dark"] .inventory-selection dt,
+html[data-theme="dark"] .inventory-reference dt {
+  color: #aebfba;
+}
+html[data-theme="dark"] .inventory-reference summary {
+  color: #91c9bd;
+}
+html[data-theme="dark"] .inventory-danger,
+html[data-theme="dark"] .inventory-preview.inventory-danger {
+  border-color: var(--danger-border);
+  background: var(--danger-surface);
+  color: var(--danger-text);
+}
+html[data-theme="dark"] .inventory-ready input {
+  accent-color: #79ada2;
+}
+html[data-theme="dark"] .shared-inventory-row {
+  border-color: #3b504c;
+  background: #1c2828;
+  color: #dce7e1;
+}
+html[data-theme="dark"] .shared-inventory-row:hover {
+  background: #263634;
+}
+html[data-theme="dark"] .shared-inventory-row span {
+  color: #a8bbb5;
+}
+
+/* Kit, combat and condition cards that still used light-only backgrounds. */
+html[data-theme="dark"] .character-kit-line:has(.item-art--empty) {
+  background: #1e2929;
+}
+html[data-theme="dark"] .character-kit-line:has(.item-art--empty) b {
+  color: #9baea8;
+}
+html[data-theme="dark"] .item-art--empty {
+  border-color: #465b56;
+  background: repeating-linear-gradient(135deg,#263331 0 5px,#202b2a 5px 10px);
+}
+html[data-theme="dark"] .character-active-weapon {
+  border-color: #47675f;
+  background: linear-gradient(90deg,#233632,#1e2e2d);
+  color: #dceae4;
+}
+html[data-theme="dark"] .character-active-weapon span,
+html[data-theme="dark"] .character-equipment > div:last-child > span {
+  color: #99c7bb;
+}
+html[data-theme="dark"] .character-active-weapon small {
+  color: #b2c2bd;
+}
+html[data-theme="dark"] .character-combat-metrics > div {
+  background: #202d2c;
+  color: #a7d1c6;
+}
+html[data-theme="dark"] .character-combat-metrics span { color: #aabbb6; }
+html[data-theme="dark"] .character-combat-metrics b { color: #edf3ee; }
+html[data-theme="dark"] .character-thresholds {
+  border-color: #766a45;
+  background: #28271f;
+}
+html[data-theme="dark"] .character-thresholds-title { color: #dbc681; }
+html[data-theme="dark"] .character-thresholds-track {
+  border-color: #756b4b;
+  background: #1d2423;
+}
+html[data-theme="dark"] .character-threshold-light { color: #9dd2c2; }
+html[data-theme="dark"] .character-threshold-major { background: #39311f; color: #ecd184; }
+html[data-theme="dark"] .character-threshold-severe { background: #3b2824; color: #f0a294; }
+html[data-theme="dark"] .character-equipment-icon {
+  background: #263735;
+  color: #98c9be;
+}
+html[data-theme="dark"] .character-condition-banner,
+html[data-theme="dark"] .character-treatment,
+html[data-theme="dark"] .character-terminal {
+  border-color: #704a43;
+  background: #302523;
+  color: #efb1a7;
+}
+html[data-theme="dark"] .character-condition-banner p,
+html[data-theme="dark"] .character-treatment span {
+  color: #c9aaa3;
+}
+html[data-theme="dark"] .character-portrait-error {
+  background: #352522;
+  color: #efaaa0;
+}
+html[data-theme="dark"] .character-rest-preview-note {
+  border-color: #8a6d43;
+  background: #302b21;
+  color: #ddc494;
+}
+html[data-theme="dark"] .rest-planner-action {
+  border-color: #40534f;
+  background: #202b2b;
+}
+html[data-theme="dark"] .rest-planner-action-title {
+  border-color: #3b4e4a;
+  color: #9eb5ae;
+}
+
+/* Roll workflow surfaces that were still using light feedback colors. */
+html[data-theme="dark"] .roll-locked,
+html[data-theme="dark"] .roll-weapon-note {
+  border-color: #40534f;
+  background: #202c2c;
+  color: #d5e2dc;
+}
+html[data-theme="dark"] .roll-locked span,
+html[data-theme="dark"] .roll-experiences legend small,
+html[data-theme="dark"] .roll-cost,
+html[data-theme="dark"] .roll-damage-heading span {
+  color: #a7b9b3;
+}
+html[data-theme="dark"] .roll-result-heading,
+html[data-theme="dark"] .roll-damage-heading b {
+  color: #dceae4;
+}
+html[data-theme="dark"] .roll-damage-result {
+  background: #213632;
+  color: #a9d8ca;
+}
+html[data-theme="dark"] .roll-damage-result.is-pending {
+  background: #39301f;
+  color: #efd08b;
+}
+html[data-theme="dark"] .roll-damage-result.is-miss {
+  background: #382625;
+  color: #efaaa5;
+}
+
+/* NPC/community and generated encounter previews. */
+html[data-theme="dark"] .npc-card {
+  border-color: #405d58;
+  background: #192929;
+  color: #dfe9e3;
+}
+html[data-theme="dark"] .npc-card:hover {
+  border-color: #6a998e;
+  background: #243936;
+}
+html[data-theme="dark"] .npc-card-copy small,
+html[data-theme="dark"] .npc-card-meta,
+html[data-theme="dark"] .npc-companion-list small {
+  color: #a9bbb5;
+}
+html[data-theme="dark"] .npc-status {
+  background: #293936;
+  color: #c4ded5;
+}
+html[data-theme="dark"] .npc-status-ferido,
+html[data-theme="dark"] .npc-status-grave {
+  background: #3b2924;
+  color: #efab9e;
+}
+html[data-theme="dark"] .npc-status-morto,
+html[data-theme="dark"] .npc-status-desaparecido {
+  background: #302d2a;
+  color: #bcb1a9;
+}
+html[data-theme="dark"] .npc-toggle-row,
+html[data-theme="dark"] .npc-companion-list {
+  border-color: #40534f;
+  background: #1d2929;
+  color: #d5e0da;
+}
+
+/* Shelter/community project badges and cards. */
+html[data-theme="dark"] .shelter-project-card,
+html[data-theme="dark"] .shelter-post-card,
+html[data-theme="dark"] .former-shelter-projects {
+  border-color: #41605b;
+  background: #1a2b2b;
+  color: #dce7e1;
+}
+html[data-theme="dark"] .shelter-community-counts span {
+  border-color: #3f615d;
+  background: #203431;
+  color: #b3c8c1;
+}
+html[data-theme="dark"] .shelter-project-state,
+html[data-theme="dark"] .shelter-post-state {
+  background: #293532;
+  color: #b8c8c3;
+}
+html[data-theme="dark"] .shelter-project-state.is-em-construção {
+  background: #3a3222;
+  color: #e1c58c;
+}
+html[data-theme="dark"] .shelter-project-state.is-concluído,
+html[data-theme="dark"] .shelter-post-state.is-operational {
+  background: #253a32;
+  color: #9fd3bd;
+}
+html[data-theme="dark"] .shelter-project-state.is-danificado {
+  background: #3b2926;
+  color: #efaaa0;
+}
+
+/* Shared semantic text helpers: do not leave dark ink on dark cards. */
+html[data-theme="dark"] .text-slate-700,
+html[data-theme="dark"] .text-slate-800,
+html[data-theme="dark"] .text-gray-700,
+html[data-theme="dark"] .text-gray-800,
+html[data-theme="dark"] .text-zinc-700,
+html[data-theme="dark"] .text-zinc-800 {
+  color: #d6e1db !important;
+}
+html[data-theme="dark"] .text-slate-500,
+html[data-theme="dark"] .text-slate-600,
+html[data-theme="dark"] .text-gray-500,
+html[data-theme="dark"] .text-gray-600,
+html[data-theme="dark"] .text-zinc-500,
+html[data-theme="dark"] .text-zinc-600 {
+  color: #a7b8b2 !important;
+}
