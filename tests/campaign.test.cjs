@@ -593,6 +593,18 @@ test('traje vestido, carrinho ativo e cassetete curto seguem a carga descrita no
   assert.ok(s.inventory.some(entry => entry.name === 'Capa de chuva leve'));
 });
 
+test('pá dobrável pode ser empunhada usando os dados de Pá curta', () => {
+  const s = survivor(); s.inventory = [item('Pá dobrável')];
+  const shovel = s.inventory[0];
+  assert.ok(inventory.compatibleSlots(shovel).includes('primary'));
+  assert.equal(inventory.equipItem(s, shovel.id, 'primary'), true);
+  assert.equal(s.primary, 'Pá dobrável');
+  const weapon = equipment.getPrimary(s.primary);
+  assert.ok(weapon);
+  assert.equal(weapon.name, 'Pá curta');
+  assert.equal(weapon.damage, 'd10+1');
+});
+
 test('água insegura exige método de tratamento e pastilhas são consumidas', () => {
   const g = campaign(); const ana = g.survivors[0];
   ana.inventory = [item('Água de chuva coletada')];
