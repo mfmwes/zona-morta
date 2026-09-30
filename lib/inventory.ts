@@ -199,6 +199,87 @@ function payPreparationCosts(game: GameState, ownerId: string, check: Preparatio
   }
   return true;
 }
+
+function accessibleFuel(game: GameState, ownerId: string) {
+  const physical = accessibleNamedQuantity(game, ownerId, "Combustível (1 unidade)");
+  const shared = ownerId === "shared" || atSharedStorage(game, ownerId) ? game.shelter.fuel : 0;
+  return physical + shared;
+}
+
+export function reusableContainerOptions(game: GameState, ownerId: string, item: InventoryItem) {
+  if (item.name !== "Galão vazio") return null;
+  const resource = item.storedResource;
+  const amount = Math.max(0, Math.trunc(item.storedAmount ?? 0));
+  return {
+    resource,
+    amount,
+    waterCapacity: resource && resource !== "water" ? 0 : Math.max(0, 4 - amount),
+    fuelCapacity: resource && resource !== "fuel" ? 0 : Math.max(0, 1 - amount),
+    waterAvailable: availableWater(game, ownerId),
+    fuelAvailable: accessibleFuel(game, ownerId),
+    canUnloadAtStorage: Boolean(resource && amount > 0 && (ownerId === "shared" || atSharedStorage(game, ownerId))),
+  };
+}
+
+function splitContainer(items: InventoryItem[], item: InventoryItem) {
+  if (item.qty <= 1) return item;
+  item.qty -= 1;
+  const split = { ...item, id: createId(), qty: 1 };
+  items.push(split);
+  return split;
+}
+
+export function fillReusableContainer(game: GameState, ownerId: string, itemId: string, resource: "water" | "fuel", quantity: number) {
+  if (ownerId === "shared" && !atSharedStorage(game)) return null;
+  const items = container(game, ownerId);
+  const item = items?.find(entry => entry.id === itemId);
+  if (!items || !item || item.name !== "Galão vazio" || !Number.isInteger(quantity) || quantity < 1) return null;
+  const currentResource = item.storedResource;
+  const currentAmount = Math.max(0, Math.trunc(item.storedAmount ?? 0));
+  if (currentResource && currentResource !== resource) return null;
+  const capacity = resource === "water" ? 4 : 1;
+  const count = Math.min(quantity, capacity - currentAmount);
+  if (count < 1) return null;
+
+  if (resource === "water") {
+    if (availableWater(game, ownerId) < count) return null;
+    let remaining = count;
+    const holder = ownerHolder(game, ownerId);
+    if (holder) remaining = consumeHolderWater(holder, remaining);
+    if (ownerId !== "shared" && remaining > 0 && atSharedStorage(game, ownerId))
+      remaining = consumeHolderWater(game.shelter, remaining);
+    if (remaining > 0) return null;
+  } else {
+    if (accessibleFuel(game, ownerId) < count) return null;
+    if (!removeNamedUnits(game, ownerId, "Combustível (1 unidade)", count)) {
+      if ((ownerId === "shared" || atSharedStorage(game, ownerId)) && game.shelter.fuel >= count) game.shelter.fuel -= count;
+      else return null;
+    }
+  }
+
+  const target = splitContainer(items, item);
+  target.storedResource = resource;
+  target.storedAmount = currentAmount + count;
+  return target;
+}
+
+export function emptyReusableContainerToReserves(game: GameState, ownerId: string, itemId: string) {
+  if (!(ownerId === "shared" || atSharedStorage(game, ownerId))) return false;
+  const item = container(game, ownerId)?.find(entry => entry.id === itemId);
+  if (!item || item.name !== "Galão vazio" || !item.storedResource || !item.storedAmount) return false;
+  const amount = Math.max(0, Math.trunc(item.storedAmount));
+  if (item.storedResource === "water") {
+    if (game.shelter.water + amount > 999) return false;
+    game.shelter.water += amount;
+  } else {
+    if (game.shelter.fuel + amount > 99) return false;
+    game.shelter.fuel += amount;
+  }
+  delete item.storedResource;
+  delete item.storedAmount;
+  return true;
+}
+
 export function itemFromCatalog(entry: CatalogEntry, qty = 1, condition = "Íntegro", foundDay?: number): InventoryItem {
   const field = entry.fields.find(f => ["Carga", "Guarda", "Carga em viagem"].includes(f.label))?.value ?? "1";
   // "0/1" denotes a loose pocket item; food and drink share the portion load calculation.
