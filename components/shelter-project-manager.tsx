@@ -20,9 +20,10 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Pick } from "@/components/game-controls";
+import { Counter, Pick } from "@/components/game-controls";
 import { addLog, displayTime, type GameState, type ShelterProject, type ShelterState } from "@/lib/game";
 import {
+  applyShelterIncident,
   cancelShelterWorkShift,
   cancelSurvivorWorkShift,
   canVolunteer,
@@ -34,6 +35,9 @@ import {
   projectDefinition,
   projectDependencyIssue,
   projectDisplayCosts,
+  projectIntegrity,
+  projectIntegrityLabel,
+  projectMechanicalBenefits,
   placeShelterProject,
   projectOperational,
   projectPlacementIssue,
@@ -42,6 +46,9 @@ import {
   scheduleShelterWorkShift,
   scheduleSurvivorWorkShift,
   shelterBlueprintSlots,
+  repairPlan,
+  shelterIncidentCandidates,
+  shelterIncidentMitigation,
   shelterMetrics,
   shelterPosts,
   shelterPower,
@@ -51,6 +58,7 @@ import {
   survivorWorkPreview,
   startProject,
   startRepair,
+  type ShelterIncidentKind,
 } from "@/lib/shelter-projects";
 
 type Edit = (fn: (draft: GameState) => void) => void;
@@ -81,7 +89,7 @@ function projectStateLabel(project?: ShelterProject) {
 function projectStateTone(project?: ShelterProject) {
   if (!project) return "available";
   if (project.state === "Concluído") return "complete";
-  if (project.state === "Danificado") return "damaged";
+  if (["Danificado", "Inoperante", "Destruído"].includes(project.state)) return "damaged";
   if (project.state === "Em construção") return "building";
   return "planned";
 }
@@ -99,6 +107,11 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
   const [planningKey, setPlanningKey] = useState<string | null>(null);
   const [planningSlotId, setPlanningSlotId] = useState<string | null>(null);
   const [catalogOpen, setCatalogOpen] = useState(false);
+  const [incidentOpen, setIncidentOpen] = useState(false);
+  const [incidentKind, setIncidentKind] = useState<ShelterIncidentKind>("Invasão");
+  const [incidentImpact, setIncidentImpact] = useState(2);
+  const [incidentCatastrophic, setIncidentCatastrophic] = useState(false);
+  const [incidentTargets, setIncidentTargets] = useState<string[]>([]);
 
   if (!shelter.hex) return null;
 
@@ -108,7 +121,14 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
   const selectedDefinition = projectDefinition(selectedKey) ?? shelterProjectCatalog[0];
   const selectedProject = projectFor(shelter, selectedDefinition.key);
   const selectedProgress = selectedProject ? projectProgress(selectedProject) : null;
-  const selectedPreview = !playerSurvivorId && selectedProject?.state === "Em construção" ? projectWorkPreview(game, shelter, selectedProject) : null;
+  const selectedIntegrity = selectedProject ? projectIntegrity(selectedProject) : null;
+  const selectedBenefits = projectMechanicalBenefits(selectedDefinition.key);
+  const selectedCanOperateWork = Boolean(selectedProject && selectedDefinition.operationWork
+    && ["Concluído", "Danificado"].includes(selectedProject.state) && projectOperational(game, shelter, selectedProject));
+  const selectedPreview = !playerSurvivorId && selectedProject && (selectedProject.state === "Em construção" || selectedCanOperateWork)
+    ? projectWorkPreview(game, shelter, selectedProject) : null;
+  const selectedRepairPlan = selectedProject && ["Danificado", "Inoperante", "Destruído"].includes(selectedProject.state)
+    ? repairPlan(game, selectedProject) : null;
   const playerSurvivor = playerSurvivorId ? game.survivors.find(person => person.id === playerSurvivorId) : undefined;
   const playerJoined = Boolean(selectedProject && playerSurvivorId && (selectedProject.survivorWorkerIds ?? []).includes(playerSurvivorId));
   const playerShift = selectedProject && playerSurvivorId
@@ -132,6 +152,8 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
   const buildLog = game.log.filter(entry => entry.kind === "abrigo").slice(0, 12);
   const scheduledProjects = (shelter.projects ?? []).filter(project => Boolean(project.workShift) || Boolean(project.volunteerShifts?.length));
   const perimeterProjects = (shelter.projects ?? []).filter(project => projectDefinition(project.key)?.kind === "upgrade");
+  const incidentCandidates = shelterIncidentCandidates(game, incidentKind);
+  const incidentMitigation = shelterIncidentMitigation(game, incidentKind);
   const slotChoices = planningSlot
     ? shelterProjectCatalog.filter(definition => definition.kind === "facility" && definition.zone === planningSlot.zone
       && (!projectFor(shelter, definition.key) || !projectFor(shelter, definition.key)?.slotId))
