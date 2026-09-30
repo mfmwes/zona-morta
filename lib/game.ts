@@ -33,7 +33,7 @@ export type HexState = {
   events: { id: string; text: string; trigger: string; revealed: boolean }[];
 };
 
-export type EquipmentSlot = "primary" | "secondary" | "protection" | "outfit" | "personal" | "bag" | "transport" | "pocket1" | "pocket2";
+export type EquipmentSlot = "primary" | "secondary" | "protection" | "outfit" | "personal" | "bag" | "pocket1" | "pocket2";
 export const ammunitionTypes = ["Pistola", "Espingarda", "Carabina", "Flechas", "Virotes", "Chumbinhos", "Outra"] as const;
 export type AmmunitionType = typeof ammunitionTypes[number];
 export type InventoryItem = {
@@ -58,6 +58,10 @@ export type InventoryItem = {
   /** Conteúdo de recipientes reutilizáveis, como o galão. */
   storedResource?: "water" | "fuel";
   storedAmount?: number;
+  /** Carrinho dobrável aberto e sendo conduzido. Não é um slot de equipamento. */
+  cartDeployed?: boolean;
+  /** Itens fisicamente colocados no carrinho. O carrinho comporta até 4 espaços. */
+  cartItems?: InventoryItem[];
 };
 
 export type ProvisionLot = {
@@ -191,7 +195,7 @@ export type Survivor = {
   outfit?: string;
   personal: string;
   bag: string;
-  /** Transporte pessoal ativo, atualmente usado pelo carrinho dobrável. */
+  /** Campo legado de campanhas antigas. O carrinho agora permanece como item no inventário. */
   transport?: string;
   pocket1?: string;
   pocket2?: string;
@@ -534,16 +538,25 @@ export function survivorStats(s: Survivor) {
   const modifiers = equipmentModifiers(s);
   const level = Math.max(1, Math.trunc(s.level ?? 1));
   const bagBonus: Record<string, number> = { "Bolsa tiracolo": 1, "Mochila urbana": 2, "Mochila de trilha": 3, "Mochila cargueira": 4 };
-  const transportBonus = s.transport === "Carrinho dobrável" ? 4 : 0;
-  const capacity = 3 + (bagBonus[s.bag] ?? 0) + transportBonus
+  const capacity = 3 + (bagBonus[s.bag] ?? 0)
     + (s.specialty === "Carregador" ? 1 : 0)
     + (s.techniques.includes("Carga bem distribuída") ? 1 : 0);
-  const foodInItems = groupedProvisionPortions(s.inventory, "food");
-  const waterInItems = groupedProvisionPortions(s.inventory, "water");
+  const activeCart = s.inventory.find(item => item.name === "Carrinho dobrável" && item.cartDeployed);
+  const looseInventory = s.inventory.filter(item => item !== activeCart);
+  const foodInItems = groupedProvisionPortions(looseInventory, "food");
+  const waterInItems = groupedProvisionPortions(looseInventory, "water");
+  const cartItems = activeCart?.cartItems ?? [];
+  const cartProvisionIds = new Set(cartItems.filter(item => item.provisionResource).map(item => item.id));
+  const cartItemsLoad = cartItems
+    .filter(item => !cartProvisionIds.has(item.id))
+    .reduce((sum, item) => sum + Math.max(0, item.load) * Math.max(0, item.qty), 0);
+  const cartFoodLoad = Math.ceil(groupedProvisionPortions(cartItems, "food") / 4);
+  const cartWaterLoad = Math.ceil(groupedProvisionPortions(cartItems, "water") / 4);
+  const cartCarried = cartItemsLoad + cartFoodLoad + cartWaterLoad;
   const ammoType = weaponAmmoType(s.primary);
   const firearm = ammoType !== null && (s.ammoType ?? ammoType) === ammoType;
   const load = {
-    items: s.inventory.reduce((sum, item) => sum + Math.max(0, item.load) * Math.max(0, item.qty), 0),
+    items: looseInventory.reduce((sum, item) => sum + Math.max(0, item.load) * Math.max(0, item.qty), 0),
     food: Math.max(0, Math.ceil((Math.max(0, s.food + foodInItems) - 2) / 4)),
     water: Math.max(0, Math.ceil((Math.max(0, s.water + waterInItems) - 2) / 4)),
     ammo: Math.max(0, s.ammo - (firearm ? 1 : 0)),
@@ -554,6 +567,7 @@ export function survivorStats(s: Survivor) {
     hp: archetype?.hp ?? 5, evasion: (archetype?.evasion ?? 10) + modifiers.evasion,
     major: armor ? armor.major + level : level, severe: armor ? armor.severe + level : level * 2,
     armor: Math.min(12, (armor?.armor ?? 0) + modifiers.armor), capacity, carried, load,
+    cart: activeCart ? { id: activeCart.id, carried: cartCarried, capacity: 4 } : null,
   };
 }
 
@@ -561,7 +575,7 @@ export function initialSurvivor(input: Omit<Survivor,
   "id" | "portrait" | "level" | "proficiency" | "bag" | "hp" | "armorMarked" | "stress" | "hope" | "infection" | "exposureDeadline" | "treatmentAttempted" |
   "terminalScenes" | "food" | "water" | "ammo" | "inventory" | "notes">): Survivor {
   return { ...input, id: createId(), level: 1, proficiency: 1, bag: input.personal === "Mochila urbana" ? "Mochila urbana" : "",
-    outfit: input.outfit ?? "", transport: input.transport ?? "",
+    outfit: input.outfit ?? "",
     ammoType: weaponAmmoType(input.primary) ?? "Indefinida",
     hp: 0, armorMarked: 0, stress: 0, hope: 2,
     infection: "Saudável", exposureDeadline: null, treatmentAttempted: false,
