@@ -1,7 +1,7 @@
 import { campaignExists, campaignOwnerId, findPlayer, readCampaign, wasRevoked, writeCampaign } from "@/db/state";
 import { sameOrigin, siteUser } from "@/lib/auth";
 import { applyPlayerChange, projectPlayerGame, type PlayerLog } from "@/lib/collaboration";
-import { ammunitionTypes, survivorStats, type GameState, type Survivor } from "@/lib/game";
+import { ammunitionTypes, survivorStats, type AmmunitionType, type GameState, type Survivor } from "@/lib/game";
 import { preserveKnownSectors } from "@/lib/sectors";
 
 export const dynamic = "force-dynamic";
@@ -51,11 +51,11 @@ function validState(value: unknown): value is GameState {
       && (s.ammoSpentScene === undefined || (Number.isInteger(s.ammoSpentScene) && s.ammoSpentScene >= 1))
       && (s.ammoSpentType === undefined || typeof s.ammoSpentType === "string")
       && (s.ammoSpentTypes === undefined || (Array.isArray(s.ammoSpentTypes) && s.ammoSpentTypes.length <= ammunitionTypes.length
-        && s.ammoSpentTypes.every(type => ammunitionTypes.includes(type as typeof ammunitionTypes[number])))))
+        && s.ammoSpentTypes.every(type => ammunitionTypes.includes(type as AmmunitionType)))))
     && Boolean(shelter && typeof shelter === "object")
     && (shelter?.ammoStocks === undefined || (typeof shelter.ammoStocks === "object" && shelter.ammoStocks !== null
       && Object.entries(shelter.ammoStocks).every(([key, value]) =>
-        ammunitionTypes.includes(key as typeof ammunitionTypes[number])
+        ammunitionTypes.includes(key as AmmunitionType)
         && Number.isInteger(value) && Number(value) >= 0 && Number(value) <= 99)))
     && (shelter?.hex === undefined || shelter.hex === null ||
       (typeof shelter.hex === "string" && state.hexes?.[shelter.hex]?.discovery === "explorado"))
