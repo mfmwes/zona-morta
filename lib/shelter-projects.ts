@@ -1,5 +1,6 @@
 import { absoluteMinutes, addLog, content, displayTime, normalizeShelterAmmo, shelterPopulationBreakdown, survivorHex, type GameState, type NPC, type ShelterManualAdjustments, type ShelterPost, type ShelterProject, type ShelterProjectCategory, type ShelterProjectCost, type ShelterProjectEffect, type ShelterState, type Survivor } from "./game";
 import { createId } from "./id";
+import { recordProvisionLot } from "./provisions";
 
 export type ShelterProjectKind = "facility" | "upgrade";
 export type ShelterBlueprintZone = "interior" | "utility" | "exterior";
@@ -806,7 +807,10 @@ export function advanceProjectOperation(game: GameState, project: ShelterProject
   for (const [resource, quantity] of Object.entries(operation.output)) {
     const total = Math.max(0, Math.trunc(Number(quantity) * cycles));
     if (!total) continue;
-    if (resource === "food" || resource === "water" || resource === "parts") {
+    if (resource === "food" && project.key === "garden") {
+      recordProvisionLot(game.shelter, "food", total, "Colheita da horta", game.day + 2);
+      output[resource] = total;
+    } else if (resource === "food" || resource === "water" || resource === "parts") {
       game.shelter[resource] += total;
       output[resource] = total;
     }
