@@ -92,6 +92,7 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
   const [selectedKey, setSelectedKey] = useState<string>(recommendations[0]?.key ?? shelter.projects?.[0]?.key ?? shelterProjectCatalog[0].key);
   const [planningKey, setPlanningKey] = useState<string | null>(null);
   const [planningSlotId, setPlanningSlotId] = useState<string | null>(null);
+  const [catalogOpen, setCatalogOpen] = useState(false);
 
   if (!shelter.hex) return null;
 
@@ -114,6 +115,7 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
   const unplacedFacilities = (shelter.projects ?? []).filter(project => projectDefinition(project.key)?.kind === "facility" && !project.slotId);
   const buildLog = game.log.filter(entry => entry.kind === "abrigo").slice(0, 12);
   const scheduledProjects = (shelter.projects ?? []).filter(project => Boolean(project.workShift));
+  const perimeterProjects = (shelter.projects ?? []).filter(project => projectDefinition(project.key)?.kind === "upgrade");
   const slotChoices = planningSlot
     ? shelterProjectCatalog.filter(definition => definition.kind === "facility" && definition.zone === planningSlot.zone
       && (!projectFor(shelter, definition.key) || !projectFor(shelter, definition.key)?.slotId))
@@ -252,6 +254,39 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
     });
   }
 
+  function renderBlueprintSlot(slot: (typeof shelterBlueprintSlots)[number]) {
+    const occupant = occupiedSlots.get(slot.id);
+    const compatible = Boolean(planningDefinition && planningDefinition.zone === slot.zone && !occupant);
+    const selectedSlot = planningSlotId === slot.id;
+    const progress = occupant ? projectProgress(occupant) : null;
+    return <button type="button" key={slot.id}
+      disabled={Boolean(planningDefinition && (!compatible || occupant)) || Boolean(!occupant && playerPreview)}
+      className={`architectural-slot is-${slot.zone} ${occupant ? "is-occupied" : "is-empty"} ${compatible ? "is-compatible" : ""} ${selectedSlot || occupant?.key === selectedKey ? "is-selected" : ""}`}
+      onClick={() => {
+        if (occupant && !planningDefinition) {
+          setSelectedKey(occupant.key);
+          setPlanningKey(null);
+          setPlanningSlotId(null);
+        } else if (planningDefinition && compatible) addProject(planningDefinition.key, slot.id);
+        else if (!planningDefinition && !occupant) {
+          setPlanningSlotId(slot.id);
+          setPlanningKey(null);
+        }
+      }}>
+      <span className="architectural-slot-number">{slot.label}</span>
+      {occupant ? <>
+        <b>{occupant.name}</b>
+        <span className={`construction-state is-${projectStateTone(occupant)}`}>{projectStateLabel(occupant)}</span>
+        {occupant.workShift && <small><Clock3 size={12} /> até {displayTime(occupant.workShift.startMinute + occupant.workShift.durationMinutes)}</small>}
+        {occupant.state === "Em construção" && progress && <span className="architectural-progress"><i style={{ width: `${Math.min(100, progress.value / progress.required * 100)}%` }} /></span>}
+      </> : <>
+        <Plus size={17} />
+        <b>{planningDefinition && compatible ? "Construir aqui" : selectedSlot ? "Espaço selecionado" : "Espaço livre"}</b>
+        <small>{slot.zone === "interior" ? "Cômodo interno" : slot.zone === "utility" ? "Área técnica" : "Área externa"}</small>
+      </>}
+    </button>;
+  }
+
   return <div className="construction-console">
     <section className="construction-summary">
       <div className="construction-summary-stat"><Hammer size={18} /><span><small>Em andamento</small><b>{activeProjects.length}</b></span></div>
@@ -307,51 +342,67 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
         })}</div>}
     </section>
 
-    {recommendations.length > 0 && <section className="construction-recommendations">
-      <div><Lightbulb size={17} /><b>Sugestões para este abrigo</b></div>
-      <div>{recommendations.map(item => <button type="button" key={item.key} onClick={() => { setSelectedKey(item.key); setFilter("Recomendados"); }}>
-        <span>{projectDefinition(item.key)?.name}</span><small>{item.reason}</small>
-      </button>)}</div>
-    </section>}
-
     <div className="construction-workspace">
-      <section className="construction-blueprint-panel">
-        <div className="construction-section-heading">
+      <section className="construction-blueprint-panel construction-blueprint-architectural">
+        <div className="construction-section-heading architectural-plan-heading">
           <div>
-            <p className="dossier-title">Planta</p>
+            <p className="dossier-title">Planta do abrigo</p>
             <h3 className="section-title">
               {planningDefinition
                 ? `Escolha onde posicionar ${planningDefinition.name}`
                 : planningSlot
                   ? `Escolha uma instalação para ${planningSlot.label}`
-                  : "Clique em um espaço livre para construir"}
+                  : shelter.name}
             </h3>
           </div>
-          {(planningDefinition || planningSlot) && <Button size="sm" variant="outline" onClick={() => { setPlanningKey(null); setPlanningSlotId(null); }}>Cancelar</Button>}
+          <div className="architectural-plan-actions">
+            {!playerPreview && <Button size="sm" onClick={() => setCatalogOpen(value => !value)}><Plus size={15} /> Nova construção</Button>}
+            {(planningDefinition || planningSlot) && <Button size="sm" variant="outline" onClick={() => { setPlanningKey(null); setPlanningSlotId(null); }}>Cancelar</Button>}
+          </div>
         </div>
 
-        <div className="construction-blueprint-grid">
-          {shelterBlueprintSlots.map(slot => {
-            const occupant = occupiedSlots.get(slot.id);
-            const compatible = Boolean(planningDefinition && planningDefinition.zone === slot.zone && !occupant);
-            const selectedSlot = planningSlotId === slot.id;
-            return <button type="button" key={slot.id}
-              disabled={Boolean(planningDefinition && (!compatible || occupant)) || Boolean(!occupant && playerPreview)}
-              className={`construction-blueprint-slot is-${slot.zone} ${occupant ? "is-occupied" : ""} ${compatible ? "is-compatible" : ""} ${selectedSlot || occupant?.key === selectedKey ? "is-selected" : ""}`}
-              onClick={() => {
-                if (occupant && !planningDefinition) {
-                  setSelectedKey(occupant.key);
-                  setPlanningKey(null);
-                  setPlanningSlotId(null);
-                } else if (planningDefinition && compatible) addProject(planningDefinition.key, slot.id);
-                else if (!planningDefinition && !occupant) { setPlanningSlotId(slot.id); setPlanningKey(null); }
-              }}>
-              <small>{slot.label}</small>
-              {occupant
-                ? <><b>{occupant.name}</b><span className={`construction-state is-${projectStateTone(occupant)}`}>{projectStateLabel(occupant)}</span></>
-                : <><Plus size={18} /><span>{planningDefinition && compatible ? "Usar este espaço" : selectedSlot ? "Espaço selecionado" : "Construir aqui"}</span></>}
-            </button>;
-          })}
+        <div className="architectural-site">
+          <div className="architectural-perimeter">
+            <div className="architectural-zone-label"><ShieldCheck size={14} /> Perímetro</div>
+            <div className="architectural-perimeter-items">
+              {perimeterProjects.length ? perimeterProjects.map(project => <button type="button" key={project.id}
+                className={project.key === selectedKey ? "is-selected" : ""}
+                onClick={() => { setSelectedKey(project.key); setPlanningKey(null); setPlanningSlotId(null); }}>
+                <span className={`construction-state is-${projectStateTone(project)}`}>{projectStateLabel(project)}</span>
+                <b>{project.name}</b>
+              </button>) : <span className="architectural-empty-note">Nenhuma melhoria de perímetro instalada.</span>}
+            </div>
+          </div>
+
+          <div className="architectural-building-shell">
+            <div className="architectural-building-caption"><span>Bloco principal</span><small>interior do abrigo</small></div>
+            <div className="architectural-building-plan">
+              <div className="architectural-room architectural-room-a">{renderBlueprintSlot(shelterBlueprintSlots.find(slot => slot.id === "room-a")!)}</div>
+              <div className="architectural-room architectural-room-b">{renderBlueprintSlot(shelterBlueprintSlots.find(slot => slot.id === "room-b")!)}</div>
+              <div className="architectural-corridor">
+                <span>CORREDOR</span>
+                <i /><i /><i />
+              </div>
+              <div className="architectural-room architectural-room-c">{renderBlueprintSlot(shelterBlueprintSlots.find(slot => slot.id === "room-c")!)}</div>
+              <div className="architectural-room architectural-room-d">{renderBlueprintSlot(shelterBlueprintSlots.find(slot => slot.id === "room-d")!)}</div>
+              <div className="architectural-room architectural-room-e">{renderBlueprintSlot(shelterBlueprintSlots.find(slot => slot.id === "room-e")!)}</div>
+              <div className="architectural-room architectural-room-f">{renderBlueprintSlot(shelterBlueprintSlots.find(slot => slot.id === "room-f")!)}</div>
+            </div>
+
+            <div className="architectural-service-band">
+              <div className="architectural-zone-label"><Wrench size={14} /> Área técnica</div>
+              <div className="architectural-service-grid">
+                {shelterBlueprintSlots.filter(slot => slot.zone === "utility").map(renderBlueprintSlot)}
+              </div>
+            </div>
+          </div>
+
+          <div className="architectural-yard">
+            <div className="architectural-zone-label"><span>↳</span> Pátio / área externa</div>
+            <div className="architectural-yard-grid">
+              {shelterBlueprintSlots.filter(slot => slot.zone === "exterior").map(renderBlueprintSlot)}
+            </div>
+          </div>
         </div>
 
         {planningSlot && !planningDefinition && <div className="construction-slot-picker">
@@ -364,10 +415,11 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
             : <p>Nenhuma instalação disponível para este espaço.</p>}</div>
         </div>}
 
-        <div className="construction-blueprint-legend">
-          <span><i className="is-interior" /> Interior</span>
-          <span><i className="is-utility" /> Técnica</span>
-          <span><i className="is-exterior" /> Exterior</span>
+        <div className="shelter-blueprint-legend architectural-legend">
+          <span><i className="is-operational" /> Concluída</span>
+          <span><i className="is-building" /> Em obra</span>
+          <span><i className="is-damaged" /> Danificada</span>
+          <span><i className="is-available" /> Espaço livre</span>
         </div>
       </section>
 
@@ -470,22 +522,42 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
       </aside>
     </div>
 
-    <section className="construction-catalog">
-      <div className="construction-section-heading"><div><p className="dossier-title">Catálogo</p><h3 className="section-title">O que construir depois</h3></div></div>
+    {catalogOpen && !playerPreview && <section className="construction-catalog construction-catalog-drawer">
+      <div className="construction-section-heading">
+        <div><p className="dossier-title">Nova construção</p><h3 className="section-title">Escolha o que deseja adicionar ao abrigo</h3></div>
+        <Button size="sm" variant="outline" onClick={() => setCatalogOpen(false)}>Fechar</Button>
+      </div>
+
+      {recommendations.length > 0 && <div className="construction-catalog-recommendations">
+        <span><Lightbulb size={14} /> Sugestões</span>
+        {recommendations.map(item => <button type="button" key={item.key} onClick={() => { setSelectedKey(item.key); setFilter("Recomendados"); }}>
+          {projectDefinition(item.key)?.name}
+        </button>)}
+      </div>}
+
       <div className="construction-filter-row">{filters.map(value => <button type="button" key={value} className={filter === value ? "is-active" : ""} onClick={() => setFilter(value)}>{value}</button>)}</div>
       {catalog.length === 0
-        ? <div className="construction-empty"><Lightbulb size={18} /><span>Nenhuma recomendação urgente. Explore uma categoria para ver todas as melhorias.</span></div>
+        ? <div className="construction-empty"><Lightbulb size={18} /><span>Nenhuma recomendação urgente. Escolha outra categoria.</span></div>
         : <div className="construction-catalog-grid">{catalog.map(definition => {
           const project = projectFor(shelter, definition.key);
           const locked = !project && Boolean(projectDependencyIssue(shelter, definition.key));
-          return <button type="button" key={definition.key} className={`construction-catalog-card ${selectedKey === definition.key ? "is-selected" : ""}`} onClick={() => setSelectedKey(definition.key)}>
+          return <button type="button" key={definition.key}
+            className={`construction-catalog-card ${selectedKey === definition.key ? "is-selected" : ""}`}
+            onClick={() => {
+              setSelectedKey(definition.key);
+              if (definition.kind === "facility" && !project?.slotId) {
+                setPlanningKey(definition.key);
+                setPlanningSlotId(null);
+              }
+              setCatalogOpen(false);
+            }}>
             <div><b>{definition.name}</b><span className={`construction-state is-${projectStateTone(project)}`}>{projectStateLabel(project)}</span></div>
             <p>{definition.effects.map(item => item.label).join(" · ")}</p>
-            <small>{projectDisplayCosts(definition.costs)} · {definition.requiredProgress} trabalho</small>
+            <small>{definition.kind === "facility" ? "Instalação física" : "Melhoria do abrigo"} · {projectDisplayCosts(definition.costs)} · {definition.requiredProgress} trabalho</small>
             {locked && <small className="is-warning">Dependência pendente</small>}
           </button>;
         })}</div>}
-    </section>
+    </section>}
 
     {completedProjects.length > 0 && <details className="construction-collapsible">
       <summary><CheckCircle2 size={16} /> Estruturas concluídas <span>{completedProjects.length}</span></summary>
