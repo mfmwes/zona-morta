@@ -309,23 +309,54 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
     <div className="construction-workspace">
       <section className="construction-blueprint-panel">
         <div className="construction-section-heading">
-          <div><p className="dossier-title">Planta</p><h3 className="section-title">{planningDefinition ? `Escolha onde construir ${planningDefinition.name}` : "Implantação física"}</h3></div>
-          {planningDefinition && <Button size="sm" variant="outline" onClick={() => setPlanningKey(null)}>Cancelar posição</Button>}
+          <div>
+            <p className="dossier-title">Planta</p>
+            <h3 className="section-title">
+              {planningDefinition
+                ? `Escolha onde posicionar ${planningDefinition.name}`
+                : planningSlot
+                  ? `Escolha uma instalação para ${planningSlot.label}`
+                  : "Clique em um espaço livre para construir"}
+            </h3>
+          </div>
+          {(planningDefinition || planningSlot) && <Button size="sm" variant="outline" onClick={() => { setPlanningKey(null); setPlanningSlotId(null); }}>Cancelar</Button>}
         </div>
+
         <div className="construction-blueprint-grid">
           {shelterBlueprintSlots.map(slot => {
             const occupant = occupiedSlots.get(slot.id);
             const compatible = Boolean(planningDefinition && planningDefinition.zone === slot.zone && !occupant);
+            const selectedSlot = planningSlotId === slot.id;
             return <button type="button" key={slot.id}
-              disabled={Boolean(occupant) || Boolean(planningDefinition && !compatible) || playerPreview}
-              className={`construction-blueprint-slot is-${slot.zone} ${occupant ? "is-occupied" : ""} ${compatible ? "is-compatible" : ""}`}
-              onClick={() => planningDefinition && compatible && addProject(planningDefinition.key, slot.id)}>
+              disabled={Boolean(occupant) || playerPreview || Boolean(planningDefinition && !compatible)}
+              className={`construction-blueprint-slot is-${slot.zone} ${occupant ? "is-occupied" : ""} ${compatible ? "is-compatible" : ""} ${selectedSlot ? "is-selected" : ""}`}
+              onClick={() => {
+                if (planningDefinition && compatible) addProject(planningDefinition.key, slot.id);
+                else if (!planningDefinition && !occupant) { setPlanningSlotId(slot.id); setPlanningKey(null); }
+              }}>
               <small>{slot.label}</small>
-              {occupant ? <><b>{occupant.name}</b><span className={`construction-state is-${projectStateTone(occupant)}`}>{projectStateLabel(occupant)}</span></> : <><Plus size={18} /><span>{planningDefinition && compatible ? "Construir aqui" : "Espaço livre"}</span></>}
+              {occupant
+                ? <><b>{occupant.name}</b><span className={`construction-state is-${projectStateTone(occupant)}`}>{projectStateLabel(occupant)}</span></>
+                : <><Plus size={18} /><span>{planningDefinition && compatible ? "Usar este espaço" : selectedSlot ? "Espaço selecionado" : "Construir aqui"}</span></>}
             </button>;
           })}
         </div>
-        <div className="construction-blueprint-legend"><span><i className="is-interior" /> Interior</span><span><i className="is-utility" /> Técnica</span><span><i className="is-exterior" /> Exterior</span></div>
+
+        {planningSlot && !planningDefinition && <div className="construction-slot-picker">
+          <div><b>Construir em {planningSlot.label}</b><small>Mostrando apenas instalações compatíveis com esta área.</small></div>
+          <div>{slotChoices.length
+            ? slotChoices.map(definition => <button type="button" key={definition.key} onClick={() => { setSelectedKey(definition.key); addProject(definition.key, planningSlot.id); }}>
+                <span><b>{definition.name}</b><small>{definition.effects.map(item => item.label).join(" · ")}</small></span>
+                <ChevronRight size={15} />
+              </button>)
+            : <p>Nenhuma instalação disponível para este espaço.</p>}</div>
+        </div>}
+
+        <div className="construction-blueprint-legend">
+          <span><i className="is-interior" /> Interior</span>
+          <span><i className="is-utility" /> Técnica</span>
+          <span><i className="is-exterior" /> Exterior</span>
+        </div>
       </section>
 
       <aside className="construction-detail-panel">
