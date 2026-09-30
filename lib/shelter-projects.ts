@@ -1,4 +1,4 @@
-import { absoluteMinutes, addLog, content, displayTime, normalizeShelterAmmo, survivorHex, type GameState, type NPC, type ShelterManualAdjustments, type ShelterPost, type ShelterProject, type ShelterProjectCategory, type ShelterProjectCost, type ShelterProjectEffect, type ShelterState, type Survivor } from "./game";
+import { absoluteMinutes, addLog, content, displayTime, normalizeShelterAmmo, shelterPopulationBreakdown, survivorHex, type GameState, type NPC, type ShelterManualAdjustments, type ShelterPost, type ShelterProject, type ShelterProjectCategory, type ShelterProjectCost, type ShelterProjectEffect, type ShelterState, type Survivor } from "./game";
 import { createId } from "./id";
 
 export type ShelterProjectKind = "facility" | "upgrade";
@@ -486,6 +486,117 @@ export function projectOperational(game: GameState, shelter: ShelterState, proje
   return shelterPower(game, shelter).balance >= 0;
 }
 
+export function shelterColdStorageActive(game: GameState, shelter: ShelterState = game.shelter) {
+  const refrigeration = shelter.projects?.find(project => project.key === "refrigeration");
+  if (refrigeration && projectOperational(game, shelter, refrigeration)) return true;
+  return Boolean(shelter.coldStorage && shelterPower(game, shelter).balance > 0);
+}
+
+export function shelterOvercrowded(game: GameState, shelter: ShelterState = game.shelter) {
+  const metrics = shelterMetrics(shelter, game);
+  return shelterPopulationBreakdown(game, shelter).present > metrics.capacity;
+}
+
+export function shelterComfortFearReduction(game: GameState) {
+  const shelter = game.shelter;
+  if (!shelter.hex || !game.survivors.length || shelter.comfortRestDay === game.day) return 0;
+  if (!game.survivors.every(person => survivorHex(game, person) === shelter.hex)) return 0;
+  if (shelterOvercrowded(game, shelter)) return 0;
+  const comfort = shelterMetrics(shelter, game).comfort;
+  return comfort >= 4 ? 2 : comfort >= 2 ? 1 : 0;
+}
+
+export function consumeShelterComfortRest(game: GameState) {
+  const reduction = shelterComfortFearReduction(game);
+  if (reduction > 0) game.shelter.comfortRestDay = game.day;
+  return reduction;
+}
+
+export type ShelterIncidentKind = "Invasão" | "Sabotagem" | "Incêndio" | "Tempestade" | "Curto elétrico" | "Inundação" | "Outro";
+
+export function projectEligibleForIncident(project: ShelterProject, kind: ShelterIncidentKind) {
+  if (!["Concluído", "Danificado", "Inoperante"].includes(project.state) || projectIntegrity(project) <= 0) return false;
+  const definition = projectDefinition(project.key);
+  if (!definition) return false;
+  if (kind === "Outro" || kind === "Sabotagem") return true;
+  if (kind === "Incêndio") return definition.zone === "interior" || definition.zone === "utility";
+  if (kind === "Tempestade") return definition.zone === "exterior"
+    || ["solar-panels", "elevated-antenna", "rain-collector", "exterior-lighting"].includes(project.key);
+  if (kind === "Curto elétrico") return definition.category === "Energia e infraestrutura"
+    || ["fixed-radio", "refrigeration", "exterior-lighting"].includes(project.key);
+  if (kind === "Inundação") return definition.kind === "facility" && definition.zone !== "utility";
+  if (kind === "Invasão") return definition.category === "Segurança" || definition.zone === "exterior" || definition.zone === "interior";
+  return true;
+}
+
+export function shelterIncidentCandidates(game: GameState, kind: ShelterIncidentKind) {
+  return (game.shelter.projects ?? []).filter(project => projectEligibleForIncident(project, kind));
+}
+
+export function shelterIncidentMitigation(game: GameState, kind: ShelterIncidentKind) {
+  const shelter = game.shelter;
+  const sources: string[] = [];
+  let amount = 0;
+  if (shelterMetrics(shelter, game).security >= 2) {
+    amount += 1;
+    sources.push("Segurança do abrigo");
+  }
+  if (kind === "Invasão") {
+    const gate = shelter.projects?.find(project => project.key === "reinforced-gate");
+    if (gate && projectOperational(game, shelter, gate)) {
+      amount += 1;
+      sources.push("Portão reforçado");
+    }
+  }
+  const alarmEligible = kind === "Invasão" || kind === "Sabotagem";
+  const alarm = shelter.projects?.find(project => project.key === "improvised-alarm");
+  const alarmReady = alarmEligible && shelter.alarmTriggeredDay !== game.day
+    && Boolean(alarm && projectOperational(game, shelter, alarm));
+  if (alarmReady) {
+    amount += 1;
+    sources.push("Alarme improvisado");
+  }
+  return { amount, sources, alarmReady };
+}
+
+export function applyShelterIncident(game: GameState, input: {
+  kind: ShelterIncidentKind;
+  impact: number;
+  targetProjectIds: string[];
+  catastrophic?: boolean;
+}) {
+  if (!Number.isInteger(input.impact) || input.impact < 1 || input.impact > 9)
+    return { ok: false as const, message: "Impacto inválido." };
+  const mitigation = shelterIncidentMitigation(game, input.kind);
+  const remainingImpact = Math.max(0, input.impact - mitigation.amount);
+  const candidates = new Map(shelterIncidentCandidates(game, input.kind).map(project => [project.id, project]));
+  const targets = [...new Set(input.targetProjectIds)].map(id => candidates.get(id)).filter((project): project is ShelterProject => Boolean(project));
+  if (remainingImpact > 0 && targets.length === 0)
+    return { ok: false as const, message: "Escolha ao menos uma estrutura elegível para receber o dano." };
+
+  let pending = remainingImpact;
+  const damaged: { id: string; name: string; damage: number; integrity: number }[] = [];
+  const maxPerTarget = input.catastrophic ? 2 : 1;
+  for (let pass = 0; pass < maxPerTarget && pending > 0; pass++) {
+    for (const project of targets) {
+      if (pending <= 0 || projectIntegrity(project) <= 0) continue;
+      const applied = applyProjectDamage(project, 1);
+      if (!applied) continue;
+      pending -= applied;
+      const row = damaged.find(entry => entry.id === project.id);
+      if (row) { row.damage += applied; row.integrity = projectIntegrity(project); }
+      else damaged.push({ id: project.id, name: project.name, damage: applied, integrity: projectIntegrity(project) });
+    }
+  }
+
+  if (mitigation.alarmReady && mitigation.sources.includes("Alarme improvisado")) game.shelter.alarmTriggeredDay = game.day;
+  const damageText = damaged.length
+    ? damaged.map(row => `${row.name} −${row.damage} Integridade (${row.integrity}/3)`).join(" · ")
+    : "nenhuma estrutura sofreu dano";
+  addLog(game, "abrigo", `Incidente — ${input.kind}: Impacto ${input.impact}, mitigação ${mitigation.amount}${mitigation.sources.length ? ` (${mitigation.sources.join(", ")})` : ""}. ${damageText}${pending ? ` · ${pending} Impacto ficou sem alvo` : ""}.`);
+  return { ok: true as const, impact: input.impact, mitigation, remainingImpact, unassignedImpact: pending, damaged };
+}
+
 export function projectAssignmentIssue(game: GameState, shelter: ShelterState, project: ShelterProject, npcId: string, responsible: boolean) {
   if (project.workShift) return "Cancele o turno em andamento antes de alterar a equipe.";
   const npc = game.npcs.find(candidate => candidate.id === npcId);
@@ -812,7 +923,7 @@ export function runShelterWorkShift(game: GameState, hours = 4) {
 export function projectContributions(shelter: ShelterState, game?: GameState) {
   const values = { security: 0, energy: 0, comfort: 0, capacity: 0 };
   for (const project of shelter.projects ?? []) {
-    if (project.state !== "Concluído") continue;
+    if (!["Concluído", "Danificado"].includes(project.state) || projectIntegrity(project) < 2) continue;
     if (game && !projectOperational(game, shelter, project)) continue;
     for (const item of project.effects) {
       values.security += item.security ?? 0;
