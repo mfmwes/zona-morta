@@ -4782,7 +4782,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Guardado ocupa 1. Aberto e conduzido, usa o espaço Transporte e concede +4 espaços de carga em piso acessível. Não atravessa escada sem esforço."
+          "value": "Guardado ocupa 1 espaço. Aberto e conduzido, deixa de contar como carga pessoal e funciona como um contêiner de até 4 espaços em piso acessível. Exige as duas mãos livres para ser empurrado e não atravessa escada sem esforço."
         },
         {
           "label": "Guarda",
@@ -6222,7 +6222,7 @@
       "fields": [
         {
           "label": "Pergunta de conferência",
-          "value": "Qual arma, secundária possível, proteção, traje, bolsa e transporte estão ativos? Itens vestidos/empunhados e o carrinho aberto não contam novamente como carga guardada."
+          "value": "Qual arma, secundária possível, proteção, traje e bolsa estão ativos? Itens vestidos ou empunhados não contam novamente como carga guardada. O carrinho aberto permanece no inventário como contêiner separado e exige as duas mãos para ser conduzido."
         }
       ]
     },
@@ -6282,7 +6282,7 @@
       "fields": [
         {
           "label": "Pergunta de conferência",
-          "value": "Bolsa não empilha com outra. Carrinho aberto concede +4 espaços enquanto a rota permitir; carro 3, moto 1 e van 6 são capacidade de carga do veículo e continuam sob controle do mestre até haver ficha própria de veículo."
+          "value": "Bolsa não empilha com outra. Carrinho aberto funciona como contêiner próprio de 4 espaços, exige duas mãos e só pode ser conduzido enquanto a rota permitir; carro 3, moto 1 e van 6 são capacidade de carga do veículo e continuam sob controle do mestre até haver ficha própria de veículo."
         }
       ]
     },
