@@ -3,7 +3,7 @@
 
 import { useMemo, useState, type ChangeEvent, type ReactNode } from "react";
 import {
-  Activity, Backpack, BookOpen, Crosshair, Dice5, Droplets, Heart, Search,
+  Activity, Backpack, BookOpen, Crosshair, Dice5, Droplets, Footprints, Heart, Search,
   HeartPulse, History, Minus, Plus, Shield, ShieldCheck, Sparkles,
   Moon, Stethoscope, Swords, Upload, Utensils, Zap,
 } from "lucide-react";
