@@ -40,6 +40,7 @@ export function HexContextMenu({
   onCreatePoint,
   onOpenMasterTools,
   onRelocateShelter,
+  onMoveSurvivors,
   children,
 }: {
   game: GameState;
@@ -51,6 +52,7 @@ export function HexContextMenu({
   onCreatePoint: () => void;
   onOpenMasterTools: () => void;
   onRelocateShelter: () => void;
+  onMoveSurvivors: () => void;
   children: ReactElement;
 }) {
   const options = hexActionOptions(game, hexId);
@@ -88,7 +90,10 @@ export function HexContextMenu({
         <ContextMenuItem onSelect={() => run({ type: "observe" })}><Eye /> Avistar setor</ContextMenuItem>}
 
       {!playerPreview && options.canTravel &&
-        <ContextMenuItem onSelect={() => run({ type: "travel" })}><Route /> Entrar no hex · {record.routeHours} h</ContextMenuItem>}
+        <ContextMenuItem onSelect={() => run({ type: "travel" })}><Route /> Mover grupo principal · {record.routeHours} h</ContextMenuItem>}
+
+      {!playerPreview && options.canMoveSurvivors &&
+        <ContextMenuItem onSelect={onMoveSurvivors}><Footprints /> Mover sobreviventes…</ContextMenuItem>}
 
       {!playerPreview && options.canEstablish &&
         <ContextMenuItem onSelect={() => run({ type: "establish" })}><House /> Estabelecer abrigo aqui</ContextMenuItem>}
