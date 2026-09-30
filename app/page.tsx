@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { BookOpen, Clock3, Download, Eye, EyeOff, House, LogOut, Map, MessageSquare, MoreHorizontal, Package, RotateCcw, Upload, Users, Volume2 } from "lucide-react";
+import { BookOpen, Brain, Clock3, Download, Droplets, Ear, Eye, EyeOff, House, LogOut, Map, MessageSquare, MoreHorizontal, Package, RotateCcw, Settings, Upload, Users, Utensils, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -12,7 +12,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sidebar, SidebarProvider } from "@/components/ui/sidebar";
 import { Counter, Field, Pick } from "@/components/game-controls";
 import { HexExplorer } from "@/components/hex-explorer";
-import { SurvivorPanel } from "@/components/survivor-panel";
+import { SurvivorPanel, type RestPeer } from "@/components/survivor-panel";
 import { NpcPanel } from "@/components/npc-panel";
 import { ReferencePanel, ShelterPanel } from "@/components/campaign-views";
 import { PlayersPanel } from "@/components/players-panel";
@@ -20,14 +20,15 @@ import { AuthPanel } from "@/components/auth-panel";
 import { CharacterWizard } from "@/components/character-wizard";
 import { CampaignLibrary, type CampaignSummary } from "@/components/campaign-library";
 import { TableChat } from "@/components/table-chat";
-import { addLog, defaultState, displayTime, type GameState, type Point, type Survivor } from "@/lib/game";
+import { DayCloseDialog } from "@/components/day-close-dialog";
+import { addLog, defaultState, displayTime, survivorHex, type GameState, type Point, type Survivor } from "@/lib/game";
 import { createId } from "@/lib/id";
 import { sectorProfiles } from "@/lib/sectors";
 import { adjustProvisionCount } from "@/lib/provisions";
 import { beginExpedition, beginScene } from "@/lib/abilities";
 import { playerEditPayload } from "@/lib/collaboration";
 
-type CampaignResponse = { revision?: number; state?: GameState; role: "mestre" | "jogador" | "convidado"; ownerId: string; survivorId?: string | null; restPeers?: { id: string; name: string }[] };
+type CampaignResponse = { revision?: number; state?: GameState; role: "mestre" | "jogador" | "convidado"; ownerId: string; survivorId?: string | null; restPeers?: RestPeer[] };
 type SaveStatus = "salvo" | "salvando" | "erro" | "conflito";
 type ModelTool = {
   name: string; title: string; description: string; inputSchema: object;
@@ -53,7 +54,7 @@ export default function CampaignApp() {
   const [role, setRole] = useState<"mestre" | "jogador" | "convidado">("mestre");
   const [ownerId, setOwnerId] = useState("");
   const [survivorId, setSurvivorId] = useState<string | null>(null);
-  const [restPeers, setRestPeers] = useState<{ id: string; name: string }[]>([]);
+  const [restPeers, setRestPeers] = useState<RestPeer[]>([]);
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState("");
   const [startWithShelter, setStartWithShelter] = useState(false);
@@ -162,7 +163,7 @@ export default function CampaignApp() {
             body: JSON.stringify(player && before ? playerEditPayload(before, snapshot)
               : { revision: revision.current, state: snapshot }),
           });
-          const result = await response.json() as { error?: string; revision?: number; state?: GameState; restPeers?: { id: string; name: string }[] };
+          const result = await response.json() as { error?: string; revision?: number; state?: GameState; restPeers?: RestPeer[] };
           if (!response.ok) {
             pending.current = current.current;
             pendingBefore.current = before;
@@ -268,7 +269,7 @@ export default function CampaignApp() {
           return { day: state.day, time: displayTime(state.minutes), shelter: state.shelter.hex ? state.shelter.name : null,
             shelterHex: state.shelter.hex, partyHex: state.partyHex,
             food: state.shelter.food, water: state.shelter.water,
-            survivors: state.survivors.map(s => s.name),
+            survivors: state.survivors.map(s => ({ name: s.name, hex: survivorHex(state, s) })),
             explored: Object.values(state.hexes).filter(h => h.discovery === "explorado").length };
         },
       },
@@ -409,6 +410,7 @@ export default function CampaignApp() {
         <div className="topbar-context text-sm">
           <span className="tag">DIA {String(game.day).padStart(2,"0")}</span>
           <span className="font-mono font-extrabold flex items-center gap-1"><Clock3 size={16} /> {displayTime(game.minutes)}</span>
+          {role === "mestre" && <DayCloseDialog game={game} edit={edit} variant="outline" size="sm" className="topbar-day-close" />}
           <span className="hidden sm:inline text-[#c4cfcb]">/</span>
           <span className="subtle hidden sm:inline">{game.shelter.hex ? game.shelter.name : "Sem abrigo"}</span>
         </div>
@@ -494,35 +496,72 @@ export default function CampaignApp() {
           <b>As alterações ainda estão nesta tela.</b> {saveError} Baixe uma cópia antes de recarregar, se precisar.
         </div>}
         {tab === "mapa" && <>
-          {!readOnlyPreview && <div className="panel panel-pad mb-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
-            <section className="grid gap-3 content-start">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2"><Volume2 size={19} /><b>Pressão da cena</b></div>
-                <div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => {
-                  edit(beginScene);
-                  toast.success("Nova cena iniciada", { description: "Barulho voltou a 0 e habilidades por cena foram renovadas." });
-                }}>Nova cena</Button>
+          {!readOnlyPreview && <div className="panel scene-control-panel mb-5">
+            <section className="scene-control-section scene-pressure-section">
+              <div className="scene-control-heading">
+                <div className="scene-control-title"><Volume2 size={20} /><b>Pressão da cena</b></div>
+                <div className="scene-control-actions">
+                  <Button size="sm" variant="outline" onClick={() => {
+                    edit(beginScene);
+                    toast.success("Nova cena iniciada", { description: "Barulho voltou a 0 e habilidades por cena foram renovadas." });
+                  }}>Nova cena</Button>
                   <Button size="sm" variant="outline" onClick={() => {
                     edit(beginExpedition);
                     toast.success("Nova expedição iniciada", { description: "Habilidades por expedição foram renovadas." });
-                  }}>Nova expedição</Button></div>
+                  }}>Nova expedição</Button>
+                </div>
               </div>
-              <div className="flex flex-wrap gap-x-6 gap-y-3"><Counter compact label="Barulho · 0–5" value={game.noise} max={5} onChange={value=>edit(d=>{d.noise=value;})} />
-                <Counter compact tone="fear" label="Fear · 0–12" value={game.fear} max={12} onChange={value=>edit(d=>{d.fear=value;})} /></div>
+
+              <div className="scene-pressure-grid">
+                <div className="scene-meter scene-meter-noise">
+                  <div className="scene-meter-identity">
+                    <Ear size={28} aria-hidden="true" />
+                    <span><b>Barulho</b><small>0–5</small></span>
+                  </div>
+                  <div className="scene-meter-control">
+                    <Counter compact label="Barulho" value={game.noise} max={5} onChange={value=>edit(d=>{d.noise=value;})} />
+                  </div>
+                </div>
+                <div className="scene-meter scene-meter-fear">
+                  <div className="scene-meter-identity">
+                    <Brain size={28} aria-hidden="true" />
+                    <span><b>Fear</b><small>0–12</small></span>
+                  </div>
+                  <div className="scene-meter-control">
+                    <Counter compact tone="fear" label="Fear" value={game.fear} max={12} onChange={value=>edit(d=>{d.fear=value;})} />
+                  </div>
+                </div>
+              </div>
             </section>
-            <section className="grid gap-3 content-start border-t pt-4 xl:border-t-0 xl:border-l xl:pl-5 xl:pt-0">
-              <div className="flex items-center gap-2"><Package size={19} /><b>{game.shelter.hex ? "Suprimentos do abrigo" : "Reservas do grupo"}</b></div>
-              <div className="flex flex-wrap gap-x-6 gap-y-3">
-                {([ ["food","Comida"], ["water","Água"], ["parts","Peças"] ] as const).map(([key,label]) =>
-                  <Counter key={key} compact label={label} value={game.shelter[key]} max={key === "parts" ? 99 : 999}
-                    editable quickStep={key === "parts" ? undefined : 4}
-                    onChange={value=>edit(d=>{ if (key === "parts") d.shelter.parts = value;
-                      else adjustProvisionCount(d.shelter, key, value); })} />)}
+
+            <section className="scene-control-section scene-supplies-section">
+              <div className="scene-control-heading">
+                <div className="scene-control-title"><Package size={20} /><b>{game.shelter.hex ? "Suprimentos do abrigo" : "Reservas do grupo"}</b></div>
               </div>
-              <p className="text-xs subtle">Comida e Água em porções (4 = 1 unidade); Peças em unidades. Sem abrigo, registre apenas o que o grupo consegue transportar.</p>
+
+              <div className="scene-supplies-grid">
+                {([
+                  ["food","Comida",Utensils,"food"],
+                  ["water","Água",Droplets,"water"],
+                  ["parts","Peças",Settings,"parts"],
+                ] as const).map(([key,label,Icon,tone]) =>
+                  <div className={`scene-supply scene-supply-${tone}`} key={key}>
+                    <div className="scene-supply-identity">
+                      <Icon size={25} aria-hidden="true" />
+                      <b>{label}</b>
+                    </div>
+                    <div className="scene-supply-control">
+                      <Counter compact label={label} value={game.shelter[key]} max={key === "parts" ? 99 : 999}
+                        editable quickStep={key === "parts" ? undefined : 4}
+                        onChange={value=>edit(d=>{ if (key === "parts") d.shelter.parts = value;
+                          else adjustProvisionCount(d.shelter, key, value); })} />
+                    </div>
+                  </div>)}
+              </div>
+              <p className="scene-supplies-note">Comida e Água em porções (4 = 1 unidade); Peças em unidades. Sem abrigo, registre apenas o que o grupo consegue transportar.</p>
             </section>
           </div>}
-          <HexExplorer key={game.campaignId} game={game} edit={edit} playerPreview={readOnlyPreview} />
+          <HexExplorer key={game.campaignId} game={game} edit={edit} playerPreview={readOnlyPreview} teamPeers={restPeers} />
           {!readOnlyPreview && <div className="panel panel-pad mt-5 flex flex-wrap items-center gap-3">
             <div className="mr-auto"><b>Relógio da expedição</b><p className="text-xs subtle">Ao anoitecer, registre o descanso na ficha, mesmo sem abrigo.</p></div>
             {[30,60,120].map(amount=><Button key={amount} size="sm" variant="outline" disabled={game.minutes+amount>=1440}

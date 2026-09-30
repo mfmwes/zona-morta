@@ -1,4 +1,4 @@
-import { addLog, content, type GameState } from "./game";
+import { addLog, content, survivorsAtHex, type GameState } from "./game";
 import { createId } from "./id";
 
 export type SearchInput = {
@@ -8,7 +8,7 @@ export type SearchInput = {
 export const normalizedSector = (name: string) => name.trim().replace(/\s+/g, " ").toLocaleLowerCase("pt-BR");
 
 export function searchError(game: GameState, input: SearchInput): string | null {
-  if (game.partyHex !== input.hex) return "Entre neste hex antes de procurar itens.";
+  if (survivorsAtHex(game, input.hex).length === 0) return "É preciso haver pelo menos um sobrevivente neste hex antes de procurar itens.";
   const hex = game.hexes[input.hex];
   const point = hex?.points.find(p => p.id === input.pointId);
   if (hex?.discovery !== "explorado" || !point) return "Este ponto precisa estar em um hex explorado.";

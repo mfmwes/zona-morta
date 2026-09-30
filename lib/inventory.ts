@@ -1,4 +1,4 @@
-import { content, type EquipmentSlot, type GameState, type InventoryItem, type Survivor } from "./game";
+import { content, survivorHex, survivorsAtHex, type EquipmentSlot, type GameState, type InventoryItem, type Survivor } from "./game";
 import { getPrimary, getProtection, getSecondary, weaponAmmoType } from "./equipment";
 import { createId } from "./id";
 import { transferPortionLots } from "./provisions";
@@ -42,15 +42,36 @@ export function addStack(items: InventoryItem[], incoming: InventoryItem) {
   if (match) match.qty += incoming.qty;
   else items.push({ ...incoming, id: createId() });
 }
-export function atSharedStorage(game: GameState) {
-  return !game.shelter.hex || game.partyHex === game.shelter.hex;
+export function sharedStorageHex(game: GameState) {
+  return game.shelter.hex ?? game.partyHex;
+}
+
+export function atSharedStorage(game: GameState, survivorId?: string) {
+  const storageHex = sharedStorageHex(game);
+  if (survivorId) {
+    const person = game.survivors.find(entry => entry.id === survivorId);
+    return Boolean(person && survivorHex(game, person) === storageHex);
+  }
+  if (game.survivors.length === 0) return game.partyHex === storageHex;
+  return survivorsAtHex(game, storageHex).length > 0;
+}
+
+function sharedAccessSurvivor(from: string, to: string) {
+  if (from === "shared" && to !== "shared") return to;
+  if (to === "shared" && from !== "shared") return from;
+  return undefined;
 }
 export function container(game: GameState, id: string) {
   if (id === "shared") return game.shelter.inventory ?? (game.shelter.inventory = []);
   return game.survivors.find(s => s.id === id)?.inventory;
 }
 export function transferItem(game: GameState, from: string, to: string, itemId: string, quantity: number) {
-  if (!Number.isInteger(quantity) || quantity < 1 || from === to || ((from === "shared" || to === "shared") && !atSharedStorage(game))) return false;
+  const sharedSurvivor = sharedAccessSurvivor(from, to);
+  const fromPerson = from === "shared" ? null : game.survivors.find(person => person.id === from);
+  const toPerson = to === "shared" ? null : game.survivors.find(person => person.id === to);
+  if (!Number.isInteger(quantity) || quantity < 1 || from === to
+    || (sharedSurvivor && !atSharedStorage(game, sharedSurvivor))
+    || (fromPerson && toPerson && survivorHex(game, fromPerson) !== survivorHex(game, toPerson))) return false;
   const source = container(game, from), target = container(game, to);
   const item = source?.find(entry => entry.id === itemId);
   const count = Math.trunc(quantity);
@@ -198,7 +219,7 @@ export function prepareProvisionItem(game: GameState, ownerId: string, itemId: s
   return after.ready ? { item: target, info: after } : null;
 }
 
-function consumePortionFromItems(items: InventoryItem[], itemId: string) {
+export function consumeProvisionPortionFromItems(items: InventoryItem[], itemId: string) {
   const item = items.find(entry => entry.id === itemId);
   if (!item) return null;
   const info = provisionItemInfo(item);
@@ -229,10 +250,10 @@ function consumePortionFromItems(items: InventoryItem[], itemId: string) {
 }
 
 export function consumeProvisionItem(game: GameState, ownerId: string, itemId: string, consumerId?: string) {
-  if (ownerId === "shared" && !atSharedStorage(game)) return null;
+  if (ownerId === "shared" && (!atSharedStorage(game) || (consumerId && !atSharedStorage(game, consumerId)))) return null;
   const items = container(game, ownerId);
   if (!items) return null;
-  const result = consumePortionFromItems(items, itemId);
+  const result = consumeProvisionPortionFromItems(items, itemId);
   if (!result) return null;
   const consumer = consumerId ? game.survivors.find(person => person.id === consumerId)
     : game.survivors.find(person => person.id === ownerId);
@@ -261,7 +282,7 @@ export function consumeReadyProvisionPortions(items: InventoryItem[] | undefined
         || (a.foundDay ?? 999999) - (b.foundDay ?? 999999));
     const next = candidates[0];
     if (!next) break;
-    const result = consumePortionFromItems(items, next.id);
+    const result = consumeProvisionPortionFromItems(items, next.id);
     if (!result) break;
     labels.push(result.name);
     remaining -= 1;
@@ -273,10 +294,15 @@ export type Provision = "food" | "water" | "ammo";
 export function provisionTransferError(game: GameState, from: string, to: string, resource: Provision, quantity: number): string | null {
   if (!Number.isInteger(quantity) || quantity < 1) return "Informe uma quantidade inteira maior que zero.";
   if (!to || from === to) return "Escolha dois destinos diferentes.";
-  if ((from === "shared" || to === "shared") && !atSharedStorage(game)) return "O grupo precisa estar no abrigo para acessar essas reservas.";
+  const sharedSurvivor = sharedAccessSurvivor(from, to);
+  if (sharedSurvivor && !atSharedStorage(game, sharedSurvivor))
+    return "Esse sobrevivente precisa estar no mesmo hex das reservas compartilhadas.";
   const source = from === "shared" ? game.shelter : game.survivors.find(s => s.id === from);
   const target = to === "shared" ? game.shelter : game.survivors.find(s => s.id === to);
   if (!source || !target) return "Sobrevivente não encontrado.";
+  if (from !== "shared" && to !== "shared"
+    && survivorHex(game, source as Survivor) !== survivorHex(game, target as Survivor))
+    return "Os sobreviventes precisam estar no mesmo hex para transferir recursos.";
   const available = resource === "ammo" && "pistolAmmo" in source ? source.pistolAmmo : (source as Survivor)[resource];
   const receiving = resource === "ammo" && "pistolAmmo" in target ? target.pistolAmmo : (target as Survivor)[resource];
   if (available < quantity) return "A origem não tem essa quantidade disponível.";

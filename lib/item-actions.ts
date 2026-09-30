@@ -1,4 +1,4 @@
-import { addLog, type EquipmentSlot, type GameState, type InventoryItem } from "./game";
+import { addLog, survivorHex, type EquipmentSlot, type GameState, type InventoryItem } from "./game";
 import {
   atSharedStorage,
   catalogForItem,
@@ -42,11 +42,15 @@ function stockResourceFor(item: InventoryItem): StockResource | undefined {
 
 export function itemActionOptions(game: GameState, ownerId: string, item: InventoryItem, selfOnly = false) {
   const slots = ownerId === "shared" ? [] : compatibleSlots(item);
+  const owner = game.survivors.find(person => person.id === ownerId);
   const targets = selfOnly ? [] : [
     ...game.survivors
       .filter(person => person.id !== ownerId)
+      .filter(person => ownerId === "shared"
+        ? atSharedStorage(game, person.id)
+        : Boolean(owner && survivorHex(game, person) === survivorHex(game, owner)))
       .map(person => ({ value: person.id, label: person.name })),
-    ...(ownerId !== "shared" && atSharedStorage(game)
+    ...(ownerId !== "shared" && atSharedStorage(game, ownerId)
       ? [{ value: "shared", label: inventoryOwnerName(game, "shared") }]
       : []),
   ];
@@ -61,8 +65,8 @@ export function itemActionOptions(game: GameState, ownerId: string, item: Invent
     targets,
     provision,
     canUse,
-    canMedication: !selfOnly && countsAsMedication(item) && atSharedStorage(game),
-    canStock: !selfOnly && Boolean(stockResource) && atSharedStorage(game),
+    canMedication: !selfOnly && countsAsMedication(item) && (ownerId === "shared" ? atSharedStorage(game) : atSharedStorage(game, ownerId)),
+    canStock: !selfOnly && Boolean(stockResource) && (ownerId === "shared" ? atSharedStorage(game) : atSharedStorage(game, ownerId)),
     stockResource,
   };
 }
@@ -113,7 +117,7 @@ export function performItemAction(game: GameState, ownerId: string, itemId: stri
     }
   } else if (action.type === "medication") {
     const count = Math.max(1, Math.min(item.qty, Math.trunc(action.quantity)));
-    if (countsAsMedication(item) && atSharedStorage(game) && game.shelter.medications + count <= 99
+    if (countsAsMedication(item) && (ownerId === "shared" ? atSharedStorage(game) : atSharedStorage(game, ownerId)) && game.shelter.medications + count <= 99
       && discardItem(game, ownerId, item.id, count)) {
       game.shelter.medications += count;
       message = `${owner} guardou ${count}× ${item.name} como ${count} unidade(s) de Medicamentos nas reservas compartilhadas.`;
@@ -121,7 +125,7 @@ export function performItemAction(game: GameState, ownerId: string, itemId: stri
   } else if (action.type === "stock") {
     const count = Math.max(1, Math.min(item.qty, Math.trunc(action.quantity)));
     const resource = stockResourceFor(item);
-    if (resource && atSharedStorage(game) && game.shelter[resource] + count <= 99
+    if (resource && (ownerId === "shared" ? atSharedStorage(game) : atSharedStorage(game, ownerId)) && game.shelter[resource] + count <= 99
       && discardItem(game, ownerId, item.id, count)) {
       game.shelter[resource] += count;
       message = `${owner} guardou ${count} unidade(s) de ${item.name} nas reservas compartilhadas.`;
@@ -129,7 +133,8 @@ export function performItemAction(game: GameState, ownerId: string, itemId: stri
   } else if (action.type === "discard") {
     const count = Math.max(1, Math.min(item.qty, Math.trunc(action.quantity)));
     if (discardItem(game, ownerId, item.id, count)) {
-      message = `${owner} deixou para trás ${count}× ${item.name} no hex ${game.partyHex}.`;
+      const location = person ? survivorHex(game, person) : (game.shelter.hex ?? game.partyHex);
+      message = `${owner} deixou para trás ${count}× ${item.name} no hex ${location}.`;
     }
   }
 

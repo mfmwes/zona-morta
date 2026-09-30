@@ -3,7 +3,7 @@
 
 import { useMemo, useState, type ChangeEvent, type ReactNode } from "react";
 import {
-  Activity, Backpack, BookOpen, Crosshair, Dice5, Droplets, Heart, Search,
+  Activity, Backpack, BookOpen, Crosshair, Dice5, Droplets, Footprints, Heart, Search,
   HeartPulse, History, Minus, Plus, Shield, ShieldCheck, Sparkles,
   Moon, Stethoscope, Swords, Upload, Utensils, Zap,
 } from "lucide-react";
@@ -21,7 +21,7 @@ import { EmptyItemArt, ItemArt } from "@/components/item-art";
 import { AbilityArt } from "@/components/ability-art";
 import { RollDialog, type RollRequest } from "@/components/roll-dialog";
 import { Counter, Field, Pick } from "@/components/game-controls";
-import { absoluteMinutes, addLog, content, survivorStats, traits, type EquipmentSlot, type GameState, type Infection, type Survivor } from "@/lib/game";
+import { absoluteMinutes, addLog, content, survivorHex, survivorStats, traits, type EquipmentSlot, type GameState, type Infection, type Survivor } from "@/lib/game";
 import { ammoTypeFor, ammoTypes, atSharedStorage, catalogForItem, countsAsMedication, discardItem, stowSlot } from "@/lib/inventory";
 import { provisionBreakdown, provisionDisplay, provisionItemInfo } from "@/lib/provision-items";
 import { equipmentModifiers, getPrimary, getProtection, getSecondary } from "@/lib/equipment";
@@ -95,7 +95,19 @@ function ResourceControl({ label, icon: Icon, current, max, onChange, tone, reve
   </div>;
 }
 
-type RestPeer = { id: string; name: string };
+export type RestPeer = {
+  id: string;
+  name: string;
+  portrait?: string;
+  archetype?: string;
+  specialty?: string;
+  hex?: string;
+  infection?: Infection;
+  hp?: number;
+  hpMax?: number;
+  stress?: number;
+  hope?: number;
+};
 
 function RestPlanner({ game, edit, selected, playerMode, playerPreview, restPeers = [] }: {
   game: GameState; edit: Edit; selected: Survivor; playerMode: boolean; playerPreview: boolean; restPeers?: RestPeer[];
@@ -103,18 +115,23 @@ function RestPlanner({ game, edit, selected, playerMode, playerPreview, restPeer
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<RestKind>("short");
   const [choices, setChoices] = useState<Record<string, [RestChoice, RestChoice]>>({});
-  const canResolve = !playerPreview && !playerMode;
-  const canChoose = !playerPreview;
-  const actors = playerMode ? [selected] : game.survivors;
+  const personalPlanning = playerMode || playerPreview;
+  const canResolve = !personalPlanning;
+  const actors = personalPlanning ? [selected] : game.survivors;
   const peers = playerMode
-    ? (restPeers.some(person => person.id === selected.id) ? restPeers : [{ id: selected.id, name: selected.name }, ...restPeers])
-    : game.survivors.map(person => ({ id: person.id, name: person.name }));
-  const targetOptions = peers.map(person => ({ value: person.id, label: person.name }));
+    ? (restPeers.some(person => person.id === selected.id)
+      ? restPeers
+      : [{ id: selected.id, name: selected.name, hex: survivorHex(game, selected) }, ...restPeers])
+    : game.survivors.map(person => ({ id: person.id, name: person.name, hex: survivorHex(game, person) }));
+  const targetsFor = (person: Survivor) => peers
+    .filter(peer => (peer.hex ?? game.partyHex) === survivorHex(game, person))
+    .map(peer => ({ value: peer.id, label: peer.name }));
 
   function defaultChoices(person: Survivor, nextKind: RestKind): [RestChoice, RestChoice] {
     const planned = person.restPlan;
+    const targetIds = new Set(targetsFor(person).map(option => option.value));
     if (planned?.kind === nextKind && planned.choices.length === 2 && planned.choices.every(choice =>
-      restActionsFor(nextKind).includes(choice.action as RestAction) && peers.some(peer => peer.id === choice.targetId))) {
+      restActionsFor(nextKind).includes(choice.action as RestAction) && targetIds.has(choice.targetId))) {
       return planned.choices as [RestChoice, RestChoice];
     }
     const action = restActionsFor(nextKind)[0]!;
@@ -158,20 +175,24 @@ function RestPlanner({ game, edit, selected, playerMode, playerPreview, restPeer
     setOpen(false);
   }
 
-  return <section className="character-surface character-rest-panel"><SectionHeading index="05" title={playerMode ? "Seu descanso" : "Descanso da mesa"} aside={<span className="character-micro">2 AÇÕES POR PESSOA</span>} />
-    <p className="character-section-intro">Curto recupera recursos com d4+1; longo limpa o recurso escolhido. Cada ação pode beneficiar você ou outra pessoa da equipe. Preparar concede Hope automaticamente.</p>
-    {!canChoose ? <p className="character-rest-readonly">Cada jogador registra as próprias escolhas nesta ficha; o mestre conclui o descanso da mesa e aplica os resultados.</p>
-      : <><div className="character-rest-actions"><Button size="sm" variant="outline" disabled={!actors.length} onClick={() => begin("short")}><Moon size={16} /> Descanso curto</Button>
-        <Button size="sm" disabled={!actors.length} onClick={() => begin("long")}><Moon size={16} /> Descanso longo</Button></div>
-        {playerMode && selected.restPlan && <p className="character-rest-status">Escolhas de descanso {selected.restPlan.kind === "short" ? "curto" : "longo"} registradas. Você pode alterá-las antes da conclusão.</p>}</>}
-    <Dialog open={open} onOpenChange={setOpen}><DialogContent className="rest-planner-dialog"><DialogHeader><DialogTitle>{playerMode ? "Escolher seu" : "Organizar"} descanso {kind === "short" ? "curto" : "longo"}</DialogTitle>
-      <DialogDescription>{playerMode ? "Defina as suas duas ações e quem receberá cada benefício. O mestre conclui o descanso para toda a mesa." : "As escolhas já registradas pelos jogadores aparecem aqui. Ajuste apenas se necessário e conclua uma vez para aplicar valores, Fear e renovação de habilidades."}</DialogDescription></DialogHeader>
+  return <section className="character-surface character-rest-panel"><SectionHeading index="04" title={personalPlanning ? "Seu descanso" : "Descanso da mesa"} aside={<span className="character-micro">2 AÇÕES POR PESSOA</span>} />
+    <p className="character-section-intro">Curto recupera recursos com d4+1; longo limpa o recurso escolhido. Cada ação pode beneficiar você ou outra pessoa no mesmo hex. Preparar concede Hope automaticamente.</p>
+    <div className="character-rest-actions"><Button size="sm" variant="outline" disabled={!actors.length} onClick={() => begin("short")}><Moon size={16} /> Descanso curto</Button>
+      <Button size="sm" disabled={!actors.length} onClick={() => begin("long")}><Moon size={16} /> Descanso longo</Button></div>
+    {personalPlanning && selected.restPlan && <p className="character-rest-status">Escolhas de descanso {selected.restPlan.kind === "short" ? "curto" : "longo"} registradas. Você pode alterá-las antes da conclusão.</p>}
+    {playerPreview && !playerMode && <p className="character-rest-preview-note">Prévia interativa: as escolhas são registradas para o sobrevivente selecionado, como aconteceria no acesso do jogador.</p>}
+    <Dialog open={open} onOpenChange={setOpen}><DialogContent className="rest-planner-dialog"><DialogHeader><DialogTitle>{personalPlanning ? "Escolher seu" : "Organizar"} descanso {kind === "short" ? "curto" : "longo"}</DialogTitle>
+      <DialogDescription>{personalPlanning ? "Defina as duas ações e quem receberá cada benefício. O mestre conclui o descanso para toda a mesa." : "As escolhas já registradas pelos jogadores aparecem aqui. Ajuste apenas se necessário e conclua uma vez para aplicar valores, Fear e renovação de habilidades."}</DialogDescription></DialogHeader>
       <div className="rest-planner-list">{actors.map(person => {
         const selectedChoices = choices[person.id] ?? defaultChoices(person, kind);
         const options = restActionsFor(kind).map(action => ({ value: action, label: restActionLabels[action] }));
-        return <div className="rest-planner-row" key={person.id}><b>{person.name}</b><div className="rest-planner-choices">
-          {[0, 1].map(index => <div className="rest-planner-action" key={index}><Pick label={`${index === 0 ? "Primeira" : "Segunda"} ação`} value={selectedChoices[index as 0 | 1].action} options={options} onChange={value => updateChoice(person.id, index as 0 | 1, "action", value)} />
-            <Pick label="Beneficia" value={selectedChoices[index as 0 | 1].targetId} options={targetOptions} onChange={value => updateChoice(person.id, index as 0 | 1, "targetId", value)} /></div>)}
+        const targetOptions = targetsFor(person);
+        return <div className="rest-planner-row" key={person.id}><b>{person.name} · Hex {survivorHex(game, person)}</b><div className="rest-planner-choices">
+          {[0, 1].map(index => <div className="rest-planner-action" key={index}>
+            <span className="rest-planner-action-title">{index === 0 ? "AÇÃO 1" : "AÇÃO 2"}</span>
+            <Pick label="O que fazer" value={selectedChoices[index as 0 | 1].action} options={options} onChange={value => updateChoice(person.id, index as 0 | 1, "action", value)} />
+            <Pick label="Quem recebe o benefício" value={selectedChoices[index as 0 | 1].targetId} options={targetOptions} onChange={value => updateChoice(person.id, index as 0 | 1, "targetId", value)} />
+          </div>)}
         </div></div>;
       })}</div>
       <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button><Button onClick={canResolve ? resolve : savePersonalPlan}>{canResolve ? "Aplicar descanso" : "Registrar escolhas"}</Button></DialogFooter>
@@ -189,7 +210,8 @@ function AbilityUseControl({ game, edit, survivorId, abilityId, name, effect, ho
   const [context, setContext] = useState("");
   const person = game.survivors.find(s => s.id === survivorId);
   const placeOrPatient = period === "place" || period === "patient";
-  const target = period === "place" && !context.trim() ? `hex ${game.partyHex}` : context;
+  const currentHex = person ? survivorHex(game, person) : game.partyHex;
+  const target = period === "place" && !context.trim() ? `hex ${currentHex}` : context;
   const available = abilityAvailable(game, survivorId, abilityId, effect, target);
   const canPay = person && (cost === "free" || cost === "hope1" && person.hope >= 1 || cost === "hope3" && person.hope >= 3 ||
     cost === "stress1" && person.stress < 6 || cost === "armor1" && (person.armorMarked ?? 0) < survivorStats(person).armor);
@@ -211,7 +233,7 @@ function AbilityUseControl({ game, edit, survivorId, abilityId, name, effect, ho
       <p className="character-rule-note">{effect}</p>
       {period && <p className="inventory-hint"><b>Limite:</b> {periodLabels[period]}{period === "place" ? " identificado abaixo" : period === "patient" ? /durante um descanso curto/i.test(effect) ? " por descanso curto" : " por cena" : ""}.</p>}
       {placeOrPatient && <Field label={period === "patient" ? "Nome do paciente" : "Hex ou local da descoberta"} value={context}
-        onChange={setContext} placeholder={period === "patient" ? "Ex.: Joana" : `hex ${game.partyHex}`} />}
+        onChange={setContext} placeholder={period === "patient" ? "Ex.: Joana" : `hex ${currentHex}`} />}
       {costs.length > 1 && <Pick label="Custo desta opção" value={cost} options={costs.map(value => ({ value, label: costLabels[value] }))} onChange={value => setCost(value as AbilityCost)} />}
       {costs.length === 1 && <p className="inventory-hint"><b>Custo:</b> {costLabels[cost]}.</p>}
       {!available && <p className="inventory-danger" role="status">Esta habilidade já foi usada neste período ou neste alvo/local.</p>}
@@ -282,6 +304,19 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
   const personal = selected ? content.personal.find(a => a.name === selected.personal) : null;
   const recentRolls = selected ? game.log.filter(entry => ["dados", "dano"].includes(entry.kind) &&
     (entry.actorId === selected.id || (!entry.actorId && entry.text.startsWith(`${selected.name}:`)))).slice(0, 4) : [];
+  const teamPeers = playerMode
+    ? (restPeers.length ? restPeers : game.survivors.map(person => {
+        const personStats = survivorStats(person);
+        return {
+          id: person.id, name: person.name, portrait: person.portrait, archetype: person.archetype,
+          specialty: person.specialty, hex: person.hex ?? game.partyHex, infection: person.infection,
+          hp: Math.max(0, personStats.hp - person.hp), hpMax: personStats.hp,
+          stress: person.stress, hope: person.hope,
+        } satisfies RestPeer;
+      }))
+    : [];
+  const rosterCount = playerMode ? teamPeers.length : game.survivors.length;
+
   const inventoryGroups = useMemo(() => {
     if (!selected) return [];
     const grouped = new Map<string, typeof selected.inventory>();
@@ -296,7 +331,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
   }, [selected, inventoryQuery, inventoryCategory]);
   const categoryOptions = ["Todas", ...new Set(selected?.inventory.map(item => catalogForItem(item)?.category ?? item.category ?? "Outros"))];
   const medicineSources = [
-    ...(!playerMode && atSharedStorage(game) && game.shelter.medications > 0 ? [{ value: "shared", label: "Reservas compartilhadas · " + game.shelter.medications }] : []),
+    ...(!playerMode && selected && atSharedStorage(game, selected.id) && game.shelter.medications > 0 ? [{ value: "shared", label: "Reservas compartilhadas · " + game.shelter.medications }] : []),
     ...(selected?.inventory.filter(item => countsAsMedication(item)).map(item => ({ value: item.id, label: item.name + " · " + item.qty })) ?? []),
   ];
   const chosenMedicine = medicineSources.some(option => option.value === treatmentSource) ? treatmentSource : medicineSources[0]?.value ?? "";
@@ -362,7 +397,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
           (s.exposureDeadline ?? 0) < absoluteMinutes(draft)) return;
       let sourceLabel = "";
       if (chosenMedicine === "shared") {
-        if (!atSharedStorage(draft) || draft.shelter.medications < 1) return;
+        if (!atSharedStorage(draft, s.id) || draft.shelter.medications < 1) return;
         draft.shelter.medications -= 1;
         sourceLabel = "reservas compartilhadas";
       } else {
@@ -382,20 +417,46 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
   }
 
   return <div className="character-sheet">
-    <div className="character-roster" aria-label="Sobreviventes da campanha" title="No computador, clique com o botão direito em um sobrevivente para ações rápidas.">
-      <div className="character-roster-label"><span>Equipe</span><b>{game.survivors.length.toString().padStart(2, "0")}</b></div>
+    <div className="character-roster" aria-label="Sobreviventes da campanha" title={playerMode ? "A equipe mostra a situação pública de todos os sobreviventes. Sua própria ficha continua sendo a única editável." : "No computador, clique com o botão direito em um sobrevivente para ações rápidas."}>
+      <div className="character-roster-label"><span>Equipe</span><b>{rosterCount.toString().padStart(2, "0")}</b></div>
       <div className="character-roster-scroll">
-        {game.survivors.map(s => { const st = survivorStats(s); const canControl = !playerPreview || playerMode; const masterMode = !playerPreview && !playerMode; return <SurvivorContextMenu key={s.id}
+        {playerMode ? teamPeers.map(peer => {
+          const own = game.survivors.find(person => person.id === peer.id);
+          if (own) {
+            const st = survivorStats(own);
+            return <SurvivorContextMenu key={own.id}
+              game={game} edit={edit} survivor={own} canControl masterMode={false}
+              onOpenTab={tab => openSurvivor(own.id, tab)}
+              onRoll={request => { openSurvivor(own.id, request.kind === "attack" ? "combate" : "atributos"); setRollRequest(request); }}>
+              <button type="button" onClick={() => openSurvivor(own.id)}
+                aria-current={selected?.id === own.id ? "true" : undefined} className="character-roster-person survivor-context-target">
+                <span className="character-roster-avatar">{own.portrait ? <img src={own.portrait} alt="" /> : own.name.charAt(0).toUpperCase()}</span>
+                <span><b>{own.name}</b>
+                  <small><Heart size={12} aria-hidden="true" /> {st.hp-own.hp}/{st.hp}<span aria-hidden="true"> · </span>{own.archetype}</small>
+                  <small className="character-roster-state"><Activity size={11} aria-hidden="true" /> {own.infection}<span aria-hidden="true"> · </span>Hex {survivorHex(game, own)}<span aria-hidden="true"> · </span>Estresse {own.stress}<span aria-hidden="true"> · </span>Hope {own.hope}</small>
+                </span>
+              </button>
+            </SurvivorContextMenu>;
+          }
+          return <div key={peer.id} className="character-roster-person character-roster-peer" title={`${peer.name}: ficha de outro jogador, exibida apenas como resumo da equipe.`}>
+            <span className="character-roster-avatar">{peer.portrait ? <img src={peer.portrait} alt="" /> : peer.name.charAt(0).toUpperCase()}</span>
+            <span><b>{peer.name}</b>
+              <small><Heart size={12} aria-hidden="true" /> {peer.hp ?? "—"}/{peer.hpMax ?? "—"}<span aria-hidden="true"> · </span>{peer.archetype ?? "Sobrevivente"}</small>
+              <small className={`character-roster-state ${peer.infection && peer.infection !== "Saudável" ? "at-risk" : ""}`}><Activity size={11} aria-hidden="true" /> {peer.infection ?? "Estado não informado"}<span aria-hidden="true"> · </span>Hex {peer.hex ?? "—"}<span aria-hidden="true"> · </span>Estresse {peer.stress ?? "—"}<span aria-hidden="true"> · </span>Hope {peer.hope ?? "—"}</small>
+            </span>
+          </div>;
+        }) : game.survivors.map(s => { const st = survivorStats(s); const canControl = !playerPreview; const masterMode = !playerPreview; return <SurvivorContextMenu key={s.id}
           game={game} edit={edit} survivor={s} canControl={canControl} masterMode={masterMode}
           onOpenTab={tab => openSurvivor(s.id, tab)}
           onRoll={request => { openSurvivor(s.id, request.kind === "attack" ? "combate" : "atributos"); setRollRequest(request); }}>
           <button type="button" onClick={() => openSurvivor(s.id)}
             aria-current={selected?.id === s.id ? "true" : undefined} className="character-roster-person survivor-context-target">
             <span className="character-roster-avatar">{s.portrait ? <img src={s.portrait} alt="" /> : s.name.charAt(0).toUpperCase()}</span>
-            <span><b>{s.name}</b><small><Heart size={12} aria-hidden="true" /> {st.hp-s.hp}/{st.hp}<span aria-hidden="true"> · </span>{s.archetype}</small></span>
+            <span><b>{s.name}</b><small><Heart size={12} aria-hidden="true" /> {st.hp-s.hp}/{st.hp}<span aria-hidden="true"> · </span>{s.archetype}</small>
+              <small className="character-roster-state"><Footprints size={11} aria-hidden="true" /> Hex {survivorHex(game, s)}<span aria-hidden="true"> · </span>{s.infection}</small></span>
           </button>
         </SurvivorContextMenu>; })}
-        {game.survivors.length === 0 && <span className="character-roster-empty">Nenhum dossiê aberto. Crie o primeiro sobrevivente.</span>}
+        {rosterCount === 0 && <span className="character-roster-empty">Nenhum dossiê aberto. Crie o primeiro sobrevivente.</span>}
       </div>
       {!playerPreview && <CharacterWizard onCreate={survivor => {
         edit(draft => { draft.survivors.push(survivor); addLog(draft, "sobrevivente", `${survivor.name} entrou para a equipe.`); });
@@ -411,7 +472,13 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
           <h2>{selected.name}</h2>
           <div className="character-identity-meta"><span>{selected.origin}</span><span>{selected.archetype} · {selected.specialty}</span><span>Nível {selected.level ?? 1}</span></div>
         </div>
-        <div className="character-hero-status"><span className={selected.infection === "Saudável" ? "character-condition healthy" : "character-condition at-risk"}><Activity size={15} aria-hidden="true" /> {selected.infection}</span><span className="character-hero-code">REGISTRO {selected.id.slice(0, 6).toUpperCase()}</span></div>
+        <div className="character-hero-status">
+          <div className="character-hero-condition-block">
+            <span className={selected.infection === "Saudável" ? "character-condition healthy" : "character-condition at-risk"}><Activity size={15} aria-hidden="true" /> {selected.infection}</span>
+            {selected.infection === "Exposto" && <span className="character-condition-detail">{selected.treatmentAttempted ? "Tratamento já tentado" : <>Tratamento até <b>{deadlineLabel(selected.exposureDeadline)}</b></>}</span>}
+          </div>
+          <span className="character-hero-code">REGISTRO {selected.id.slice(0, 6).toUpperCase()}</span>
+        </div>
       </header>
       {portraitError && <p className="character-portrait-error" role="alert">{portraitError}</p>}
 
@@ -420,7 +487,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
           <div className="character-tabs-scroll"><TabsList className="character-tabs" aria-label="Áreas da ficha">{tabs.map(tab => <TabsTrigger key={tab.id} value={tab.id} className="character-tab"><tab.icon size={16} aria-hidden="true" />{tab.label}</TabsTrigger>)}</TabsList></div>
           <TabsContent value="resumo" className="character-tab-content">
             <div className="character-summary-grid">
-              <section className="character-surface"><SectionHeading index="01" title="Pronto para agir" aside={<span className="character-micro">KIT ATIVO</span>} />
+              <section className="character-surface character-summary-action"><SectionHeading index="01" title="Pronto para agir" aside={<span className="character-micro">KIT ATIVO</span>} />
                 <div className="character-active-weapon">{selected.primary ? <ItemArt name={selected.primary} category="Armas primárias" /> : <EmptyItemArt />}<div><span>Arma principal</span><strong>{selected.primary || "Sem arma principal"}</strong><small>{primary ? `${primary.damage} · ${primary.range} · ${primary.trait}` : "Dados da arma no kit"}</small></div>
                   <Button size="sm" variant="outline" className="character-weapon-roll" onClick={() => setRollRequest({ survivorId: selected.id, kind: "attack", weapon: "primary" })}><Dice5 size={16} /> Atacar</Button></div>
                 {selected.secondary && <div className="character-info-row"><ItemArt name={selected.secondary} category="Armas secundárias" size="small" /><span>Secundária</span><b>{selected.secondary}</b></div>}
@@ -428,7 +495,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
                 <div className="character-info-row">{selected.personal ? <ItemArt name={selected.personal} category="Abrigo, transporte e mochilas" size="small" /> : <EmptyItemArt />}<span>Item pessoal</span><b>{selected.personal || "Nenhum item pessoal"}</b></div>
                 <button className="character-text-link" type="button" onClick={() => setActiveTab("combate")}>Abrir detalhes de combate <span aria-hidden="true">↗</span></button>
               </section>
-              <section className="character-surface"><SectionHeading index="02" title="Recursos de campo" />
+              <section className="character-surface character-summary-resources"><SectionHeading index="02" title="Recursos de campo" />
                 <div className="character-provision-grid">
                   <span><Utensils size={18} aria-hidden="true" /><b>{selected.food}</b><small>Comida</small></span>
                   <span><Droplets size={18} aria-hidden="true" /><b>{selected.water}</b><small>Água</small></span>
@@ -439,20 +506,21 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
                 {stats.carried > stats.capacity && <p className="character-alert">Acima da capacidade. Redistribua antes de atravessar.</p>}
                 <button className="character-text-link" type="button" onClick={() => setActiveTab("inventario")}>Abrir inventário <span aria-hidden="true">↗</span></button>
               </section>
-              <section className="character-surface"><SectionHeading index="03" title="Especialidades" />
-                <div className="character-experience"><b>{origin?.experience || selected.origin}</b><span>Experience de origem · +2 por 1 Hope</span></div>
-                <div className="character-experience"><b>{selected.freeExperience}</b><span>Experience livre · +2 por 1 Hope</span></div>
-                <button className="character-hope-teaser" type="button" onClick={() => setActiveTab("habilidades")}
-                  aria-label={`Ler habilidade de Hope: ${hopeName}`}>
-                  <AbilityArt abilityId={`hope:${selected.archetype}`} size="small" /><span><small>HABILIDADE DE HOPE</small><b>{hopeName}</b></span><strong>3 Hope</strong>
-                </button>
-                <div className="character-technique-preview">{selected.techniques.map(name => <span key={name}><AbilityArt abilityId={`technique:${name}`} size="tiny" />{name}</span>)}</div>
-                <button className="character-text-link" type="button" onClick={() => setActiveTab("habilidades")}>Consultar habilidades <span aria-hidden="true">↗</span></button>
-              </section>
-              <section className="character-surface"><SectionHeading index="04" title="Situação atual" />
-                <div className="character-status-line"><span className={selected.infection === "Saudável" ? "character-status-dot healthy" : "character-status-dot"} /><b>{selected.infection}</b></div>
-                {selected.infection === "Exposto" ? <p>Janela de tratamento até <b>{deadlineLabel(selected.exposureDeadline)}</b>. {selected.treatmentAttempted ? "Tentativa já usada." : "Uma tentativa disponível."}</p> : <p>{selected.past || "Passado e vínculos ainda não registrados."}</p>}
-                <button className="character-text-link" type="button" onClick={() => setActiveTab(selected.infection === "Saudável" ? "historia" : "condicoes")}>Ver {selected.infection === "Saudável" ? "história" : "condições"} <span aria-hidden="true">↗</span></button>
+              <section className="character-surface character-summary-specialties"><SectionHeading index="03" title="Especialidades" />
+                <div className="character-specialties-layout">
+                  <div className="character-specialties-experiences">
+                    <div className="character-experience"><b>{origin?.experience || selected.origin}</b><span>Experience de origem · +2 por 1 Hope</span></div>
+                    <div className="character-experience"><b>{selected.freeExperience}</b><span>Experience livre · +2 por 1 Hope</span></div>
+                  </div>
+                  <button className="character-hope-teaser" type="button" onClick={() => setActiveTab("habilidades")}
+                    aria-label={`Ler habilidade de Hope: ${hopeName}`}>
+                    <AbilityArt abilityId={`hope:${selected.archetype}`} /><span className="character-hope-teaser-copy"><small>HABILIDADE DE HOPE</small><b>{hopeName}</b></span><strong>3 Hope</strong>
+                  </button>
+                </div>
+                <div className="character-specialties-footer">
+                  <div className="character-technique-preview">{selected.techniques.map(name => <span key={name}><AbilityArt abilityId={`technique:${name}`} size="tiny" />{name}</span>)}</div>
+                  <button className="character-text-link" type="button" onClick={() => setActiveTab("habilidades")}>Consultar habilidades <span aria-hidden="true">↗</span></button>
+                </div>
               </section>
               <RestPlanner game={game} edit={edit} selected={selected} playerMode={playerMode} playerPreview={playerPreview} restPeers={restPeers} />
             </div>
@@ -532,7 +600,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
                 <Button size="sm" variant="outline" disabled={selected.water < 1 || selected.waterConsumedDay === game.day} onClick={() => edit(draft => {
                   if (consumeDailyProvision(draft, selected.id, "water")) toast.success("Água solta de hoje registrada.");
                 })}><Droplets size={15} /> {selected.waterConsumedDay === game.day ? "Água de hoje registrada" : "Beber 1 porção solta"}</Button></div>
-              <p className="roll-hint">Para consumir uma porção de um alimento ou bebida específico, use <b>Ações → Consumir</b> no item. Ele só desaparece quando suas porções acabam.</p>
+              <p className="roll-hint">Para registrar alimentação/hidratação do dia, use <b>Comer/Beber</b> ou <b>Ações → Consumir</b> no item. Alterar o contador manualmente corrige o estoque, mas não registra que o personagem consumiu.</p>
               <div className="character-provision-actions">{!playerMode && <ProvisionTransferDialog key={selected.id} game={game} edit={edit} survivorId={selected.id} />}<Pick label="Tipo de munição" value={ammoTypeFor(selected)} options={ammoTypes} onChange={value => change(selected.id, s => { s.ammoType = value; })} /></div>
             </section>
             <section className="character-surface"><SectionHeading index="02" title="Kit ativo" />

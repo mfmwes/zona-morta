@@ -40,6 +40,8 @@ export function HexContextMenu({
   onCreatePoint,
   onOpenMasterTools,
   onRelocateShelter,
+  activeGroupHex,
+  onMoveSurvivors,
   children,
 }: {
   game: GameState;
@@ -51,12 +53,16 @@ export function HexContextMenu({
   onCreatePoint: () => void;
   onOpenMasterTools: () => void;
   onRelocateShelter: () => void;
+  activeGroupHex: string;
+  onMoveSurvivors: () => void;
   children: ReactElement;
 }) {
   const options = hexActionOptions(game, hexId);
   if (!options) return children;
 
   const { record } = options;
+  const activeSourceCanReach = options.sources.some(group => group.hex === activeGroupHex);
+  const activeIsMain = activeGroupHex === game.partyHex;
   const title = record.discovery === "desconhecido"
     ? "Fora do horizonte"
     : record.sector?.name ?? `Hex ${hexId}`;
@@ -66,7 +72,7 @@ export function HexContextMenu({
     edit(draft => { result = performHexAction(draft, hexId, action); });
     if (!result?.ok) {
       toast.error("A ação não pôde ser concluída.", {
-        description: "Confira a posição do grupo, o horário e o estado do setor.",
+        description: "Confira a posição dos sobreviventes, o horário e o estado do setor.",
       });
       return;
     }
@@ -84,11 +90,14 @@ export function HexContextMenu({
 
       <ContextMenuItem onSelect={onOpenDetails}><MapPin /> Abrir detalhes</ContextMenuItem>
 
-      {!playerPreview && options.canObserve &&
-        <ContextMenuItem onSelect={() => run({ type: "observe" })}><Eye /> Avistar setor</ContextMenuItem>}
+      {!playerPreview && record.discovery === "desconhecido" && activeSourceCanReach &&
+        <ContextMenuItem onSelect={() => run({ type: "observe" })}><Eye /> Avistar com o grupo ativo</ContextMenuItem>}
 
-      {!playerPreview && options.canTravel &&
-        <ContextMenuItem onSelect={() => run({ type: "travel" })}><Route /> Entrar no hex · {record.routeHours} h</ContextMenuItem>}
+      {!playerPreview && activeIsMain && options.canTravel &&
+        <ContextMenuItem onSelect={() => run({ type: "travel" })}><Route /> Mover grupo principal · {record.routeHours} h</ContextMenuItem>}
+
+      {!playerPreview && record.discovery !== "desconhecido" && activeSourceCanReach &&
+        <ContextMenuItem onSelect={onMoveSurvivors}><Footprints /> {activeIsMain ? "Separar / mover sobreviventes…" : "Mover / dividir subgrupo…"}</ContextMenuItem>}
 
       {!playerPreview && options.canEstablish &&
         <ContextMenuItem onSelect={() => run({ type: "establish" })}><House /> Estabelecer abrigo aqui</ContextMenuItem>}
@@ -99,7 +108,7 @@ export function HexContextMenu({
       {!playerPreview && record.discovery !== "desconhecido" && <>
         <ContextMenuSeparator />
         <ContextMenuSub>
-          <ContextMenuSubTrigger><Dice5 /> Gerar conteúdo</ContextMenuSubTrigger>
+          <ContextMenuSubTrigger><Dice5 /> Tabelas do hex</ContextMenuSubTrigger>
           <ContextMenuSubContent className="inventory-context-submenu">
             <ContextMenuItem onSelect={() => onGenerate("locais")}><Dice5 /> B1 · Local</ContextMenuItem>
             <ContextMenuItem onSelect={() => onGenerate("comercios")}><Dice5 /> B2 · Comércio</ContextMenuItem>

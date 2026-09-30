@@ -678,3 +678,295 @@ test('menu de sobrevivente pode transferir item pelas regras centrais já usadas
   assert.equal(ana.inventory.reduce((sum, entry) => sum + entry.qty, 0), 1);
   assert.equal(bia.inventory.some(entry => entry.name === 'Rádio portátil'), true);
 });
+
+
+test('movimento individual divide e reúne grupos sem perder a posição principal', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  const start = content.hexes.find(hex => `${hex.q},${hex.r}` === g.partyHex);
+  const neighbor = content.hexes.find(hex => require('../lib/game.ts').hexDistance(hex.q-start.q, hex.r-start.r) === 1);
+  assert.ok(neighbor);
+  const destination = `${neighbor.q},${neighbor.r}`;
+  const before = g.minutes;
+
+  let result = hexActions.moveSurvivors(g, destination, [ana.id]);
+  assert.equal(result.ok, true);
+  assert.equal(require('../lib/game.ts').survivorHex(g, ana), destination);
+  assert.equal(require('../lib/game.ts').survivorHex(g, bia), '0,0');
+  assert.equal(g.partyHex, '0,0');
+  assert.equal(g.minutes, before + g.hexes[destination].routeHours * 60);
+
+  result = hexActions.moveSurvivors(g, destination, [bia.id]);
+  assert.equal(result.ok, true);
+  assert.equal(require('../lib/game.ts').survivorHex(g, bia), destination);
+  assert.equal(g.partyHex, destination);
+  assert.equal(require('../lib/game.ts').survivorsAtHex(g, destination).length, 2);
+});
+
+test('um subgrupo pode seguir viagem enquanto outro permanece no hex anterior', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  const first = content.hexes.find(hex => require('../lib/game.ts').hexDistance(hex.q, hex.r) === 1);
+  const firstId = `${first.q},${first.r}`;
+  assert.equal(hexActions.moveSurvivors(g, firstId, [ana.id, bia.id]).ok, true);
+
+  const second = content.hexes.find(hex => {
+    const id = `${hex.q},${hex.r}`;
+    return id !== '0,0' && id !== firstId
+      && require('../lib/game.ts').hexDistance(hex.q-first.q, hex.r-first.r) === 1;
+  });
+  assert.ok(second);
+  const secondId = `${second.q},${second.r}`;
+  if (g.hexes[secondId].discovery === 'desconhecido') {
+    require('../lib/sectors.ts').revealSector(g, secondId);
+    g.hexes[secondId].discovery = 'avistado';
+  }
+  const result = hexActions.moveSurvivors(g, secondId, [ana.id]);
+  assert.equal(result.ok, true);
+  assert.equal(require('../lib/game.ts').survivorHex(g, ana), secondId);
+  assert.equal(require('../lib/game.ts').survivorHex(g, bia), firstId);
+  assert.equal(require('../lib/game.ts').survivorPositionGroups(g).length, 2);
+});
+
+test('campanhas antigas sem posição individual continuam usando partyHex', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  assert.equal(ana.hex, undefined); assert.equal(bia.hex, undefined);
+  assert.equal(require('../lib/game.ts').survivorHex(g, ana), g.partyHex);
+  g.partyHex = '1,0';
+  assert.equal(require('../lib/game.ts').survivorHex(g, ana), '1,0');
+  assert.equal(require('../lib/game.ts').survivorHex(g, bia), '1,0');
+});
+
+test('transferências e reservas exigem sobreviventes no mesmo local', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  g.shelter.hex = '0,0';
+  ana.hex = '1,0'; bia.hex = '0,0';
+  const radio = item('Rádio portátil'); ana.inventory.push(radio);
+  const tool = item('Alicate'); bia.inventory.push(tool);
+
+  assert.equal(inventory.atSharedStorage(g, ana.id), false);
+  assert.equal(inventory.atSharedStorage(g, bia.id), true);
+  assert.equal(inventory.transferItem(g, ana.id, bia.id, radio.id, 1), false);
+  assert.equal(inventory.transferItem(g, bia.id, 'shared', tool.id, 1), true);
+
+  ana.food = 2; bia.food = 0;
+  assert.equal(inventory.transferProvisions(g, ana.id, bia.id, 'food', 1), false);
+  assert.equal(inventory.transferProvisions(g, 'shared', ana.id, 'food', 1), false);
+});
+
+test('anoitecer conta nas reservas apenas quem está fisicamente na base', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  g.shelter.hex = '0,0'; g.shelter.residents = 1;
+  ana.hex = '0,0'; bia.hex = '1,0';
+  assert.deepEqual(survival.eveningNeeds(g), { food: 2, water: 2 });
+  ana.foodConsumedDay = g.day;
+  assert.deepEqual(survival.eveningNeeds(g), { food: 1, water: 2 });
+});
+
+test('depósito antigo só pode ser retirado por sobrevivente presente naquele hex', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  g.formerShelters = [{ ...structuredClone(g.shelter), hex:'1,0', food:2, inventory:[] }];
+  ana.hex = '1,0'; bia.hex = '0,0';
+  assert.equal(require('../lib/game.ts').recoverFormerStock(g, '1,0', bia.id, 'food', 1), false);
+  assert.equal(require('../lib/game.ts').recoverFormerStock(g, '1,0', ana.id, 'food', 1), true);
+  assert.equal(ana.food, 2);
+});
+
+test('jogador não pode alterar a própria posição diretamente pelo payload da ficha', () => {
+  const g = campaign(); const ana = g.survivors[0];
+  const before = structuredClone(ana);
+  const after = { ...structuredClone(ana), hex:'1,0' };
+  assert.equal(collaboration.applyPlayerChange(g, ana.id, before, after, 0, []), null);
+});
+
+
+test('descanso entre grupos separados só permite alvos no mesmo hex', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  ana.hex = '0,0'; bia.hex = '1,0';
+  const invalid = abilities.resolveGroupRest(g, 'short', [
+    { survivorId: ana.id, choices: [{ action:'stress', targetId:bia.id }, { action:'prepare', targetId:ana.id }] },
+    { survivorId: bia.id, choices: [{ action:'stress', targetId:bia.id }, { action:'prepare', targetId:bia.id }] },
+  ], () => 2);
+  assert.equal(invalid.ok, false);
+});
+
+test('preparo em descanso só recebe bônus de equipe com sobreviventes no mesmo hex', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  ana.hex = '0,0'; bia.hex = '1,0';
+  ana.hope = 2; bia.hope = 2;
+  const result = abilities.resolveGroupRest(g, 'short', [
+    { survivorId: ana.id, choices: [{ action:'prepare', targetId:ana.id }, { action:'fiction', targetId:ana.id }] },
+    { survivorId: bia.id, choices: [{ action:'prepare', targetId:bia.id }, { action:'fiction', targetId:bia.id }] },
+  ], () => 1);
+  assert.equal(result.ok, true);
+  assert.equal(ana.hope, 3);
+  assert.equal(bia.hope, 3);
+});
+
+test('habilidade limitada por local usa o hex real do sobrevivente', () => {
+  const g = campaign(); const ana = g.survivors[0];
+  ana.hex = '0,0';
+  const effect = 'Uma vez por hex, faça algo útil.';
+  assert.equal(abilities.recordAbilityUse(g, ana.id, 'teste-local', 'Teste local', effect, 'free'), true);
+  assert.equal(abilities.abilityAvailable(g, ana.id, 'teste-local', effect), false);
+  ana.hex = '1,0';
+  assert.equal(abilities.abilityAvailable(g, ana.id, 'teste-local', effect), true);
+});
+
+
+test('encerrar o dia é independente de descanso longo', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  ana.hp = 2; bia.stress = 2;
+  const dayBeforeRest = g.day;
+  const minutesBeforeRest = g.minutes;
+
+  const rest = abilities.resolveGroupRest(g, 'long', [
+    { survivorId: ana.id, choices: [{ action:'hp-full', targetId:ana.id }, { action:'fiction', targetId:ana.id }] },
+    { survivorId: bia.id, choices: [{ action:'stress-full', targetId:bia.id }, { action:'fiction', targetId:bia.id }] },
+  ], () => 1);
+  assert.equal(rest.ok, true);
+  assert.equal(g.day, dayBeforeRest);
+  assert.equal(g.minutes, minutesBeforeRest);
+
+  const shortRestBeforeDayClose = g.shortRest;
+  const longRestBeforeDayClose = g.longRest;
+  assert.equal(survival.closeDay(g, 0, 0, dayBeforeRest), true);
+  assert.equal(g.day, dayBeforeRest + 1);
+  assert.equal(g.minutes, 480);
+  assert.equal(g.shortRest, shortRestBeforeDayClose);
+  assert.equal(g.longRest, longRestBeforeDayClose);
+});
+
+
+test('encerramento do dia monta fontes individuais por posição e consumo já registrado', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  g.shelter.hex = '0,0'; g.shelter.residents = 1; g.shelter.food = 6; g.shelter.water = 6;
+  ana.hex = '0,0'; bia.hex = '1,0';
+  ana.foodConsumedDay = g.day;
+  bia.food = 1; bia.water = 0;
+
+  const plan = survival.defaultDayClosePlan(g);
+  const anaPlan = plan.survivors.find(row => row.survivorId === ana.id);
+  const biaPlan = plan.survivors.find(row => row.survivorId === bia.id);
+  assert.equal(anaPlan.food, 'already');
+  assert.equal(anaPlan.water, 'shared');
+  assert.equal(biaPlan.food, 'personal');
+  assert.equal(biaPlan.water, 'none');
+  assert.equal(plan.residentsFood, 1);
+  assert.equal(plan.residentsWater, 1);
+});
+
+test('encerrar dia consome porções pessoais em campo sem cobrar novamente quem já consumiu', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  g.shelter.hex = '0,0'; g.shelter.residents = 0; g.shelter.food = 2; g.shelter.water = 2;
+  ana.hex = '0,0'; bia.hex = '1,0';
+  ana.foodConsumedDay = g.day;
+  bia.food = 1; bia.water = 1;
+
+  const plan = {
+    expectedDay: g.day, residentsFood: 0, residentsWater: 0,
+    survivors: [
+      { survivorId: ana.id, food:'already', water:'shared' },
+      { survivorId: bia.id, food:'personal', water:'personal' },
+    ],
+  };
+  const result = survival.closeDayWithPlan(g, plan);
+  assert.equal(result.ok, true);
+  assert.equal(result.deprivations.length, 0);
+  assert.equal(g.shelter.food, 2);
+  assert.equal(g.shelter.water, 1);
+  assert.equal(bia.food, 0);
+  assert.equal(bia.water, 0);
+  assert.equal(ana.foodConsumedDay, 1);
+  assert.equal(ana.waterConsumedDay, 1);
+  assert.equal(bia.foodConsumedDay, 1);
+  assert.equal(bia.waterConsumedDay, 1);
+  assert.equal(g.day, 2);
+});
+
+test('encerramento registra privação nominal e impede uso remoto das reservas', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  g.shelter.hex = '0,0'; g.shelter.residents = 0; g.shelter.food = 5; g.shelter.water = 5;
+  ana.hex = '0,0'; bia.hex = '1,0';
+
+  const plan = {
+    expectedDay: g.day, residentsFood: 0, residentsWater: 0,
+    survivors: [
+      { survivorId: ana.id, food:'other', water:'other' },
+      { survivorId: bia.id, food:'shared', water:'other' },
+    ],
+  };
+  const result = survival.closeDayWithPlan(g, plan);
+  assert.equal(result.ok, true);
+  assert.equal(g.shelter.food, 5);
+  assert.ok(result.deprivations.some(row => row.survivorId === bia.id && row.resource === 'food' && row.reason === 'remote'));
+  assert.ok(g.log.some(row => row.kind === 'privação' && row.actorId === bia.id && /sem registrar alimentação/.test(row.text)));
+  assert.equal(bia.foodConsumedDay, undefined);
+  assert.equal(bia.waterConsumedDay, 1);
+});
+
+test('moradores usam uma conta separada e faltas ficam registradas sem aplicar efeito automático', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  g.shelter.residents = 3; g.shelter.food = 1; g.shelter.water = 2;
+  const plan = {
+    expectedDay: g.day, residentsFood: 3, residentsWater: 3,
+    survivors: [
+      { survivorId: ana.id, food:'other', water:'other' },
+      { survivorId: bia.id, food:'other', water:'other' },
+    ],
+  };
+  const result = survival.closeDayWithPlan(g, plan);
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.residentMissing, { food:2, water:1 });
+  assert.equal(g.shelter.food, 0); assert.equal(g.shelter.water, 0);
+  assert.ok(g.log.some(row => row.kind === 'privação' && /Moradores do abrigo/.test(row.text)));
+  assert.equal(ana.stress, 0); assert.equal(bia.stress, 0);
+});
+
+test('encerramento prioriza provisão física perecível antes de porção solta durável', () => {
+  const g = campaign();
+  g.shelter.food = 1;
+  g.shelter.provisionLots = [];
+  g.shelter.inventory = [item('Fruta firme')];
+  const fruitId = g.shelter.inventory[0].id;
+
+  const used = survival.consumeBestProvision(g.shelter, 'food');
+  assert.equal(used.consumed, 1);
+  assert.equal(used.source, 'item');
+  assert.equal(g.shelter.food, 1);
+  assert.equal(g.shelter.inventory.some(entry => entry.id === fruitId), false);
+});
+
+test('consumo por item físico já registrado não é cobrado novamente ao encerrar o dia', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  ana.food = 0; ana.inventory = [item('Barra de cereal')];
+  const cereal = ana.inventory[0];
+  const consumed = inventory.consumeProvisionItem(g, ana.id, cereal.id, ana.id);
+  assert.ok(consumed);
+  assert.equal(ana.foodConsumedDay, g.day);
+
+  g.shelter.food = 5; g.shelter.water = 5;
+  const plan = survival.defaultDayClosePlan(g);
+  assert.equal(plan.survivors.find(row => row.survivorId === ana.id).food, 'already');
+  const beforeFood = g.shelter.food;
+  const result = survival.closeDayWithPlan(g, plan);
+  assert.equal(result.ok, true);
+  assert.equal(g.shelter.food <= beforeFood, true);
+  assert.equal(result.deprivations.some(row => row.survivorId === ana.id && row.resource === 'food'), false);
+});
+
+test('outra fonte satisfaz a necessidade sem gastar provisões', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  g.shelter.food = 4; g.shelter.water = 4;
+  const plan = {
+    expectedDay: g.day, residentsFood: 0, residentsWater: 0,
+    survivors: [
+      { survivorId: ana.id, food:'other', water:'other' },
+      { survivorId: bia.id, food:'other', water:'other' },
+    ],
+  };
+  const result = survival.closeDayWithPlan(g, plan);
+  assert.equal(result.ok, true);
+  assert.equal(result.deprivations.length, 0);
+  assert.equal(g.shelter.food, 4); assert.equal(g.shelter.water, 4);
+  assert.equal(ana.foodConsumedDay, 1); assert.equal(ana.waterConsumedDay, 1);
+  assert.equal(bia.foodConsumedDay, 1); assert.equal(bia.waterConsumedDay, 1);
+});

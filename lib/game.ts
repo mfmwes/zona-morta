@@ -110,6 +110,8 @@ export type Survivor = {
   id: string;
   name: string;
   portrait?: string;
+  /** Posição individual. Ausente em campanhas antigas = posição do grupo principal (partyHex). */
+  hex?: string;
   level?: number;
   proficiency?: number;
   origin: string;
@@ -175,6 +177,24 @@ export const traits = ["Agilidade", "Força", "Finesse", "Instinto", "Presença"
 
 export function hexKey(q: number, r: number) { return `${q},${r}`; }
 export function hexDistance(q: number, r: number) { return Math.max(Math.abs(q), Math.abs(r), Math.abs(q + r)); }
+
+export function survivorHex(state: GameState, survivor: Survivor | string) {
+  const person = typeof survivor === "string" ? state.survivors.find(entry => entry.id === survivor) : survivor;
+  return person?.hex ?? state.partyHex;
+}
+
+export function survivorsAtHex(state: GameState, key: string) {
+  return state.survivors.filter(person => survivorHex(state, person) === key);
+}
+
+export function survivorPositionGroups(state: GameState) {
+  const groups = new Map<string, Survivor[]>();
+  for (const person of state.survivors) {
+    const key = survivorHex(state, person);
+    groups.set(key, [...(groups.get(key) ?? []), person]);
+  }
+  return [...groups.entries()].map(([hex, members]) => ({ hex, members }));
+}
 export function displayTime(minutes: number) {
   const h = Math.floor(minutes / 60) % 24;
   return `${String(h).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
@@ -224,9 +244,10 @@ export function defaultState(options: { startSectorId?: string; withShelter?: bo
   return state;
 }
 
-/** Shelter and the group's current position are separate; a base can be established after play starts. */
+/** Shelter and survivor positions are separate; any group physically present may establish a base. */
 export function establishShelter(state: GameState, key: string, manifest: ShelterManifest = {}) {
-  if (state.partyHex !== key || state.hexes[key]?.discovery !== "explorado") return false;
+  const present = survivorsAtHex(state, key);
+  if ((state.survivors.length > 0 && present.length === 0) || state.hexes[key]?.discovery !== "explorado") return false;
   const oldHex = state.shelter.hex;
   if (oldHex === key) return false;
   const sector = revealSector(state, key);
@@ -300,7 +321,7 @@ export function residentNpcs(state: GameState, home: string | null = state.shelt
 
 export function shelterPopulation(state: GameState) {
   const shelterHex = state.shelter.hex;
-  const survivorsPresent = shelterHex && state.partyHex === shelterHex ? state.survivors.length : 0;
+  const survivorsPresent = shelterHex ? survivorsAtHex(state, shelterHex).length : survivorsAtHex(state, state.partyHex).length;
   return state.shelter.residents + residentNpcs(state).length + survivorsPresent;
 }
 
@@ -331,7 +352,7 @@ export function abandonShelter(state: GameState, manifest: ShelterManifest = {})
 export function recoverFormerStock(state: GameState, hex: string, receiverId: string, key: typeof stockKeys[number], quantity: number, itemId?: string) {
   const site = state.formerShelters?.find(s => s.hex === hex);
   const receiver = state.survivors.find(s => s.id === receiverId);
-  if (state.partyHex !== hex || !site || !receiver) return false;
+  if (!site || !receiver || survivorHex(state, receiver) !== hex) return false;
   if (itemId) {
     const index = (site.inventory ?? []).findIndex(item => item.id === itemId);
     if (index < 0) return false;

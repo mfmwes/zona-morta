@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BookOpen, ChevronLeft, ChevronRight, House, LayoutGrid, List, Moon, Package, ShieldAlert } from "lucide-react";
+import { BookOpen, ChevronLeft, ChevronRight, House, LayoutGrid, List, Package, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -11,19 +11,16 @@ import { AddItemDialog, ItemActionsDialog } from "@/components/inventory-workflo
 import { ItemContextMenu } from "@/components/item-context-menu";
 import { ItemArt } from "@/components/item-art";
 import { ShelterMoveDialog } from "@/components/shelter-move";
-import { content, establishShelter, recoverFormerStock, residentNpcs, shelterPopulation, type GameState } from "@/lib/game";
+import { DayCloseDialog } from "@/components/day-close-dialog";
+import { content, establishShelter, recoverFormerStock, residentNpcs, survivorPositionGroups, survivorsAtHex, type GameState } from "@/lib/game";
 import { atSharedStorage, catalogForItem } from "@/lib/inventory";
 import { provisionBreakdown, provisionDisplay, provisionItemInfo } from "@/lib/provision-items";
-import { closeDay, eveningNeeds } from "@/lib/survival";
 import { adjustProvisionCount } from "@/lib/provisions";
 import { createId } from "@/lib/id";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 
 export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; edit: Edit; playerPreview: boolean }) {
-  const [closeOpen, setCloseOpen] = useState(false);
-  const [foodConsumers, setFoodConsumers] = useState(String(game.shelter.residents));
-  const [waterConsumers, setWaterConsumers] = useState(String(game.shelter.residents));
   const [shelterNotes, setShelterNotes] = useState(game.shelter.notes);
   const [shelterName, setShelterName] = useState(game.shelter.name);
   const [cacheRecipient, setCacheRecipient] = useState("");
@@ -35,12 +32,15 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
   const sharedAccessible = atSharedStorage(game);
   const currentSector = game.hexes[game.partyHex]?.sector?.name ?? `Hex ${game.partyHex}`;
   const homeSector = s.hex ? game.hexes[s.hex]?.sector?.name ?? `Hex ${s.hex}` : null;
-  const visitedCache = (game.formerShelters ?? []).find(site => site.hex === game.partyHex);
-  const recipient = game.survivors.find(person => person.id === cacheRecipient) ?? game.survivors[0];
+  const survivorsAtShelter = s.hex ? survivorsAtHex(game, s.hex) : survivorsAtHex(game, game.partyHex);
+  const visitedCache = (game.formerShelters ?? []).find(site => Boolean(site.hex && survivorsAtHex(game, site.hex).length > 0));
+  const cacheVisitors = visitedCache?.hex ? survivorsAtHex(game, visitedCache.hex) : [];
+  const recipient = cacheVisitors.find(person => person.id === cacheRecipient) ?? cacheVisitors[0];
   const shelterFood = provisionBreakdown(s, "food");
   const shelterWater = provisionBreakdown(s, "water");
   const namedResidents = residentNpcs(game);
-  const population = shelterPopulation(game);
+  const travelGroups = survivorPositionGroups(game);
+  const population = s.residents + namedResidents.length + survivorsAtShelter.length;
   useEffect(() => { setShelterNotes(s.notes); }, [s.notes]);
   useEffect(() => { setShelterName(s.name); }, [s.name]);
   const stocks: { key: keyof typeof s; label: string; unit: string; max: number }[] = [
@@ -52,23 +52,16 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
     {key:"parts",label:"Peças",unit:"unidades",max:99},
   ];
 
-  function nextMorning() {
-    if (!consumptionValid) return;
-    edit(draft => { closeDay(draft, Number(foodConsumers), Number(waterConsumers), game.day); });
-    toast.success("Novo amanhecer registrado", { description: `Dia ${game.day + 1}. Consumo e progressão diária foram processados.` });
-    setCloseOpen(false);
-  }
-  const consumptionValid = [foodConsumers, waterConsumers].every(value => value.trim() !== "" && Number.isInteger(Number(value)) && Number(value) >= 0 && Number(value) <= 999);
-
   return <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
     <section className="panel panel-pad">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div><p className="dossier-title">{hasShelter ? `Base / hex ${s.hex}` : `Grupo / hex ${game.partyHex}`}</p>
           <h2 className="page-title mt-1">{hasShelter ? s.name : "Sem abrigo"}</h2>
           <p className="intro-line mt-2">{hasShelter
-            ? `Situado em ${homeSector}. O grupo está em ${currentSector}.`
-            : `O grupo está em ${currentSector}. Ainda não há base fixa; escolha um lugar explorado para estabelecer uma.`}</p></div>
-        {hasShelter && <span className="tag">{population}/{s.capacity} pessoas</span>}
+            ? `Situado em ${homeSector}. O grupo principal está em ${currentSector}.`
+            : `O grupo principal está em ${currentSector}. Ainda não há base fixa; escolha um lugar explorado para estabelecer uma.`}</p>
+          {travelGroups.length > 1 && <p className="text-xs subtle mt-2">Grupos em campo: {travelGroups.map(group => `Hex ${group.hex} — ${group.members.map(person => person.name).join(", ")}`).join(" · ")}</p>}</div>
+        {hasShelter && <span className="tag">{population}/{s.capacity} pessoas presentes</span>}
       </div>
       {!hasShelter && !playerPreview && <div className="mt-5 list-card">
         <p className="text-sm">O setor atual já foi explorado. Estabelecer uma base aqui não consome tempo automaticamente: resolva segurança, acesso e transporte na ficção.</p>
@@ -157,21 +150,7 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
       <section className="panel panel-pad">
         <p className="dossier-title">Rotina / sobrevivência</p><h3 className="section-title mt-1">Anoitecer e provisões</h3>
         <p className="intro-line mt-3">Cada pessoa precisa de uma porção de Comida e uma de Água por dia. O consumo pessoal registrado na ficha é excluído da sugestão. Ao fechar o dia, o sistema usa porções soltas e, se necessário, itens físicos prontos das reservas compartilhadas.</p>
-        {!playerPreview && <Dialog open={closeOpen} onOpenChange={setCloseOpen}>
-          <DialogTrigger asChild><Button className="mt-4 w-full" onClick={() => {
-            const needs = eveningNeeds(game);
-            setFoodConsumers(String(needs.food)); setWaterConsumers(String(needs.water));
-          }}><Moon /> Fechar dia</Button></DialogTrigger>
-          <DialogContent><DialogHeader><DialogTitle>Passar para o próximo amanhecer</DialogTitle>
-            <DialogDescription>Os valores sugeridos incluem moradores não identificados, NPCs presentes nas reservas e sobreviventes presentes que ainda não registraram consumo pessoal hoje. Ajuste se alguém comeu de outra fonte. Confira privação, vigia e descanso com o grupo.</DialogDescription></DialogHeader>
-            <div className="inventory-search"><Field label="Comida das reservas · porções" value={foodConsumers} onChange={setFoodConsumers} type="number" />
-              <Field label="Água das reservas · porções" value={waterConsumers} onChange={setWaterConsumers} type="number" /></div>
-            {!atSharedStorage(game) && <p className="character-rule-note">O grupo está fora da base. A sugestão continua incluindo moradores e NPCs que ficaram na base; pessoas em campo precisam ter outra fonte registrada.</p>}
-            <p className="text-sm subtle">Faltas ficam registradas no diário; o sistema não aplica novas penalidades automáticas. Itens físicos prontos nas reservas entram no total.</p>
-            {!consumptionValid && <p className="inventory-danger" role="alert">Informe quantidades inteiras entre 0 e 999.</p>}
-            <DialogFooter><Button variant="outline" onClick={() => setCloseOpen(false)}>Cancelar</Button><Button disabled={!consumptionValid} onClick={nextMorning}>Confirmar anoitecer</Button></DialogFooter>
-          </DialogContent>
-        </Dialog>}
+        {!playerPreview && <DayCloseDialog game={game} edit={edit} label="Encerrar dia" className="mt-4 w-full" />}
         <p className="text-xs subtle mt-2">As escolhas e os efeitos de descanso ficam na ficha de cada sobrevivente, inclusive quando a campanha ainda não tem abrigo.</p>
       </section>
       {hasShelter && <section className="panel panel-pad">
@@ -189,23 +168,23 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
       {visitedCache && <section className="panel panel-pad">
         <p className="dossier-title">Hex {visitedCache.hex} / Depósito antigo</p>
         <h3 className="section-title mt-1">{visitedCache.name}</h3>
-        <p className="intro-line mt-2">O grupo está neste local. Retire os mantimentos e itens desejados e confira a carga do sobrevivente.</p>
-        {!playerPreview && recipient && <Pick label="Quem vai carregar" value={recipient.id} options={game.survivors.map(person => ({ value: person.id, label: person.name }))} onChange={setCacheRecipient} />}
+        <p className="intro-line mt-2">Há sobreviventes neste local. Retire os mantimentos e itens desejados apenas com quem está presente neste hex.</p>
+        {!playerPreview && recipient && <Pick label="Quem vai carregar" value={recipient.id} options={cacheVisitors.map(person => ({ value: person.id, label: person.name }))} onChange={setCacheRecipient} />}
         <div className="grid gap-2 mt-3">
           {([ ["food", "Comida"], ["water", "Água"], ["pistolAmmo", "Munição de pistola"],
             ["medications", "Medicamentos"], ["fuel", "Combustível"], ["parts", "Peças"] ] as const).map(([key, label]) =>
             <div key={key} className="shared-inventory-row"><div><b>{label}</b><span>{visitedCache[key]} {key === "pistolAmmo" ? "carga(s)" : "porção(ões)"}</span></div>
               {visitedCache[key] > 0 && recipient && !playerPreview && <div className="flex gap-1 flex-wrap">
                 <Button size="sm" variant="outline" onClick={() => edit(d => {
-                  if (!recoverFormerStock(d, game.partyHex, recipient.id, key, 1)) toast.error("Não foi possível retirar. Verifique o limite do contador.");
+                  if (!recoverFormerStock(d, visitedCache.hex!, recipient.id, key, 1)) toast.error("Não foi possível retirar. Verifique o limite do contador.");
                 })}>Retirar 1</Button>
                 {visitedCache[key] > 1 && <Button size="sm" variant="outline" onClick={() => edit(d => {
-                  if (!recoverFormerStock(d, game.partyHex, recipient.id, key, visitedCache[key])) toast.error("Não coube no contador deste sobrevivente.");
+                  if (!recoverFormerStock(d, visitedCache.hex!, recipient.id, key, visitedCache[key])) toast.error("Não coube no contador deste sobrevivente.");
                 })}>Retirar tudo</Button>}
               </div>}</div>)}
           {(visitedCache.inventory ?? []).map(item => <div key={item.id} className="shared-inventory-row"><div className="shared-inventory-entry"><ItemArt name={item.name} category={item.category} /><div><b>{item.qty}× {item.name}</b><span>{item.load * item.qty} carga</span></div></div>
             {recipient && !playerPreview && <Button size="sm" variant="outline" onClick={() => edit(d => {
-              if (!recoverFormerStock(d, game.partyHex, recipient.id, "food", 0, item.id)) toast.error("O item já não está neste depósito.");
+              if (!recoverFormerStock(d, visitedCache.hex!, recipient.id, "food", 0, item.id)) toast.error("O item já não está neste depósito.");
             })}>Retirar</Button>}</div>)}
         </div>
         <p className="text-sm subtle mt-3">Peças, combustível e medicamentos retirados viram itens de carga 1 no inventário. Ao chegar à base ativa, use Ações → Guardar nas reservas para converter de volta.</p>
@@ -304,7 +283,7 @@ export function ReferencePanel() {
             <p className="mt-2">Ao concluir, o mestre recebe 1d4 Fear. Após três descansos curtos seguidos, o próximo deve ser longo. Descanso interrompido não concede benefícios.</p></article>
           <article className="list-card leading-relaxed"><h2 className="section-title">Descanso longo</h2>
             <p className="mt-2">Requer refúgio seguro, vigia e água. Cada PC escolhe duas ações: limpar todos os HP, todo Stress ou toda Armadura; Preparar; trabalhar em projeto; ou executar uma ação de cenário. Projetos avançam um ponto por ação, com custos pagos ao iniciar.</p>
-            <p className="mt-2">Ao concluir, o mestre recebe 1d4 + número de PCs Fear. Porções de Comida e Água são descontadas só uma vez ao anoitecer, não a cada descanso. A janela de Exposição continua correndo.</p></article>
+            <p className="mt-2">Ao concluir, o mestre recebe 1d4 + número de PCs Fear. Descanso longo não encerra o dia nem avança o calendário. Porções de Comida e Água são descontadas só ao usar Encerrar dia; a janela de Exposição continua correndo.</p></article>
           <article className="list-card leading-relaxed"><h2 className="section-title">Carga e mochilas</h2>
             <p className="mt-2">Base 3 espaços. Bolsa tiracolo +1, mochila urbana +2, de trilha +3, cargueira +4; uma bolsa vestida por pessoa. Duas porções pessoais de cada recurso cabem nos bolsos; cada grupo extra de até quatro porções ocupa 1. Uma carga reserva de munição ocupa 1.</p>
             <p className="mt-2">Até dois espaços excedentes podem ir nas mãos, somando 1 hora por hex. Acima disso, faça outra viagem ou use carrinho/veículo.</p></article>
