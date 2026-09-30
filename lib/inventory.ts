@@ -1,7 +1,7 @@
-import { content, survivorHex, survivorsAtHex, type EquipmentSlot, type GameState, type InventoryItem, type Survivor } from "./game";
+import { ammunitionTypes, content, setShelterAmmoCount, shelterAmmoCount, survivorHex, survivorsAtHex, type AmmunitionType, type EquipmentSlot, type GameState, type InventoryItem, type Survivor } from "./game";
 import { getPrimary, getProtection, getSecondary, weaponAmmoType } from "./equipment";
 import { createId } from "./id";
-import { transferPortionLots } from "./provisions";
+import { transferPortionLots, withdrawPortions } from "./provisions";
 import { hydrateProvisionItem, physicalProvisionPortions, provisionItemInfo, type ProvisionResource } from "./provision-items";
 
 type CatalogEntry = (typeof content.catalog)[number];
@@ -10,7 +10,7 @@ export const inventoryCategories = [...new Set(content.catalog
   .map(entry => entry.category))];
 export const catalogItems = content.catalog.filter(entry => inventoryCategories.includes(entry.category));
 export const conditions = ["Íntegro", "Gasto", "Danificado", "Contaminado", "Estragado"];
-export const ammoTypes = ["Indefinida", "Pistola", "Espingarda", "Carabina", "Flechas", "Virotes", "Chumbinhos", "Outra"];
+export const ammoTypes: AmmunitionType[] = [...ammunitionTypes];
 export function ammoTypeFor(s: Survivor) {
   return s.ammoType || weaponAmmoType(s.primary) || "Indefinida";
 }
@@ -19,6 +19,142 @@ export function catalogKey(entry: CatalogEntry) { return entry.category + "::" +
 export function catalogForItem(item: InventoryItem) {
   return content.catalog.find(entry => catalogKey(entry) === item.catalogKey)
     ?? content.catalog.find(entry => entry.name === item.name && (!item.category || entry.category === item.category));
+}
+
+const explicitSingleUse = new Set([
+  "Kit de pilhas", "Pastilhas de purificação", "Sinalizador de mão", "Luvas descartáveis", "Luvas de procedimento",
+  "Solução de limpeza lacrada", "Soro fisiológico lacrado", "Curativo compressivo", "Analgésico genérico",
+  "Antitérmico genérico", "Medicamento para alergia", "Medicamento para enjoo", "Medicamento prescrito identificado",
+  "Antibiótico prescrito", "Sachês de reidratação",
+]);
+const reusableCare = new Set(["Kit médico de campo", "Termômetro", "Tala e faixa", "Máscara respiratória com filtro"]);
+export function catalogItemIsConsumable(item: InventoryItem) {
+  const entry = catalogForItem(item);
+  if (!entry) return false;
+  if (explicitSingleUse.has(item.name)) return true;
+  return entry.category === "Medicamentos e cuidado" && !reusableCare.has(item.name) && !countsAsMedication(item);
+}
+
+type PreparationCheck = { ok: boolean; message: string; details: string[]; waterCost: number; tabletCost: number; fuelCost: number };
+function accessContainers(game: GameState, ownerId: string) {
+  const primary = ownerId === "shared" ? game.shelter.inventory ?? [] : game.survivors.find(person => person.id === ownerId)?.inventory ?? [];
+  const shared = ownerId !== "shared" && atSharedStorage(game, ownerId) ? game.shelter.inventory ?? [] : [];
+  return shared === primary ? [primary] : [primary, shared];
+}
+function accessibleNamedQuantity(game: GameState, ownerId: string, name: string) {
+  return accessContainers(game, ownerId).reduce((sum, items) => sum + items.filter(item => item.name === name).reduce((n, item) => n + item.qty, 0), 0);
+}
+function completedFacility(game: GameState, ...keys: string[]) {
+  return Boolean(game.shelter.hex && keys.some(key => game.shelter.projects?.some(project => project.key === key && project.state === "Concluído")));
+}
+function ownerHolder(game: GameState, ownerId: string) {
+  return ownerId === "shared" ? game.shelter : game.survivors.find(person => person.id === ownerId);
+}
+function availableWater(game: GameState, ownerId: string) {
+  const holder = ownerHolder(game, ownerId);
+  let total = holder ? (holder.water ?? 0) + physicalProvisionPortions(holder.inventory, "water", true) : 0;
+  if (ownerId !== "shared" && atSharedStorage(game, ownerId)) total += game.shelter.water + physicalProvisionPortions(game.shelter.inventory, "water", true);
+  return total;
+}
+function hasPan(game: GameState, ownerId: string) {
+  return accessibleNamedQuantity(game, ownerId, "Panela leve") > 0 || completedFacility(game, "community-kitchen", "community-kitchen-space");
+}
+function heatPlan(game: GameState, ownerId: string) {
+  if (completedFacility(game, "community-kitchen", "community-kitchen-space")) return { ok: true, fuelCost: 0 };
+  if (accessibleNamedQuantity(game, ownerId, "Fogareiro") < 1) return { ok: false, fuelCost: 0 };
+  const personalFuel = accessibleNamedQuantity(game, ownerId, "Combustível (1 unidade)");
+  if (personalFuel > 0) return { ok: true, fuelCost: 1 };
+  if (ownerId === "shared" || atSharedStorage(game, ownerId)) return { ok: game.shelter.fuel > 0, fuelCost: game.shelter.fuel > 0 ? 1 : 0 };
+  return { ok: false, fuelCost: 0 };
+}
+
+export function provisionPreparationCheck(game: GameState, ownerId: string, item: InventoryItem, quantity = 1): PreparationCheck {
+  const entry = catalogForItem(item);
+  const info = provisionItemInfo(item);
+  const count = Math.max(1, Math.min(item.qty, Math.trunc(quantity)));
+  const requirement = entry?.fields.find(field => field.label === "Requisitos")?.value ?? "";
+  const details: string[] = [];
+  let waterCost = 0, tabletCost = 0, fuelCost = 0;
+
+  const waterPerUnit = Number(requirement.match(/(\d+) porção de Água[^.]*por unidade/i)?.[1] ?? 0);
+  if (waterPerUnit > 0) {
+    waterCost = waterPerUnit * count;
+    details.push(`${waterCost} porção(ões) de Água`);
+    if (availableWater(game, ownerId) < waterCost)
+      return { ok: false, message: `Faltam ${waterCost} porção(ões) de Água acessível para preparar este item.`, details, waterCost, tabletCost, fuelCost };
+  }
+
+  const needsPan = /Panela leve/i.test(requirement);
+  if (needsPan) {
+    details.push("Panela leve");
+    if (!hasPan(game, ownerId)) return { ok: false, message: "É necessária uma Panela leve ou cozinha operacional.", details, waterCost, tabletCost, fuelCost };
+  }
+
+  if (/fonte de calor/i.test(requirement)) {
+    const heat = heatPlan(game, ownerId);
+    details.push("fonte de calor");
+    if (!heat.ok) return { ok: false, message: "Falta uma fonte de calor funcional: use uma cozinha operacional ou Fogareiro com Combustível.", details, waterCost, tabletCost, fuelCost };
+    fuelCost = heat.fuelCost;
+  }
+
+  if (info.requiresVerification && ["Água de torneira sem verificação", "Água de chuva coletada"].includes(item.name)) {
+    if (completedFacility(game, "water-filter") || accessibleNamedQuantity(game, ownerId, "Filtro portátil") > 0) {
+      details.push("filtragem");
+    } else {
+      const portions = Math.max(1, info.portionsPerUnit * count);
+      const tablets = Math.ceil(portions / 4);
+      if (accessibleNamedQuantity(game, ownerId, "Pastilhas de purificação") >= tablets) {
+        tabletCost = tablets; details.push(`${tablets} Pastilhas de purificação`);
+      } else {
+        const heat = heatPlan(game, ownerId);
+        if (hasPan(game, ownerId) && heat.ok) {
+          fuelCost = Math.max(fuelCost, heat.fuelCost); details.push("fervura");
+        } else {
+          return { ok: false, message: "Água insegura exige Filtro portátil, Pastilhas de purificação ou fervura com Panela leve e fonte de calor.", details, waterCost, tabletCost, fuelCost };
+        }
+      }
+    }
+  }
+  if (info.requiresVerification && item.name === "Garrafa sem rótulo") details.push("confirmação do mestre sobre conteúdo e segurança");
+  if (info.requiresVerification && item.name === "Água de cisterna tratada") details.push("verificação plausível da origem/qualidade");
+
+  return { ok: true, message: details.length ? `Requisitos disponíveis: ${details.join(", ")}.` : "Sem requisito material adicional.", details, waterCost, tabletCost, fuelCost };
+}
+
+function removeNamedUnits(game: GameState, ownerId: string, name: string, quantity: number) {
+  let remaining = quantity;
+  for (const items of accessContainers(game, ownerId)) {
+    for (const item of [...items]) {
+      if (item.name !== name || remaining < 1) continue;
+      const take = Math.min(remaining, item.qty);
+      item.qty -= take; remaining -= take;
+      if (item.qty <= 0) items.splice(items.indexOf(item), 1);
+    }
+  }
+  return remaining === 0;
+}
+function consumeHolderWater(holder: { water: number; provisionLots?: any[]; inventory?: InventoryItem[] }, quantity: number) {
+  let remaining = quantity;
+  const loose = Math.min(remaining, Math.max(0, holder.water ?? 0));
+  if (loose > 0) { withdrawPortions(holder as any, "water", loose); remaining -= loose; }
+  if (remaining > 0) remaining -= consumeReadyProvisionPortions(holder.inventory, "water", remaining).consumed;
+  return remaining;
+}
+function payPreparationCosts(game: GameState, ownerId: string, check: PreparationCheck) {
+  let waterRemaining = check.waterCost;
+  const holder = ownerHolder(game, ownerId);
+  if (holder && waterRemaining > 0) waterRemaining = consumeHolderWater(holder, waterRemaining);
+  if (ownerId !== "shared" && waterRemaining > 0 && atSharedStorage(game, ownerId))
+    waterRemaining = consumeHolderWater(game.shelter, waterRemaining);
+  if (waterRemaining > 0) return false;
+  if (check.tabletCost > 0 && !removeNamedUnits(game, ownerId, "Pastilhas de purificação", check.tabletCost)) return false;
+  if (check.fuelCost > 0) {
+    if (!removeNamedUnits(game, ownerId, "Combustível (1 unidade)", check.fuelCost)) {
+      if ((ownerId === "shared" || atSharedStorage(game, ownerId)) && game.shelter.fuel >= check.fuelCost) game.shelter.fuel -= check.fuelCost;
+      else return false;
+    }
+  }
+  return true;
 }
 export function itemFromCatalog(entry: CatalogEntry, qty = 1, condition = "Íntegro", foundDay?: number): InventoryItem {
   const field = entry.fields.find(f => ["Carga", "Guarda", "Carga em viagem"].includes(f.label))?.value ?? "1";
@@ -103,7 +239,9 @@ export function compatibleSlots(item: InventoryItem): EquipmentSlot[] {
   if (getPrimary(name)) slots.push("primary");
   if (getSecondary(name)) slots.push("secondary");
   if (getProtection(name)) slots.push("protection");
+  if (item.category === "Trajes e acessórios" || catalogForItem(item)?.category === "Trajes e acessórios") slots.push("outfit");
   if (["Bolsa tiracolo", "Mochila urbana", "Mochila de trilha", "Mochila cargueira"].includes(name)) slots.push("bag");
+  if (name === "Carrinho dobrável") slots.push("transport");
   if (content.personal.some(x => x.name === name) && !slots.includes("bag")) slots.push("personal");
   if (pocketEligible(item)) slots.push("pocket1", "pocket2");
   return slots;
@@ -121,7 +259,10 @@ export function storedLoad(name: string, slot: EquipmentSlot) {
     const value = "stored" in record ? record.stored : record.load;
     return Number(value === "0/1" ? 1 : value);
   }
-  const entry = content.catalog.find(x => x.name === name && (slot !== "bag" || x.category === "Abrigo, transporte e mochilas"));
+  const entry = content.catalog.find(x => x.name === name
+    && (slot !== "bag" || x.category === "Abrigo, transporte e mochilas")
+    && (slot !== "outfit" || x.category === "Trajes e acessórios")
+    && (slot !== "transport" || x.category === "Abrigo, transporte e mochilas"));
   const field = entry?.fields.find(x => ["Guarda", "Carga", "Carga em viagem"].includes(x.label))?.value;
   return Number(field?.match(/^\d+/)?.[0] ?? 1);
 }
@@ -129,7 +270,10 @@ export function stowSlot(s: Survivor, slot: EquipmentSlot) {
   const name = s[slot];
   if (!name) return false;
   if (slot === "personal" && s.bag === name) return stowSlot(s, "bag");
-  const entry = content.catalog.find(x => x.name === name && (slot !== "bag" || x.category === "Abrigo, transporte e mochilas"));
+  const entry = content.catalog.find(x => x.name === name
+    && (slot !== "bag" || x.category === "Abrigo, transporte e mochilas")
+    && (slot !== "outfit" || x.category === "Trajes e acessórios")
+    && (slot !== "transport" || x.category === "Abrigo, transporte e mochilas"));
   const previous = s.equippedItems?.[slot];
   addStack(s.inventory, { id: createId(), name, load: storedLoad(name, slot),
     condition: s.kitCondition?.[slot] ?? "Íntegro", catalogKey: entry ? catalogKey(entry) : undefined,
@@ -208,15 +352,19 @@ export function prepareProvisionItem(game: GameState, ownerId: string, itemId: s
   if (!items || !item) return null;
   const before = provisionItemInfo(item);
   if (!before.resource || before.ready || item.condition === "Estragado" || item.condition === "Contaminado") return null;
-  const target = splitInventoryUnits(items, item, quantity);
-  if (!target) return null;
+  const count = Math.max(1, Math.min(item.qty, Math.trunc(quantity)));
+  const check = provisionPreparationCheck(game, ownerId, item, count);
+  if (!check.ok) return null;
+  // Split only after all requirements are known; costs are paid immediately before state changes.
+  const target = splitInventoryUnits(items, item, count);
+  if (!target || !payPreparationCosts(game, ownerId, check)) return null;
   if (before.requiresPreparation) {
     target.prepared = true;
     target.expiresDay = game.day + 1;
   }
   if (before.requiresVerification) target.verified = true;
   const after = provisionItemInfo(target);
-  return after.ready ? { item: target, info: after } : null;
+  return after.ready ? { item: target, info: after, requirements: check.details } : null;
 }
 
 export function consumeProvisionPortionFromItems(items: InventoryItem[], itemId: string) {
@@ -291,7 +439,12 @@ export function consumeReadyProvisionPortions(items: InventoryItem[] | undefined
 }
 
 export type Provision = "food" | "water" | "ammo";
-export function provisionTransferError(game: GameState, from: string, to: string, resource: Provision, quantity: number): string | null {
+function transferAmmoType(game: GameState, from: string, requested?: string): string {
+  if (from === "shared") return requested && ammunitionTypes.includes(requested as AmmunitionType) ? requested : "Pistola";
+  const source = game.survivors.find(s => s.id === from);
+  return source ? ammoTypeFor(source) : "Indefinida";
+}
+export function provisionTransferError(game: GameState, from: string, to: string, resource: Provision, quantity: number, requestedAmmoType?: string): string | null {
   if (!Number.isInteger(quantity) || quantity < 1) return "Informe uma quantidade inteira maior que zero.";
   if (!to || from === to) return "Escolha dois destinos diferentes.";
   const sharedSurvivor = sharedAccessSurvivor(from, to);
@@ -303,28 +456,41 @@ export function provisionTransferError(game: GameState, from: string, to: string
   if (from !== "shared" && to !== "shared"
     && survivorHex(game, source as Survivor) !== survivorHex(game, target as Survivor))
     return "Os sobreviventes precisam estar no mesmo hex para transferir recursos.";
-  const available = resource === "ammo" && "pistolAmmo" in source ? source.pistolAmmo : (source as Survivor)[resource];
-  const receiving = resource === "ammo" && "pistolAmmo" in target ? target.pistolAmmo : (target as Survivor)[resource];
-  if (available < quantity) return "A origem não tem essa quantidade disponível.";
-  if (receiving + quantity > (to === "shared" && resource !== "ammo" ? 999 : 99)) return "O destino atingiria o limite do contador.";
+
   if (resource === "ammo") {
-    const sourceType = "pistolAmmo" in source ? "Pistola" : ammoTypeFor(source);
-    const targetType = "pistolAmmo" in target ? "Pistola" : ammoTypeFor(target);
-    if (["Indefinida", "Outra"].includes(sourceType)) return "Identifique o tipo de munição da origem antes de transferir.";
-    if ((receiving > 0 || to === "shared") && sourceType !== targetType) return `Não é possível misturar ${sourceType} e ${targetType} no mesmo contador.`;
+    const type = transferAmmoType(game, from, requestedAmmoType);
+    if (!ammunitionTypes.includes(type as AmmunitionType)) return "Identifique o tipo de munição da origem antes de transferir.";
+    const available = from === "shared" ? shelterAmmoCount(game.shelter, type as AmmunitionType) : (source as Survivor).ammo;
+    const receiving = to === "shared" ? shelterAmmoCount(game.shelter, type as AmmunitionType) : (target as Survivor).ammo;
+    if (available < quantity) return `A origem não tem ${quantity} carga(s) de ${type}.`;
+    if (receiving + quantity > 99) return "O destino atingiria o limite do contador.";
+    if (to !== "shared") {
+      const targetType = ammoTypeFor(target as Survivor);
+      if (receiving > 0 && targetType !== type) return `Não é possível misturar ${type} e ${targetType} no mesmo contador.`;
+    }
+    return null;
   }
+
+  const available = (source as Survivor)[resource];
+  const receiving = (target as Survivor)[resource];
+  if (available < quantity) return "A origem não tem essa quantidade disponível.";
+  if (receiving + quantity > (to === "shared" ? 999 : 99)) return "O destino atingiria o limite do contador.";
   return null;
 }
 
-export function transferProvisions(game: GameState, from: string, to: string, resource: Provision, quantity: number) {
-  if (provisionTransferError(game, from, to, resource, quantity)) return false;
+export function transferProvisions(game: GameState, from: string, to: string, resource: Provision, quantity: number, requestedAmmoType?: string) {
+  if (provisionTransferError(game, from, to, resource, quantity, requestedAmmoType)) return false;
   const source = from === "shared" ? game.shelter : game.survivors.find(s => s.id === from)!;
   const target = to === "shared" ? game.shelter : game.survivors.find(s => s.id === to)!;
   if (resource === "ammo") {
-    const type = "pistolAmmo" in source ? "Pistola" : ammoTypeFor(source);
-    if ("pistolAmmo" in source) source.pistolAmmo -= quantity; else source.ammo -= quantity;
-    if ("pistolAmmo" in target) target.pistolAmmo += quantity;
-    else { target.ammo += quantity; target.ammoType = type; }
+    const type = transferAmmoType(game, from, requestedAmmoType) as AmmunitionType;
+    if (from === "shared") setShelterAmmoCount(game.shelter, type, shelterAmmoCount(game.shelter, type) - quantity);
+    else (source as Survivor).ammo -= quantity;
+    if (to === "shared") setShelterAmmoCount(game.shelter, type, shelterAmmoCount(game.shelter, type) + quantity);
+    else {
+      (target as Survivor).ammo += quantity;
+      (target as Survivor).ammoType = type;
+    }
   } else transferPortionLots(source, target, resource, quantity);
   return true;
 }
