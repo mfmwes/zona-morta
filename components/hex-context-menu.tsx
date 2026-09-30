@@ -97,7 +97,7 @@ export function HexContextMenu({
         <ContextMenuItem onSelect={() => run({ type: "travel" })}><Route /> Mover grupo principal · {record.routeHours} h</ContextMenuItem>}
 
       {!playerPreview && record.discovery !== "desconhecido" && activeSourceCanReach &&
-        <ContextMenuItem onSelect={onMoveSurvivors}><Footprints /> Mover grupo ativo…</ContextMenuItem>}
+        <ContextMenuItem onSelect={onMoveSurvivors}><Footprints /> {activeIsMain ? "Separar / mover sobreviventes…" : "Mover / dividir subgrupo…"}</ContextMenuItem>}
 
       {!playerPreview && options.canEstablish &&
         <ContextMenuItem onSelect={() => run({ type: "establish" })}><House /> Estabelecer abrigo aqui</ContextMenuItem>}
