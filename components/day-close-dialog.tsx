@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element -- survivor portraits can be small uploaded data URLs. */
 
 import { useState } from "react";
 import { AlertTriangle, CheckCircle2, Droplets, MapPin, Moon, Utensils } from "lucide-react";
