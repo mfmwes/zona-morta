@@ -120,6 +120,16 @@ export type ShelterProject = {
   repairProgress?: number;
   requiredRepairProgress?: number;
   repairCostsPaid?: boolean;
+  /** Turno de trabalho já programado. O relógio geral da campanha conclui o turno automaticamente. */
+  workShift?: {
+    startDay: number;
+    startMinute: number;
+    durationMinutes: number;
+    endAbsoluteMinute: number;
+    points: number;
+    workerIds: string[];
+    repairing: boolean;
+  };
 };
 export type ShelterPost = {
   key: string;
