@@ -62,9 +62,12 @@ function stockResourceFor(item: InventoryItem): StockResource | undefined {
 }
 
 export function itemActionOptions(game: GameState, ownerId: string, item: InventoryItem, selfOnly = false) {
-  const slots = ownerId === "shared" ? [] : compatibleSlots(item);
   const owner = game.survivors.find(person => person.id === ownerId);
-  const targets = selfOnly ? [] : [
+  const cart = owner ? activeCart(owner) : null;
+  const lockedCart = item.name === "Carrinho dobrável" && (Boolean(item.cartDeployed) || (item.cartItems?.length ?? 0) > 0);
+  const slots = ownerId === "shared" ? [] : compatibleSlots(item)
+    .filter(slot => !(cart && (slot === "primary" || slot === "secondary")));
+  const targets = selfOnly || lockedCart ? [] : [
     ...game.survivors
       .filter(person => person.id !== ownerId)
       .filter(person => ownerId === "shared"
@@ -83,7 +86,6 @@ export function itemActionOptions(game: GameState, ownerId: string, item: Invent
   const containerOptions = reusableContainerOptions(game, ownerId, item);
   const canUse = catalogItemCanUse(item) && item.name !== "Kit de pilhas";
   const stockResource = stockResourceFor(item);
-  const cart = owner ? activeCart(owner) : null;
   const cartContents = item.name === "Carrinho dobrável" ? item.cartItems ?? [] : [];
   const cartLoad = item.name === "Carrinho dobrável"
     ? cartContents.reduce((sum, entry) => sum + Math.max(0, entry.load) * Math.max(0, entry.qty), 0)
@@ -100,6 +102,7 @@ export function itemActionOptions(game: GameState, ownerId: string, item: Invent
     canFoldCart: Boolean(owner && item.name === "Carrinho dobrável" && item.cartDeployed && cartContents.length === 0),
     cartFoldBlocked: Boolean(owner && item.name === "Carrinho dobrável" && item.cartDeployed && cartContents.length > 0),
     canStoreInCart: Boolean(owner && cart && cart.id !== item.id),
+    canDiscard: !lockedCart,
     cart,
     cartLoad,
     canMedication: !selfOnly && countsAsMedication(item) && (ownerId === "shared" ? atSharedStorage(game) : atSharedStorage(game, ownerId)),
