@@ -302,7 +302,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
         const personStats = survivorStats(person);
         return {
           id: person.id, name: person.name, portrait: person.portrait, archetype: person.archetype,
-          specialty: person.specialty, infection: person.infection,
+          specialty: person.specialty, hex: person.hex ?? game.partyHex, infection: person.infection,
           hp: Math.max(0, personStats.hp - person.hp), hpMax: personStats.hp,
           stress: person.stress, hope: person.hope,
         } satisfies RestPeer;
