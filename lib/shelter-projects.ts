@@ -509,27 +509,82 @@ export function startProject(shelter: ShelterState, project: ShelterProject) {
 }
 
 export function markProjectDamaged(project: ShelterProject) {
-  if (project.state !== "Concluído") return false;
-  const definition = projectDefinition(project.key);
-  project.state = "Danificado";
-  project.repairProgress = 0;
-  project.requiredRepairProgress = definition?.repairProgress ?? Math.max(1, Math.ceil(project.requiredProgress / 2));
-  project.repairCostsPaid = false;
-  return true;
+  return applyProjectDamage(project, 1) > 0;
 }
 
-export function startRepair(shelter: ShelterState, project: ShelterProject) {
-  if (project.state !== "Danificado") return "A estrutura não está danificada.";
+function halfCosts(costs: ShelterProjectCost) {
+  return Object.fromEntries(Object.entries(costs)
+    .map(([key, quantity]) => [key, Math.ceil(Number(quantity) / 2)])
+    .filter(([, quantity]) => Number(quantity) > 0)) as ShelterProjectCost;
+}
+
+export function repairPlan(gameOrShelter: GameState | ShelterState, project: ShelterProject) {
+  const game = "shelter" in gameOrShelter ? gameOrShelter : undefined;
+  const shelter = game ? game.shelter : gameOrShelter;
+  const integrity = projectIntegrity(project);
   const definition = projectDefinition(project.key);
-  const costs = definition?.repairCosts ?? { parts: 1 };
-  for (const [key, quantity] of Object.entries(costs) as [keyof ShelterProjectCost, number][]) {
+  let costs: ShelterProjectCost = {};
+  let requiredProgress = 1;
+  let label = "Reparo leve";
+
+  if (integrity === 1) {
+    costs = { parts: 1 };
+    requiredProgress = 2;
+    label = "Reparo estrutural";
+  } else if (integrity <= 0) {
+    costs = halfCosts(definition?.costs ?? project.costs ?? {});
+    requiredProgress = Math.max(1, Math.ceil((definition?.requiredProgress ?? project.requiredProgress) / 2));
+    label = "Restauração";
+  }
+
+  let workshopDiscount = false;
+  if (game && (costs.parts ?? 0) > 0 && shelter.maintenanceDiscountDay !== game.day) {
+    const workshop = shelter.projects?.find(candidate => candidate.key === "workshop");
+    if (workshop && workshop.id !== project.id && projectOperational(game, shelter, workshop)) {
+      costs = { ...costs, parts: Math.max(0, (costs.parts ?? 0) - 1) };
+      if (!costs.parts) delete costs.parts;
+      workshopDiscount = true;
+    }
+  }
+  return { integrity, costs, requiredProgress, label, workshopDiscount };
+}
+
+export function repairWorkBonus(game: GameState, project: ShelterProject) {
+  if (project.repairProgress === undefined) return { points: 0, sources: [] as string[] };
+  const sources: string[] = [];
+  let points = 0;
+  const bench = game.shelter.projects?.find(candidate => candidate.key === "tool-bench");
+  if (bench && bench.id !== project.id && projectOperational(game, game.shelter, bench)) {
+    points += 1; sources.push("Bancada de ferramentas");
+  }
+  const definition = projectDefinition(project.key);
+  const electrical = definition?.buildCapabilities?.includes("Eletricidade") || project.buildCapabilities?.includes("Eletricidade");
+  const electricalWorkshop = game.shelter.projects?.find(candidate => candidate.key === "electrical-workshop");
+  if (electrical && electricalWorkshop && electricalWorkshop.id !== project.id
+    && projectOperational(game, game.shelter, electricalWorkshop)) {
+    points += 1; sources.push("Oficina elétrica");
+  }
+  return { points, sources };
+}
+
+export function startRepair(gameOrShelter: GameState | ShelterState, project: ShelterProject) {
+  const game = "shelter" in gameOrShelter ? gameOrShelter : undefined;
+  const shelter = game ? game.shelter : gameOrShelter;
+  if (!["Danificado", "Inoperante", "Destruído"].includes(project.state))
+    return "A estrutura não precisa de reparo.";
+  const plan = repairPlan(gameOrShelter, project);
+  for (const [key, quantity] of Object.entries(plan.costs) as [keyof ShelterProjectCost, number][]) {
     if ((shelter[key] ?? 0) < quantity) return `Faltam ${key === "parts" ? "Peças" : key === "medications" ? "Medicamentos" : "Combustível"} para o reparo.`;
   }
-  for (const [key, quantity] of Object.entries(costs) as [keyof ShelterProjectCost, number][]) shelter[key] -= quantity;
-  project.repairProgress ??= 0;
-  project.requiredRepairProgress ??= definition?.repairProgress ?? 1;
+  for (const [key, quantity] of Object.entries(plan.costs) as [keyof ShelterProjectCost, number][]) shelter[key] -= quantity;
+  if (game && plan.workshopDiscount) shelter.maintenanceDiscountDay = game.day;
+  project.repairFromIntegrity = plan.integrity;
+  project.repairProgress = 0;
+  project.requiredRepairProgress = plan.requiredProgress;
   project.repairCostsPaid = true;
   project.state = "Em construção";
+  delete project.workShift;
+  project.volunteerShifts = [];
   return null;
 }
 
@@ -546,10 +601,12 @@ export function advanceProject(project: ShelterProject, points = 1) {
     const required = project.requiredRepairProgress ?? 1;
     project.repairProgress = Math.min(required, project.repairProgress + points);
     if (project.repairProgress >= required) {
+      project.integrity = shelterProjectMaxIntegrity;
       project.state = "Concluído";
       delete project.repairProgress;
       delete project.requiredRepairProgress;
       delete project.repairCostsPaid;
+      delete project.repairFromIntegrity;
     }
     return true;
   }
