@@ -99,7 +99,7 @@ export function HexContextMenu({
       {!playerPreview && record.discovery !== "desconhecido" && <>
         <ContextMenuSeparator />
         <ContextMenuSub>
-          <ContextMenuSubTrigger><Dice5 /> Gerar conteúdo</ContextMenuSubTrigger>
+          <ContextMenuSubTrigger><Dice5 /> Tabelas do hex</ContextMenuSubTrigger>
           <ContextMenuSubContent className="inventory-context-submenu">
             <ContextMenuItem onSelect={() => onGenerate("locais")}><Dice5 /> B1 · Local</ContextMenuItem>
             <ContextMenuItem onSelect={() => onGenerate("comercios")}><Dice5 /> B2 · Comércio</ContextMenuItem>
