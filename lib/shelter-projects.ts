@@ -19,6 +19,7 @@ export type ProjectDefinition = {
   dependencies?: { allOf?: string[]; anyOf?: string[] };
   repairCosts?: ShelterProjectCost;
   repairProgress?: number;
+  operationWork?: { label: string; requiredProgress: number; output: Partial<Record<"food" | "water" | "parts", number>>; capability?: string };
   effects: ShelterProjectEffect[];
 };
 
@@ -53,7 +54,7 @@ export const shelterProjectCatalog: ProjectDefinition[] = [
   { key: "water-filter", name: "Filtro de água", category: "Sobrevivência", kind: "facility", zone: "utility", requiredProgress: 2, costs: { parts: 1 }, buildCapabilities: ["Mecânica"], ...passive, repairCosts: { parts: 1 }, repairProgress: 1, effects: [effect("Tratamento de água coletada")] },
   { key: "community-kitchen", name: "Cozinha comunitária", category: "Sobrevivência", kind: "facility", zone: "interior", requiredProgress: 2, costs: { parts: 1, fuel: 1 }, buildCapabilities: ["Construção"], ...staffed(["Cozinha"]), repairCosts: { parts: 1 }, repairProgress: 1, effects: [effect("Preparo coletivo de refeições", { comfort: 1 })] },
   { key: "pantry", name: "Despensa", category: "Sobrevivência", kind: "facility", zone: "interior", requiredProgress: 2, costs: { parts: 1 }, buildCapabilities: ["Construção"], ...staffed(["Logística"]), repairCosts: { parts: 1 }, repairProgress: 1, effects: [effect("Estoque seco organizado")] },
-  { key: "garden", name: "Horta", category: "Sobrevivência", kind: "facility", zone: "exterior", requiredProgress: 4, costs: { parts: 2 }, buildCapabilities: ["Construção"], ...staffed(["Cultivo"]), repairCosts: { parts: 1 }, repairProgress: 2, effects: [effect("Área de cultivo comunitário")] },
+  { key: "garden", name: "Horta", category: "Sobrevivência", kind: "facility", zone: "exterior", requiredProgress: 4, costs: { parts: 2 }, buildCapabilities: ["Construção"], ...staffed(["Cultivo"]), repairCosts: { parts: 1 }, repairProgress: 2, operationWork: { label: "Cultivar", requiredProgress: 4, output: { food: 2 }, capability: "Cultivo" }, effects: [effect("Área de cultivo comunitário")] },
   { key: "rain-collector", name: "Coletor de chuva", category: "Sobrevivência", kind: "upgrade", requiredProgress: 2, costs: { parts: 1 }, buildCapabilities: ["Construção"], ...passive, repairCosts: { parts: 1 }, repairProgress: 1, effects: [effect("Captação de chuva")] },
   { key: "refrigeration", name: "Refrigeração", category: "Sobrevivência", kind: "facility", zone: "utility", requiredProgress: 3, costs: { parts: 2, fuel: 1 }, buildCapabilities: ["Eletricidade"], ...passive, requiresPower: true, dependencies: { anyOf: ["generator", "solar-panels", "battery-bank"] }, repairCosts: { parts: 1 }, repairProgress: 2, effects: [effect("Conservação a frio", { energy: -1 })] },
 
@@ -85,6 +86,49 @@ export const shelterProjectCatalog: ProjectDefinition[] = [
   { key: "improvised-school", name: "Escola improvisada", category: "Comunidade", kind: "facility", zone: "interior", requiredProgress: 2, costs: { parts: 1 }, buildCapabilities: ["Construção"], ...staffed(["Comunicação"]), repairCosts: { parts: 1 }, repairProgress: 1, effects: [effect("Aprendizado e atividades para a comunidade")] },
   { key: "social-space", name: "Espaço social", category: "Comunidade", kind: "facility", zone: "interior", requiredProgress: 1, costs: {}, buildCapabilities: [], ...passive, repairCosts: {}, repairProgress: 1, effects: [effect("Ponto de encontro e escuta", { comfort: 1 })] },
 ];
+
+export const shelterMechanicalBenefits: Record<string, string[]> = {
+  barricades: ["+1 Segurança enquanto estiver funcional."],
+  "reinforced-gate": ["+1 Segurança.", "Reduz em 1 o Impacto de invasões enquanto estiver funcional."],
+  watchpost: ["+1 Segurança quando houver operador com Vigilância."],
+  "exterior-lighting": ["+1 Segurança enquanto houver energia."],
+  "improvised-alarm": ["A primeira invasão ou sabotagem do dia sofre −1 Impacto."],
+  "evacuation-route": ["Mantém uma rota alternativa preparada para eventos de evacuação."],
+  cistern: ["Reserva física para sistemas de água; não cria água automaticamente."],
+  "water-filter": ["Infraestrutura de tratamento de água; não cria água automaticamente."],
+  "community-kitchen": ["+1 Conforto quando operada."],
+  pantry: ["Organiza estoque seco; conservação específica será aplicada apenas a itens compatíveis."],
+  garden: ["4 pontos de trabalho de Cultivo produzem 2 porções de Comida."],
+  "rain-collector": ["Captação preparada; produção depende de chuva/evento e não é automática."],
+  refrigeration: ["Conserva automaticamente alimentos refrigeráveis no depósito enquanto estiver operacional e energizada."],
+  infirmary: ["+1 Conforto e infraestrutura para tratamento médico."],
+  quarantine: ["Infraestrutura para isolamento de casos de infecção."],
+  "medical-stock": ["Infraestrutura para organização de medicamentos."],
+  "recovery-space": ["+1 Conforto e +1 Capacidade."],
+  generator: ["+1 Energia enquanto estiver operacional."],
+  "solar-panels": ["+1 Energia enquanto estiver funcional."],
+  "battery-bank": ["+1 Energia de reserva enquanto estiver funcional."],
+  "electrical-workshop": ["+1 progresso em turnos de reparo de estruturas elétricas."],
+  "interior-lighting": ["+1 Conforto enquanto houver energia."],
+  "fixed-radio": ["Habilita comunicação fixa enquanto houver energia e operador."],
+  "elevated-antenna": ["Infraestrutura para ampliar comunicações futuras."],
+  "communications-room": ["Infraestrutura para coordenação de comunicações."],
+  "route-board": ["Registra rotas conhecidas para futuras ações de logística."],
+  workshop: ["A primeira reparação paga iniciada no dia custa 1 Peça a menos, mínimo 0."],
+  garage: ["Infraestrutura de manutenção para futuros veículos."],
+  "tool-bench": ["+1 progresso em qualquer turno de reparo realizado no abrigo."],
+  recycling: ["Infraestrutura para reciclagem; não gera Peças sem matéria-prima."],
+  dormitories: ["+4 Capacidade e +1 Conforto."],
+  "community-kitchen-space": ["+1 Conforto."],
+  refectory: ["+1 Conforto."],
+  "common-area": ["+1 Conforto."],
+  "improvised-school": ["Infraestrutura para treinamento comunitário futuro."],
+  "social-space": ["+1 Conforto."],
+};
+
+export function projectMechanicalBenefits(key: string) {
+  return shelterMechanicalBenefits[key] ?? [];
+}
 
 export const shelterPostCatalog = [
   { key: "vigilance", name: "Vigilância", capability: "Vigilância", projects: [] },
