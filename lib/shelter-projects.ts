@@ -178,8 +178,14 @@ export function normalizeShelter(shelter: ShelterState) {
     project.operationMode ??= definition?.operationMode ?? "passive";
     project.effects ??= structuredClone(definition?.effects ?? []);
     project.helperIds ??= [];
-    project.survivorWorkerIds ??= [];
-    project.volunteerShifts ??= [];
+    project.survivorWorkerIds = [...new Set((project.survivorWorkerIds ?? []).filter(id => typeof id === "string"))];
+    project.volunteerShifts = (project.volunteerShifts ?? []).filter(shift => shift && typeof shift.survivorId === "string").map(shift => ({
+      ...shift,
+      durationMinutes: Math.max(60, Math.trunc(shift.durationMinutes ?? 240)),
+      endAbsoluteMinute: Math.max(0, Math.trunc(shift.endAbsoluteMinute ?? 0)),
+      points: Math.max(1, Math.trunc(shift.points ?? 1)),
+      repairing: Boolean(shift.repairing),
+    }));
     if (project.workShift) {
       project.workShift.durationMinutes = Math.max(60, Math.trunc(project.workShift.durationMinutes ?? 240));
       project.workShift.points = Math.max(1, Math.trunc(project.workShift.points ?? 1));
@@ -518,6 +524,7 @@ export function processScheduledShelterWork(game: GameState) {
     const finished = project.state === "Concluído";
     const workers = shift.workerIds.map(id => game.npcs.find(npc => npc.id === id)?.name).filter(Boolean);
     delete project.workShift;
+    if (finished) project.volunteerShifts = [];
     completed.push({ key: project.key, name: project.name, points, completed: finished });
     addLog(game, "abrigo", finished
       ? `${project.name} foi ${shift.repairing ? "reparado" : "concluído"} ao fim do turno programado${workers.length ? ` com ${workers.join(", ")}` : ""}.`
@@ -531,12 +538,17 @@ export function processScheduledShelterWork(game: GameState) {
     .sort((a, b) => a.shift.endAbsoluteMinute - b.shift.endAbsoluteMinute);
 
   for (const { project, shift } of volunteerDue) {
+    if (!(project.volunteerShifts ?? []).includes(shift)) continue;
     const survivor = game.survivors.find(person => person.id === shift.survivorId);
     const before = projectProgress(project);
     const points = project.state === "Em construção" ? Math.max(0, Math.min(shift.points, before.required - before.value)) : 0;
     if (points > 0) advanceProject(project, points);
     const finished = project.state === "Concluído";
     project.volunteerShifts = (project.volunteerShifts ?? []).filter(entry => entry !== shift);
+    if (finished) {
+      project.volunteerShifts = [];
+      delete project.workShift;
+    }
     completed.push({ key: project.key, name: project.name, points, completed: finished });
     addLog(game, "abrigo", points > 0
       ? `${survivor?.name ?? "Um sobrevivente"} trabalhou em ${project.name}: +${points} progresso${finished ? " e a obra foi concluída" : ""}.`
