@@ -101,6 +101,7 @@ export type RestPeer = {
   portrait?: string;
   archetype?: string;
   specialty?: string;
+  hex?: string;
   infection?: Infection;
   hp?: number;
   hpMax?: number;
@@ -434,7 +435,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
             <span className="character-roster-avatar">{peer.portrait ? <img src={peer.portrait} alt="" /> : peer.name.charAt(0).toUpperCase()}</span>
             <span><b>{peer.name}</b>
               <small><Heart size={12} aria-hidden="true" /> {peer.hp ?? "—"}/{peer.hpMax ?? "—"}<span aria-hidden="true"> · </span>{peer.archetype ?? "Sobrevivente"}</small>
-              <small className={`character-roster-state ${peer.infection && peer.infection !== "Saudável" ? "at-risk" : ""}`}><Activity size={11} aria-hidden="true" /> {peer.infection ?? "Estado não informado"}<span aria-hidden="true"> · </span>Estresse {peer.stress ?? "—"}<span aria-hidden="true"> · </span>Hope {peer.hope ?? "—"}</small>
+              <small className={`character-roster-state ${peer.infection && peer.infection !== "Saudável" ? "at-risk" : ""}`}><Activity size={11} aria-hidden="true" /> {peer.infection ?? "Estado não informado"}<span aria-hidden="true"> · </span>Hex {peer.hex ?? "—"}<span aria-hidden="true"> · </span>Estresse {peer.stress ?? "—"}<span aria-hidden="true"> · </span>Hope {peer.hope ?? "—"}</small>
             </span>
           </div>;
         }) : game.survivors.map(s => { const st = survivorStats(s); const canControl = !playerPreview; const masterMode = !playerPreview; return <SurvivorContextMenu key={s.id}
