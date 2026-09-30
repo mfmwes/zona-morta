@@ -1,4 +1,4 @@
-import { absoluteMinutes, addLog, displayTime, normalizeShelterAmmo, type GameState, type NPC, type ShelterManualAdjustments, type ShelterPost, type ShelterProject, type ShelterProjectCategory, type ShelterProjectCost, type ShelterProjectEffect, type ShelterState } from "./game";
+import { absoluteMinutes, addLog, content, displayTime, normalizeShelterAmmo, survivorHex, type GameState, type NPC, type ShelterManualAdjustments, type ShelterPost, type ShelterProject, type ShelterProjectCategory, type ShelterProjectCost, type ShelterProjectEffect, type ShelterState, type Survivor } from "./game";
 import { createId } from "./id";
 
 export type ShelterProjectKind = "facility" | "upgrade";
@@ -149,6 +149,8 @@ export function createShelterProject(key: string, slotId?: string): ShelterProje
     slotId,
     effects: structuredClone(definition.effects),
     helperIds: [],
+    survivorWorkerIds: [],
+    volunteerShifts: [],
   } : null;
 }
 
@@ -176,6 +178,8 @@ export function normalizeShelter(shelter: ShelterState) {
     project.operationMode ??= definition?.operationMode ?? "passive";
     project.effects ??= structuredClone(definition?.effects ?? []);
     project.helperIds ??= [];
+    project.survivorWorkerIds ??= [];
+    project.volunteerShifts ??= [];
     if (project.workShift) {
       project.workShift.durationMinutes = Math.max(60, Math.trunc(project.workShift.durationMinutes ?? 240));
       project.workShift.points = Math.max(1, Math.trunc(project.workShift.points ?? 1));
@@ -196,6 +200,106 @@ function activePresent(game: GameState, shelter: ShelterState, id?: string) {
 
 function hasCapability(npc: NPC | undefined, capability: string) {
   return Boolean(npc && npc.skills.some(skill => skill.localeCompare(capability, "pt-BR", { sensitivity: "base" }) === 0));
+}
+
+function normalizeWorkText(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
+}
+
+const survivorCapabilityKeywords: Record<string, string[]> = {
+  "Construção": ["constr", "pedreir", "carpint", "engenh", "arquitet", "obra"],
+  "Eletricidade": ["eletric", "eletron", "energia"],
+  "Mecânica": ["mecanic", "motor", "automot", "manutenc"],
+  "Medicina": ["medic", "enferm", "socor", "saude", "paramed"],
+  "Logística": ["logist", "estoque", "almox", "supriment", "organiz"],
+  "Vigilância": ["vigil", "segur", "guarda", "polic", "militar"],
+  "Cozinha": ["cozinh", "culin", "chef"],
+  "Cultivo": ["cultiv", "agric", "hort", "jardin"],
+  "Comunicação": ["comunic", "radio", "jornal", "midia", "oratoria"],
+};
+
+export function survivorShelterCapabilities(survivor: Survivor) {
+  const originExperience = content.origins.find(origin => origin.name === survivor.origin)?.experience ?? "";
+  const sources = [originExperience, survivor.freeExperience].filter(Boolean);
+  const normalized = sources.map(normalizeWorkText);
+  return Object.entries(survivorCapabilityKeywords)
+    .filter(([capability, keywords]) => normalized.some(source => source.includes(normalizeWorkText(capability))
+      || keywords.some(keyword => source.includes(keyword))))
+    .map(([capability]) => capability);
+}
+
+export function survivorActiveShelterShift(game: GameState, survivorId: string) {
+  const now = absoluteMinutes(game);
+  for (const project of game.shelter.projects ?? []) {
+    const shift = (project.volunteerShifts ?? []).find(entry => entry.survivorId === survivorId && entry.endAbsoluteMinute > now);
+    if (shift) return { project, shift };
+  }
+  return null;
+}
+
+export function survivorShelterWorkIssue(game: GameState, project: ShelterProject, survivorId: string) {
+  const survivor = game.survivors.find(person => person.id === survivorId);
+  if (!survivor) return "Sobrevivente não encontrado.";
+  if (!game.shelter.hex || survivorHex(game, survivor) !== game.shelter.hex) return "Seu personagem precisa estar no abrigo para trabalhar aqui.";
+  if (!["Planejado", "Em construção"].includes(project.state)) return "Esta estrutura não está aceitando trabalhadores agora.";
+  const active = survivorActiveShelterShift(game, survivorId);
+  if (active && active.project.id !== project.id) return `Você já está trabalhando em ${active.project.name} até ${displayTime(active.shift.startMinute + active.shift.durationMinutes)}.`;
+  return null;
+}
+
+export function joinShelterProjectAsSurvivor(game: GameState, project: ShelterProject, survivorId: string) {
+  const issue = survivorShelterWorkIssue(game, project, survivorId);
+  if (issue) return issue;
+  project.survivorWorkerIds ??= [];
+  if (!project.survivorWorkerIds.includes(survivorId)) project.survivorWorkerIds.push(survivorId);
+  return null;
+}
+
+export function leaveShelterProjectAsSurvivor(game: GameState, project: ShelterProject, survivorId: string) {
+  if ((project.volunteerShifts ?? []).some(shift => shift.survivorId === survivorId))
+    return "Cancele seu turno antes de sair da equipe.";
+  project.survivorWorkerIds = (project.survivorWorkerIds ?? []).filter(id => id !== survivorId);
+  return null;
+}
+
+export function survivorWorkPreview(game: GameState, project: ShelterProject, survivorId: string) {
+  const issue = survivorShelterWorkIssue(game, project, survivorId);
+  const survivor = game.survivors.find(person => person.id === survivorId);
+  if (issue || !survivor) return { issue: issue ?? "Sobrevivente não encontrado.", points: 0, capabilities: [] as string[], matches: [] as string[] };
+  if (project.state !== "Em construção") return { issue: "A obra ainda precisa ser iniciada pelo mestre.", points: 0, capabilities: survivorShelterCapabilities(survivor), matches: [] as string[] };
+  if (!(project.survivorWorkerIds ?? []).includes(survivorId))
+    return { issue: "Entre na equipe desta obra antes de programar um turno.", points: 0, capabilities: survivorShelterCapabilities(survivor), matches: [] as string[] };
+  const capabilities = survivorShelterCapabilities(survivor);
+  const requirements = project.buildCapabilities ?? projectDefinition(project.key)?.buildCapabilities ?? [];
+  const matches = requirements.filter(capability => capabilities.includes(capability));
+  return { issue: null, points: 1 + (matches.length ? 1 : 0), capabilities, matches };
+}
+
+export function scheduleSurvivorWorkShift(game: GameState, project: ShelterProject, survivorId: string, hours = 4) {
+  if (!Number.isInteger(hours) || hours < 1 || hours > 8) return { ok: false, message: "Duração de turno inválida." };
+  if (game.minutes + hours * 60 >= 1440) return { ok: false, message: "Este turno terminaria depois do fim do dia." };
+  if ((project.volunteerShifts ?? []).some(shift => shift.survivorId === survivorId))
+    return { ok: false, message: "Você já tem um turno programado nesta obra." };
+  const preview = survivorWorkPreview(game, project, survivorId);
+  if (preview.issue || preview.points < 1) return { ok: false, message: preview.issue ?? "Não foi possível programar seu turno." };
+  const durationMinutes = hours * 60;
+  project.volunteerShifts ??= [];
+  project.volunteerShifts.push({
+    survivorId,
+    startDay: game.day,
+    startMinute: game.minutes,
+    durationMinutes,
+    endAbsoluteMinute: absoluteMinutes(game) + durationMinutes,
+    points: preview.points,
+    repairing: Boolean(project.repairProgress !== undefined),
+  });
+  return { ok: true, message: `Seu turno foi programado até ${displayTime(game.minutes + durationMinutes)}.`, preview };
+}
+
+export function cancelSurvivorWorkShift(project: ShelterProject, survivorId: string) {
+  const before = project.volunteerShifts?.length ?? 0;
+  project.volunteerShifts = (project.volunteerShifts ?? []).filter(shift => shift.survivorId !== survivorId);
+  return (project.volunteerShifts?.length ?? 0) < before;
 }
 
 export function canVolunteer(npc: NPC, responsibility = false) {
@@ -400,15 +504,16 @@ export function cancelShelterWorkShift(game: GameState, project: ShelterProject)
 
 export function processScheduledShelterWork(game: GameState) {
   const now = absoluteMinutes(game);
-  const due = (game.shelter.projects ?? [])
+  const completed: { key: string; name: string; points: number; completed: boolean }[] = [];
+
+  const dueNpc = (game.shelter.projects ?? [])
     .filter(project => project.workShift && project.workShift.endAbsoluteMinute <= now)
     .sort((a, b) => (a.workShift?.endAbsoluteMinute ?? 0) - (b.workShift?.endAbsoluteMinute ?? 0));
-  const completed: { key: string; name: string; points: number; completed: boolean }[] = [];
-  for (const project of due) {
+  for (const project of dueNpc) {
     const shift = project.workShift;
     if (!shift) continue;
     const before = projectProgress(project);
-    const points = Math.max(0, Math.min(shift.points, before.required - before.value));
+    const points = project.state === "Em construção" ? Math.max(0, Math.min(shift.points, before.required - before.value)) : 0;
     if (points > 0) advanceProject(project, points);
     const finished = project.state === "Concluído";
     const workers = shift.workerIds.map(id => game.npcs.find(npc => npc.id === id)?.name).filter(Boolean);
@@ -418,6 +523,27 @@ export function processScheduledShelterWork(game: GameState) {
       ? `${project.name} foi ${shift.repairing ? "reparado" : "concluído"} ao fim do turno programado${workers.length ? ` com ${workers.join(", ")}` : ""}.`
       : `${project.name}: +${points} progresso no turno programado (${projectProgress(project).value}/${projectProgress(project).required}).`);
   }
+
+  const volunteerDue = (game.shelter.projects ?? []).flatMap(project =>
+    (project.volunteerShifts ?? [])
+      .filter(shift => shift.endAbsoluteMinute <= now)
+      .map(shift => ({ project, shift })))
+    .sort((a, b) => a.shift.endAbsoluteMinute - b.shift.endAbsoluteMinute);
+
+  for (const { project, shift } of volunteerDue) {
+    const survivor = game.survivors.find(person => person.id === shift.survivorId);
+    const before = projectProgress(project);
+    const points = project.state === "Em construção" ? Math.max(0, Math.min(shift.points, before.required - before.value)) : 0;
+    if (points > 0) advanceProject(project, points);
+    const finished = project.state === "Concluído";
+    project.volunteerShifts = (project.volunteerShifts ?? []).filter(entry => entry !== shift);
+    completed.push({ key: project.key, name: project.name, points, completed: finished });
+    addLog(game, "abrigo", points > 0
+      ? `${survivor?.name ?? "Um sobrevivente"} trabalhou em ${project.name}: +${points} progresso${finished ? " e a obra foi concluída" : ""}.`
+      : `O turno de ${survivor?.name ?? "um sobrevivente"} em ${project.name} terminou sem progresso adicional.`,
+      survivor?.id);
+  }
+
   return completed;
 }
 
