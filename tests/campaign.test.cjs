@@ -778,3 +778,27 @@ test('habilidade limitada por local usa o hex real do sobrevivente', () => {
   ana.hex = '1,0';
   assert.equal(abilities.abilityAvailable(g, ana.id, 'teste-local', effect), true);
 });
+
+
+test('encerrar o dia é independente de descanso longo', () => {
+  const g = campaign(); const [ana, bia] = g.survivors;
+  ana.hp = 2; bia.stress = 2;
+  const dayBeforeRest = g.day;
+  const minutesBeforeRest = g.minutes;
+
+  const rest = abilities.resolveGroupRest(g, 'long', [
+    { survivorId: ana.id, choices: [{ action:'hp-full', targetId:ana.id }, { action:'fiction', targetId:ana.id }] },
+    { survivorId: bia.id, choices: [{ action:'stress-full', targetId:bia.id }, { action:'fiction', targetId:bia.id }] },
+  ], () => 1);
+  assert.equal(rest.ok, true);
+  assert.equal(g.day, dayBeforeRest);
+  assert.equal(g.minutes, minutesBeforeRest);
+
+  const shortRestBeforeDayClose = g.shortRest;
+  const longRestBeforeDayClose = g.longRest;
+  assert.equal(survival.closeDay(g, 0, 0, dayBeforeRest), true);
+  assert.equal(g.day, dayBeforeRest + 1);
+  assert.equal(g.minutes, 480);
+  assert.equal(g.shortRest, shortRestBeforeDayClose);
+  assert.equal(g.longRest, longRestBeforeDayClose);
+});
