@@ -294,6 +294,22 @@ html[data-theme="dark"] .rest-planner-row { border-color: #405650; background: #
 html[data-theme="dark"] .character-hope-teaser { border-color: #8a6b14; background: var(--hope-surface); color: #fff0b8; box-shadow: none; }
 html[data-theme="dark"] .character-hope-teaser:hover { background: #51420d; }
 html[data-theme="dark"] .character-hope-teaser strong { background: #6b5510; color: #ffe995; }
+/* The sheet has nested cards of its own; keep their reading surface dark instead of
+   inheriting light cards with light text from the surrounding character panel. */
+html[data-theme="dark"] .character-tabs-scroll { border-color: #3a504d; background: #1a2526; box-shadow: none; }
+html[data-theme="dark"] .character-tab { color: #c6d4cf; }
+html[data-theme="dark"] .character-tab:hover { background: #263634; color: #eef5f0; }
+html[data-theme="dark"] .character-ability { border-color: #3b514e !important; background: #202b2b; color: #dfe9e3; }
+html[data-theme="dark"] .character-ability-trigger { color: #e7f0ea; }
+html[data-theme="dark"] .character-ability-trigger:hover { background: #293735; }
+html[data-theme="dark"] .character-ability-title { color: #f0f6f1; }
+html[data-theme="dark"] .character-ability-icon { background: #293a38; color: #9bc9bd; }
+html[data-theme="dark"] .character-ability-meta span { background: #2a3735; color: #c3d4ce; }
+html[data-theme="dark"] .character-ability-meta span:first-child { background: #29433e; color: #a8d9cb; }
+html[data-theme="dark"] .character-ability-preview { color: #b8c9c3; }
+html[data-theme="dark"] .character-ability-detail { border-top-color: #3b514e; }
+html[data-theme="dark"] .character-ability-detail p { color: #d3dfd9; }
+html[data-theme="dark"] .character-technique-preview > span { background: #263634; color: #bdd6cd; }
 html[data-theme="dark"] [data-slot="dialog-content"],
 html[data-theme="dark"] [data-slot="select-content"],
 html[data-theme="dark"] [data-slot="dropdown-menu-content"],
