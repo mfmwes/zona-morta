@@ -13,7 +13,7 @@ import { ItemArt } from "@/components/item-art";
 import { ShelterMoveDialog } from "@/components/shelter-move";
 import { DayCloseDialog } from "@/components/day-close-dialog";
 import { FormerShelterProjects, ShelterProjectsManager } from "@/components/shelter-project-manager";
-import { content, establishShelter, recoverFormerStock, shelterPopulationBreakdown, survivorPositionGroups, survivorsAtHex, type GameState } from "@/lib/game";
+import { ammunitionTypes, content, establishShelter, recoverFormerAmmo, recoverFormerStock, setShelterAmmoCount, shelterAmmoCount, shelterPopulationBreakdown, survivorPositionGroups, survivorsAtHex, type GameState } from "@/lib/game";
 import { shelterMetrics } from "@/lib/shelter-projects";
 import { atSharedStorage, catalogForItem } from "@/lib/inventory";
 import { provisionBreakdown, provisionDisplay, provisionItemInfo } from "@/lib/provision-items";
@@ -50,7 +50,6 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
     {key:"food",label:"Comida",unit:"porções",max:999},
     {key:"water",label:"Água",unit:"porções",max:999},
     {key:"medications",label:"Medicamentos",unit:"tratamentos",max:99},
-    {key:"pistolAmmo",label:"Munição de pistola",unit:"cargas",max:99},
     {key:"fuel",label:"Combustível",unit:"cargas",max:99},
     {key:"parts",label:"Peças",unit:"unidades",max:99},
   ];
@@ -107,6 +106,17 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
                 else (draft.shelter[stock.key] as number) = value; })} />}
           <p className="text-xs subtle mt-2">{stock.unit}{provision ? " · itens físicos são contados automaticamente no total acima" : ""}</p>
         </div>; })}
+      </div>
+      <div className="divider" />
+      <div className="flex items-center gap-2 mb-3"><h3 className="section-title">Munição por tipo</h3></div>
+      <p className="intro-line mb-3">Cada carga mantém seu tipo. Armas consomem automaticamente 1 carga compatível na primeira ação de disparo da cena.</p>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {ammunitionTypes.map(type => <div className="metric" key={type}>
+          {playerPreview ? <div><span className="smallcaps subtle">{type}</span><strong>{shelterAmmoCount(s, type)}</strong></div>
+            : <Counter compact editable label={type} value={shelterAmmoCount(s, type)} max={99}
+                onChange={value => edit(draft => { setShelterAmmoCount(draft.shelter, type, value); })} />}
+          <p className="text-xs subtle mt-2">carga(s)</p>
+        </div>)}
       </div>
       {(s.provisionLots ?? []).length > 0 && <p className="character-rule-note mt-3">Lotes com prazo: {s.provisionLots!.map(lot => `${lot.qty} ${lot.resource === "food" ? "comida" : "água"} (${lot.label}) → amanhecer do dia ${lot.expiresDay}`).join(" · ")}.</p>}
       <div className="divider" />
@@ -165,7 +175,7 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
         <p className="intro-line mt-2">Há sobreviventes neste local. Retire os mantimentos e itens desejados apenas com quem está presente neste hex.</p>
         {!playerPreview && recipient && <Pick label="Quem vai carregar" value={recipient.id} options={cacheVisitors.map(person => ({ value: person.id, label: person.name }))} onChange={setCacheRecipient} />}
         <div className="grid gap-2 mt-3">
-          {([ ["food", "Comida"], ["water", "Água"], ["pistolAmmo", "Munição de pistola"],
+          {([ ["food", "Comida"], ["water", "Água"],
             ["medications", "Medicamentos"], ["fuel", "Combustível"], ["parts", "Peças"] ] as const).map(([key, label]) =>
             <div key={key} className="shared-inventory-row"><div><b>{label}</b><span>{visitedCache[key]} {key === "pistolAmmo" ? "carga(s)" : "porção(ões)"}</span></div>
               {visitedCache[key] > 0 && recipient && !playerPreview && <div className="flex gap-1 flex-wrap">
@@ -174,6 +184,17 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
                 })}>Retirar 1</Button>
                 {visitedCache[key] > 1 && <Button size="sm" variant="outline" onClick={() => edit(d => {
                   if (!recoverFormerStock(d, visitedCache.hex!, recipient.id, key, visitedCache[key])) toast.error("Não coube no contador deste sobrevivente.");
+                })}>Retirar tudo</Button>}
+              </div>}</div>)}
+          {ammunitionTypes.filter(type => shelterAmmoCount(visitedCache, type) > 0).map(type =>
+            <div key={`ammo-${type}`} className="shared-inventory-row"><div><b>Munição · {type}</b><span>{shelterAmmoCount(visitedCache, type)} carga(s)</span></div>
+              {recipient && !playerPreview && <div className="flex gap-1 flex-wrap">
+                <Button size="sm" variant="outline" onClick={() => edit(d => {
+                  if (!recoverFormerAmmo(d, visitedCache.hex!, recipient.id, type, 1)) toast.error("Não foi possível retirar. Verifique o tipo de munição e o contador do sobrevivente.");
+                })}>Retirar 1</Button>
+                {shelterAmmoCount(visitedCache, type) > 1 && <Button size="sm" variant="outline" onClick={() => edit(d => {
+                  const total = shelterAmmoCount(d.formerShelters?.find(site => site.hex === visitedCache.hex!) ?? visitedCache, type);
+                  if (!recoverFormerAmmo(d, visitedCache.hex!, recipient.id, type, total)) toast.error("Não foi possível retirar todas as cargas deste tipo.");
                 })}>Retirar tudo</Button>}
               </div>}</div>)}
           {(visitedCache.inventory ?? []).map(item => <div key={item.id} className="shared-inventory-row"><div className="shared-inventory-entry"><ItemArt name={item.name} category={item.category} /><div><b>{item.qty}× {item.name}</b><span>{item.load * item.qty} carga</span></div></div>
