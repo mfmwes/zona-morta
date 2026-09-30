@@ -254,11 +254,11 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
   return <div className="construction-console">
     <section className="construction-summary">
       <div className="construction-summary-stat"><Hammer size={18} /><span><small>Em andamento</small><b>{activeProjects.length}</b></span></div>
+      <div className="construction-summary-stat"><Clock3 size={18} /><span><small>Turnos agendados</small><b>{scheduledProjects.length}</b></span></div>
       <div className="construction-summary-stat"><CheckCircle2 size={18} /><span><small>Concluídas</small><b>{completedProjects.length}</b></span></div>
       <div className="construction-summary-stat"><Wrench size={18} /><span><small>Peças</small><b>{shelter.parts}</b></span></div>
       <div className="construction-summary-stat"><Users size={18} /><span><small>Equipe livre</small><b>{availableWorkers}/{peopleAtBase.length}</b></span></div>
       <div className={`construction-summary-stat ${power.balance < 0 ? "is-warning" : ""}`}><Zap size={18} /><span><small>Energia</small><b>{power.production} / {power.consumption}</b></span></div>
-      {!playerPreview && <Button onClick={runShift} disabled={!activeProjects.some(project => project.state === "Em construção")}><Clock3 size={16} /> Turno da equipe · 4h</Button>}
     </section>
 
     {power.balance < 0 && <div className="construction-alert"><AlertTriangle size={17} /><div><b>Energia insuficiente</b><span>Produção {power.production} · consumo {power.consumption}. Desligue consumidores menos prioritários até o saldo voltar a zero.</span></div></div>}
@@ -289,7 +289,12 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
             <b>{project.name}</b>
             <div className="construction-mini-progress"><span style={{ width: `${Math.min(100, progress.value / progress.required * 100)}%` }} /></div>
             <small>{progress.value}/{progress.required} progresso{progress.repairing ? " de reparo" : ""}</small>
-            <small>{preview?.issue ? `⏸ ${preview.issue}` : preview ? `Próximo turno: +${preview.points}` : project.state === "Danificado" ? "Aguardando reparo" : "Aguardando início"}</small>
+            <small>{project.workShift
+              ? `⏱ Trabalhando até ${displayTime(project.workShift.startMinute + project.workShift.durationMinutes)} · +${project.workShift.points} previsto`
+              : preview?.issue ? `⏸ ${preview.issue}`
+              : preview ? `Pronto para agendar: +${preview.points} em 4h`
+              : project.state === "Danificado" ? "Aguardando reparo"
+              : projectPlacementIssue(shelter, project) ?? "Aguardando início"}</small>
           </button>;
         })}</div>}
     </section>
