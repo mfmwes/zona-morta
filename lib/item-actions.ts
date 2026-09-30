@@ -3,6 +3,7 @@ import {
   addStack,
   atSharedStorage,
   catalogForItem,
+  catalogItemCanUse,
   catalogItemIsConsumable,
   compatibleSlots,
   consumeProvisionItem,
@@ -59,7 +60,7 @@ export function itemActionOptions(game: GameState, ownerId: string, item: Invent
   ];
   const provision = provisionItemInfo(item);
   const current = catalogForItem(item);
-  const canUse = catalogItemIsConsumable(item);
+  const canUse = catalogItemCanUse(item);
   const stockResource = stockResourceFor(item);
 
   return {
@@ -115,8 +116,14 @@ export function performItemAction(game: GameState, ownerId: string, itemId: stri
     }
   } else if (action.type === "use") {
     const count = Math.max(1, Math.min(item.qty, Math.trunc(action.quantity)));
-    if (discardItem(game, ownerId, item.id, count)) {
-      message = `${owner} usou ${count}× ${item.name}. Aplicar o efeito indicado pelo item em cena.`;
+    const consumable = catalogItemIsConsumable(item);
+    const used = consumable ? discardItem(game, ownerId, item.id, count) : catalogItemCanUse(item);
+    if (used) {
+      const noise = item.name === "Sinalizador de mão" ? 2 : item.name === "Apito" ? 1 : 0;
+      if (noise) game.noise = Math.min(5, game.noise + noise);
+      message = `${owner} usou ${count}× ${item.name}.` +
+        (consumable ? " A unidade foi consumida." : " O item permanece disponível.") +
+        (noise ? ` Barulho +${noise}.` : " Aplicar o efeito indicado pelo item em cena.");
     }
   } else if (action.type === "medication") {
     const count = Math.max(1, Math.min(item.qty, Math.trunc(action.quantity)));
