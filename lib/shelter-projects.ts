@@ -141,6 +141,49 @@ export const shelterPostCatalog = [
 
 export function projectDefinition(key: string) { return shelterProjectCatalog.find(project => project.key === key); }
 
+export const shelterProjectMaxIntegrity = 3;
+
+export function projectIntegrity(project: ShelterProject) {
+  if (project.integrity !== undefined) return Math.max(0, Math.min(shelterProjectMaxIntegrity, Math.trunc(project.integrity)));
+  if (project.state === "Destruído") return 0;
+  if (project.state === "Inoperante") return 1;
+  if (project.state === "Danificado") return 2;
+  return shelterProjectMaxIntegrity;
+}
+
+export function projectIntegrityLabel(project: ShelterProject) {
+  const integrity = projectIntegrity(project);
+  if (integrity >= 3) return "Íntegra";
+  if (integrity === 2) return "Danificada";
+  if (integrity === 1) return "Inoperante";
+  return "Destruída";
+}
+
+function syncProjectIntegrityState(project: ShelterProject) {
+  const integrity = projectIntegrity(project);
+  project.integrity = integrity;
+  if (project.repairProgress !== undefined || project.state === "Em construção" || project.state === "Planejado") return integrity;
+  project.state = integrity >= 3 ? "Concluído" : integrity === 2 ? "Danificado" : integrity === 1 ? "Inoperante" : "Destruído";
+  return integrity;
+}
+
+export function applyProjectDamage(project: ShelterProject, points = 1) {
+  if (!Number.isInteger(points) || points < 1) return 0;
+  if (!["Concluído", "Danificado", "Inoperante"].includes(project.state)) return 0;
+  const before = projectIntegrity(project);
+  const after = Math.max(0, before - points);
+  if (after === before) return 0;
+  project.integrity = after;
+  project.state = after >= 3 ? "Concluído" : after === 2 ? "Danificado" : after === 1 ? "Inoperante" : "Destruído";
+  delete project.workShift;
+  project.volunteerShifts = [];
+  delete project.repairProgress;
+  delete project.requiredRepairProgress;
+  delete project.repairCostsPaid;
+  delete project.repairFromIntegrity;
+  return before - after;
+}
+
 export function projectPlacementIssue(shelter: ShelterState, projectOrKey: ShelterProject | string) {
   const project = typeof projectOrKey === "string" ? shelter.projects?.find(entry => entry.key === projectOrKey) : projectOrKey;
   const key = typeof projectOrKey === "string" ? projectOrKey : projectOrKey.key;
@@ -186,6 +229,8 @@ export function createShelterProject(key: string, slotId?: string): ShelterProje
     state: "Planejado",
     progress: 0,
     requiredProgress: definition.requiredProgress,
+    integrity: shelterProjectMaxIntegrity,
+    operationProgress: 0,
     costs: structuredClone(definition.costs),
     buildCapabilities: [...(definition.buildCapabilities ?? [])],
     requiredCapabilities: [...(definition.requiredCapabilities ?? [])],
@@ -214,6 +259,11 @@ export function normalizeShelter(shelter: ShelterState) {
     project.name ??= definition?.name ?? project.key;
     project.category ??= definition?.category ?? "Comunidade";
     project.state ??= "Planejado";
+    project.integrity = project.state === "Planejado" || (project.state === "Em construção" && project.repairProgress === undefined)
+      ? shelterProjectMaxIntegrity
+      : projectIntegrity(project);
+    if (!["Planejado", "Em construção"].includes(project.state)) syncProjectIntegrityState(project);
+    project.operationProgress = Math.max(0, Math.trunc(project.operationProgress ?? 0));
     project.progress = Math.max(0, Math.trunc(project.progress ?? 0));
     project.requiredProgress = Math.max(1, Math.trunc(project.requiredProgress ?? definition?.requiredProgress ?? 1));
     project.costs ??= structuredClone(definition?.costs ?? {});
@@ -359,7 +409,7 @@ export function canVolunteer(npc: NPC, responsibility = false) {
 }
 
 function concluded(shelter: ShelterState, key: string) {
-  return Boolean(shelter.projects?.some(project => project.key === key && project.state === "Concluído"));
+  return Boolean(shelter.projects?.some(project => project.key === key && ["Concluído", "Danificado"].includes(project.state) && projectIntegrity(project) >= 2));
 }
 
 export function projectDependencyIssue(shelter: ShelterState, projectOrKey: ShelterProject | string) {
@@ -382,7 +432,7 @@ function assignedPeople(game: GameState, shelter: ShelterState, project: Shelter
 }
 
 export function projectBaseOperational(game: GameState, shelter: ShelterState, project: ShelterProject) {
-  if (project.state !== "Concluído" || projectDependencyIssue(shelter, project)) return false;
+  if (!["Concluído", "Danificado"].includes(project.state) || projectIntegrity(project) < 2 || projectDependencyIssue(shelter, project)) return false;
   if (project.operatorReady !== undefined) return project.operatorReady;
   const definition = projectDefinition(project.key);
   const mode = project.operationMode ?? definition?.operationMode ?? "passive";
