@@ -50,13 +50,16 @@ function RollForm({ game, edit, request }: { game: GameState; edit: Edit; reques
   const rollTrait = kind === "attack" ? weapon?.trait ?? trait : trait;
   const equipmentBonus = modifiers?.traits[rollTrait] ?? 0;
   const ammoNeeded = kind === "attack" && weapon ? weaponAmmoType(weapon.name) : null;
-  const ammoWarning = ammoNeeded && survivor && (survivor.ammo < 1 || ammoTypeFor(survivor) !== ammoNeeded)
-    ? `Sem carga de ${ammoNeeded} registrada. Confira a munição antes de atacar.` : "";
+  const sceneId = game.scene ?? 1;
+  const ammoCovered = Boolean(ammoNeeded && survivor && survivor.ammoSpentScene === sceneId && survivor.ammoSpentType === ammoNeeded);
+  const ammoReady = !ammoNeeded || ammoCovered || Boolean(survivor && survivor.ammo > 0 && ammoTypeFor(survivor) === ammoNeeded);
+  const ammoWarning = ammoNeeded && !ammoReady
+    ? `Sem carga de ${ammoNeeded} pronta para esta cena. A primeira ação de disparo da cena consome 1 carga compatível.` : "";
   const target = difficulty.trim() === "" ? null : Number(difficulty);
   const targetValid = target === null || (Number.isInteger(target) && target >= 1 && target <= 99);
   const experienceCost = experiences.length;
   const handConflict = kind === "attack" && weaponSlot === "secondary" && getPrimary(survivor?.primary ?? "")?.hands === "Duas";
-  const canRoll = targetValid && experienceCost <= (survivor?.hope ?? 0) && (kind !== "attack" || Boolean(weapon && parseWeaponDamage(weapon.damage))) && !handConflict;
+  const canRoll = targetValid && experienceCost <= (survivor?.hope ?? 0) && (kind !== "attack" || Boolean(weapon && parseWeaponDamage(weapon.damage))) && !handConflict && ammoReady;
   const attackResult = last?.kind === "attack" && last.actorId === person && last.weaponName === weapon?.name ? last : null;
   const attackHit = attackResult && targetValid ? resolveAttackHit(attackResult.outcome, target, confirmedHit) : null;
   const displayedLast = last && attackResult ? { ...last, outcome: { ...last.outcome, difficulty: targetValid ? target : null, success: attackHit } } : last;
@@ -77,7 +80,7 @@ function RollForm({ game, edit, request }: { game: GameState; edit: Edit; reques
 
   function damageLog(record: DamageRecord, status: string) {
     const situational = record.extra - record.equipment;
-    return `${survivor?.name ?? "Sobrevivente"}: ${record.weaponName} — ${record.formula}${record.equipment ? ` +${record.equipment} da Faca pequena` : ""}${situational ? ` ${situational >= 0 ? "+" : "−"}${Math.abs(situational)} situacional` : ""}${record.critical ? ` + ${record.criticalBonus} crítico` : ""} = ${record.total} dano físico (dados: ${record.dice.join(", ")}). ${status} Compare aos limiares do alvo; Barulho e uma carga de munição são registrados conforme a cena.`;
+    return `${survivor?.name ?? "Sobrevivente"}: ${record.weaponName} — ${record.formula}${record.equipment ? ` +${record.equipment} da Faca pequena` : ""}${situational ? ` ${situational >= 0 ? "+" : "−"}${Math.abs(situational)} situacional` : ""}${record.critical ? ` + ${record.criticalBonus} crítico` : ""} = ${record.total} dano físico (dados: ${record.dice.join(", ")}). ${status} Compare aos limiares do alvo; Barulho é aplicado por disparo e a carga de munição é consumida automaticamente na primeira ação compatível da cena.`;
   }
 
   function rollAction() {
@@ -105,15 +108,34 @@ function RollForm({ game, edit, request }: { game: GameState; edit: Edit; reques
       experienceCost: used.length, reaction: kind === "reaction", outcome: result,
     });
     const damage = kind === "attack" ? calculateDamage(result.critical) : null;
+    const attackNoise = kind === "attack" && weapon && "noise" in weapon
+      ? Math.max(0, Number(String(weapon.noise).replace("+", "")) || 0) : 0;
+    const spendsAmmo = Boolean(ammoNeeded && !ammoCovered);
     const damageStatus = result.success === false ? "Falha: dano rolado, não aplicado."
       : result.success === null ? "Dano potencial; acerto pendente de confirmação."
       : "Dano do acerto.";
     edit(draft => {
       const actor = draft.survivors.find(s => s.id === person);
-      if (actor) { actor.hope = resourcePreview.hope!; actor.stress = resourcePreview.stress!; }
+      if (actor) {
+        actor.hope = resourcePreview.hope!;
+        actor.stress = resourcePreview.stress!;
+        if (kind === "attack" && ammoNeeded) {
+          const currentScene = draft.scene ?? 1;
+          const covered = actor.ammoSpentScene === currentScene && actor.ammoSpentType === ammoNeeded;
+          if (!covered) {
+            if (actor.ammo < 1 || ammoTypeFor(actor) !== ammoNeeded) return;
+            actor.ammo -= 1;
+            actor.ammoSpentScene = currentScene;
+            actor.ammoSpentType = ammoNeeded;
+          }
+        }
+      }
       draft.fear = resourcePreview.fear;
+      if (kind === "attack" && attackNoise > 0) draft.noise = Math.min(5, draft.noise + attackNoise);
       if (damage) addLog(draft, "dano", damageLog(damage, damageStatus), actor?.id);
-      addLog(draft, "dados", text, actor?.id);
+      addLog(draft, "dados", text +
+        (spendsAmmo ? ` · 1 carga de ${ammoNeeded} consumida para a cena.` : ammoNeeded ? ` · carga de ${ammoNeeded} já aberta nesta cena.` : "") +
+        (attackNoise ? ` · Barulho +${attackNoise}.` : ""), actor?.id);
     });
     setLast(record); setLastDamage(damage); setStandaloneDamage(null); setConfirmedHit(false);
   }
@@ -181,7 +203,7 @@ function RollForm({ game, edit, request }: { game: GameState; edit: Edit; reques
       <div className="roll-damage-actions"><Button size="sm" variant="outline" disabled={Boolean(standaloneDamage) || handConflict} onClick={rollStandaloneDamage}>Dano avulso</Button>
         {standaloneDamage && <Button size="sm" variant="ghost" onClick={() => setStandaloneDamage(null)}>Novo dano avulso</Button>}</div>
       {standaloneDamage && <output className="roll-damage-result"><strong>{standaloneDamage.total} dano físico avulso</strong><span>{standaloneDamage.formula}{standaloneDamage.equipment ? ` +${standaloneDamage.equipment} equipamento` : ""}{standaloneDamage.extra - standaloneDamage.equipment ? ` ${standaloneDamage.extra - standaloneDamage.equipment >= 0 ? "+" : "−"} ${Math.abs(standaloneDamage.extra - standaloneDamage.equipment)} situacional` : ""}{standaloneDamage.critical ? ` + ${standaloneDamage.criticalBonus} crítico` : ""} · dados {standaloneDamage.dice.join(", ")}</span></output>}
-      <p className="roll-hint">Compare o dano aos limiares do alvo. Disparos podem gerar Barulho; uma carga de munição cobre a cena, conforme a regra de Zona Morta. Registre-a uma vez por cena.</p>
+      <p className="roll-hint">Compare o dano aos limiares do alvo. O sistema aplica o Barulho da arma a cada ação de disparo e consome 1 carga compatível apenas na primeira ação daquele tipo de munição na cena.</p>
     </div>}
   </>;
 }
