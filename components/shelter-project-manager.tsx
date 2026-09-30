@@ -212,7 +212,7 @@ export function ShelterProjectsManager({ game, edit, playerPreview }: { game: Ga
       <div className="construction-summary-stat"><Wrench size={18} /><span><small>Peças</small><b>{shelter.parts}</b></span></div>
       <div className="construction-summary-stat"><Users size={18} /><span><small>Equipe livre</small><b>{availableWorkers}/{peopleAtBase.length}</b></span></div>
       <div className={`construction-summary-stat ${power.balance < 0 ? "is-warning" : ""}`}><Zap size={18} /><span><small>Energia</small><b>{power.production} / {power.consumption}</b></span></div>
-      {!playerPreview && <Button onClick={runShift} disabled={!activeProjects.some(project => project.state === "Em construção")}><Clock3 size={16} /> Executar turno · 4h</Button>}
+      {!playerPreview && <Button onClick={runShift} disabled={!activeProjects.some(project => project.state === "Em construção")}><Clock3 size={16} /> Turno da equipe · 4h</Button>}
     </section>
 
     {power.balance < 0 && <div className="construction-alert"><AlertTriangle size={17} /><div><b>Energia insuficiente</b><span>Produção {power.production} · consumo {power.consumption}. Desligue consumidores menos prioritários até o saldo voltar a zero.</span></div></div>}
