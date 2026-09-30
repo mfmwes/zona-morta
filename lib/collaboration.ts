@@ -46,9 +46,9 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
 
 const immutable = ["id", "name", "level", "proficiency", "origin", "past", "archetype", "specialty", "hex",
   "attributes", "freeExperience", "techniques", "infection", "exposureDeadline", "treatmentAttempted", "terminalScenes"] as const;
-const editable = ["portrait", "primary", "secondary", "protection", "personal", "bag", "pocket1", "pocket2", "equippedItems", "kitCondition",
+const editable = ["portrait", "primary", "secondary", "protection", "outfit", "personal", "bag", "transport", "pocket1", "pocket2", "equippedItems", "kitCondition",
   "hp", "armorMarked", "stress", "hope", "food", "water", "foodConsumedDay", "waterConsumedDay", "provisionLots",
-  "ammo", "ammoType", "inventory", "notes", "abilityUses", "restPlan"] as const;
+  "ammo", "ammoType", "ammoSpentScene", "ammoSpentType", "inventory", "notes", "abilityUses", "restPlan"] as const;
 const allowedKeys = new Set<string>([...immutable, ...editable]);
 const allowedItemKeys = new Set(["id", "name", "load", "qty", "condition", "catalogKey", "category", "armorMarked", "foundDay",
   "provisionResource", "portionsPerUnit", "portionsRemaining", "prepared", "verified", "opened", "expiresDay"]);
@@ -71,22 +71,26 @@ function validRestPlan(plan: Survivor["restPlan"], survivors: Survivor[], actor:
 }
 
 export function playerEditPayload(before: GameState, after: GameState) {
-  const rest = (state: GameState) => JSON.stringify({ ...state, survivors: [], fear: 0, log: [] });
+  const rest = (state: GameState) => JSON.stringify({ ...state, survivors: [], fear: 0, noise: 0, log: [] });
   const fearDelta = after.fear - before.fear;
+  const noiseDelta = after.noise - before.noise;
   if (before.survivors.length !== 1 || after.survivors.length !== 1
     || after.survivors[0].id !== before.survivors[0].id || rest(before) !== rest(after)
-    || !Number.isInteger(fearDelta) || fearDelta < 0 || fearDelta > 1) return null;
+    || !Number.isInteger(fearDelta) || fearDelta < 0 || fearDelta > 1
+    || !Number.isInteger(noiseDelta) || noiseDelta < 0 || noiseDelta > 5 || after.noise > 5) return null;
   const logs = after.log.filter(entry => !before.log.some(prior => prior.id === entry.id))
     .map(entry => ({ kind: entry.kind, text: entry.text }));
   if (logs.length > 3) return null;
-  return { before: before.survivors[0], after: after.survivors[0], fearDelta, logs };
+  return { before: before.survivors[0], after: after.survivors[0], fearDelta, noiseDelta, logs };
 }
 
 export function applyPlayerChange(game: GameState, survivorId: string, before: Survivor, after: Survivor,
-  fearDelta: number, logs: PlayerLog[]): GameState | null {
+  fearDelta: number, logs: PlayerLog[], noiseDelta = 0): GameState | null {
   const person = game.survivors.find(s => s.id === survivorId);
   if (!person || before?.id !== survivorId || after?.id !== survivorId || JSON.stringify(person) !== JSON.stringify(before)
-    || !Number.isInteger(fearDelta) || fearDelta < 0 || fearDelta > 1 || !Array.isArray(logs) || logs.length > 3
+    || !Number.isInteger(fearDelta) || fearDelta < 0 || fearDelta > 1
+    || !Number.isInteger(noiseDelta) || noiseDelta < 0 || noiseDelta > 5 || game.noise + noiseDelta > 5
+    || !Array.isArray(logs) || logs.length > 3
     || (fearDelta === 1 && !logs.some(log => log?.kind === "dados"))
     || !Object.keys(after).every(key => allowedKeys.has(key))
     || immutable.some(key => JSON.stringify(before[key]) !== JSON.stringify(after[key]))
@@ -116,6 +120,7 @@ export function applyPlayerChange(game: GameState, survivorId: string, before: S
   const index = next.survivors.findIndex(s => s.id === survivorId);
   next.survivors[index] = structuredClone(after);
   next.fear = Math.min(12, next.fear + fearDelta);
+  next.noise = Math.min(5, next.noise + noiseDelta);
   for (const log of [...logs].reverse()) addLog(next, log.kind, log.text, survivorId);
   return next;
 }
