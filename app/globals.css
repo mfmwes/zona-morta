@@ -185,6 +185,7 @@ button { cursor: pointer; } button:disabled { cursor: not-allowed; }
 .character-rest-actions { display:flex; flex-wrap:wrap; gap:8px; }
 .character-rest-readonly { margin:0; padding:10px 11px; border-left:3px solid #77a196; background:#edf4f0; color:#45625d; font-size:.82rem; line-height:1.45; }
 .character-rest-status { margin:11px 0 0; color:#496c65; font-size:.8rem; line-height:1.45; }
+.character-rest-preview-note { margin:10px 0 0; padding:9px 11px; border-left:3px solid #c79a5e; background:#f7f1e5; color:#66573d; font-size:.78rem; line-height:1.45; }
 .rest-planner-dialog { width:min(860px,calc(100vw - 24px)); max-width:min(860px,calc(100vw - 24px)); }
 .rest-planner-list { display:grid; gap:14px; max-height:min(58vh,600px); overflow:auto; padding:2px 5px 2px 1px; }
 .rest-planner-row { display:grid; grid-template-columns:1fr; gap:10px; align-items:start; padding:14px; border:1px solid #d5e0d8; border-radius:9px; background:#f5f8f4; }
