@@ -73,7 +73,7 @@ function projectFor(shelter: ShelterState, key: string) {
 
 function projectStateLabel(project?: ShelterProject) {
   if (!project) return "Disponível";
-  if (project.workShift) return "Turno agendado";
+  if (project.workShift || (project.volunteerShifts ?? []).length) return "Turno agendado";
   if (project.state === "Em construção" && project.repairProgress !== undefined) return "Em reparo";
   return project.state;
 }
@@ -95,7 +95,7 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
   const shelter = game.shelter;
   const recommendations = shelterRecommendations(game, shelter);
   const [filter, setFilter] = useState<CatalogFilter>("Recomendados");
-  const [selectedKey, setSelectedKey] = useState<string>(recommendations[0]?.key ?? shelter.projects?.[0]?.key ?? shelterProjectCatalog[0].key);
+  const [selectedKey, setSelectedKey] = useState<string>(playerSurvivorId ? (shelter.projects?.[0]?.key ?? shelterProjectCatalog[0].key) : (recommendations[0]?.key ?? shelter.projects?.[0]?.key ?? shelterProjectCatalog[0].key));
   const [planningKey, setPlanningKey] = useState<string | null>(null);
   const [planningSlotId, setPlanningSlotId] = useState<string | null>(null);
   const [catalogOpen, setCatalogOpen] = useState(false);
@@ -130,7 +130,7 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
   const occupiedSlots = new globalThis.Map((shelter.projects ?? []).filter(project => project.slotId).map(project => [project.slotId!, project]));
   const unplacedFacilities = (shelter.projects ?? []).filter(project => projectDefinition(project.key)?.kind === "facility" && !project.slotId);
   const buildLog = game.log.filter(entry => entry.kind === "abrigo").slice(0, 12);
-  const scheduledProjects = (shelter.projects ?? []).filter(project => Boolean(project.workShift));
+  const scheduledProjects = (shelter.projects ?? []).filter(project => Boolean(project.workShift) || Boolean(project.volunteerShifts?.length));
   const perimeterProjects = (shelter.projects ?? []).filter(project => projectDefinition(project.key)?.kind === "upgrade");
   const slotChoices = planningSlot
     ? shelterProjectCatalog.filter(definition => definition.kind === "facility" && definition.zone === planningSlot.zone
@@ -335,7 +335,10 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
       {occupant ? <>
         <b>{occupant.name}</b>
         <span className={`construction-state is-${projectStateTone(occupant)}`}>{projectStateLabel(occupant)}</span>
-        {occupant.workShift && <small><Clock3 size={12} /> até {displayTime(occupant.workShift.startMinute + occupant.workShift.durationMinutes)}</small>}
+        {(occupant.workShift || occupant.volunteerShifts?.length) && <small><Clock3 size={12} /> até {displayTime(Math.min(
+          ...(occupant.workShift ? [occupant.workShift.startMinute + occupant.workShift.durationMinutes] : []),
+          ...(occupant.volunteerShifts ?? []).map(shift => shift.startMinute + shift.durationMinutes),
+        ))}</small>}
         {occupant.state === "Em construção" && progress && <span className="architectural-progress"><i style={{ width: `${Math.min(100, progress.value / progress.required * 100)}%` }} /></span>}
       </> : <>
         <Plus size={17} />
