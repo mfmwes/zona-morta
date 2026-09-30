@@ -213,7 +213,9 @@ export function inspectDayClosePlan(game: GameState, plan: DayClosePlan): DayClo
   const sharedDemand = (resource: DailyResource) => plan.survivors.filter(entry => {
     if (entry[resource] !== "shared") return false;
     const person = game.survivors.find(candidate => candidate.id === entry.survivorId);
-    return Boolean(person && !provisionConsumedToday(game, person, resource));
+    return Boolean(person
+      && survivorHex(game, person) === storageHex
+      && !provisionConsumedToday(game, person, resource));
   }).length;
   const demand: Record<DailyResource, number> = {
     food: residentDemand.food + sharedDemand("food"),
