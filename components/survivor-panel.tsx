@@ -452,7 +452,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
                 <div className="character-technique-preview">{selected.techniques.map(name => <span key={name}><AbilityArt abilityId={`technique:${name}`} size="tiny" />{name}</span>)}</div>
                 <button className="character-text-link" type="button" onClick={() => setActiveTab("habilidades")}>Consultar habilidades <span aria-hidden="true">↗</span></button>
               </section>
-              <section className="character-surface"><SectionHeading index="04" title="Situação atual" />
+              <section className="character-surface character-status-card"><SectionHeading index="04" title="Situação atual" />
                 <div className="character-status-line"><span className={selected.infection === "Saudável" ? "character-status-dot healthy" : "character-status-dot"} /><b>{selected.infection}</b></div>
                 {selected.infection === "Exposto" ? <p>Janela de tratamento até <b>{deadlineLabel(selected.exposureDeadline)}</b>. {selected.treatmentAttempted ? "Tentativa já usada." : "Uma tentativa disponível."}</p> : <p>{selected.past || "Passado e vínculos ainda não registrados."}</p>}
                 <button className="character-text-link" type="button" onClick={() => setActiveTab(selected.infection === "Saudável" ? "historia" : "condicoes")}>Ver {selected.infection === "Saudável" ? "história" : "condições"} <span aria-hidden="true">↗</span></button>
