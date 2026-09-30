@@ -259,7 +259,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
               <div className="flex flex-wrap gap-2">
                 {record.discovery === "desconhecido" && activeAdjacentToSelected && <Button size="sm" onClick={observe}>Avistar setor</Button>}
                 {activeCanMoveSelected &&
-                  <Button size="sm" disabled={game.minutes+travelMinutes>=1440} onClick={() => openMovement(selected)}><Footprints /> Mover grupo ativo</Button>}
+                  <Button size="sm" disabled={game.minutes+travelMinutes>=1440} onClick={() => openMovement(selected)}><Footprints /> {activeGroupHex === game.partyHex ? "Separar sobreviventes" : "Mover / dividir subgrupo"}</Button>}
                 {activeGroupHex === game.partyHex && selected !== game.partyHex && canTravel && record.discovery !== "desconhecido" &&
                   <Button size="sm" variant="outline" disabled={game.minutes+travelMinutes>=1440} onClick={travel}><Route /> Mover grupo principal</Button>}
                 {actualMembersHere.length > 0 && <span className="tag">Grupo presente</span>}
