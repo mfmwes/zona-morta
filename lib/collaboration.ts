@@ -40,15 +40,19 @@ const allowedItemKeys = new Set(["id", "name", "load", "qty", "condition", "cata
 export type PlayerLog = { kind: string; text: string };
 
 const restActions = new Set(["hp", "stress", "armor", "prepare", "fiction", "hp-full", "stress-full", "armor-full"]);
-function validRestPlan(plan: Survivor["restPlan"], survivors: Survivor[]) {
+function validRestPlan(plan: Survivor["restPlan"], survivors: Survivor[], actor: Survivor, partyHex: string) {
   if (plan === undefined) return true;
   const validActions = plan.kind === "short"
     ? new Set(["hp", "stress", "armor", "prepare", "fiction"])
     : new Set(["hp-full", "stress-full", "armor-full", "prepare", "fiction"]);
+  const actorHex = actor.hex ?? partyHex;
   return Boolean(plan && (plan.kind === "short" || plan.kind === "long") && Array.isArray(plan.choices) && plan.choices.length === 2
-    && plan.choices.every(choice => choice && Object.keys(choice).every(key => key === "action" || key === "targetId")
-      && typeof choice.action === "string" && restActions.has(choice.action) && validActions.has(choice.action)
-      && typeof choice.targetId === "string" && survivors.some(person => person.id === choice.targetId)));
+    && plan.choices.every(choice => {
+      const target = survivors.find(person => person.id === choice.targetId);
+      return Boolean(choice && Object.keys(choice).every(key => key === "action" || key === "targetId")
+        && typeof choice.action === "string" && restActions.has(choice.action) && validActions.has(choice.action)
+        && typeof choice.targetId === "string" && target && (target.hex ?? partyHex) === actorHex);
+    }));
 }
 
 export function playerEditPayload(before: GameState, after: GameState) {
@@ -90,7 +94,7 @@ export function applyPlayerChange(game: GameState, survivorId: string, before: S
       || (item.opened !== undefined && typeof item.opened !== "boolean")
       || (item.expiresDay !== undefined && (!Number.isInteger(item.expiresDay) || item.expiresDay < 1 || item.expiresDay > 9999)))
     || typeof after.notes !== "string" || after.notes.length > 4000
-    || !validRestPlan(after.restPlan, game.survivors)
+    || !validRestPlan(after.restPlan, game.survivors, after, game.partyHex)
     || logs.some(log => !log || !["chat", "dados", "dano", "inventário", "habilidade", "provisões", "tratamento"].includes(log.kind)
       || typeof log.text !== "string" || log.text.length > 600)) return null;
   const next = structuredClone(game);
