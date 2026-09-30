@@ -43,7 +43,7 @@ export function ShelterPanel({ game, edit, playerPreview }: { game: GameState; e
   const shelterWater = provisionBreakdown(s, "water");
   const population = shelterPopulationBreakdown(game);
   const namedResidents = population.namedResidents;
-  const metrics = shelterMetrics(s);
+  const metrics = shelterMetrics(s, game);
   const travelGroups = survivorPositionGroups(game);
 
   useEffect(() => { setShelterNotes(s.notes); }, [s.notes]);
