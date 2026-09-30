@@ -248,7 +248,7 @@ function consumePortionFromItems(items: InventoryItem[], itemId: string) {
 }
 
 export function consumeProvisionItem(game: GameState, ownerId: string, itemId: string, consumerId?: string) {
-  if (ownerId === "shared" && !atSharedStorage(game)) return null;
+  if (ownerId === "shared" && (!atSharedStorage(game) || (consumerId && !atSharedStorage(game, consumerId)))) return null;
   const items = container(game, ownerId);
   if (!items) return null;
   const result = consumePortionFromItems(items, itemId);
