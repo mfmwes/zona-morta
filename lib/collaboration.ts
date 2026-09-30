@@ -1,4 +1,4 @@
-import { addLog, ammunitionTypes, type GameState, type NPC, type Survivor } from "./game";
+import { addLog, ammunitionTypes, type AmmunitionType, type GameState, type NPC, type Survivor } from "./game";
 
 export function projectPlayerGame(game: GameState, survivorId: string): GameState {
   const visible = structuredClone(game);
@@ -105,7 +105,7 @@ export function applyPlayerChange(game: GameState, survivorId: string, before: S
     || (after.ammoSpentType !== undefined && typeof after.ammoSpentType !== "string")
     || (after.ammoSpentTypes !== undefined && (!Array.isArray(after.ammoSpentTypes)
       || after.ammoSpentTypes.length > ammunitionTypes.length
-      || after.ammoSpentTypes.some(type => !ammunitionTypes.includes(type as typeof ammunitionTypes[number]))))
+      || after.ammoSpentTypes.some(type => !ammunitionTypes.includes(type as AmmunitionType))))
     || !Array.isArray(after.inventory) || after.inventory.length > 120
     || after.inventory.some(item => !item || typeof item.id !== "string" || typeof item.name !== "string"
       || !Object.keys(item).every(key => allowedItemKeys.has(key))
