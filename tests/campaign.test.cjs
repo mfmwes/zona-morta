@@ -421,6 +421,22 @@ test('rota de spotlight permite pedir e cancelar sem criar iniciativa ou escreve
   assert.doesNotMatch(route, /addLog/);
 });
 
+test('prévia dos jogadores mostra Spotlight e oculta Dificuldade e Limiares das ameaças', () => {
+  const panel = fs.readFileSync(require.resolve('../components/survivor-panel.tsx'), 'utf8');
+  const hud = fs.readFileSync(require.resolve('../components/survivor-conflict-hud.tsx'), 'utf8');
+  const rolls = fs.readFileSync(require.resolve('../components/roll-dialog.tsx'), 'utf8');
+
+  assert.match(panel, /playerPreview=\{playerPreview\}/);
+  assert.match(panel, /hideThreatSecrets=\{playerMode \|\| playerPreview\}/);
+  assert.match(hud, /const playerPerspective = playerMode \|\| playerPreview/);
+  assert.match(hud, /Prévia dos jogadores/);
+  assert.match(hud, /Pedir Spotlight/);
+  assert.match(rolls, /hideThreatSecrets/);
+  assert.match(rolls, /!hideThreatSecrets && game\.conflict\?\.active/);
+  assert.match(rolls, /publicConflictScene\(game\.conflict, game\.survivors, survivor\.id\)/);
+  assert.match(rolls, /Dificuldade e Limiares são ocultos e resolvidos pelo sistema/);
+});
+
 test('Trilha de Conflito acompanha a rolagem da página sem invadir o modal de dados', () => {
   const hud = fs.readFileSync(require.resolve('../components/survivor-conflict-hud.tsx'), 'utf8');
   const trail = fs.readFileSync(require.resolve('../components/conflict-trail.tsx'), 'utf8');
