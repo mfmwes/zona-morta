@@ -247,6 +247,15 @@ test('ameaças públicas preservam grupo para seleção compacta sem expor ficha
   assert.equal(json.includes('templateSnapshot'), false);
 });
 
+test('Cena de Conflito reage à largura útil e evita sobreposição dos controles', () => {
+  const visual = fs.readFileSync(require.resolve('../app/visual-system.css'), 'utf8');
+  assert.match(visual, /\.conflict-manager\s*\{[\s\S]*container-type:inline-size/);
+  assert.match(visual, /\.conflict-team-panel \.conflict-add-row\s*\{[\s\S]*grid-template-columns:1fr/);
+  assert.match(visual, /@container \(max-width: 980px\)/);
+  assert.match(visual, /grid-template-columns:minmax\(290px,330px\) minmax\(0,1fr\)/);
+  assert.match(visual, /repeat\(auto-fit,minmax\(300px,1fr\)\)/);
+});
+
 test('Cena de Conflito usa dashboard compacto, grupos e vocabulário visual consistente', () => {
   const manager = fs.readFileSync(require.resolve('../components/conflict-scene-manager.tsx'), 'utf8');
   const visual = fs.readFileSync(require.resolve('../app/visual-system.css'), 'utf8');
