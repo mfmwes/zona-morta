@@ -30,6 +30,41 @@ function restPeers(state: GameState) {
   });
 }
 
+function validThreat(value: unknown) {
+  if (!value || typeof value !== "object") return false;
+  const threat = value as Record<string, unknown>;
+  const attack = threat.attack as Record<string, unknown> | null | undefined;
+  const features = threat.features;
+  return typeof threat.id === "string" && threat.id.length <= 120
+    && typeof threat.name === "string" && threat.name.length <= 100
+    && Number.isInteger(threat.tier) && Number(threat.tier) >= 1 && Number(threat.tier) <= 4
+    && typeof threat.role === "string" && threat.role.length <= 60
+    && typeof threat.description === "string" && threat.description.length <= 2000
+    && typeof threat.motivations === "string" && threat.motivations.length <= 1200
+    && Number.isInteger(threat.difficulty) && Number(threat.difficulty) >= 1 && Number(threat.difficulty) <= 99
+    && (threat.majorThreshold === null || (Number.isInteger(threat.majorThreshold) && Number(threat.majorThreshold) >= 1 && Number(threat.majorThreshold) <= 999))
+    && (threat.severeThreshold === null || (Number.isInteger(threat.severeThreshold) && Number(threat.severeThreshold) >= 1 && Number(threat.severeThreshold) <= 999))
+    && (threat.maxHp === null || (Number.isInteger(threat.maxHp) && Number(threat.maxHp) >= 1 && Number(threat.maxHp) <= 99))
+    && (threat.maxStress === null || (Number.isInteger(threat.maxStress) && Number(threat.maxStress) >= 0 && Number(threat.maxStress) <= 99))
+    && (attack === null || Boolean(attack && typeof attack.name === "string" && attack.name.length <= 100
+      && Number.isInteger(attack.bonus) && Number(attack.bonus) >= -20 && Number(attack.bonus) <= 20
+      && typeof attack.range === "string" && attack.range.length <= 80
+      && typeof attack.damage === "string" && attack.damage.length <= 80
+      && typeof attack.damageType === "string" && attack.damageType.length <= 40))
+    && Array.isArray(features) && features.length <= 20
+    && features.every(feature => {
+      if (!feature || typeof feature !== "object") return false;
+      const row = feature as Record<string, unknown>;
+      return typeof row.id === "string" && row.id.length <= 120
+        && typeof row.name === "string" && row.name.length <= 100
+        && ["Passiva", "Ação", "Reação", "Outro"].includes(String(row.kind))
+        && typeof row.effect === "string" && row.effect.length <= 2000;
+    })
+    && Array.isArray(threat.tags) && threat.tags.length <= 12
+    && threat.tags.every(tag => typeof tag === "string" && tag.length <= 40)
+    && ["base", "custom"].includes(String(threat.source));
+}
+
 function validState(value: unknown): value is GameState {
   if (!value || typeof value !== "object") return false;
   const state = value as Partial<GameState>;
@@ -44,6 +79,8 @@ function validState(value: unknown): value is GameState {
     && (state.npcs === undefined || (Array.isArray(state.npcs) && state.npcs.length <= 300
       && state.npcs.every(npc => npc && typeof npc.id === "string" && typeof npc.name === "string"
         && typeof npc.hex === "string" && Array.isArray(npc.skills))))
+    && (state.threats === undefined || (Array.isArray(state.threats) && state.threats.length <= 120
+      && state.threats.every(validThreat)))
     && state.survivors.every(s => Number.isInteger(s.armorMarked) && s.armorMarked >= 0 && s.armorMarked <= 20
       && (s.hex === undefined || (typeof s.hex === "string" && Boolean(state.hexes?.[s.hex])))
       && (s.outfit === undefined || typeof s.outfit === "string")
