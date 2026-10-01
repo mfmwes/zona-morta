@@ -365,7 +365,9 @@ test('visão do jogador mostra só sua ficha, locais revelados e registros próp
   assert.equal(visible.hexes['0,0'].points[0].name, 'Depósito');
   assert.equal(visible.hexes['0,0'].points[0].notes, '');
   assert.equal(visible.hexes['0,0'].points[0].searches.length, 0);
-  assert.deepEqual(visible.log.map(row => row.text), ['Ana rolou']);
+  assert.deepEqual(visible.log.map(row => row.kind), ['dados', 'ameaça']);
+  assert.equal(visible.log[0].text, 'Ana rolou');
+  assert.match(visible.log[1].text, /ERRANTE: Investida/);
   assert.equal(g.hexes['0,0'].notes, 'armadilha');
   conflictScene.endConflictScene(g.conflict, g.day, '08:10');
   assert.equal(collaboration.projectPlayerGame(g, ana.id).publicConflict, undefined);
