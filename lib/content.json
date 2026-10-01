@@ -6175,16 +6175,100 @@
       ]
     },
     {
-      "category": "Suprimentos abstratos",
-      "name": "Munição (1 carga)",
+      "category": "Munição",
+      "name": "Munição de Pistola",
       "fields": [
         {
-          "label": "Carga em viagem",
-          "value": "0/1"
+          "label": "Carga",
+          "value": "1/4"
         },
         {
-          "label": "Regra de transporte",
-          "value": "Uma carga pronta na arma ativa ocupa 0 durante a cena. Cada reserva ocupa 1 e tem tipo específico: Pistola, Espingarda, Carabina, Flechas, Virotes, Chumbinhos ou Outra."
+          "label": "Uso em jogo",
+          "value": "Uma unidade é comprometida no primeiro disparo desta categoria na cena e removida quando a cena termina. Até quatro unidades deste mesmo tipo ocupam 1 espaço de carga."
+        }
+      ]
+    },
+    {
+      "category": "Munição",
+      "name": "Munição de Espingarda",
+      "fields": [
+        {
+          "label": "Carga",
+          "value": "1/4"
+        },
+        {
+          "label": "Uso em jogo",
+          "value": "Uma unidade é comprometida no primeiro disparo desta categoria na cena e removida quando a cena termina. Até quatro unidades deste mesmo tipo ocupam 1 espaço de carga."
+        }
+      ]
+    },
+    {
+      "category": "Munição",
+      "name": "Munição de Carabina",
+      "fields": [
+        {
+          "label": "Carga",
+          "value": "1/4"
+        },
+        {
+          "label": "Uso em jogo",
+          "value": "Uma unidade é comprometida no primeiro disparo desta categoria na cena e removida quando a cena termina. Até quatro unidades deste mesmo tipo ocupam 1 espaço de carga."
+        }
+      ]
+    },
+    {
+      "category": "Munição",
+      "name": "Munição de Flechas",
+      "fields": [
+        {
+          "label": "Carga",
+          "value": "1/4"
+        },
+        {
+          "label": "Uso em jogo",
+          "value": "Uma unidade é comprometida no primeiro disparo desta categoria na cena e removida quando a cena termina. Até quatro unidades deste mesmo tipo ocupam 1 espaço de carga."
+        }
+      ]
+    },
+    {
+      "category": "Munição",
+      "name": "Munição de Virotes",
+      "fields": [
+        {
+          "label": "Carga",
+          "value": "1/4"
+        },
+        {
+          "label": "Uso em jogo",
+          "value": "Uma unidade é comprometida no primeiro disparo desta categoria na cena e removida quando a cena termina. Até quatro unidades deste mesmo tipo ocupam 1 espaço de carga."
+        }
+      ]
+    },
+    {
+      "category": "Munição",
+      "name": "Munição de Chumbinhos",
+      "fields": [
+        {
+          "label": "Carga",
+          "value": "1/4"
+        },
+        {
+          "label": "Uso em jogo",
+          "value": "Uma unidade é comprometida no primeiro disparo desta categoria na cena e removida quando a cena termina. Até quatro unidades deste mesmo tipo ocupam 1 espaço de carga."
+        }
+      ]
+    },
+    {
+      "category": "Munição",
+      "name": "Munição de Outra",
+      "fields": [
+        {
+          "label": "Carga",
+          "value": "1/4"
+        },
+        {
+          "label": "Uso em jogo",
+          "value": "Uma unidade é comprometida no primeiro disparo desta categoria na cena e removida quando a cena termina. Até quatro unidades deste mesmo tipo ocupam 1 espaço de carga."
         }
       ]
     },
