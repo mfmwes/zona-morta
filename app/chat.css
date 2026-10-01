@@ -217,7 +217,14 @@
   border-radius: 4px;
   font-size: .7rem;
 }
-.table-chat-dice-pair .hope { background: var(--hope-surface); color: var(--hope-ink); }
+.table-chat-dice-pair .hope {
+  border: 1px solid #f0d86f;
+  background: linear-gradient(180deg, #f1d75b 0%, #dfbd35 100%);
+  color: #352900;
+  box-shadow: inset 0 1px 0 #fff4ae80;
+}
+.table-chat-dice-pair .hope svg { color: #4a3800; }
+.table-chat-dice-pair .hope b { color: #201800; font-weight: 900; }
 .table-chat-dice-pair .fear { background: var(--fear-surface); color: var(--fear-ink); }
 .table-chat-dice-pair b { margin-left: auto; color: #243e40; font-family: var(--font-mono); }
 .table-chat-formula {
