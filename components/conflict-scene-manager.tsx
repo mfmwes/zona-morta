@@ -45,7 +45,10 @@ function ResourceMeter({ label, value, max, tone, icon }: { label: string; value
 }
 
 function ThreatStat({ label, value, tone, icon }: { label: string; value: ReactNode; tone: "difficulty" | "threshold"; icon: ReactNode }) {
-  return <span className={`conflict-stat conflict-stat--${tone}`}><small>{icon}{label}</small><b>{value}</b></span>;
+  return <span className={`conflict-stat conflict-stat--${tone}`} aria-label={`${label}: ${typeof value === "string" || typeof value === "number" ? value : ""}`}>
+    <small title={label}>{icon}<span>{label}</span></small>
+    <b>{value}</b>
+  </span>;
 }
 
 function ThreatRoleIcon({ role, size = 17 }: { role: string; size?: number }) {
