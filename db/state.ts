@@ -176,7 +176,7 @@ export async function syncCampaignAccountCharacters(campaignId: string, state: G
 
   const [players, saved] = await Promise.all([
     db.prepare(
-      "SELECT user_id, survivor_id FROM campaign_players WHERE owner_id = ? AND revoked_at IS NULL AND user_id IS NOT NULL AND survivor_id IS NOT NULL"
+      "SELECT user_id, survivor_id FROM campaign_players WHERE owner_id = ? AND user_id IS NOT NULL AND survivor_id IS NOT NULL"
     ).bind(campaignId).all<{ user_id: string; survivor_id: string }>(),
     db.prepare(
       "SELECT user_id, survivor_id, body FROM user_characters WHERE campaign_id = ?"
