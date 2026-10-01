@@ -20,6 +20,7 @@ import { SurvivorContextMenu } from "@/components/survivor-context-menu";
 import { EmptyItemArt, ItemArt } from "@/components/item-art";
 import { AbilityArt } from "@/components/ability-art";
 import { RollDialog, type RollRequest } from "@/components/roll-dialog";
+import { SurvivorConflictHud } from "@/components/survivor-conflict-hud";
 import { Counter, Field, Pick } from "@/components/game-controls";
 import { traitLabel, localizeRollLog } from "@/lib/terminology";
 import { absoluteMinutes, addLog, ammunitionCount, ammunitionItemType, ammunitionTypes, content, survivorHex, survivorStats, traits, type EquipmentSlot, type GameState, type Infection, type Survivor } from "@/lib/game";
@@ -278,7 +279,7 @@ function deadlineLabel(deadline: number | null | undefined) {
   return `dia ${Math.floor(deadline / 1440) + 1}, ${String(Math.floor((deadline % 1440) / 60)).padStart(2, "0")}:${String(deadline % 60).padStart(2, "0")}`;
 }
 
-export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, restPeers = [] }: { game: GameState; edit: Edit; playerPreview: boolean; playerMode?: boolean; restPeers?: RestPeer[] }) {
+export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, restPeers = [], onOpenConflict }: { game: GameState; edit: Edit; playerPreview: boolean; playerMode?: boolean; restPeers?: RestPeer[]; onOpenConflict?: () => void }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("resumo");
   const [notesDraft, setNotesDraft] = useState<{ id: string; source: string; value: string } | null>(null);
@@ -287,6 +288,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
   const [treatmentSource, setTreatmentSource] = useState("");
   const [cleanWaterConfirmed, setCleanWaterConfirmed] = useState(false);
   const [rollRequest, setRollRequest] = useState<RollRequest | null>(null);
+  const [combatTargetId, setCombatTargetId] = useState("");
   const [inventoryQuery, setInventoryQuery] = useState("");
   const [inventoryCategory, setInventoryCategory] = useState("Todas");
   const selected = game.survivors.find(s => s.id === selectedId) ?? game.survivors[0];
@@ -353,6 +355,12 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
   }
   function openSurvivor(id: string, tab = "resumo") {
     setSelectedId(id); setActiveTab(tab); setPortraitError(""); setInventoryQuery(""); setInventoryCategory("Todas");
+  }
+
+
+  function beginRoll(request: RollRequest) {
+    const targetThreatId = request.kind === "attack" && combatTargetId ? combatTargetId : undefined;
+    setRollRequest(targetThreatId ? { ...request, targetThreatId } : request);
   }
   function storeActive(slot: EquipmentSlot) {
     if (!selected) return;
@@ -439,7 +447,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
             return <SurvivorContextMenu key={own.id}
               game={game} edit={edit} survivor={own} canControl masterMode={false}
               onOpenTab={tab => openSurvivor(own.id, tab)}
-              onRoll={request => { openSurvivor(own.id, request.kind === "attack" ? "combate" : "atributos"); setRollRequest(request); }}>
+              onRoll={request => { openSurvivor(own.id, request.kind === "attack" ? "combate" : "atributos"); beginRoll(request); }}>
               <button type="button" onClick={() => openSurvivor(own.id)}
                 aria-current={selected?.id === own.id ? "true" : undefined} className="character-roster-person survivor-context-target">
                 <span className="character-roster-avatar">{own.portrait ? <img src={own.portrait} alt="" /> : own.name.charAt(0).toUpperCase()}</span>
@@ -460,7 +468,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
         }) : game.survivors.map(s => { const st = survivorStats(s); const canControl = !playerPreview; const masterMode = !playerPreview; return <SurvivorContextMenu key={s.id}
           game={game} edit={edit} survivor={s} canControl={canControl} masterMode={masterMode}
           onOpenTab={tab => openSurvivor(s.id, tab)}
-          onRoll={request => { openSurvivor(s.id, request.kind === "attack" ? "combate" : "atributos"); setRollRequest(request); }}>
+          onRoll={request => { openSurvivor(s.id, request.kind === "attack" ? "combate" : "atributos"); beginRoll(request); }}>
           <button type="button" onClick={() => openSurvivor(s.id)}
             aria-current={selected?.id === s.id ? "true" : undefined} className="character-roster-person survivor-context-target">
             <span className="character-roster-avatar">{s.portrait ? <img src={s.portrait} alt="" /> : s.name.charAt(0).toUpperCase()}</span>
@@ -493,6 +501,15 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
         </div>
       </header>
       {portraitError && <p className="character-portrait-error" role="alert">{portraitError}</p>}
+      <SurvivorConflictHud
+        game={game}
+        survivor={selected}
+        playerMode={playerMode}
+        targetId={combatTargetId}
+        onTargetChange={setCombatTargetId}
+        onAttack={targetId => beginRoll({ survivorId: selected.id, kind: "attack", weapon: "primary", targetThreatId: targetId })}
+        onOpenConflict={onOpenConflict}
+      />
 
       <div className="character-layout">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="character-main">
@@ -501,7 +518,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
             <div className="character-summary-grid">
               <section className="character-surface character-summary-action"><SectionHeading index="01" title="Pronto para agir" aside={<span className="character-micro">KIT ATIVO</span>} />
                 <div className="character-active-weapon">{selected.primary ? <ItemArt name={selected.primary} category="Armas primárias" /> : <EmptyItemArt />}<div><span>Arma principal</span><strong>{selected.primary || "Sem arma principal"}</strong><small>{primary ? `${primary.damage} · ${primary.range} · ${traitLabel(primary.trait)}` : "Dados da arma no kit"}</small></div>
-                  <Button size="sm" variant="outline" className="character-weapon-roll" onClick={() => setRollRequest({ survivorId: selected.id, kind: "attack", weapon: "primary" })}><Dice5 size={16} /> Atacar</Button></div>
+                  <Button size="sm" variant="outline" className="character-weapon-roll" onClick={() => beginRoll({ survivorId: selected.id, kind: "attack", weapon: "primary" })}><Dice5 size={16} /> Atacar</Button></div>
                 {selected.secondary && <div className="character-info-row"><ItemArt name={selected.secondary} category="Armas secundárias" size="small" /><span>Secundária</span><b>{selected.secondary}</b></div>}
                 <div className="character-info-row">{selected.protection ? <ItemArt name={selected.protection} category="Proteções" size="small" /> : <EmptyItemArt />}<span>Proteção</span><b>{selected.protection || "Sem proteção"}</b></div>
                 {selected.outfit && <div className="character-info-row"><ItemArt name={selected.outfit} category="Trajes e acessórios" size="small" /><span>Traje</span><b>{selected.outfit}</b></div>}
@@ -543,9 +560,9 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
           <TabsContent value="atributos" className="character-tab-content">
             <section className="character-surface"><SectionHeading index="01" title="Atributos e testes" aside={<span className="character-micro">DADOS DE DUALIDADE</span>} />
               <p className="character-section-intro">Clique em um atributo para rolar. Uma Experiência pertinente acrescenta +2 ao gastar 1 Esperança; declare seu uso antes da rolagem.</p>
-              <div className="character-attributes">{traits.map(trait => <button type="button" key={trait} className="character-attribute" onClick={() => setRollRequest({ survivorId: selected.id, kind: "action", trait })} aria-label={`Rolar ${traitLabel(trait)}, modificador ${selected.attributes[trait]}`}><span>{traitLabel(trait)}</span><strong>{selected.attributes[trait] > 0 ? "+" : ""}{selected.attributes[trait]}</strong><Dice5 size={15} aria-hidden="true" /></button>)}</div>
+              <div className="character-attributes">{traits.map(trait => <button type="button" key={trait} className="character-attribute" onClick={() => beginRoll({ survivorId: selected.id, kind: "action", trait })} aria-label={`Rolar ${traitLabel(trait)}, modificador ${selected.attributes[trait]}`}><span>{traitLabel(trait)}</span><strong>{selected.attributes[trait] > 0 ? "+" : ""}{selected.attributes[trait]}</strong><Dice5 size={15} aria-hidden="true" /></button>)}</div>
               {Object.entries(modifiers?.traits ?? {}).some(([, value]) => value !== 0) && <p className="character-rule-note">Equipamento: {Object.entries(modifiers?.traits ?? {}).filter(([, value]) => value !== 0).map(([name, value]) => `${value} em ${traitLabel(name)}`).join(" · ")}. Os atributos acima são os valores base; os ajustes entram automaticamente ao rolar.</p>}
-              <div className="character-experience-list"><button type="button" onClick={() => setRollRequest({ survivorId: selected.id, kind: "action", experience: "origin" })} aria-label={`Rolar com Experiência ${origin?.experience || selected.origin}, custa 1 Esperança`}><BookOpen size={18} aria-hidden="true" /><span>{origin?.experience || selected.origin}</span><b>+2 · 1 Esperança</b></button><button type="button" onClick={() => setRollRequest({ survivorId: selected.id, kind: "action", experience: "free" })} aria-label={`Rolar com Experiência ${selected.freeExperience}, custa 1 Esperança`}><BookOpen size={18} aria-hidden="true" /><span>{selected.freeExperience}</span><b>+2 · 1 Esperança</b></button></div>
+              <div className="character-experience-list"><button type="button" onClick={() => beginRoll({ survivorId: selected.id, kind: "action", experience: "origin" })} aria-label={`Rolar com Experiência ${origin?.experience || selected.origin}, custa 1 Esperança`}><BookOpen size={18} aria-hidden="true" /><span>{origin?.experience || selected.origin}</span><b>+2 · 1 Esperança</b></button><button type="button" onClick={() => beginRoll({ survivorId: selected.id, kind: "action", experience: "free" })} aria-label={`Rolar com Experiência ${selected.freeExperience}, custa 1 Esperança`}><BookOpen size={18} aria-hidden="true" /><span>{selected.freeExperience}</span><b>+2 · 1 Esperança</b></button></div>
             </section>
             <section className="character-surface"><SectionHeading index="02" title="Origem" /><div className="character-feature-callout"><b>{selected.origin} · {origin?.feature}</b><p>{origin?.effect}</p></div></section>
             <section className="character-surface"><SectionHeading index="03" title="Últimas rolagens" />{recentRolls.length ? <div className="character-roll-history">{recentRolls.map(entry => <div key={entry.id}><span>Dia {entry.day} · {entry.time} · {entry.kind}</span><p>{localizeRollLog(entry.text)}</p></div>)}</div> : <p className="character-empty-list">Nenhuma rolagem deste sobrevivente registrada ainda.</p>}</section>
@@ -566,9 +583,9 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
             </section>
             <section className="character-surface"><SectionHeading index="02" title="Armas e kit ativo" />
               <div className="character-equipment">{selected.primary ? <ItemArt name={selected.primary} category="Armas primárias" size="large" /> : <EmptyItemArt size="large" />}<div><span>PRIMÁRIA</span><h4>{selected.primary || "Sem arma principal"}</h4>{primary && <><p><b>{primary.damage}</b> dano · {primary.range} · {traitLabel(primary.trait)} · {primary.hands === "Uma" ? "uma mão" : "duas mãos"}</p><div className="character-chips"><span>Ruído: {primary.noise}</span><span>Carga guardada: {primary.stored}</span></div><p>{primary.note}</p></>}
-                <Button size="sm" className="mt-2" disabled={!primary} onClick={() => setRollRequest({ survivorId: selected.id, kind: "attack", weapon: "primary" })}><Dice5 size={16} /> Rolar ataque</Button>{!primary && <button type="button" className="character-text-link" onClick={() => setActiveTab("inventario")}>Equipar uma arma no inventário ↗</button>}{Boolean(modifiers?.primaryDamage) && <p>+{modifiers?.primaryDamage} ao dano pela Faca pequena (automático).</p>}</div></div>
+                <Button size="sm" className="mt-2" disabled={!primary} onClick={() => beginRoll({ survivorId: selected.id, kind: "attack", weapon: "primary" })}><Dice5 size={16} /> Rolar ataque</Button>{!primary && <button type="button" className="character-text-link" onClick={() => setActiveTab("inventario")}>Equipar uma arma no inventário ↗</button>}{Boolean(modifiers?.primaryDamage) && <p>+{modifiers?.primaryDamage} ao dano pela Faca pequena (automático).</p>}</div></div>
               {selected.secondary && <div className="character-equipment"><ItemArt name={selected.secondary} category="Armas secundárias" size="large" /><div><span>SECUNDÁRIA</span><h4>{selected.secondary}</h4>{secondary && <><p><b>{secondary.damage}</b> dano · {secondary.range} · {traitLabel(secondary.trait)}</p><div className="character-chips"><span>Carga guardada: {secondary.stored}</span></div><p>{secondary.effect}</p></>}
-                <Button size="sm" variant="outline" className="mt-2" onClick={() => setRollRequest({ survivorId: selected.id, kind: "attack", weapon: "secondary" })}><Dice5 size={16} /> Rolar secundária</Button></div></div>}
+                <Button size="sm" variant="outline" className="mt-2" onClick={() => beginRoll({ survivorId: selected.id, kind: "attack", weapon: "secondary" })}><Dice5 size={16} /> Rolar secundária</Button></div></div>}
               <div className="character-equipment">{selected.protection ? <ItemArt name={selected.protection} category="Proteções" size="large" /> : <EmptyItemArt size="large" />}<div><span>PROTEÇÃO VESTIDA</span><h4>{selected.protection || "Sem proteção"}</h4>{protection && <><p>Limiar maior {stats.major} · severo {stats.severe} · {stats.armor} espaços de armadura</p><p>{protection.effect}</p></>}</div></div>
               {selected.outfit && <div className="character-equipment"><ItemArt name={selected.outfit} category="Trajes e acessórios" size="large" /><div><span>TRAJE VESTIDO</span><h4>{selected.outfit}</h4><p>Em uso · não conta novamente como carga guardada.</p></div></div>}
               {cart && <div className="character-equipment"><ItemArt name={cart.name} category="Abrigo, transporte e mochilas" size="large" /><div><span>CARRINHO EM USO</span><h4>Carrinho dobrável</h4><p><b>{cartLoad}/4 espaços</b> no carrinho · exige as duas mãos livres enquanto é conduzido.</p></div></div>}
@@ -700,7 +717,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
               <DamageThresholds major={stats.major} severe={stats.severe} />
             </div>
             <div className="character-quick-attack"><span><Swords size={17} aria-hidden="true" /> ATAQUE PRONTO</span><strong>{selected.primary || "Sem arma principal"}</strong><small>{primary ? `${primary.damage} · ${primary.range}` : "Veja o kit de combate"}</small><div><span>{primaryAmmoType ? `Munição · ${primaryAmmoType}` : "Munição"}</span><b>{primaryAmmoType ? `${primaryAmmoAvailable} livre(s)${primaryAmmoCommitted ? ` + ${primaryAmmoCommitted} comprometida` : ""}` : "não usa"}</b></div></div>
-            <div className="character-quick-rolls"><button type="button" onClick={() => setRollRequest({ survivorId: selected.id, kind: "action" })}><Dice5 size={16} aria-hidden="true" /> Teste</button><button type="button" disabled={!primary} onClick={() => setRollRequest({ survivorId: selected.id, kind: "attack", weapon: "primary" })}><Crosshair size={16} aria-hidden="true" /> Ataque</button></div>
+            <div className="character-quick-rolls"><button type="button" onClick={() => beginRoll({ survivorId: selected.id, kind: "action" })}><Dice5 size={16} aria-hidden="true" /> Teste</button><button type="button" disabled={!primary} onClick={() => beginRoll({ survivorId: selected.id, kind: "attack", weapon: "primary" })}><Crosshair size={16} aria-hidden="true" /> Ataque</button></div>
           </div>
           <div className="character-quick-mobile"><span title="PV disponíveis"><Heart size={16} aria-hidden="true" /><b>{stats.hp-selected.hp}/{stats.hp}</b><small>PV</small></span><span title="Estresse marcado"><Zap size={16} aria-hidden="true" /><b>{selected.stress}/6</b><small>Estresse</small></span><span title="Esperança"><Sparkles size={16} aria-hidden="true" /><b>{selected.hope}/6</b><small>Esperança</small></span><span title="Evasão"><Crosshair size={16} aria-hidden="true" /><b>{stats.evasion}</b><small>Evasão</small></span><button type="button" onClick={() => setActiveTab("combate")} aria-label="Abrir combate e controles de recursos"><Shield size={16} aria-hidden="true" /><b>{Math.max(0, stats.armor-(selected.armorMarked ?? 0))}</b><small>Combate</small></button><button type="button" className="character-quick-mobile-weapon" onClick={() => setActiveTab("combate")}><Swords size={14} aria-hidden="true" /><strong>{selected.primary || "Sem arma principal"}</strong><span>{primary ? `${primary.damage} · ${primary.range}` : "Ver ataque"}</span><span>{primaryAmmoType ? `${primaryAmmoAvailable} livre(s)` : "sem munição"}</span></button></div>
         </aside>
