@@ -246,6 +246,23 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
     return person ? [{ value: person.id, label: person.name }] : [];
   }), [conflict?.survivorIds, game.survivors]);
 
+  const threatGroups = useMemo(() => {
+    const groups = new Map<string, NonNullable<GameState["conflict"]>["threats"]>();
+    for (const threat of conflict?.threats ?? []) {
+      const key = threat.templateSnapshot.id || threat.templateSnapshot.name;
+      groups.set(key, [...(groups.get(key) ?? []), threat]);
+    }
+    return [...groups.entries()].map(([key, rows]) => ({
+      key,
+      name: rows[0]?.templateSnapshot.name ?? "Ameaças",
+      role: rows[0]?.templateSnapshot.role ?? "Ameaça",
+      tier: rows[0]?.templateSnapshot.tier ?? 1,
+      threats: rows,
+      active: rows.filter(row => !row.defeated).length,
+      defeated: rows.filter(row => row.defeated).length,
+    })).sort((a, b) => a.tier - b.tier || a.name.localeCompare(b.name, "pt-BR"));
+  }, [conflict?.threats]);
+
   useEffect(() => {
     if (!availableSurvivors.some(option => option.value === survivorToAdd)) setSurvivorToAdd(availableSurvivors[0]?.value ?? "");
   }, [availableSurvivors, survivorToAdd]);
@@ -467,12 +484,14 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
   </div>;
 
   const spotlightName = participantLabel(game, conflict.spotlight);
+  const activeThreats = conflict.threats.filter(threat => !threat.defeated).length;
+  const defeatedThreats = conflict.threats.length - activeThreats;
   const participantsCount = conflict.survivorIds.length + conflict.threats.length;
 
   return <div className="conflict-manager">
     <section className="panel conflict-hero">
       <div className="conflict-hero-main">
-        <div><p className="dossier-title">Cena {conflict.sceneNumber} · conflito ativo</p><h2>{conflict.name}</h2>
+        <div className="conflict-hero-titleblock"><p className="dossier-title">Cena {conflict.sceneNumber} · conflito ativo</p><h2>{conflict.name}</h2>
           <p>Dia {game.day} · {displayTime(game.minutes)} · {participantsCount} participante(s)</p></div>
         <AlertDialog>
           <AlertDialogTrigger asChild><Button size="sm" variant="outline">Encerrar conflito</Button></AlertDialogTrigger>
@@ -482,6 +501,13 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
             <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={closeConflict}>Encerrar conflito</AlertDialogAction></AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+      </div>
+
+      <div className="conflict-overview-metrics" aria-label="Resumo do conflito">
+        <span className="conflict-overview-metric is-survivors"><Users size={17} /><small>Sobreviventes</small><b>{conflict.survivorIds.length}</b></span>
+        <span className="conflict-overview-metric is-active"><ShieldAlert size={17} /><small>Ameaças ativas</small><b>{activeThreats}</b></span>
+        <span className="conflict-overview-metric is-defeated"><Skull size={17} /><small>Derrotadas</small><b>{defeatedThreats}</b></span>
+        <span className="conflict-overview-metric is-spotlight"><Crosshair size={17} /><small>Spotlight</small><b>{spotlightName ?? "Sem foco"}</b></span>
       </div>
 
       <div className="conflict-trail-full-status" role="status" aria-live="polite">
