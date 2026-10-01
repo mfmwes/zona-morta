@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import { addLog, defaultState, type GameState, type Survivor } from "@/lib/game";
+import { addLog, defaultState, normalizeSurvivorAmmunition, type GameState, type Survivor } from "@/lib/game";
 import { preserveKnownSectors } from "@/lib/sectors";
 import { normalizeShelter } from "@/lib/shelter-projects";
 import { randomToken, tokenHash } from "@/lib/auth";
@@ -292,6 +292,7 @@ export async function restoreAccountCharacterToCampaign(campaignId: string, user
   try {
     const survivor = JSON.parse(row.body) as Survivor;
     if (!survivor || survivor.id !== survivorId || typeof survivor.name !== "string") return false;
+    normalizeSurvivorAmmunition(survivor);
     survivor.hex = survivor.hex && state.hexes[survivor.hex] ? survivor.hex : state.partyHex;
     delete survivor.restPlan;
     delete survivor.ammoSpentScene;
