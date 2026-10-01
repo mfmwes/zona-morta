@@ -5,7 +5,7 @@ import { createId } from "./id";
 import { transferPortionLots } from "./provisions";
 import { groupedProvisionPortions } from "./provision-items";
 import { defaultThreatTemplates, type ThreatTemplate } from "./threats";
-import type { ConflictScene } from "./conflict";
+import type { ConflictScene, PublicConflictScene } from "./conflict";
 
 export { content };
 
@@ -364,8 +364,10 @@ export type GameState = {
   npcs: NPC[];
   /** Catálogo de ameaças da campanha. Ausente em campanhas antigas = catálogo-base. */
   threats?: ThreatTemplate[];
-  /** Cena de conflito opcional dentro da cena narrativa atual. Não cria iniciativa nem ordem de turnos. */
+  /** Cena de conflito completa, usada pelo mestre. */
   conflict?: ConflictScene;
+  /** Projeção pública efêmera enviada apenas aos jogadores; nunca é persistida pelo mestre. */
+  publicConflict?: PublicConflictScene;
   shelter: ShelterState;
   formerShelters?: ShelterState[];
   log: { id: string; day: number; time: string; kind: string; text: string; actorId?: string; actorName?: string; actorPortrait?: string }[];
