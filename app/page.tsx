@@ -421,7 +421,7 @@ export default function CampaignApp() {
       { value: "conflito", label: game.conflict?.active ? "Conflito ativo" : "Conflito", icon: Swords },
       { value: "ameacas", label: "Ameaças", icon: ShieldAlert },
     ] : publicConflictActive ? [
-      { value: "conflito", label: "Conflito ativo", icon: Swords },
+      { value: "conflito", label: game.publicConflict?.pendingDamage.length ? `Resolver dano (${game.publicConflict.pendingDamage.length})` : "Conflito ativo", icon: Swords },
     ] : []),
     { value: "referencias", label: "Regras e itens", icon: BookOpen },
     ...(role === "mestre" ? [{ value: "jogadores", label: "Jogadores", icon: Users }] : []),
