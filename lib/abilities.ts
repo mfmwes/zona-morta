@@ -3,6 +3,7 @@ import { rollDie } from "./rolls";
 import { consumeShelterComfortRest } from "./shelter-projects";
 import { settleSceneAmmunition } from "./combat-resources";
 import { localizeRulesText } from "./terminology";
+import { endConflictScene } from "./conflict";
 
 export type AbilityCost = "free" | "hope1" | "hope3" | "stress1" | "armor1";
 export type AbilityPeriod = "scene" | "day" | "expedition" | "shortRest" | "longRest" | "rest" | "place" | "patient" | null;
@@ -105,6 +106,11 @@ export function recordAbilityUse(game: GameState, survivorId: string, abilityId:
 
 export function beginScene(game: GameState) {
   const settled = settleSceneAmmunition(game);
+  if (game.conflict?.active) {
+    const name = game.conflict.name;
+    endConflictScene(game.conflict, game.day, displayTime(game.minutes));
+    addLog(game, "conflito", `Conflito encerrado ao iniciar nova cena: ${name}.`);
+  }
   game.scene = (game.scene ?? 1) + 1;
   game.noise = 0;
   addLog(game, "cena", `Nova cena: Barulho voltou a 0 e habilidades por cena estão disponíveis.${settled.length ? ` ${settled.reduce((sum, row) => sum + row.units, 0)} unidade(s) de munição foram consumidas da cena anterior.` : ""}`);
