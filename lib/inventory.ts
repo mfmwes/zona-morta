@@ -3,6 +3,7 @@ import { getPrimary, getProtection, getSecondary, weaponAmmoType } from "./equip
 import { createId } from "./id";
 import { transferPortionLots, withdrawPortions } from "./provisions";
 import { groupedProvisionPortions, hydrateProvisionItem, physicalProvisionPortions, provisionItemInfo, type ProvisionResource } from "./provision-items";
+import { projectOperational } from "./shelter-projects";
 
 type CatalogEntry = (typeof content.catalog)[number];
 export const inventoryCategories = [...new Set(content.catalog
@@ -94,12 +95,9 @@ function accessContainers(game: GameState, ownerId: string) {
 function accessibleNamedQuantity(game: GameState, ownerId: string, name: string) {
   return accessContainers(game, ownerId).reduce((sum, items) => sum + items.filter(item => item.name === name).reduce((n, item) => n + item.qty, 0), 0);
 }
-function completedFacility(game: GameState, ...keys: string[]) {
-  return Boolean(game.shelter.hex && keys.some(key => game.shelter.projects?.some(project => {
-    if (project.key !== key || !["Concluído", "Danificado"].includes(project.state)) return false;
-    const integrity = project.integrity ?? (project.state === "Danificado" ? 2 : 3);
-    return integrity >= 2;
-  })));
+function operationalFacility(game: GameState, ...keys: string[]) {
+  return Boolean(game.shelter.hex && keys.some(key => game.shelter.projects?.some(project =>
+    project.key === key && projectOperational(game, game.shelter, project))));
 }
 function ownerHolder(game: GameState, ownerId: string) {
   return ownerId === "shared" ? game.shelter : game.survivors.find(person => person.id === ownerId);
@@ -113,10 +111,10 @@ function availableWater(game: GameState, ownerId: string, excludeItemId?: string
   return total;
 }
 function hasPan(game: GameState, ownerId: string) {
-  return accessibleNamedQuantity(game, ownerId, "Panela leve") > 0 || completedFacility(game, "community-kitchen", "community-kitchen-space");
+  return accessibleNamedQuantity(game, ownerId, "Panela leve") > 0 || operationalFacility(game, "community-kitchen");
 }
 function heatPlan(game: GameState, ownerId: string) {
-  if (completedFacility(game, "community-kitchen", "community-kitchen-space")) return { ok: true, fuelCost: 0 };
+  if (operationalFacility(game, "community-kitchen")) return { ok: true, fuelCost: 0 };
   if (accessibleNamedQuantity(game, ownerId, "Fogareiro") < 1) return { ok: false, fuelCost: 0 };
   const personalFuel = accessibleNamedQuantity(game, ownerId, "Combustível (1 unidade)");
   if (personalFuel > 0) return { ok: true, fuelCost: 1 };
@@ -156,7 +154,7 @@ export function provisionPreparationCheck(game: GameState, ownerId: string, item
   }
 
   if (alternativeWaterTreatment) {
-    if (completedFacility(game, "water-filter") || accessibleNamedQuantity(game, ownerId, "Filtro portátil") > 0) {
+    if (operationalFacility(game, "water-filter") || accessibleNamedQuantity(game, ownerId, "Filtro portátil") > 0) {
       details.push("filtragem");
     } else {
       const portions = Math.max(1, info.portionsPerUnit * count);
