@@ -1,4 +1,4 @@
-import { assignPlayerCharacter, campaignOwnerId, listPlayers, readCampaign } from "@/db/state";
+import { assignPlayerCharacter, campaignOwnerId, listPlayers, readCampaign, syncCampaignAccountCharacters } from "@/db/state";
 import { sameOrigin, siteUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -23,6 +23,7 @@ export async function POST(request: Request) {
       return Response.json({ error: "Ficha não encontrada." }, { status: 404 });
     if (!await assignPlayerCharacter(campaignId, input.userId, input.survivorId))
       return Response.json({ error: "A ficha foi vinculada em outra janela. Atualize a lista." }, { status: 409 });
+    await syncCampaignAccountCharacters(campaignId, campaign.state);
     return Response.json({ players: await listPlayers(campaignId) }, { headers: { "Cache-Control": "no-store" } });
   } catch {
     return Response.json({ error: "Não foi possível vincular a ficha." }, { status: 503 });
