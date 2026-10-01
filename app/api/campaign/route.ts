@@ -1,4 +1,4 @@
-import { campaignExists, campaignOwnerId, findPlayer, readCampaign, wasRevoked, writeCampaign } from "@/db/state";
+import { campaignExists, campaignOwnerId, findPlayer, readCampaign, syncCampaignAccountCharacters, wasRevoked, writeCampaign } from "@/db/state";
 import { sameOrigin, siteUser } from "@/lib/auth";
 import { applyPlayerChange, projectPlayerGame, type PlayerLog, type ShelterWorkAction } from "@/lib/collaboration";
 import { ammunitionTypes, survivorStats, type AmmunitionType, type GameState, type Survivor } from "@/lib/game";
@@ -80,6 +80,7 @@ export async function GET(request: Request) {
     if (ownerId === user.id) {
       const data = await readCampaign(campaignId);
       const state = preserveKnownSectors(data.state);
+      await syncCampaignAccountCharacters(campaignId, state);
       return Response.json({ ...data, state, role: "mestre", ownerId: campaignId }, { headers: noStore });
     }
     const member = await findPlayer(campaignId, user.id, user.email);
@@ -92,6 +93,7 @@ export async function GET(request: Request) {
     }
     const data = await readCampaign(campaignId);
     const state = preserveKnownSectors(data.state);
+    await syncCampaignAccountCharacters(campaignId, state);
     const characterId = member.survivor_id && state.survivors.some(s => s.id === member.survivor_id) ? member.survivor_id : null;
     return Response.json({ revision: data.revision, state: projectPlayerGame(state, characterId ?? ""),
       role: "jogador", ownerId: campaignId, survivorId: characterId, restPeers: restPeers(state) }, { headers: noStore });
