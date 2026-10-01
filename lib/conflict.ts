@@ -15,6 +15,25 @@ export type SpotlightHistoryEntry = ConflictParticipantRef & {
   time: string;
 };
 
+export type ConflictDamageRequest = {
+  id: string;
+  targetSurvivorId: string;
+  sourceThreatId: string;
+  sourceName: string;
+  attackName: string;
+  damage: number;
+  damageType: string;
+  tier: SurvivorDamageTier;
+  createdDay: number;
+  createdTime: string;
+  status: "pending" | "resolved";
+  resolution?: "hp" | "armor";
+  appliedHpMarks?: number;
+  armorMarked?: number;
+  resolvedDay?: number;
+  resolvedTime?: string;
+};
+
 export type ConflictScene = {
   id: string;
   name: string;
@@ -30,6 +49,8 @@ export type ConflictScene = {
   spotlightHistory: SpotlightHistoryEntry[];
   /** IDs das rolagens de ataque cujo dano já foi confirmado pelo mestre. */
   appliedAttackLogIds?: string[];
+  /** Dano de ameaça aguardando decisão do sobrevivente (PV ou Armadura). */
+  damageRequests?: ConflictDamageRequest[];
   notes: string;
 };
 
@@ -46,6 +67,9 @@ export type PublicConflictThreat = {
   conditions: string[];
 };
 
+export type PublicConflictDamageRequest = Omit<ConflictDamageRequest,
+  "targetSurvivorId" | "sourceThreatId" | "status" | "resolution" | "appliedHpMarks" | "armorMarked" | "resolvedDay" | "resolvedTime">;
+
 export type PublicConflictScene = {
   id: string;
   name: string;
@@ -56,11 +80,13 @@ export type PublicConflictScene = {
   survivors: PublicConflictSurvivor[];
   threats: PublicConflictThreat[];
   spotlight: ConflictParticipantRef | null;
+  pendingDamage: PublicConflictDamageRequest[];
 };
 
 export function publicConflictScene(
   scene: ConflictScene,
   survivors: Array<{ id: string; name: string; portrait?: string }>,
+  viewerSurvivorId?: string | null,
 ): PublicConflictScene | undefined {
   if (!scene.active) return undefined;
   const survivorById = new Map(survivors.map(person => [person.id, person]));
@@ -80,6 +106,19 @@ export function publicConflictScene(
       : publicThreats.some(threat => threat.id === scene.spotlight!.id))
     ? { ...scene.spotlight }
     : null;
+  const pendingDamage = viewerSurvivorId
+    ? (scene.damageRequests ?? []).filter(request => request.status === "pending" && request.targetSurvivorId === viewerSurvivorId)
+      .map(request => ({
+        id: request.id,
+        sourceName: request.sourceName,
+        attackName: request.attackName,
+        damage: request.damage,
+        damageType: request.damageType,
+        tier: { ...request.tier },
+        createdDay: request.createdDay,
+        createdTime: request.createdTime,
+      }))
+    : [];
   return {
     id: scene.id,
     name: scene.name,
@@ -90,6 +129,7 @@ export function publicConflictScene(
     survivors: publicSurvivors,
     threats: publicThreats,
     spotlight,
+    pendingDamage,
   };
 }
 
@@ -122,6 +162,7 @@ export function createConflictScene(input: {
     spotlight: null,
     spotlightHistory: [],
     appliedAttackLogIds: [],
+    damageRequests: [],
     notes: "",
   };
 }
@@ -262,6 +303,83 @@ export function parseThreatDamageFormula(formula: string) {
   const flat = Number(value);
   if (Number.isFinite(flat)) return { dice: 0, die: 0, flat: Math.trunc(flat) };
   return null;
+}
+
+
+export function queueSurvivorDamage(scene: ConflictScene, input: {
+  targetSurvivorId: string;
+  sourceThreatId: string;
+  sourceName: string;
+  attackName: string;
+  damage: number;
+  damageType: string;
+  tier: SurvivorDamageTier;
+  day: number;
+  time: string;
+}) {
+  if (!scene.active || input.tier.hpMarks <= 0 || !scene.survivorIds.includes(input.targetSurvivorId)) return null;
+  const request: ConflictDamageRequest = {
+    id: createId(),
+    targetSurvivorId: input.targetSurvivorId,
+    sourceThreatId: input.sourceThreatId,
+    sourceName: input.sourceName.trim().slice(0, 100),
+    attackName: input.attackName.trim().slice(0, 100),
+    damage: Math.max(0, Math.trunc(input.damage || 0)),
+    damageType: input.damageType.trim().slice(0, 40),
+    tier: { ...input.tier },
+    createdDay: Math.max(1, Math.trunc(input.day || 1)),
+    createdTime: input.time,
+    status: "pending",
+  };
+  scene.damageRequests ??= [];
+  scene.damageRequests.push(request);
+  scene.damageRequests = scene.damageRequests.slice(-120);
+  return request;
+}
+
+export function resolveSurvivorDamageRequest(
+  scene: ConflictScene,
+  requestId: string,
+  survivor: { id: string; hp: number; armorMarked?: number },
+  stats: { hp: number; armor: number },
+  resolution: "hp" | "armor",
+  day: number,
+  time: string,
+) {
+  const request = (scene.damageRequests ?? []).find(row => row.id === requestId);
+  if (!request || request.status !== "pending" || request.targetSurvivorId !== survivor.id)
+    return { ok: false as const, reason: "unavailable" as const };
+
+  const baseMarks = request.tier.hpMarks;
+  let armorUsed = 0;
+  let hpMarks = baseMarks;
+  if (resolution === "armor") {
+    const freeArmor = Math.max(0, stats.armor - (survivor.armorMarked ?? 0));
+    if (freeArmor < 1) return { ok: false as const, reason: "no-armor" as const };
+    survivor.armorMarked = (survivor.armorMarked ?? 0) + 1;
+    armorUsed = 1;
+    hpMarks = Math.max(0, baseMarks - 1) as 0 | 1 | 2;
+  }
+
+  survivor.hp = Math.max(0, Math.min(stats.hp, survivor.hp + hpMarks));
+  request.status = "resolved";
+  request.resolution = resolution;
+  request.appliedHpMarks = hpMarks;
+  request.armorMarked = armorUsed;
+  request.resolvedDay = Math.max(1, Math.trunc(day || 1));
+  request.resolvedTime = time;
+  return {
+    ok: true as const,
+    requestId: request.id,
+    sourceName: request.sourceName,
+    attackName: request.attackName,
+    hpMarks,
+    armorUsed,
+    totalHpMarked: survivor.hp,
+    maxHp: stats.hp,
+    armorMarked: survivor.armorMarked ?? 0,
+    maxArmor: stats.armor,
+  };
 }
 
 
