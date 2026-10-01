@@ -1863,3 +1863,61 @@ test('Cozinha comunitária só substitui panela e calor quando está realmente o
   check = inventory.provisionPreparationCheck(g, ana.id, rice, 1);
   assert.equal(check.ok, false);
 });
+
+
+test('munição comprometida permanece visível e não pode ser transferida ou descartada', () => {
+  const g = campaign(); const [a,b] = g.survivors;
+  a.primary = 'Pistola';
+  a.inventory = [item('Munição de Pistola', 2)];
+  g.scene = 7;
+  assert.equal(combatResources.applyAttackResources(g, a.id, 'Pistola', '+1').ok, true);
+  const ammo = a.inventory.find(x => x.ammunitionType === 'Pistola');
+  assert.equal(ammo.qty, 2);
+  assert.equal(ammo.committedAmmo, 1);
+
+  assert.equal(inventory.transferItem(g, a.id, b.id, ammo.id, 2), false);
+  assert.equal(inventory.discardItem(g, a.id, ammo.id, 2), false);
+  assert.equal(inventory.transferItem(g, a.id, b.id, ammo.id, 1), true);
+  assert.equal(require('../lib/game.ts').ammunitionCount(a.inventory, 'Pistola'), 1);
+  assert.equal(require('../lib/game.ts').ammunitionCount(a.inventory, 'Pistola', true), 0);
+  assert.equal(inventory.discardItem(g, a.id, ammo.id, 1), false);
+
+  abilities.beginScene(g);
+  assert.equal(require('../lib/game.ts').ammunitionCount(a.inventory, 'Pistola'), 0);
+  assert.equal(require('../lib/game.ts').ammunitionCount(b.inventory, 'Pistola'), 1);
+});
+
+test('campanhas antigas migram contadores de munição para itens sem duplicar', () => {
+  const g = campaign(); const a = g.survivors[0];
+  a.inventory = [];
+  a.ammo = 3; a.ammoType = 'Espingarda';
+  g.shelter.inventory = [];
+  g.shelter.pistolAmmo = 2;
+  g.shelter.ammoStocks = { Pistola: 2, Carabina: 4 };
+
+  preserveKnownSectors(g);
+  assert.equal(a.ammo, 0);
+  assert.equal(require('../lib/game.ts').ammunitionCount(a.inventory, 'Espingarda'), 3);
+  assert.equal(require('../lib/game.ts').ammunitionCount(g.shelter.inventory, 'Pistola'), 2);
+  assert.equal(require('../lib/game.ts').ammunitionCount(g.shelter.inventory, 'Carabina'), 4);
+  assert.equal(g.shelter.pistolAmmo, 0);
+  assert.equal(g.shelter.ammoStocks.Pistola, 0);
+  assert.equal(g.shelter.ammoStocks.Carabina, 0);
+
+  preserveKnownSectors(g);
+  assert.equal(require('../lib/game.ts').ammunitionCount(a.inventory, 'Espingarda'), 3);
+  assert.equal(require('../lib/game.ts').ammunitionCount(g.shelter.inventory, 'Pistola'), 2);
+  assert.equal(require('../lib/game.ts').ammunitionCount(g.shelter.inventory, 'Carabina'), 4);
+});
+
+test('arma que exige munição não pode disparar sem unidade física livre', () => {
+  const g = campaign(); const a = g.survivors[0];
+  a.primary = 'Pistola'; a.inventory = [];
+  assert.equal(combatResources.attackResourceState(g, a, 'Pistola', 1).ammoReady, false);
+  a.inventory.push(item('Munição de Pistola', 1));
+  assert.equal(combatResources.attackResourceState(g, a, 'Pistola', 1).ammoReady, true);
+  combatResources.applyAttackResources(g, a.id, 'Pistola', 1);
+  assert.equal(combatResources.attackResourceState(g, a, 'Pistola', 1).ammoReady, true);
+  abilities.beginScene(g);
+  assert.equal(combatResources.attackResourceState(g, a, 'Pistola', 1).ammoReady, false);
+});
