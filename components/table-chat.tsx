@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronDown,
+  CheckCircle2,
   Crosshair,
   Dice5,
   MessageSquare,
@@ -19,6 +20,7 @@ import { RollDialog, type RollRequest } from "@/components/roll-dialog";
 import { rollInfo } from "@/lib/roll-log";
 import { localizeRollLog } from "@/lib/terminology";
 import { addLog, type GameState } from "@/lib/game";
+import { applyThreatDamage } from "@/lib/conflict";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 type Role = "mestre" | "jogador" | "convidado";
@@ -46,7 +48,8 @@ function damageInfo(text?: string) {
   const total = text.match(/=\s*(\d+)\s+dano/i)?.[1] ?? null;
   const weapon = text.match(/^[^:]+:\s*(.+?)\s+—/)?.[1]?.trim() ?? "Dano";
   const formula = text.match(/—\s*([^=]+)=/)?.[1]?.trim() ?? "";
-  const status = /não aplicado/i.test(text) ? "não aplicado"
+  const status = /Acerto confirmado/i.test(text) && /Dano ainda não aplicado/i.test(text) ? "pendente"
+    : /não aplicado/i.test(text) ? "não aplicado"
     : /potencial|pendente/i.test(text) ? "potencial"
     : "aplicável";
   const target = text.match(/Alvo:\s*(.*?)\./i)?.[1]?.trim() ?? "";
@@ -54,6 +57,27 @@ function damageInfo(text?: string) {
   const tier = tierMatch?.[1] ? tierMatch[1].toLocaleUpperCase("pt-BR") : "";
   const hpMarks = tierMatch?.[2] ? Number(tierMatch[2]) : null;
   return total ? { total, weapon, formula, status, target, tier, hpMarks } : null;
+}
+
+
+function threatActionInfo(text: string) {
+  const main = text.match(/^(.*?):\s*(.*?)\s+contra\s+(.*?)\s+—\s+d20\s+(\d+)\s+([+−-])\s+(\d+)\s+=\s+(-?\d+)\s+vs\s+Evasão\s+(\d+):\s+(ACERTO|FALHA)\./i);
+  if (!main) return null;
+  const damage = text.match(/Dano\s+(\d+)\s+(.+?)\s+→\s+(SEM DANO|MENOR|MAIOR|SEVERO)\s+\((\d+)\s+PV\)/i);
+  return {
+    threat: main[1].trim(),
+    attack: main[2].trim(),
+    target: main[3].trim(),
+    d20: Number(main[4]),
+    bonus: `${main[5] === "+" ? "+" : "−"}${main[6]}`,
+    total: Number(main[7]),
+    evasion: Number(main[8]),
+    hit: main[9].toUpperCase() === "ACERTO",
+    damage: damage ? Number(damage[1]) : null,
+    damageType: damage?.[2]?.trim() ?? "",
+    tier: damage?.[3]?.toUpperCase() ?? "",
+    hpMarks: damage ? Number(damage[4]) : null,
+  };
 }
 
 function Avatar({ name, portrait }: { name: string; portrait?: string }) {
@@ -87,7 +111,7 @@ export function TableChat({
   const rowCountRef = useRef(0);
 
   const rows = useMemo(() => {
-    const relevant = game.log.filter(entry => ["chat", "dados", "dano"].includes(entry.kind));
+    const relevant = game.log.filter(entry => ["chat", "dados", "dano", "ameaça"].includes(entry.kind));
     const grouped: ChatRow[] = [];
     for (let index = 0; index < relevant.length; index += 1) {
       const entry = relevant[index];
@@ -151,6 +175,21 @@ export function TableChat({
     edit(draft => { draft.log = draft.log.filter(entry => !ids.includes(entry.id)); });
   }
 
+
+  function applyAttackDamage(logId: string, targetName: string, hpMarks: number) {
+    if (role !== "mestre" || readOnly || !game.conflict?.active || hpMarks <= 0) return;
+    const candidates = game.conflict.threats.filter(threat => threat.name === targetName);
+    if (candidates.length !== 1) return;
+    const targetId = candidates[0].id;
+    edit(draft => {
+      const scene = draft.conflict;
+      if (!scene?.active) return;
+      const result = applyThreatDamage(scene, targetId, hpMarks, logId);
+      if (!result.ok) return;
+      addLog(draft, "conflito", `${result.targetName} marcou ${result.hpMarks} PV por um ataque resolvido no Chat da Mesa (${result.totalMarked}/${result.maxHp})${result.defeated ? " e ficou fora de combate" : ""}.`);
+    });
+  }
+
   function openRoll(kind: RollRequest["kind"]) {
     if (readOnly || role === "convidado") return;
     setRollRequest({ kind, ...(role === "jogador" && survivorId ? { survivorId } : {}) });
@@ -190,6 +229,32 @@ export function TableChat({
           </div>
         </article>;
 
+        if (row.entry.kind === "ameaça") {
+          const threat = threatActionInfo(row.entry.text);
+          if (!threat) return <article key={row.entry.id} className="table-chat-message"><div className="table-chat-message-body"><p>{localizeRollLog(row.entry.text)}</p></div></article>;
+          return <article key={row.entry.id} className={`table-chat-threat-action${highlightedId === row.entry.id ? " is-new" : ""}`}>
+            <div className="table-chat-threat-card">
+              <p className="table-chat-threat-kicker"><Swords size={14} /> Ação de ameaça</p>
+              <div className="table-chat-threat-title"><div><strong>{threat.threat}</strong><span>{threat.attack}</span></div><b className={threat.hit ? "is-hit" : "is-miss"}>{threat.hit ? "ACERTO" : "FALHA"}</b></div>
+              <div className="table-chat-target">
+                <Crosshair size={15} />
+                <span><small>Alvo</small><strong>{threat.target}</strong></span>
+              </div>
+              <div className="table-chat-threat-roll">
+                <span><small>d20</small><b>{threat.d20}</b></span>
+                <span><small>Bônus</small><b>{threat.bonus}</b></span>
+                <span><small>Total</small><b>{threat.total}</b></span>
+                <span><small>Evasão</small><b>{threat.evasion}</b></span>
+              </div>
+              {threat.hit && threat.damage !== null && <div className="table-chat-threat-damage">
+                <span>Dano</span><strong>{threat.damage} <small>{threat.damageType}</small></strong>
+                <div><b>{threat.tier}</b><span>{threat.hpMarks} PV · alvo pode usar Armadura</span></div>
+              </div>}
+              <details className="table-chat-roll-details"><summary>Detalhes <ChevronDown size={13} /></summary><p>{localizeRollLog(row.entry.text)}</p></details>
+            </div>
+          </article>;
+        }
+
         if (row.entry.kind === "dados") {
           const info = rollInfo(row.entry.text);
           const damage = damageInfo(row.damage?.text);
@@ -222,7 +287,20 @@ export function TableChat({
                 <span><Swords size={14} /> Dano automático</span>
                 <strong>{damage.total} <small>dano físico · {damage.status}</small></strong>
                 <small>{damage.weapon}{damage.formula ? ` · ${damage.formula}` : ""}</small>
-                {damage.tier && <div className="table-chat-damage-tier"><span>Dano {damage.tier}</span><b>{damage.hpMarks ?? 0} PV</b><small>{damage.status === "não aplicado" ? "não aplicado" : "a marcar"}</small></div>}
+                {damage.tier && (() => {
+                  const hpMarks = damage.hpMarks ?? 0;
+                  const conflictTarget = game.conflict?.active && damage.target
+                    ? game.conflict.threats.find(threat => threat.name === damage.target) ?? null
+                    : null;
+                  const applied = Boolean(game.conflict?.appliedAttackLogIds?.includes(row.entry.id));
+                  const canApply = role === "mestre" && !readOnly && info.targetResult === "ACERTO" && hpMarks > 0 && Boolean(conflictTarget) && !conflictTarget?.defeated && !applied;
+                  return <div className="table-chat-damage-tier">
+                    <span>Dano {damage.tier}</span><b>{hpMarks} PV</b>
+                    {applied ? <small className="is-applied"><CheckCircle2 size={12} /> aplicado</small>
+                      : canApply ? <button type="button" onClick={() => applyAttackDamage(row.entry.id, damage.target, hpMarks)}>Aplicar {hpMarks} PV</button>
+                      : <small>{damage.status === "não aplicado" ? "não aplicado" : damage.status === "pendente" ? "a confirmar" : "a marcar"}</small>}
+                  </div>;
+                })()}
               </div>}
               <details className="table-chat-roll-details">
                 <summary>Detalhes <ChevronDown size={13} /></summary>
