@@ -10,6 +10,7 @@ import { traitLabel, dualityLabel } from "@/lib/terminology";
 import { addLog, content, traits, type GameState } from "@/lib/game";
 import { equipmentModifiers, getPrimary, getSecondary } from "@/lib/equipment";
 import { applyAttackResources, attackResourceState } from "@/lib/combat-resources";
+import { resolveThreatAttack, type ThreatAttackResolution } from "@/lib/conflict";
 import { parseWeaponDamage, resolveActionRoll, resolveAttackHit, resolveRollResources, resolveWeaponDamage, rollDie, type ActionOutcome, type Edge, type RollKind } from "@/lib/rolls";
 
 type Edit = (fn: (draft: GameState) => void) => void;
@@ -32,6 +33,7 @@ function RollForm({ game, edit, request, onCompleted }: { game: GameState; edit:
   const [trait, setTrait] = useState(request?.trait ?? "Agilidade");
   const [weaponSlot, setWeaponSlot] = useState<"primary" | "secondary">(initialWeaponSlot);
   const [difficulty, setDifficulty] = useState(request?.kind === "attack" || request?.survivorId ? "" : "12");
+  const [targetThreatId, setTargetThreatId] = useState("");
   const [extra, setExtra] = useState("0");
   const [edge, setEdge] = useState<Edge>("none");
   const [experiences, setExperiences] = useState<Array<"origin" | "free">>(request?.experience ? [request.experience] : []);
@@ -40,6 +42,7 @@ function RollForm({ game, edit, request, onCompleted }: { game: GameState; edit:
   const [manualCritical, setManualCritical] = useState(false);
   const [last, setLast] = useState<RollRecord | null>(null);
   const [lastDamage, setLastDamage] = useState<DamageRecord | null>(null);
+  const [lastTargetResolution, setLastTargetResolution] = useState<ThreatAttackResolution | null>(null);
   const [standaloneDamage, setStandaloneDamage] = useState<DamageRecord | null>(null);
   const [isRolling, setIsRolling] = useState(false);
   const [rollError, setRollError] = useState("");
@@ -62,12 +65,25 @@ function RollForm({ game, edit, request, onCompleted }: { game: GameState; edit:
   const ammoReady = attackResources.ammoReady;
   const ammoWarning = ammoNeeded && !ammoReady
     ? `Sem Munição de ${ammoNeeded} livre no inventário. O primeiro disparo desta categoria na cena compromete 1 unidade física.` : "";
-  const target = difficulty.trim() === "" ? null : Number(difficulty);
-  const targetValid = target === null || (Number.isInteger(target) && target >= 1 && target <= 99);
+  const masterThreats = game.conflict?.active ? game.conflict.threats : [];
+  const publicThreats = game.publicConflict?.active ? game.publicConflict.threats : [];
+  const sceneTargets = (masterThreats.length ? masterThreats : publicThreats).filter(threat => !threat.defeated);
+  const targetOptions = sceneTargets.map(threat => ({ value: threat.id, label: threat.name }));
+  const selectedMasterThreat = targetThreatId ? masterThreats.find(threat => threat.id === targetThreatId) ?? null : null;
+  const selectedPublicThreat = targetThreatId ? publicThreats.find(threat => threat.id === targetThreatId) ?? null : null;
+  const selectedTargetName = selectedMasterThreat?.name ?? selectedPublicThreat?.name ?? null;
+  const targetSelectionMissing = Boolean(targetThreatId && !selectedTargetName);
+  const manualTarget = difficulty.trim() === "" ? null : Number(difficulty);
+  const target = targetThreatId ? selectedMasterThreat?.templateSnapshot.difficulty ?? null : manualTarget;
+  const targetValid = targetThreatId
+    ? !targetSelectionMissing
+    : manualTarget === null || (Number.isInteger(manualTarget) && manualTarget >= 1 && manualTarget <= 99);
   const experienceCost = experiences.length;
   const handConflict = kind === "attack" && weaponSlot === "secondary" && getPrimary(survivor?.primary ?? "")?.hands === "Duas";
-  const rollIssue = !targetValid
-    ? `Informe ${kind === "attack" ? "uma defesa" : "uma dificuldade"} inteira entre 1 e 99 ou deixe o campo vazio.`
+  const rollIssue = targetSelectionMissing
+    ? "O alvo selecionado não está mais disponível nesta Cena de Conflito."
+    : !targetValid
+      ? `Informe ${kind === "attack" ? "uma defesa" : "uma dificuldade"} inteira entre 1 e 99 ou deixe o campo vazio.`
     : experienceCost > (survivor?.hope ?? 0)
       ? "Esperança insuficiente para as Experiências declaradas."
       : kind === "attack" && !weapon
@@ -81,10 +97,14 @@ function RollForm({ game, edit, request, onCompleted }: { game: GameState; edit:
               : "";
   const canRoll = !rollIssue && !isRolling;
   const attackResult = last?.kind === "attack" && last.actorId === person && last.weaponName === weapon?.name ? last : null;
-  const attackHit = attackResult && targetValid ? resolveAttackHit(attackResult.outcome, target, confirmedHit) : null;
-  const displayedLast = last && attackResult ? { ...last, outcome: { ...last.outcome, difficulty: targetValid ? target : null, success: attackHit } } : last;
+  const attackHit = attackResult && targetValid
+    ? lastTargetResolution?.targetId === targetThreatId && targetThreatId
+      ? lastTargetResolution.hit
+      : resolveAttackHit(attackResult.outcome, target, confirmedHit)
+    : null;
+  const displayedLast = last && attackResult ? { ...last, outcome: { ...last.outcome, difficulty: targetThreatId ? null : targetValid ? target : null, success: attackHit } } : last;
 
-  function clearResult() { setLast(null); setLastDamage(null); setStandaloneDamage(null); setConfirmedHit(false); setRollError(""); }
+  function clearResult() { setLast(null); setLastDamage(null); setLastTargetResolution(null); setStandaloneDamage(null); setConfirmedHit(false); setRollError(""); }
 
   function calculateDamage(critical: boolean): DamageRecord | null {
     if (!survivor || !weapon || handConflict) return null;
@@ -100,10 +120,28 @@ function RollForm({ game, edit, request, onCompleted }: { game: GameState; edit:
 
   function damageLog(record: DamageRecord, status: string) {
     const situational = record.extra - record.equipment;
-    return `${survivor?.name ?? "Sobrevivente"}: ${record.weaponName} — ${record.formula}${record.equipment ? ` +${record.equipment} da Faca pequena` : ""}${situational ? ` ${situational >= 0 ? "+" : "−"}${Math.abs(situational)} situacional` : ""}${record.critical ? ` + ${record.criticalBonus} crítico` : ""} = ${record.total} dano físico (dados: ${record.dice.join(", ")}). ${status} Compare aos limiares do alvo; Barulho é aplicado por disparo e uma unidade física de munição é comprometida na primeira ação compatível da cena.`;
+    return `${survivor?.name ?? "Sobrevivente"}: ${record.weaponName} — ${record.formula}${record.equipment ? ` +${record.equipment} da Faca pequena` : ""}${situational ? ` ${situational >= 0 ? "+" : "−"}${Math.abs(situational)} situacional` : ""}${record.critical ? ` + ${record.criticalBonus} crítico` : ""} = ${record.total} dano físico (dados: ${record.dice.join(", ")}). ${status} Barulho é aplicado por disparo e uma unidade física de munição é comprometida na primeira ação compatível da cena.`;
   }
 
-  function rollAction(keepOpen = false) {
+  async function resolveSceneTarget(attackTotal: number, critical: boolean, damageTotal: number): Promise<ThreatAttackResolution | null> {
+    if (!targetThreatId) return null;
+    if (selectedMasterThreat) return resolveThreatAttack(selectedMasterThreat, attackTotal, critical, damageTotal);
+
+    const response = await fetch(`/api/campaign/target?campanha=${encodeURIComponent(game.campaignId)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ targetId: targetThreatId, attackTotal, critical, damageTotal }),
+    });
+    const payload = await response.json() as Partial<ThreatAttackResolution> & { error?: string };
+    if (!response.ok) throw new Error(payload.error || "Não foi possível resolver o alvo.");
+    if (typeof payload.targetId !== "string" || typeof payload.targetName !== "string" || typeof payload.hit !== "boolean"
+      || !payload.damageTier || typeof payload.damageTier.label !== "string" || !Number.isInteger(payload.damageTier.hpMarks)) {
+      throw new Error("A resposta do alvo veio incompleta.");
+    }
+    return payload as ThreatAttackResolution;
+  }
+
+  async function rollAction(keepOpen = false) {
     if (rollingRef.current) return;
     if (!canRoll) {
       if (rollIssue) setRollError(rollIssue);
@@ -112,60 +150,86 @@ function RollForm({ game, edit, request, onCompleted }: { game: GameState; edit:
     rollingRef.current = true;
     setIsRolling(true);
     setRollError("");
-    const traitBonus = survivor?.attributes[rollTrait] ?? 0;
-    const symptom = survivor?.infection === "Sintomático" && ["Agilidade", "Força"].includes(rollTrait) ? -1 : 0;
-    const other = Math.max(-99, Math.min(99, Math.trunc(Number(extra) || 0)));
-    const used = experienceOptions.filter(option => experiences.includes(option.id)).map(option => option.name);
-    const result = resolveActionRoll({
-      hopeDie: rollDie(12), fearDie: rollDie(12), trait: traitBonus, experience: used.length * 2,
-      other: other + equipmentBonus, symptom, edge, edgeDie: edge === "none" ? null : rollDie(6), difficulty: target,
-    });
-    const record: RollRecord = { outcome: result, kind, trait: rollTrait, traitBonus, weaponName: weapon?.name ?? null, actorId: person, experiences: used, symptom, other, equipment: equipmentBonus };
-    const lead = `${survivor?.name ?? "Rolagem livre"}: ${kind === "attack" ? `ataque com ${weapon?.name}` : kind === "reaction" ? "reação" : "ação"} (${traitLabel(rollTrait)})`;
-    const edgeLabel = result.edgeDie ? ` ${edge === "advantage" ? "+" : "−"} d6(${result.edgeDie})` : "";
-    const targetLabel = target === null ? kind === "attack" ? "Defesa a definir" : "Dificuldade a definir" : `${kind === "attack" ? "Defesa" : "Dificuldade"} ${target}`;
-    const experienceLabel = used.length ? ` · Experiências: ${used.join(" e ")} (−${used.length} Esperança)` : "";
-    const fixedBonus = traitBonus + used.length * 2 + other + symptom + equipmentBonus;
-    const text = `${lead}: Esperança ${result.hopeDie} + Medo ${result.fearDie} ${fixedBonus >= 0 ? "+" : "−"} ${Math.abs(fixedBonus)}${edgeLabel} = ${result.total}; ${targetLabel}. ${outcomeLabel(record)}${experienceLabel}${equipmentBonus ? ` · ${equipmentBonus} por equipamento` : ""}${symptom ? " · −1 por sintomas" : ""}${kind === "reaction" ? " · reação sem ganho de Esperança/Medo" : ""}.`;
-    const beforeHope = survivor?.hope ?? null;
-    const beforeStress = survivor?.stress ?? null;
-    const beforeFear = game.fear;
-    const resourcePreview = resolveRollResources({
-      hope: beforeHope, stress: beforeStress, fear: beforeFear,
-      experienceCost: used.length, reaction: kind === "reaction", outcome: result,
-    });
-    const damage = kind === "attack" ? calculateDamage(result.critical) : null;
-    const attackNoise = kind === "attack" ? attackResources.noise : 0;
-    const spendsAmmo = kind === "attack" && attackResources.spendsAmmo;
-    const damageStatus = result.success === false ? "Falha: dano rolado, não aplicado."
-      : result.success === null ? "Dano potencial; acerto pendente de confirmação."
-      : "Dano do acerto.";
-    edit(draft => {
-      const actor = draft.survivors.find(s => s.id === person);
-      if (actor) {
-        actor.hope = resourcePreview.hope!;
-        actor.stress = resourcePreview.stress!;
-      }
-      draft.fear = resourcePreview.fear;
-      const spent = kind === "attack" && weapon && actor
-        ? applyAttackResources(draft, actor.id, weapon.name, "noise" in weapon ? weapon.noise : 0)
+
+    try {
+      const traitBonus = survivor?.attributes[rollTrait] ?? 0;
+      const symptom = survivor?.infection === "Sintomático" && ["Agilidade", "Força"].includes(rollTrait) ? -1 : 0;
+      const other = Math.max(-99, Math.min(99, Math.trunc(Number(extra) || 0)));
+      const used = experienceOptions.filter(option => experiences.includes(option.id)).map(option => option.name);
+      const result = resolveActionRoll({
+        hopeDie: rollDie(12), fearDie: rollDie(12), trait: traitBonus, experience: used.length * 2,
+        other: other + equipmentBonus, symptom, edge, edgeDie: edge === "none" ? null : rollDie(6), difficulty: target,
+      });
+      const damage = kind === "attack" ? calculateDamage(result.critical) : null;
+      const sceneResolution = kind === "attack" && damage && targetThreatId
+        ? await resolveSceneTarget(result.total, result.critical, damage.total)
         : null;
-      if (kind === "attack" && spent && !spent.ok) return;
-      if (damage) addLog(draft, "dano", damageLog(damage, damageStatus), actor?.id);
-      addLog(draft, "dados", text +
-        (spendsAmmo ? ` · 1 unidade de Munição de ${ammoNeeded} comprometida até a próxima cena.` : ammoNeeded ? ` · Munição de ${ammoNeeded} já comprometida nesta cena.` : "") +
-        (attackNoise ? ` · Barulho +${attackNoise}.` : ""), actor?.id);
-    });
-    setLast(record); setLastDamage(damage); setStandaloneDamage(null); setConfirmedHit(false);
-    window.setTimeout(() => {
-      window.dispatchEvent(new CustomEvent("zona-morta:roll-completed"));
-      if (keepOpen) {
-        rollingRef.current = false;
-        setIsRolling(false);
-      } else {
-        onCompleted();
-      }
-    }, 80);
+      const resolvedOutcome = sceneResolution ? { ...result, success: sceneResolution.hit, difficulty: null } : result;
+      const record: RollRecord = { outcome: resolvedOutcome, kind, trait: rollTrait, traitBonus, weaponName: weapon?.name ?? null, actorId: person, experiences: used, symptom, other, equipment: equipmentBonus };
+      const lead = `${survivor?.name ?? "Rolagem livre"}: ${kind === "attack" ? `ataque com ${weapon?.name}` : kind === "reaction" ? "reação" : "ação"} (${traitLabel(rollTrait)})`;
+      const edgeLabel = result.edgeDie ? ` ${edge === "advantage" ? "+" : "−"} d6(${result.edgeDie})` : "";
+      const targetLabel = sceneResolution
+        ? `Alvo: ${sceneResolution.targetName}. Resultado contra o alvo: ${sceneResolution.hit ? "ACERTO" : "FALHA"}`
+        : target === null ? kind === "attack" ? "Defesa a definir" : "Dificuldade a definir" : `${kind === "attack" ? "Defesa" : "Dificuldade"} ${target}`;
+      const experienceLabel = used.length ? ` · Experiências: ${used.join(" e ")} (−${used.length} Esperança)` : "";
+      const fixedBonus = traitBonus + used.length * 2 + other + symptom + equipmentBonus;
+      const text = `${lead}: Esperança ${result.hopeDie} + Medo ${result.fearDie} ${fixedBonus >= 0 ? "+" : "−"} ${Math.abs(fixedBonus)}${edgeLabel} = ${result.total}; ${targetLabel}. ${outcomeLabel(record)}${experienceLabel}${equipmentBonus ? ` · ${equipmentBonus} por equipamento` : ""}${symptom ? " · −1 por sintomas" : ""}${kind === "reaction" ? " · reação sem ganho de Esperança/Medo" : ""}.`;
+      const beforeHope = survivor?.hope ?? null;
+      const beforeStress = survivor?.stress ?? null;
+      const beforeFear = game.fear;
+      const resourcePreview = resolveRollResources({
+        hope: beforeHope, stress: beforeStress, fear: beforeFear,
+        experienceCost: used.length, reaction: kind === "reaction", outcome: result,
+      });
+      const attackNoise = kind === "attack" ? attackResources.noise : 0;
+      const spendsAmmo = kind === "attack" && attackResources.spendsAmmo;
+      const tierText = sceneResolution
+        ? `Faixa de dano: ${sceneResolution.damageTier.label.toUpperCase()} (${sceneResolution.damageTier.hpMarks} PV).`
+        : "";
+      const damageStatus = sceneResolution
+        ? sceneResolution.hit
+          ? `Alvo: ${sceneResolution.targetName}. Acerto confirmado. ${tierText} Dano ainda não aplicado.`
+          : `Alvo: ${sceneResolution.targetName}. Falha: dano rolado, não aplicado. Faixa potencial: ${sceneResolution.damageTier.label.toUpperCase()} (${sceneResolution.damageTier.hpMarks} PV).`
+        : result.success === false ? "Falha: dano rolado, não aplicado."
+          : result.success === null ? "Dano potencial; acerto pendente de confirmação. Compare aos limiares do alvo."
+          : "Dano do acerto. Compare aos limiares do alvo.";
+
+      edit(draft => {
+        const actor = draft.survivors.find(s => s.id === person);
+        if (actor) {
+          actor.hope = resourcePreview.hope!;
+          actor.stress = resourcePreview.stress!;
+        }
+        draft.fear = resourcePreview.fear;
+        const spent = kind === "attack" && weapon && actor
+          ? applyAttackResources(draft, actor.id, weapon.name, "noise" in weapon ? weapon.noise : 0)
+          : null;
+        if (kind === "attack" && spent && !spent.ok) return;
+        if (damage) addLog(draft, "dano", damageLog(damage, damageStatus), actor?.id);
+        addLog(draft, "dados", text +
+          (spendsAmmo ? ` · 1 unidade de Munição de ${ammoNeeded} comprometida até a próxima cena.` : ammoNeeded ? ` · Munição de ${ammoNeeded} já comprometida nesta cena.` : "") +
+          (attackNoise ? ` · Barulho +${attackNoise}.` : ""), actor?.id);
+      });
+
+      setLast(record);
+      setLastDamage(damage);
+      setLastTargetResolution(sceneResolution);
+      setStandaloneDamage(null);
+      setConfirmedHit(false);
+      window.setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("zona-morta:roll-completed"));
+        if (keepOpen) {
+          rollingRef.current = false;
+          setIsRolling(false);
+        } else {
+          onCompleted();
+        }
+      }, 80);
+    } catch (error) {
+      setRollError(error instanceof Error ? error.message : "Não foi possível concluir a rolagem.");
+      rollingRef.current = false;
+      setIsRolling(false);
+    }
   }
 
   function rollStandaloneDamage() {
@@ -196,7 +260,16 @@ function RollForm({ game, edit, request, onCompleted }: { game: GameState; edit:
       }} placeholder="Rolagem livre" />}
       {kind === "attack" ? <Pick label="Arma equipada" value={weaponSlot} options={[{ value: "primary", label: survivor?.primary || "Primária" }, ...(survivor?.secondary ? [{ value: "secondary", label: survivor.secondary }] : [])]} onChange={value => { setWeaponSlot(value as "primary" | "secondary"); clearResult(); }} disabled={!survivor} />
         : <Pick label="Atributo" value={trait} options={traits.map(value => ({ value, label: traitLabel(value) }))} onChange={value => { setTrait(value); clearResult(); }} />}
-      <Field label={kind === "attack" ? "Defesa do alvo (opcional)" : "Dificuldade (opcional)"} value={difficulty} onChange={value => { setDifficulty(value); if (kind === "attack") setConfirmedHit(false); else clearResult(); }} type="number" placeholder="Mestre decide" />
+      {kind === "attack" && targetOptions.length > 0 && <Pick label="Alvo da Cena de Conflito" value={targetThreatId} options={targetOptions} onChange={value => { setTargetThreatId(value); setDifficulty(""); clearResult(); }} placeholder="Sem alvo definido" />}
+      {(kind !== "attack" || !targetThreatId) && <Field label={kind === "attack" ? "Defesa manual (opcional)" : "Dificuldade (opcional)"} value={difficulty} onChange={value => { setDifficulty(value); if (kind === "attack") setConfirmedHit(false); else clearResult(); }} type="number" placeholder="Mestre decide" />}
+      {kind === "attack" && targetThreatId && <div className="roll-target-locked">
+        <span>Alvo selecionado</span>
+        <strong>{selectedTargetName ?? "Alvo indisponível"}</strong>
+        <small>{selectedMasterThreat
+          ? `Dificuldade ${selectedMasterThreat.templateSnapshot.difficulty} · Limiares ${selectedMasterThreat.templateSnapshot.majorThreshold ?? "—"} / ${selectedMasterThreat.templateSnapshot.severeThreshold ?? "—"}`
+          : "Dificuldade e Limiares são resolvidos em sigilo pelo sistema."}</small>
+        <button type="button" onClick={() => { setTargetThreatId(""); clearResult(); }}>Usar defesa manual</button>
+      </div>}
     </div>
     {kind === "attack" && <div className="roll-weapon-note"><Crosshair size={17} aria-hidden="true" /><span>{weapon ? `${weapon.name} · ${traitLabel(rollTrait)} ${survivor && survivor.attributes[rollTrait] >= 0 ? "+" : ""}${survivor?.attributes[rollTrait] ?? 0} · ${weapon.range} · ${weapon.damage}` : "Escolha um sobrevivente e sua arma equipada."}</span></div>}
     {equipmentBonus !== 0 && <p className="roll-hint">{survivor?.protection}: {equipmentBonus} em {traitLabel(rollTrait)}, já incluído nesta rolagem.</p>}
@@ -229,13 +302,13 @@ function RollForm({ game, edit, request, onCompleted }: { game: GameState; edit:
         <button type="button" key={value} aria-pressed={edge === value} onClick={() => { setEdge(value); clearResult(); }}>{label}</button>)}
     </div></div>
     {kind === "reaction" && <p className="roll-hint">Reações não geram Esperança ou Medo. Um crítico não recupera Estresse.</p>}
-    {!targetValid && <p className="text-sm text-red-700" role="alert">Informe {kind === "attack" ? "uma defesa" : "uma dificuldade"} inteira entre 1 e 99 ou deixe o campo vazio.</p>}
+    {!targetValid && <p className="text-sm text-red-700" role="alert">{targetSelectionMissing ? "O alvo selecionado não está mais disponível." : <>Informe {kind === "attack" ? "uma defesa" : "uma dificuldade"} inteira entre 1 e 99 ou deixe o campo vazio.</>}</p>}
     {rollError && <p className="roll-error" role="alert">{rollError}</p>}
     <div className="roll-actions"><Button disabled={!canRoll} aria-busy={isRolling} onClick={event => rollAction(event.shiftKey)}><Dice5 size={17} /> {isRolling ? "Rolando…" : <>Rolar {kind === "attack" ? "ataque + dano" : kind === "reaction" ? "reação" : "Esperança/Medo"}{experienceCost ? ` · ${experienceCost} Esperança` : ""}{kind === "attack" && attackResources.spendsAmmo ? " · 1 munição" : ""}</>}</Button>
       {survivor && <span>Esperança atual: <b>{survivor.hope}/6</b></span>}
       <small className="roll-shortcut-hint">Enter rola · Shift + clique mantém aberto</small></div>
     {displayedLast && <div className="roll-result" role="status" aria-live="polite">
-      <div className="roll-result-heading"><b>{outcomeLabel(displayedLast)}</b><span>{displayedLast.outcome.difficulty === null ? kind === "attack" ? "Defesa não informada" : "Dificuldade não informada" : `contra ${displayedLast.outcome.difficulty}`}</span></div>
+      <div className="roll-result-heading"><b>{outcomeLabel(displayedLast)}</b><span>{lastTargetResolution ? `contra ${lastTargetResolution.targetName}` : displayedLast.outcome.difficulty === null ? kind === "attack" ? "Defesa não informada" : "Dificuldade não informada" : `contra ${displayedLast.outcome.difficulty}`}</span></div>
       <div className="roll-dice"><div className="hope"><Sparkles size={15} aria-hidden="true" /><span>Esperança</span><strong>{last.outcome.hopeDie}</strong></div><div className="fear"><Zap size={15} aria-hidden="true" /><span>Medo</span><strong>{last.outcome.fearDie}</strong></div><div className="total"><span>Total</span><strong>{last.outcome.total}</strong></div></div>
       <p className="roll-breakdown">{traitLabel(last.trait)}: {last.traitBonus >= 0 ? "+" : ""}{last.traitBonus} · Experiências: +{last.experiences.length * 2}{last.experiences.length ? ` (−${last.experiences.length} Esperança)` : ""} · outros: {last.other >= 0 ? "+" : ""}{last.other}{last.equipment ? ` · equipamento: ${last.equipment}` : ""}{last.symptom ? " · sintomas: −1" : ""}{last.outcome.edgeDie ? ` · ${last.outcome.edge === "advantage" ? "vantagem" : "desvantagem"}: ${last.outcome.edge === "advantage" ? "+" : "−"}${last.outcome.edgeDie}` : ""}.</p>
       <p className="roll-hint">{last.kind === "reaction" ? "Reação: nenhum recurso gerado." : last.outcome.critical ? "Crítico: +1 Esperança e limpa 1 Estresse (respeitando os limites)." : last.outcome.with === "Hope" ? "+1 Esperança (até o limite de 6)." : "+1 Medo para o mestre (até o limite de 12)."} O mestre descreve a consequência na ficção.</p>
@@ -245,11 +318,11 @@ function RollForm({ game, edit, request, onCompleted }: { game: GameState; edit:
         {attackHit === null && !targetValid ? <p className="roll-hint" role="alert">Corrija a defesa para avaliar o acerto; os dados já rolados serão mantidos.</p> : null}
         {attackHit === null && targetValid && <p className="roll-hint">Acerto a confirmar · dano potencial. Informe a defesa acima ou confirme o acerto com o mestre antes de aplicá-lo.</p>}
         {attackHit === false && <p className="roll-hint" role="status">Falha · dano rolado, não aplicado.</p>}
-        {attackHit === true && <p className="roll-hint" role="status">{lastDamage.critical ? "Crítico: acerto automático" : "Acerto confirmado"} · dano aplicável após comparar aos limiares.</p>}
-        {target === null && targetValid && !attackResult.outcome.critical && <label className="roll-confirm"><Checkbox checked={confirmedHit} onCheckedChange={checked => setConfirmedHit(checked === true)} /> Mestre confirmou o acerto sem defesa informada</label>}
+        {attackHit === true && <p className="roll-hint" role="status">{lastDamage.critical ? "Crítico: acerto automático" : "Acerto confirmado"}{lastTargetResolution ? ` · Dano ${lastTargetResolution.damageTier.label} → ${lastTargetResolution.damageTier.hpMarks} PV a marcar` : " · dano aplicável após comparar aos limiares"}.</p>}
+        {target === null && targetValid && !targetThreatId && !attackResult.outcome.critical && <label className="roll-confirm"><Checkbox checked={confirmedHit} onCheckedChange={checked => setConfirmedHit(checked === true)} /> Mestre confirmou o acerto sem defesa informada</label>}
         <output className={`roll-damage-result${attackHit === false ? " is-miss" : attackHit === null ? " is-pending" : ""}`}><strong>{lastDamage.total} dano físico{attackHit === false ? " · não aplicado" : attackHit === null ? " · potencial" : ""}</strong><span>{lastDamage.formula}{lastDamage.equipment ? ` +${lastDamage.equipment} equipamento` : ""}{lastDamage.extra - lastDamage.equipment ? ` ${lastDamage.extra - lastDamage.equipment >= 0 ? "+" : "−"} ${Math.abs(lastDamage.extra - lastDamage.equipment)} situacional` : ""}{lastDamage.critical ? ` + ${lastDamage.criticalBonus} crítico` : ""} · dados {lastDamage.dice.join(", ")}</span></output>
       </>}
-      <p className="roll-hint">Compare o dano aos limiares do alvo. O sistema aplica o Barulho da arma a cada ação de disparo e compromete 1 unidade física compatível apenas na primeira ação daquele tipo de munição na cena; ela é consumida ao iniciar a próxima cena.</p>
+      <p className="roll-hint">{lastTargetResolution ? "A faixa de dano foi calculada automaticamente, mas nenhum PV foi marcado no alvo nesta etapa." : "Sem um alvo da Cena de Conflito, compare o dano aos limiares manualmente."} O sistema aplica o Barulho da arma a cada ação de disparo e compromete 1 unidade física compatível apenas na primeira ação daquele tipo de munição na cena; ela é consumida ao iniciar a próxima cena.</p>
     </div>}
   </div>;
 }
