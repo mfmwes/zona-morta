@@ -47,6 +47,8 @@ export type ConflictScene = {
   threats: ThreatInstance[];
   spotlight: ConflictParticipantRef | null;
   spotlightHistory: SpotlightHistoryEntry[];
+  /** Sobreviventes que sinalizaram interesse em receber o spotlight. Não representa fila ou iniciativa. */
+  spotlightRequests?: string[];
   /** IDs das rolagens de ataque cujo dano já foi confirmado pelo mestre. */
   appliedAttackLogIds?: string[];
   /** Dano de ameaça aguardando decisão do sobrevivente (PV ou Armadura). */
@@ -80,6 +82,7 @@ export type PublicConflictScene = {
   survivors: PublicConflictSurvivor[];
   threats: PublicConflictThreat[];
   spotlight: ConflictParticipantRef | null;
+  spotlightRequested: boolean;
   pendingDamage: PublicConflictDamageRequest[];
 };
 
@@ -129,6 +132,7 @@ export function publicConflictScene(
     survivors: publicSurvivors,
     threats: publicThreats,
     spotlight,
+    spotlightRequested: Boolean(viewerSurvivorId && scene.spotlightRequests?.includes(viewerSurvivorId)),
     pendingDamage,
   };
 }
@@ -161,6 +165,7 @@ export function createConflictScene(input: {
     threats: [],
     spotlight: null,
     spotlightHistory: [],
+    spotlightRequests: [],
     appliedAttackLogIds: [],
     damageRequests: [],
     notes: "",
@@ -216,6 +221,34 @@ export function setConflictSpotlight(
 
 export function clearConflictSpotlight(scene: ConflictScene) {
   scene.spotlight = null;
+}
+
+
+export function requestConflictSpotlight(scene: ConflictScene, survivorId: string) {
+  if (!scene.active || !scene.survivorIds.includes(survivorId)) return false;
+  scene.spotlightRequests ??= [];
+  if (scene.spotlightRequests.includes(survivorId)) return false;
+  scene.spotlightRequests.push(survivorId);
+  scene.spotlightRequests = scene.spotlightRequests.slice(-30);
+  return true;
+}
+
+export function cancelConflictSpotlightRequest(scene: ConflictScene, survivorId: string) {
+  const before = scene.spotlightRequests?.length ?? 0;
+  scene.spotlightRequests = (scene.spotlightRequests ?? []).filter(id => id !== survivorId);
+  return scene.spotlightRequests.length !== before;
+}
+
+export function grantConflictSpotlight(
+  scene: ConflictScene,
+  survivorId: string,
+  name: string,
+  day: number,
+  time: string,
+) {
+  const changed = setConflictSpotlight(scene, { kind: "survivor", id: survivorId }, name, day, time);
+  cancelConflictSpotlightRequest(scene, survivorId);
+  return changed;
 }
 
 
