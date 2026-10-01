@@ -221,7 +221,7 @@ test('jogador cria ficha válida sem poder injetar recursos ou escolhas fora do 
     personal: content.personal[0].name, hp: 99, hope: 99, inventory: [{ name: 'Injetado' }], id: 'roubado' };
   const created = createSurvivorFromDraft(draft);
   assert.ok(created);
-  assert.notEqual(created.id, 'roubado'); assert.equal(created.hp, 0); assert.equal(created.hope, 2);
+  assert.notEqual(created.id, 'roubado'); assert.equal(created.hp, 0); assert.equal(created.stress, 0); assert.equal(created.hope, 0);
   assert.deepEqual(created.inventory, []);
   assert.equal(createSurvivorFromDraft({ ...draft, attributes: { ...draft.attributes, Força: 2 } }), null);
   assert.equal(createSurvivorFromDraft({ ...draft, techniques: [draft.techniques[0], draft.techniques[0]] }), null);
