@@ -28,6 +28,8 @@ export type ConflictScene = {
   threats: ThreatInstance[];
   spotlight: ConflictParticipantRef | null;
   spotlightHistory: SpotlightHistoryEntry[];
+  /** IDs das rolagens de ataque cujo dano já foi confirmado pelo mestre. */
+  appliedAttackLogIds?: string[];
   notes: string;
 };
 
@@ -119,6 +121,7 @@ export function createConflictScene(input: {
     threats: [],
     spotlight: null,
     spotlightHistory: [],
+    appliedAttackLogIds: [],
     notes: "",
   };
 }
@@ -186,6 +189,79 @@ export function setThreatStressMarked(threat: ThreatInstance, marked: number) {
   const max = threat.templateSnapshot.maxStress;
   if (max === null) return;
   threat.stressMarked = Math.max(0, Math.min(max, Math.trunc(marked || 0)));
+}
+
+
+export function applyThreatDamage(scene: ConflictScene, targetId: string, hpMarks: number, resolutionId: string) {
+  const marks = Math.max(0, Math.min(3, Math.trunc(hpMarks || 0)));
+  if (!scene.active || marks <= 0 || !resolutionId) return { ok: false as const, reason: "invalid" as const };
+  scene.appliedAttackLogIds ??= [];
+  if (scene.appliedAttackLogIds.includes(resolutionId))
+    return { ok: false as const, reason: "already-applied" as const };
+
+  const threat = scene.threats.find(row => row.id === targetId);
+  if (!threat || threat.defeated || threat.templateSnapshot.maxHp === null)
+    return { ok: false as const, reason: "target-unavailable" as const };
+
+  const before = threat.hpMarked;
+  setThreatHpMarked(threat, before + marks);
+  scene.appliedAttackLogIds.push(resolutionId);
+  scene.appliedAttackLogIds = scene.appliedAttackLogIds.slice(-160);
+  return {
+    ok: true as const,
+    targetId: threat.id,
+    targetName: threat.name,
+    hpMarks: threat.hpMarked - before,
+    totalMarked: threat.hpMarked,
+    maxHp: threat.templateSnapshot.maxHp,
+    defeated: threat.defeated,
+  };
+}
+
+export function addThreatCondition(threat: ThreatInstance, condition: string) {
+  const normalized = condition.trim().replace(/\s+/g, " ").slice(0, 100);
+  if (!normalized) return false;
+  if (threat.conditions.some(value => value.toLocaleLowerCase("pt-BR") === normalized.toLocaleLowerCase("pt-BR"))) return false;
+  if (threat.conditions.length >= 20) return false;
+  threat.conditions.push(normalized);
+  return true;
+}
+
+export function removeThreatCondition(threat: ThreatInstance, condition: string) {
+  const index = threat.conditions.findIndex(value => value === condition);
+  if (index < 0) return false;
+  threat.conditions.splice(index, 1);
+  return true;
+}
+
+export type SurvivorDamageTier = {
+  key: "none" | "minor" | "major" | "severe";
+  label: "Sem dano" | "Menor" | "Maior" | "Severo";
+  hpMarks: 0 | 1 | 2 | 3;
+};
+
+export function resolveSurvivorDamageTier(majorThreshold: number, severeThreshold: number, damage: number): SurvivorDamageTier {
+  const amount = Math.max(0, Math.trunc(damage || 0));
+  if (amount <= 0) return { key: "none", label: "Sem dano", hpMarks: 0 };
+  if (amount >= severeThreshold) return { key: "severe", label: "Severo", hpMarks: 3 };
+  if (amount >= majorThreshold) return { key: "major", label: "Maior", hpMarks: 2 };
+  return { key: "minor", label: "Menor", hpMarks: 1 };
+}
+
+export function parseThreatDamageFormula(formula: string) {
+  const value = formula.trim();
+  if (!value || /sem dano/i.test(value)) return { dice: 0, die: 0, flat: 0 };
+  const dice = value.match(/^(\d*)d(\d+)([+-]\d+)?$/i);
+  if (dice) {
+    const count = Math.max(1, Math.min(20, Number(dice[1] || 1)));
+    const die = Number(dice[2]);
+    const flat = Number(dice[3] ?? 0);
+    if (!Number.isInteger(die) || die < 2 || die > 100) return null;
+    return { dice: count, die, flat };
+  }
+  const flat = Number(value);
+  if (Number.isFinite(flat)) return { dice: 0, die: 0, flat: Math.trunc(flat) };
+  return null;
 }
 
 
