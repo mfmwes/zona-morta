@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Crosshair, Dice5, Flame, Sparkles, Swords, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RollDialog } from "@/components/roll-dialog";
+import { localizeRollLog } from "@/lib/terminology";
 import type { GameState } from "@/lib/game";
 
 type Edit = (fn: (draft: GameState) => void) => void;
@@ -20,18 +21,19 @@ function actorLabel(game: GameState, entry: LogEntry) {
 }
 
 function outcome(entry: LogEntry) {
+  const text = localizeRollLog(entry.text);
   if (entry.kind === "dano") {
-    if (/não aplicado/i.test(entry.text)) return { label: "Não aplicado", tone: "neutral" } as const;
-    if (/acerto pendente/i.test(entry.text)) return { label: "Dano potencial", tone: "neutral" } as const;
+    if (/não aplicado/i.test(text)) return { label: "Não aplicado", tone: "neutral" } as const;
+    if (/acerto pendente/i.test(text)) return { label: "Dano potencial", tone: "neutral" } as const;
     return { label: "Dano", tone: "damage" } as const;
   }
-  if (/Sucesso crítico/i.test(entry.text)) return { label: "Crítico", tone: "critical" } as const;
-  if (/Falha com Fear/i.test(entry.text)) return { label: "Falha · Fear", tone: "fear" } as const;
-  if (/Falha com Hope/i.test(entry.text)) return { label: "Falha · Hope", tone: "hope" } as const;
-  if (/Sucesso com Fear/i.test(entry.text)) return { label: "Sucesso · Fear", tone: "fear" } as const;
-  if (/Sucesso com Hope/i.test(entry.text)) return { label: "Sucesso · Hope", tone: "hope" } as const;
-  if (/com Fear/i.test(entry.text)) return { label: "Fear", tone: "fear" } as const;
-  if (/com Hope/i.test(entry.text)) return { label: "Hope", tone: "hope" } as const;
+  if (/Sucesso crítico/i.test(text)) return { label: "Crítico", tone: "critical" } as const;
+  if (/Falha com Medo/i.test(text)) return { label: "Falha · Medo", tone: "fear" } as const;
+  if (/Falha com Esperança/i.test(text)) return { label: "Falha · Esperança", tone: "hope" } as const;
+  if (/Sucesso com Medo/i.test(text)) return { label: "Sucesso · Medo", tone: "fear" } as const;
+  if (/Sucesso com Esperança/i.test(text)) return { label: "Sucesso · Esperança", tone: "hope" } as const;
+  if (/com Medo/i.test(text)) return { label: "Medo", tone: "fear" } as const;
+  if (/com Esperança/i.test(text)) return { label: "Esperança", tone: "hope" } as const;
   return { label: "Rolagem", tone: "neutral" } as const;
 }
 
@@ -54,9 +56,9 @@ export function RollCenter({ game, edit, role, survivorId }: {
     || (filter === "damage" && entry.kind === "dano")).slice(0, 60), [rollLog, filter]);
 
   const actionRolls = rollLog.filter(entry => entry.kind === "dados");
-  const hope = actionRolls.filter(entry => /com Hope/i.test(entry.text) || /Sucesso crítico/i.test(entry.text)).length;
-  const fear = actionRolls.filter(entry => /com Fear/i.test(entry.text)).length;
-  const critical = actionRolls.filter(entry => /Sucesso crítico/i.test(entry.text)).length;
+  const hope = actionRolls.filter(entry => /com Esperança/i.test(localizeRollLog(entry.text)) || /Sucesso crítico/i.test(localizeRollLog(entry.text))).length;
+  const fear = actionRolls.filter(entry => /com Medo/i.test(localizeRollLog(entry.text))).length;
+  const critical = actionRolls.filter(entry => /Sucesso crítico/i.test(localizeRollLog(entry.text))).length;
   const playerRequest = role === "jogador" && survivorId ? { survivorId } : undefined;
 
   return <div className="grid gap-5">
@@ -72,8 +74,8 @@ export function RollCenter({ game, edit, role, survivorId }: {
 
       <div className="grid gap-3 mt-5 sm:grid-cols-2 xl:grid-cols-4">
         <div className="metric"><span className="smallcaps subtle flex items-center gap-2"><Dice5 size={15} /> Rolagens</span><strong>{actionRolls.length}</strong></div>
-        <div className="metric"><span className="smallcaps subtle flex items-center gap-2"><Sparkles size={15} /> Com Hope</span><strong>{hope}</strong></div>
-        <div className="metric"><span className="smallcaps subtle flex items-center gap-2"><Zap size={15} /> Com Fear</span><strong>{fear}</strong></div>
+        <div className="metric"><span className="smallcaps subtle flex items-center gap-2"><Sparkles size={15} /> Com Esperança</span><strong>{hope}</strong></div>
+        <div className="metric"><span className="smallcaps subtle flex items-center gap-2"><Zap size={15} /> Com Medo</span><strong>{fear}</strong></div>
         <div className="metric"><span className="smallcaps subtle flex items-center gap-2"><Flame size={15} /> Críticos</span><strong>{critical}</strong></div>
       </div>
     </section>
@@ -115,7 +117,7 @@ export function RollCenter({ game, edit, role, survivorId }: {
               </div>
               {damage && <strong className="text-xl font-mono">{damage} <span className="text-xs font-normal subtle">{result.label === "Não aplicado" ? "não aplicado" : result.label === "Dano potencial" ? "potencial" : "dano"}</span></strong>}
             </div>
-            <p className="text-sm leading-relaxed mt-3">{entry.text}</p>
+            <p className="text-sm leading-relaxed mt-3">{localizeRollLog(entry.text)}</p>
           </article>;
         })}
       </div>}

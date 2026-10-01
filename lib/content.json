@@ -5,7 +5,7 @@
       "name": "Docente",
       "experience": "Ensinar procedimentos.",
       "feature": "Explicação clara",
-      "effect": "uma vez por cena, antes de um aliado Perto rolar para executar algo que você sabe explicar, marque 1 Stress para conceder +1 à rolagem.",
+      "effect": "uma vez por cena, antes de um aliado Perto rolar para executar algo que você sabe explicar, marque 1 Estresse para conceder +1 à rolagem.",
       "past": "Qual aluno você ainda procura?"
     },
     {
@@ -21,7 +21,7 @@
       "name": "Profissional de enfermagem",
       "experience": "Triagem de plantão.",
       "feature": "Cuidado imediato",
-      "effect": "uma vez por cena, use uma ação e material médico adequado para cuidar de alguém com dor ou em choque; essa pessoa limpa 1 Stress, sem recuperar HP.",
+      "effect": "uma vez por cena, use uma ação e material médico adequado para cuidar de alguém com dor ou em choque; essa pessoa limpa 1 Estresse, sem recuperar PV.",
       "past": "Qual paciente você prometeu reencontrar?"
     },
     {
@@ -37,7 +37,7 @@
       "name": "Cuidador(a)",
       "experience": "Manter rotinas de cuidado.",
       "feature": "Presença constante",
-      "effect": "uma vez por descanso longo, quando ajudar outra pessoa a comer, beber e repousar em segurança, ela limpa 1 Stress adicional. Os mantimentos são consumidos normalmente.",
+      "effect": "uma vez por descanso longo, quando ajudar outra pessoa a comer, beber e repousar em segurança, ela limpa 1 Estresse adicional. Os mantimentos são consumidos normalmente.",
       "past": "Por quem você ainda se sente responsável?"
     },
     {
@@ -69,7 +69,7 @@
       "name": "Militar",
       "experience": "Organizar um perímetro.",
       "feature": "Aviso de cobertura",
-      "effect": "uma vez por cena, antes de um ataque visível contra um aliado Perto, marque 1 Stress para conceder +1 Evasion a ele contra esse ataque.",
+      "effect": "uma vez por cena, antes de um ataque visível contra um aliado Perto, marque 1 Estresse para conceder +1 Evasão a ele contra esse ataque.",
       "past": "Qual ordem você se arrepende de ter cumprido?"
     },
     {
@@ -141,7 +141,7 @@
       "name": "Trabalhador(a) da construção",
       "experience": "Escorar estruturas.",
       "feature": "Escora provisória",
-      "effect": "uma vez por cena, use uma ação, materiais ao alcance e 1 Stress para conter um risco localizado de desabamento até o fim da cena, se a estrutura puder ser escorada. O reparo definitivo permanece necessário.",
+      "effect": "uma vez por cena, use uma ação, materiais ao alcance e 1 Estresse para conter um risco localizado de desabamento até o fim da cena, se a estrutura puder ser escorada. O reparo definitivo permanece necessário.",
       "past": "Quem ficou preso na obra?"
     },
     {
@@ -157,7 +157,7 @@
       "name": "Cozinheiro(a)",
       "experience": "Preparar refeições com pouco.",
       "feature": "Comida de verdade",
-      "effect": "uma vez por descanso longo, ao preparar e repartir pelo menos duas porções com utensílios e insumos adequados, escolha uma pessoa que comeu: ela limpa 1 Stress. A preparação e o consumo seguem as regras normais.",
+      "effect": "uma vez por descanso longo, ao preparar e repartir pelo menos duas porções com utensílios e insumos adequados, escolha uma pessoa que comeu: ela limpa 1 Estresse. A preparação e o consumo seguem as regras normais.",
       "past": "Para quem você costumava cozinhar?"
     },
     {
@@ -197,7 +197,7 @@
       "name": "Assistente social",
       "experience": "Escutar pessoas em crise.",
       "feature": "Ajuda concreta",
-      "effect": "uma vez por cena, depois que uma pessoa aceitar conversar sobre um problema, marque 1 Stress para que ela limpe 1 Stress e diga qual ajuda concreta aceitaria agora. Ela conserva o direito de recusar outras propostas.",
+      "effect": "uma vez por cena, depois que uma pessoa aceitar conversar sobre um problema, marque 1 Estresse para que ela limpe 1 Estresse e diga qual ajuda concreta aceitaria agora. Ela conserva o direito de recusar outras propostas.",
       "past": "Que família você tentava reunir?"
     },
     {
@@ -213,7 +213,7 @@
       "name": "Guia de trilhas",
       "experience": "Orientar caminhadas.",
       "feature": "Recuperar a direção",
-      "effect": "uma vez por expedição, quando uma rota incerta levaria a atraso ou acesso pior, marque 1 Stress para encontrar uma passagem plausível e evitar até 30 minutos de atraso ou chegar pelo acesso planejado. Não atravessa um bloqueio completo nem altera Hope/Fear da rolagem que revelou o problema.",
+      "effect": "uma vez por expedição, quando uma rota incerta levaria a atraso ou acesso pior, marque 1 Estresse para encontrar uma passagem plausível e evitar até 30 minutos de atraso ou chegar pelo acesso planejado. Não atravessa um bloqueio completo nem altera Esperança/Medo da rolagem que revelou o problema.",
       "past": "Quem você guiava quando o surto começou?"
     },
     {
@@ -221,7 +221,7 @@
       "name": "Atleta",
       "experience": "Treinar resistência física.",
       "feature": "Segundo fôlego",
-      "effect": "uma vez por cena, quando for marcar Stress especificamente por correr, escalar, nadar ou esforço físico semelhante, evite 1 Stress dessa marcação. Não se aplica a medo, ferimentos ou privação.",
+      "effect": "uma vez por cena, quando for marcar Estresse especificamente por correr, escalar, nadar ou esforço físico semelhante, evite 1 Estresse dessa marcação. Não se aplica a medo, ferimentos ou privação.",
       "past": "Por quem você continuava competindo?"
     },
     {
@@ -229,7 +229,7 @@
       "name": "Artista",
       "experience": "Prender a atenção de um público.",
       "feature": "Todos olham para cá",
-      "effect": "uma vez por cena, ao atrair de modo plausível a atenção de pessoas ou infectados, marque 1 Stress para conceder +1 à próxima rolagem de Finesse de um aliado Perto que aproveite a distração. A ação ainda produz o Barulho correspondente.",
+      "effect": "uma vez por cena, ao atrair de modo plausível a atenção de pessoas ou infectados, marque 1 Estresse para conceder +1 à próxima rolagem de Acuidade de um aliado Perto que aproveite a distração. A ação ainda produz o Barulho correspondente.",
       "past": "Qual apresentação foi interrompida?"
     },
     {
@@ -237,7 +237,7 @@
       "name": "Pai de Família",
       "experience": "Proteger quem depende de mim.",
       "feature": "Fique comigo",
-      "effect": "uma vez por cena, antes de um aliado Perto rolar para alcançar, amparar ou retirar outra pessoa de um perigo imediato, marque 1 Stress para conceder +1 à rolagem. A característica não elimina obstáculos entre eles.",
+      "effect": "uma vez por cena, antes de um aliado Perto rolar para alcançar, amparar ou retirar outra pessoa de um perigo imediato, marque 1 Estresse para conceder +1 à rolagem. A característica não elimina obstáculos entre eles.",
       "past": "Quem ainda espera que você volte?"
     }
   ],
@@ -251,7 +251,7 @@
         "Manobra"
       ],
       "feature": "Cobrir retirada",
-      "effect": "uma vez por cena, quando um aliado se retirar sob ameaça de um inimigo ao seu alcance, gaste 1 Hope para impor desvantagem ao próximo ataque desse inimigo contra ele nesta cena.",
+      "effect": "uma vez por cena, quando um aliado se retirar sob ameaça de um inimigo ao seu alcance, gaste 1 Esperança para impor desvantagem ao próximo ataque desse inimigo contra ele nesta cena.",
       "specialties": [
         {
           "name": "Defensor",
@@ -259,10 +259,10 @@
         },
         {
           "name": "Atirador",
-          "effect": "uma vez por cena, quando disparar uma arma de fogo de posição estável e com linha de visão, marque 1 Stress para receber vantagem nesse ataque, sem ação prévia de mira. Munição e Barulho seguem normais."
+          "effect": "uma vez por cena, quando disparar uma arma de fogo de posição estável e com linha de visão, marque 1 Estresse para receber vantagem nesse ataque, sem ação prévia de mira. Munição e Barulho seguem normais."
         }
       ],
-      "hopeFeature": "Forçar abertura: depois de acertar um ataque com arma, gaste 3 Hope para rolar mais um dado de dano da arma, sem repetir o bônus fixo, e permitir que um aliado Perto alcance cobertura transitável Muito perto dele, sem rolagem adicional apenas de movimento. Não atravessa bloqueios nem cancela ataques já resolvidos."
+      "hopeFeature": "Forçar abertura: depois de acertar um ataque com arma, gaste 3 Esperança para rolar mais um dado de dano da arma, sem repetir o bônus fixo, e permitir que um aliado Perto alcance cobertura transitável Muito perto dele, sem rolagem adicional apenas de movimento. Não atravessa bloqueios nem cancela ataques já resolvidos."
     },
     {
       "name": "Sobrevivente",
@@ -273,18 +273,18 @@
         "Manobra"
       ],
       "feature": "Insistir",
-      "effect": "uma vez por cena, após falhar numa ação para escapar, resistir ao ambiente ou proteger alguém, marque 1 Stress para somar +2 ao total; Hope/Fear da rolagem não muda.",
+      "effect": "uma vez por cena, após falhar numa ação para escapar, resistir ao ambiente ou proteger alguém, marque 1 Estresse para somar +2 ao total; Esperança/Medo da rolagem não muda.",
       "specialties": [
         {
           "name": "Resiliente",
-          "effect": "uma vez por descanso curto, ao limpar Stress, limpe +1."
+          "effect": "uma vez por descanso curto, ao limpar Estresse, limpe +1."
         },
         {
           "name": "Carregador",
           "effect": "sempre que preparar a carga, receba +1 espaço de carga sem penalidade."
         }
       ],
-      "hopeFeature": "Ainda de pé: quando você marcaria seu último HP ou seu último espaço de Stress, gaste 3 Hope para marcar 1 a menos dessa consequência, mínimo 0, e mova-se até cobertura acessível Muito perto. Não impede Exposição ou outra consequência separada."
+      "hopeFeature": "Ainda de pé: quando você marcaria seu último PV ou seu último espaço de Estresse, gaste 3 Esperança para marcar 1 a menos dessa consequência, mínimo 0, e mova-se até cobertura acessível Muito perto. Não impede Exposição ou outra consequência separada."
     },
     {
       "name": "Socorrista",
@@ -295,18 +295,18 @@
         "Conexão"
       ],
       "feature": "Primeiros socorros",
-      "effect": "uma vez por cena, com material médico adequado e uma ação fora de ataque, marque 1 Stress para limpar 1 HP de alguém ao alcance; uma jogada de morte já realizada exige situação plausível para socorro.",
+      "effect": "uma vez por cena, com material médico adequado e uma ação fora de ataque, marque 1 Estresse para limpar 1 PV de alguém ao alcance; uma jogada de morte já realizada exige situação plausível para socorro.",
       "specialties": [
         {
           "name": "Urgencista",
-          "effect": "ao aplicar Primeiros socorros num paciente com pelo menos metade do HP total marcado (arredonde para cima), limpe 2 HP, em vez de 1."
+          "effect": "ao aplicar Primeiros socorros num paciente com pelo menos metade do PV total marcado (arredonde para cima), limpe 2 PV, em vez de 1."
         },
         {
           "name": "Acolhedor",
-          "effect": "uma vez por cena, após conversar com alguém em segurança, gaste 1 Hope para essa pessoa limpar 1 Stress."
+          "effect": "uma vez por cena, após conversar com alguém em segurança, gaste 1 Esperança para essa pessoa limpar 1 Estresse."
         }
       ],
-      "hopeFeature": "Atendimento conjunto: com material médico adequado, gaste 3 Hope e uma ação para que até duas pessoas Muito perto limpem, cada uma, 1 HP ou 1 Stress à escolha delas. Não substitui tratamento de Exposição nem se soma a Primeiros socorros no mesmo paciente e cena."
+      "hopeFeature": "Atendimento conjunto: com material médico adequado, gaste 3 Esperança e uma ação para que até duas pessoas Muito perto limpem, cada uma, 1 PV ou 1 Estresse à escolha delas. Não substitui tratamento de Exposição nem se soma a Primeiros socorros no mesmo paciente e cena."
     },
     {
       "name": "Mecânico",
@@ -317,18 +317,18 @@
         "Exploração"
       ],
       "feature": "Reparo improvisado",
-      "effect": "uma vez por cena, com ferramentas e acesso plausíveis, marque 1 Stress para manter veículo, porta ou aparelho danificado funcionando até o fim da cena; o reparo permanente continua um projeto. Em veículo de Condição 0, isso permite uma última partida, até um hex, sem repetir para o mesmo defeito antes de reparo definitivo.",
+      "effect": "uma vez por cena, com ferramentas e acesso plausíveis, marque 1 Estresse para manter veículo, porta ou aparelho danificado funcionando até o fim da cena; o reparo permanente continua um projeto. Em veículo de Condição 0, isso permite uma última partida, até um hex, sem repetir para o mesmo defeito antes de reparo definitivo.",
       "specialties": [
         {
           "name": "Operador",
-          "effect": "uma vez por cena, ao conduzir veículo ou operar máquina sob pressão, marque 1 Stress para evitar 1 perda de Condição ou receber +2 na rolagem de controle."
+          "effect": "uma vez por cena, ao conduzir veículo ou operar máquina sob pressão, marque 1 Estresse para evitar 1 perda de Condição ou receber +2 na rolagem de controle."
         },
         {
           "name": "Construtor",
           "effect": "uma vez por descanso longo, quando fizer Trabalhar em projeto num abrigo, veículo ou instalação, conte esse avanço como dois, em vez de um."
         }
       ],
-      "hopeFeature": "Fôlego da máquina: com ferramentas e acesso, gaste 3 Hope e uma ação para recuperar 1 ponto temporário de Condição de um veículo danificado, até o máximo 3, ou manter um mecanismo danificado operante até o próximo descanso. A Condição temporária desaparece no próximo descanso; combustível e Barulho são normais. Não repara peça destruída nem cria energia ou Peças."
+      "hopeFeature": "Fôlego da máquina: com ferramentas e acesso, gaste 3 Esperança e uma ação para recuperar 1 ponto temporário de Condição de um veículo danificado, até o máximo 3, ou manter um mecanismo danificado operante até o próximo descanso. A Condição temporária desaparece no próximo descanso; combustível e Barulho são normais. Não repara peça destruída nem cria energia ou Peças."
     },
     {
       "name": "Batedor",
@@ -343,14 +343,14 @@
       "specialties": [
         {
           "name": "Infiltrador",
-          "effect": "uma vez por cena, quando houver cobertura acessível, marque 1 Stress para aproveitar a abertura e ficar Oculto."
+          "effect": "uma vez por cena, quando houver cobertura acessível, marque 1 Estresse para aproveitar a abertura e ficar Oculto."
         },
         {
           "name": "Vigia",
           "effect": "uma vez por descanso, ao assumir a guarda, perceba a primeira aproximação com sinais perceptíveis, venha de onde vier, antes que se torne emboscada; o grupo ainda decide como reagir. Diferentemente de Montar perímetro, não exige escolher um acesso."
         }
       ],
-      "hopeFeature": "Ponta da expedição: ao observar um hex novo de um acesso plausível, gaste 3 Hope para identificar até dois pontos de interesse perceptíveis e conduzir o grupo até um deles sem rolagem de navegação. O mestre ainda descreve perigos e acessos; locais fechados, Barulho e buscas continuam exigindo as decisões normais."
+      "hopeFeature": "Ponta da expedição: ao observar um hex novo de um acesso plausível, gaste 3 Esperança para identificar até dois pontos de interesse perceptíveis e conduzir o grupo até um deles sem rolagem de navegação. O mestre ainda descreve perigos e acessos; locais fechados, Barulho e buscas continuam exigindo as decisões normais."
     },
     {
       "name": "Negociador",
@@ -361,18 +361,18 @@
         "Cuidados"
       ],
       "feature": "Abrir conversa",
-      "effect": "uma vez por cena, depois de alguns instantes conversando com uma pessoa disposta a responder, gaste 1 Hope e faça uma pergunta: “O que ela precisa agora?”, “O que ela teme perder?” ou “Em quem ou no que ela confia para decidir?”. O mestre responde de acordo com o que a pessoa sabe e demonstra. Isso revela uma pista para conduzir a conversa, mas não garante acordo nem substitui uma rolagem quando houver risco.",
+      "effect": "uma vez por cena, depois de alguns instantes conversando com uma pessoa disposta a responder, gaste 1 Esperança e faça uma pergunta: “O que ela precisa agora?”, “O que ela teme perder?” ou “Em quem ou no que ela confia para decidir?”. O mestre responde de acordo com o que a pessoa sabe e demonstra. Isso revela uma pista para conduzir a conversa, mas não garante acordo nem substitui uma rolagem quando houver risco.",
       "specialties": [
         {
           "name": "Mediador",
-          "effect": "uma vez por cena, quando duas pessoas ou grupos com interesses conflitantes ainda aceitarem conversar, marque 1 Stress e apresente um compromisso concreto que ofereça algo relevante a ambos. A próxima rolagem feita para conseguir um acordo temporário entre esses lados recebe vantagem. Em caso de sucesso, o acordo dura enquanto suas condições forem respeitadas. Nenhum lado é obrigado a aceitar uma proposta que contradiga um limite já estabelecido."
+          "effect": "uma vez por cena, quando duas pessoas ou grupos com interesses conflitantes ainda aceitarem conversar, marque 1 Estresse e apresente um compromisso concreto que ofereça algo relevante a ambos. A próxima rolagem feita para conseguir um acordo temporário entre esses lados recebe vantagem. Em caso de sucesso, o acordo dura enquanto suas condições forem respeitadas. Nenhum lado é obrigado a aceitar uma proposta que contradiga um limite já estabelecido."
         },
         {
           "name": "Líder de campo",
-          "effect": "uma vez por cena, depois que aliado Muito perto seguir orientação útil sua, marque 1 Stress para ele limpar 1 Stress."
+          "effect": "uma vez por cena, depois que aliado Muito perto seguir orientação útil sua, marque 1 Estresse para ele limpar 1 Estresse."
         }
       ],
-      "hopeFeature": "Manter a conversa: quando uma pessoa ou grupo que ainda pode dialogar estiver prestes a encerrar a conversa por conflito, gaste 3 Hope e ofereça uma proposta concreta. Saiba que gesto manteria a conversa aberta; até haver resposta e chance de aceitá-la ou recusá-la, a discussão por si só não deflagra ataque. Isso não força acordo nem impede uma ameaça independente."
+      "hopeFeature": "Manter a conversa: quando uma pessoa ou grupo que ainda pode dialogar estiver prestes a encerrar a conversa por conflito, gaste 3 Esperança e ofereça uma proposta concreta. Saiba que gesto manteria a conversa aberta; até haver resposta e chance de aceitá-la ou recusá-la, a discussão por si só não deflagra ataque. Isso não força acordo nem impede uma ameaça independente."
     },
     {
       "name": "Caçador",
@@ -394,7 +394,7 @@
           "effect": "uma vez por cena, ao acertar ataque estando Oculto, some +2 ao dano; o ataque revela sua posição conforme o SRD."
         }
       ],
-      "hopeFeature": "Presa exposta: depois de acertar um adversário que você observou ou rastreou nesta cena, gaste 3 Hope para rolar mais um dado de dano da arma, sem repetir o bônus fixo, e deixá-lo temporariamente Vulnerável à próxima rolagem de ataque de um aliado, ou até o fim da cena. O alvo pode gastar seu Spotlight para se livrar da condição temporária."
+      "hopeFeature": "Presa exposta: depois de acertar um adversário que você observou ou rastreou nesta cena, gaste 3 Esperança para rolar mais um dado de dano da arma, sem repetir o bônus fixo, e deixá-lo temporariamente Vulnerável à próxima rolagem de ataque de um aliado, ou até o fim da cena. O alvo pode gastar seu Foco para se livrar da condição temporária."
     },
     {
       "name": "Especialista",
@@ -413,22 +413,22 @@
         },
         {
           "name": "Comunicador",
-          "effect": "uma vez por cena, ao interpretar rádio, marcas, sinais ou bilhetes, gaste 1 Hope para descobrir provável autor, direção ou origem, se houver indícios suficientes."
+          "effect": "uma vez por cena, ao interpretar rádio, marcas, sinais ou bilhetes, gaste 1 Esperança para descobrir provável autor, direção ou origem, se houver indícios suficientes."
         }
       ],
-      "hopeFeature": "Plano B: quando um aliado Perto falhar uma rolagem de ação diante de dispositivo, estrutura ou procedimento que você examinou nesta cena, gaste 3 Hope para ele rolar de novo com vantagem. Vale o novo resultado, inclusive seus dados de Hope/Fear; não se pode usar depois de resolver as consequências da primeira rolagem."
+      "hopeFeature": "Plano B: quando um aliado Perto falhar uma rolagem de ação diante de dispositivo, estrutura ou procedimento que você examinou nesta cena, gaste 3 Esperança para ele rolar de novo com vantagem. Vale o novo resultado, inclusive seus dados de Esperança/Medo; não se pode usar depois de resolver as consequências da primeira rolagem."
     }
   ],
   "techniques": [
     {
       "track": "Confronto",
       "name": "Abrir brecha",
-      "effect": "Uma vez por cena, depois de acertar um ataque contra qualquer adversário, marque 1 Stress para deixá-lo temporariamente Vulnerável à próxima rolagem de ataque de um aliado contra ele, ou até o fim da cena. O adversário pode gastar seu Spotlight para se livrar da condição temporária, como no SRD; recebê-lo não a encerra automaticamente."
+      "effect": "Uma vez por cena, depois de acertar um ataque contra qualquer adversário, marque 1 Estresse para deixá-lo temporariamente Vulnerável à próxima rolagem de ataque de um aliado contra ele, ou até o fim da cena. O adversário pode gastar seu Foco para se livrar da condição temporária, como no SRD; recebê-lo não a encerra automaticamente."
     },
     {
       "track": "Confronto",
       "name": "Cobrir avanço",
-      "effect": "Uma vez por cena, quando um aliado Perto avançar para enfrentar um adversário ao alcance da sua arma, gaste 1 Hope e descreva como o pressiona. O aliado recebe +1 na próxima rolagem de ataque contra esse adversário nesta cena. Se houver cobertura alcançável no avanço, pode terminar nela sem outra rolagem apenas para chegar. Não atravessa bloqueios. Pressionar com um disparo gera munição e Barulho normais; não concede ataque ou disparo extra."
+      "effect": "Uma vez por cena, quando um aliado Perto avançar para enfrentar um adversário ao alcance da sua arma, gaste 1 Esperança e descreva como o pressiona. O aliado recebe +1 na próxima rolagem de ataque contra esse adversário nesta cena. Se houver cobertura alcançável no avanço, pode terminar nela sem outra rolagem apenas para chegar. Não atravessa bloqueios. Pressionar com um disparo gera munição e Barulho normais; não concede ataque ou disparo extra."
     },
     {
       "track": "Confronto",
@@ -438,42 +438,42 @@
     {
       "track": "Exploração",
       "name": "Ler o caminho",
-      "effect": "Uma vez por hex ou local novo, ao declarar um objetivo ali, gaste 1 Hope para descobrir uma abordagem praticável e seu impedimento perceptível. O mestre dá informação adicional aos sinais gratuitos, inclusive quando o melhor caminho leva a outro ponto. Não cria recurso ou passagem inexistente nem garante segurança."
+      "effect": "Uma vez por hex ou local novo, ao declarar um objetivo ali, gaste 1 Esperança para descobrir uma abordagem praticável e seu impedimento perceptível. O mestre dá informação adicional aos sinais gratuitos, inclusive quando o melhor caminho leva a outro ponto. Não cria recurso ou passagem inexistente nem garante segurança."
     },
     {
       "track": "Exploração",
       "name": "Carga bem distribuída",
-      "effect": "Sempre que preparar sua carga, receba +1 espaço de carga; este bônus não se multiplica e pode somar-se a uma mochila e ao Carregador. Além disso, uma vez por cena, quando suprimentos que você transporta estiverem prestes a ser perdidos, marque 1 Stress para salvar 1 unidade."
+      "effect": "Sempre que preparar sua carga, receba +1 espaço de carga; este bônus não se multiplica e pode somar-se a uma mochila e ao Carregador. Além disso, uma vez por cena, quando suprimentos que você transporta estiverem prestes a ser perdidos, marque 1 Estresse para salvar 1 unidade."
     },
     {
       "track": "Exploração",
       "name": "Viver com pouco",
-      "effect": "Uma vez por dia, após 10 minutos examinando fonte plausível de comida ou água, gaste 1 Hope para obter 1 porção utilizável sem rolagem. Se ela estiver esgotada, saiba disso antes do gasto e descubra um indício de outra fonte possível. Não repõe lugar já esvaziado nem cria estoque."
+      "effect": "Uma vez por dia, após 10 minutos examinando fonte plausível de comida ou água, gaste 1 Esperança para obter 1 porção utilizável sem rolagem. Se ela estiver esgotada, saiba disso antes do gasto e descubra um indício de outra fonte possível. Não repõe lugar já esvaziado nem cria estoque."
     },
     {
       "track": "Manobra",
       "name": "Reposicionar",
-      "effect": "Uma vez por cena, em perigo, gaste 1 Hope e indique uma passagem transitável: você e um aliado Muito perto alcançam cobertura ou outra posição até Longe, sem rolagem extra de movimento. Vale para avanço ou retirada; não atravessa paredes ou bloqueios completos nem anula ataques já resolvidos."
+      "effect": "Uma vez por cena, em perigo, gaste 1 Esperança e indique uma passagem transitável: você e um aliado Muito perto alcançam cobertura ou outra posição até Longe, sem rolagem extra de movimento. Vale para avanço ou retirada; não atravessa paredes ou bloqueios completos nem anula ataques já resolvidos."
     },
     {
       "track": "Manobra",
       "name": "Ação discreta",
-      "effect": "Uma vez por cena, antes de uma ação sua ou de um aliado Muito perto que causaria Barulho, marque 1 Stress e descreva a precaução para reduzir o aumento de Barulho dessa ação em 1, mínimo 0. Vale para arrombamento, movimento e disparo; não reduz explosão ou alarme contínuo, que fixam Barulho em 5."
+      "effect": "Uma vez por cena, antes de uma ação sua ou de um aliado Muito perto que causaria Barulho, marque 1 Estresse e descreva a precaução para reduzir o aumento de Barulho dessa ação em 1, mínimo 0. Vale para arrombamento, movimento e disparo; não reduz explosão ou alarme contínuo, que fixam Barulho em 5."
     },
     {
       "track": "Manobra",
       "name": "Controlar passagem",
-      "effect": "Uma vez por cena, gaste uma ação e marque 1 Stress para usar porta, móveis, grade ou desnível disponível e criar barreira temporária ou cobertura para um aliado. Cruzá-la exige contorno, remoção ou rolagem de Dificuldade 12, conforme a ficção; nada surge em terreno vazio."
+      "effect": "Uma vez por cena, gaste uma ação e marque 1 Estresse para usar porta, móveis, grade ou desnível disponível e criar barreira temporária ou cobertura para um aliado. Cruzá-la exige contorno, remoção ou rolagem de Dificuldade 12, conforme a ficção; nada surge em terreno vazio."
     },
     {
       "track": "Cuidados",
       "name": "Mãos firmes",
-      "effect": "Durante uma cena: uma vez por paciente, ao cuidar com kit médico ou material adequado, gaste 1 Hope e uma ação para limpar 1 HP. Não some com Primeiros socorros ou Atendimento conjunto do Socorrista no mesmo paciente e cena.\nDurante um descanso curto: uma vez por paciente, ao usar Tratar Feridas, limpe +1 HP além da ação normal, sem pagar Hope. Não aumenta Tratar Todas as Feridas no descanso longo, que já limpa tudo."
+      "effect": "Durante uma cena: uma vez por paciente, ao cuidar com kit médico ou material adequado, gaste 1 Esperança e uma ação para limpar 1 PV. Não some com Primeiros socorros ou Atendimento conjunto do Socorrista no mesmo paciente e cena.\nDurante um descanso curto: uma vez por paciente, ao usar Tratar Feridas, limpe +1 PV além da ação normal, sem pagar Esperança. Não aumenta Tratar Todas as Feridas no descanso longo, que já limpa tudo."
     },
     {
       "track": "Cuidados",
       "name": "Tirar do choque",
-      "effect": "Uma vez por cena, quando um aliado Perto for marcar Stress por medo ou esforço, marque 1 Stress seu ou gaste 1 Hope para evitar 1 Stress dele. Se não houver Stress iminente, use uma ação de apoio e pague o mesmo custo para limpar 1 Stress já marcado pelo aliado."
+      "effect": "Uma vez por cena, quando um aliado Perto for marcar Estresse por medo ou esforço, marque 1 Estresse seu ou gaste 1 Esperança para evitar 1 Estresse dele. Se não houver Estresse iminente, use uma ação de apoio e pague o mesmo custo para limpar 1 Estresse já marcado pelo aliado."
     },
     {
       "track": "Cuidados",
@@ -483,38 +483,38 @@
     {
       "track": "Técnica",
       "name": "Ferramenta inesperada",
-      "effect": "Uma vez por cena, com um objeto cotidiano que possa manipular, marque 1 Stress para usá-lo como ferramenta simples em uma tarefa e receber +1 na rolagem pertinente. Não cria energia, Peças nem reparo permanente."
+      "effect": "Uma vez por cena, com um objeto cotidiano que possa manipular, marque 1 Estresse para usá-lo como ferramenta simples em uma tarefa e receber +1 na rolagem pertinente. Não cria energia, Peças nem reparo permanente."
     },
     {
       "track": "Técnica",
       "name": "Encontrar o ponto fraco",
-      "effect": "Uma vez por cena, depois de examinar adversário, dispositivo, estrutura ou procedimento, gaste 1 Hope para descobrir uma vulnerabilidade explorável agora: o mestre descreve a pista e você ou um aliado recebe +2 na próxima rolagem que a aproveite nesta cena. Se não houver fraqueza explorável, saiba disso antes do gasto."
+      "effect": "Uma vez por cena, depois de examinar adversário, dispositivo, estrutura ou procedimento, gaste 1 Esperança para descobrir uma vulnerabilidade explorável agora: o mestre descreve a pista e você ou um aliado recebe +2 na próxima rolagem que a aproveite nesta cena. Se não houver fraqueza explorável, saiba disso antes do gasto."
     },
     {
       "track": "Técnica",
       "name": "Aproveitamento",
-      "effect": "Uma vez por descanso longo, escolha uma opção:\nColeta: passe 1 hora em um local com sucata dispersa e gaste 1 Hope para reunir 1 unidade de Peças a partir de material que, isolado, não seria uma unidade utilizável (uma coleta por local).\nProjeto: ao começar um projeto, gaste 1 Hope para reduzir seu custo em 1 unidade de Peças, mínimo 1.\nNão produz material onde não há fonte nem repõe sucata já usada."
+      "effect": "Uma vez por descanso longo, escolha uma opção:\nColeta: passe 1 hora em um local com sucata dispersa e gaste 1 Esperança para reunir 1 unidade de Peças a partir de material que, isolado, não seria uma unidade utilizável (uma coleta por local).\nProjeto: ao começar um projeto, gaste 1 Esperança para reduzir seu custo em 1 unidade de Peças, mínimo 1.\nNão produz material onde não há fonte nem repõe sucata já usada."
     },
     {
       "track": "Conexão",
       "name": "Ler intenções",
-      "effect": "Uma vez por cena, após observar por alguns instantes uma pessoa, grupo, animal ou infectado, gaste 1 Hope e pergunte qual atitude provavelmente tomará agora se ninguém intervier. O mestre aponta um comportamento que sustente a resposta e uma forma plausível de antecipá-la; infectados revelam só impulsos simples. Se não houver sinal interpretável, saiba disso antes do gasto. Não lê pensamentos nem garante que o alvo não mudará de ideia."
+      "effect": "Uma vez por cena, após observar por alguns instantes uma pessoa, grupo, animal ou infectado, gaste 1 Esperança e pergunte qual atitude provavelmente tomará agora se ninguém intervier. O mestre aponta um comportamento que sustente a resposta e uma forma plausível de antecipá-la; infectados revelam só impulsos simples. Se não houver sinal interpretável, saiba disso antes do gasto. Não lê pensamentos nem garante que o alvo não mudará de ideia."
     },
     {
       "track": "Conexão",
       "name": "Reunir esforços",
-      "effect": "Uma vez por cena, depois que um aliado Perto falhar uma rolagem de ação na qual você ainda possa ajudar concretamente, marque 1 Stress e descreva sua intervenção para somar +2 ao total. Pode converter falha em sucesso, sem alterar Hope/Fear; não acumula com Ajudar Aliado nessa rolagem nem vale para reação."
+      "effect": "Uma vez por cena, depois que um aliado Perto falhar uma rolagem de ação na qual você ainda possa ajudar concretamente, marque 1 Estresse e descreva sua intervenção para somar +2 ao total. Pode converter falha em sucesso, sem alterar Esperança/Medo; não acumula com Ajudar Aliado nessa rolagem nem vale para reação."
     },
     {
       "track": "Conexão",
       "name": "Palavra cumprida",
-      "effect": "Uma vez por descanso longo, após cumprir uma promessa significativa a qualquer pessoa ou arriscar-se para protegê-la, ganhe 1 Hope; a pessoa beneficiada pode limpar 1 Stress ou, se for NPC disposto e souber de algo, compartilhar uma informação útil. A técnica não força gratidão nem acordo político."
+      "effect": "Uma vez por descanso longo, após cumprir uma promessa significativa a qualquer pessoa ou arriscar-se para protegê-la, ganhe 1 Esperança; a pessoa beneficiada pode limpar 1 Estresse ou, se for PNJ disposto e souber de algo, compartilhar uma informação útil. A técnica não força gratidão nem acordo político."
     }
   ],
   "primaries": [
     {
       "name": "Faca resistente",
-      "trait": "Finesse",
+      "trait": "Acuidade",
       "range": "Corpo a corpo",
       "damage": "d8+1",
       "hands": "Uma",
@@ -564,7 +564,7 @@
     },
     {
       "name": "Pistola",
-      "trait": "Finesse",
+      "trait": "Acuidade",
       "range": "Longe",
       "damage": "d8+2",
       "hands": "Uma",
@@ -606,7 +606,7 @@
   "secondaries": [
     {
       "name": "Faca pequena",
-      "trait": "Finesse",
+      "trait": "Acuidade",
       "range": "Corpo a corpo",
       "damage": "d6 físico",
       "stored": 0,
@@ -636,7 +636,7 @@
       "severe": 11,
       "armor": 3,
       "stored": 1,
-      "effect": "+1 Evasion"
+      "effect": "+1 Evasão"
     },
     {
       "name": "Jaqueta grossa",
@@ -652,7 +652,7 @@
       "severe": 15,
       "armor": 4,
       "stored": 1,
-      "effect": "−1 Evasion. Não impede infecção por si só"
+      "effect": "−1 Evasão. Não impede infecção por si só"
     }
   ],
   "personal": [
@@ -2876,7 +2876,7 @@
       "fields": [
         {
           "label": "Atributo",
-          "value": "Finesse"
+          "value": "Acuidade"
         },
         {
           "label": "Alcance",
@@ -2895,7 +2895,7 @@
           "value": "0"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         },
         {
@@ -2929,7 +2929,7 @@
           "value": "0"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         },
         {
@@ -2963,7 +2963,7 @@
           "value": "0"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "2"
         },
         {
@@ -2997,7 +2997,7 @@
           "value": "0"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         },
         {
@@ -3031,7 +3031,7 @@
           "value": "0"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "2"
         },
         {
@@ -3046,7 +3046,7 @@
       "fields": [
         {
           "label": "Atributo",
-          "value": "Finesse"
+          "value": "Acuidade"
         },
         {
           "label": "Alcance",
@@ -3065,7 +3065,7 @@
           "value": "+2"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         },
         {
@@ -3099,7 +3099,7 @@
           "value": "+2"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         },
         {
@@ -3133,7 +3133,7 @@
           "value": "+3"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "2"
         },
         {
@@ -3167,7 +3167,7 @@
           "value": "+3"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "2"
         },
         {
@@ -3182,7 +3182,7 @@
       "fields": [
         {
           "label": "Atributo",
-          "value": "Finesse"
+          "value": "Acuidade"
         },
         {
           "label": "Alcance",
@@ -3201,7 +3201,7 @@
           "value": "0"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "0"
         },
         {
@@ -3235,7 +3235,7 @@
           "value": "0"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         },
         {
@@ -3269,7 +3269,7 @@
           "value": "0"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         },
         {
@@ -3303,7 +3303,7 @@
           "value": "0"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         },
         {
@@ -3337,7 +3337,7 @@
           "value": "0"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "2"
         },
         {
@@ -3371,7 +3371,7 @@
           "value": "0"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "2"
         },
         {
@@ -3405,7 +3405,7 @@
           "value": "0"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         },
         {
@@ -3439,7 +3439,7 @@
           "value": "0"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         },
         {
@@ -3473,7 +3473,7 @@
           "value": "0"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "0"
         },
         {
@@ -3507,7 +3507,7 @@
           "value": "0"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "2"
         },
         {
@@ -3522,7 +3522,7 @@
       "fields": [
         {
           "label": "Atributo",
-          "value": "Finesse"
+          "value": "Acuidade"
         },
         {
           "label": "Alcance",
@@ -3541,7 +3541,7 @@
           "value": "+1"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "2"
         },
         {
@@ -3556,7 +3556,7 @@
       "fields": [
         {
           "label": "Atributo",
-          "value": "Finesse"
+          "value": "Acuidade"
         },
         {
           "label": "Alcance",
@@ -3575,7 +3575,7 @@
           "value": "+2"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         },
         {
@@ -3590,7 +3590,7 @@
       "fields": [
         {
           "label": "Atributo",
-          "value": "Finesse"
+          "value": "Acuidade"
         },
         {
           "label": "Alcance",
@@ -3609,7 +3609,7 @@
           "value": "+1"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         },
         {
@@ -3643,7 +3643,7 @@
           "value": "+4"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "2"
         },
         {
@@ -3658,7 +3658,7 @@
       "fields": [
         {
           "label": "Atributo",
-          "value": "Finesse"
+          "value": "Acuidade"
         },
         {
           "label": "Alcance",
@@ -3677,7 +3677,7 @@
           "value": "+4"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "2"
         },
         {
@@ -3692,7 +3692,7 @@
       "fields": [
         {
           "label": "Atributo",
-          "value": "Finesse"
+          "value": "Acuidade"
         },
         {
           "label": "Alcance",
@@ -3707,7 +3707,7 @@
           "value": "+1 ao dano da primária em Corpo a corpo."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "0"
         }
       ]
@@ -3733,7 +3733,7 @@
           "value": "+1 ao valor de Armadura."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         }
       ]
@@ -3759,7 +3759,7 @@
           "value": "Ilumina até Perto com bateria plausível."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         }
       ]
@@ -3770,7 +3770,7 @@
       "fields": [
         {
           "label": "Atributo",
-          "value": "Finesse"
+          "value": "Acuidade"
         },
         {
           "label": "Alcance",
@@ -3785,7 +3785,7 @@
           "value": "Corta fios, ataduras e lacres acessíveis."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "0"
         }
       ]
@@ -3811,7 +3811,7 @@
           "value": "Permite pregar ou soltar peça pequena."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         }
       ]
@@ -3837,7 +3837,7 @@
           "value": "Cabe em bolso ou cinto. Sem bônus automático."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "0"
         }
       ]
@@ -3848,7 +3848,7 @@
       "fields": [
         {
           "label": "Atributo",
-          "value": "Finesse"
+          "value": "Acuidade"
         },
         {
           "label": "Alcance",
@@ -3863,7 +3863,7 @@
           "value": "Permite abrir tampa com parafusos expostos."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "0"
         }
       ]
@@ -3889,7 +3889,7 @@
           "value": "+2 ao valor de Armadura enquanto íntegro e empunhado."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "2"
         }
       ]
@@ -3900,7 +3900,7 @@
       "fields": [
         {
           "label": "Atributo",
-          "value": "Finesse"
+          "value": "Acuidade"
         },
         {
           "label": "Alcance",
@@ -3915,7 +3915,7 @@
           "value": "Corta tecido, cinta ou cinto de segurança acessível."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "0"
         }
       ]
@@ -3934,10 +3934,10 @@
         },
         {
           "label": "Efeito",
-          "value": "+1 Evasion"
+          "value": "+1 Evasão"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         }
       ]
@@ -3959,7 +3959,7 @@
           "value": "Sem efeito adicional"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         }
       ]
@@ -3978,10 +3978,10 @@
         },
         {
           "label": "Efeito",
-          "value": "−1 Evasion. Não impede infecção por si só"
+          "value": "−1 Evasão. Não impede infecção por si só"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         }
       ]
@@ -4000,10 +4000,10 @@
         },
         {
           "label": "Efeito",
-          "value": "Ajuda a suportar frio sem proteção adicional de HP"
+          "value": "Ajuda a suportar frio sem proteção adicional de PV"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         }
       ]
@@ -4025,7 +4025,7 @@
           "value": "Mantém a roupa sob ela seca se estiver íntegra"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         }
       ]
@@ -4047,7 +4047,7 @@
           "value": "Tecido fechado e resistente; cobertura depende da área exposta."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "2"
         }
       ]
@@ -4066,10 +4066,10 @@
         },
         {
           "label": "Efeito",
-          "value": "−1 Finesse por rigidez"
+          "value": "−1 Acuidade por rigidez"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "2"
         }
       ]
@@ -4091,7 +4091,7 @@
           "value": "−1 Agilidade. Máscara e ar são itens separados"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "2"
         }
       ]
@@ -4113,7 +4113,7 @@
           "value": "−1 Agilidade. Volumoso e visível"
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "2"
         }
       ]
@@ -4127,7 +4127,7 @@
           "value": "Permite trocar roupas molhadas antes de descanso. Conjunto dobrado ocupa 1 espaço."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         }
       ]
@@ -4141,7 +4141,7 @@
           "value": "Facilita passar despercebido na penumbra com cobertura. Não torna Oculto sozinho."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         }
       ]
@@ -4155,7 +4155,7 @@
           "value": "Torna plausível descansar ou viajar no frio sem roupa molhada."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         }
       ]
@@ -4169,7 +4169,7 @@
           "value": "Protege mapas e roupa de chuva comum. Não veda água contaminada."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         }
       ]
@@ -4183,7 +4183,7 @@
           "value": "Permitem atravessar lama e água rasa sem encharcar os pés."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         }
       ]
@@ -4197,7 +4197,7 @@
           "value": "Adequados para corrida em piso seco, frágeis em entulho cortante."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         }
       ]
@@ -4211,7 +4211,7 @@
           "value": "Permitem mover entulho áspero ou vidro com cuidado."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "0"
         }
       ]
@@ -4225,7 +4225,7 @@
           "value": "Ajudam em higiene de cuidados. Um par é usado numa cena de procedimento."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "0"
         }
       ]
@@ -4239,7 +4239,7 @@
           "value": "Protegem os olhos de poeira e respingos comuns se estiverem no rosto."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "0"
         }
       ]
@@ -4253,7 +4253,7 @@
           "value": "Reduz inalação de poeira. Não é respirador para fumaça tóxica."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "0"
         }
       ]
@@ -4267,7 +4267,7 @@
           "value": "Protege roupa de sujeira numa tarefa de limpeza."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         }
       ]
@@ -4281,7 +4281,7 @@
           "value": "Bolsos e tecido de trabalho. Roupa comum, não Armadura."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         }
       ]
@@ -4295,7 +4295,7 @@
           "value": "Identifica possível trabalhador da área. Pode abrir diálogo ou criar cobranças."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         }
       ]
@@ -4309,7 +4309,7 @@
           "value": "Justifica circular com ferramentas em prédios ainda ocupados."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         }
       ]
@@ -4323,7 +4323,7 @@
           "value": "Torna o portador visível a motoristas e aliados, inclusive a observadores."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "0"
         }
       ]
@@ -4337,7 +4337,7 @@
           "value": "Adequada a mato e chuva leve, sem reduzir horas por hex sozinha."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         }
       ]
@@ -4351,7 +4351,7 @@
           "value": "Pode permitir disfarce se ninguém o reconhecer. Brasão também denuncia."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         }
       ]
@@ -4365,7 +4365,7 @@
           "value": "Ajuda a atravessar risco de queda de detritos. Não concede espaço extra de Armadura."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         }
       ]
@@ -4432,7 +4432,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Permite tentar abrir fechadura simples. Exige tempo e Finesse se houver risco."
+          "value": "Permite tentar abrir fechadura simples. Exige tempo e Acuidade se houver risco."
         },
         {
           "label": "Carga",
@@ -4729,7 +4729,7 @@
           "value": "Vestida, +1 espaço de carga. Acesso rápido, não segura arma longa."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         }
       ]
@@ -4743,7 +4743,7 @@
           "value": "Vestida, +2 espaços de carga. Cabe uma peça longa presa externamente."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         }
       ]
@@ -4757,7 +4757,7 @@
           "value": "Vestida, +3 espaços de carga. Exige ajuste, cabe uma peça longa externa."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "2"
         }
       ]
@@ -4771,7 +4771,7 @@
           "value": "Vestida, +4 espaços de carga. Cheia, atrapalha vãos estreitos e natação."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "2"
         }
       ]
@@ -4785,7 +4785,7 @@
           "value": "Guardado ocupa 1 espaço. Aberto e conduzido, deixa de contar como carga pessoal e funciona como um contêiner de até 4 espaços em piso acessível. Exige as duas mãos livres para ser empurrado e não atravessa escada sem esforço."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         }
       ]
@@ -4799,7 +4799,7 @@
           "value": "Ajuda a estabelecer um lugar de descanso plausível. Não torna a rua segura."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         }
       ]
@@ -4813,7 +4813,7 @@
           "value": "Protege do frio durante descanso em abrigo protegido."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         }
       ]
@@ -4827,7 +4827,7 @@
           "value": "Permite tentar tornar água suspeita utilizável com tempo e verificação. Não cria Água."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "0"
         }
       ]
@@ -4841,7 +4841,7 @@
           "value": "Consumível: uma utilização trata até 4 porções de água encontrada. Acesso e verificação ainda importam."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "0"
         }
       ]
@@ -4855,7 +4855,7 @@
           "value": "Acende chama com combustível. Fogo e fumaça são perceptíveis."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "0"
         }
       ]
@@ -4869,7 +4869,7 @@
           "value": "Prepara comida se houver combustível adequado e local ventilado."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         }
       ]
@@ -4883,7 +4883,7 @@
           "value": "Permite cozinhar e aquecer água. Não purifica automaticamente contaminação desconhecida."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         }
       ]
@@ -4897,7 +4897,7 @@
           "value": "Sabão, pano e recipiente para manter espaço limpo num descanso."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "1"
         }
       ]
@@ -4911,7 +4911,7 @@
           "value": "Pode estabelecer identidade verdadeira ou permitir disfarce verificável."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "0"
         }
       ]
@@ -4925,7 +4925,7 @@
           "value": "Ligam pessoas e lugares já descobertos. Não têm bônus de rolagem por si."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "0"
         }
       ]
@@ -4939,7 +4939,7 @@
           "value": "Consumível: uma utilização; ilumina e revela posição. +2 Barulho quando acionado."
         },
         {
-          "label": "Guarda",
+          "label": "Carga guardada",
           "value": "0"
         }
       ]
@@ -5914,7 +5914,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Material adequado para uma ação de cuidado. Não limpa HP sozinho."
+          "value": "Material adequado para uma ação de cuidado. Não limpa PV sozinho."
         },
         {
           "label": "Carga",
@@ -5970,7 +5970,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Material de cuidado para ferimento visível. Não altera limiares ou HP sozinho."
+          "value": "Material de cuidado para ferimento visível. Não altera limiares ou PV sozinho."
         },
         {
           "label": "Carga",
@@ -6068,7 +6068,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Uso narrativo em mal-estar comum. Não elimina Stress sozinho."
+          "value": "Uso narrativo em mal-estar comum. Não elimina Estresse sozinho."
         },
         {
           "label": "Carga",
@@ -6384,7 +6384,7 @@
   "adversaries": [
     {
       "name": "INFECTADO DISPERSO",
-      "intro": "Tier 1 Lacaio. Um recém-transformado sozinho, perigoso quando vários bloqueiam uma fuga. Motivações e Táticas: seguir ruído, cercar, obstruir passagem.",
+      "intro": "Patamar 1 Lacaio. Um recém-transformado sozinho, perigoso quando vários bloqueiam uma fuga. Motivações e Táticas: seguir ruído, cercar, obstruir passagem.",
       "stats": "10 | Limiares — | PV 1 | Estresse 1",
       "attack": "+0 | Unhas e empurrão | Corpo a corpo | 3 físico",
       "features": [
@@ -6395,51 +6395,51 @@
     },
     {
       "name": "ERRANTE",
-      "intro": "Tier 1 Padrão. Corpo lento, persistente, ainda reconhecível. Motivações e Táticas: aproximar-se do som, empurrar presas para um canto, segurar.",
+      "intro": "Patamar 1 Padrão. Corpo lento, persistente, ainda reconhecível. Motivações e Táticas: aproximar-se do som, empurrar presas para um canto, segurar.",
       "stats": "11 | Limiares 7/14 | PV 3 | Estresse 2",
       "attack": "+0 | Investida curta | Corpo a corpo | 1d6+2 físico",
       "features": [
         "Agarrar — Ação: marque 1 Estresse para atacar alguém Corpo a corpo; no sucesso, cause o dano básico e deixe o alvo temporariamente Restrito. Diga onde os braços prenderam.",
-        "Mordida — Ação: somente contra alvo já Restrito ou indefeso; use a reação/bloqueio da seção 5. O Errante precisa de outro Spotlight para morder após Agarrar.",
+        "Mordida — Ação: somente contra alvo já Restrito ou indefeso; use a reação/bloqueio da seção 5. O Errante precisa de outro Foco para morder após Agarrar.",
         "Rastro lento — Passiva: não persegue carro em movimento nem alcança alguém que já tomou uma rota de retirada sem barreiras; pode aguardar em gargalos."
       ]
     },
     {
       "name": "CORREDOR",
-      "intro": "Tier 1 Emboscador. Infectado recente que acelera ao detectar presa. Motivações e Táticas: surgir de trás de obstáculos, alcançar o último do grupo, separar.",
+      "intro": "Patamar 1 Emboscador. Infectado recente que acelera ao detectar presa. Motivações e Táticas: surgir de trás de obstáculos, alcançar o último do grupo, separar.",
       "stats": "13 | Limiares 7/14 | PV 3 | Estresse 2",
       "attack": "+1 | Choque e garras | Corpo a corpo | 1d8+2 físico",
       "features": [
-        "Arrancada — Passiva: ao receber Spotlight, pode alcançar alvo em Longe se houver percurso desimpedido; antes de atacá-lo, marque 1 Estresse. Se não puder pagar, mova só como adversário comum.",
+        "Arrancada — Passiva: ao receber Foco, pode alcançar alvo em Longe se houver percurso desimpedido; antes de atacá-lo, marque 1 Estresse. Se não puder pagar, mova só como adversário comum.",
         "Derrubar — Reação: após acertar um alvo isolado, marque 1 Estresse para deixá-lo temporariamente Restrito pelo peso do corpo, em vez de infligir o dano do ataque.",
-        "Mordida — Ação: somente alvo já Restrito ou indefeso; seção 5, exigindo Spotlight próprio."
+        "Mordida — Ação: somente alvo já Restrito ou indefeso; seção 5, exigindo Foco próprio."
       ]
     },
     {
       "name": "AGARRADOR",
-      "intro": "Tier 1 Bruto. Ombros largos, braços fortes e pouco equilíbrio. Motivações e Táticas: fechar porta com o corpo, capturar alguém, impedir retirada.",
+      "intro": "Patamar 1 Bruto. Ombros largos, braços fortes e pouco equilíbrio. Motivações e Táticas: fechar porta com o corpo, capturar alguém, impedir retirada.",
       "stats": "12 | Limiares 9/17 | PV 5 | Estresse 3",
       "attack": "+1 | Braços esmagadores | Corpo a corpo | 1d8+2 físico",
       "features": [
-        "Imobilizar — Ação: marque 1 Estresse; faça ataque padrão. No sucesso, o alvo sofre dano normal e fica temporariamente Restrito. Um aliado Muito perto pode tentar livrá-lo, Força ou Finesse (12).",
-        "Mordida — Ação: somente contra alvo já Restrito ou indefeso; seção 5. Necessita novo Spotlight após Imobilizar.",
+        "Imobilizar — Ação: marque 1 Estresse; faça ataque padrão. No sucesso, o alvo sofre dano normal e fica temporariamente Restrito. Um aliado Muito perto pode tentar livrá-lo, Força ou Acuidade (12).",
+        "Mordida — Ação: somente contra alvo já Restrito ou indefeso; seção 5. Necessita novo Foco após Imobilizar.",
         "Desequilíbrio — Passiva: uma barricada baixa, escada estreita ou empurrão bem descrito cria abertura plausível para fugir ou derrubá-lo; peça rolagem só se houver risco."
       ]
     },
     {
       "name": "INCHADO",
-      "intro": "Tier 1 Padrão. Infectado deteriorado cujo rompimento libera fluidos irritantes. Motivações e Táticas: vagar em espaços estreitos, reagir ao toque, bloquear passagens.",
+      "intro": "Patamar 1 Padrão. Infectado deteriorado cujo rompimento libera fluidos irritantes. Motivações e Táticas: vagar em espaços estreitos, reagir ao toque, bloquear passagens.",
       "stats": "11 | Limiares 8/16 | PV 4 | Estresse 2",
       "attack": "+0 | Peso morto | Corpo a corpo | 1d6+3 físico",
       "features": [
-        "Nuvem irritante — Reação: quando perde o último PV em Corpo a corpo, pessoas Muito perto fazem reação de Agilidade (12); na falha marcam 1 Stress. Na reação crítica, ignoram até os respingos. A nuvem não causa Exposição.",
+        "Nuvem irritante — Reação: quando perde o último PV em Corpo a corpo, pessoas Muito perto fazem reação de Agilidade (12); na falha marcam 1 Estresse. Na reação crítica, ignoram até os respingos. A nuvem não causa Exposição.",
         "Mordida — Ação: somente contra alvo já Restrito ou indefeso; seção 5.",
         "Odor — Passiva: o grupo pode detectá-lo antes de vê-lo em corredor sem ventilação."
       ]
     },
     {
       "name": "CEGO",
-      "intro": "Tier 1 Padrão. Olhos destruídos, procura vibração e som. Motivações e Táticas: seguir motores, emboscar ruídos, perder o alvo silencioso.",
+      "intro": "Patamar 1 Padrão. Olhos destruídos, procura vibração e som. Motivações e Táticas: seguir motores, emboscar ruídos, perder o alvo silencioso.",
       "stats": "11 | Limiares 7/13 | PV 3 | Estresse 2",
       "attack": "+0 | Golpe na direção do som | Corpo a corpo | 1d6+2 físico",
       "features": [
@@ -6450,43 +6450,43 @@
     },
     {
       "name": "MASSA DE INFECTADOS",
-      "intro": "Tier 1 Horda (2 infectados/PV, aproximadamente 12 corpos). Uma frente que ocupa rua e empurra contra vitrines. Motivações e Táticas: convergir ao ruído, pressionar passagens, separar fugitivos. A Horda nunca é recompensa por “ganhar Fear” sem chegada telegrafada.",
+      "intro": "Patamar 1 Horda (2 infectados/PV, aproximadamente 12 corpos). Uma frente que ocupa rua e empurra contra vitrines. Motivações e Táticas: convergir ao ruído, pressionar passagens, separar fugitivos. A Horda nunca é recompensa por “ganhar Medo” sem chegada telegrafada.",
       "stats": "12 | Limiares 9/17 | PV 6 | Estresse 2",
       "attack": "+2 | Frente de corpos | Perto | 1d10+3 físico",
       "features": [
         "Horda — Passiva: com 3 ou mais PV marcados, o ataque básico cai para 1d6+2 físico; descreva dispersão de corpos.",
         "Fechar a rua — Ação: ocupe uma saída de até Perto e mostre uma alternativa arriscada. Passar através da massa exige ação de Agilidade ou Força (15), se houver caminho; fracasso significa recuo ou alvo temporariamente Restrito, não mordida automática.",
-        "Mordida na massa — Ação: somente contra alvo já Restrito/indefeso dentro da massa. Use a reação/bloqueio da seção 5. Ela toma o Spotlight da Horda.",
+        "Mordida na massa — Ação: somente contra alvo já Restrito/indefeso dentro da massa. Use a reação/bloqueio da seção 5. Ela toma o Foco da Horda.",
         "Dispersar — Passiva: se barulho se afastar ou um bloqueio for fechado, sobreviventes podem fugir sem zerar PV; ofereça rotas como solução."
       ]
     },
     {
       "name": "SAQUEADOR CAUTELOSO",
-      "intro": "Tier 1 Padrão. Pessoa armada que prefere voltar viva. Motivações e Táticas: avaliar superioridade, ameaçar, negociar suprimentos, fugir ferida.",
+      "intro": "Patamar 1 Padrão. Pessoa armada que prefere voltar viva. Motivações e Táticas: avaliar superioridade, ameaçar, negociar suprimentos, fugir ferida.",
       "stats": "12 | Limiares 7/14 | PV 3 | Estresse 2",
       "attack": "+1 | Pistola velha | Longe | 1d8+2 físico",
       "features": [
-        "Tiro que denuncia — Passiva: disparar aumenta Barulho em +2 na cena. Depois de uma troca longa, descreva recarga e oportunidade de negociação. A munição de NPC não é saque infinito.",
+        "Tiro que denuncia — Passiva: disparar aumenta Barulho em +2 na cena. Depois de uma troca longa, descreva recarga e oportunidade de negociação. A munição de PNJ não é saque infinito.",
         "Pedir trégua — Reação: após marcar 2 PV, oferece recuo por suprimento ou informação; não é obrigatoriamente sincero."
       ]
     },
     {
       "name": "VIGIA DE PASSAGEM",
-      "intro": "Tier 1 Atirador. Pessoa que guarda uma passagem por um motivo a definir quando surgir na ficção. Motivações e Táticas: anunciar presença, pedir distância, usar cobertura e aceitar rendição.",
+      "intro": "Patamar 1 Atirador. Pessoa que guarda uma passagem por um motivo a definir quando surgir na ficção. Motivações e Táticas: anunciar presença, pedir distância, usar cobertura e aceitar rendição.",
       "stats": "13 | Limiares 8/16 | PV 4 | Estresse 3",
       "attack": "+1 | Carabina | Muito longe | 1d8+3 físico",
       "features": [
         "Advertência — Ação: em vez de atirar numa pessoa, atire em superfície próxima (+3 Barulho); um alvo que compreenda a ordem sabe qual saída o vigia quer liberar. Não causa dano automático.",
-        "Recuar para cobertura — Reação: quando atacado e há cobertura Perto, marque 1 Estresse para se mover até ela antes do próximo Spotlight; isto não cancela o ataque já resolvido."
+        "Recuar para cobertura — Reação: quando atacado e há cobertura Perto, marque 1 Estresse para se mover até ela antes do próximo Foco; isto não cancela o ataque já resolvido."
       ]
     },
     {
       "name": "AMBIENTE: PORTA ALARMADA",
-      "intro": "Tier 1 Ambiente. Porta de ferro e alarme alimentado por bateria. Motivações e Táticas: impedir acesso, atrair atenção, permitir saída lateral.",
+      "intro": "Patamar 1 Ambiente. Porta de ferro e alarme alimentado por bateria. Motivações e Táticas: impedir acesso, atrair atenção, permitir saída lateral.",
       "stats": "12 | Limiares — | PV — | Estresse —",
       "attack": "— | Alarme | Perto | sem dano",
       "features": [
-        "Bateria ativa — Reação: se for arrombada sem desarmar, +2 Barulho; anuncie LED e fios visíveis. Finesse (12) com tempo desarma; outra abordagem plausível pode contornar. Sucesso com Fear pode gastar tempo ou quebrar ferramenta, mas não adicionar automaticamente outro +2 por causa do mesmo alarme."
+        "Bateria ativa — Reação: se for arrombada sem desarmar, +2 Barulho; anuncie LED e fios visíveis. Acuidade (12) com tempo desarma; outra abordagem plausível pode contornar. Sucesso com Medo pode gastar tempo ou quebrar ferramenta, mas não adicionar automaticamente outro +2 por causa do mesmo alarme."
       ]
     }
   ]

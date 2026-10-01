@@ -299,7 +299,7 @@ export function emptyReusableContainerToReserves(game: GameState, ownerId: strin
 }
 
 export function itemFromCatalog(entry: CatalogEntry, qty = 1, condition = "Íntegro", foundDay?: number): InventoryItem {
-  const field = entry.fields.find(f => ["Carga", "Guarda", "Carga em viagem"].includes(f.label))?.value ?? "1";
+  const field = entry.fields.find(f => ["Carga", "Carga guardada", "Guarda", "Carga em viagem"].includes(f.label))?.value ?? "1";
   // "0/1" denotes a loose pocket item; food and drink share the portion load calculation.
   const isAmmo = entry.category === "Munição";
   const load = isAmmo ? 0 : field === "0/1" && ["Alimentos", "Bebidas"].includes(entry.category)
@@ -391,7 +391,7 @@ export function pocketEligible(item: InventoryItem) {
   if (ammunitionItemType(item)) return false;
   const entry = catalogForItem(item);
   if (entry && ["Alimentos", "Bebidas"].includes(entry.category)) return false;
-  const loadField = entry?.fields.find(field => ["Carga", "Guarda", "Carga em viagem"].includes(field.label))?.value;
+  const loadField = entry?.fields.find(field => ["Carga", "Carga guardada", "Guarda", "Carga em viagem"].includes(field.label))?.value;
   return item.load === 0 || loadField === "0";
 }
 export function compatibleSlots(item: InventoryItem): EquipmentSlot[] {
@@ -422,7 +422,7 @@ export function storedLoad(name: string, slot: EquipmentSlot) {
   const entry = content.catalog.find(x => x.name === name
     && (slot !== "bag" || x.category === "Abrigo, transporte e mochilas")
     && (slot !== "outfit" || x.category === "Trajes e acessórios"));
-  const field = entry?.fields.find(x => ["Guarda", "Carga", "Carga em viagem"].includes(x.label))?.value;
+  const field = entry?.fields.find(x => ["Carga guardada", "Guarda", "Carga", "Carga em viagem"].includes(x.label))?.value;
   return Number(field?.match(/^\d+/)?.[0] ?? 1);
 }
 export function stowSlot(s: Survivor, slot: EquipmentSlot) {

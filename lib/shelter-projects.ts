@@ -646,8 +646,8 @@ export function projectAssignmentIssue(game: GameState, shelter: ShelterState, p
   const npc = game.npcs.find(candidate => candidate.id === npcId);
   if (!npc || !activePresent(game, shelter, npcId)) return "A pessoa precisa estar presente no abrigo.";
   if (npc.disposition === "Desconfiado" && !responsible && (project.buildCapabilities?.length ?? 0) === 0 && project.requiredCapabilities.length === 0) return null;
-  if (npc.disposition === "Desconfiado") return "NPC Desconfiado aceita apenas tarefas básicas, sem operar estruturas ou assumir obra especializada.";
-  if (!canVolunteer(npc, responsible)) return responsible ? "Apenas NPCs Aliados ou Leais assumem responsabilidade." : "NPC Hostil não assume tarefas voluntariamente.";
+  if (npc.disposition === "Desconfiado") return "PNJ Desconfiado aceita apenas tarefas básicas, sem operar estruturas ou assumir obra especializada.";
+  if (!canVolunteer(npc, responsible)) return responsible ? "Apenas PNJs Aliados ou Leais assumem responsabilidade." : "PNJ Hostil não assume tarefas voluntariamente.";
 
   if (project.state === "Em construção") {
     const conflict = shelter.projects?.find(other => other.id !== project.id && other.state === "Em construção"

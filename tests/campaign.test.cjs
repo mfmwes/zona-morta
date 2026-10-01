@@ -24,6 +24,67 @@ const shelterProjects = require('../lib/shelter-projects.ts');
 const campaignTime = require('../lib/time.ts');
 const npcGenerator = require('../lib/npc-generator.ts');
 const combatResources = require('../lib/combat-resources.ts');
+const { rollInfo } = require('../lib/roll-log.ts');
+const { traitLabel, traitStorageKey, localizeRollLog } = require('../lib/terminology.ts');
+
+test('custos em português e descrições antigas debitam os mesmos recursos', () => {
+  for (const description of ['gaste 1 Hope', 'gaste 1 hope', 'gaste 1 Esperança']) {
+    const game = campaign();
+    assert.equal(abilities.recordAbilityUse(game, game.survivors[0].id, 'custo', 'Apoio', description, 'hope1'), true);
+    assert.equal(game.survivors[0].hope, 1);
+    assert.match(game.log[0].text, /1 Esperança/);
+  }
+  for (const description of ['marque 1 Stress', 'marque 1 Estresse']) {
+    const game = campaign();
+    assert.equal(abilities.recordAbilityUse(game, game.survivors[0].id, 'custo', 'Apoio', description, 'stress1'), true);
+    assert.equal(game.survivors[0].stress, 1);
+  }
+  assert.deepEqual(abilities.abilityCosts('gaste 3 Esperança'), ['hope3']);
+  assert.deepEqual(abilities.abilityCosts('gaste 1 Esperança ou use sem pagar Esperança'), ['hope1', 'free']);
+  const game = campaign();
+  assert.equal(abilities.recordAbilityUse(game, game.survivors[0].id, 'custo', 'Apoio', 'gaste 3 Esperança', 'hope3'), false);
+  assert.equal(game.survivors[0].hope, 2);
+});
+
+test('Acuidade exibe o novo termo e usa o atributo das fichas existentes no ataque', () => {
+  const person = survivor();
+  const weapon = equipment.getPrimary(person.primary);
+  assert.equal(traitLabel(weapon.trait), 'Acuidade');
+  assert.equal(traitStorageKey('Acuidade'), 'Finesse');
+  const result = resolveActionRoll({ hopeDie: 9, fearDie: 3, trait: person.attributes[weapon.trait], experience: 0, other: 0, symptom: 0, edge: 'none', difficulty: 13 });
+  assert.equal(result.total, 13);
+  assert.equal(result.success, true);
+  assert.equal(person.attributes.Finesse, 1);
+});
+
+test('carga guardada e efeitos traduzidos mantêm os valores dos equipamentos', () => {
+  for (const [name, load] of [['Canivete robusto', 0], ['Faca resistente', 1], ['Espingarda', 2]]) {
+    assert.equal(equipment.getPrimary(name).stored, load);
+    assert.equal(item(name).load, load);
+  }
+  assert.equal(equipment.getSecondary('Faca pequena').stored, 0);
+  assert.equal(equipment.getSecondary('Escudo improvisado').stored, 2);
+  for (const [name, evasion, finesse, agility] of [
+    ['Roupa reforçada', 1, 0, 0], ['Colete de proteção', -1, 0, 0],
+    ['Jaqueta de motociclista', 0, -1, 0], ['Traje de bombeiro', 0, 0, -1],
+    ['Colete tático reforçado', 0, 0, -1],
+  ]) {
+    const modifiers = equipment.equipmentModifiers({ primary: '', secondary: '', protection: name });
+    assert.equal(modifiers.evasion, evasion, name);
+    assert.equal(modifiers.traits.Finesse, finesse, name);
+    assert.equal(modifiers.traits.Agilidade, agility, name);
+  }
+});
+
+test('rolagens históricas e novas mantêm dados, modificadores, resultados e nomes', () => {
+  const legacy = 'Hope: ação (Finesse): Hope 4 + Fear 9 − 2 + d6(3) = 14; Dificuldade 15. Falha com Fear · Experiences: com Hope (−1 Hope).';
+  const translated = 'Hope: ação (Acuidade): Esperança 4 + Medo 9 − 2 + d6(3) = 14; Dificuldade 15. Falha com Medo · Experiências: com Hope (−1 Esperança).';
+  assert.equal(localizeRollLog(legacy), translated);
+  assert.deepEqual(rollInfo(legacy), rollInfo(translated));
+  assert.deepEqual(rollInfo(legacy), { total: '14', hope: '4', fear: '9', modifier: '−2', edge: ' + d6', outcome: 'FALHA COM MEDO', title: 'Teste · Acuidade' });
+  assert.equal(localizeRollLog(translated), translated);
+  assert.equal(rollInfo('Ana: ação (Força): Hope 12 + Fear 12 + 1 = 25; Dificuldade 20. Sucesso crítico.').outcome, 'CRÍTICO');
+});
 
 test('painel de construção não sombreia o Map nativo com ícone', () => {
   const source = fs.readFileSync(require.resolve('../components/shelter-project-manager.tsx'), 'utf8');

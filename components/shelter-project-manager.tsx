@@ -221,7 +221,7 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
 
   function begin(project: ShelterProject) {
     if (!project.responsibleId && !(project.helperIds ?? []).length && !(project.survivorWorkerIds ?? []).length) {
-      toast.error("Defina a equipe primeiro", { description: "Escolha um NPC ou aguarde um jogador se oferecer para trabalhar nesta obra." });
+      toast.error("Defina a equipe primeiro", { description: "Escolha um PNJ ou aguarde um jogador se oferecer para trabalhar nesta obra." });
       return;
     }
     let issue: string | null = null;
@@ -505,7 +505,7 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
                 <small>{progress.value}/{progress.required} progresso{progress.repairing ? " de reparo" : ""}</small>
               </>}
             <small>{project.workShift
-              ? `⏱ Equipe NPC até ${displayTime(project.workShift.startMinute + project.workShift.durationMinutes)} · +${project.workShift.points} previsto`
+              ? `⏱ Equipe PNJ até ${displayTime(project.workShift.startMinute + project.workShift.durationMinutes)} · +${project.workShift.points} previsto`
               : project.volunteerShifts?.length
                 ? `⏱ ${project.volunteerShifts.length} turno(s) de jogador · próximo até ${displayTime(Math.min(...project.volunteerShifts.map(shift => shift.startMinute + shift.durationMinutes)))}`
                 : preview?.issue ? `⏸ ${preview.issue}`
@@ -700,8 +700,8 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
             <b>{["Concluído", "Danificado"].includes(selectedProject.state) ? "Equipe de operação" : "2 · Defina a equipe"}</b>
             <p className="construction-team-help">{["Concluído", "Danificado"].includes(selectedProject.state)
               ? "A operação usa as capacidades indicadas acima."
-              : "NPCs são coordenados pelo mestre. Jogadores podem se oferecer diretamente pela própria interface e cumprem turnos individuais."}</p>
-            <Pick label="Responsável NPC" value={selectedProject.responsibleId ?? ""} options={[
+              : "PNJs são coordenados pelo mestre. Jogadores podem se oferecer diretamente pela própria interface e cumprem turnos individuais."}</p>
+            <Pick label="Responsável PNJ" value={selectedProject.responsibleId ?? ""} options={[
               { value: "", label: "Sem responsável" },
               ...peopleAtBase.filter(npc => canVolunteer(npc, true)).map(npc => ({ value: npc.id, label: `${npc.name} · ${npc.skills.join(", ") || "sem capacidade"}` })),
             ]} onChange={id => setProjectResponsible(selectedProject, id)} />
@@ -739,7 +739,7 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
             </Button>}
 
             {selectedProject?.state === "Planejado" && (!selectedProject.responsibleId && !(selectedProject.helperIds ?? []).length && !(selectedProject.survivorWorkerIds ?? []).length)
-              && <p className="construction-next-step">Próximo passo: escolha um NPC ou aguarde um jogador se oferecer para a equipe.</p>}
+              && <p className="construction-next-step">Próximo passo: escolha um PNJ ou aguarde um jogador se oferecer para a equipe.</p>}
 
             {selectedProject?.state === "Planejado" && !placementIssue && Boolean(selectedProject.responsibleId || (selectedProject.helperIds ?? []).length || (selectedProject.survivorWorkerIds ?? []).length)
               && <Button onClick={() => begin(selectedProject)}><Hammer size={15} /> 3 · Iniciar obra e pagar custos</Button>}

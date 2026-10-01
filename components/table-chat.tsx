@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RollDialog, type RollRequest } from "@/components/roll-dialog";
+import { rollInfo } from "@/lib/roll-log";
+import { localizeRollLog } from "@/lib/terminology";
 import { addLog, type GameState } from "@/lib/game";
 
 type Edit = (fn: (draft: GameState) => void) => void;
@@ -36,31 +38,6 @@ function actor(game: GameState, entry: LogEntry) {
 
 function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]?.toUpperCase()).join("") || "ZM";
-}
-
-function rollInfo(text: string) {
-  const total = text.match(/=\s*(-?\d+)\s*;/)?.[1] ?? "—";
-  const hope = text.match(/Hope\s+(\d+)/i)?.[1] ?? "—";
-  const fear = text.match(/Fear\s+(\d+)/i)?.[1] ?? "—";
-  const action = text.match(/^[^:]+:\s*([^:]+):/)?.[1]?.trim() ?? "Rolagem";
-  const trait = action.match(/\(([^)]+)\)/)?.[1] ?? "";
-  const weapon = action.match(/ataque com\s+(.+?)\s*\(/i)?.[1]?.trim();
-  const modifierMatch = text.match(/Fear\s+\d+\s*([+−-])\s*(\d+)/i);
-  const modifier = modifierMatch ? `${modifierMatch[1] === "+" ? "+" : "−"}${modifierMatch[2]}` : "";
-  const edgeMatch = text.match(/([+−])\s*d6\((\d+)\)/i);
-  const edge = edgeMatch ? ` ${edgeMatch[1]} d6` : "";
-  const outcome = /Sucesso crítico/i.test(text) ? "CRÍTICO"
-    : /Falha com Fear/i.test(text) ? "FALHA COM FEAR"
-    : /Falha com Hope/i.test(text) ? "FALHA COM HOPE"
-    : /Sucesso com Fear/i.test(text) ? "SUCESSO COM FEAR"
-    : /Sucesso com Hope/i.test(text) ? "SUCESSO COM HOPE"
-    : /com Fear/i.test(text) ? "COM FEAR"
-    : /com Hope/i.test(text) ? "COM HOPE"
-    : "";
-  const title = weapon ? `Ataque · ${weapon}`
-    : /reação/i.test(action) ? `Reação${trait ? ` · ${trait}` : ""}`
-    : `Teste${trait ? ` · ${trait}` : ""}`;
-  return { total, hope, fear, modifier, edge, outcome, title };
 }
 
 function damageInfo(text?: string) {
@@ -183,7 +160,7 @@ export function TableChat({
         if (row.entry.kind === "dados") {
           const info = rollInfo(row.entry.text);
           const damage = damageInfo(row.damage?.text);
-          const fearTone = /FEAR/.test(info.outcome);
+          const fearTone = /MEDO/.test(info.outcome);
           const critical = info.outcome === "CRÍTICO";
           return <article key={row.entry.id} className="table-chat-roll">
             <div className="table-chat-roll-author">
@@ -193,14 +170,14 @@ export function TableChat({
               {canDelete && <button type="button" onClick={() => removeRows(row.ids)} aria-label="Excluir rolagem"><Trash2 size={14} /></button>}
             </div>
             <div className={`table-chat-roll-card${fearTone ? " is-fear" : ""}${critical ? " is-critical" : ""}`}>
-              <p className="table-chat-roll-kicker"><Dice5 size={14} /> Duality Roll</p>
+              <p className="table-chat-roll-kicker"><Dice5 size={14} /> Rolagem de Dualidade</p>
               <h3>{info.title}</h3>
               <div className="table-chat-roll-separator"><span /></div>
               <span className="table-chat-roll-label">Resultado</span>
               <strong className="table-chat-roll-total">{info.total} <small>{info.outcome}</small></strong>
               <div className="table-chat-dice-pair">
-                <span className="hope"><Sparkles size={13} /> Hope <b>{info.hope}</b></span>
-                <span className="fear"><Zap size={13} /> Fear <b>{info.fear}</b></span>
+                <span className="hope"><Sparkles size={13} /> Esperança <b>{info.hope}</b></span>
+                <span className="fear"><Zap size={13} /> Medo <b>{info.fear}</b></span>
               </div>
               <div className="table-chat-formula"><span>Fórmula</span><b>1d12 + 1d12{info.modifier ? ` ${info.modifier}` : ""}{info.edge}</b></div>
               {damage && <div className="table-chat-damage">
@@ -210,8 +187,8 @@ export function TableChat({
               </div>}
               <details className="table-chat-roll-details">
                 <summary>Detalhes <ChevronDown size={13} /></summary>
-                <p>{row.entry.text}</p>
-                {row.damage && <p>{row.damage.text}</p>}
+                <p>{localizeRollLog(row.entry.text)}</p>
+                {row.damage && <p>{localizeRollLog(row.damage.text)}</p>}
               </details>
             </div>
           </article>;
@@ -230,7 +207,7 @@ export function TableChat({
             <h3>{damage?.weapon ?? "Dano avulso"}</h3>
             <strong className="table-chat-roll-total">{damage?.total ?? "—"} <small>dano físico</small></strong>
             <details className="table-chat-roll-details">
-              <summary>Detalhes <ChevronDown size={13} /></summary><p>{row.entry.text}</p>
+              <summary>Detalhes <ChevronDown size={13} /></summary><p>{localizeRollLog(row.entry.text)}</p>
             </details>
           </div>
         </article>;

@@ -64,7 +64,7 @@ export function ShelterMoveDialog({ game, edit, mode, destination, open, onOpenC
         <Counter compact label="Moradores não identificados que acompanharam" value={residents} max={old.residents} onChange={setResidents} />
         {residentPeople.length > 0 && <div className="shelter-move-items">{residentPeople.map(npc => <label key={npc.id}>
           <input type="checkbox" checked={npcIds.includes(npc.id)} onChange={event => setNpcIds(current => event.target.checked ? [...current, npc.id] : current.filter(id => id !== npc.id))} />
-          <span>{npc.name}{npc.role ? ` · ${npc.role}` : ""}</span><small>NPC identificado</small>
+          <span>{npc.name}{npc.role ? ` · ${npc.role}` : ""}</span><small>PNJ identificado</small>
         </label>)}</div>}
         {(old.inventory ?? []).length ? <div className="shelter-move-items">{old.inventory!.map(item => <label key={item.id}>
           <input type="checkbox" checked={itemIds.includes(item.id)} onChange={event => setItemIds(current => event.target.checked ? [...current, item.id] : current.filter(id => id !== item.id))} />

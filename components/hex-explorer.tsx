@@ -493,7 +493,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
           {game.shelter.hex && <span className="flex items-center gap-1"><House size={15} /> Casa = abrigo atual</span>}
           {(game.formerShelters ?? []).length > 0 && <span className="flex items-center gap-1"><Package size={15} /> Antiga base</span>}
           <span className="flex items-center gap-1"><MapPin size={15} /> Pin = locais descobertos</span>
-          {(game.npcs ?? []).length > 0 && <span className="flex items-center gap-1"><Users size={15} /> NPCs</span>}
+          {(game.npcs ?? []).length > 0 && <span className="flex items-center gap-1"><Users size={15} /> PNJs</span>}
         </div>
       </div>
       <div className="map-group-summary" aria-label="Selecionar grupo ativo">

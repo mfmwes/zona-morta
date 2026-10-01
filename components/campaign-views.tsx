@@ -157,7 +157,7 @@ export function ShelterPanel({ game, edit, playerPreview, playerSurvivorId }: { 
     <p className="text-sm mt-3">{population.unidentifiedResidents} morador(es) não identificado(s) e {namedResidents.length} pessoa(s) identificada(s) pertencem a esta base. Pessoas mortas ou desaparecidas não entram nas contagens ativas.</p>
     {namedResidents.length > 0 && <div className="shelter-resident-grid mt-4">{namedResidents.map(npc => <div className="list-card text-sm" key={npc.id}><b>{npc.name}</b>{npc.role && <span className="subtle"> · {npc.role}</span>}{npc.hex !== s.hex && <p className="mt-1 text-xs subtle">Em campo no hex {npc.hex}</p>}{npc.duty && <p className="mt-1 text-xs subtle">Função livre: {npc.duty}</p>}</div>)}</div>}
     {!playerPreview && s.residents > 0 && <Dialog open={convertOpen} onOpenChange={setConvertOpen}><DialogTrigger asChild><Button size="sm" variant="outline" className="mt-4" onClick={() => { setConvertName(""); setConvertRole(""); }}>Identificar um morador</Button></DialogTrigger>
-      <DialogContent><DialogHeader><DialogTitle>Converter morador em NPC</DialogTitle><DialogDescription>Isso reduz apenas a contagem sem nome e cria uma pessoa identificada; nenhum nome é inventado automaticamente.</DialogDescription></DialogHeader>
+      <DialogContent><DialogHeader><DialogTitle>Converter morador em PNJ</DialogTitle><DialogDescription>Isso reduz apenas a contagem sem nome e cria uma pessoa identificada; nenhum nome é inventado automaticamente.</DialogDescription></DialogHeader>
         <div className="grid gap-3"><Field label="Nome" value={convertName} onChange={setConvertName} placeholder="Nome da pessoa" /><Field label="Função / papel" value={convertRole} onChange={setConvertRole} placeholder="Opcional" /></div>
         <DialogFooter><Button variant="outline" onClick={() => setConvertOpen(false)}>Cancelar</Button><Button disabled={!convertName.trim()} onClick={() => {
           const name = convertName.trim();
@@ -167,8 +167,8 @@ export function ShelterPanel({ game, edit, playerPreview, playerSurvivorId }: { 
             draft.npcs.push({ id: createId(), name, role: convertRole.trim(), description: "", notes: "", publicNotes: "", hex: draft.shelter.hex, home: draft.shelter.hex, status: "Bem", infection: "Saudável", disposition: "Neutro", skills: [], duty: "", active: true });
           });
           setConvertOpen(false);
-          toast.success("Morador identificado", { description: `${name} agora tem uma ficha de NPC.` });
-        }}>Criar NPC</Button></DialogFooter>
+          toast.success("Morador identificado", { description: `${name} agora tem uma ficha de PNJ.` });
+        }}>Criar PNJ</Button></DialogFooter>
       </DialogContent></Dialog>}
   </section>;
 
@@ -298,7 +298,7 @@ export function ReferencePanel() {
         <TabsTrigger value="procedimentos"><BookOpen /> Procedimentos</TabsTrigger></TabsList>
       <TabsContent value="itens">
         <div className="flex flex-wrap items-end justify-between gap-4 mb-4"><div><h2 className="section-title">Catálogo de exploração</h2>
-          <p className="intro-line mt-1">{content.catalog.length} itens do apêndice. A carga e os efeitos seguem a alfa.</p></div>
+          <p className="intro-line mt-1">{content.catalog.length} itens do catálogo. A carga e os efeitos seguem a alfa.</p></div>
           <span className="tag">{matches.length} resultados</span></div>
         <div className="reference-controls">
           <Field label="Buscar pelo nome ou efeito" value={query} onChange={value => { setQuery(value); setPage(1); }} placeholder="Água, lanterna, mochila..." />
@@ -348,8 +348,8 @@ export function ReferencePanel() {
       <TabsContent value="procedimentos">
         <div className="grid gap-4 lg:grid-cols-2">
           <article className="list-card leading-relaxed"><h2 className="section-title">Rolagem de ação</h2>
-            <p className="mt-2">Declare objetivo, Dificuldade e risco. Role Hope d12 + Fear d12 + atributo e modificadores. Igualar a Dificuldade é sucesso. Dados iguais: crítico, sucesso automático, +1 Hope e −1 Stress.</p>
-            <p className="mt-2">Hope dominante concede 1 Hope. Fear dominante concede 1 Fear ao mestre; sucesso com Fear preserva o objetivo, com uma complicação. Reações não geram recursos.</p></article>
+            <p className="mt-2">Declare objetivo, Dificuldade e risco. Role Esperança d12 + Medo d12 + atributo e modificadores. Igualar a Dificuldade é sucesso. Dados iguais: crítico, sucesso automático, +1 Esperança e −1 Estresse.</p>
+            <p className="mt-2">Esperança dominante concede 1 Esperança. Medo dominante concede 1 Medo ao mestre; sucesso com Medo preserva o objetivo, com uma complicação. Reações não geram recursos.</p></article>
           <article className="list-card leading-relaxed"><h2 className="section-title">Buscar algo específico</h2>
             <p className="mt-2">Pergunte <b>o que procuram, para quê e onde</b>. Mostre sinais, quantidade possível, tempo e risco antes da escolha. Objeto acessível à vista não exige busca. Setor comum: 30 minutos; área extensa: 1 hora. Role apenas se houver risco interessante.</p>
             <p className="mt-2">Busca específica não recebe d12 extra. Um setor recebe uma busca completa; registre o que foi retirado.</p></article>
@@ -365,11 +365,11 @@ export function ReferencePanel() {
             <p className="mt-2">Cada hex mede cerca de 2 km e custa 1 hora de travessia normal ou 2 horas por acesso difícil. Da posição atual, entre num hex vizinho; aviste a próxima borda ao chegar. Se houver abrigo, voltar a ele exige percorrer o caminho de volta. Sinais e locais registrados permanecem no mapa.</p>
             <p className="mt-2">Uma busca em setor comum leva cerca de 30 minutos, uma área extensa até 1 hora. Tempo e resultado são anotados no ponto. Não trate cada hex como uma única sala.</p></article>
           <article className="list-card leading-relaxed"><h2 className="section-title">Descanso curto</h2>
-            <p className="mt-2">Em lugar onde o grupo possa parar e se defender, gaste cerca de 1 hora. Cada PC escolhe duas ações, podendo repetir: tratar 1d4+1 HP, aliviar 1d4+1 Stress, reparar 1d4+1 Armadura, ou Preparar para ganhar 1 Hope (2 se um aliado também escolher Preparar). Planejar o acesso, preparar provisões e montar perímetro também usam uma ação.</p>
-            <p className="mt-2">Ao concluir, o mestre recebe 1d4 Fear. Após três descansos curtos seguidos, o próximo deve ser longo. Descanso interrompido não concede benefícios.</p></article>
+            <p className="mt-2">Em lugar onde o grupo possa parar e se defender, gaste cerca de 1 hora. Cada PJ escolhe duas ações, podendo repetir: tratar 1d4+1 PV, aliviar 1d4+1 Estresse, reparar 1d4+1 Armadura, ou Preparar para ganhar 1 Esperança (2 se um aliado também escolher Preparar). Planejar o acesso, preparar provisões e montar perímetro também usam uma ação.</p>
+            <p className="mt-2">Ao concluir, o mestre recebe 1d4 Medo. Após três descansos curtos seguidos, o próximo deve ser longo. Descanso interrompido não concede benefícios.</p></article>
           <article className="list-card leading-relaxed"><h2 className="section-title">Descanso longo</h2>
-            <p className="mt-2">Requer refúgio seguro, vigia e água. Cada PC escolhe duas ações: limpar todos os HP, todo Stress ou toda Armadura; Preparar; trabalhar em projeto; ou executar uma ação de cenário. Projetos avançam um ponto por ação, com custos pagos ao iniciar.</p>
-            <p className="mt-2">Ao concluir, o mestre recebe 1d4 + número de PCs Fear. Descanso longo não encerra o dia nem avança o calendário. Porções de Comida e Água são descontadas só ao usar Encerrar dia; a janela de Exposição continua correndo.</p></article>
+            <p className="mt-2">Requer refúgio seguro, vigia e água. Cada PJ escolhe duas ações: limpar todos os PV, todo Estresse ou toda Armadura; Preparar; trabalhar em projeto; ou executar uma ação de cenário. Projetos avançam um ponto por ação, com custos pagos ao iniciar.</p>
+            <p className="mt-2">Ao concluir, o mestre recebe Medo igual a 1d4 + número de PJs. Descanso longo não encerra o dia nem avança o calendário. Porções de Comida e Água são descontadas só ao usar Encerrar dia; a janela de Exposição continua correndo.</p></article>
           <article className="list-card leading-relaxed"><h2 className="section-title">Carga e mochilas</h2>
             <p className="mt-2">Base 3 espaços. Bolsa tiracolo +1, mochila urbana +2, de trilha +3, cargueira +4; uma bolsa vestida por pessoa. Duas porções pessoais de cada recurso cabem nos bolsos; cada grupo extra de até quatro porções ocupa 1. Uma carga reserva de munição ocupa 1.</p>
             <p className="mt-2">Até dois espaços excedentes podem ir nas mãos, somando 1 hora por hex. Acima disso, faça outra viagem ou use carrinho/veículo.</p></article>

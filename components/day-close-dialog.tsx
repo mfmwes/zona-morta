@@ -274,7 +274,7 @@ export function DayCloseDialog({
       {(npcsAtReserve.length > 0 || fieldNpcList.length > 0) && <section className="day-close-section">
         <div className="day-close-section-heading"><div><small>NPCS IDENTIFICADOS</small><b>{npcsAtReserve.length} junto às reservas · {fieldNpcList.length} em campo</b></div>
           <span>Todo consumo é nominal e auditável.</span></div>
-        <p className="text-xs subtle mb-3">NPCs no abrigo podem usar reservas compartilhadas. Quem está em campo só pode usar uma porção portada por sobrevivente no mesmo hex, outra fonte declarada pelo mestre ou terá a privação registrada.</p>
+        <p className="text-xs subtle mb-3">PNJs no abrigo podem usar reservas compartilhadas. Quem está em campo só pode usar uma porção portada por sobrevivente no mesmo hex, outra fonte declarada pelo mestre ou terá a privação registrada.</p>
         <div className="day-close-people">{[...npcsAtReserve, ...fieldNpcList].map(npc => {
           const entry = npcPlanFor(npc);
           const carriers = game.survivors.filter(person => survivorHex(game, person) === npc.hex);

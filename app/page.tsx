@@ -388,12 +388,12 @@ export default function CampaignApp() {
   </section></main>;
 
   const readOnlyPreview = playerPreview || role === "jogador";
-  const title = { mapa: "Exploração", sobreviventes: "Sobreviventes", comunidade: "NPCs e comunidade", abrigo: "Abrigo e reservas",
+  const title = { mapa: "Exploração", sobreviventes: "Sobreviventes", comunidade: "PNJs e comunidade", abrigo: "Abrigo e reservas",
     referencias: "Arquivo de campo", jogadores: "Jogadores e acessos" }[tab] || "Campanha";
   const nav = [
     { value: "mapa", label: "Mapa e hexes", icon: Map },
     { value: "sobreviventes", label: "Sobreviventes", icon: Users },
-    { value: "comunidade", label: "NPCs e comunidade", icon: Users },
+    { value: "comunidade", label: "PNJs e comunidade", icon: Users },
     { value: "abrigo", label: "Abrigo e reservas", icon: House },
     { value: "referencias", label: "Regras e itens", icon: BookOpen },
     ...(role === "mestre" ? [{ value: "jogadores", label: "Jogadores", icon: Users }] : []),
@@ -539,10 +539,10 @@ export default function CampaignApp() {
                 <div className="scene-meter scene-meter-fear">
                   <div className="scene-meter-identity">
                     <Brain size={28} aria-hidden="true" />
-                    <span><b>Fear</b><small>0–12</small></span>
+                    <span><b>Medo</b><small>0–12</small></span>
                   </div>
                   <div className="scene-meter-control">
-                    <Counter compact tone="fear" label="Fear" value={game.fear} max={12} onChange={value=>edit(d=>{d.fear=value;})} />
+                    <Counter compact tone="fear" label="Medo" value={game.fear} max={12} onChange={value=>edit(d=>{d.fear=value;})} />
                   </div>
                 </div>
               </div>

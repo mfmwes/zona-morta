@@ -2,6 +2,7 @@ import { addLog, survivorHex, survivorStats, type GameState } from "./game";
 import { rollDie } from "./rolls";
 import { consumeShelterComfortRest } from "./shelter-projects";
 import { settleSceneAmmunition } from "./combat-resources";
+import { localizeRulesText } from "./terminology";
 
 export type AbilityCost = "free" | "hope1" | "hope3" | "stress1" | "armor1";
 export type AbilityPeriod = "scene" | "day" | "expedition" | "shortRest" | "longRest" | "rest" | "place" | "patient" | null;
@@ -11,8 +12,8 @@ export type RestChoice = { action: RestAction; targetId: string };
 export type RestSelection = { survivorId: string; choices: RestChoice[] };
 
 export const restActionLabels: Record<RestAction, string> = {
-  hp: "Recuperar Vida", stress: "Aliviar Estresse", armor: "Reparar Armadura", prepare: "Preparar", fiction: "Ação de ficção",
-  "hp-full": "Limpar toda a Vida", "stress-full": "Limpar todo o Estresse", "armor-full": "Reparar toda a Armadura",
+  hp: "Recuperar PV", stress: "Aliviar Estresse", armor: "Reparar Armadura", prepare: "Preparar", fiction: "Ação de ficção",
+  "hp-full": "Recuperar todos os PV", "stress-full": "Limpar todo o Estresse", "armor-full": "Reparar toda a Armadura",
 };
 
 export function restActionsFor(kind: RestKind): RestAction[] {
@@ -35,17 +36,18 @@ export function abilityPeriod(effect: string): AbilityPeriod {
 
 export function abilityCosts(effect: string, isHopeFeature = false): AbilityCost[] {
   if (isHopeFeature) return ["hope3"];
+  effect = localizeRulesText(effect);
   const choices: AbilityCost[] = [];
-  if (/gaste 1 Hope/i.test(effect)) choices.push("hope1");
-  if (/gaste 3 Hope/i.test(effect)) choices.push("hope3");
-  if (/marque 1 Stress|e 1 Stress/i.test(effect)) choices.push("stress1");
+  if (/gaste 1 Esperança/i.test(effect)) choices.push("hope1");
+  if (/gaste 3 Esperança/i.test(effect)) choices.push("hope3");
+  if (/marque 1 Estresse|e 1 Estresse/i.test(effect)) choices.push("stress1");
   if (/marque 1 espaço da sua Armadura/i.test(effect)) choices.push("armor1");
-  if (choices.length === 0 || /sem pagar Hope/i.test(effect)) choices.push("free");
+  if (choices.length === 0 || /sem pagar Esperança/i.test(effect)) choices.push("free");
   return choices;
 }
 
 export const costLabels: Record<AbilityCost, string> = {
-  free: "Sem custo de recurso", hope1: "1 Hope", hope3: "3 Hope", stress1: "1 Stress", armor1: "1 espaço de Armadura",
+  free: "Sem custo de recurso", hope1: "1 Esperança", hope3: "3 Esperança", stress1: "1 Estresse", armor1: "1 espaço de Armadura",
 };
 export const periodLabels: Record<NonNullable<AbilityPeriod>, string> = {
   scene: "1× por cena", day: "1× por dia", expedition: "1× por expedição",
@@ -148,7 +150,7 @@ export function resolveGroupRest(game: GameState, kind: RestKind, selections: Re
       if (choice.action === "hp") {
         const rolled = Math.max(2, Math.min(5, Math.trunc(roll(4)) + 1));
         const recovered = Math.min(target.hp, rolled); target.hp -= recovered;
-        results.push(`${targetPrefix}Vida +${recovered} (d4+1 = ${rolled})`);
+        results.push(`${targetPrefix}PV +${recovered} (d4+1 = ${rolled})`);
       } else if (choice.action === "stress") {
         const rolled = Math.max(2, Math.min(5, Math.trunc(roll(4)) + 1));
         const recovered = Math.min(target.stress, rolled); target.stress -= recovered;
@@ -158,14 +160,14 @@ export function resolveGroupRest(game: GameState, kind: RestKind, selections: Re
         const repaired = Math.min(target.armorMarked ?? 0, rolled); target.armorMarked = Math.max(0, (target.armorMarked ?? 0) - repaired);
         results.push(`${targetPrefix}Armadura −${repaired} (d4+1 = ${rolled})`);
       } else if (choice.action === "hp-full") {
-        const recovered = target.hp; target.hp = 0; results.push(`${targetPrefix}Vida +${recovered}`);
+        const recovered = target.hp; target.hp = 0; results.push(`${targetPrefix}PV +${recovered}`);
       } else if (choice.action === "stress-full") {
         const recovered = target.stress; target.stress = 0; results.push(`${targetPrefix}Estresse −${recovered}`);
       } else if (choice.action === "armor-full") {
         const repaired = target.armorMarked ?? 0; target.armorMarked = 0; results.push(`${targetPrefix}Armadura −${repaired}`);
       } else if (choice.action === "prepare") {
         const gained = Math.min(6 - target.hope, prepareGain); target.hope += gained;
-        results.push(`${targetPrefix}Hope +${gained}${prepareGain === 2 ? " (preparo em equipe)" : ""}`);
+        results.push(`${targetPrefix}Esperança +${gained}${prepareGain === 2 ? " (preparo em equipe)" : ""}`);
       } else {
         results.push(`${targetPrefix}Ação de ficção registrada`);
       }
@@ -181,7 +183,7 @@ export function resolveGroupRest(game: GameState, kind: RestKind, selections: Re
   const fearGain = Math.max(0, rawFear - comfortReduction);
   const actualFear = Math.min(12 - game.fear, fearGain);
   game.fear += actualFear;
-  addLog(game, "descanso", `Descanso ${kind === "short" ? "curto" : "longo"}: Fear +${actualFear}${kind === "long" ? ` (d4 ${fearDie} + ${game.survivors.length} PC${game.survivors.length === 1 ? "" : "s"}` : ` (d4 ${fearDie}`}${comfortReduction ? ` − ${comfortReduction} Conforto do abrigo` : ""}).`);
+  addLog(game, "descanso", `Descanso ${kind === "short" ? "curto" : "longo"}: Medo +${actualFear}${kind === "long" ? ` (d4 ${fearDie} + ${game.survivors.length} PJ${game.survivors.length === 1 ? "" : "s"}` : ` (d4 ${fearDie}`}${comfortReduction ? ` − ${comfortReduction} Conforto do abrigo` : ""}).`);
   registerRest(game, kind);
   return { ok: true as const, fear: actualFear, summaries };
 }

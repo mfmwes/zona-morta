@@ -90,7 +90,7 @@ export function ShelterVisualDashboard({ game }: { game: GameState }) {
     { label: "Água", value: water.total, note: "porções disponíveis", icon: Droplets },
     { label: "Energia", value: metrics.energy, note: metrics.power ? `${metrics.power.production} produzida · ${metrics.power.consumption} usada` : "saldo estrutural", icon: Zap },
     { label: "Segurança", value: metrics.security, note: "proteção da base", icon: Shield },
-    { label: "Conforto", value: metrics.comfort, note: overcrowded ? "sem benefício enquanto superlotado" : metrics.comfort >= 4 ? "−2 Fear no 1º descanso do dia" : metrics.comfort >= 2 ? "−1 Fear no 1º descanso do dia" : "qualidade do abrigo", icon: HeartHandshake },
+    { label: "Conforto", value: metrics.comfort, note: overcrowded ? "sem benefício enquanto superlotado" : metrics.comfort >= 4 ? "−2 Medo no 1º descanso do dia" : metrics.comfort >= 2 ? "−1 Medo no 1º descanso do dia" : "qualidade do abrigo", icon: HeartHandshake },
     { label: "Medicamentos", value: shelter.medications, note: "tratamentos", icon: Cross },
   ];
 

@@ -72,7 +72,7 @@ export function SurvivorContextMenu({
     <ContextMenuContent className="inventory-context-menu survivor-context-menu">
       <ContextMenuLabel className="inventory-context-header">
         <b>{survivor.name}</b>
-        <span>PV {Math.max(0, stats.hp - survivor.hp)}/{stats.hp} · Hope {survivor.hope}/6 · Stress {survivor.stress}/6</span>
+        <span>PV {Math.max(0, stats.hp - survivor.hp)}/{stats.hp} · Esperança {survivor.hope}/6 · Estresse {survivor.stress}/6</span>
       </ContextMenuLabel>
       <ContextMenuSeparator />
 

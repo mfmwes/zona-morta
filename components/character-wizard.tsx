@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Field, Pick } from "@/components/game-controls";
 import { EmptyItemArt, ItemArt } from "@/components/item-art";
 import { AbilityArt } from "@/components/ability-art";
+import { traitLabel } from "@/lib/terminology";
 import { content, initialSurvivor, traits, type Survivor } from "@/lib/game";
 
 const defaultAttributes: Record<string, number> = {
@@ -71,7 +72,7 @@ export function CharacterWizard({ onCreate }: { onCreate: (survivor: Survivor) =
           </div>
           {originData && <div className="list-card wizard-ability-preview text-sm leading-relaxed">
             <AbilityArt abilityId={`origin:${origin}`} size="small" />
-            <div><b>Experience:</b> {originData.experience} +2 ao gastar 1 Hope numa rolagem pertinente<br />
+            <div><b>Experiência:</b> {originData.experience} +2 ao gastar 1 Esperança numa rolagem pertinente<br />
               <b>{originData.feature}:</b> {originData.effect}<br />
               <span className="subtle">{originData.past}</span></div>
           </div>}
@@ -87,19 +88,19 @@ export function CharacterWizard({ onCreate }: { onCreate: (survivor: Survivor) =
           </div>
           {archetypeData && <div className="list-card wizard-ability-preview text-sm leading-relaxed">
             <AbilityArt abilityId={`archetype:${archetype}`} size="small" />
-            <div><b>EV {archetypeData.evasion} · HP {archetypeData.hp} · Trilhas {archetypeData.tracks.join(" e ")}</b><br />
+            <div><b>Evasão {archetypeData.evasion} · PV {archetypeData.hp} · Trilhas {archetypeData.tracks.join(" e ")}</b><br />
               <b>{archetypeData.feature}:</b> {archetypeData.effect}<br />
               {specialty && <span className="wizard-specialty"><AbilityArt abilityId={`specialty:${specialty}`} size="tiny" /><span><b>{specialty}:</b> {archetypeData.specialties.find(s => s.name === specialty)?.effect}</span></span>}
-              <span className="wizard-specialty"><AbilityArt abilityId={`hope:${archetype}`} size="tiny" /><span><b>Habilidade de Hope:</b> {archetypeData.hopeFeature.split(":")[0]}</span></span></div>
+              <span className="wizard-specialty"><AbilityArt abilityId={`hope:${archetype}`} size="tiny" /><span><b>Habilidade de Esperança:</b> {archetypeData.hopeFeature.split(":")[0]}</span></span></div>
           </div>}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {traits.map(trait => <Pick key={trait} label={trait} value={String(attributes[trait])}
+            {traits.map(trait => <Pick key={trait} label={traitLabel(trait)} value={String(attributes[trait])}
               options={["-1", "0", "1", "2"]} onChange={value => setAttributes({ ...attributes, [trait]: Number(value) })} />)}
           </div>
           <p className={`text-sm ${distribution ? "text-emerald-700" : "text-red-700"}`}>
             {distribution ? "Distribuição correta: +2, +1, +1, 0, 0, −1." : "Distribua exatamente +2, +1, +1, 0, 0 e −1."}
           </p>
-          <Field label="Segunda Experience +2 (custa 1 Hope ao usar)" value={freeExperience} onChange={setFreeExperience}
+          <Field label="Segunda Experiência +2 (custa 1 Esperança ao usar)" value={freeExperience} onChange={setFreeExperience}
             placeholder="Ex.: Conheço os becos do centro" />
         </section>
         <section className="grid gap-3 border-t pt-5">

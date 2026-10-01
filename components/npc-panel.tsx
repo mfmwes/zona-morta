@@ -84,21 +84,21 @@ export function NpcPanel({ game, edit, playerPreview }: { game: GameState; edit:
   }
 
   return <div className="npc-panel">
-    <div className="flex flex-wrap items-start justify-between gap-4 mb-5"><div><p className="dossier-title">Pessoas da campanha</p><h2 className="section-title mt-1">NPCs e comunidade</h2>
+    <div className="flex flex-wrap items-start justify-between gap-4 mb-5"><div><p className="dossier-title">Pessoas da campanha</p><h2 className="section-title mt-1">PNJs e comunidade</h2>
       <p className="intro-line mt-2">Pessoas identificadas podem morar em uma base, acompanhar o grupo ou permanecer em outro lugar.</p></div>
-      {!playerPreview && <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={() => { setGenerationHex(game.shelter.hex ?? game.partyHex); setGenerated([]); setGeneratorOpen(true); }}><Sparkles /> Gerar NPC / encontro</Button><Button onClick={() => editNpc()}><Plus /> Novo NPC</Button></div>}</div>
-    <div className="npc-filter-row" role="group" aria-label="Filtrar NPCs">{filters.map(value => <Button key={value} size="sm" variant={filter === value ? "default" : "outline"}
+      {!playerPreview && <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={() => { setGenerationHex(game.shelter.hex ?? game.partyHex); setGenerated([]); setGeneratorOpen(true); }}><Sparkles /> Gerar PNJ / encontro</Button><Button onClick={() => editNpc()}><Plus /> Novo PNJ</Button></div>}</div>
+    <div className="npc-filter-row" role="group" aria-label="Filtrar PNJs">{filters.map(value => <Button key={value} size="sm" variant={filter === value ? "default" : "outline"}
       onClick={() => setFilter(value)} aria-pressed={filter === value}>{value}</Button>)}</div>
     <div className="npc-grid mt-5">{filtered.length ? filtered.map(npc => <button type="button" key={npc.id} className="npc-card" onClick={() => editNpc(npc)}>
       <span className="npc-avatar" style={npc.portrait ? { backgroundImage: `url(${JSON.stringify(npc.portrait)})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}>{npc.portrait ? "" : npc.name.slice(0, 1).toUpperCase()}</span><span className="npc-card-copy"><strong>{npc.name}</strong><small>{npc.role || "Função não registrada"}</small>
         <span className="npc-card-meta"><MapPin size={13} /> {locationLabel(game, npc)}</span></span><span className={`npc-status npc-status-${npc.status.toLowerCase()}`}>{npc.status}</span>
     </button>) : <p className="character-empty-list">Nenhuma pessoa corresponde a este filtro.</p>}</div>
-    <Dialog open={open} onOpenChange={setOpen}><DialogContent className="npc-dialog"><DialogHeader><DialogTitle>{draft.id ? draft.name || "NPC" : "Novo NPC"}</DialogTitle>
+    <Dialog open={open} onOpenChange={setOpen}><DialogContent className="npc-dialog"><DialogHeader><DialogTitle>{draft.id ? draft.name || "PNJ" : "Novo PNJ"}</DialogTitle>
       <DialogDescription>{playerPreview ? "Informações públicas da comunidade." : "Ficha leve: registra situação e vínculos sem criar outra ficha completa de sobrevivente."}</DialogDescription></DialogHeader>
       {playerPreview ? <PublicNpcDetails npc={draft} game={game} /> : <NpcForm game={game} draft={draft} setDraft={setDraft} hexOptions={hexOptions} />}
-      <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Fechar</Button>{!playerPreview && <Button disabled={!draft.name.trim()} onClick={save}>Salvar NPC</Button>}</DialogFooter>
+      <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Fechar</Button>{!playerPreview && <Button disabled={!draft.name.trim()} onClick={save}>Salvar PNJ</Button>}</DialogFooter>
     </DialogContent></Dialog>
-    {!playerPreview && <Dialog open={generatorOpen} onOpenChange={setGeneratorOpen}><DialogContent className="npc-dialog"><DialogHeader><DialogTitle>Gerar NPC ou encontro</DialogTitle>
+    {!playerPreview && <Dialog open={generatorOpen} onOpenChange={setGeneratorOpen}><DialogContent className="npc-dialog"><DialogHeader><DialogTitle>Gerar PNJ ou encontro</DialogTitle>
       <DialogDescription>Gerador local: cria rascunhos ficcionais, sem usar API nem inventar moradores legados.</DialogDescription></DialogHeader>
       <div className="grid gap-4"><div className="grid gap-3 sm:grid-cols-2"><Pick label="Quantidade" value={String(quantity)} options={[1,2,3,4,5,6].map(value => ({ value: String(value), label: String(value) }))} onChange={value => setQuantity(Number(value))} />
         <Pick label="Tom" value={tone} options={[...encounterTones]} onChange={value => setTone(value as EncounterTone)} /></div>
@@ -137,8 +137,8 @@ function NpcForm({ game, draft, setDraft, hexOptions }: { game: GameState; draft
     <div className="npc-toggle-row"><label><input type="checkbox" checked={draft.accompaniesParty ?? false} onChange={event => setDraft({ ...draft, accompaniesParty: event.target.checked, hex: event.target.checked ? game.partyHex : draft.hex })} /> <Users size={15} /> Acompanha o grupo principal</label>
       <label><input type="checkbox" checked={draft.active} onChange={event => update("active", event.target.checked)} /> Ativo na campanha</label>
       {game.shelter.hex && <label><input type="checkbox" checked={draft.home === game.shelter.hex} onChange={event => update("home", event.target.checked ? game.shelter.hex : undefined)} /> Morador identificado deste abrigo</label>}</div>
-    <div className="field"><span className="field-label">Acompanha este grupo de sobreviventes</span><div className="npc-companion-list">{game.survivors.filter(person => (person.hex ?? game.partyHex) === draft.hex).map(person => <label key={person.id}><input type="checkbox" checked={(draft.accompaniesSurvivorIds ?? []).includes(person.id)} onChange={event => update("accompaniesSurvivorIds", event.target.checked ? [...new Set([...(draft.accompaniesSurvivorIds ?? []), person.id])] : (draft.accompaniesSurvivorIds ?? []).filter(id => id !== person.id))} /> {person.name}</label>)}{!game.survivors.some(person => (person.hex ?? game.partyHex) === draft.hex) && <small className="subtle">Nenhum sobrevivente neste hex. Mova o NPC ou use o grupo principal.</small>}</div></div>
-    {isAtShelter && <p className="text-xs subtle">Este NPC está na base ativa e entra no consumo individual das reservas ao encerrar o dia.</p>}
+    <div className="field"><span className="field-label">Acompanha este grupo de sobreviventes</span><div className="npc-companion-list">{game.survivors.filter(person => (person.hex ?? game.partyHex) === draft.hex).map(person => <label key={person.id}><input type="checkbox" checked={(draft.accompaniesSurvivorIds ?? []).includes(person.id)} onChange={event => update("accompaniesSurvivorIds", event.target.checked ? [...new Set([...(draft.accompaniesSurvivorIds ?? []), person.id])] : (draft.accompaniesSurvivorIds ?? []).filter(id => id !== person.id))} /> {person.name}</label>)}{!game.survivors.some(person => (person.hex ?? game.partyHex) === draft.hex) && <small className="subtle">Nenhum sobrevivente neste hex. Mova o PNJ ou use o grupo principal.</small>}</div></div>
+    {isAtShelter && <p className="text-xs subtle">Este PNJ está na base ativa e entra no consumo individual das reservas ao encerrar o dia.</p>}
     <label className="field"><span className="field-label">Notas públicas</span><textarea value={draft.publicNotes ?? ""} onChange={event => update("publicNotes", event.target.value)} placeholder="O que jogadores podem ler." /></label>
     <label className="field"><span className="field-label">Notas privadas do mestre</span><textarea value={draft.notes} onChange={event => update("notes", event.target.value)} placeholder="Segredos, ganchos e relações ocultas." /></label>
   </div>;

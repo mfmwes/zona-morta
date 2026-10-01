@@ -21,6 +21,7 @@ import { EmptyItemArt, ItemArt } from "@/components/item-art";
 import { AbilityArt } from "@/components/ability-art";
 import { RollDialog, type RollRequest } from "@/components/roll-dialog";
 import { Counter, Field, Pick } from "@/components/game-controls";
+import { traitLabel, localizeRollLog } from "@/lib/terminology";
 import { absoluteMinutes, addLog, ammunitionCount, ammunitionItemType, ammunitionTypes, content, survivorHex, survivorStats, traits, type EquipmentSlot, type GameState, type Infection, type Survivor } from "@/lib/game";
 import { activeCart, atSharedStorage, batteryStateFor, cartStoredLoad, catalogForItem, countsAsMedication, discardItem, stowSlot } from "@/lib/inventory";
 import { provisionBreakdown, provisionDisplay, provisionItemInfo } from "@/lib/provision-items";
@@ -172,18 +173,18 @@ function RestPlanner({ game, edit, selected, playerMode, playerPreview, restPeer
       else failure = result.message;
     });
     if (!completed) { toast.error(failure); return; }
-    toast.success(`Descanso ${kind === "short" ? "curto" : "longo"} concluído`, { description: `As duas escolhas de cada sobrevivente foram aplicadas. Fear +${fear}.` });
+    toast.success(`Descanso ${kind === "short" ? "curto" : "longo"} concluído`, { description: `As duas escolhas de cada sobrevivente foram aplicadas. Medo +${fear}.` });
     setOpen(false);
   }
 
   return <section className="character-surface character-rest-panel"><SectionHeading index="04" title={personalPlanning ? "Seu descanso" : "Descanso da mesa"} aside={<span className="character-micro">2 AÇÕES POR PESSOA</span>} />
-    <p className="character-section-intro">Curto recupera recursos com d4+1; longo limpa o recurso escolhido. Cada ação pode beneficiar você ou outra pessoa no mesmo hex. Preparar concede Hope automaticamente.</p>
+    <p className="character-section-intro">Curto recupera recursos com d4+1; longo limpa o recurso escolhido. Cada ação pode beneficiar você ou outra pessoa no mesmo hex. Preparar concede Esperança automaticamente.</p>
     <div className="character-rest-actions"><Button size="sm" variant="outline" disabled={!actors.length} onClick={() => begin("short")}><Moon size={16} /> Descanso curto</Button>
       <Button size="sm" disabled={!actors.length} onClick={() => begin("long")}><Moon size={16} /> Descanso longo</Button></div>
     {personalPlanning && selected.restPlan && <p className="character-rest-status">Escolhas de descanso {selected.restPlan.kind === "short" ? "curto" : "longo"} registradas. Você pode alterá-las antes da conclusão.</p>}
     {playerPreview && !playerMode && <p className="character-rest-preview-note">Prévia interativa: as escolhas são registradas para o sobrevivente selecionado, como aconteceria no acesso do jogador.</p>}
     <Dialog open={open} onOpenChange={setOpen}><DialogContent className="rest-planner-dialog"><DialogHeader><DialogTitle>{personalPlanning ? "Escolher seu" : "Organizar"} descanso {kind === "short" ? "curto" : "longo"}</DialogTitle>
-      <DialogDescription>{personalPlanning ? "Defina as duas ações e quem receberá cada benefício. O mestre conclui o descanso para toda a mesa." : "As escolhas já registradas pelos jogadores aparecem aqui. Ajuste apenas se necessário e conclua uma vez para aplicar valores, Fear e renovação de habilidades."}</DialogDescription></DialogHeader>
+      <DialogDescription>{personalPlanning ? "Defina as duas ações e quem receberá cada benefício. O mestre conclui o descanso para toda a mesa." : "As escolhas já registradas pelos jogadores aparecem aqui. Ajuste apenas se necessário e conclua uma vez para aplicar valores, Medo e renovação de habilidades."}</DialogDescription></DialogHeader>
       <div className="rest-planner-list">{actors.map(person => {
         const selectedChoices = choices[person.id] ?? defaultChoices(person, kind);
         const options = restActionsFor(kind).map(action => ({ value: action, label: restActionLabels[action] }));
@@ -227,7 +228,7 @@ function AbilityUseControl({ game, edit, survivorId, abilityId, name, effect, ho
   return <Dialog open={open} onOpenChange={setOpen}>
     <DialogTrigger asChild><Button size="sm" variant="outline" disabled={(!placeOrPatient && !available) || (hopeFeature && !canPay)}>
       {!available ? `Usada ${period === "scene" ? "nesta cena" : period === "day" ? "hoje" : "neste período"}`
-        : hopeFeature && !canPay ? "Exige 3 Hope" : buttonLabel ?? "Registrar uso"}
+        : hopeFeature && !canPay ? "Exige 3 Esperança" : buttonLabel ?? "Registrar uso"}
     </Button></DialogTrigger>
     <DialogContent className="ability-use-dialog"><DialogHeader><DialogTitle>Usar {name}</DialogTitle>
       <DialogDescription>Confirme que o gatilho ocorreu. O aplicativo desconta o recurso e guarda o limite de uso; resolva o efeito descrito com o grupo.</DialogDescription></DialogHeader>
@@ -298,7 +299,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
   const archetype = selected ? content.archetypes.find(a => a.name === selected.archetype) : null;
   const hopeFeature = archetype?.hopeFeature ?? "";
   const hopeSeparator = hopeFeature.indexOf(":");
-  const hopeName = hopeSeparator >= 0 ? hopeFeature.slice(0, hopeSeparator).trim() : "Característica de Hope";
+  const hopeName = hopeSeparator >= 0 ? hopeFeature.slice(0, hopeSeparator).trim() : "Característica de Esperança";
   const hopeEffect = hopeSeparator >= 0 ? hopeFeature.slice(hopeSeparator + 1).trim() : hopeFeature;
   const primary = selected ? getPrimary(selected.primary) : null;
   const secondary = selected ? getSecondary(selected.secondary) : null;
@@ -420,7 +421,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
       if (hope === fear) { s.hope = Math.min(6, s.hope + 1); s.stress = Math.max(0, s.stress - 1); }
       else if (hope > fear) s.hope = Math.min(6, s.hope + 1);
       else draft.fear = Math.min(12, draft.fear + 1);
-      addLog(draft, "tratamento", s.name + ": limpeza de Exposição (" + hope + " Hope / " + fear + " Fear + Conhecimento" +
+      addLog(draft, "tratamento", s.name + ": limpeza de Exposição (" + hope + " Esperança / " + fear + " Medo + Conhecimento" +
         (support.bonus ? " + " + support.bonus + " infraestrutura [" + support.sources.join(" + ") + "]" : "") + " = " + total +
         ", Dificuldade 13). " + (success ? "Saudável" : "Permanece Exposto") + ". Gastou 1 Medicamentos de " + sourceLabel + ".", s.id);
     });
@@ -444,7 +445,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
                 <span className="character-roster-avatar">{own.portrait ? <img src={own.portrait} alt="" /> : own.name.charAt(0).toUpperCase()}</span>
                 <span><b>{own.name}</b>
                   <small><Heart size={12} aria-hidden="true" /> {st.hp-own.hp}/{st.hp}<span aria-hidden="true"> · </span>{own.archetype}</small>
-                  <small className="character-roster-state"><Activity size={11} aria-hidden="true" /> {own.infection}<span aria-hidden="true"> · </span>Hex {survivorHex(game, own)}<span aria-hidden="true"> · </span>Estresse {own.stress}<span aria-hidden="true"> · </span>Hope {own.hope}</small>
+                  <small className="character-roster-state"><Activity size={11} aria-hidden="true" /> {own.infection}<span aria-hidden="true"> · </span>Hex {survivorHex(game, own)}<span aria-hidden="true"> · </span>Estresse {own.stress}<span aria-hidden="true"> · </span>Esperança {own.hope}</small>
                 </span>
               </button>
             </SurvivorContextMenu>;
@@ -453,7 +454,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
             <span className="character-roster-avatar">{peer.portrait ? <img src={peer.portrait} alt="" /> : peer.name.charAt(0).toUpperCase()}</span>
             <span><b>{peer.name}</b>
               <small><Heart size={12} aria-hidden="true" /> {peer.hp ?? "—"}/{peer.hpMax ?? "—"}<span aria-hidden="true"> · </span>{peer.archetype ?? "Sobrevivente"}</small>
-              <small className={`character-roster-state ${peer.infection && peer.infection !== "Saudável" ? "at-risk" : ""}`}><Activity size={11} aria-hidden="true" /> {peer.infection ?? "Estado não informado"}<span aria-hidden="true"> · </span>Hex {peer.hex ?? "—"}<span aria-hidden="true"> · </span>Estresse {peer.stress ?? "—"}<span aria-hidden="true"> · </span>Hope {peer.hope ?? "—"}</small>
+              <small className={`character-roster-state ${peer.infection && peer.infection !== "Saudável" ? "at-risk" : ""}`}><Activity size={11} aria-hidden="true" /> {peer.infection ?? "Estado não informado"}<span aria-hidden="true"> · </span>Hex {peer.hex ?? "—"}<span aria-hidden="true"> · </span>Estresse {peer.stress ?? "—"}<span aria-hidden="true"> · </span>Esperança {peer.hope ?? "—"}</small>
             </span>
           </div>;
         }) : game.survivors.map(s => { const st = survivorStats(s); const canControl = !playerPreview; const masterMode = !playerPreview; return <SurvivorContextMenu key={s.id}
@@ -499,7 +500,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
           <TabsContent value="resumo" className="character-tab-content">
             <div className="character-summary-grid">
               <section className="character-surface character-summary-action"><SectionHeading index="01" title="Pronto para agir" aside={<span className="character-micro">KIT ATIVO</span>} />
-                <div className="character-active-weapon">{selected.primary ? <ItemArt name={selected.primary} category="Armas primárias" /> : <EmptyItemArt />}<div><span>Arma principal</span><strong>{selected.primary || "Sem arma principal"}</strong><small>{primary ? `${primary.damage} · ${primary.range} · ${primary.trait}` : "Dados da arma no kit"}</small></div>
+                <div className="character-active-weapon">{selected.primary ? <ItemArt name={selected.primary} category="Armas primárias" /> : <EmptyItemArt />}<div><span>Arma principal</span><strong>{selected.primary || "Sem arma principal"}</strong><small>{primary ? `${primary.damage} · ${primary.range} · ${traitLabel(primary.trait)}` : "Dados da arma no kit"}</small></div>
                   <Button size="sm" variant="outline" className="character-weapon-roll" onClick={() => setRollRequest({ survivorId: selected.id, kind: "attack", weapon: "primary" })}><Dice5 size={16} /> Atacar</Button></div>
                 {selected.secondary && <div className="character-info-row"><ItemArt name={selected.secondary} category="Armas secundárias" size="small" /><span>Secundária</span><b>{selected.secondary}</b></div>}
                 <div className="character-info-row">{selected.protection ? <ItemArt name={selected.protection} category="Proteções" size="small" /> : <EmptyItemArt />}<span>Proteção</span><b>{selected.protection || "Sem proteção"}</b></div>
@@ -523,12 +524,12 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
               <section className="character-surface character-summary-specialties"><SectionHeading index="03" title="Especialidades" />
                 <div className="character-specialties-layout">
                   <div className="character-specialties-experiences">
-                    <div className="character-experience"><b>{origin?.experience || selected.origin}</b><span>Experience de origem · +2 por 1 Hope</span></div>
-                    <div className="character-experience"><b>{selected.freeExperience}</b><span>Experience livre · +2 por 1 Hope</span></div>
+                    <div className="character-experience"><b>{origin?.experience || selected.origin}</b><span>Experiência de origem · +2 por 1 Esperança</span></div>
+                    <div className="character-experience"><b>{selected.freeExperience}</b><span>Experiência livre · +2 por 1 Esperança</span></div>
                   </div>
                   <button className="character-hope-teaser" type="button" onClick={() => setActiveTab("habilidades")}
-                    aria-label={`Ler habilidade de Hope: ${hopeName}`}>
-                    <AbilityArt abilityId={`hope:${selected.archetype}`} /><span className="character-hope-teaser-copy"><small>HABILIDADE DE HOPE</small><b>{hopeName}</b></span><strong>3 Hope</strong>
+                    aria-label={`Ler habilidade de Esperança: ${hopeName}`}>
+                    <AbilityArt abilityId={`hope:${selected.archetype}`} /><span className="character-hope-teaser-copy"><small>HABILIDADE DE ESPERANÇA</small><b>{hopeName}</b></span><strong>3 Esperança</strong>
                   </button>
                 </div>
                 <div className="character-specialties-footer">
@@ -541,17 +542,17 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
           </TabsContent>
           <TabsContent value="atributos" className="character-tab-content">
             <section className="character-surface"><SectionHeading index="01" title="Atributos e testes" aside={<span className="character-micro">DADOS DE DUALIDADE</span>} />
-              <p className="character-section-intro">Clique em um atributo para rolar. Uma Experience pertinente acrescenta +2 ao gastar 1 Hope; declare seu uso antes da rolagem.</p>
-              <div className="character-attributes">{traits.map(trait => <button type="button" key={trait} className="character-attribute" onClick={() => setRollRequest({ survivorId: selected.id, kind: "action", trait })} aria-label={`Rolar ${trait}, modificador ${selected.attributes[trait]}`}><span>{trait}</span><strong>{selected.attributes[trait] > 0 ? "+" : ""}{selected.attributes[trait]}</strong><Dice5 size={15} aria-hidden="true" /></button>)}</div>
-              {Object.entries(modifiers?.traits ?? {}).some(([, value]) => value !== 0) && <p className="character-rule-note">Equipamento: {Object.entries(modifiers?.traits ?? {}).filter(([, value]) => value !== 0).map(([name, value]) => `${value} em ${name}`).join(" · ")}. Os atributos acima são os valores base; os ajustes entram automaticamente ao rolar.</p>}
-              <div className="character-experience-list"><button type="button" onClick={() => setRollRequest({ survivorId: selected.id, kind: "action", experience: "origin" })} aria-label={`Rolar com Experience ${origin?.experience || selected.origin}, custa 1 Hope`}><BookOpen size={18} aria-hidden="true" /><span>{origin?.experience || selected.origin}</span><b>+2 · 1 Hope</b></button><button type="button" onClick={() => setRollRequest({ survivorId: selected.id, kind: "action", experience: "free" })} aria-label={`Rolar com Experience ${selected.freeExperience}, custa 1 Hope`}><BookOpen size={18} aria-hidden="true" /><span>{selected.freeExperience}</span><b>+2 · 1 Hope</b></button></div>
+              <p className="character-section-intro">Clique em um atributo para rolar. Uma Experiência pertinente acrescenta +2 ao gastar 1 Esperança; declare seu uso antes da rolagem.</p>
+              <div className="character-attributes">{traits.map(trait => <button type="button" key={trait} className="character-attribute" onClick={() => setRollRequest({ survivorId: selected.id, kind: "action", trait })} aria-label={`Rolar ${traitLabel(trait)}, modificador ${selected.attributes[trait]}`}><span>{traitLabel(trait)}</span><strong>{selected.attributes[trait] > 0 ? "+" : ""}{selected.attributes[trait]}</strong><Dice5 size={15} aria-hidden="true" /></button>)}</div>
+              {Object.entries(modifiers?.traits ?? {}).some(([, value]) => value !== 0) && <p className="character-rule-note">Equipamento: {Object.entries(modifiers?.traits ?? {}).filter(([, value]) => value !== 0).map(([name, value]) => `${value} em ${traitLabel(name)}`).join(" · ")}. Os atributos acima são os valores base; os ajustes entram automaticamente ao rolar.</p>}
+              <div className="character-experience-list"><button type="button" onClick={() => setRollRequest({ survivorId: selected.id, kind: "action", experience: "origin" })} aria-label={`Rolar com Experiência ${origin?.experience || selected.origin}, custa 1 Esperança`}><BookOpen size={18} aria-hidden="true" /><span>{origin?.experience || selected.origin}</span><b>+2 · 1 Esperança</b></button><button type="button" onClick={() => setRollRequest({ survivorId: selected.id, kind: "action", experience: "free" })} aria-label={`Rolar com Experiência ${selected.freeExperience}, custa 1 Esperança`}><BookOpen size={18} aria-hidden="true" /><span>{selected.freeExperience}</span><b>+2 · 1 Esperança</b></button></div>
             </section>
             <section className="character-surface"><SectionHeading index="02" title="Origem" /><div className="character-feature-callout"><b>{selected.origin} · {origin?.feature}</b><p>{origin?.effect}</p></div></section>
-            <section className="character-surface"><SectionHeading index="03" title="Últimas rolagens" />{recentRolls.length ? <div className="character-roll-history">{recentRolls.map(entry => <div key={entry.id}><span>Dia {entry.day} · {entry.time} · {entry.kind}</span><p>{entry.text}</p></div>)}</div> : <p className="character-empty-list">Nenhuma rolagem deste sobrevivente registrada ainda.</p>}</section>
+            <section className="character-surface"><SectionHeading index="03" title="Últimas rolagens" />{recentRolls.length ? <div className="character-roll-history">{recentRolls.map(entry => <div key={entry.id}><span>Dia {entry.day} · {entry.time} · {entry.kind}</span><p>{localizeRollLog(entry.text)}</p></div>)}</div> : <p className="character-empty-list">Nenhuma rolagem deste sobrevivente registrada ainda.</p>}</section>
           </TabsContent>
           <TabsContent value="combate" className="character-tab-content">
             <section className="character-mobile-resources" aria-label="Ajustar recursos de combate">
-              <ResourceControl label="Vida" icon={Heart} current={stats.hp-selected.hp} max={stats.hp} onChange={value => change(selected.id, s => { s.hp = stats.hp - value; })} tone="health" reverse />
+              <ResourceControl label="PV" icon={Heart} current={stats.hp-selected.hp} max={stats.hp} onChange={value => change(selected.id, s => { s.hp = stats.hp - value; })} tone="health" reverse />
               <ResourceControl label="Estresse" icon={Zap} current={selected.stress} max={6} onChange={value => change(selected.id, s => { s.stress = value; })} tone="stress" />
               <ResourceControl label="Esperança" icon={Sparkles} current={selected.hope} max={6} onChange={value => change(selected.id, s => { s.hope = value; })} tone="hope" />
               <ResourceControl label="Armadura livre" icon={Shield} current={Math.max(0, stats.armor-(selected.armorMarked ?? 0))} max={stats.armor} onChange={value => change(selected.id, s => { s.armorMarked = Math.max(0, (s.armorMarked ?? 0) + Math.max(0, stats.armor - (s.armorMarked ?? 0)) - value); })} tone="armor" reverse />
@@ -564,9 +565,9 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
               <div className="character-proficiency"><ShieldCheck size={18} aria-hidden="true" /><span>Proficiência registrada</span>{playerMode ? <b>{selected.proficiency ?? 1}</b> : <Counter compact label="Proficiência" value={selected.proficiency ?? 1} min={1} max={9} onChange={value => change(selected.id, s => { s.proficiency = value; })} />}</div>
             </section>
             <section className="character-surface"><SectionHeading index="02" title="Armas e kit ativo" />
-              <div className="character-equipment">{selected.primary ? <ItemArt name={selected.primary} category="Armas primárias" size="large" /> : <EmptyItemArt size="large" />}<div><span>PRIMÁRIA</span><h4>{selected.primary || "Sem arma principal"}</h4>{primary && <><p><b>{primary.damage}</b> dano · {primary.range} · {primary.trait} · {primary.hands === "Uma" ? "uma mão" : "duas mãos"}</p><div className="character-chips"><span>Ruído: {primary.noise}</span><span>Carga guardada: {primary.stored}</span></div><p>{primary.note}</p></>}
+              <div className="character-equipment">{selected.primary ? <ItemArt name={selected.primary} category="Armas primárias" size="large" /> : <EmptyItemArt size="large" />}<div><span>PRIMÁRIA</span><h4>{selected.primary || "Sem arma principal"}</h4>{primary && <><p><b>{primary.damage}</b> dano · {primary.range} · {traitLabel(primary.trait)} · {primary.hands === "Uma" ? "uma mão" : "duas mãos"}</p><div className="character-chips"><span>Ruído: {primary.noise}</span><span>Carga guardada: {primary.stored}</span></div><p>{primary.note}</p></>}
                 <Button size="sm" className="mt-2" disabled={!primary} onClick={() => setRollRequest({ survivorId: selected.id, kind: "attack", weapon: "primary" })}><Dice5 size={16} /> Rolar ataque</Button>{!primary && <button type="button" className="character-text-link" onClick={() => setActiveTab("inventario")}>Equipar uma arma no inventário ↗</button>}{Boolean(modifiers?.primaryDamage) && <p>+{modifiers?.primaryDamage} ao dano pela Faca pequena (automático).</p>}</div></div>
-              {selected.secondary && <div className="character-equipment"><ItemArt name={selected.secondary} category="Armas secundárias" size="large" /><div><span>SECUNDÁRIA</span><h4>{selected.secondary}</h4>{secondary && <><p><b>{secondary.damage}</b> dano · {secondary.range} · {secondary.trait}</p><div className="character-chips"><span>Carga guardada: {secondary.stored}</span></div><p>{secondary.effect}</p></>}
+              {selected.secondary && <div className="character-equipment"><ItemArt name={selected.secondary} category="Armas secundárias" size="large" /><div><span>SECUNDÁRIA</span><h4>{selected.secondary}</h4>{secondary && <><p><b>{secondary.damage}</b> dano · {secondary.range} · {traitLabel(secondary.trait)}</p><div className="character-chips"><span>Carga guardada: {secondary.stored}</span></div><p>{secondary.effect}</p></>}
                 <Button size="sm" variant="outline" className="mt-2" onClick={() => setRollRequest({ survivorId: selected.id, kind: "attack", weapon: "secondary" })}><Dice5 size={16} /> Rolar secundária</Button></div></div>}
               <div className="character-equipment">{selected.protection ? <ItemArt name={selected.protection} category="Proteções" size="large" /> : <EmptyItemArt size="large" />}<div><span>PROTEÇÃO VESTIDA</span><h4>{selected.protection || "Sem proteção"}</h4>{protection && <><p>Limiar maior {stats.major} · severo {stats.severe} · {stats.armor} espaços de armadura</p><p>{protection.effect}</p></>}</div></div>
               {selected.outfit && <div className="character-equipment"><ItemArt name={selected.outfit} category="Trajes e acessórios" size="large" /><div><span>TRAJE VESTIDO</span><h4>{selected.outfit}</h4><p>Em uso · não conta novamente como carga guardada.</p></div></div>}
@@ -574,17 +575,17 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
               <div className="character-equipment">{selected.personal ? <ItemArt name={selected.personal} category="Abrigo, transporte e mochilas" size="large" /> : <EmptyItemArt size="large" />}<div><span>ITEM PESSOAL</span><h4>{selected.personal || "Nenhum item pessoal"}</h4>{personal && <p>{personal.effect} · Carga guardada {personal.load}</p>}</div></div>
               {(["pocket1", "pocket2"] as const).map((slot, index) => {
                 const pocketItem = selected.equippedItems?.[slot];
-                return <div className="character-equipment" key={slot}>{selected[slot] ? <ItemArt name={selected[slot]!} category={pocketItem?.category} size="large" /> : <EmptyItemArt size="large" />}<div><span>BOLSO {index + 1}</span><h4>{selected[slot] || "Bolso vazio"}</h4><p>{selected[slot] ? "Item de acesso rápido · 0 carga enquanto ativo." : "Aceita objetos compactos marcados com Carga/Guarda 0."}</p></div></div>;
+                return <div className="character-equipment" key={slot}>{selected[slot] ? <ItemArt name={selected[slot]!} category={pocketItem?.category} size="large" /> : <EmptyItemArt size="large" />}<div><span>BOLSO {index + 1}</span><h4>{selected[slot] || "Bolso vazio"}</h4><p>{selected[slot] ? "Item de acesso rápido · 0 carga enquanto ativo." : "Aceita objetos compactos marcados com Carga guardada 0."}</p></div></div>;
               })}
             </section>
             <p className="character-rule-note">Munição é um item físico do inventário. O primeiro disparo de cada categoria na cena compromete 1 unidade compatível; ela permanece visível e bloqueada até a próxima cena, quando é consumida. Até 4 unidades do mesmo tipo ocupam 1 espaço de carga. Armas, proteção e traje em uso não ocupam espaço guardado.</p>
           </TabsContent>
           <TabsContent value="habilidades" className="character-tab-content">
             <section className="character-hope-feature" aria-labelledby="hope-feature-title">
-              <div className="character-hope-feature-top"><span><Sparkles size={17} aria-hidden="true" /> HABILIDADE DE HOPE</span><span>ARQUÉTIPO · {selected.archetype}</span></div>
+              <div className="character-hope-feature-top"><span><Sparkles size={17} aria-hidden="true" /> HABILIDADE DE ESPERANÇA</span><span>ARQUÉTIPO · {selected.archetype}</span></div>
               <div className="character-hope-feature-body"><AbilityArt abilityId={`hope:${selected.archetype}`} size="large" />
                 <div><h3 id="hope-feature-title">{hopeName}</h3><p>{hopeEffect}</p></div></div>
-              <div className="character-hope-feature-foot"><span className="character-hope-cost"><Sparkles size={15} aria-hidden="true" /> Custo: 3 Hope</span><span>Esperança atual: <b>{selected.hope}/6</b></span>
+              <div className="character-hope-feature-foot"><span className="character-hope-cost"><Sparkles size={15} aria-hidden="true" /> Custo: 3 Esperança</span><span>Esperança atual: <b>{selected.hope}/6</b></span>
                 <AbilityUseControl game={game} edit={edit} survivorId={selected.id} abilityId={`hope:${selected.archetype}`}
                   name={hopeName} effect={hopeEffect} hopeFeature /></div>
             </section>
@@ -629,7 +630,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
                 const pocketItem = selected.equippedItems?.[slot];
                 return <div className="character-kit-line" key={slot}>{selected[slot] ? <ItemArt name={selected[slot]!} category={pocketItem?.category} size="small" /> : <EmptyItemArt />}<span>Bolso {index + 1} · 0 carga</span><b>{selected[slot] || "Vazio"}</b>{selected[slot] && <Button size="sm" variant="ghost" aria-label={`Guardar ${selected[slot]}`} onClick={() => storeActive(slot)}>Guardar</Button>}</div>;
               })}
-              <p className="roll-hint">Para trocar o kit, use <b>Ações → Equipar</b>. Trajes vestidos saem da carga guardada. O Carrinho dobrável não ocupa um slot: aberto, exige duas mãos e leva até 4 espaços próprios. Objetos com Carga/Guarda 0 podem ocupar os bolsos.</p>
+              <p className="roll-hint">Para trocar o kit, use <b>Ações → Equipar</b>. Trajes vestidos saem da carga guardada. O Carrinho dobrável não ocupa um slot: aberto, exige duas mãos e leva até 4 espaços próprios. Objetos com Carga guardada 0 podem ocupar os bolsos.</p>
             </section>
             </div>
             <section className="character-surface"><SectionHeading index="03" title="Itens guardados" aside={<AddItemDialog game={game} edit={edit} ownerId={selected.id} />} />
@@ -676,7 +677,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
               {selected.infection === "Terminal" && !playerPreview && <div className="character-terminal"><Counter compact label="Cenas significativas restantes" value={selected.terminalScenes} max={3} onChange={value => change(selected.id, s => { s.terminalScenes = value; })} /></div>}
               {selected.infection === "Terminal" && playerPreview && <p className="character-terminal">Cenas significativas restantes: <b>{selected.terminalScenes}</b></p>}
             </section>
-            <section className="character-surface"><SectionHeading index="02" title="Estado de combate" /><div className="character-combat-metrics"><div><Heart size={17} aria-hidden="true" /><span>Vida disponível</span><b>{stats.hp-selected.hp}/{stats.hp}</b></div><div><Zap size={17} aria-hidden="true" /><span>Estresse marcado</span><b>{selected.stress}/6</b></div><div><Shield size={17} aria-hidden="true" /><span>Armadura marcada</span><b>{selected.armorMarked ?? 0}/{stats.armor}</b></div></div><p className="character-rule-note">Ajuste os recursos no painel lateral. Em telas menores, toque em Combate na barra de consulta rápida.</p></section>
+            <section className="character-surface"><SectionHeading index="02" title="Estado de combate" /><div className="character-combat-metrics"><div><Heart size={17} aria-hidden="true" /><span>PV disponíveis</span><b>{stats.hp-selected.hp}/{stats.hp}</b></div><div><Zap size={17} aria-hidden="true" /><span>Estresse marcado</span><b>{selected.stress}/6</b></div><div><Shield size={17} aria-hidden="true" /><span>Armadura marcada</span><b>{selected.armorMarked ?? 0}/{stats.armor}</b></div></div><p className="character-rule-note">Ajuste os recursos no painel lateral. Em telas menores, toque em Combate na barra de consulta rápida.</p></section>
           </TabsContent>
           <TabsContent value="historia" className="character-tab-content">
             <section className="character-surface"><SectionHeading index="01" title="Antes e depois" /><div className="character-story-grid"><div><span>ORIGEM</span><b>{selected.origin}</b><p>{origin?.past}</p></div><div><span>ATUAÇÃO</span><b>{selected.archetype} · {selected.specialty}</b><p>Trilhas: {archetype?.tracks.join(" e ")}</p></div></div>
@@ -689,7 +690,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
 
         <aside className="character-quick" aria-label="Consulta rápida do sobrevivente">
           <div className="character-quick-desktop"><div className="character-quick-heading"><span>CONSULTA RÁPIDA</span><small>RECURSOS EM CENA</small></div>
-            <ResourceControl label="Vida" icon={Heart} current={stats.hp-selected.hp} max={stats.hp} onChange={value => change(selected.id, s => { s.hp = stats.hp - value; })} tone="health" reverse />
+            <ResourceControl label="PV" icon={Heart} current={stats.hp-selected.hp} max={stats.hp} onChange={value => change(selected.id, s => { s.hp = stats.hp - value; })} tone="health" reverse />
             <ResourceControl label="Estresse" icon={Zap} current={selected.stress} max={6} onChange={value => change(selected.id, s => { s.stress = value; })} tone="stress" />
             <ResourceControl label="Esperança" icon={Sparkles} current={selected.hope} max={6} onChange={value => change(selected.id, s => { s.hope = value; })} tone="hope" />
             <ResourceControl label="Armadura livre" icon={Shield} current={Math.max(0, stats.armor-(selected.armorMarked ?? 0))} max={stats.armor} onChange={value => change(selected.id, s => { s.armorMarked = Math.max(0, (s.armorMarked ?? 0) + Math.max(0, stats.armor - (s.armorMarked ?? 0)) - value); })} tone="armor" reverse />
@@ -701,7 +702,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
             <div className="character-quick-attack"><span><Swords size={17} aria-hidden="true" /> ATAQUE PRONTO</span><strong>{selected.primary || "Sem arma principal"}</strong><small>{primary ? `${primary.damage} · ${primary.range}` : "Veja o kit de combate"}</small><div><span>{primaryAmmoType ? `Munição · ${primaryAmmoType}` : "Munição"}</span><b>{primaryAmmoType ? `${primaryAmmoAvailable} livre(s)${primaryAmmoCommitted ? ` + ${primaryAmmoCommitted} comprometida` : ""}` : "não usa"}</b></div></div>
             <div className="character-quick-rolls"><button type="button" onClick={() => setRollRequest({ survivorId: selected.id, kind: "action" })}><Dice5 size={16} aria-hidden="true" /> Teste</button><button type="button" disabled={!primary} onClick={() => setRollRequest({ survivorId: selected.id, kind: "attack", weapon: "primary" })}><Crosshair size={16} aria-hidden="true" /> Ataque</button></div>
           </div>
-          <div className="character-quick-mobile"><span title="Vida disponível"><Heart size={16} aria-hidden="true" /><b>{stats.hp-selected.hp}/{stats.hp}</b><small>Vida</small></span><span title="Estresse marcado"><Zap size={16} aria-hidden="true" /><b>{selected.stress}/6</b><small>Stress</small></span><span title="Esperança"><Sparkles size={16} aria-hidden="true" /><b>{selected.hope}/6</b><small>Hope</small></span><span title="Evasão"><Crosshair size={16} aria-hidden="true" /><b>{stats.evasion}</b><small>EV</small></span><button type="button" onClick={() => setActiveTab("combate")} aria-label="Abrir combate e controles de recursos"><Shield size={16} aria-hidden="true" /><b>{Math.max(0, stats.armor-(selected.armorMarked ?? 0))}</b><small>Combate</small></button><button type="button" className="character-quick-mobile-weapon" onClick={() => setActiveTab("combate")}><Swords size={14} aria-hidden="true" /><strong>{selected.primary || "Sem arma principal"}</strong><span>{primary ? `${primary.damage} · ${primary.range}` : "Ver ataque"}</span><span>{primaryAmmoType ? `${primaryAmmoAvailable} livre(s)` : "sem munição"}</span></button></div>
+          <div className="character-quick-mobile"><span title="PV disponíveis"><Heart size={16} aria-hidden="true" /><b>{stats.hp-selected.hp}/{stats.hp}</b><small>PV</small></span><span title="Estresse marcado"><Zap size={16} aria-hidden="true" /><b>{selected.stress}/6</b><small>Estresse</small></span><span title="Esperança"><Sparkles size={16} aria-hidden="true" /><b>{selected.hope}/6</b><small>Esperança</small></span><span title="Evasão"><Crosshair size={16} aria-hidden="true" /><b>{stats.evasion}</b><small>Evasão</small></span><button type="button" onClick={() => setActiveTab("combate")} aria-label="Abrir combate e controles de recursos"><Shield size={16} aria-hidden="true" /><b>{Math.max(0, stats.armor-(selected.armorMarked ?? 0))}</b><small>Combate</small></button><button type="button" className="character-quick-mobile-weapon" onClick={() => setActiveTab("combate")}><Swords size={14} aria-hidden="true" /><strong>{selected.primary || "Sem arma principal"}</strong><span>{primary ? `${primary.damage} · ${primary.range}` : "Ver ataque"}</span><span>{primaryAmmoType ? `${primaryAmmoAvailable} livre(s)` : "sem munição"}</span></button></div>
         </aside>
       </div>
       {rollRequest && <RollDialog game={game} edit={edit} request={rollRequest} open onOpenChange={opened => { if (!opened) setRollRequest(null); }} />}

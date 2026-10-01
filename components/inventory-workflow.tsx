@@ -82,11 +82,11 @@ export function AddItemDialog({ game, edit, ownerId }: { game: GameState; edit: 
         <div className="inventory-catalog-results" aria-label="Resultados do catálogo">
           {matches.map(item => <button type="button" key={catalogKey(item)} className={catalogKey(item) === key ? "selected" : ""}
             onClick={() => setKey(catalogKey(item))} aria-pressed={catalogKey(item) === key}>
-            <ItemArt name={item.name} category={item.category} /><span><b>{item.name}</b><small>{item.category}</small></span><strong>{item.fields.find(f => ["Guarda", "Carga"].includes(f.label))?.value ?? "1"} espaço(s)</strong></button>)}
+            <ItemArt name={item.name} category={item.category} /><span><b>{item.name}</b><small>{item.category}</small></span><strong>{item.fields.find(f => ["Carga guardada", "Guarda", "Carga"].includes(f.label))?.value ?? "1"} espaço(s)</strong></button>)}
           {matches.length === 0 && <p>Nenhum item encontrado. Tente outro termo ou registre um item livre.</p>}
         </div>
         {entry && <div className="inventory-selection"><div className="inventory-selection-heading"><ItemArt name={entry.name} category={entry.category} size="large" /><div><b>{entry.name}</b><span>Carga registrada: {preview?.load === 0 && ["Alimentos","Bebidas"].includes(entry.category) ? "porções físicas agrupadas na carga" : preview?.load === 0 ? "objeto compacto · pode usar bolso" : (preview?.load ?? 1) + " por unidade"}</span></div></div>
-          <dl>{entry.fields.filter(f => !["Guarda", "Carga"].includes(f.label)).slice(0, 4).map(f => <div key={f.label}><dt>{f.label}</dt><dd>{f.value}</dd></div>)}</dl></div>}
+          <dl>{entry.fields.filter(f => !["Carga guardada", "Guarda", "Carga"].includes(f.label)).slice(0, 4).map(f => <div key={f.label}><dt>{f.label}</dt><dd>{f.value}</dd></div>)}</dl></div>}
       </> : <div className="inventory-search"><Field label="Nome" value={name} onChange={setName} placeholder="Ex.: filtro portátil" />
         <Field label="Carga por unidade" value={load} onChange={setLoad} type="number" /></div>}
       <div className="inventory-search"><Field label="Quantidade" value={qty} onChange={setQty} type="number" />

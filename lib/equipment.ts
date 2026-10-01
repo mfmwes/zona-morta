@@ -1,18 +1,19 @@
 import content from "./content.json";
+import { localizeRulesText, traitStorageKey } from "./terminology";
 
 // Starting choices remain deliberately small. Equipment found in play uses the full catalogue.
 const entries = (category: string) => content.catalog.filter(item => item.category === category);
 type Entry = (typeof content.catalog)[number];
 const field = (entry: Entry, name: string) => entry.fields.find(f => f.label === name)?.value ?? "";
-const stored = (entry: Entry) => Number(field(entry, "Guarda").match(/^\d+/)?.[0] ?? 1);
+const stored = (entry: Entry) => Number((field(entry, "Carga guardada") || field(entry, "Guarda")).match(/^\d+/)?.[0] ?? 1);
 
 export const primaryWeapons = entries("Armas primárias").map(entry => ({
-  name: entry.name, trait: field(entry, "Atributo"), range: field(entry, "Alcance"),
+  name: entry.name, trait: traitStorageKey(field(entry, "Atributo")), range: field(entry, "Alcance"),
   damage: field(entry, "Dano"), hands: field(entry, "Mãos"), noise: field(entry, "Barulho"),
   stored: stored(entry), note: field(entry, "Observação"),
 }));
 export const secondaryWeapons = entries("Armas secundárias").map(entry => ({
-  name: entry.name, trait: field(entry, "Atributo"), range: field(entry, "Alcance"),
+  name: entry.name, trait: traitStorageKey(field(entry, "Atributo")), range: field(entry, "Alcance"),
   damage: field(entry, "Dano"), stored: stored(entry), effect: field(entry, "Efeito"),
 }));
 export const protections = entries("Proteções").map(entry => {
@@ -38,7 +39,7 @@ export function weaponAmmoType(name: string): string | null {
 
 type Kit = { primary: string; secondary: string; protection: string; kitCondition?: Partial<Record<string, string>> };
 export function equipmentModifiers(kit: Kit) {
-  const effect = getProtection(kit.protection)?.effect ?? "";
+  const effect = localizeRulesText(getProtection(kit.protection)?.effect ?? "");
   const adjustment = (name: string) => Number(effect.match(new RegExp(`([+−-]\\d+) (?:em )?${name}`))?.[1]?.replace("−", "-") ?? 0);
   const secondaryActive = getPrimary(kit.primary)?.hands !== "Duas";
   const secondary = secondaryActive ? getSecondary(kit.secondary) : undefined;
@@ -47,8 +48,8 @@ export function equipmentModifiers(kit: Kit) {
     ? Number(secondary.effect.match(/([+−-]\d+) ao valor de Armadura/i)?.[1]?.replace("−", "-") ?? 0)
     : 0;
   return {
-    evasion: adjustment("Evasion"),
-    traits: { Agilidade: adjustment("Agilidade"), Finesse: adjustment("Finesse") } as Record<string, number>,
+    evasion: adjustment("Evasão"),
+    traits: { Agilidade: adjustment("Agilidade"), Finesse: adjustment("Acuidade") } as Record<string, number>,
     armor: secondaryArmor,
     primaryDamage: secondaryActive && kit.secondary === "Faca pequena" && getPrimary(kit.primary)?.range === "Corpo a corpo" ? 1 : 0,
   };

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Field, Pick } from "@/components/game-controls";
+import { traitLabel, dualityLabel } from "@/lib/terminology";
 import { addLog, content, traits, type GameState } from "@/lib/game";
 import { equipmentModifiers, getPrimary, getSecondary } from "@/lib/equipment";
 import { applyAttackResources, attackResourceState } from "@/lib/combat-resources";
@@ -18,8 +19,8 @@ type DamageRecord = ReturnType<typeof resolveWeaponDamage> & { weaponName: strin
 
 function outcomeLabel(roll: RollRecord) {
   if (roll.outcome.critical) return "Sucesso crítico";
-  if (roll.outcome.success === null) return `Total com ${roll.outcome.with} · ${roll.kind === "attack" ? "acerto a confirmar" : "aguarda dificuldade"}`;
-  return `${roll.outcome.success ? "Sucesso" : "Falha"} com ${roll.outcome.with}`;
+  if (roll.outcome.success === null) return `Total com ${dualityLabel(roll.outcome.with)} · ${roll.kind === "attack" ? "acerto a confirmar" : "aguarda dificuldade"}`;
+  return `${roll.outcome.success ? "Sucesso" : "Falha"} com ${dualityLabel(roll.outcome.with)}`;
 }
 
 function RollForm({ game, edit, request }: { game: GameState; edit: Edit; request?: RollRequest }) {
@@ -94,12 +95,12 @@ function RollForm({ game, edit, request }: { game: GameState; edit: Edit; reques
       other: other + equipmentBonus, symptom, edge, edgeDie: edge === "none" ? null : rollDie(6), difficulty: target,
     });
     const record: RollRecord = { outcome: result, kind, trait: rollTrait, traitBonus, weaponName: weapon?.name ?? null, actorId: person, experiences: used, symptom, other, equipment: equipmentBonus };
-    const lead = `${survivor?.name ?? "Rolagem livre"}: ${kind === "attack" ? `ataque com ${weapon?.name}` : kind === "reaction" ? "reação" : "ação"} (${rollTrait})`;
+    const lead = `${survivor?.name ?? "Rolagem livre"}: ${kind === "attack" ? `ataque com ${weapon?.name}` : kind === "reaction" ? "reação" : "ação"} (${traitLabel(rollTrait)})`;
     const edgeLabel = result.edgeDie ? ` ${edge === "advantage" ? "+" : "−"} d6(${result.edgeDie})` : "";
     const targetLabel = target === null ? kind === "attack" ? "Defesa a definir" : "Dificuldade a definir" : `${kind === "attack" ? "Defesa" : "Dificuldade"} ${target}`;
-    const experienceLabel = used.length ? ` · Experiences: ${used.join(" e ")} (−${used.length} Hope)` : "";
+    const experienceLabel = used.length ? ` · Experiências: ${used.join(" e ")} (−${used.length} Esperança)` : "";
     const fixedBonus = traitBonus + used.length * 2 + other + symptom + equipmentBonus;
-    const text = `${lead}: Hope ${result.hopeDie} + Fear ${result.fearDie} ${fixedBonus >= 0 ? "+" : "−"} ${Math.abs(fixedBonus)}${edgeLabel} = ${result.total}; ${targetLabel}. ${outcomeLabel(record)}${experienceLabel}${equipmentBonus ? ` · ${equipmentBonus} por equipamento` : ""}${symptom ? " · −1 por sintomas" : ""}${kind === "reaction" ? " · reação sem ganho de Hope/Fear" : ""}.`;
+    const text = `${lead}: Esperança ${result.hopeDie} + Medo ${result.fearDie} ${fixedBonus >= 0 ? "+" : "−"} ${Math.abs(fixedBonus)}${edgeLabel} = ${result.total}; ${targetLabel}. ${outcomeLabel(record)}${experienceLabel}${equipmentBonus ? ` · ${equipmentBonus} por equipamento` : ""}${symptom ? " · −1 por sintomas" : ""}${kind === "reaction" ? " · reação sem ganho de Esperança/Medo" : ""}.`;
     const beforeHope = survivor?.hope ?? null;
     const beforeStress = survivor?.stress ?? null;
     const beforeFear = game.fear;
@@ -142,7 +143,7 @@ function RollForm({ game, edit, request }: { game: GameState; edit: Edit; reques
 
   return <>
     <DialogHeader><p className="dossier-title">Dados de dualidade</p><DialogTitle>Rolagem de {kind === "attack" ? "ataque" : kind === "reaction" ? "reação" : "ação"}</DialogTitle>
-      <DialogDescription>Defina a ação e seus riscos com o mestre. Declare Experiences e modificadores antes de rolar.</DialogDescription></DialogHeader>
+      <DialogDescription>Defina a ação e seus riscos com o mestre. Declare Experiências e modificadores antes de rolar.</DialogDescription></DialogHeader>
     <div className="roll-modes" role="group" aria-label="Tipo de rolagem">
       {([ ["action", "Ação", Dice5], ["reaction", "Reação", Zap], ["attack", "Ataque", Swords] ] as const).map(([id, label, Icon]) =>
         <button type="button" key={id} aria-pressed={kind === id} onClick={() => { setKind(id); setDifficulty(id === "attack" ? "" : "12"); clearResult(); }}><Icon size={16} aria-hidden="true" />{label}</button>)}
@@ -150,37 +151,37 @@ function RollForm({ game, edit, request }: { game: GameState; edit: Edit; reques
     <div className="grid gap-3 sm:grid-cols-2">
       {request?.survivorId ? <div className="roll-locked"><span>Sobrevivente</span><strong>{survivor?.name ?? "Não encontrado"}</strong></div> : <Pick label="Sobrevivente" value={person} options={game.survivors.map(s => ({ value: s.id, label: s.name }))} onChange={value => { setPerson(value); setExperiences([]); setWeaponSlot("primary"); clearResult(); }} placeholder="Rolagem livre" />}
       {kind === "attack" ? <Pick label="Arma equipada" value={weaponSlot} options={[{ value: "primary", label: survivor?.primary || "Primária" }, ...(survivor?.secondary ? [{ value: "secondary", label: survivor.secondary }] : [])]} onChange={value => { setWeaponSlot(value as "primary" | "secondary"); clearResult(); }} disabled={!survivor} />
-        : <Pick label="Atributo" value={trait} options={traits} onChange={value => { setTrait(value); clearResult(); }} />}
+        : <Pick label="Atributo" value={trait} options={traits.map(value => ({ value, label: traitLabel(value) }))} onChange={value => { setTrait(value); clearResult(); }} />}
       <Field label={kind === "attack" ? "Defesa do alvo (opcional)" : "Dificuldade (opcional)"} value={difficulty} onChange={value => { setDifficulty(value); if (kind === "attack") setConfirmedHit(false); else clearResult(); }} type="number" placeholder="Mestre decide" />
       <Field label="Outros modificadores" value={extra} onChange={value => { setExtra(value); clearResult(); }} type="number" />
     </div>
-    {kind === "attack" && <div className="roll-weapon-note"><Crosshair size={17} aria-hidden="true" /><span>{weapon ? `${weapon.name} · ${rollTrait} ${survivor && survivor.attributes[rollTrait] >= 0 ? "+" : ""}${survivor?.attributes[rollTrait] ?? 0} · ${weapon.range} · ${weapon.damage}` : "Escolha um sobrevivente e sua arma equipada."}</span></div>}
-    {equipmentBonus !== 0 && <p className="roll-hint">{survivor?.protection}: {equipmentBonus} em {rollTrait}, já incluído nesta rolagem.</p>}
+    {kind === "attack" && <div className="roll-weapon-note"><Crosshair size={17} aria-hidden="true" /><span>{weapon ? `${weapon.name} · ${traitLabel(rollTrait)} ${survivor && survivor.attributes[rollTrait] >= 0 ? "+" : ""}${survivor?.attributes[rollTrait] ?? 0} · ${weapon.range} · ${weapon.damage}` : "Escolha um sobrevivente e sua arma equipada."}</span></div>}
+    {equipmentBonus !== 0 && <p className="roll-hint">{survivor?.protection}: {equipmentBonus} em {traitLabel(rollTrait)}, já incluído nesta rolagem.</p>}
     {kind === "attack" && weaponSlot === "primary" && Boolean(modifiers?.primaryDamage) && <p className="roll-hint">Faca pequena: +1 ao dano desta arma, incluído automaticamente.</p>}
     {kind === "attack" && <Field label="Bônus situacional ao dano" value={damageExtra} onChange={value => { setDamageExtra(value); setStandaloneDamage(null); }} type="number" />}
     {ammoWarning && <p className="inventory-hint inventory-danger" role="status">{ammoWarning} Disparos seguintes da mesma categoria nesta cena não comprometem outra unidade.</p>}
     {handConflict && <p className="inventory-hint inventory-danger" role="alert">A arma principal ocupa as duas mãos. Guarde-a no inventário para usar a secundária.</p>}
-    <fieldset className="roll-experiences"><legend>Experiences <small>+2 cada · 1 Hope por Experience pertinente</small></legend>
+    <fieldset className="roll-experiences"><legend>Experiências <small>+2 cada · 1 Esperança por Experiência pertinente</small></legend>
       {experienceOptions.length ? experienceOptions.map(option => <label key={option.id} className="roll-experience">
         <Checkbox checked={experiences.includes(option.id)} disabled={!experiences.includes(option.id) && experienceCost >= (survivor?.hope ?? 0)} onCheckedChange={checked => {
           setExperiences(current => checked ? [...current, option.id] : current.filter(id => id !== option.id)); clearResult();
         }} /><span>{option.name}</span><b>+2</b>
-      </label>) : <p className="text-sm subtle">Escolha um sobrevivente para utilizar Experiences.</p>}
-      {experienceCost > 0 && <p className="roll-cost">Custo declarado: {experienceCost} Hope · disponível antes da rolagem: {survivor?.hope ?? 0}</p>}
+      </label>) : <p className="text-sm subtle">Escolha um sobrevivente para utilizar Experiências.</p>}
+      {experienceCost > 0 && <p className="roll-cost">Custo declarado: {experienceCost} Esperança · disponível antes da rolagem: {survivor?.hope ?? 0}</p>}
     </fieldset>
     <div className="roll-edge"><span>Condição da rolagem</span><div role="group" aria-label="Vantagem ou desvantagem">
       {([ ["none", "Normal"], ["advantage", "Vantagem +d6"], ["disadvantage", "Desvantagem −d6"] ] as const).map(([value, label]) =>
         <button type="button" key={value} aria-pressed={edge === value} onClick={() => { setEdge(value); clearResult(); }}>{label}</button>)}
     </div></div>
-    {kind === "reaction" && <p className="roll-hint">Reações não geram Hope ou Fear. Um crítico não recupera Stress.</p>}
+    {kind === "reaction" && <p className="roll-hint">Reações não geram Esperança ou Medo. Um crítico não recupera Estresse.</p>}
     {!targetValid && <p className="text-sm text-red-700" role="alert">Informe {kind === "attack" ? "uma defesa" : "uma dificuldade"} inteira entre 1 e 99 ou deixe o campo vazio.</p>}
-    <div className="roll-actions"><Button disabled={!canRoll} onClick={rollAction}><Dice5 size={17} /> Rolar {kind === "attack" ? "ataque + dano" : kind === "reaction" ? "reação" : "Hope/Fear"}</Button>
-      {survivor && <span>Hope atual: <b>{survivor.hope}/6</b></span>}</div>
+    <div className="roll-actions"><Button disabled={!canRoll} onClick={rollAction}><Dice5 size={17} /> Rolar {kind === "attack" ? "ataque + dano" : kind === "reaction" ? "reação" : "Esperança/Medo"}</Button>
+      {survivor && <span>Esperança atual: <b>{survivor.hope}/6</b></span>}</div>
     {displayedLast && <div className="roll-result" role="status" aria-live="polite">
       <div className="roll-result-heading"><b>{outcomeLabel(displayedLast)}</b><span>{displayedLast.outcome.difficulty === null ? kind === "attack" ? "Defesa não informada" : "Dificuldade não informada" : `contra ${displayedLast.outcome.difficulty}`}</span></div>
-      <div className="roll-dice"><div className="hope"><Sparkles size={15} aria-hidden="true" /><span>Hope</span><strong>{last.outcome.hopeDie}</strong></div><div className="fear"><Zap size={15} aria-hidden="true" /><span>Fear</span><strong>{last.outcome.fearDie}</strong></div><div className="total"><span>Total</span><strong>{last.outcome.total}</strong></div></div>
-      <p className="roll-breakdown">{last.trait}: {last.traitBonus >= 0 ? "+" : ""}{last.traitBonus} · Experiences: +{last.experiences.length * 2}{last.experiences.length ? ` (−${last.experiences.length} Hope)` : ""} · outros: {last.other >= 0 ? "+" : ""}{last.other}{last.equipment ? ` · equipamento: ${last.equipment}` : ""}{last.symptom ? " · sintomas: −1" : ""}{last.outcome.edgeDie ? ` · ${last.outcome.edge === "advantage" ? "vantagem" : "desvantagem"}: ${last.outcome.edge === "advantage" ? "+" : "−"}${last.outcome.edgeDie}` : ""}.</p>
-      <p className="roll-hint">{last.kind === "reaction" ? "Reação: nenhum recurso gerado." : last.outcome.critical ? "Crítico: +1 Hope e limpa 1 Stress (respeitando os limites)." : last.outcome.with === "Hope" ? "+1 Hope (até o limite de 6)." : "+1 Fear para o mestre (até o limite de 12)."} O mestre descreve a consequência na ficção.</p>
+      <div className="roll-dice"><div className="hope"><Sparkles size={15} aria-hidden="true" /><span>Esperança</span><strong>{last.outcome.hopeDie}</strong></div><div className="fear"><Zap size={15} aria-hidden="true" /><span>Medo</span><strong>{last.outcome.fearDie}</strong></div><div className="total"><span>Total</span><strong>{last.outcome.total}</strong></div></div>
+      <p className="roll-breakdown">{traitLabel(last.trait)}: {last.traitBonus >= 0 ? "+" : ""}{last.traitBonus} · Experiências: +{last.experiences.length * 2}{last.experiences.length ? ` (−${last.experiences.length} Esperança)` : ""} · outros: {last.other >= 0 ? "+" : ""}{last.other}{last.equipment ? ` · equipamento: ${last.equipment}` : ""}{last.symptom ? " · sintomas: −1" : ""}{last.outcome.edgeDie ? ` · ${last.outcome.edge === "advantage" ? "vantagem" : "desvantagem"}: ${last.outcome.edge === "advantage" ? "+" : "−"}${last.outcome.edgeDie}` : ""}.</p>
+      <p className="roll-hint">{last.kind === "reaction" ? "Reação: nenhum recurso gerado." : last.outcome.critical ? "Crítico: +1 Esperança e limpa 1 Estresse (respeitando os limites)." : last.outcome.with === "Hope" ? "+1 Esperança (até o limite de 6)." : "+1 Medo para o mestre (até o limite de 12)."} O mestre descreve a consequência na ficção.</p>
     </div>}
     {kind === "attack" && weapon && <div className="roll-damage-panel"><div className="roll-damage-heading"><b>Dano da arma</b><span>Proficiência {survivor?.proficiency ?? 1} · {weapon.damage} físico</span></div>
       {attackResult && lastDamage && <>
