@@ -1,5 +1,5 @@
 import content from "./content.json";
-import type { GameState, HexState, InventoryItem, Survivor } from "./game";
+import { normalizeSurvivorAmmunition, type GameState, type HexState, type InventoryItem, type Survivor } from "./game";
 import { createId } from "./id";
 import { normalizeShelter } from "./shelter-projects";
 
@@ -77,6 +77,7 @@ export function preserveKnownSectors(state: GameState) {
   }
   for (const survivor of state.survivors ?? []) {
     survivor.inventory ??= [];
+    normalizeSurvivorAmmunition(survivor);
     const legacy = survivor as Survivor & {
       transport?: string;
       equippedItems?: Record<string, InventoryItem>;
