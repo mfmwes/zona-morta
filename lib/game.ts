@@ -71,6 +71,35 @@ export function ammunitionCount(items: InventoryItem[] | undefined, type?: Ammun
 export function ammunitionLoad(items: InventoryItem[] | undefined) {
   return ammunitionTypes.reduce((sum, type) => sum + Math.ceil(ammunitionCount(items, type) / 4), 0);
 }
+
+export function normalizeSurvivorAmmunition(survivor: Survivor) {
+  survivor.inventory ??= [];
+  for (const item of survivor.inventory) {
+    const type = ammunitionItemType(item);
+    if (type) {
+      item.ammunitionType = type;
+      item.category = "Munição";
+      item.load = 0;
+      const committed = Math.max(0, Math.min(item.qty, Math.trunc(item.committedAmmo ?? 0)));
+      if (committed > 0) item.committedAmmo = committed;
+      else delete item.committedAmmo;
+    }
+  }
+  const legacy = Math.max(0, Math.trunc(survivor.ammo ?? 0));
+  if (legacy > 0) {
+    const legacyType = ammunitionTypes.includes(survivor.ammoType as AmmunitionType)
+      ? survivor.ammoType as AmmunitionType
+      : weaponAmmoType(survivor.primary);
+    if (legacyType) {
+      const existing = survivor.inventory.find(item => ammunitionItemType(item) === legacyType && !(item.committedAmmo ?? 0));
+      if (existing && existing.qty + legacy <= 99) existing.qty += legacy;
+      else survivor.inventory.push(createAmmunitionItem(legacyType, legacy));
+      survivor.ammoType = legacyType;
+    }
+  }
+  survivor.ammo = 0;
+  return survivor;
+}
 export type InventoryItem = {
   id: string;
   name: string;
@@ -412,7 +441,13 @@ export function defaultState(options: { startSectorId?: string; withShelter?: bo
 export function resetCityPreservingSurvivors(state: GameState, options: { startSectorId?: string; withShelter?: boolean } = {}) {
   const campaignId = state.campaignId;
   const survivors = structuredClone(state.survivors).map(person => {
-    const preserved = { ...person, hex: "0,0" } as Survivor;
+    const preserved = normalizeSurvivorAmmunition({ ...person, hex: "0,0" } as Survivor);
+    for (const item of [...preserved.inventory]) {
+      const committed = Math.max(0, Math.min(item.qty, Math.trunc(item.committedAmmo ?? 0)));
+      if (committed > 0) item.qty -= committed;
+      delete item.committedAmmo;
+      if (item.qty <= 0) preserved.inventory.splice(preserved.inventory.indexOf(item), 1);
+    }
     delete preserved.restPlan;
     delete preserved.ammoSpentScene;
     delete preserved.ammoSpentType;
