@@ -214,6 +214,39 @@ test('ataque de ameaça interpreta dano e classifica pelos limiares do sobrevive
   assert.deepEqual(conflictScene.resolveSurvivorDamageTier(8, 14, 14), { key:'severe', label:'Severo', hpMarks:3 });
 });
 
+test('pedidos de spotlight são sinais sem fila e só o próprio jogador vê seu estado', () => {
+  const g = campaign();
+  const [ana, bia] = g.survivors;
+  g.conflict = conflictScene.createConflictScene({ name:'Teste', sceneNumber:1, day:g.day, time:'08:00', survivorIds:[ana.id, bia.id] });
+
+  assert.equal(conflictScene.requestConflictSpotlight(g.conflict, ana.id), true);
+  assert.equal(conflictScene.requestConflictSpotlight(g.conflict, ana.id), false);
+  assert.deepEqual(g.conflict.spotlightRequests, [ana.id]);
+  assert.equal(collaboration.projectPlayerGame(g, ana.id).publicConflict.spotlightRequested, true);
+  assert.equal(collaboration.projectPlayerGame(g, bia.id).publicConflict.spotlightRequested, false);
+
+  assert.equal(conflictScene.requestConflictSpotlight(g.conflict, bia.id), true);
+  assert.deepEqual(new Set(g.conflict.spotlightRequests), new Set([ana.id, bia.id]));
+  assert.equal(conflictScene.grantConflictSpotlight(g.conflict, bia.id, bia.name, g.day, '08:02'), true);
+  assert.deepEqual(g.conflict.spotlight, { kind:'survivor', id:bia.id });
+  assert.deepEqual(g.conflict.spotlightRequests, [ana.id]);
+  assert.equal(conflictScene.cancelConflictSpotlightRequest(g.conflict, ana.id), true);
+  assert.deepEqual(g.conflict.spotlightRequests, []);
+});
+
+test('ameaças públicas preservam grupo para seleção compacta sem expor ficha mecânica', () => {
+  const g = campaign();
+  const [ana] = g.survivors;
+  g.conflict = conflictScene.createConflictScene({ name:'Teste', sceneNumber:1, day:g.day, time:'08:00', survivorIds:[ana.id] });
+  const template = threats.threatLibrary(g.threats).find(row => row.name === 'ERRANTE');
+  conflictScene.addThreatInstances(g.conflict, template, 3);
+  const view = collaboration.projectPlayerGame(g, ana.id);
+  assert.deepEqual(view.publicConflict.threats.map(row => row.groupName), ['ERRANTE', 'ERRANTE', 'ERRANTE']);
+  const json = JSON.stringify(view.publicConflict.threats);
+  assert.equal(json.includes('difficulty'), false);
+  assert.equal(json.includes('templateSnapshot'), false);
+});
+
 test('dano de ameaça vira solicitação e Armadura reduz a severidade em um passo', () => {
   const g = campaign();
   const [ana] = g.survivors;
@@ -333,6 +366,25 @@ test('resolução privada de alvo existe sem enviar dificuldade ao cliente jogad
   assert.doesNotMatch(route, /difficulty:\s*resolution/);
   assert.doesNotMatch(route, /majorThreshold:\s*resolution/);
   assert.doesNotMatch(route, /severeThreshold:\s*resolution/);
+});
+
+test('rota de spotlight permite pedir e cancelar sem criar iniciativa ou escrever no chat', () => {
+  const route = fs.readFileSync(require.resolve('../app/api/campaign/spotlight/route.ts'), 'utf8');
+  assert.match(route, /requestConflictSpotlight/);
+  assert.match(route, /cancelConflictSpotlightRequest/);
+  assert.match(route, /\["request", "cancel"\]/);
+  assert.doesNotMatch(route, /addLog/);
+});
+
+test('HUD da ficha reutiliza alvo selecionado nas rolagens de ataque', () => {
+  const hud = fs.readFileSync(require.resolve('../components/survivor-conflict-hud.tsx'), 'utf8');
+  const rolls = fs.readFileSync(require.resolve('../components/roll-dialog.tsx'), 'utf8');
+  assert.match(hud, /ALVOS DA CENA/);
+  assert.match(hud, /Pedir Spotlight/);
+  assert.match(hud, /DANO PENDENTE/);
+  assert.match(hud, /targets-recent/);
+  assert.match(rolls, /targetThreatId\?: string/);
+  assert.match(rolls, /useState\(request\?\.targetThreatId/);
 });
 
 test('rota de dano exige o sobrevivente alvo e resolve PV ou Armadura no servidor', () => {
