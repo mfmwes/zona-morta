@@ -722,7 +722,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
           <div className="character-quick-mobile"><span title="PV disponíveis"><Heart size={16} aria-hidden="true" /><b>{stats.hp-selected.hp}/{stats.hp}</b><small>PV</small></span><span title="Estresse marcado"><Zap size={16} aria-hidden="true" /><b>{selected.stress}/6</b><small>Estresse</small></span><span title="Esperança"><Sparkles size={16} aria-hidden="true" /><b>{selected.hope}/6</b><small>Esperança</small></span><span title="Evasão"><Crosshair size={16} aria-hidden="true" /><b>{stats.evasion}</b><small>Evasão</small></span><button type="button" onClick={() => setActiveTab("combate")} aria-label="Abrir combate e controles de recursos"><Shield size={16} aria-hidden="true" /><b>{Math.max(0, stats.armor-(selected.armorMarked ?? 0))}</b><small>Combate</small></button><button type="button" className="character-quick-mobile-weapon" onClick={() => setActiveTab("combate")}><Swords size={14} aria-hidden="true" /><strong>{selected.primary || "Sem arma principal"}</strong><span>{primary ? `${primary.damage} · ${primary.range}` : "Ver ataque"}</span><span>{primaryAmmoType ? `${primaryAmmoAvailable} livre(s)` : "sem munição"}</span></button></div>
         </aside>
       </div>
-      {rollRequest && <RollDialog game={game} edit={edit} request={rollRequest} open onOpenChange={opened => { if (!opened) setRollRequest(null); }} />}
+      {rollRequest && <RollDialog game={game} edit={edit} request={rollRequest} playerMode={playerMode} open onOpenChange={opened => { if (!opened) setRollRequest(null); }} />}
     </>}
   </div>;
 }
