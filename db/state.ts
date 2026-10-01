@@ -174,28 +174,46 @@ export async function syncCampaignAccountCharacters(campaignId: string, state: G
     .bind(campaignId).first<{ owner_id: string }>();
   if (!campaign) return;
 
-  const players = await db.prepare(
-    "SELECT user_id, survivor_id FROM campaign_players WHERE owner_id = ? AND revoked_at IS NULL AND user_id IS NOT NULL AND survivor_id IS NOT NULL"
-  ).bind(campaignId).all<{ user_id: string; survivor_id: string }>();
+  const [players, saved] = await Promise.all([
+    db.prepare(
+      "SELECT user_id, survivor_id FROM campaign_players WHERE owner_id = ? AND revoked_at IS NULL AND user_id IS NOT NULL AND survivor_id IS NOT NULL"
+    ).bind(campaignId).all<{ user_id: string; survivor_id: string }>(),
+    db.prepare(
+      "SELECT user_id, survivor_id, body FROM user_characters WHERE campaign_id = ?"
+    ).bind(campaignId).all<{ user_id: string; survivor_id: string; body: string }>(),
+  ]);
   const playerOwners = new Map(players.results.map(row => [row.survivor_id, row.user_id]));
+  const savedBySurvivor = new Map<string, { user_id: string; body: string }[]>();
+  for (const row of saved.results) {
+    savedBySurvivor.set(row.survivor_id, [...(savedBySurvivor.get(row.survivor_id) ?? []), { user_id: row.user_id, body: row.body }]);
+  }
+
   const now = new Date().toISOString();
   const statements = [];
-
   for (const survivor of state.survivors) {
     const userId = playerOwners.get(survivor.id) ?? campaign.owner_id;
-    statements.push(
-      db.prepare("DELETE FROM user_characters WHERE campaign_id = ? AND survivor_id = ? AND user_id <> ?")
-        .bind(campaignId, survivor.id, userId)
-    );
-    statements.push(
-      db.prepare(`INSERT INTO user_characters (user_id, survivor_id, campaign_id, body, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?)
-        ON CONFLICT(user_id, survivor_id) DO UPDATE SET
-          campaign_id = excluded.campaign_id,
-          body = excluded.body,
-          updated_at = excluded.updated_at`)
-        .bind(userId, survivor.id, campaignId, JSON.stringify(survivor), now, now)
-    );
+    const body = JSON.stringify(survivor);
+    const existing = savedBySurvivor.get(survivor.id) ?? [];
+    const current = existing.find(row => row.user_id === userId);
+    const staleOwners = existing.filter(row => row.user_id !== userId);
+
+    if (staleOwners.length) {
+      statements.push(
+        db.prepare("DELETE FROM user_characters WHERE campaign_id = ? AND survivor_id = ? AND user_id <> ?")
+          .bind(campaignId, survivor.id, userId)
+      );
+    }
+    if (!current || current.body !== body) {
+      statements.push(
+        db.prepare(`INSERT INTO user_characters (user_id, survivor_id, campaign_id, body, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?)
+          ON CONFLICT(user_id, survivor_id) DO UPDATE SET
+            campaign_id = excluded.campaign_id,
+            body = excluded.body,
+            updated_at = excluded.updated_at`)
+          .bind(userId, survivor.id, campaignId, body, now, now)
+      );
+    }
   }
   if (statements.length) await db.batch(statements);
 }
