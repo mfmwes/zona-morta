@@ -11,7 +11,7 @@ import {
 } from "./game";
 import { revealSector } from "./sectors";
 import { advanceCampaignTime } from "./time";
-import { survivorActiveShelterShift } from "./shelter-projects";
+import { shelterTravelMinutes, survivorActiveShelterShift } from "./shelter-projects";
 
 export type HexQuickAction =
   | { type: "observe" }
@@ -19,6 +19,15 @@ export type HexQuickAction =
   | { type: "establish" }
   | { type: "infestation"; value: number | null };
 
+
+function travelDurationLabel(minutes: number) {
+  const value = Math.max(1, Math.trunc(minutes));
+  const hours = Math.floor(value / 60);
+  const rest = value % 60;
+  if (!hours) return `${rest} min`;
+  if (!rest) return `${hours} h`;
+  return `${hours}h${String(rest).padStart(2, "0")}`;
+}
 
 export function movementSources(game: GameState, destination: string) {
   const target = content.hexes.find(hex => hexKey(hex.q, hex.r) === destination);
@@ -63,7 +72,7 @@ export function moveSurvivors(game: GameState, destination: string, survivorIds:
   const target = content.hexes.find(hex => hexKey(hex.q, hex.r) === destination);
   if (!source || !target || hexDistance(target.q - source.q, target.r - source.r) !== 1) return { ok: false, message: "" };
 
-  const travelMinutes = record.routeHours * 60;
+  const travelMinutes = shelterTravelMinutes(game, sourceHex, destination, record.routeHours * 60);
   if (game.minutes + travelMinutes >= 1440) return { ok: false, message: "" };
 
   const wholeSourceGroup = people.length === survivorsAtHex(game, sourceHex).length;
@@ -86,7 +95,7 @@ export function moveSurvivors(game: GameState, destination: string, survivorIds:
   const sector = revealAround(game, destination);
   const names = people.map(person => person.name);
   const subject = names.length === 1 ? names[0] : names.join(", ");
-  const message = `${subject} ${names.length === 1 ? "entrou" : "entraram"} em ${sector?.name ?? `hex ${destination}`} após ${record.routeHours} h de trajeto.`;
+  const message = `${subject} ${names.length === 1 ? "entrou" : "entraram"} em ${sector?.name ?? `hex ${destination}`} após ${travelDurationLabel(travelMinutes)} de trajeto.`;
   addLog(game, "travessia", message);
   return { ok: true, message, sourceHex, destination, survivorIds: ids };
 }
@@ -99,12 +108,14 @@ export function hexActionOptions(game: GameState, id: string) {
   const [partyQ, partyR] = (game.partyHex || "0,0").split(",").map(Number);
   const nearby = hexDistance(area.q - partyQ, area.r - partyR) === 1;
   const sources = movementSources(game, id);
-  const travelMinutes = record.routeHours * 60;
+  const travelMinutes = shelterTravelMinutes(game, game.partyHex, id, record.routeHours * 60);
+  const sourceTravelMinutes = sources.map(group => shelterTravelMinutes(game, group.hex, id, record.routeHours * 60));
+  const shortestMovementMinutes = sourceTravelMinutes.length ? Math.min(...sourceTravelMinutes) : travelMinutes;
   const atParty = id === game.partyHex;
   const peopleHere = survivorsAtHex(game, id);
   const canObserve = (sources.length > 0 || (game.survivors.length === 0 && nearby)) && record.discovery === "desconhecido";
   const canTravel = nearby && record.discovery !== "desconhecido" && game.minutes + travelMinutes < 1440;
-  const canMoveSurvivors = sources.length > 0 && record.discovery !== "desconhecido" && game.minutes + travelMinutes < 1440;
+  const canMoveSurvivors = sources.length > 0 && record.discovery !== "desconhecido" && game.minutes + shortestMovementMinutes < 1440;
   const canEstablish = (peopleHere.length > 0 || (game.survivors.length === 0 && atParty))
     && record.discovery === "explorado" && !game.shelter.hex;
   const canRelocate = (peopleHere.length > 0 || (game.survivors.length === 0 && atParty))
@@ -152,7 +163,7 @@ export function performHexAction(game: GameState, id: string, action: HexQuickAc
       if (npc.active && npc.accompaniesParty && npc.status !== "Morto" && npc.status !== "Desaparecido") npc.hex = id;
     }
     const destination = revealAround(game, id);
-    const message = `O grupo entrou em ${destination?.name ?? `hex ${id}`} após ${record.routeHours} h de trajeto.`;
+    const message = `O grupo entrou em ${destination?.name ?? `hex ${id}`} após ${travelDurationLabel(options.travelMinutes)} de trajeto.`;
     addLog(game, "travessia", message);
     return { ok: true, message };
   }
