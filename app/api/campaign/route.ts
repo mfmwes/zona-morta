@@ -113,6 +113,30 @@ function validConflict(value: unknown) {
     })
     && (conflict.appliedAttackLogIds === undefined || (Array.isArray(conflict.appliedAttackLogIds) && conflict.appliedAttackLogIds.length <= 160
       && conflict.appliedAttackLogIds.every(id => typeof id === "string" && id.length <= 120)))
+    && (conflict.damageRequests === undefined || (Array.isArray(conflict.damageRequests) && conflict.damageRequests.length <= 120
+      && conflict.damageRequests.every(request => {
+        if (!request || typeof request !== "object") return false;
+        const row = request as Record<string, unknown>;
+        const tier = row.tier as Record<string, unknown> | undefined;
+        return typeof row.id === "string" && row.id.length <= 120
+          && typeof row.targetSurvivorId === "string" && row.targetSurvivorId.length <= 120
+          && typeof row.sourceThreatId === "string" && row.sourceThreatId.length <= 120
+          && typeof row.sourceName === "string" && row.sourceName.length <= 100
+          && typeof row.attackName === "string" && row.attackName.length <= 100
+          && Number.isInteger(row.damage) && Number(row.damage) >= 0 && Number(row.damage) <= 5000
+          && typeof row.damageType === "string" && row.damageType.length <= 40
+          && Boolean(tier && ["none", "minor", "major", "severe"].includes(String(tier.key))
+            && ["Sem dano", "Menor", "Maior", "Severo"].includes(String(tier.label))
+            && Number.isInteger(tier.hpMarks) && Number(tier.hpMarks) >= 0 && Number(tier.hpMarks) <= 3)
+          && Number.isInteger(row.createdDay) && Number(row.createdDay) >= 1 && Number(row.createdDay) <= 99999
+          && typeof row.createdTime === "string" && row.createdTime.length <= 20
+          && ["pending", "resolved"].includes(String(row.status))
+          && (row.resolution === undefined || ["hp", "armor"].includes(String(row.resolution)))
+          && (row.appliedHpMarks === undefined || (Number.isInteger(row.appliedHpMarks) && Number(row.appliedHpMarks) >= 0 && Number(row.appliedHpMarks) <= 3))
+          && (row.armorMarked === undefined || (Number.isInteger(row.armorMarked) && Number(row.armorMarked) >= 0 && Number(row.armorMarked) <= 1))
+          && (row.resolvedDay === undefined || (Number.isInteger(row.resolvedDay) && Number(row.resolvedDay) >= 1 && Number(row.resolvedDay) <= 99999))
+          && (row.resolvedTime === undefined || (typeof row.resolvedTime === "string" && row.resolvedTime.length <= 20));
+      })))
     && typeof conflict.notes === "string" && conflict.notes.length <= 4000;
 }
 
