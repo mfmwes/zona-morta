@@ -2956,3 +2956,207 @@ button { cursor: pointer; } button:disabled { cursor: not-allowed; }
     flex-direction:column;
   }
 }
+
+
+/* Abrigo — integridade, incidentes, reparos e benefícios mecânicos. */
+.construction-incident-launch {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:10px 12px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:color-mix(in srgb,var(--card) 94%,#7b4d43);
+}
+.construction-incident-launch > div {
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+}
+.construction-incident-launch > div > span { display:grid; gap:2px; }
+.construction-incident-launch b { font-size:.69rem; }
+.construction-incident-launch small { color:var(--muted-foreground); font-size:.59rem; line-height:1.4; }
+
+.construction-incident-panel {
+  display:grid;
+  gap:11px;
+  padding:12px;
+  border:1px solid color-mix(in srgb,var(--border) 74%,#86534a);
+  border-radius:9px;
+  background:color-mix(in srgb,var(--card) 96%,#5f3c36);
+}
+.construction-incident-controls {
+  display:grid;
+  grid-template-columns:minmax(180px,1fr) minmax(130px,.55fr) minmax(220px,1fr);
+  gap:8px;
+  align-items:end;
+}
+.construction-incident-catastrophic {
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+  min-height:58px;
+  padding:8px 9px;
+  border:1px solid var(--border);
+  border-radius:7px;
+  background:color-mix(in srgb,var(--card) 95%,var(--muted));
+}
+.construction-incident-catastrophic input { margin-top:2px; }
+.construction-incident-catastrophic span { display:grid; gap:2px; }
+.construction-incident-catastrophic b { font-size:.65rem; }
+.construction-incident-catastrophic small { color:var(--muted-foreground); font-size:.56rem; line-height:1.35; }
+.construction-incident-preview {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:6px;
+}
+.construction-incident-preview span {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:7px 8px;
+  border:1px solid var(--border);
+  border-radius:6px;
+  color:var(--muted-foreground);
+  font-size:.61rem;
+  background:color-mix(in srgb,var(--card) 96%,var(--muted));
+}
+.construction-incident-preview b { color:var(--foreground); font:800 .72rem var(--font-mono); }
+.construction-incident-targets { display:grid; gap:6px; }
+.construction-incident-targets > span {
+  color:var(--muted-foreground);
+  font:800 .56rem var(--font-mono);
+  letter-spacing:.05em;
+  text-transform:uppercase;
+}
+.construction-incident-targets > label {
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+  padding:7px 8px;
+  border:1px solid var(--border);
+  border-radius:6px;
+  background:var(--card);
+}
+.construction-incident-targets > label.is-selected {
+  border-color:#9a6d61;
+  background:color-mix(in srgb,var(--card) 87%,#86534a);
+}
+.construction-incident-targets label > span { display:grid; gap:2px; }
+.construction-incident-targets b { font-size:.64rem; }
+.construction-incident-targets small { color:var(--muted-foreground); font-size:.56rem; }
+.construction-incident-targets p { color:var(--muted-foreground); font-size:.62rem; }
+.construction-incident-actions {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.construction-incident-actions p { color:var(--muted-foreground); font-size:.6rem; line-height:1.4; }
+
+.construction-integrity-mini {
+  color:#9fb7b0 !important;
+  font:800 .55rem var(--font-mono) !important;
+  letter-spacing:.05em;
+}
+.construction-integrity-card {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:7px 8px;
+  border:1px solid #75514b;
+  border-radius:6px;
+  background:color-mix(in srgb,var(--card) 90%,#6e443d);
+}
+.construction-integrity-card span {
+  color:#dfaa9e;
+  font:800 .72rem var(--font-mono);
+  letter-spacing:.12em;
+}
+.construction-integrity-card b { font:800 .65rem var(--font-mono); }
+
+.construction-integrity-panel {
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  gap:10px;
+  padding:9px 10px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:color-mix(in srgb,var(--card) 95%,var(--muted));
+}
+.construction-integrity-panel > div:first-child { display:grid; gap:3px; align-content:start; }
+.construction-integrity-panel > div:first-child span {
+  color:var(--muted-foreground);
+  font:800 .54rem var(--font-mono);
+  text-transform:uppercase;
+}
+.construction-integrity-panel strong {
+  font:800 .92rem var(--font-mono);
+  letter-spacing:.12em;
+}
+.construction-integrity-panel > div:last-child { display:grid; gap:2px; }
+.construction-integrity-panel b { font-size:.68rem; }
+.construction-integrity-panel small { color:var(--muted-foreground); font-size:.58rem; line-height:1.4; }
+.construction-integrity-panel.is-damaged {
+  border-color:#7f554e;
+  background:color-mix(in srgb,var(--card) 88%,#73483f);
+}
+
+.construction-benefit-box,
+.construction-operation-progress {
+  display:grid;
+  gap:6px;
+  padding:9px 10px;
+  border:1px solid var(--border);
+  border-radius:7px;
+  background:color-mix(in srgb,var(--card) 95%,#456f63);
+}
+.construction-benefit-box > span,
+.construction-operation-progress > div:first-child > span {
+  color:var(--muted-foreground);
+  font:800 .55rem var(--font-mono);
+  letter-spacing:.05em;
+  text-transform:uppercase;
+}
+.construction-benefit-box ul {
+  display:grid;
+  gap:4px;
+  margin:0;
+  padding-left:17px;
+}
+.construction-benefit-box li {
+  color:var(--foreground);
+  font-size:.62rem;
+  line-height:1.42;
+}
+.construction-repair-plan {
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+  padding:9px 10px;
+  border:1px solid #7b6750;
+  border-radius:7px;
+  background:color-mix(in srgb,var(--card) 90%,#806942);
+}
+.construction-repair-plan > svg { flex:none; margin-top:1px; }
+.construction-repair-plan > span { display:grid; gap:2px; }
+.construction-repair-plan b { font-size:.67rem; }
+.construction-repair-plan small { color:var(--muted-foreground); font-size:.58rem; line-height:1.4; }
+.construction-operation-progress > div:first-child {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.construction-operation-progress > div:first-child b { font:800 .66rem var(--font-mono); }
+.construction-operation-progress > small { color:var(--muted-foreground); font-size:.58rem; line-height:1.4; }
+
+@media (max-width:760px) {
+  .construction-incident-controls,
+  .construction-incident-preview { grid-template-columns:1fr; }
+  .construction-incident-actions,
+  .construction-incident-launch { align-items:stretch; flex-direction:column; }
+}
