@@ -178,7 +178,7 @@ function RestPlanner({ game, edit, selected, playerMode, playerPreview, restPeer
     setOpen(false);
   }
 
-  return <section className="character-surface character-rest-panel"><SectionHeading index="04" title={personalPlanning ? "Seu descanso" : "Descanso da mesa"} aside={<span className="character-micro">2 AÇÕES POR PESSOA</span>} />
+  return <section className="character-surface character-rest-panel"><SectionHeading index="05" title={personalPlanning ? "Seu descanso" : "Descanso da mesa"} aside={<span className="character-micro">2 AÇÕES POR PESSOA</span>} />
     <p className="character-section-intro">Curto recupera recursos com d4+1; longo limpa o recurso escolhido. Cada ação pode beneficiar você ou outra pessoa no mesmo hex. Preparar concede Esperança automaticamente.</p>
     <div className="character-rest-actions"><Button size="sm" variant="outline" disabled={!actors.length} onClick={() => begin("short")}><Moon size={16} /> Descanso curto</Button>
       <Button size="sm" disabled={!actors.length} onClick={() => begin("long")}><Moon size={16} /> Descanso longo</Button></div>
@@ -539,7 +539,25 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
                 {stats.carried > stats.capacity && <p className="character-alert">Acima da capacidade. Redistribua antes de atravessar.</p>}
                 <button className="character-text-link" type="button" onClick={() => setActiveTab("inventario")}>Abrir inventário <span aria-hidden="true">↗</span></button>
               </section>
-              <section className="character-surface character-summary-specialties"><SectionHeading index="03" title="Especialidades" />
+              <section className="character-surface character-summary-tests"><SectionHeading index="03" title="Testes rápidos" aside={<span className="character-micro">DADOS DE DUALIDADE</span>} />
+                <p className="character-section-intro">Escolha um atributo para abrir a rolagem já configurada. Ajustes de equipamento entram automaticamente.</p>
+                <div className="character-summary-attributes">
+                  {traits.map(trait => {
+                    const base = selected.attributes[trait];
+                    const equipment = modifiers?.traits[trait] ?? 0;
+                    const total = base + equipment;
+                    return <button type="button" key={trait} className="character-summary-attribute"
+                      onClick={() => beginRoll({ survivorId: selected.id, kind: "action", trait })}
+                      aria-label={`Rolar ${traitLabel(trait)}, modificador total ${total}`}
+                      title={equipment ? `${traitLabel(trait)}: ${base >= 0 ? "+" : ""}${base} base ${equipment >= 0 ? "+" : ""}${equipment} equipamento` : `Rolar ${traitLabel(trait)}`}>
+                      <span><small>{traitLabel(trait)}</small><strong>{total > 0 ? "+" : ""}{total}</strong></span>
+                      <Dice5 size={16} aria-hidden="true" />
+                    </button>;
+                  })}
+                </div>
+                <button className="character-text-link" type="button" onClick={() => setActiveTab("atributos")}>Abrir atributos e Experiências <span aria-hidden="true">↗</span></button>
+              </section>
+              <section className="character-surface character-summary-specialties"><SectionHeading index="04" title="Especialidades" />
                 <div className="character-specialties-layout">
                   <div className="character-specialties-experiences">
                     <div className="character-experience"><b>{origin?.experience || selected.origin}</b><span>Experiência de origem · +2 por 1 Esperança</span></div>
