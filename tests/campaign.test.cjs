@@ -232,8 +232,9 @@ test('visão do jogador mostra só sua ficha, locais revelados e registros próp
     notes: '', revealed: false, searches: [] });
   known.events.push({ id: 'e', text: 'Surge um grupo', trigger: 'relógio secreto', revealed: false });
   g.shelter.notes = 'reserva secreta';
-  g.conflict = conflictScene.createConflictScene({ name:'Conflito secreto', sceneNumber:1, day:g.day, time:'08:00', survivorIds:[ana.id] });
-  conflictScene.addThreatInstances(g.conflict, threats.threatLibrary(g.threats).find(row => row.name === 'ERRANTE'), 1);
+  g.conflict = conflictScene.createConflictScene({ name:'Posto abandonado', sceneNumber:1, day:g.day, time:'08:00', survivorIds:[ana.id, bia.id] });
+  const publicThreat = conflictScene.addThreatInstances(g.conflict, threats.threatLibrary(g.threats).find(row => row.name === 'ERRANTE'), 1)[0];
+  conflictScene.setConflictSpotlight(g.conflict, { kind:'threat', id:publicThreat.id }, publicThreat.name, g.day, '08:02');
   require('../lib/game.ts').addLog(g, 'dados', 'Ana rolou', ana.id);
   require('../lib/game.ts').addLog(g, 'evento', 'Segredo do mestre');
   const visible = collaboration.projectPlayerGame(g, ana.id);
@@ -245,13 +246,22 @@ test('visão do jogador mostra só sua ficha, locais revelados e registros próp
   assert.equal(JSON.stringify(visible).includes('Porta oculta'), false);
   assert.equal(JSON.stringify(visible).includes('relógio secreto'), false);
   assert.equal(JSON.stringify(visible).includes('reserva secreta'), false);
-  assert.equal(JSON.stringify(visible).includes('Conflito secreto'), false);
   assert.equal(visible.conflict, undefined);
+  assert.equal(visible.publicConflict.name, 'Posto abandonado');
+  assert.deepEqual(visible.publicConflict.survivors.map(person => person.name), ['Ana', 'Bia']);
+  assert.equal(visible.publicConflict.threats[0].name, 'ERRANTE');
+  assert.deepEqual(visible.publicConflict.spotlight, { kind:'threat', id:publicThreat.id });
+  const publicConflictJson = JSON.stringify(visible.publicConflict);
+  for (const privateField of ['difficulty', 'majorThreshold', 'severeThreshold', 'maxHp', 'maxStress', 'hpMarked', 'stressMarked', 'templateSnapshot', 'motivations', 'notes']) {
+    assert.equal(publicConflictJson.includes(privateField), false, privateField);
+  }
   assert.equal(visible.hexes['0,0'].points[0].name, 'Depósito');
   assert.equal(visible.hexes['0,0'].points[0].notes, '');
   assert.equal(visible.hexes['0,0'].points[0].searches.length, 0);
   assert.deepEqual(visible.log.map(row => row.text), ['Ana rolou']);
   assert.equal(g.hexes['0,0'].notes, 'armadilha');
+  conflictScene.endConflictScene(g.conflict, g.day, '08:10');
+  assert.equal(collaboration.projectPlayerGame(g, ana.id).publicConflict, undefined);
 });
 
 test('dois jogadores editam fichas diferentes após atualização do mapa sem sobrescrever dados', () => {
