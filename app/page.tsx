@@ -133,6 +133,12 @@ export default function CampaignApp() {
   useEffect(() => { void loadCampaign(); }, [loadCampaign]);
 
   useEffect(() => {
+    const refresh = () => { if (!pending.current && !sending.current) void loadCampaign(); };
+    window.addEventListener("zona-morta:campaign-refresh", refresh);
+    return () => window.removeEventListener("zona-morta:campaign-refresh", refresh);
+  }, [loadCampaign]);
+
+  useEffect(() => {
     const warnUnsaved = (event: BeforeUnloadEvent) => {
       if (!pending.current && !sending.current && !paused.current) return;
       event.preventDefault();
