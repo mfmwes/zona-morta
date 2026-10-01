@@ -36,6 +36,41 @@ export type HexState = {
 export type EquipmentSlot = "primary" | "secondary" | "protection" | "outfit" | "personal" | "bag" | "pocket1" | "pocket2";
 export const ammunitionTypes = ["Pistola", "Espingarda", "Carabina", "Flechas", "Virotes", "Chumbinhos", "Outra"] as const;
 export type AmmunitionType = typeof ammunitionTypes[number];
+
+export function ammunitionItemName(type: AmmunitionType) {
+  return `Munição de ${type}`;
+}
+export function ammunitionTypeFromName(name: string): AmmunitionType | null {
+  const normalized = name.trim().toLocaleLowerCase("pt-BR");
+  return ammunitionTypes.find(type => normalized === ammunitionItemName(type).toLocaleLowerCase("pt-BR")) ?? null;
+}
+export function ammunitionItemType(item: InventoryItem): AmmunitionType | null {
+  if (item.ammunitionType && ammunitionTypes.includes(item.ammunitionType)) return item.ammunitionType;
+  return ammunitionTypeFromName(item.name);
+}
+export function createAmmunitionItem(type: AmmunitionType, qty = 1): InventoryItem {
+  return {
+    id: createId(),
+    name: ammunitionItemName(type),
+    category: "Munição",
+    catalogKey: `Munição::${ammunitionItemName(type)}`,
+    condition: "Íntegro",
+    load: 0,
+    qty: Math.max(1, Math.min(99, Math.trunc(qty))),
+    ammunitionType: type,
+  };
+}
+export function ammunitionCount(items: InventoryItem[] | undefined, type?: AmmunitionType, availableOnly = false) {
+  return (items ?? []).reduce((sum, item) => {
+    const itemType = ammunitionItemType(item);
+    if (!itemType || (type && itemType !== type)) return sum;
+    const committed = Math.max(0, Math.min(item.qty, Math.trunc(item.committedAmmo ?? 0)));
+    return sum + (availableOnly ? Math.max(0, item.qty - committed) : item.qty);
+  }, 0);
+}
+export function ammunitionLoad(items: InventoryItem[] | undefined) {
+  return ammunitionTypes.reduce((sum, type) => sum + Math.ceil(ammunitionCount(items, type) / 4), 0);
+}
 export type InventoryItem = {
   id: string;
   name: string;
@@ -62,6 +97,10 @@ export type InventoryItem = {
   cartDeployed?: boolean;
   /** Itens fisicamente colocados no carrinho. O carrinho comporta até 4 espaços. */
   cartItems?: InventoryItem[];
+  /** Categoria de munição quando este objeto representa uma carga física. */
+  ammunitionType?: AmmunitionType;
+  /** Unidades deste stack comprometidas por disparos na cena atual. Só são removidas ao trocar de cena. */
+  committedAmmo?: number;
 };
 
 export type ProvisionLot = {
@@ -249,6 +288,7 @@ export type Survivor = {
   pocket2?: string;
   kitCondition?: Partial<Record<EquipmentSlot, string>>;
   equippedItems?: Partial<Record<EquipmentSlot, InventoryItem>>;
+  /** Campos legados mantidos apenas para migração de campanhas antigas. */
   ammoType?: string;
   hp: number;
   armorMarked: number;
@@ -263,8 +303,9 @@ export type Survivor = {
   foodConsumedDay?: number;
   waterConsumedDay?: number;
   provisionLots?: ProvisionLot[];
+  /** Contador legado. Novas campanhas armazenam munição como itens físicos no inventário. */
   ammo: number;
-  /** Uma carga compatível cobre os disparos da mesma arma/tipo durante a cena. */
+  /** Uma unidade física compatível é comprometida na primeira ação daquele tipo durante a cena. */
   ammoSpentScene?: number;
   ammoSpentType?: string;
   ammoSpentTypes?: string[];
@@ -430,21 +471,46 @@ export function establishShelter(state: GameState, key: string, manifest: Shelte
 const stockKeys = ["food", "water", "medications", "pistolAmmo", "fuel", "parts"] as const;
 
 export function shelterAmmoCount(shelter: ShelterState, type: AmmunitionType) {
+  const physical = ammunitionCount(shelter.inventory, type);
+  if (physical > 0) return physical;
   if (type === "Pistola") return Math.max(0, Math.trunc(shelter.ammoStocks?.Pistola ?? shelter.pistolAmmo ?? 0));
   return Math.max(0, Math.trunc(shelter.ammoStocks?.[type] ?? 0));
 }
 export function setShelterAmmoCount(shelter: ShelterState, type: AmmunitionType, value: number) {
   const count = Math.max(0, Math.min(99, Math.trunc(value)));
+  shelter.inventory ??= [];
+  const stacks = shelter.inventory.filter(item => ammunitionItemType(item) === type);
+  const current = stacks.reduce((sum, item) => sum + item.qty, 0);
+  if (count > current) {
+    const target = stacks[0];
+    if (target && target.qty + (count - current) <= 99) target.qty += count - current;
+    else shelter.inventory.push(createAmmunitionItem(type, count - current));
+  } else if (count < current) {
+    let remove = current - count;
+    for (const item of [...stacks].reverse()) {
+      const take = Math.min(remove, item.qty);
+      item.qty -= take; remove -= take;
+      if (item.qty <= 0) shelter.inventory.splice(shelter.inventory.indexOf(item), 1);
+      if (!remove) break;
+    }
+  }
   shelter.ammoStocks ??= {};
-  shelter.ammoStocks[type] = count;
-  if (type === "Pistola") shelter.pistolAmmo = count;
+  shelter.ammoStocks[type] = 0;
+  if (type === "Pistola") shelter.pistolAmmo = 0;
 }
 export function normalizeShelterAmmo(shelter: ShelterState) {
+  shelter.inventory ??= [];
   shelter.ammoStocks ??= {};
   for (const type of ammunitionTypes) {
-    if (shelter.ammoStocks[type] === undefined) shelter.ammoStocks[type] = type === "Pistola" ? Math.max(0, shelter.pistolAmmo ?? 0) : 0;
+    const legacy = Math.max(0, Math.trunc(shelter.ammoStocks[type] ?? (type === "Pistola" ? shelter.pistolAmmo ?? 0 : 0)));
+    if (legacy > 0) {
+      const existing = shelter.inventory.find(item => ammunitionItemType(item) === type && (item.committedAmmo ?? 0) === 0);
+      if (existing && existing.qty + legacy <= 99) existing.qty += legacy;
+      else shelter.inventory.push(createAmmunitionItem(type, legacy));
+    }
+    shelter.ammoStocks[type] = 0;
   }
-  shelter.pistolAmmo = shelter.ammoStocks.Pistola ?? 0;
+  shelter.pistolAmmo = 0;
   return shelter;
 }
 function emptyShelter(hex: string | null, name: string): ShelterState {
@@ -615,18 +681,17 @@ export function survivorStats(s: Survivor) {
   const cartItems = activeCart?.cartItems ?? [];
   const cartProvisionIds = new Set(cartItems.filter(item => item.provisionResource).map(item => item.id));
   const cartItemsLoad = cartItems
-    .filter(item => !cartProvisionIds.has(item.id))
+    .filter(item => !cartProvisionIds.has(item.id) && !ammunitionItemType(item))
     .reduce((sum, item) => sum + Math.max(0, item.load) * Math.max(0, item.qty), 0);
   const cartFoodLoad = Math.ceil(groupedProvisionPortions(cartItems, "food") / 4);
   const cartWaterLoad = Math.ceil(groupedProvisionPortions(cartItems, "water") / 4);
-  const cartCarried = cartItemsLoad + cartFoodLoad + cartWaterLoad;
-  const ammoType = weaponAmmoType(s.primary);
-  const firearm = ammoType !== null && (s.ammoType ?? ammoType) === ammoType;
+  const cartAmmoLoad = ammunitionLoad(cartItems);
+  const cartCarried = cartItemsLoad + cartFoodLoad + cartWaterLoad + cartAmmoLoad;
   const load = {
-    items: looseInventory.reduce((sum, item) => sum + Math.max(0, item.load) * Math.max(0, item.qty), 0),
+    items: looseInventory.filter(item => !ammunitionItemType(item)).reduce((sum, item) => sum + Math.max(0, item.load) * Math.max(0, item.qty), 0),
     food: Math.max(0, Math.ceil((Math.max(0, s.food + foodInItems) - 2) / 4)),
     water: Math.max(0, Math.ceil((Math.max(0, s.water + waterInItems) - 2) / 4)),
-    ammo: Math.max(0, s.ammo - (firearm ? 1 : 0)),
+    ammo: ammunitionLoad(looseInventory),
     personal: s.personal === "Kit médico de campo" || s.personal === "Kit de ferramentas de trabalho" ? 1 : 0,
   };
   const carried = Object.values(load).reduce((sum, value) => sum + value, 0);
@@ -641,12 +706,13 @@ export function survivorStats(s: Survivor) {
 export function initialSurvivor(input: Omit<Survivor,
   "id" | "portrait" | "level" | "proficiency" | "bag" | "hp" | "armorMarked" | "stress" | "hope" | "infection" | "exposureDeadline" | "treatmentAttempted" |
   "terminalScenes" | "food" | "water" | "ammo" | "inventory" | "notes">): Survivor {
+  const startingAmmo = weaponAmmoType(input.primary);
   return { ...input, id: createId(), level: 1, proficiency: 1, bag: input.personal === "Mochila urbana" ? "Mochila urbana" : "",
     outfit: input.outfit ?? "",
-    ammoType: weaponAmmoType(input.primary) ?? "Indefinida",
+    ammoType: startingAmmo ?? "Indefinida",
     hp: 0, armorMarked: 0, stress: 0, hope: 2,
     infection: "Saudável", exposureDeadline: null, treatmentAttempted: false,
     terminalScenes: 3, food: 1, water: 1,
-    ammo: ["Pistola", "Revólver", "Espingarda", "Carabina"].includes(input.primary) ? 1 : 0,
-    inventory: [], notes: "" };
+    ammo: 0,
+    inventory: startingAmmo ? [createAmmunitionItem(startingAmmo, 1)] : [], notes: "" };
 }
