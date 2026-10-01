@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Crosshair, Dice5, Sparkles, Swords, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -23,11 +23,14 @@ function outcomeLabel(roll: RollRecord) {
   return `${roll.outcome.success ? "Sucesso" : "Falha"} com ${dualityLabel(roll.outcome.with)}`;
 }
 
-function RollForm({ game, edit, request }: { game: GameState; edit: Edit; request?: RollRequest }) {
+function RollForm({ game, edit, request, onCompleted }: { game: GameState; edit: Edit; request?: RollRequest; onCompleted: () => void }) {
+  const requestedSurvivor = request?.survivorId ? game.survivors.find(s => s.id === request.survivorId) : null;
+  const initialWeaponSlot: "primary" | "secondary" = request?.weapon
+    ?? (requestedSurvivor && !requestedSurvivor.primary && requestedSurvivor.secondary ? "secondary" : "primary");
   const [person, setPerson] = useState(request?.survivorId ?? "");
   const [kind, setKind] = useState<RollKind>(request?.kind ?? "action");
   const [trait, setTrait] = useState(request?.trait ?? "Agilidade");
-  const [weaponSlot, setWeaponSlot] = useState<"primary" | "secondary">(request?.weapon ?? "primary");
+  const [weaponSlot, setWeaponSlot] = useState<"primary" | "secondary">(initialWeaponSlot);
   const [difficulty, setDifficulty] = useState(request?.kind === "attack" || request?.survivorId ? "" : "12");
   const [extra, setExtra] = useState("0");
   const [edge, setEdge] = useState<Edge>("none");
@@ -38,6 +41,9 @@ function RollForm({ game, edit, request }: { game: GameState; edit: Edit; reques
   const [last, setLast] = useState<RollRecord | null>(null);
   const [lastDamage, setLastDamage] = useState<DamageRecord | null>(null);
   const [standaloneDamage, setStandaloneDamage] = useState<DamageRecord | null>(null);
+  const [isRolling, setIsRolling] = useState(false);
+  const [rollError, setRollError] = useState("");
+  const rollingRef = useRef(false);
   const survivor = game.survivors.find(s => s.id === person);
   const origin = survivor ? content.origins.find(o => o.name === survivor.origin) : null;
   const experienceOptions = survivor ? [
@@ -60,12 +66,25 @@ function RollForm({ game, edit, request }: { game: GameState; edit: Edit; reques
   const targetValid = target === null || (Number.isInteger(target) && target >= 1 && target <= 99);
   const experienceCost = experiences.length;
   const handConflict = kind === "attack" && weaponSlot === "secondary" && getPrimary(survivor?.primary ?? "")?.hands === "Duas";
-  const canRoll = targetValid && experienceCost <= (survivor?.hope ?? 0) && (kind !== "attack" || Boolean(weapon && parseWeaponDamage(weapon.damage))) && !handConflict && ammoReady;
+  const rollIssue = !targetValid
+    ? `Informe ${kind === "attack" ? "uma defesa" : "uma dificuldade"} inteira entre 1 e 99 ou deixe o campo vazio.`
+    : experienceCost > (survivor?.hope ?? 0)
+      ? "Esperança insuficiente para as Experiências declaradas."
+      : kind === "attack" && !weapon
+        ? "Selecione um sobrevivente com uma arma equipada."
+        : kind === "attack" && weapon && !parseWeaponDamage(weapon.damage)
+          ? "A arma selecionada não possui uma fórmula de dano válida."
+          : handConflict
+            ? "A arma principal ocupa as duas mãos. Guarde-a antes de usar a secundária."
+            : !ammoReady
+              ? `Sem Munição de ${ammoNeeded} livre no inventário.`
+              : "";
+  const canRoll = !rollIssue && !isRolling;
   const attackResult = last?.kind === "attack" && last.actorId === person && last.weaponName === weapon?.name ? last : null;
   const attackHit = attackResult && targetValid ? resolveAttackHit(attackResult.outcome, target, confirmedHit) : null;
   const displayedLast = last && attackResult ? { ...last, outcome: { ...last.outcome, difficulty: targetValid ? target : null, success: attackHit } } : last;
 
-  function clearResult() { setLast(null); setLastDamage(null); setStandaloneDamage(null); setConfirmedHit(false); }
+  function clearResult() { setLast(null); setLastDamage(null); setStandaloneDamage(null); setConfirmedHit(false); setRollError(""); }
 
   function calculateDamage(critical: boolean): DamageRecord | null {
     if (!survivor || !weapon || handConflict) return null;
@@ -84,8 +103,15 @@ function RollForm({ game, edit, request }: { game: GameState; edit: Edit; reques
     return `${survivor?.name ?? "Sobrevivente"}: ${record.weaponName} — ${record.formula}${record.equipment ? ` +${record.equipment} da Faca pequena` : ""}${situational ? ` ${situational >= 0 ? "+" : "−"}${Math.abs(situational)} situacional` : ""}${record.critical ? ` + ${record.criticalBonus} crítico` : ""} = ${record.total} dano físico (dados: ${record.dice.join(", ")}). ${status} Compare aos limiares do alvo; Barulho é aplicado por disparo e uma unidade física de munição é comprometida na primeira ação compatível da cena.`;
   }
 
-  function rollAction() {
-    if (!canRoll) return;
+  function rollAction(keepOpen = false) {
+    if (rollingRef.current) return;
+    if (!canRoll) {
+      if (rollIssue) setRollError(rollIssue);
+      return;
+    }
+    rollingRef.current = true;
+    setIsRolling(true);
+    setRollError("");
     const traitBonus = survivor?.attributes[rollTrait] ?? 0;
     const symptom = survivor?.infection === "Sintomático" && ["Agilidade", "Força"].includes(rollTrait) ? -1 : 0;
     const other = Math.max(-99, Math.min(99, Math.trunc(Number(extra) || 0)));
@@ -131,6 +157,15 @@ function RollForm({ game, edit, request }: { game: GameState; edit: Edit; reques
         (attackNoise ? ` · Barulho +${attackNoise}.` : ""), actor?.id);
     });
     setLast(record); setLastDamage(damage); setStandaloneDamage(null); setConfirmedHit(false);
+    window.setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("zona-morta:roll-completed"));
+      if (keepOpen) {
+        rollingRef.current = false;
+        setIsRolling(false);
+      } else {
+        onCompleted();
+      }
+    }, 80);
   }
 
   function rollStandaloneDamage() {
@@ -141,7 +176,13 @@ function RollForm({ game, edit, request }: { game: GameState; edit: Edit; reques
     setStandaloneDamage(record);
   }
 
-  return <>
+  return <div className="roll-form" onKeyDown={event => {
+    if (event.key !== "Enter" || event.shiftKey || event.isComposing) return;
+    const targetElement = event.target as HTMLElement;
+    if (["TEXTAREA", "BUTTON", "SELECT"].includes(targetElement.tagName) || targetElement.isContentEditable) return;
+    event.preventDefault();
+    rollAction(false);
+  }}>
     <DialogHeader><p className="dossier-title">Dados de dualidade</p><DialogTitle>Rolagem de {kind === "attack" ? "ataque" : kind === "reaction" ? "reação" : "ação"}</DialogTitle>
       <DialogDescription>Defina a ação e seus riscos com o mestre. Declare Experiências e modificadores antes de rolar.</DialogDescription></DialogHeader>
     <div className="roll-modes" role="group" aria-label="Tipo de rolagem">
@@ -149,18 +190,32 @@ function RollForm({ game, edit, request }: { game: GameState; edit: Edit; reques
         <button type="button" key={id} aria-pressed={kind === id} onClick={() => { setKind(id); setDifficulty(id === "attack" ? "" : "12"); clearResult(); }}><Icon size={16} aria-hidden="true" />{label}</button>)}
     </div>
     <div className="grid gap-3 sm:grid-cols-2">
-      {request?.survivorId ? <div className="roll-locked"><span>Sobrevivente</span><strong>{survivor?.name ?? "Não encontrado"}</strong></div> : <Pick label="Sobrevivente" value={person} options={game.survivors.map(s => ({ value: s.id, label: s.name }))} onChange={value => { setPerson(value); setExperiences([]); setWeaponSlot("primary"); clearResult(); }} placeholder="Rolagem livre" />}
+      {request?.survivorId ? <div className="roll-locked"><span>Sobrevivente</span><strong>{survivor?.name ?? "Não encontrado"}</strong></div> : <Pick label="Sobrevivente" value={person} options={game.survivors.map(s => ({ value: s.id, label: s.name }))} onChange={value => {
+        const next = game.survivors.find(s => s.id === value);
+        setPerson(value); setExperiences([]); setWeaponSlot(next?.primary ? "primary" : next?.secondary ? "secondary" : "primary"); clearResult();
+      }} placeholder="Rolagem livre" />}
       {kind === "attack" ? <Pick label="Arma equipada" value={weaponSlot} options={[{ value: "primary", label: survivor?.primary || "Primária" }, ...(survivor?.secondary ? [{ value: "secondary", label: survivor.secondary }] : [])]} onChange={value => { setWeaponSlot(value as "primary" | "secondary"); clearResult(); }} disabled={!survivor} />
         : <Pick label="Atributo" value={trait} options={traits.map(value => ({ value, label: traitLabel(value) }))} onChange={value => { setTrait(value); clearResult(); }} />}
       <Field label={kind === "attack" ? "Defesa do alvo (opcional)" : "Dificuldade (opcional)"} value={difficulty} onChange={value => { setDifficulty(value); if (kind === "attack") setConfirmedHit(false); else clearResult(); }} type="number" placeholder="Mestre decide" />
-      <Field label="Outros modificadores" value={extra} onChange={value => { setExtra(value); clearResult(); }} type="number" />
     </div>
     {kind === "attack" && <div className="roll-weapon-note"><Crosshair size={17} aria-hidden="true" /><span>{weapon ? `${weapon.name} · ${traitLabel(rollTrait)} ${survivor && survivor.attributes[rollTrait] >= 0 ? "+" : ""}${survivor?.attributes[rollTrait] ?? 0} · ${weapon.range} · ${weapon.damage}` : "Escolha um sobrevivente e sua arma equipada."}</span></div>}
     {equipmentBonus !== 0 && <p className="roll-hint">{survivor?.protection}: {equipmentBonus} em {traitLabel(rollTrait)}, já incluído nesta rolagem.</p>}
     {kind === "attack" && weaponSlot === "primary" && Boolean(modifiers?.primaryDamage) && <p className="roll-hint">Faca pequena: +1 ao dano desta arma, incluído automaticamente.</p>}
-    {kind === "attack" && <Field label="Bônus situacional ao dano" value={damageExtra} onChange={value => { setDamageExtra(value); setStandaloneDamage(null); }} type="number" />}
     {ammoWarning && <p className="inventory-hint inventory-danger" role="status">{ammoWarning} Disparos seguintes da mesma categoria nesta cena não comprometem outra unidade.</p>}
     {handConflict && <p className="inventory-hint inventory-danger" role="alert">A arma principal ocupa as duas mãos. Guarde-a no inventário para usar a secundária.</p>}
+    <details className="roll-advanced">
+      <summary>Opções avançadas{kind === "attack" ? " e dano avulso" : ""}</summary>
+      <div className="roll-advanced-body">
+        <Field label="Outros modificadores" value={extra} onChange={value => { setExtra(value); clearResult(); }} type="number" />
+        {kind === "attack" && <>
+          <Field label="Bônus situacional ao dano" value={damageExtra} onChange={value => { setDamageExtra(value); setStandaloneDamage(null); }} type="number" />
+          <div className="roll-damage-settings"><label><Checkbox checked={manualCritical} onCheckedChange={checked => { setManualCritical(checked === true); setStandaloneDamage(null); }} /> Crítico no dano avulso</label></div>
+          <div className="roll-damage-actions"><Button type="button" size="sm" variant="outline" disabled={Boolean(standaloneDamage) || handConflict || !weapon} onClick={rollStandaloneDamage}>Rolar dano avulso</Button>
+            {standaloneDamage && <Button type="button" size="sm" variant="ghost" onClick={() => setStandaloneDamage(null)}>Novo dano avulso</Button>}</div>
+          {standaloneDamage && <output className="roll-damage-result"><strong>{standaloneDamage.total} dano físico avulso</strong><span>{standaloneDamage.formula}{standaloneDamage.equipment ? ` +${standaloneDamage.equipment} equipamento` : ""}{standaloneDamage.extra - standaloneDamage.equipment ? ` ${standaloneDamage.extra - standaloneDamage.equipment >= 0 ? "+" : "−"} ${Math.abs(standaloneDamage.extra - standaloneDamage.equipment)} situacional` : ""}{standaloneDamage.critical ? ` + ${standaloneDamage.criticalBonus} crítico` : ""} · dados {standaloneDamage.dice.join(", ")}</span></output>}
+        </>}
+      </div>
+    </details>
     <fieldset className="roll-experiences"><legend>Experiências <small>+2 cada · 1 Esperança por Experiência pertinente</small></legend>
       {experienceOptions.length ? experienceOptions.map(option => <label key={option.id} className="roll-experience">
         <Checkbox checked={experiences.includes(option.id)} disabled={!experiences.includes(option.id) && experienceCost >= (survivor?.hope ?? 0)} onCheckedChange={checked => {
@@ -175,8 +230,10 @@ function RollForm({ game, edit, request }: { game: GameState; edit: Edit; reques
     </div></div>
     {kind === "reaction" && <p className="roll-hint">Reações não geram Esperança ou Medo. Um crítico não recupera Estresse.</p>}
     {!targetValid && <p className="text-sm text-red-700" role="alert">Informe {kind === "attack" ? "uma defesa" : "uma dificuldade"} inteira entre 1 e 99 ou deixe o campo vazio.</p>}
-    <div className="roll-actions"><Button disabled={!canRoll} onClick={rollAction}><Dice5 size={17} /> Rolar {kind === "attack" ? "ataque + dano" : kind === "reaction" ? "reação" : "Esperança/Medo"}</Button>
-      {survivor && <span>Esperança atual: <b>{survivor.hope}/6</b></span>}</div>
+    {rollError && <p className="roll-error" role="alert">{rollError}</p>}
+    <div className="roll-actions"><Button disabled={!canRoll} aria-busy={isRolling} onClick={event => rollAction(event.shiftKey)}><Dice5 size={17} /> {isRolling ? "Rolando…" : <>Rolar {kind === "attack" ? "ataque + dano" : kind === "reaction" ? "reação" : "Esperança/Medo"}{experienceCost ? ` · ${experienceCost} Esperança` : ""}{kind === "attack" && attackResources.spendsAmmo ? " · 1 munição" : ""}</>}</Button>
+      {survivor && <span>Esperança atual: <b>{survivor.hope}/6</b></span>}
+      <small className="roll-shortcut-hint">Enter rola · Shift + clique mantém aberto</small></div>
     {displayedLast && <div className="roll-result" role="status" aria-live="polite">
       <div className="roll-result-heading"><b>{outcomeLabel(displayedLast)}</b><span>{displayedLast.outcome.difficulty === null ? kind === "attack" ? "Defesa não informada" : "Dificuldade não informada" : `contra ${displayedLast.outcome.difficulty}`}</span></div>
       <div className="roll-dice"><div className="hope"><Sparkles size={15} aria-hidden="true" /><span>Esperança</span><strong>{last.outcome.hopeDie}</strong></div><div className="fear"><Zap size={15} aria-hidden="true" /><span>Medo</span><strong>{last.outcome.fearDie}</strong></div><div className="total"><span>Total</span><strong>{last.outcome.total}</strong></div></div>
@@ -192,13 +249,9 @@ function RollForm({ game, edit, request }: { game: GameState; edit: Edit; reques
         {target === null && targetValid && !attackResult.outcome.critical && <label className="roll-confirm"><Checkbox checked={confirmedHit} onCheckedChange={checked => setConfirmedHit(checked === true)} /> Mestre confirmou o acerto sem defesa informada</label>}
         <output className={`roll-damage-result${attackHit === false ? " is-miss" : attackHit === null ? " is-pending" : ""}`}><strong>{lastDamage.total} dano físico{attackHit === false ? " · não aplicado" : attackHit === null ? " · potencial" : ""}</strong><span>{lastDamage.formula}{lastDamage.equipment ? ` +${lastDamage.equipment} equipamento` : ""}{lastDamage.extra - lastDamage.equipment ? ` ${lastDamage.extra - lastDamage.equipment >= 0 ? "+" : "−"} ${Math.abs(lastDamage.extra - lastDamage.equipment)} situacional` : ""}{lastDamage.critical ? ` + ${lastDamage.criticalBonus} crítico` : ""} · dados {lastDamage.dice.join(", ")}</span></output>
       </>}
-      <div className="roll-damage-settings"><label><Checkbox checked={manualCritical} onCheckedChange={checked => { setManualCritical(checked === true); setStandaloneDamage(null); }} /> Crítico no dano avulso</label></div>
-      <div className="roll-damage-actions"><Button size="sm" variant="outline" disabled={Boolean(standaloneDamage) || handConflict} onClick={rollStandaloneDamage}>Dano avulso</Button>
-        {standaloneDamage && <Button size="sm" variant="ghost" onClick={() => setStandaloneDamage(null)}>Novo dano avulso</Button>}</div>
-      {standaloneDamage && <output className="roll-damage-result"><strong>{standaloneDamage.total} dano físico avulso</strong><span>{standaloneDamage.formula}{standaloneDamage.equipment ? ` +${standaloneDamage.equipment} equipamento` : ""}{standaloneDamage.extra - standaloneDamage.equipment ? ` ${standaloneDamage.extra - standaloneDamage.equipment >= 0 ? "+" : "−"} ${Math.abs(standaloneDamage.extra - standaloneDamage.equipment)} situacional` : ""}{standaloneDamage.critical ? ` + ${standaloneDamage.criticalBonus} crítico` : ""} · dados {standaloneDamage.dice.join(", ")}</span></output>}
       <p className="roll-hint">Compare o dano aos limiares do alvo. O sistema aplica o Barulho da arma a cada ação de disparo e compromete 1 unidade física compatível apenas na primeira ação daquele tipo de munição na cena; ela é consumida ao iniciar a próxima cena.</p>
     </div>}
-  </>;
+  </div>;
 }
 
 export function RollDialog({ game, edit, request, open, onOpenChange }: {
@@ -206,8 +259,12 @@ export function RollDialog({ game, edit, request, open, onOpenChange }: {
 }) {
   const [localOpen, setLocalOpen] = useState(false);
   const visible = open ?? localOpen;
-  return <Dialog open={visible} onOpenChange={value => { if (open === undefined) setLocalOpen(value); onOpenChange?.(value); }}>
+  function changeOpen(value: boolean) {
+    if (open === undefined) setLocalOpen(value);
+    onOpenChange?.(value);
+  }
+  return <Dialog open={visible} onOpenChange={changeOpen}>
     {open === undefined && <DialogTrigger asChild><Button size="sm"><Dice5 /> Rolar dados</Button></DialogTrigger>}
-    {visible && <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[650px]"><RollForm game={game} edit={edit} request={request} /></DialogContent>}
+    {visible && <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[650px]"><RollForm game={game} edit={edit} request={request} onCompleted={() => changeOpen(false)} /></DialogContent>}
   </Dialog>;
 }
