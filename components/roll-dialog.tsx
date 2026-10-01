@@ -2,17 +2,15 @@
 
 import { useRef, useState } from "react";
 import { Crosshair, Dice5, Sparkles, Swords, Zap } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Field, Pick } from "@/components/game-controls";
-import { ConflictTrail } from "@/components/conflict-trail";
 import { traitLabel, dualityLabel } from "@/lib/terminology";
 import { addLog, content, traits, type GameState } from "@/lib/game";
 import { equipmentModifiers, getPrimary, getSecondary } from "@/lib/equipment";
 import { applyAttackResources, attackResourceState } from "@/lib/combat-resources";
-import { publicConflictScene, resolveThreatAttack, type ThreatAttackResolution } from "@/lib/conflict";
+import { resolveThreatAttack, type ThreatAttackResolution } from "@/lib/conflict";
 import { parseWeaponDamage, resolveActionRoll, resolveAttackHit, resolveRollResources, resolveWeaponDamage, rollDie, type ActionOutcome, type Edge, type RollKind } from "@/lib/rolls";
 
 type Edit = (fn: (draft: GameState) => void) => void;
@@ -26,7 +24,7 @@ function outcomeLabel(roll: RollRecord) {
   return `${roll.outcome.success ? "Sucesso" : "Falha"} com ${dualityLabel(roll.outcome.with)}`;
 }
 
-function RollForm({ game, edit, request, onCompleted, playerMode = false }: { game: GameState; edit: Edit; request?: RollRequest; onCompleted: () => void; playerMode?: boolean }) {
+function RollForm({ game, edit, request, onCompleted }: { game: GameState; edit: Edit; request?: RollRequest; onCompleted: () => void }) {
   const requestedSurvivor = request?.survivorId ? game.survivors.find(s => s.id === request.survivorId) : null;
   const initialWeaponSlot: "primary" | "secondary" = request?.weapon
     ?? (requestedSurvivor && !requestedSurvivor.primary && requestedSurvivor.secondary ? "secondary" : "primary");
@@ -48,12 +46,8 @@ function RollForm({ game, edit, request, onCompleted, playerMode = false }: { ga
   const [standaloneDamage, setStandaloneDamage] = useState<DamageRecord | null>(null);
   const [isRolling, setIsRolling] = useState(false);
   const [rollError, setRollError] = useState("");
-  const [spotlightBusy, setSpotlightBusy] = useState(false);
   const rollingRef = useRef(false);
   const survivor = game.survivors.find(s => s.id === person);
-  const rollConflict = game.publicConflict
-    ?? (game.conflict?.active ? publicConflictScene(game.conflict, game.survivors, survivor?.id ?? null) : undefined);
-  const survivorInConflict = Boolean(survivor && rollConflict?.survivors.some(row => row.id === survivor.id));
   const origin = survivor ? content.origins.find(o => o.name === survivor.origin) : null;
   const experienceOptions = survivor ? [
     { id: "origin" as const, name: origin?.experience || survivor.origin },
@@ -112,28 +106,6 @@ function RollForm({ game, edit, request, onCompleted, playerMode = false }: { ga
 
   function clearResult() { setLast(null); setLastDamage(null); setLastTargetResolution(null); setStandaloneDamage(null); setConfirmedHit(false); setRollError(""); }
 
-
-  async function toggleSpotlightRequest() {
-    if (!playerMode || !survivor || !rollConflict?.active || spotlightBusy) return;
-    setSpotlightBusy(true);
-    setRollError("");
-    try {
-      const action = rollConflict.spotlightRequested ? "cancel" : "request";
-      const response = await fetch(`/api/campaign/spotlight?campanha=${encodeURIComponent(game.campaignId)}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
-      });
-      const payload = await response.json() as { error?: string };
-      if (!response.ok) throw new Error(payload.error || "Não foi possível atualizar o pedido de Spotlight.");
-      toast.success(action === "request" ? "Spotlight solicitado" : "Pedido de Spotlight cancelado");
-      window.dispatchEvent(new CustomEvent("zona-morta:campaign-refresh"));
-    } catch (error) {
-      setRollError(error instanceof Error ? error.message : "Não foi possível atualizar o pedido de Spotlight.");
-    } finally {
-      setSpotlightBusy(false);
-    }
-  }
 
   function calculateDamage(critical: boolean): DamageRecord | null {
     if (!survivor || !weapon || handConflict) return null;
@@ -278,26 +250,6 @@ function RollForm({ game, edit, request, onCompleted, playerMode = false }: { ga
   }}>
     <DialogHeader><p className="dossier-title">Dados de dualidade</p><DialogTitle>Rolagem de {kind === "attack" ? "ataque" : kind === "reaction" ? "reação" : "ação"}</DialogTitle>
       <DialogDescription>Defina a ação e seus riscos com o mestre. Declare Experiências e modificadores antes de rolar.</DialogDescription></DialogHeader>
-    {rollConflict?.active && survivorInConflict && <div className="roll-conflict-dock">
-      <div className="roll-conflict-dock-heading">
-        <div><span><Swords size={13} /> Conflito ativo</span>
-          <small>{kind === "attack" ? (selectedTargetName ? <>Alvo <b>{selectedTargetName}</b></> : "Clique em uma ameaça para escolher o alvo") : "Acompanhe o Spotlight sem sair da rolagem"}</small></div>
-        {playerMode && <Button type="button" size="sm" variant={rollConflict.spotlightRequested ? "secondary" : "ghost"} disabled={spotlightBusy || (rollConflict.spotlight?.kind === "survivor" && rollConflict.spotlight.id === survivor?.id)} onClick={() => void toggleSpotlightRequest()}>
-          <Crosshair size={13} /> {rollConflict.spotlight?.kind === "survivor" && rollConflict.spotlight.id === survivor?.id ? "Seu Spotlight" : rollConflict.spotlightRequested ? "Spotlight solicitado" : "Pedir Spotlight"}
-        </Button>}
-      </div>
-      <div className="roll-conflict-trail">
-        <ConflictTrail
-          survivors={rollConflict.survivors.map(row => ({ ...row, requested: row.id === survivor?.id && rollConflict.spotlightRequested }))}
-          threats={rollConflict.threats}
-          spotlight={rollConflict.spotlight}
-          selfId={survivor?.id ?? null}
-          targetId={targetThreatId}
-          mode="player"
-          onThreatTarget={kind === "attack" ? id => { setTargetThreatId(id); setDifficulty(""); clearResult(); } : undefined}
-        />
-      </div>
-    </div>}
     <div className="roll-modes" role="group" aria-label="Tipo de rolagem">
       {([ ["action", "Ação", Dice5], ["reaction", "Reação", Zap], ["attack", "Ataque", Swords] ] as const).map(([id, label, Icon]) =>
         <button type="button" key={id} aria-pressed={kind === id} onClick={() => { setKind(id); setDifficulty(id === "attack" ? "" : "12"); clearResult(); }}><Icon size={16} aria-hidden="true" />{label}</button>)}
@@ -376,8 +328,8 @@ function RollForm({ game, edit, request, onCompleted, playerMode = false }: { ga
   </div>;
 }
 
-export function RollDialog({ game, edit, request, open, onOpenChange, playerMode = false }: {
-  game: GameState; edit: Edit; request?: RollRequest; open?: boolean; onOpenChange?: (open: boolean) => void; playerMode?: boolean;
+export function RollDialog({ game, edit, request, open, onOpenChange }: {
+  game: GameState; edit: Edit; request?: RollRequest; open?: boolean; onOpenChange?: (open: boolean) => void;
 }) {
   const [localOpen, setLocalOpen] = useState(false);
   const visible = open ?? localOpen;
@@ -387,6 +339,6 @@ export function RollDialog({ game, edit, request, open, onOpenChange, playerMode
   }
   return <Dialog open={visible} onOpenChange={changeOpen}>
     {open === undefined && <DialogTrigger asChild><Button size="sm"><Dice5 /> Rolar dados</Button></DialogTrigger>}
-    {visible && <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[720px]"><RollForm game={game} edit={edit} request={request} playerMode={playerMode} onCompleted={() => changeOpen(false)} /></DialogContent>}
+    {visible && <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[650px]"><RollForm game={game} edit={edit} request={request} onCompleted={() => changeOpen(false)} /></DialogContent>}
   </Dialog>;
 }
