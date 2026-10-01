@@ -18,10 +18,14 @@ import { displayTime, shelterPopulationBreakdown, type GameState, type ShelterPr
 import {
   projectDefinition,
   projectDisplayCosts,
+  projectIntegrity,
+  projectIntegrityLabel,
+  projectMechanicalBenefits,
   projectOperational,
   projectProgress,
   shelterBlueprintSlots,
   shelterMetrics,
+  shelterOvercrowded,
 } from "@/lib/shelter-projects";
 
 type Icon = ComponentType<{ size?: number; className?: string; "aria-hidden"?: boolean }>;
@@ -39,10 +43,12 @@ function projectIcon(project?: ShelterProject): Icon {
 
 function projectState(game: GameState, project?: ShelterProject) {
   if (!project) return { label: "Livre", tone: "available" };
-  if (project.state === "Concluído") {
+  if (project.state === "Destruído") return { label: "Destruída", tone: "damaged" };
+  if (project.state === "Inoperante") return { label: "Inoperante", tone: "damaged" };
+  if (project.state === "Danificado" || project.state === "Concluído") {
     const definition = projectDefinition(project.key);
     if ((game.shelter.disabledProjectKeys ?? []).includes(project.key)) return { label: "Desligado", tone: "waiting" };
-    if (projectOperational(game, game.shelter, project)) return { label: "Operacional", tone: "operational" };
+    if (projectOperational(game, game.shelter, project)) return { label: project.state === "Danificado" ? "Danificada · operacional" : "Operacional", tone: project.state === "Danificado" ? "damaged" : "operational" };
     if (definition?.requiresPower) return { label: "Sem energia", tone: "waiting" };
     return { label: "Sem operador", tone: "waiting" };
   }
@@ -72,18 +78,19 @@ export function ShelterVisualDashboard({ game }: { game: GameState }) {
   const selectedProgress = selectedProject ? projectProgress(selectedProject) : null;
   const metrics = shelterMetrics(shelter, game);
   const population = shelterPopulationBreakdown(game);
+  const overcrowded = shelterOvercrowded(game, shelter);
   const food = provisionBreakdown(shelter, "food");
   const water = provisionBreakdown(shelter, "water");
   const occupied = new Map(facilities.filter(project => project.slotId).map(project => [project.slotId!, project]));
   const unplaced = facilities.filter(project => !project.slotId);
 
   const summary = [
-    { label: "Pessoas", value: `${population.present}/${metrics.capacity}`, note: "presentes / capacidade", icon: Users },
+    { label: "Pessoas", value: `${population.present}/${metrics.capacity}`, note: overcrowded ? "SUPERLOTADO · Conforto suspenso" : "presentes / capacidade", icon: Users },
     { label: "Comida", value: food.total, note: "porções disponíveis", icon: Utensils },
     { label: "Água", value: water.total, note: "porções disponíveis", icon: Droplets },
     { label: "Energia", value: metrics.energy, note: metrics.power ? `${metrics.power.production} produzida · ${metrics.power.consumption} usada` : "saldo estrutural", icon: Zap },
     { label: "Segurança", value: metrics.security, note: "proteção da base", icon: Shield },
-    { label: "Conforto", value: metrics.comfort, note: "qualidade do abrigo", icon: HeartHandshake },
+    { label: "Conforto", value: metrics.comfort, note: overcrowded ? "sem benefício enquanto superlotado" : metrics.comfort >= 4 ? "−2 Fear no 1º descanso do dia" : metrics.comfort >= 2 ? "−1 Fear no 1º descanso do dia" : "qualidade do abrigo", icon: HeartHandshake },
     { label: "Medicamentos", value: shelter.medications, note: "tratamentos", icon: Cross },
   ];
 
@@ -101,6 +108,7 @@ export function ShelterVisualDashboard({ game }: { game: GameState }) {
         <Icon size={18} aria-hidden />
         <b>{project.name}</b>
         <span className={`shelter-detail-state is-${state.tone}`}>{state.label}</span>
+        {["Concluído", "Danificado", "Inoperante", "Destruído"].includes(project.state) && <small className="construction-integrity-mini">${"●".repeat(projectIntegrity(project))}${"○".repeat(3 - projectIntegrity(project))} · {projectIntegrity(project)}/3</small>}
         {(project.workShift || project.volunteerShifts?.length) && <small><span>⏱</span> até {displayTime(Math.min(
           ...(project.workShift ? [project.workShift.startMinute + project.workShift.durationMinutes] : []),
           ...(project.volunteerShifts ?? []).map(shift => shift.startMinute + shift.durationMinutes),
@@ -197,12 +205,14 @@ export function ShelterVisualDashboard({ game }: { game: GameState }) {
           </header>
           <div className="shelter-detail-body">
             <div className="shelter-detail-row"><span>Estado</span><b>{selectedProject.state}</b></div>
-            <div className="shelter-detail-row"><span>Progresso</span><b>{selectedProgress?.value}/{selectedProgress?.required}{selectedProgress?.repairing ? " · reparo" : ""}</b></div>
+            {selectedProject.state !== "Planejado" && <div className="shelter-detail-row"><span>Integridade</span><b>{projectIntegrity(selectedProject)}/3 · {projectIntegrityLabel(selectedProject)}</b></div>}
+            {["Planejado", "Em construção"].includes(selectedProject.state) && <div className="shelter-detail-row"><span>Progresso</span><b>{selectedProgress?.value}/{selectedProgress?.required}{selectedProgress?.repairing ? " · reparo" : ""}</b></div>}
             <div className="shelter-detail-row"><span>Custo</span><b>{definition ? projectDisplayCosts(definition.costs) : "—"}</b></div>
             <div className="shelter-detail-row"><span>Construção</span><b>{definition?.buildCapabilities?.length ? definition.buildCapabilities.join(" + ") : "Sem especialidade obrigatória"}</b></div>
             <div className="shelter-detail-row"><span>Operação</span><b>{definition?.operationMode === "staffed" ? definition.requiredCapabilities?.join(" + ") || "Equipe" : definition?.requiresPower ? "Energia" : "Passiva"}</b></div>
             {responsible && <div className="shelter-detail-row"><span>Responsável</span><b>{responsible.name}</b></div>}
             <div className="shelter-detail-effects"><span>Efeito</span><p>{definition?.effects.map(item => item.label).join(" · ") ?? "Estrutura sem efeito cadastrado."}</p></div>
+            {projectMechanicalBenefits(selectedProject.key).length > 0 && <div className="shelter-detail-effects"><span>Benefícios mecânicos</span><p>{projectMechanicalBenefits(selectedProject.key).join(" · ")}</p></div>}
             {selectedProject.state === "Em construção" && selectedProgress && <div className="shelter-detail-progress"><span style={{ width: `${Math.min(100, selectedProgress.value / selectedProgress.required * 100)}%` }} /></div>}
             <p className="shelter-detail-hint">{selectedProject.state === "Concluído" && !projectOperational(game, shelter, selectedProject)
               ? definition?.requiresPower ? "A estrutura está pronta, mas não está recebendo energia ou foi desligada." : "A estrutura está pronta, mas ainda precisa da equipe indicada para operar."
