@@ -65,19 +65,20 @@ export function createConflictScene(input: {
 
 export function addThreatInstances(scene: ConflictScene, template: ThreatTemplate, quantity = 1) {
   const count = Math.max(1, Math.min(20, Math.trunc(quantity || 1)));
-  const usedNames = new Set(scene.threats.filter(threat => threat.templateId === template.id).map(threat => threat.name));
+  const existingSameTemplate = scene.threats.filter(threat => threat.templateId === template.id);
+  const allNames = new Set(scene.threats.map(threat => threat.name));
   const added: ThreatInstance[] = [];
   let candidateIndex = 0;
 
   for (let index = 0; index < count; index++) {
+    const needsSuffix = count > 1 || existingSameTemplate.length > 0 || added.length > 0 || allNames.has(template.name);
     let name = template.name;
-    while (usedNames.has(name) || scene.threats.some(threat => threat.name === name) || added.some(threat => threat.name === name)) {
-      name = `${template.name} ${alphabeticLabel(candidateIndex++)}`;
+    if (needsSuffix) {
+      do {
+        name = `${template.name} ${alphabeticLabel(candidateIndex++)}`;
+      } while (allNames.has(name));
     }
-    if (count > 1 && name === template.name && !usedNames.has(template.name)) {
-      name = `${template.name} ${alphabeticLabel(candidateIndex++)}`;
-    }
-    usedNames.add(name);
+    allNames.add(name);
     const instance = instantiateThreat(template, name);
     scene.threats.push(instance);
     added.push(instance);
