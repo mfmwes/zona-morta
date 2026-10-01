@@ -3520,3 +3520,552 @@ html[data-theme="dark"] .character-conflict-hud--trail .character-spotlight-requ
     transition:none;
   }
 }
+
+
+/* Cena de Conflito: dashboard tático padronizado. */
+.conflict-manager {
+  gap:14px;
+}
+.conflict-hero {
+  overflow:hidden;
+}
+.conflict-hero-titleblock {
+  min-width:0;
+}
+.conflict-hero-titleblock h2 {
+  margin:2px 0 3px;
+  font-size:clamp(1.05rem,1.6vw,1.32rem);
+}
+.conflict-overview-metrics {
+  display:grid;
+  grid-template-columns:.78fr .9fr .82fr minmax(190px,1.4fr);
+  gap:7px;
+  margin:10px 22px 8px;
+}
+.conflict-overview-metric {
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  align-items:center;
+  gap:3px 7px;
+  min-width:0;
+  min-height:48px;
+  padding:7px 9px;
+  border:1px solid var(--border);
+  border-radius:7px;
+  background:var(--surface-raised);
+}
+.conflict-overview-metric > svg {
+  grid-row:1 / span 2;
+  color:var(--muted-foreground);
+}
+.conflict-overview-metric small {
+  overflow:hidden;
+  color:var(--muted-foreground);
+  font:800 .55rem var(--font-mono);
+  letter-spacing:.05em;
+  text-overflow:ellipsis;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+.conflict-overview-metric b {
+  overflow:hidden;
+  color:var(--foreground);
+  font:850 .82rem var(--font-mono);
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.conflict-overview-metric.is-survivors {
+  border-top-color:#5b9187;
+  background:color-mix(in srgb,#5b9187 7%,var(--surface-raised));
+}
+.conflict-overview-metric.is-survivors > svg { color:#4f887d; }
+.conflict-overview-metric.is-active {
+  border-top-color:#9a6a53;
+  background:color-mix(in srgb,#a96e56 7%,var(--surface-raised));
+}
+.conflict-overview-metric.is-active > svg { color:#965a49; }
+.conflict-overview-metric.is-defeated {
+  border-top-color:#8a8d8c;
+  background:color-mix(in srgb,#858a88 6%,var(--surface-raised));
+}
+.conflict-overview-metric.is-spotlight {
+  border-top-color:var(--accent-warm);
+  background:color-mix(in srgb,var(--accent-warm) 10%,var(--surface-raised));
+}
+.conflict-overview-metric.is-spotlight > svg,
+.conflict-overview-metric.is-spotlight b { color:#7b5d21; }
+
+.conflict-workspace {
+  display:grid;
+  grid-template-columns:minmax(285px,.68fr) minmax(0,2.15fr);
+  gap:14px;
+  align-items:start;
+}
+.conflict-team-panel,
+.conflict-threat-panel {
+  min-width:0;
+}
+.conflict-team-panel {
+  align-self:start;
+}
+.conflict-heading-with-icon {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+.conflict-heading-icon {
+  display:grid;
+  place-items:center;
+  width:32px;
+  height:32px;
+  flex:none;
+  border:1px solid #b8cec8;
+  border-radius:7px;
+  background:#edf5f2;
+  color:#4d8177;
+}
+.conflict-heading-icon.is-pressure {
+  border-color:#d1b5aa;
+  background:#f5ece8;
+  color:#945b4c;
+}
+.conflict-heading-counters {
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  flex-wrap:wrap;
+  gap:5px;
+}
+.conflict-heading-counters .tag.is-muted {
+  opacity:.68;
+}
+
+.conflict-team-panel .conflict-add-row {
+  grid-template-columns:minmax(0,1fr) auto;
+}
+.conflict-team-panel .conflict-survivor-list {
+  display:grid;
+  grid-template-columns:1fr;
+  gap:7px;
+  max-height:none;
+  overflow:visible;
+}
+.conflict-person--compact {
+  grid-template-columns:auto minmax(0,1fr);
+  gap:8px;
+  min-height:0;
+  padding:8px;
+}
+.conflict-person--compact .conflict-avatar {
+  width:34px;
+  height:34px;
+  align-self:start;
+}
+.conflict-person--compact .conflict-person-actions {
+  grid-column:1 / -1;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:5px;
+  margin-top:0;
+}
+.conflict-person--compact .conflict-person-actions > button {
+  min-height:28px;
+  padding-block:3px;
+  font-size:.64rem;
+}
+.conflict-person--compact .conflict-survivor-resources {
+  gap:4px;
+  margin-top:5px;
+}
+.conflict-person--compact.has-pending-damage {
+  border-color:#b96b52;
+  box-shadow:inset 3px 0 #b96b52;
+}
+.conflict-person--compact .conflict-resource {
+  min-height:43px;
+  padding:5px 6px !important;
+}
+.conflict-person--compact .conflict-resource small,
+.conflict-threat--compact .conflict-resource small,
+.conflict-threat--compact .conflict-stat small {
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+}
+
+.conflict-threat-add {
+  grid-template-columns:minmax(220px,1fr) auto auto;
+  align-items:end;
+  gap:6px;
+  padding:7px;
+  border:1px solid color-mix(in srgb,var(--border) 76%,transparent);
+  border-radius:7px;
+  background:color-mix(in srgb,var(--surface-soft) 46%,transparent);
+}
+.conflict-threat-groups {
+  display:grid;
+  gap:10px;
+  min-width:0;
+  margin-top:9px;
+}
+.conflict-threat-group {
+  min-width:0;
+  overflow:hidden;
+  border:1px solid color-mix(in srgb,var(--border) 88%,transparent);
+  border-radius:9px;
+  background:color-mix(in srgb,var(--surface-soft) 30%,transparent);
+}
+.conflict-threat-group-heading {
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  align-items:center;
+  gap:8px;
+  min-height:43px;
+  padding:6px 8px;
+  border-bottom:1px solid var(--border);
+  background:color-mix(in srgb,var(--surface-soft) 68%,var(--surface-raised));
+}
+.conflict-threat-group-icon {
+  display:grid;
+  place-items:center;
+  width:29px;
+  height:29px;
+  border:1px solid #c4d3cf;
+  border-radius:7px;
+  background:var(--surface-raised);
+  color:#5d817a;
+}
+.conflict-threat-group-heading > div {
+  display:grid;
+  gap:0;
+  min-width:0;
+}
+.conflict-threat-group-heading small {
+  overflow:hidden;
+  color:var(--muted-foreground);
+  font:800 .51rem var(--font-mono);
+  letter-spacing:.055em;
+  text-overflow:ellipsis;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+.conflict-threat-group-heading b {
+  overflow:hidden;
+  color:var(--foreground);
+  font-size:.75rem;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.conflict-threat-group-count {
+  display:grid;
+  grid-template-columns:auto auto;
+  align-items:baseline;
+  gap:0 4px;
+  min-width:54px;
+  padding:4px 6px;
+  border-radius:6px;
+  background:var(--surface-raised);
+  color:#3f7068;
+  font:900 .74rem var(--font-mono);
+  text-align:right;
+}
+.conflict-threat-group-count small {
+  color:var(--muted-foreground);
+  font-size:.48rem;
+  text-transform:uppercase;
+}
+.conflict-threat-group-count em {
+  grid-column:1 / -1;
+  color:var(--muted-foreground);
+  font-size:.5rem;
+  font-style:normal;
+  font-weight:700;
+}
+.conflict-threat-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(275px,1fr));
+  gap:7px;
+  min-width:0;
+  padding:7px;
+}
+.conflict-threat--compact {
+  gap:6px;
+  min-width:0;
+  padding:8px;
+  border-left-width:3px;
+  border-radius:7px;
+}
+.conflict-threat--compact.is-intact {
+  border-left-color:#538b80;
+}
+.conflict-threat--compact.is-wounded {
+  border-color:#c69d62;
+  border-left-color:#c07d3d;
+  background:linear-gradient(105deg,color-mix(in srgb,#c07d3d 7%,var(--surface-raised)),var(--surface-raised) 42%);
+}
+.conflict-threat--compact.is-defeated {
+  border-left-color:#7c817f;
+  opacity:.58;
+  filter:saturate(.48);
+}
+.conflict-threat--compact.is-focused {
+  opacity:1;
+  filter:none;
+  border-color:#a88646;
+  border-left-color:var(--accent-warm);
+  box-shadow:inset 3px 0 var(--accent-warm),0 0 0 1px color-mix(in srgb,var(--accent-warm) 20%,transparent),0 5px 14px #7e612419;
+}
+.conflict-threat-identity {
+  display:grid;
+  gap:0;
+  min-width:0;
+}
+.conflict-threat-identity small {
+  color:var(--muted-foreground);
+  font:800 .5rem var(--font-mono);
+  letter-spacing:.055em;
+  text-transform:uppercase;
+}
+.conflict-threat-identity b {
+  overflow:hidden;
+  color:var(--foreground);
+  font-size:.76rem;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.conflict-threat--compact .conflict-threat-icon {
+  width:29px;
+  height:29px;
+}
+.conflict-threat--compact .conflict-threat-stats {
+  grid-template-columns:.8fr 1fr 1.15fr 1.15fr;
+  border-radius:6px;
+}
+.conflict-threat--compact .conflict-threat-stats > span {
+  min-height:45px;
+  padding:5px 6px;
+}
+.conflict-threat--compact .conflict-stat b,
+.conflict-threat--compact .conflict-resource b {
+  font-size:.68rem;
+}
+.conflict-threshold-divider {
+  opacity:.45;
+  padding-inline:2px;
+}
+.conflict-state-badge {
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+  min-height:21px;
+  padding:2px 6px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  background:var(--surface-soft);
+  color:var(--muted-foreground);
+  font:800 .53rem var(--font-mono);
+  letter-spacing:.035em;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+.conflict-state-badge.is-intact {
+  border-color:#a9c7bf;
+  background:#e9f2ef;
+  color:#48766d;
+}
+.conflict-state-badge.is-wounded {
+  border-color:#d2ad78;
+  background:#f5ead8;
+  color:#8a5b22;
+}
+.conflict-state-badge.is-defeated {
+  border-color:#c5c9c7;
+  background:#eceeed;
+  color:#676c6a;
+}
+.conflict-threat--compact .conflict-threat-details {
+  margin:0;
+}
+.conflict-threat--compact .conflict-threat-details > summary {
+  min-height:26px;
+  padding:3px 6px;
+}
+.conflict-threat--compact .conflict-threat-details > summary > span {
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+}
+.conflict-threat--compact .conflict-threat-details > summary > b {
+  display:grid;
+  place-items:center;
+  min-width:19px;
+  height:18px;
+  border-radius:999px;
+  background:var(--surface-raised);
+  color:var(--foreground);
+  font:800 .54rem var(--font-mono);
+}
+.conflict-threat--compact .conflict-threat-actions {
+  display:grid;
+  grid-template-columns:minmax(58px,1.05fr) minmax(67px,1fr) minmax(65px,1fr) 30px;
+  gap:4px;
+}
+.conflict-threat--compact .conflict-threat-actions > button {
+  min-width:0;
+  min-height:29px;
+  padding:3px 5px;
+  font-size:.59rem;
+}
+.conflict-threat-primary-action {
+  border-color:#4d8d81 !important;
+  background:#5f9e92 !important;
+  color:#102c27 !important;
+}
+.conflict-threat-primary-action:hover {
+  background:#72aea3 !important;
+}
+.conflict-focus-badge {
+  min-height:21px;
+  padding:2px 5px;
+  font-size:.51rem;
+}
+.conflict-damage-pending-badge {
+  gap:3px;
+}
+
+.conflict-bottom-grid {
+  gap:14px;
+}
+.conflict-bottom-grid > .panel {
+  min-width:0;
+}
+html[data-theme="dark"] .conflict-overview-metric {
+  border-color:#344a46;
+  background:#172321;
+}
+html[data-theme="dark"] .conflict-overview-metric.is-survivors {
+  border-top-color:#6da89d;
+  background:#192a27;
+}
+html[data-theme="dark"] .conflict-overview-metric.is-active {
+  border-top-color:#b1725e;
+  background:#2b211f;
+}
+html[data-theme="dark"] .conflict-overview-metric.is-defeated {
+  border-top-color:#727b78;
+  background:#202624;
+}
+html[data-theme="dark"] .conflict-overview-metric.is-spotlight {
+  border-top-color:#b8964b;
+  background:#30291d;
+}
+html[data-theme="dark"] .conflict-overview-metric.is-spotlight > svg,
+html[data-theme="dark"] .conflict-overview-metric.is-spotlight b {
+  color:#e7c77e;
+}
+html[data-theme="dark"] .conflict-heading-icon {
+  border-color:#41615a;
+  background:#1d302c;
+  color:#9bd0c5;
+}
+html[data-theme="dark"] .conflict-heading-icon.is-pressure {
+  border-color:#684a42;
+  background:#302321;
+  color:#e5a89d;
+}
+html[data-theme="dark"] .conflict-threat-add {
+  border-color:#344b46;
+  background:#16211f;
+}
+html[data-theme="dark"] .conflict-threat-group {
+  border-color:#334945;
+  background:#141f1d;
+}
+html[data-theme="dark"] .conflict-threat-group-heading {
+  border-color:#344944;
+  background:#192522;
+}
+html[data-theme="dark"] .conflict-threat-group-icon {
+  border-color:#405954;
+  background:#20302d;
+  color:#acd0c9;
+}
+html[data-theme="dark"] .conflict-threat-group-count {
+  background:#20302d;
+  color:#a8d2c9;
+}
+html[data-theme="dark"] .conflict-threat--compact.is-wounded {
+  border-color:#6d5738;
+  border-left-color:#bd8141;
+  background:linear-gradient(105deg,#30271c,var(--card) 42%);
+}
+html[data-theme="dark"] .conflict-state-badge.is-intact {
+  border-color:#45665f;
+  background:#20332f;
+  color:#acd2ca;
+}
+html[data-theme="dark"] .conflict-state-badge.is-wounded {
+  border-color:#735936;
+  background:#392d1e;
+  color:#e7c487;
+}
+html[data-theme="dark"] .conflict-state-badge.is-defeated {
+  border-color:#48504d;
+  background:#252b29;
+  color:#a2aaa7;
+}
+html[data-theme="dark"] .conflict-threat-primary-action {
+  border-color:#5d978d !important;
+  background:#78ada3 !important;
+  color:#102824 !important;
+}
+
+@media (min-width:1500px) {
+  .conflict-workspace {
+    grid-template-columns:minmax(300px,.62fr) minmax(0,2.45fr);
+  }
+  .conflict-threat-grid {
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  }
+}
+@media (max-width:1180px) {
+  .conflict-workspace {
+    grid-template-columns:1fr;
+  }
+  .conflict-team-panel .conflict-survivor-list {
+    grid-template-columns:repeat(auto-fit,minmax(270px,1fr));
+  }
+  .conflict-team-panel .conflict-person--compact .conflict-person-actions {
+    grid-column:auto;
+  }
+}
+@media (max-width:820px) {
+  .conflict-overview-metrics {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    margin-inline:14px;
+  }
+  .conflict-threat-grid {
+    grid-template-columns:1fr;
+  }
+}
+@media (max-width:620px) {
+  .conflict-overview-metrics {
+    grid-template-columns:1fr 1fr;
+  }
+  .conflict-overview-metric.is-spotlight {
+    grid-column:1 / -1;
+  }
+  .conflict-threat-add {
+    grid-template-columns:1fr;
+  }
+  .conflict-threat--compact .conflict-threat-stats {
+    grid-template-columns:1fr 1fr;
+  }
+  .conflict-threat--compact .conflict-threat-actions {
+    grid-template-columns:1fr 1fr;
+  }
+  .conflict-threat--compact .conflict-threat-actions > button:last-child {
+    grid-column:2;
+  }
+}
