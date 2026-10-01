@@ -323,16 +323,19 @@ html[data-theme="dark"] .tag-danger { border-color: #8f5751; background: #402725
 html[data-theme="dark"] .reference-tabs,
 html[data-theme="dark"] .reference-category,
 html[data-theme="dark"] .character-attribute,
+html[data-theme="dark"] .character-summary-attribute,
 html[data-theme="dark"] .character-experience-list button,
 html[data-theme="dark"] .character-provision-grid > span,
 html[data-theme="dark"] .character-defense-card { border-color: #3b514e; background: #202c2c; color: var(--foreground); }
 html[data-theme="dark"] .reference-category,
 html[data-theme="dark"] .character-attribute span,
+html[data-theme="dark"] .character-summary-attribute small,
 html[data-theme="dark"] .character-defense-card > span,
 html[data-theme="dark"] .character-defense-card > strong { color: #dce7e1; }
 html[data-theme="dark"] .character-provision-grid b { color: #dce7e1; }
 html[data-theme="dark"] .reference-category:hover,
 html[data-theme="dark"] .character-attribute:hover,
+html[data-theme="dark"] .character-summary-attribute:hover,
 html[data-theme="dark"] .character-experience-list button:hover { border-color: #69988d; background: #293b38; }
 html[data-theme="dark"] .reference-detail dl > div,
 html[data-theme="dark"] .reference-pagination,
@@ -4412,3 +4415,8 @@ html[data-theme="dark"] .npc-delete-button {
     width:100%;
   }
 }
+
+
+/* Resumo da ficha: testes rápidos de atributo. */
+html[data-theme="dark"] .character-summary-attribute strong { color:#a9d6cc; }
+html[data-theme="dark"] .character-summary-attribute > svg { color:#91c2b7; }
