@@ -472,6 +472,19 @@ test('prévia dos jogadores mostra Spotlight e oculta Dificuldade e Limiares das
   assert.match(rolls, /Dificuldade e Limiares são ocultos e resolvidos pelo sistema/);
 });
 
+test('Resumo da ficha oferece testes rápidos para todos os atributos', () => {
+  const panel = fs.readFileSync(require.resolve('../components/survivor-panel.tsx'), 'utf8');
+  const styles = fs.readFileSync(require.resolve('../app/globals.css'), 'utf8');
+  assert.match(panel, /title="Testes rápidos"/);
+  assert.match(panel, /character-summary-attributes/);
+  assert.match(panel, /traits\.map\(trait =>/);
+  assert.match(panel, /beginRoll\(\{ survivorId: selected\.id, kind: "action", trait \}\)/);
+  assert.match(panel, /Ajustes de equipamento entram automaticamente/);
+  assert.match(panel, /Abrir atributos e Experiências/);
+  assert.match(styles, /\.character-summary-attributes/);
+  assert.match(styles, /grid-template-columns:repeat\(6,minmax\(0,1fr\)\)/);
+});
+
 test('Trilha de Conflito acompanha a rolagem da página sem invadir o modal de dados', () => {
   const hud = fs.readFileSync(require.resolve('../components/survivor-conflict-hud.tsx'), 'utf8');
   const trail = fs.readFileSync(require.resolve('../components/conflict-trail.tsx'), 'utf8');
