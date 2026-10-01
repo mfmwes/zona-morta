@@ -123,7 +123,7 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
   if (!shelter.hex) return null;
 
   const power = shelterPower(game, shelter);
-  const activeProjects = (shelter.projects ?? []).filter(project => project.state !== "Concluído");
+  const activeProjects = (shelter.projects ?? []).filter(project => project.state !== "Concluído" || Boolean(project.workShift) || Boolean(project.volunteerShifts?.length));
   const completedProjects = (shelter.projects ?? []).filter(project => project.state === "Concluído");
   const selectedDefinition = projectDefinition(selectedKey) ?? shelterProjectCatalog[0];
   const selectedProject = projectFor(shelter, selectedDefinition.key);
