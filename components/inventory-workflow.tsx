@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Counter, Field, Pick } from "@/components/game-controls";
 import { ItemArt } from "@/components/item-art";
-import { addLog, shelterAmmoCount, survivorHex, survivorStats, type AmmunitionType, type EquipmentSlot, type GameState, type InventoryItem } from "@/lib/game";
+import { addLog, ammunitionCount, ammunitionTypes, survivorHex, survivorStats, type AmmunitionType, type EquipmentSlot, type GameState, type InventoryItem } from "@/lib/game";
 import { createId } from "@/lib/id";
-import { addStack, ammoTypeFor, ammoTypes, atSharedStorage, batteryStateFor, batteryTargets, catalogForItem, catalogItemCanUse, catalogItemIsConsumable, catalogItems, catalogKey, compatibleSlots, conditions,
+import { addStack, atSharedStorage, batteryStateFor, batteryTargets, catalogForItem, catalogItemCanUse, catalogItemIsConsumable, catalogItems, catalogKey, compatibleSlots, conditions,
   container, countsAsMedication, displacedSlots, equipItem, inventoryCategories, itemFromCatalog,
   provisionInfo, provisionPreparationCheck, provisionTransferError, reusableContainerOptions, slotLabels, transferItem, transferProvisions } from "@/lib/inventory";
 import { itemActionOptions, performItemAction } from "@/lib/item-actions";
@@ -317,10 +317,10 @@ export function ProvisionTransferDialog({ game, edit, survivorId }: { game: Game
   const sourceId = choices.some(x => x.value === from) ? from : survivorId;
   const targetId = choices.some(x => x.value === to) && to !== sourceId ? to : choices.find(x => x.value !== sourceId)?.value ?? "";
   const sourcePerson = game.survivors.find(s => s.id === sourceId);
-  const selectedAmmoType = (sourcePerson ? ammoTypeFor(sourcePerson) : ammoKind) as string;
+  const selectedAmmoType = ammoKind as string;
   const source = sourceId === "shared"
-    ? resource === "ammo" ? shelterAmmoCount(game.shelter, ammoKind) : game.shelter[resource]
-    : game.survivors.find(s => s.id === sourceId)?.[resource] ?? 0;
+    ? resource === "ammo" ? ammunitionCount(game.shelter.inventory, ammoKind, true) : game.shelter[resource]
+    : resource === "ammo" ? ammunitionCount(sourcePerson?.inventory, ammoKind, true) : sourcePerson?.[resource] ?? 0;
   const count = Math.max(1, Math.min(99, amount));
   const error = provisionTransferError(game, sourceId, targetId, resource, count, selectedAmmoType);
   let loadPreview: ReturnType<typeof survivorStats> | null = null;
@@ -336,7 +336,7 @@ export function ProvisionTransferDialog({ game, edit, survivorId }: { game: Game
       moved = transferProvisions(draft, sourceId, targetId, resource, count, selectedAmmoType);
       if (!moved) return;
       addLog(draft, "provisões", ownerName(draft, sourceId) + " → " + ownerName(draft, targetId) + ": " + count + " " +
-        (resource === "ammo" ? `carga(s) de ${selectedAmmoType}` : resource === "food" ? "porção(ões) de comida" : "porção(ões) de água") + ".");
+        (resource === "ammo" ? `unidade(s) de Munição de ${selectedAmmoType}` : resource === "food" ? "porção(ões) de comida" : "porção(ões) de água") + ".");
     });
     if (!moved) { toast.error("A transferência não foi concluída. Confira as reservas e tente novamente."); return; }
     toast.success("Provisões transferidas.", { description: `${ownerName(game, sourceId)} → ${ownerName(game, targetId)}` });
@@ -345,13 +345,13 @@ export function ProvisionTransferDialog({ game, edit, survivorId }: { game: Game
   return <Dialog open={open} onOpenChange={setOpen}>
     <DialogTrigger asChild><Button size="sm" variant="outline"><ArrowLeftRight size={16} /> Transferir provisões</Button></DialogTrigger>
     <DialogContent className="inventory-dialog"><DialogHeader><DialogTitle>Transferir provisões</DialogTitle>
-      <DialogDescription>Move porções soltas ou cargas tipadas entre fichas e reservas compartilhadas. Itens físicos são transferidos pelas ações do próprio item.</DialogDescription></DialogHeader>
-      <Pick label="Recurso" value={resource} options={[{ value: "food", label: "Comida · porções soltas" }, { value: "water", label: "Água · porções soltas" }, { value: "ammo", label: "Munição · cargas" }]} onChange={value => setResource(value as typeof resource)} />
+      <DialogDescription>Move porções soltas e unidades físicas de munição entre fichas e reservas compartilhadas. Munição comprometida por disparos na cena não pode ser transferida.</DialogDescription></DialogHeader>
+      <Pick label="Recurso" value={resource} options={[{ value: "food", label: "Comida · porções soltas" }, { value: "water", label: "Água · porções soltas" }, { value: "ammo", label: "Munição · unidades físicas" }]} onChange={value => setResource(value as typeof resource)} />
       <div className="inventory-search"><Pick label="De" value={sourceId} options={choices} onChange={setFrom} />
         <Pick label="Para" value={targetId} options={choices.filter(x => x.value !== sourceId)} onChange={setTo} /></div>
-      {resource === "ammo" && sourceId === "shared" && <Pick label="Tipo de munição" value={ammoKind} options={ammoTypes} onChange={value => setAmmoKind(value as AmmunitionType)} />}
+      {resource === "ammo" && <Pick label="Tipo de munição" value={ammoKind} options={ammunitionTypes} onChange={value => setAmmoKind(value as AmmunitionType)} />}
       <Counter label={"Quantidade · disponível " + source} value={count} min={1} max={Math.max(1, Math.min(99, source))} onChange={setAmount} compact />
-      {resource === "ammo" && <p className="inventory-hint">Tipo movimentado: <b>{selectedAmmoType}</b>. O depósito mantém contadores separados para cada tipo e não mistura cargas incompatíveis.</p>}
+      {resource === "ammo" && <p className="inventory-hint">Tipo movimentado: <b>{selectedAmmoType}</b>. Cada unidade é um item real; até quatro do mesmo tipo ocupam 1 espaço de carga.</p>}
       {error && <p className="inventory-hint inventory-danger" role="status">{error}</p>}
       {loadPreview && <div className={`inventory-preview ${loadPreview.carried > loadPreview.capacity ? "inventory-danger" : ""}`}><Backpack size={19} aria-hidden="true" /><span><b>Carga no destino após a transferência</b><small>{loadPreview.carried > loadPreview.capacity ? "Acima da capacidade; redistribua antes de viajar." : "Dentro da capacidade."}</small></span><strong>{loadPreview.carried}/{loadPreview.capacity}</strong></div>}
       <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button><Button disabled={Boolean(error)} onClick={move}>Transferir</Button></DialogFooter>
