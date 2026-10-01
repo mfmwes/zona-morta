@@ -548,9 +548,12 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
       <p className="conflict-rule-note">Spotlight é apenas um marcador de foco narrativo. Pedidos indicam interesse em agir, mas não criam fila, iniciativa ou prioridade automática.</p>
     </section>
 
-    <div className="conflict-columns">
-      <section className="panel panel-pad conflict-participants">
-        <div className="conflict-section-heading"><div><p className="dossier-title">Equipe</p><h3>Sobreviventes</h3></div><span className="tag">{conflict.survivorIds.length}</span></div>
+    <div className="conflict-workspace">
+      <section className="panel panel-pad conflict-participants conflict-team-panel">
+        <div className="conflict-section-heading">
+          <div className="conflict-heading-with-icon"><span className="conflict-heading-icon"><Users size={17} /></span><div><p className="dossier-title">Equipe</p><h3>Sobreviventes</h3></div></div>
+          <span className="tag">{conflict.survivorIds.length}</span>
+        </div>
         <div className="conflict-add-row">
           <Pick label="Adicionar sobrevivente" value={survivorToAdd} options={availableSurvivors} onChange={setSurvivorToAdd} placeholder="Todos já estão na cena" disabled={!availableSurvivors.length} />
           <Button size="sm" variant="outline" disabled={!survivorToAdd || !availableSurvivors.length} onClick={addSurvivor}><UserPlus size={15} /> Adicionar</Button>
@@ -561,17 +564,21 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
             if (!person) return <article key={id} className="conflict-person is-missing"><Users size={18} /><div><b>Sobrevivente indisponível</b><small>{id}</small></div><Button size="sm" variant="ghost" onClick={() => remove({ kind: "survivor", id }, "Sobrevivente indisponível")}><X size={15} /></Button></article>;
             const stats = survivorStats(person);
             const isFocused = conflict.spotlight?.kind === "survivor" && conflict.spotlight.id === person.id;
-            return <article key={person.id} data-conflict-kind="survivor" data-conflict-id={person.id} className={`conflict-person${isFocused ? " is-focused" : ""}`}>
+            const hasPendingDamage = (conflict.damageRequests ?? []).some(request => request.status === "pending" && request.targetSurvivorId === person.id);
+            return <article key={person.id} data-conflict-kind="survivor" data-conflict-id={person.id} className={`conflict-person conflict-person--compact${isFocused ? " is-focused" : ""}${hasPendingDamage ? " has-pending-damage" : ""}`}>
               <div className="conflict-avatar">{person.portrait ? <img src={person.portrait} alt="" /> : person.name.slice(0,2).toUpperCase()}</div>
-              <div className="conflict-person-copy"><div className="conflict-person-name"><b>{person.name}</b>{isFocused && <span className="conflict-focus-badge"><Crosshair size={11} /> Spotlight</span>}{(conflict.damageRequests ?? []).some(request => request.status === "pending" && request.targetSurvivorId === person.id) && <span className="conflict-damage-pending-badge">Dano pendente</span>}</div><small>{person.archetype} · {person.specialty}</small>
+              <div className="conflict-person-copy">
+                <div className="conflict-person-name"><b>{person.name}</b>{isFocused && <span className="conflict-focus-badge"><Crosshair size={11} /> Spotlight</span>}{hasPendingDamage && <span className="conflict-damage-pending-badge"><Activity size={10} /> Dano</span>}</div>
+                <small>{person.archetype} · {person.specialty}</small>
                 <div className="conflict-survivor-resources">
-                  <ResourceMeter label="PV marcados" value={person.hp} max={stats.hp} tone="hp" />
-                  <ResourceMeter label="Estresse" value={person.stress} max={6} tone="stress" />
-                  <ResourceMeter label="Esperança" value={person.hope} max={6} tone="hope" />
-                </div></div>
+                  <ResourceMeter icon={<HeartPulse size={10} />} label="PV" value={person.hp} max={stats.hp} tone="hp" />
+                  <ResourceMeter icon={<Zap size={10} />} label="Estresse" value={person.stress} max={6} tone="stress" />
+                  <ResourceMeter icon={<Activity size={10} />} label="Esperança" value={person.hope} max={6} tone="hope" />
+                </div>
+              </div>
               <div className="conflict-person-actions">
-                <Button size="sm" variant={isFocused ? "default" : "outline"} onClick={() => focus({ kind: "survivor", id: person.id }, person.name)}><Crosshair size={14} /> {isFocused ? "Em foco" : "Spotlight"}</Button>
-                <Button size="sm" variant="ghost" aria-label={`Remover ${person.name} do conflito`} onClick={() => remove({ kind: "survivor", id: person.id }, person.name)}><X size={15} /></Button>
+                <Button size="sm" variant={isFocused ? "default" : "outline"} aria-label={isFocused ? `${person.name} está em Spotlight` : `Dar Spotlight a ${person.name}`} onClick={() => focus({ kind: "survivor", id: person.id }, person.name)}><Crosshair size={14} /><span>{isFocused ? "Em foco" : "Spotlight"}</span></Button>
+                <Button size="sm" variant="ghost" aria-label={`Remover ${person.name} do conflito`} onClick={() => remove({ kind: "survivor", id: person.id }, person.name)}><Trash2 size={14} /></Button>
               </div>
             </article>;
           })}
@@ -579,70 +586,90 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
         </div>
       </section>
 
-      <section className="panel panel-pad conflict-participants">
-        <div className="conflict-section-heading"><div><p className="dossier-title">Pressão</p><h3>Ameaças em cena</h3></div><span className="tag">{conflict.threats.length}</span></div>
+      <section className="panel panel-pad conflict-participants conflict-threat-panel">
+        <div className="conflict-section-heading">
+          <div className="conflict-heading-with-icon"><span className="conflict-heading-icon is-pressure"><ShieldAlert size={17} /></span><div><p className="dossier-title">Pressão</p><h3>Ameaças em cena</h3></div></div>
+          <div className="conflict-heading-counters"><span className="tag">{activeThreats} ativas</span>{defeatedThreats > 0 && <span className="tag is-muted">{defeatedThreats} derrotadas</span>}</div>
+        </div>
         <div className="conflict-threat-add">
           <Pick label="Ameaça do catálogo" value={threatToAdd} options={threatOptions} onChange={setThreatToAdd} placeholder="Catálogo vazio" disabled={!threatOptions.length} />
           <Counter compact label="Qtd." value={threatQuantity} min={1} max={12} onChange={setThreatQuantity} />
           <Button size="sm" variant="outline" disabled={!threatToAdd || !threatOptions.length} onClick={addThreats}><Plus size={15} /> Adicionar</Button>
         </div>
-        <div className="conflict-threat-list">
-          {conflict.threats.map(instance => {
-            const template = instance.templateSnapshot;
-            const isFocused = conflict.spotlight?.kind === "threat" && conflict.spotlight.id === instance.id;
-            return <article key={instance.id} data-conflict-kind="threat" data-conflict-id={instance.id} className={`conflict-threat${isFocused ? " is-focused" : ""}${instance.defeated ? " is-defeated" : ""}`}>
-              <div className="conflict-threat-heading">
-                <span className="conflict-threat-icon">{instance.defeated ? <Skull size={18} /> : <ShieldAlert size={18} />}</span>
-                <div><small>Patamar {template.tier} · {template.role}</small><b>{instance.name}</b></div>
-                <div className="conflict-threat-tags">
-                  {isFocused && <span className="conflict-focus-badge"><Crosshair size={11} /> Spotlight</span>}
-                  {instance.defeated && <span className="tag">DERROTADA</span>}
-                </div>
-              </div>
-              <div className="conflict-threat-stats">
-                <span className="conflict-stat conflict-stat--difficulty"><small>Dificuldade</small><b>{template.difficulty}</b></span>
-                <span className="conflict-stat conflict-stat--threshold"><small>Limiares</small><b>{template.majorThreshold ?? "—"} / {template.severeThreshold ?? "—"}</b></span>
-                <ResourceMeter label="PV marcados" value={instance.hpMarked} max={template.maxHp} tone="hp" />
-                <ResourceMeter label="Estresse" value={instance.stressMarked} max={template.maxStress} tone="stress" />
-              </div>
-              <details className="conflict-threat-details">
-                <summary>Recursos e condições{instance.conditions.length ? ` · ${instance.conditions.length}` : ""}</summary>
-                <div className="conflict-threat-detail-body">
-                  {(template.maxHp !== null || template.maxStress !== null) && <div className="conflict-threat-controls">
-                    {template.maxHp !== null && <Counter compact label="PV marcados" value={instance.hpMarked} min={0} max={template.maxHp} onChange={value => edit(draft => {
-                      const row = draft.conflict?.threats.find(threat => threat.id === instance.id);
-                      if (row) setThreatHpMarked(row, value);
-                    })} />}
-                    {template.maxStress !== null && <Counter compact label="Estresse marcado" value={instance.stressMarked} min={0} max={template.maxStress} onChange={value => edit(draft => {
-                      const row = draft.conflict?.threats.find(threat => threat.id === instance.id);
-                      if (row) setThreatStressMarked(row, value);
-                    })} />}
-                  </div>}
-                  <div className="conflict-condition-block">
-                    <span className="field-label">Condições públicas</span>
-                    {instance.conditions.length > 0 && <div className="conflict-condition-tags">
-                      {instance.conditions.map(condition => <button type="button" key={condition} onClick={() => removeCondition(instance.id, condition)} title="Remover condição"><span>{condition}</span><X size={11} /></button>)}
-                    </div>}
-                    <div className="conflict-condition-editor">
-                      <input value={conditionDrafts[instance.id] ?? ""} maxLength={100} onChange={event => setConditionDrafts(current => ({ ...current, [instance.id]: event.target.value }))} onKeyDown={event => {
-                        if (event.key === "Enter") { event.preventDefault(); addCondition(instance.id); }
-                      }} placeholder="Ex.: Vulnerável, Preso, Em chamas…" aria-label={`Nova condição para ${instance.name}`} />
-                      <Button type="button" size="sm" variant="outline" disabled={!(conditionDrafts[instance.id] ?? "").trim()} onClick={() => addCondition(instance.id)}><Plus size={13} /> Adicionar</Button>
+
+        <div className="conflict-threat-groups">
+          {threatGroups.map(group => <section key={group.key} className="conflict-threat-group">
+            <header className="conflict-threat-group-heading">
+              <span className="conflict-threat-group-icon"><ThreatRoleIcon role={group.role} size={16} /></span>
+              <div><small>Patamar {group.tier} · {group.role}</small><b>{group.name}</b></div>
+              <span className="conflict-threat-group-count">{group.active}<small>ativas</small>{group.defeated > 0 && <em>+{group.defeated} fora</em>}</span>
+            </header>
+            <div className="conflict-threat-grid">
+              {group.threats.map(instance => {
+                const template = instance.templateSnapshot;
+                const isFocused = conflict.spotlight?.kind === "threat" && conflict.spotlight.id === instance.id;
+                const isWounded = !instance.defeated && instance.hpMarked > 0;
+                const stateClass = instance.defeated ? " is-defeated" : isWounded ? " is-wounded" : " is-intact";
+                return <article key={instance.id} data-conflict-kind="threat" data-conflict-id={instance.id} className={`conflict-threat conflict-threat--compact${isFocused ? " is-focused" : ""}${stateClass}`}>
+                  <div className="conflict-threat-heading">
+                    <span className="conflict-threat-icon">{instance.defeated ? <Skull size={17} /> : <ThreatRoleIcon role={template.role} size={17} />}</span>
+                    <div className="conflict-threat-identity"><small>Patamar {template.tier} · {template.role}</small><b>{instance.name}</b></div>
+                    <div className="conflict-threat-tags">
+                      {isFocused && <span className="conflict-focus-badge"><Crosshair size={11} /> Spotlight</span>}
+                      {instance.defeated ? <span className="conflict-state-badge is-defeated"><Skull size={10} /> Derrotada</span>
+                        : isWounded ? <span className="conflict-state-badge is-wounded"><HeartPulse size={10} /> Ferida</span>
+                        : <span className="conflict-state-badge is-intact">Íntegra</span>}
                     </div>
                   </div>
-                </div>
-              </details>
-              <div className="conflict-threat-actions">
-                {template.attack && <Button size="sm" onClick={() => openThreatAction(instance.id)} disabled={instance.defeated}><Swords size={14} /> Atacar</Button>}
-                <Button size="sm" variant={isFocused ? "default" : "outline"} onClick={() => focus({ kind: "threat", id: instance.id }, instance.name)}><Crosshair size={14} /> {isFocused ? "Em foco" : "Spotlight"}</Button>
-                <Button size="sm" variant="outline" onClick={() => edit(draft => {
-                  const row = draft.conflict?.threats.find(threat => threat.id === instance.id);
-                  if (row) row.defeated = !row.defeated;
-                })}>{instance.defeated ? "Reativar" : "Marcar derrotada"}</Button>
-                <Button size="sm" variant="ghost" aria-label={`Remover ${instance.name} do conflito`} onClick={() => remove({ kind: "threat", id: instance.id }, instance.name)}><X size={15} /></Button>
-              </div>
-            </article>;
-          })}
+
+                  <div className="conflict-threat-stats">
+                    <ThreatStat icon={<Shield size={11} />} label="Dificuldade" value={template.difficulty} tone="difficulty" />
+                    <ThreatStat icon={<Gauge size={11} />} label="Limiares" value={<>{template.majorThreshold ?? "—"} <span className="conflict-threshold-divider">/</span> {template.severeThreshold ?? "—"}</>} tone="threshold" />
+                    <ResourceMeter icon={<HeartPulse size={10} />} label="PV" value={instance.hpMarked} max={template.maxHp} tone="hp" />
+                    <ResourceMeter icon={<Zap size={10} />} label="Estresse" value={instance.stressMarked} max={template.maxStress} tone="stress" />
+                  </div>
+
+                  <details className="conflict-threat-details">
+                    <summary><span><Tag size={12} /> Condições e recursos</span>{instance.conditions.length > 0 && <b>{instance.conditions.length}</b>}</summary>
+                    <div className="conflict-threat-detail-body">
+                      {(template.maxHp !== null || template.maxStress !== null) && <div className="conflict-threat-controls">
+                        {template.maxHp !== null && <Counter compact label="PV marcados" value={instance.hpMarked} min={0} max={template.maxHp} onChange={value => edit(draft => {
+                          const row = draft.conflict?.threats.find(threat => threat.id === instance.id);
+                          if (row) setThreatHpMarked(row, value);
+                        })} />}
+                        {template.maxStress !== null && <Counter compact label="Estresse marcado" value={instance.stressMarked} min={0} max={template.maxStress} onChange={value => edit(draft => {
+                          const row = draft.conflict?.threats.find(threat => threat.id === instance.id);
+                          if (row) setThreatStressMarked(row, value);
+                        })} />}
+                      </div>}
+                      <div className="conflict-condition-block">
+                        <span className="field-label">Condições públicas</span>
+                        {instance.conditions.length > 0 && <div className="conflict-condition-tags">
+                          {instance.conditions.map(condition => <button type="button" key={condition} onClick={() => removeCondition(instance.id, condition)} title="Remover condição"><span>{condition}</span><X size={11} /></button>)}
+                        </div>}
+                        <div className="conflict-condition-editor">
+                          <input value={conditionDrafts[instance.id] ?? ""} maxLength={100} onChange={event => setConditionDrafts(current => ({ ...current, [instance.id]: event.target.value }))} onKeyDown={event => {
+                            if (event.key === "Enter") { event.preventDefault(); addCondition(instance.id); }
+                          }} placeholder="Ex.: Vulnerável, Preso, Em chamas…" aria-label={`Nova condição para ${instance.name}`} />
+                          <Button type="button" size="sm" variant="outline" disabled={!(conditionDrafts[instance.id] ?? "").trim()} onClick={() => addCondition(instance.id)}><Plus size={13} /> Adicionar</Button>
+                        </div>
+                      </div>
+                    </div>
+                  </details>
+
+                  <div className="conflict-threat-actions">
+                    {template.attack && <Button className="conflict-threat-primary-action" size="sm" onClick={() => openThreatAction(instance.id)} disabled={instance.defeated}><Swords size={14} /> Atacar</Button>}
+                    <Button size="sm" variant={isFocused ? "default" : "outline"} title={isFocused ? "Esta ameaça está no Spotlight" : "Dar Spotlight"} aria-label={isFocused ? `${instance.name} está no Spotlight` : `Dar Spotlight a ${instance.name}`} onClick={() => focus({ kind: "threat", id: instance.id }, instance.name)}><Crosshair size={14} /><span>{isFocused ? "Em foco" : "Spotlight"}</span></Button>
+                    <Button size="sm" variant="outline" title={instance.defeated ? "Reativar ameaça" : "Marcar como derrotada"} onClick={() => edit(draft => {
+                      const row = draft.conflict?.threats.find(threat => threat.id === instance.id);
+                      if (row) row.defeated = !row.defeated;
+                    })}>{instance.defeated ? <><RotateCcw size={14} /> Reativar</> : <><Skull size={14} /> Derrotar</>}</Button>
+                    <Button size="sm" variant="ghost" title="Remover da cena" aria-label={`Remover ${instance.name} do conflito`} onClick={() => remove({ kind: "threat", id: instance.id }, instance.name)}><Trash2 size={14} /></Button>
+                  </div>
+                </article>;
+              })}
+            </div>
+          </section>)}
           {!conflict.threats.length && <p className="conflict-inline-empty">Nenhuma ameaça adicionada.</p>}
         </div>
       </section>
@@ -650,7 +677,7 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
 
     <div className="conflict-bottom-grid">
       <section className="panel panel-pad">
-        <div className="conflict-section-heading"><div><p className="dossier-title">Ritmo narrativo</p><h3>Histórico de spotlight</h3></div><span className="tag">{conflict.spotlightHistory.length}</span></div>
+        <div className="conflict-section-heading"><div className="conflict-heading-with-icon"><span className="conflict-heading-icon"><Activity size={17} /></span><div><p className="dossier-title">Ritmo narrativo</p><h3>Histórico de spotlight</h3></div></div><span className="tag">{conflict.spotlightHistory.length}</span></div>
         <div className="conflict-spotlight-history">
           {[...conflict.spotlightHistory].reverse().slice(0,18).map((event, index) => <div key={event.eventId} className="conflict-history-row">
             <span>{conflict.spotlightHistory.length - index}</span>
@@ -661,7 +688,7 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
       </section>
 
       <section className="panel panel-pad">
-        <div className="conflict-section-heading"><div><p className="dossier-title">Anotações</p><h3>Estado da cena</h3></div></div>
+        <div className="conflict-section-heading"><div className="conflict-heading-with-icon"><span className="conflict-heading-icon"><Tag size={17} /></span><div><p className="dossier-title">Anotações</p><h3>Estado da cena</h3></div></div></div>
         <Field label="Notas do mestre" multiline value={notesDraft} onChange={setNotesDraft} placeholder="Cobertura, perigos, objetivos, mudanças no ambiente…" />
         <div className="conflict-notes-actions"><Button size="sm" variant="outline" disabled={notesDraft === conflict.notes} onClick={() => {
           const notes = notesDraft.trim().slice(0, 4000);
