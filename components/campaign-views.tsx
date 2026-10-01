@@ -15,7 +15,7 @@ import { DayCloseDialog } from "@/components/day-close-dialog";
 import { FormerShelterProjects, ShelterProjectsManager } from "@/components/shelter-project-manager";
 import { ShelterVisualDashboard } from "@/components/shelter-dashboard";
 import { RuntimeErrorBoundary } from "@/components/runtime-error-boundary";
-import { ammunitionTypes, content, establishShelter, recoverFormerAmmo, recoverFormerStock, setShelterAmmoCount, shelterAmmoCount, shelterPopulationBreakdown, survivorPositionGroups, survivorsAtHex, type GameState } from "@/lib/game";
+import { ammunitionCount, ammunitionTypes, content, establishShelter, recoverFormerStock, shelterPopulationBreakdown, survivorPositionGroups, survivorsAtHex, type GameState } from "@/lib/game";
 import { shelterColdStorageActive, shelterMetrics } from "@/lib/shelter-projects";
 import { atSharedStorage, batteryStateFor, catalogForItem } from "@/lib/inventory";
 import { provisionBreakdown, provisionDisplay, provisionItemInfo, provisionShelfLabel } from "@/lib/provision-items";
@@ -81,14 +81,12 @@ export function ShelterPanel({ game, edit, playerPreview, playerSurvivorId }: { 
     </div>
 
     <div className="divider" />
-    <h3 className="section-title">Munição por tipo</h3>
-    <p className="intro-line mt-2 mb-3">Cada carga mantém seu tipo. Armas consomem automaticamente 1 carga compatível na primeira ação de disparo da cena.</p>
+    <h3 className="section-title">Munição no depósito</h3>
+    <p className="intro-line mt-2 mb-3">Munição agora é item físico do inventário compartilhado. Cada unidade mantém seu tipo e até quatro unidades iguais ocupam 1 espaço quando carregadas por um sobrevivente.</p>
     <div className="shelter-ammo-grid">
       {ammunitionTypes.map(type => <div className="metric" key={type}>
-        {playerPreview ? <div><span className="smallcaps subtle">{type}</span><strong>{shelterAmmoCount(s, type)}</strong></div>
-          : <Counter compact editable label={type} value={shelterAmmoCount(s, type)} max={99}
-            onChange={value => edit(draft => { setShelterAmmoCount(draft.shelter, type, value); })} />}
-        <p className="text-xs subtle mt-2">carga(s)</p>
+        <span className="smallcaps subtle">{type}</span><strong>{ammunitionCount(s.inventory, type)}</strong>
+        <p className="text-xs subtle mt-2">unidade(s) físicas</p>
       </div>)}
     </div>
     {(s.provisionLots ?? []).length > 0 && <p className="character-rule-note mt-3">Lotes com prazo: {s.provisionLots!.map(lot => `${lot.qty} ${lot.resource === "food" ? "comida" : "água"} (${lot.label}) → amanhecer do dia ${lot.expiresDay}`).join(" · ")}.</p>}
@@ -141,17 +139,6 @@ export function ShelterPanel({ game, edit, playerPreview, playerSurvivorId }: { 
             })}>Retirar 1</Button>
             {visitedCache[key] > 1 && <Button size="sm" variant="outline" onClick={() => edit(d => {
               if (!recoverFormerStock(d, visitedCache.hex!, recipient.id, key, visitedCache[key])) toast.error("Não coube no contador deste sobrevivente.");
-            })}>Retirar tudo</Button>}
-          </div>}</div>)}
-      {ammunitionTypes.filter(type => shelterAmmoCount(visitedCache, type) > 0).map(type =>
-        <div key={`ammo-${type}`} className="shared-inventory-row"><div><b>Munição · {type}</b><span>{shelterAmmoCount(visitedCache, type)} carga(s)</span></div>
-          {recipient && !playerPreview && <div className="flex gap-1 flex-wrap">
-            <Button size="sm" variant="outline" onClick={() => edit(d => {
-              if (!recoverFormerAmmo(d, visitedCache.hex!, recipient.id, type, 1)) toast.error("Não foi possível retirar. Verifique o tipo de munição e o contador do sobrevivente.");
-            })}>Retirar 1</Button>
-            {shelterAmmoCount(visitedCache, type) > 1 && <Button size="sm" variant="outline" onClick={() => edit(d => {
-              const total = shelterAmmoCount(d.formerShelters?.find(site => site.hex === visitedCache.hex!) ?? visitedCache, type);
-              if (!recoverFormerAmmo(d, visitedCache.hex!, recipient.id, type, total)) toast.error("Não foi possível retirar todas as cargas deste tipo.");
             })}>Retirar tudo</Button>}
           </div>}</div>)}
       {(visitedCache.inventory ?? []).map(item => <div key={item.id} className="shared-inventory-row"><div className="shared-inventory-entry"><ItemArt name={item.name} category={item.category} /><div><b>{item.qty}× {item.name}</b><span>{item.load * item.qty} carga</span></div></div>
