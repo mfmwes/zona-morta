@@ -1,4 +1,4 @@
-import { ammunitionTypes, content, setShelterAmmoCount, shelterAmmoCount, survivorHex, survivorsAtHex, type AmmunitionType, type EquipmentSlot, type GameState, type InventoryItem, type Survivor } from "./game";
+import { ammunitionItemType, ammunitionLoad, ammunitionTypeFromName, ammunitionTypes, content, setShelterAmmoCount, shelterAmmoCount, survivorHex, survivorsAtHex, type AmmunitionType, type EquipmentSlot, type GameState, type InventoryItem, type Survivor } from "./game";
 import { getPrimary, getProtection, getSecondary, weaponAmmoType } from "./equipment";
 import { createId } from "./id";
 import { transferPortionLots, withdrawPortions } from "./provisions";
@@ -301,11 +301,13 @@ export function emptyReusableContainerToReserves(game: GameState, ownerId: strin
 export function itemFromCatalog(entry: CatalogEntry, qty = 1, condition = "Íntegro", foundDay?: number): InventoryItem {
   const field = entry.fields.find(f => ["Carga", "Guarda", "Carga em viagem"].includes(f.label))?.value ?? "1";
   // "0/1" denotes a loose pocket item; food and drink share the portion load calculation.
-  const load = field === "0/1" && ["Alimentos", "Bebidas"].includes(entry.category)
+  const isAmmo = entry.category === "Munição";
+  const load = isAmmo ? 0 : field === "0/1" && ["Alimentos", "Bebidas"].includes(entry.category)
     ? 0 : Number(field.match(/^\d+/)?.[0] ?? 1);
   const battery = batteryDefaults[entry.name];
+  const ammunitionType = isAmmo ? ammunitionTypeFromName(entry.name) : null;
   return hydrateProvisionItem({ id: createId(), name: entry.name, catalogKey: catalogKey(entry), category: entry.category,
-    load, qty, condition, ...(battery ? { battery } : {}),
+    load, qty, condition, ...(battery ? { battery } : {}), ...(ammunitionType ? { ammunitionType } : {}),
     ...(["Alimentos", "Bebidas"].includes(entry.category) && foundDay ? { foundDay } : {}) });
 }
 export function addStack(items: InventoryItem[], incoming: InventoryItem) {
@@ -323,9 +325,12 @@ export function addStack(items: InventoryItem[], incoming: InventoryItem) {
     && item.cartDeployed === incoming.cartDeployed
     && JSON.stringify(item.cartItems ?? []) === JSON.stringify(incoming.cartItems ?? [])
     && (item.armorMarked ?? 0) === (incoming.armorMarked ?? 0)
+    && ammunitionItemType(item) === ammunitionItemType(incoming)
     && item.qty + incoming.qty <= 99);
-  if (match) match.qty += incoming.qty;
-  else items.push({ ...incoming, id: createId() });
+  if (match) {
+    match.qty += incoming.qty;
+    if (incoming.committedAmmo) match.committedAmmo = (match.committedAmmo ?? 0) + incoming.committedAmmo;
+  } else items.push({ ...incoming, id: createId() });
 }
 export function sharedStorageHex(game: GameState) {
   return game.shelter.hex ?? game.partyHex;
@@ -362,7 +367,9 @@ export function transferItem(game: GameState, from: string, to: string, itemId: 
   const count = Math.trunc(quantity);
   if (!source || !target || !item || count < 1 || count > item.qty) return false;
   if (item.name === "Carrinho dobrável" && (item.cartDeployed || (item.cartItems?.length ?? 0) > 0)) return false;
-  addStack(target, { ...item, qty: count });
+  const committed = Math.max(0, Math.min(item.qty, item.committedAmmo ?? 0));
+  if (ammunitionItemType(item) && count > item.qty - committed) return false;
+  addStack(target, { ...item, qty: count, committedAmmo: undefined });
   item.qty -= count;
   if (item.qty === 0) source.splice(source.indexOf(item), 1);
   return true;
@@ -374,11 +381,14 @@ export function discardItem(game: GameState, from: string, itemId: string, quant
   const count = Math.trunc(quantity);
   if (!source || !item || count < 1 || count > item.qty) return false;
   if (item.name === "Carrinho dobrável" && (item.cartDeployed || (item.cartItems?.length ?? 0) > 0)) return false;
+  const committed = Math.max(0, Math.min(item.qty, item.committedAmmo ?? 0));
+  if (ammunitionItemType(item) && count > item.qty - committed) return false;
   item.qty -= count;
   if (item.qty === 0) source.splice(source.indexOf(item), 1);
   return true;
 }
 export function pocketEligible(item: InventoryItem) {
+  if (ammunitionItemType(item)) return false;
   const entry = catalogForItem(item);
   if (entry && ["Alimentos", "Bebidas"].includes(entry.category)) return false;
   const loadField = entry?.fields.find(field => ["Carga", "Guarda", "Carga em viagem"].includes(field.label))?.value;
@@ -445,11 +455,11 @@ export function activeCart(s: Survivor) {
 }
 
 export function cartStoredLoad(items: InventoryItem[] = []) {
-  const regular = items.filter(item => !item.provisionResource)
+  const regular = items.filter(item => !item.provisionResource && !ammunitionItemType(item))
     .reduce((sum, item) => sum + Math.max(0, item.load) * Math.max(0, item.qty), 0);
   const food = Math.ceil(groupedProvisionPortions(items, "food") / 4);
   const water = Math.ceil(groupedProvisionPortions(items, "water") / 4);
-  return regular + food + water;
+  return regular + food + water + ammunitionLoad(items);
 }
 
 export function deployCart(s: Survivor, itemId: string) {
@@ -480,7 +490,9 @@ export function storeInCart(s: Survivor, itemId: string, quantity = 1) {
   const item = s.inventory.find(entry => entry.id === itemId);
   const count = Math.trunc(quantity);
   if (!cart || !item || item.id === cart.id || count < 1 || count > item.qty) return false;
-  const incoming = { ...item, qty: count };
+  const committed = Math.max(0, Math.min(item.qty, item.committedAmmo ?? 0));
+  if (ammunitionItemType(item) && count > item.qty - committed) return false;
+  const incoming = { ...item, qty: count, committedAmmo: undefined };
   const next = [...(cart.cartItems ?? []).map(entry => ({ ...entry })), incoming];
   if (cartStoredLoad(next) > 4) return false;
   cart.cartItems ??= [];
