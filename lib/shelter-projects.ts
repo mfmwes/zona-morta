@@ -502,7 +502,9 @@ export function projectOperational(game: GameState, shelter: ShelterState, proje
 export function shelterColdStorageActive(game: GameState, shelter: ShelterState = game.shelter) {
   const refrigeration = shelter.projects?.find(project => project.key === "refrigeration");
   if (refrigeration && projectOperational(game, shelter, refrigeration)) return true;
-  return Boolean(shelter.coldStorage && shelterPower(game, shelter).balance > 0);
+  // Compatibilidade com campanhas antigas: o toggle legado usava o campo
+  // de Energia corrigido diretamente pelo mestre, antes da rede estrutural existir.
+  return Boolean(shelter.coldStorage && shelterMetrics(shelter).energy > 0);
 }
 
 export function shelterOvercrowded(game: GameState, shelter: ShelterState = game.shelter) {
