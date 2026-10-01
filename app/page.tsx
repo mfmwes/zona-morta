@@ -3,7 +3,7 @@ import { localizeRollLog } from "@/lib/terminology";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { BookOpen, Brain, Clock3, Download, Droplets, Ear, Eye, EyeOff, House, LogOut, Map, MessageSquare, MoreHorizontal, Package, RotateCcw, Settings, ShieldAlert, Upload, Users, Utensils, Volume2 } from "lucide-react";
+import { BookOpen, Brain, Clock3, Download, Droplets, Ear, Eye, EyeOff, House, LogOut, Map, MessageSquare, MoreHorizontal, Package, RotateCcw, Settings, ShieldAlert, Swords, Upload, Users, Utensils, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -17,6 +17,7 @@ import { SurvivorPanel, type RestPeer } from "@/components/survivor-panel";
 import { NpcPanel } from "@/components/npc-panel";
 import { ReferencePanel, ShelterPanel } from "@/components/campaign-views";
 import { ThreatManager } from "@/components/threat-manager";
+import { ConflictSceneManager } from "@/components/conflict-scene-manager";
 import { PlayersPanel } from "@/components/players-panel";
 import { AuthPanel } from "@/components/auth-panel";
 import { CharacterWizard } from "@/components/character-wizard";
@@ -398,13 +399,16 @@ export default function CampaignApp() {
 
   const readOnlyPreview = playerPreview || role === "jogador";
   const title = { mapa: "Exploração", sobreviventes: "Sobreviventes", comunidade: "PNJs e comunidade", abrigo: "Abrigo e reservas",
-    ameacas: "Gerenciador de ameaças", referencias: "Arquivo de campo", jogadores: "Jogadores e acessos" }[tab] || "Campanha";
+    conflito: "Cena de conflito", ameacas: "Gerenciador de ameaças", referencias: "Arquivo de campo", jogadores: "Jogadores e acessos" }[tab] || "Campanha";
   const nav = [
     { value: "mapa", label: "Mapa e hexes", icon: Map },
     { value: "sobreviventes", label: "Sobreviventes", icon: Users },
     { value: "comunidade", label: "PNJs e comunidade", icon: Users },
     { value: "abrigo", label: "Abrigo e reservas", icon: House },
-    ...(role === "mestre" && !playerPreview ? [{ value: "ameacas", label: "Ameaças", icon: ShieldAlert }] : []),
+    ...(role === "mestre" && !playerPreview ? [
+      { value: "conflito", label: game.conflict?.active ? "Conflito ativo" : "Conflito", icon: Swords },
+      { value: "ameacas", label: "Ameaças", icon: ShieldAlert },
+    ] : []),
     { value: "referencias", label: "Regras e itens", icon: BookOpen },
     ...(role === "mestre" ? [{ value: "jogadores", label: "Jogadores", icon: Users }] : []),
   ];
@@ -450,7 +454,7 @@ export default function CampaignApp() {
             title={playerPreview ? "Desativar prévia dos jogadores" : "Ativar prévia dos jogadores"}
             onClick={() => {
               const nextPreview = !playerPreview;
-              if (nextPreview && tab === "ameacas") setTab("referencias");
+              if (nextPreview && (tab === "ameacas" || tab === "conflito")) setTab("referencias");
               setPlayerPreview(nextPreview);
             }}>
             {playerPreview ? <Eye size={16} /> : <EyeOff size={16} />}<span>{playerPreview ? "Prévia ativa" : "Prévia dos jogadores"}</span>
@@ -480,6 +484,7 @@ export default function CampaignApp() {
               tab === "sobreviventes" ? "Históricos, arquétipos e recursos prontos para jogar." :
               tab === "comunidade" ? "Acompanhe pessoas importantes, vínculos e a comunidade entre os hexes." :
               tab === "abrigo" ? "Organize reservas e descanso. Estabeleça um abrigo quando o grupo encontrar um lugar." :
+              tab === "conflito" ? "Acompanhe participantes, ameaças e spotlight sem criar iniciativa ou ordem de turnos." :
               tab === "ameacas" ? "Crie, adapte e consulte as ameaças mecânicas usadas pelo mestre durante a campanha." :
               tab === "jogadores" ? "Compartilhe a campanha e acompanhe quem entrou na mesa." :
               "Consulte itens e procedimentos durante a sessão."}</p></div>
@@ -620,6 +625,7 @@ export default function CampaignApp() {
         {tab === "sobreviventes" && <SurvivorPanel game={game} edit={edit} playerPreview={readOnlyPreview} playerMode={role === "jogador"} restPeers={restPeers} />}
         {tab === "comunidade" && <NpcPanel game={game} edit={edit} playerPreview={readOnlyPreview} />}
         {tab === "abrigo" && <ShelterPanel game={game} edit={edit} playerPreview={readOnlyPreview} playerSurvivorId={role === "jogador" ? survivorId : null} />}
+        {tab === "conflito" && role === "mestre" && !playerPreview && <ConflictSceneManager game={game} edit={edit} />}
         {tab === "ameacas" && role === "mestre" && !playerPreview && <section className="panel panel-pad"><ThreatManager game={game} edit={edit} /></section>}
         {tab === "referencias" && <ReferencePanel />}
         {tab === "jogadores" && role === "mestre" && <PlayersPanel game={game} ownerId={ownerId} />}
