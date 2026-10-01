@@ -5,6 +5,7 @@ import { ChevronRight, Crosshair, Search, ShieldAlert, Swords, Target, X } from 
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ConflictTrail } from "@/components/conflict-trail";
 import { publicConflictScene } from "@/lib/conflict";
 import { survivorStats, type GameState, type Survivor } from "@/lib/game";
 
@@ -45,7 +46,7 @@ export function SurvivorConflictHud({
       if (Array.isArray(recent)) setRecentIds(recent.filter(value => typeof value === "string").slice(0, 5));
       if (stored && conflict.threats.some(threat => threat.id === stored && !threat.defeated)) onTargetChange(stored);
     } catch {}
-  // Carregar apenas quando a cena muda; onTargetChange é estável o bastante para este uso local.
+  // Carregar somente quando a Cena de Conflito muda.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conflict?.id]);
 
@@ -146,19 +147,20 @@ export function SurvivorConflictHud({
     }
   }
 
-  return <section className={`character-conflict-hud${ownSpotlight ? " is-own-spotlight" : ""}${firstDamage ? " has-damage" : ""}`}>
-    <div className="character-conflict-main">
-      <div className="character-conflict-status">
-        <span className="character-conflict-kicker"><Swords size={14} /> CONFLITO ATIVO</span>
-        <div className="character-conflict-line">
-          <span><Crosshair size={14} /><small>Spotlight</small><strong>{ownSpotlight ? "VOCÊ" : spotlightName ?? "Sem foco"}</strong></span>
-          <span><Target size={14} /><small>Alvo</small><strong>{selectedTarget?.name ?? "Nenhum"}</strong></span>
-          <span className="character-conflict-count"><small>Ameaças</small><strong>{livingThreats.length}</strong></span>
-        </div>
+  return <section className={`character-conflict-hud character-conflict-hud--trail${ownSpotlight ? " is-own-spotlight" : ""}${firstDamage ? " has-damage" : ""}`}>
+    <div className="character-conflict-trail-header">
+      <div className="character-conflict-trail-title">
+        <span className="character-conflict-kicker"><Swords size={14} /> TRILHA DE CONFLITO</span>
+        <span className="character-conflict-trail-summary" role="status">
+          <span><Crosshair size={12} /> Spotlight <b>{ownSpotlight ? "VOCÊ" : spotlightName ?? "sem foco"}</b></span>
+          <span><Target size={12} /> Alvo <b>{selectedTarget?.name ?? "nenhum"}</b></span>
+          <span>{livingThreats.length} ameaça{livingThreats.length === 1 ? "" : "s"} ativa{livingThreats.length === 1 ? "" : "s"}</span>
+        </span>
       </div>
+
       <div className="character-conflict-actions">
         <Popover open={targetOpen} onOpenChange={setTargetOpen}>
-          <PopoverTrigger asChild><Button size="sm" variant="outline"><Target size={14} /> {selectedTarget ? "Trocar alvo" : "Escolher alvo"}</Button></PopoverTrigger>
+          <PopoverTrigger asChild><Button size="sm" variant="outline"><Search size={14} /> Localizar</Button></PopoverTrigger>
           <PopoverContent align="end" className="character-target-popover">
             <div className="character-target-heading"><div><span>ALVOS DA CENA</span><b>{livingThreats.length} disponíveis</b></div>{targetId && <button type="button" onClick={() => chooseTarget("")} aria-label="Limpar alvo"><X size={15} /></button>}</div>
             <label className="character-target-search"><Search size={15} /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Buscar ameaça…" autoFocus /></label>
@@ -175,14 +177,24 @@ export function SurvivorConflictHud({
           </PopoverContent>
         </Popover>
 
-        <Button size="sm" disabled={!selectedTarget} onClick={() => onAttack(selectedTarget?.id)}><Swords size={14} /> Atacar alvo</Button>
+        <Button size="sm" disabled={!selectedTarget} onClick={() => onAttack(selectedTarget?.id)}><Swords size={14} /> Atacar</Button>
 
         {playerMode && <Button size="sm" variant={conflict.spotlightRequested ? "secondary" : "ghost"} disabled={spotlightBusy || ownSpotlight} onClick={() => void toggleSpotlightRequest()}>
           <Crosshair size={14} /> {ownSpotlight ? "Seu Spotlight" : conflict.spotlightRequested ? "Spotlight solicitado" : "Pedir Spotlight"}
         </Button>}
-        {onOpenConflict && <button type="button" className="character-conflict-link" onClick={onOpenConflict}>Ver conflito completo ↗</button>}
+        {onOpenConflict && <button type="button" className="character-conflict-link" onClick={onOpenConflict}>Ver cena ↗</button>}
       </div>
     </div>
+
+    <ConflictTrail
+      survivors={conflict.survivors}
+      threats={conflict.threats}
+      spotlight={conflict.spotlight}
+      selfId={survivor.id}
+      targetId={targetId}
+      mode="player"
+      onThreatTarget={chooseTarget}
+    />
 
     {firstDamage && <div className="character-conflict-damage">
       <div className="character-conflict-damage-heading"><ShieldAlert size={18} /><div><span>DANO PENDENTE{pendingDamage.length > 1 ? ` · ${pendingDamage.length} impactos` : ""}</span><strong>{firstDamage.sourceName} · {firstDamage.attackName}</strong></div><b>{firstDamage.tier.label}</b></div>
