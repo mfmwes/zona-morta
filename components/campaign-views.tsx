@@ -15,7 +15,7 @@ import { DayCloseDialog } from "@/components/day-close-dialog";
 import { FormerShelterProjects, ShelterProjectsManager } from "@/components/shelter-project-manager";
 import { ShelterVisualDashboard } from "@/components/shelter-dashboard";
 import { RuntimeErrorBoundary } from "@/components/runtime-error-boundary";
-import { ammunitionCount, ammunitionTypes, content, establishShelter, recoverFormerStock, shelterPopulationBreakdown, survivorPositionGroups, survivorsAtHex, type GameState } from "@/lib/game";
+import { ammunitionCount, ammunitionItemType, ammunitionTypes, content, establishShelter, recoverFormerStock, shelterPopulationBreakdown, survivorPositionGroups, survivorsAtHex, type GameState } from "@/lib/game";
 import { shelterColdStorageActive, shelterMetrics } from "@/lib/shelter-projects";
 import { atSharedStorage, batteryStateFor, catalogForItem } from "@/lib/inventory";
 import { provisionBreakdown, provisionDisplay, provisionItemInfo, provisionShelfLabel } from "@/lib/provision-items";
@@ -100,7 +100,7 @@ export function ShelterPanel({ game, edit, playerPreview, playerSurvivorId }: { 
       {(s.inventory ?? []).length === 0 ? <p className="character-empty-list">Nenhum objeto guardado no depósito.</p>
         : (s.inventory ?? []).map(item => {
           const provisionState = provisionItemInfo(item);
-          const row = <div className={`shared-inventory-row ${sharedAccessible && !playerPreview ? "inventory-context-target" : ""}`}><div className="shared-inventory-entry"><ItemArt name={item.name} category={catalogForItem(item)?.category ?? item.category} /><div><b>{item.name}</b><span>{provisionState.resource ? provisionDisplay(item) : `${catalogForItem(item)?.category ?? item.category ?? "Outros"} · ${item.qty}× · carga ${item.load} cada · ${item.condition ?? "sem estado"}${batteryStateFor(item) ? ` · bateria ${batteryStateFor(item)?.toLowerCase()}` : ""}`}</span></div></div>
+          const row = <div className={`shared-inventory-row ${sharedAccessible && !playerPreview ? "inventory-context-target" : ""}`}><div className="shared-inventory-entry"><ItemArt name={item.name} category={catalogForItem(item)?.category ?? item.category} /><div><b>{item.name}</b><span>{provisionState.resource ? provisionDisplay(item) : ammunitionItemType(item) ? `${item.qty}× · até 4 unidades = 1 espaço de carga` : `${catalogForItem(item)?.category ?? item.category ?? "Outros"} · ${item.qty}× · carga ${item.load} cada · ${item.condition ?? "sem estado"}${batteryStateFor(item) ? ` · bateria ${batteryStateFor(item)?.toLowerCase()}` : ""}`}</span></div></div>
             {sharedAccessible && !playerPreview && <ItemActionsDialog game={game} edit={edit} ownerId="shared" item={item} allowCorrection />}</div>;
           return sharedAccessible && !playerPreview
             ? <ItemContextMenu key={item.id} game={game} edit={edit} ownerId="shared" item={item}>{row}</ItemContextMenu>
@@ -141,7 +141,7 @@ export function ShelterPanel({ game, edit, playerPreview, playerSurvivorId }: { 
               if (!recoverFormerStock(d, visitedCache.hex!, recipient.id, key, visitedCache[key])) toast.error("Não coube no contador deste sobrevivente.");
             })}>Retirar tudo</Button>}
           </div>}</div>)}
-      {(visitedCache.inventory ?? []).map(item => <div key={item.id} className="shared-inventory-row"><div className="shared-inventory-entry"><ItemArt name={item.name} category={item.category} /><div><b>{item.qty}× {item.name}</b><span>{item.load * item.qty} carga</span></div></div>
+      {(visitedCache.inventory ?? []).map(item => <div key={item.id} className="shared-inventory-row"><div className="shared-inventory-entry"><ItemArt name={item.name} category={item.category} /><div><b>{item.qty}× {item.name}</b><span>{ammunitionItemType(item) ? `${Math.ceil(item.qty / 4)} carga · munição física` : `${item.load * item.qty} carga`}</span></div></div>
         {recipient && !playerPreview && <Button size="sm" variant="outline" onClick={() => edit(d => {
           if (!recoverFormerStock(d, visitedCache.hex!, recipient.id, "food", 0, item.id)) toast.error("O item já não está neste depósito.");
         })}>Retirar</Button>}</div>)}
