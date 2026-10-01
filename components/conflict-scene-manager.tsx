@@ -14,6 +14,8 @@ import {
   endConflictScene,
   removeConflictParticipant,
   setConflictSpotlight,
+  setThreatHpMarked,
+  setThreatStressMarked,
   publicConflictScene,
   type ConflictParticipantRef,
   type PublicConflictScene,
@@ -22,9 +24,14 @@ import { threatLibrary } from "@/lib/threats";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 
-function threatHp(instance: NonNullable<GameState["conflict"]>["threats"][number]) {
-  const max = instance.templateSnapshot.maxHp;
-  return max === null ? null : Math.max(0, max - instance.hpMarked);
+function ResourceMeter({ label, value, max, tone }: { label: string; value: number; max: number | null; tone: "hp" | "stress" | "hope" }) {
+  if (max === null) return <span className={`conflict-resource conflict-resource--${tone}`}><span><small>{label}</small><b>—</b></span></span>;
+  const current = Math.max(0, Math.min(max, value));
+  const percent = max > 0 ? Math.round((current / max) * 100) : 0;
+  return <span className={`conflict-resource conflict-resource--${tone}`} aria-label={`${label} ${current} de ${max}`}>
+    <span><small>{label}</small><b>{current}/{max}</b></span>
+    <span className="conflict-resource-track" aria-hidden="true"><span style={{ width: `${percent}%` }} /></span>
+  </span>;
 }
 
 function participantLabel(game: GameState, ref: ConflictParticipantRef | null) {
@@ -318,7 +325,11 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
             return <article key={person.id} data-conflict-kind="survivor" data-conflict-id={person.id} className={`conflict-person${isFocused ? " is-focused" : ""}`}>
               <div className="conflict-avatar">{person.portrait ? <img src={person.portrait} alt="" /> : person.name.slice(0,2).toUpperCase()}</div>
               <div className="conflict-person-copy"><div className="conflict-person-name"><b>{person.name}</b>{isFocused && <span className="conflict-focus-badge"><Crosshair size={11} /> Spotlight</span>}</div><small>{person.archetype} · {person.specialty}</small>
-                <span>PV {Math.max(0, stats.hp - person.hp)}/{stats.hp} · Estresse {person.stress}/6 · Esperança {person.hope}/6</span></div>
+                <div className="conflict-survivor-resources">
+                  <ResourceMeter label="PV marcados" value={person.hp} max={stats.hp} tone="hp" />
+                  <ResourceMeter label="Estresse" value={person.stress} max={6} tone="stress" />
+                  <ResourceMeter label="Esperança" value={person.hope} max={6} tone="hope" />
+                </div></div>
               <div className="conflict-person-actions">
                 <Button size="sm" variant={isFocused ? "default" : "outline"} onClick={() => focus({ kind: "survivor", id: person.id }, person.name)}><Crosshair size={14} /> {isFocused ? "Em foco" : "Spotlight"}</Button>
                 <Button size="sm" variant="ghost" aria-label={`Remover ${person.name} do conflito`} onClick={() => remove({ kind: "survivor", id: person.id }, person.name)}><X size={15} /></Button>
@@ -339,7 +350,6 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
         <div className="conflict-threat-list">
           {conflict.threats.map(instance => {
             const template = instance.templateSnapshot;
-            const hp = threatHp(instance);
             const isFocused = conflict.spotlight?.kind === "threat" && conflict.spotlight.id === instance.id;
             return <article key={instance.id} data-conflict-kind="threat" data-conflict-id={instance.id} className={`conflict-threat${isFocused ? " is-focused" : ""}${instance.defeated ? " is-defeated" : ""}`}>
               <div className="conflict-threat-heading">
@@ -351,23 +361,21 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
                 </div>
               </div>
               <div className="conflict-threat-stats">
-                <span><small>Dificuldade</small><b>{template.difficulty}</b></span>
-                <span><small>Limiares</small><b>{template.majorThreshold ?? "—"} / {template.severeThreshold ?? "—"}</b></span>
-                <span><small>PV</small><b>{hp === null ? "—" : `${hp}/${template.maxHp}`}</b></span>
-                <span><small>Estresse</small><b>{template.maxStress === null ? "—" : `${Math.max(0, template.maxStress - instance.stressMarked)}/${template.maxStress}`}</b></span>
+                <span className="conflict-stat conflict-stat--difficulty"><small>Dificuldade</small><b>{template.difficulty}</b></span>
+                <span className="conflict-stat conflict-stat--threshold"><small>Limiares</small><b>{template.majorThreshold ?? "—"} / {template.severeThreshold ?? "—"}</b></span>
+                <ResourceMeter label="PV marcados" value={instance.hpMarked} max={template.maxHp} tone="hp" />
+                <ResourceMeter label="Estresse" value={instance.stressMarked} max={template.maxStress} tone="stress" />
               </div>
               {(template.maxHp !== null || template.maxStress !== null) && <details className="conflict-threat-details">
                 <summary>Ajustar recursos</summary>
                 <div className="conflict-threat-controls">
                   {template.maxHp !== null && <Counter compact label="PV marcados" value={instance.hpMarked} min={0} max={template.maxHp} onChange={value => edit(draft => {
                     const row = draft.conflict?.threats.find(threat => threat.id === instance.id);
-                    if (!row) return;
-                    row.hpMarked = value;
-                    row.defeated = value >= (row.templateSnapshot.maxHp ?? 999);
+                    if (row) setThreatHpMarked(row, value);
                   })} />}
-                  {template.maxStress !== null && <Counter compact label="Estresse" value={instance.stressMarked} min={0} max={template.maxStress} onChange={value => edit(draft => {
+                  {template.maxStress !== null && <Counter compact label="Estresse marcado" value={instance.stressMarked} min={0} max={template.maxStress} onChange={value => edit(draft => {
                     const row = draft.conflict?.threats.find(threat => threat.id === instance.id);
-                    if (row) row.stressMarked = value;
+                    if (row) setThreatStressMarked(row, value);
                   })} />}
                 </div>
               </details>}
