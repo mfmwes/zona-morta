@@ -220,7 +220,25 @@ export async function syncCampaignAccountCharacters(campaignId: string, state: G
 
 export async function listAccountCharacters(userId: string): Promise<AccountCharacterSummary[]> {
   await ensureCampaignSchema();
-  const result = await database().prepare(`
+  const db = database();
+
+  // Migração preguiçosa: contas existentes ganham a biblioteca sem exigir que
+  // o usuário edite cada campanha primeiro.
+  const legacy = await db.prepare(`
+    SELECT DISTINCT c.id AS campaign_id, cs.body AS body
+    FROM campaigns c
+    JOIN campaign_states cs ON cs.owner_id = c.id
+    LEFT JOIN campaign_players cp ON cp.owner_id = c.id
+    WHERE c.owner_id = ? OR cp.user_id = ?
+  `).bind(userId, userId).all<{ campaign_id: string; body: string }>();
+  for (const row of legacy.results) {
+    try {
+      const state = JSON.parse(row.body) as GameState;
+      if (state && Array.isArray(state.survivors)) await syncCampaignAccountCharacters(row.campaign_id, state);
+    } catch { /* Uma campanha inválida não bloqueia as demais fichas da conta. */ }
+  }
+
+  const result = await db.prepare(`
     SELECT uc.user_id, uc.survivor_id, uc.campaign_id, uc.body, uc.created_at, uc.updated_at,
       c.name AS campaign_name, c.archived_at AS campaign_archived_at
     FROM user_characters uc
