@@ -642,7 +642,7 @@ export default function CampaignApp() {
         {activeTab === "conflito" && role === "mestre" && !playerPreview && <ConflictSceneManager game={game} edit={edit} />}
         {activeTab === "conflito" && readOnlyPreview && publicConflictActive && <PlayerConflictScene game={game} selfId={role === "jogador" ? survivorId : null} />}
         {activeTab === "ameacas" && role === "mestre" && !playerPreview && <section className="panel panel-pad"><ThreatManager game={game} edit={edit} /></section>}
-        {activeTab === "referencias" && <ReferencePanel />}
+        {activeTab === "referencias" && <ReferencePanel game={game} showThreats={role === "mestre" && !playerPreview} />}
         {activeTab === "jogadores" && role === "mestre" && <PlayersPanel game={game} ownerId={ownerId} />}
         {activeTab === "mapa" && !readOnlyPreview && <section className="panel panel-pad mt-5">
           <div className="flex items-center justify-between gap-3"><div><p className="dossier-title">Registro</p><h2 className="section-title mt-1">Últimos acontecimentos</h2></div>
