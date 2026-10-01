@@ -108,7 +108,7 @@ export function ShelterVisualDashboard({ game }: { game: GameState }) {
         <Icon size={18} aria-hidden />
         <b>{project.name}</b>
         <span className={`shelter-detail-state is-${state.tone}`}>{state.label}</span>
-        {["Concluído", "Danificado", "Inoperante", "Destruído"].includes(project.state) && <small className="construction-integrity-mini">${"●".repeat(projectIntegrity(project))}${"○".repeat(3 - projectIntegrity(project))} · {projectIntegrity(project)}/3</small>}
+        {["Concluído", "Danificado", "Inoperante", "Destruído"].includes(project.state) && <small className="construction-integrity-mini">{"●".repeat(projectIntegrity(project))}{"○".repeat(3 - projectIntegrity(project))} · {projectIntegrity(project)}/3</small>}
         {(project.workShift || project.volunteerShifts?.length) && <small><span>⏱</span> até {displayTime(Math.min(
           ...(project.workShift ? [project.workShift.startMinute + project.workShift.durationMinutes] : []),
           ...(project.volunteerShifts ?? []).map(shift => shift.startMinute + shift.durationMinutes),
