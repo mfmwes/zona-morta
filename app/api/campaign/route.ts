@@ -111,6 +111,8 @@ function validConflict(value: unknown) {
         && Number.isInteger(row.day) && Number(row.day) >= 1 && Number(row.day) <= 99999
         && typeof row.time === "string" && row.time.length <= 20;
     })
+    && (conflict.appliedAttackLogIds === undefined || (Array.isArray(conflict.appliedAttackLogIds) && conflict.appliedAttackLogIds.length <= 160
+      && conflict.appliedAttackLogIds.every(id => typeof id === "string" && id.length <= 120)))
     && typeof conflict.notes === "string" && conflict.notes.length <= 4000;
 }
 
