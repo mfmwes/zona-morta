@@ -41,6 +41,19 @@ export const users = sqliteTable("users", {
   createdAt: text("created_at").notNull(),
 });
 
+export const userCharacters = sqliteTable("user_characters", {
+  userId: text("user_id").notNull(),
+  survivorId: text("survivor_id").notNull(),
+  campaignId: text("campaign_id").notNull(),
+  body: text("body").notNull(),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+}, table => [
+  primaryKey({ columns: [table.userId, table.survivorId] }),
+  index("idx_user_characters_user").on(table.userId, table.updatedAt),
+  index("idx_user_characters_campaign").on(table.campaignId),
+]);
+
 export const sessions = sqliteTable("sessions", {
   tokenHash: text("token_hash").primaryKey(),
   userId: text("user_id").notNull(),
