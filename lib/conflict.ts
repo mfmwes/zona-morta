@@ -188,6 +188,46 @@ export function setThreatStressMarked(threat: ThreatInstance, marked: number) {
   threat.stressMarked = Math.max(0, Math.min(max, Math.trunc(marked || 0)));
 }
 
+
+export type ThreatDamageTier = {
+  key: "none" | "minor" | "major" | "severe";
+  label: "Sem dano" | "Menor" | "Maior" | "Severo";
+  hpMarks: 0 | 1 | 2 | 3;
+};
+
+export type ThreatAttackResolution = {
+  targetId: string;
+  targetName: string;
+  hit: boolean;
+  damageTier: ThreatDamageTier;
+};
+
+export function resolveThreatDamageTier(template: ThreatTemplate, damage: number): ThreatDamageTier {
+  const amount = Math.max(0, Math.trunc(damage || 0));
+  if (amount <= 0) return { key: "none", label: "Sem dano", hpMarks: 0 };
+  if (template.severeThreshold !== null && amount >= template.severeThreshold)
+    return { key: "severe", label: "Severo", hpMarks: 3 };
+  if (template.majorThreshold !== null && amount >= template.majorThreshold)
+    return { key: "major", label: "Maior", hpMarks: 2 };
+  return { key: "minor", label: "Menor", hpMarks: 1 };
+}
+
+export function resolveThreatAttack(
+  threat: ThreatInstance,
+  attackTotal: number,
+  critical: boolean,
+  damage: number,
+): ThreatAttackResolution {
+  const total = Math.trunc(attackTotal || 0);
+  const hit = Boolean(critical) || total >= threat.templateSnapshot.difficulty;
+  return {
+    targetId: threat.id,
+    targetName: threat.name,
+    hit,
+    damageTier: resolveThreatDamageTier(threat.templateSnapshot, damage),
+  };
+}
+
 export function removeConflictParticipant(scene: ConflictScene, participant: ConflictParticipantRef) {
   if (participant.kind === "survivor") {
     scene.survivorIds = scene.survivorIds.filter(id => id !== participant.id);
