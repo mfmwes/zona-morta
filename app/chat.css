@@ -391,3 +391,111 @@
     outline-color: color-mix(in srgb, var(--hope) 48%, transparent);
   }
 }
+
+
+/* Alvo e faixa de dano das rolagens de conflito. */
+.table-chat-target {
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  align-items:center;
+  gap:8px;
+  margin-top:10px;
+  padding:8px 9px;
+  border:1px solid #cbd9d4;
+  border-radius:5px;
+  background:#f2f6f3;
+  color:#56706b;
+}
+.table-chat-target > svg {
+  color:#587e77;
+}
+.table-chat-target > span {
+  display:grid;
+  gap:1px;
+  min-width:0;
+}
+.table-chat-target small {
+  color:#71817d;
+  font:800 .56rem var(--font-mono);
+  letter-spacing:.07em;
+  text-transform:uppercase;
+}
+.table-chat-target strong {
+  overflow:hidden;
+  color:#294b48;
+  font-size:.76rem;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.table-chat-target > b {
+  padding:3px 6px;
+  border-radius:4px;
+  font:850 .58rem var(--font-mono);
+  letter-spacing:.05em;
+}
+.table-chat-target.is-hit {
+  border-color:#a8cbc1;
+  background:#e9f4ee;
+}
+.table-chat-target.is-hit > b {
+  background:#d8ebe2;
+  color:#2f6b5c;
+}
+.table-chat-target.is-miss {
+  border-color:#dcc5bf;
+  background:#f7ece9;
+}
+.table-chat-target.is-miss > b {
+  background:#edd8d2;
+  color:#8a4b42;
+}
+.table-chat-damage-tier {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto auto;
+  align-items:center;
+  gap:6px;
+  margin-top:6px;
+  padding-top:6px;
+  border-top:1px solid color-mix(in srgb,#5d827b 26%,transparent);
+}
+.table-chat-damage-tier > span {
+  color:#456761;
+  font:850 .62rem var(--font-mono);
+  letter-spacing:.045em;
+  text-transform:uppercase;
+}
+.table-chat-damage-tier > b {
+  color:#274f4a;
+  font:900 .72rem var(--font-mono);
+}
+.table-chat-damage-tier > small {
+  color:#687d78;
+  font-size:.6rem;
+}
+html[data-theme="dark"] .table-chat-target {
+  border-color:#3e514e;
+  background:#1a2525;
+}
+html[data-theme="dark"] .table-chat-target strong {
+  color:#e4ece7;
+}
+html[data-theme="dark"] .table-chat-target.is-hit {
+  border-color:#466b62;
+  background:#1a2d29;
+}
+html[data-theme="dark"] .table-chat-target.is-hit > b {
+  background:#244139;
+  color:#b5dfd1;
+}
+html[data-theme="dark"] .table-chat-target.is-miss {
+  border-color:#6e4c46;
+  background:#302321;
+}
+html[data-theme="dark"] .table-chat-target.is-miss > b {
+  background:#482f2b;
+  color:#efb4aa;
+}
+html[data-theme="dark"] .table-chat-damage-tier > span,
+html[data-theme="dark"] .table-chat-damage-tier > b {
+  color:#c2ddd5;
+}
