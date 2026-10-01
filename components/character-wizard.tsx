@@ -133,7 +133,7 @@ export function CharacterWizard({ onCreate }: { onCreate: (survivor: Survivor) =
           </div>
           {primaryData && <p className="text-sm subtle">{primaryData.trait} · {primaryData.range} · {primaryData.damage} físico · Barulho {primaryData.noise}. {primaryData.hands === "Duas" ? "Exige duas mãos." : "Deixa uma mão para secundária."}</p>}
           <div className="wizard-kit-note rounded-md bg-[#e7f1ed] p-3 text-sm leading-relaxed">
-            O kit inclui 1 porção de Comida e 1 de Água. Arma de fogo recebe 1 carga de munição compatível além do item pessoal. A proteção vestida e a arma ativa ocupam 0 carga.
+            O kit inclui 1 porção de Comida e 1 de Água. Armas que usam munição começam com 1 unidade física compatível no inventário. Até 4 unidades do mesmo tipo ocupam 1 espaço de carga. A proteção vestida e a arma ativa ocupam 0 carga.
           </div>
         </section>
       </div>
