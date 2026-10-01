@@ -262,7 +262,9 @@ export function normalizeShelter(shelter: ShelterState) {
     project.state ??= "Planejado";
     project.integrity = project.state === "Planejado" || (project.state === "Em construção" && project.repairProgress === undefined)
       ? shelterProjectMaxIntegrity
-      : projectIntegrity(project);
+      : project.state === "Em construção" && project.repairProgress !== undefined && project.integrity === undefined
+        ? 2
+        : projectIntegrity(project);
     if (!["Planejado", "Em construção"].includes(project.state)) syncProjectIntegrityState(project);
     project.operationProgress = Math.max(0, Math.trunc(project.operationProgress ?? 0));
     project.progress = Math.max(0, Math.trunc(project.progress ?? 0));
