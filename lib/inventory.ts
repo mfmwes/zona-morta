@@ -1,4 +1,4 @@
-import { ammunitionItemType, ammunitionLoad, ammunitionTypeFromName, ammunitionTypes, content, setShelterAmmoCount, shelterAmmoCount, survivorHex, survivorsAtHex, type AmmunitionType, type EquipmentSlot, type GameState, type InventoryItem, type Survivor } from "./game";
+import { ammunitionCount, ammunitionItemType, ammunitionLoad, ammunitionTypeFromName, ammunitionTypes, content, createAmmunitionItem, setShelterAmmoCount, shelterAmmoCount, survivorHex, survivorsAtHex, type AmmunitionType, type EquipmentSlot, type GameState, type InventoryItem, type Survivor } from "./game";
 import { getPrimary, getProtection, getSecondary, weaponAmmoType } from "./equipment";
 import { createId } from "./id";
 import { transferPortionLots, withdrawPortions } from "./provisions";
@@ -671,10 +671,22 @@ export function consumeReadyProvisionPortions(items: InventoryItem[] | undefined
 }
 
 export type Provision = "food" | "water" | "ammo";
-function transferAmmoType(game: GameState, from: string, requested?: string): string {
-  if (from === "shared") return requested && ammunitionTypes.includes(requested as AmmunitionType) ? requested : "Pistola";
-  const source = game.survivors.find(s => s.id === from);
-  return source ? ammoTypeFor(source) : "Indefinida";
+function transferAmmoType(_game: GameState, _from: string, requested?: string): string {
+  return requested && ammunitionTypes.includes(requested as AmmunitionType) ? requested : "Pistola";
+}
+function removeAvailableAmmo(items: InventoryItem[], type: AmmunitionType, quantity: number) {
+  let remaining = quantity;
+  for (const item of [...items]) {
+    if (ammunitionItemType(item) !== type || remaining < 1) continue;
+    const committed = Math.max(0, Math.min(item.qty, item.committedAmmo ?? 0));
+    const free = Math.max(0, item.qty - committed);
+    const take = Math.min(free, remaining);
+    if (!take) continue;
+    item.qty -= take;
+    remaining -= take;
+    if (item.qty <= 0) items.splice(items.indexOf(item), 1);
+  }
+  return remaining === 0;
 }
 export function provisionTransferError(game: GameState, from: string, to: string, resource: Provision, quantity: number, requestedAmmoType?: string): string | null {
   if (!Number.isInteger(quantity) || quantity < 1) return "Informe uma quantidade inteira maior que zero.";
@@ -692,14 +704,15 @@ export function provisionTransferError(game: GameState, from: string, to: string
   if (resource === "ammo") {
     const type = transferAmmoType(game, from, requestedAmmoType);
     if (!ammunitionTypes.includes(type as AmmunitionType)) return "Identifique o tipo de munição da origem antes de transferir.";
-    const available = from === "shared" ? shelterAmmoCount(game.shelter, type as AmmunitionType) : (source as Survivor).ammo;
-    const receiving = to === "shared" ? shelterAmmoCount(game.shelter, type as AmmunitionType) : (target as Survivor).ammo;
-    if (available < quantity) return `A origem não tem ${quantity} carga(s) de ${type}.`;
-    if (receiving + quantity > 99) return "O destino atingiria o limite do contador.";
-    if (to !== "shared") {
-      const targetType = ammoTypeFor(target as Survivor);
-      if (receiving > 0 && targetType !== type) return `Não é possível misturar ${type} e ${targetType} no mesmo contador.`;
-    }
+    const ammoType = type as AmmunitionType;
+    const available = from === "shared"
+      ? ammunitionCount(game.shelter.inventory, ammoType, true)
+      : ammunitionCount((source as Survivor).inventory, ammoType, true);
+    const receiving = to === "shared"
+      ? ammunitionCount(game.shelter.inventory, ammoType)
+      : ammunitionCount((target as Survivor).inventory, ammoType);
+    if (available < quantity) return `A origem não tem ${quantity} unidade(s) livre(s) de Munição de ${type}.`;
+    if (receiving + quantity > 99) return "O destino atingiria 99 unidades desse tipo.";
     return null;
   }
 
@@ -716,13 +729,10 @@ export function transferProvisions(game: GameState, from: string, to: string, re
   const target = to === "shared" ? game.shelter : game.survivors.find(s => s.id === to)!;
   if (resource === "ammo") {
     const type = transferAmmoType(game, from, requestedAmmoType) as AmmunitionType;
-    if (from === "shared") setShelterAmmoCount(game.shelter, type, shelterAmmoCount(game.shelter, type) - quantity);
-    else (source as Survivor).ammo -= quantity;
-    if (to === "shared") setShelterAmmoCount(game.shelter, type, shelterAmmoCount(game.shelter, type) + quantity);
-    else {
-      (target as Survivor).ammo += quantity;
-      (target as Survivor).ammoType = type;
-    }
+    const sourceItems = from === "shared" ? game.shelter.inventory ?? (game.shelter.inventory = []) : (source as Survivor).inventory;
+    const targetItems = to === "shared" ? game.shelter.inventory ?? (game.shelter.inventory = []) : (target as Survivor).inventory;
+    if (!removeAvailableAmmo(sourceItems, type, quantity)) return false;
+    addStack(targetItems, createAmmunitionItem(type, quantity));
   } else transferPortionLots(source, target, resource, quantity);
   return true;
 }
