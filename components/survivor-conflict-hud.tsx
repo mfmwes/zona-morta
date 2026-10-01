@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronRight, Crosshair, Search, ShieldAlert, Swords, Target, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -33,7 +33,9 @@ export function SurvivorConflictHud({
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const [spotlightBusy, setSpotlightBusy] = useState(false);
   const [damageBusy, setDamageBusy] = useState(false);
+  const [isStuck, setIsStuck] = useState(false);
   const [error, setError] = useState("");
+  const stickySentinelRef = useRef<HTMLDivElement | null>(null);
 
   const storageKey = `zona-morta:target:${game.campaignId}:${survivor.id}`;
   const recentKey = `zona-morta:targets-recent:${game.campaignId}:${survivor.id}`;
@@ -58,6 +60,23 @@ export function SurvivorConflictHud({
       try { window.localStorage.removeItem(storageKey); } catch {}
     }
   }, [conflict?.threats, onTargetChange, storageKey, targetId]);
+
+
+  useEffect(() => {
+    const sentinel = stickySentinelRef.current;
+    if (!sentinel) return;
+    const update = () => {
+      const stickyTop = window.innerWidth <= 1000 ? 64 : 8;
+      setIsStuck(sentinel.getBoundingClientRect().top <= stickyTop);
+    };
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [conflict?.id]);
 
   const livingThreats = useMemo(() => (conflict?.threats ?? []).filter(threat => !threat.defeated), [conflict?.threats]);
   const selectedTarget = livingThreats.find(threat => threat.id === targetId) ?? null;
@@ -147,7 +166,9 @@ export function SurvivorConflictHud({
     }
   }
 
-  return <section className={`character-conflict-hud character-conflict-hud--trail${ownSpotlight ? " is-own-spotlight" : ""}${firstDamage ? " has-damage" : ""}`}>
+  return <>
+    <div ref={stickySentinelRef} className="character-conflict-sticky-sentinel" aria-hidden="true" />
+    <section className={`character-conflict-hud character-conflict-hud--trail${isStuck ? " is-stuck" : ""}${ownSpotlight ? " is-own-spotlight" : ""}${firstDamage ? " has-damage" : ""}`}>
     <div className="character-conflict-trail-header">
       <div className="character-conflict-trail-title">
         <span className="character-conflict-kicker"><Swords size={14} /> TRILHA DE CONFLITO</span>
@@ -179,7 +200,7 @@ export function SurvivorConflictHud({
 
         <Button size="sm" disabled={!selectedTarget} onClick={() => onAttack(selectedTarget?.id)}><Swords size={14} /> Atacar</Button>
 
-        {playerMode && <Button size="sm" variant={conflict.spotlightRequested ? "secondary" : "ghost"} disabled={spotlightBusy || ownSpotlight} onClick={() => void toggleSpotlightRequest()}>
+        {playerMode && <Button className="character-spotlight-request" size="sm" variant={conflict.spotlightRequested ? "secondary" : "outline"} disabled={spotlightBusy || ownSpotlight} onClick={() => void toggleSpotlightRequest()}>
           <Crosshair size={14} /> {ownSpotlight ? "Seu Spotlight" : conflict.spotlightRequested ? "Spotlight solicitado" : "Pedir Spotlight"}
         </Button>}
         {onOpenConflict && <button type="button" className="character-conflict-link" onClick={onOpenConflict}>Ver cena ↗</button>}
@@ -206,5 +227,6 @@ export function SurvivorConflictHud({
     </div>}
 
     {error && <p className="character-conflict-error" role="alert">{error}</p>}
-  </section>;
+    </section>
+  </>;
 }
