@@ -93,7 +93,7 @@ register("provisions", 13, "Carne seca embalada");
 register("provisions", 14, "Chocolate fechado");
 register("provisions", 15, "Refeição congelada|Ração de emergência|Comida (1 unidade)");
 
-register("weapons", 10, "Munição (1 carga)");
+register("weapons", 10, "Munição (1 carga)|Munição de Pistola|Munição de Espingarda|Munição de Carabina|Munição de Flechas|Munição de Virotes|Munição de Chumbinhos|Munição de Outra");
 
 export function explicitItemArtFor(name: string): ItemArtRef | undefined { return named.get(name); }
 
