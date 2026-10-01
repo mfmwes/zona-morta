@@ -247,6 +247,21 @@ test('ameaças públicas preservam grupo para seleção compacta sem expor ficha
   assert.equal(json.includes('templateSnapshot'), false);
 });
 
+test('gerenciador de ameaças aceita imagem e preserva-a em duplicações e instâncias', () => {
+  const manager = fs.readFileSync(require.resolve('../components/threat-manager.tsx'), 'utf8');
+  const template = threats.createThreatTemplate();
+  template.image = 'https://example.com/ameaça.png';
+  const sanitized = threats.sanitizeThreatTemplate(template);
+  assert.equal(sanitized.image, 'https://example.com/ameaça.png');
+  const copy = threats.duplicateThreatTemplate(sanitized);
+  assert.equal(copy.image, sanitized.image);
+  const instance = threats.instantiateThreat(sanitized);
+  assert.equal(instance.templateSnapshot.image, sanitized.image);
+  assert.match(manager, /<ImagePicker label="Imagem da ameaça"/);
+  assert.match(manager, /threat-card-icon.*has-image/);
+  assert.match(manager, /threat-sheet-art/);
+});
+
 test('Cena de Conflito reage à largura útil e evita sobreposição dos controles', () => {
   const visual = fs.readFileSync(require.resolve('../app/visual-system.css'), 'utf8');
   assert.match(visual, /\.conflict-manager\s*\{[\s\S]*container-type:inline-size/);
@@ -411,6 +426,12 @@ test('resolução privada de alvo existe sem enviar dificuldade ao cliente jogad
   assert.doesNotMatch(route, /difficulty:\s*resolution/);
   assert.doesNotMatch(route, /majorThreshold:\s*resolution/);
   assert.doesNotMatch(route, /severeThreshold:\s*resolution/);
+});
+
+test('API limita imagens persistidas de PNJs e ameaças', () => {
+  const route = fs.readFileSync(require.resolve('../app/api/campaign/route.ts'), 'utf8');
+  assert.match(route, /threat\.image\.length <= 12000/);
+  assert.match(route, /npc\.portrait\.length <= 12000/);
 });
 
 test('rota de spotlight permite pedir e cancelar sem criar iniciativa ou escrever no chat', () => {
@@ -925,6 +946,19 @@ test('NPC que fica em uma base antiga não é transportado sem ser selecionado',
   assert.equal(require('../lib/game.ts').establishShelter(g, '1,0', {}), true);
   assert.equal(joel.home, '0,0'); assert.equal(joel.hex, '0,0');
   assert.equal(g.formerShelters[0].hex, '0,0');
+});
+
+test('ferramentas de PNJ permitem imagem por link/upload e exclusão com limpeza de vínculos', () => {
+  const panel = fs.readFileSync(require.resolve('../components/npc-panel.tsx'), 'utf8');
+  const picker = fs.readFileSync(require.resolve('../components/image-picker.tsx'), 'utf8');
+  assert.match(panel, /<ImagePicker label="Retrato do PNJ"/);
+  assert.match(panel, /Excluir PNJ/);
+  assert.match(panel, /state\.npcs = state\.npcs\.filter/);
+  assert.match(panel, /project\.helperIds = \(project\.helperIds \?\? \[\]\)\.filter/);
+  assert.match(panel, /post\.helperIds = \(post\.helperIds \?\? \[\]\)\.filter/);
+  assert.match(picker, /Usar link/);
+  assert.match(picker, /accept="image\/\*"/);
+  assert.match(picker, /encodeSquareImage/);
 });
 
 test('NPC acompanhante segue o grupo quando o hex muda', () => {
