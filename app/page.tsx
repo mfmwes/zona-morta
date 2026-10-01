@@ -3,7 +3,7 @@ import { localizeRollLog } from "@/lib/terminology";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { BookOpen, Brain, Clock3, Download, Droplets, Ear, Eye, EyeOff, House, LogOut, Map, MessageSquare, MoreHorizontal, Package, RotateCcw, Settings, Upload, Users, Utensils, Volume2 } from "lucide-react";
+import { BookOpen, Brain, Clock3, Download, Droplets, Ear, Eye, EyeOff, House, LogOut, Map, MessageSquare, MoreHorizontal, Package, RotateCcw, Settings, ShieldAlert, Upload, Users, Utensils, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -16,6 +16,7 @@ import { HexExplorer } from "@/components/hex-explorer";
 import { SurvivorPanel, type RestPeer } from "@/components/survivor-panel";
 import { NpcPanel } from "@/components/npc-panel";
 import { ReferencePanel, ShelterPanel } from "@/components/campaign-views";
+import { ThreatManager } from "@/components/threat-manager";
 import { PlayersPanel } from "@/components/players-panel";
 import { AuthPanel } from "@/components/auth-panel";
 import { CharacterWizard } from "@/components/character-wizard";
@@ -397,12 +398,13 @@ export default function CampaignApp() {
 
   const readOnlyPreview = playerPreview || role === "jogador";
   const title = { mapa: "Exploração", sobreviventes: "Sobreviventes", comunidade: "PNJs e comunidade", abrigo: "Abrigo e reservas",
-    referencias: "Arquivo de campo", jogadores: "Jogadores e acessos" }[tab] || "Campanha";
+    ameacas: "Gerenciador de ameaças", referencias: "Arquivo de campo", jogadores: "Jogadores e acessos" }[tab] || "Campanha";
   const nav = [
     { value: "mapa", label: "Mapa e hexes", icon: Map },
     { value: "sobreviventes", label: "Sobreviventes", icon: Users },
     { value: "comunidade", label: "PNJs e comunidade", icon: Users },
     { value: "abrigo", label: "Abrigo e reservas", icon: House },
+    ...(role === "mestre" && !playerPreview ? [{ value: "ameacas", label: "Ameaças", icon: ShieldAlert }] : []),
     { value: "referencias", label: "Regras e itens", icon: BookOpen },
     ...(role === "mestre" ? [{ value: "jogadores", label: "Jogadores", icon: Users }] : []),
   ];
@@ -446,7 +448,11 @@ export default function CampaignApp() {
           {role === "mestre" && <Button size="sm" className="topbar-preview-button" variant={playerPreview ? "default" : "outline"}
             aria-label={playerPreview ? "Desativar prévia dos jogadores" : "Ativar prévia dos jogadores"}
             title={playerPreview ? "Desativar prévia dos jogadores" : "Ativar prévia dos jogadores"}
-            onClick={() => setPlayerPreview(value => !value)}>
+            onClick={() => {
+              const nextPreview = !playerPreview;
+              if (nextPreview && tab === "ameacas") setTab("referencias");
+              setPlayerPreview(nextPreview);
+            }}>
             {playerPreview ? <Eye size={16} /> : <EyeOff size={16} />}<span>{playerPreview ? "Prévia ativa" : "Prévia dos jogadores"}</span>
           </Button>}
           <Button size="sm" variant={chatOpen ? "default" : "outline"} onClick={() => setChatOpen(value => !value)} aria-expanded={chatOpen} aria-controls="table-chat"><MessageSquare size={16} /><span className="topbar-options-label">Chat</span></Button>
@@ -474,8 +480,9 @@ export default function CampaignApp() {
               tab === "sobreviventes" ? "Históricos, arquétipos e recursos prontos para jogar." :
               tab === "comunidade" ? "Acompanhe pessoas importantes, vínculos e a comunidade entre os hexes." :
               tab === "abrigo" ? "Organize reservas e descanso. Estabeleça um abrigo quando o grupo encontrar um lugar." :
+              tab === "ameacas" ? "Crie, adapte e consulte as ameaças mecânicas usadas pelo mestre durante a campanha." :
               tab === "jogadores" ? "Compartilhe a campanha e acompanhe quem entrou na mesa." :
-              "Consulte itens, adversários e procedimentos durante a sessão."}</p></div>
+              "Consulte itens e procedimentos durante a sessão."}</p></div>
           {!readOnlyPreview && tab === "mapa" &&
             <AlertDialog>
               <AlertDialogTrigger asChild><Button variant="outline" size="sm"><RotateCcw /> Reiniciar cidade</Button></AlertDialogTrigger>
@@ -613,7 +620,8 @@ export default function CampaignApp() {
         {tab === "sobreviventes" && <SurvivorPanel game={game} edit={edit} playerPreview={readOnlyPreview} playerMode={role === "jogador"} restPeers={restPeers} />}
         {tab === "comunidade" && <NpcPanel game={game} edit={edit} playerPreview={readOnlyPreview} />}
         {tab === "abrigo" && <ShelterPanel game={game} edit={edit} playerPreview={readOnlyPreview} playerSurvivorId={role === "jogador" ? survivorId : null} />}
-        {tab === "referencias" && <ReferencePanel game={game} edit={edit} playerPreview={readOnlyPreview} />}
+        {tab === "ameacas" && role === "mestre" && !playerPreview && <section className="panel panel-pad"><ThreatManager game={game} edit={edit} /></section>}
+        {tab === "referencias" && <ReferencePanel />}
         {tab === "jogadores" && role === "mestre" && <PlayersPanel game={game} ownerId={ownerId} />}
         {tab === "mapa" && !readOnlyPreview && <section className="panel panel-pad mt-5">
           <div className="flex items-center justify-between gap-3"><div><p className="dossier-title">Registro</p><h2 className="section-title mt-1">Últimos acontecimentos</h2></div>
