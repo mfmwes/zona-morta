@@ -247,18 +247,18 @@ test('ameaças públicas preservam grupo para seleção compacta sem expor ficha
   assert.equal(json.includes('templateSnapshot'), false);
 });
 
-test('Regras e itens mostra Ameaças só para o mestre fora da prévia', () => {
+test('Regras e itens mantém apenas Itens e Procedimentos; Ameaças ficam no menu do mestre', () => {
   const page = fs.readFileSync(require.resolve('../app/page.tsx'), 'utf8');
   const reference = fs.readFileSync(require.resolve('../components/campaign-views.tsx'), 'utf8');
   const threatsUi = fs.readFileSync(require.resolve('../components/threat-manager.tsx'), 'utf8');
 
-  assert.match(page, /<ReferencePanel game=\{game\} showThreats=\{role === "mestre" && !playerPreview\}/);
-  assert.match(reference, /showThreats && <TabsTrigger value="ameacas"/);
-  assert.match(reference, /showThreats && <TabsContent value="ameacas"/);
-  assert.match(reference, /<ThreatReference game=\{game\}/);
-  assert.match(reference, /if \(!showThreats && referenceTab === "ameacas"\) setReferenceTab\("itens"\)/);
-  assert.match(threatsUi, /export function ThreatReference/);
-  assert.match(threatsUi, /use o Gerenciador de ameaças no menu lateral/);
+  assert.match(page, /activeTab === "ameacas" && role === "mestre" && !playerPreview/);
+  assert.match(page, /activeTab === "referencias" && <ReferencePanel \/>/);
+  assert.match(reference, /TabsTrigger value="itens"/);
+  assert.match(reference, /TabsTrigger value="procedimentos"/);
+  assert.doesNotMatch(reference, /TabsTrigger value="ameacas"/);
+  assert.doesNotMatch(reference, /ThreatReference/);
+  assert.doesNotMatch(threatsUi, /export function ThreatReference/);
 });
 
 test('gerenciador de ameaças aceita imagem e preserva-a em duplicações e instâncias', () => {
