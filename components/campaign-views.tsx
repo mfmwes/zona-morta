@@ -295,7 +295,7 @@ export function ReferencePanel({ game, edit, playerPreview }: { game: GameState;
   return <div className="panel panel-pad reference-panel">
     <Tabs defaultValue="itens">
       <TabsList className="mb-5 max-w-full overflow-x-auto reference-tabs"><TabsTrigger value="itens"><Package /> Itens</TabsTrigger>
-        <TabsTrigger value="ameacas"><ShieldAlert /> Ameaças</TabsTrigger>
+        {!playerPreview && <TabsTrigger value="ameacas"><ShieldAlert /> Ameaças</TabsTrigger>}
         <TabsTrigger value="procedimentos"><BookOpen /> Procedimentos</TabsTrigger></TabsList>
       <TabsContent value="itens">
         <div className="flex flex-wrap items-end justify-between gap-4 mb-4"><div><h2 className="section-title">Catálogo de exploração</h2>
@@ -335,13 +335,9 @@ export function ReferencePanel({ game, edit, playerPreview }: { game: GameState;
             <Button size="sm" variant="outline" disabled={page === pageCount} aria-label="Próxima página" onClick={() => setPage(value => value + 1)}>Próxima <ChevronRight size={16} /></Button></div>
         </nav>}
       </TabsContent>
-      <TabsContent value="ameacas">
-        {playerPreview ? <div className="threat-manager-locked">
-          <ShieldAlert size={28} aria-hidden="true" />
-          <div><h2 className="section-title">Gerenciador de ameaças</h2>
-            <p className="intro-line mt-1">As fichas mecânicas de ameaças ficam reservadas ao mestre. Informações reveladas durante uma Cena de Conflito serão apresentadas aos jogadores pela própria cena.</p></div>
-        </div> : <ThreatManager game={game} edit={edit} />}
-      </TabsContent>
+      {!playerPreview && <TabsContent value="ameacas">
+        <ThreatManager game={game} edit={edit} />
+      </TabsContent>}
       <TabsContent value="procedimentos">
         <div className="grid gap-4 lg:grid-cols-2">
           <article className="list-card leading-relaxed"><h2 className="section-title">Rolagem de ação</h2>
