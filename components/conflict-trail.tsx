@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { Crosshair, Skull, Target, UserRound } from "lucide-react";
+import { Crosshair, Skull, Target } from "lucide-react";
 import type { ConflictParticipantRef, PublicConflictThreat, PublicConflictSurvivor } from "@/lib/conflict";
 
 type Props = {
