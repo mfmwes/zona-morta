@@ -3707,7 +3707,12 @@ html[data-theme="dark"] .character-conflict-hud--trail .character-spotlight-requ
   display:grid;
   gap:10px;
   min-width:0;
+  max-height:min(68vh,760px);
   margin-top:9px;
+  padding-right:3px;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
 }
 .conflict-threat-group {
   min-width:0;
@@ -4050,6 +4055,11 @@ html[data-theme="dark"] .conflict-threat-primary-action {
   }
 }
 @media (max-width:620px) {
+  .conflict-threat-groups {
+    max-height:none;
+    padding-right:0;
+    overflow:visible;
+  }
   .conflict-overview-metrics {
     grid-template-columns:1fr 1fr;
   }
