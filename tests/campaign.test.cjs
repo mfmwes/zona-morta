@@ -1771,3 +1771,81 @@ test('benefícios de instalações permanecem em 2/3 e param em 1/3 de Integrida
   check = inventory.provisionPreparationCheck(g, ana.id, rain, 1);
   assert.equal(check.ok, false);
 });
+
+
+test('Enfermaria e Estoque médico dão suporte mecânico ao tratamento no abrigo', () => {
+  const g = campaign(); const ana = g.survivors[0];
+  assert.equal(require('../lib/game.ts').establishShelter(g, '0,0'), true);
+  ana.hex = '0,0';
+  const medic = { id:'medic-infra', name:'Lia', role:'Médica', description:'', notes:'', hex:'0,0', home:'0,0', status:'Bem', infection:'Saudável', disposition:'Aliado', skills:['Medicina','Logística'], active:true };
+  g.npcs.push(medic);
+
+  const infirmary = shelterProjects.createShelterProject('infirmary', 'room-a');
+  infirmary.state = 'Concluído'; infirmary.progress = infirmary.requiredProgress; infirmary.responsibleId = medic.id;
+  const stock = shelterProjects.createShelterProject('medical-stock', 'room-b');
+  stock.state = 'Concluído'; stock.progress = stock.requiredProgress; stock.responsibleId = medic.id;
+  g.shelter.projects.push(infirmary, stock);
+
+  let support = shelterProjects.shelterTreatmentBonus(g, ana.id);
+  assert.equal(support.bonus, 2);
+  assert.deepEqual(support.sources, ['Enfermaria', 'Estoque médico']);
+
+  ana.hex = '1,0';
+  support = shelterProjects.shelterTreatmentBonus(g, ana.id);
+  assert.equal(support.bonus, 0);
+
+  ana.hex = '0,0';
+  shelterProjects.applyProjectDamage(infirmary, 2);
+  support = shelterProjects.shelterTreatmentBonus(g, ana.id);
+  assert.equal(support.bonus, 1);
+  assert.deepEqual(support.sources, ['Estoque médico']);
+});
+
+test('Quadro de rotas reduz em 30 minutos viagens que partem ou retornam ao abrigo', () => {
+  const g = campaign(); const ana = g.survivors[0];
+  assert.equal(require('../lib/game.ts').establishShelter(g, '0,0'), true);
+  ana.hex = '0,0';
+  const board = shelterProjects.createShelterProject('route-board');
+  board.state = 'Concluído'; board.progress = board.requiredProgress;
+  g.shelter.projects.push(board);
+
+  assert.equal(shelterProjects.shelterTravelMinutes(g, '0,0', '1,0', 60), 30);
+  assert.equal(shelterProjects.shelterTravelMinutes(g, '1,0', '0,0', 120), 90);
+  assert.equal(shelterProjects.shelterTravelMinutes(g, '1,0', '2,0', 60), 60);
+
+  g.hexes['1,0'].discovery = 'explorado';
+  g.hexes['1,0'].routeHours = 1;
+  const before = g.minutes;
+  const moved = hexActions.moveSurvivors(g, '1,0', [ana.id]);
+  assert.equal(moved.ok, true);
+  assert.equal(g.minutes, before + 30);
+  assert.match(moved.message, /30 min/);
+});
+
+test('Cozinha comunitária só substitui panela e calor quando está realmente operacional', () => {
+  const g = campaign(); const ana = g.survivors[0];
+  assert.equal(require('../lib/game.ts').establishShelter(g, '0,0'), true);
+  ana.hex = '0,0';
+  ana.water = 2;
+  ana.inventory = [item('Arroz cru')];
+  const rice = ana.inventory[0];
+
+  const kitchen = shelterProjects.createShelterProject('community-kitchen', 'room-a');
+  kitchen.state = 'Concluído'; kitchen.progress = kitchen.requiredProgress;
+  g.shelter.projects.push(kitchen);
+
+  let check = inventory.provisionPreparationCheck(g, ana.id, rice, 1);
+  assert.equal(check.ok, false);
+  assert.match(check.message, /Panela leve|fonte de calor/);
+
+  const cook = { id:'cook-infra', name:'Nina', role:'Cozinheira', description:'', notes:'', hex:'0,0', home:'0,0', status:'Bem', infection:'Saudável', disposition:'Aliado', skills:['Cozinha'], active:true };
+  g.npcs.push(cook);
+  kitchen.responsibleId = cook.id;
+  check = inventory.provisionPreparationCheck(g, ana.id, rice, 1);
+  assert.equal(check.ok, true);
+  assert.equal(check.fuelCost, 0);
+
+  shelterProjects.applyProjectDamage(kitchen, 2);
+  check = inventory.provisionPreparationCheck(g, ana.id, rice, 1);
+  assert.equal(check.ok, false);
+});
