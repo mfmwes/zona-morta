@@ -472,13 +472,17 @@ test('prévia dos jogadores mostra Spotlight e oculta Dificuldade e Limiares das
   assert.match(rolls, /Dificuldade e Limiares são ocultos e resolvidos pelo sistema/);
 });
 
-test('Testes rápidos usam container query e não quebram com Chat aberto', () => {
+test('Resumo compacto usa a largura real da ficha e empilha recursos com testes', () => {
   const visual = fs.readFileSync(require.resolve('../app/visual-system.css'), 'utf8');
-  assert.match(visual, /character-summary-tests[\s\S]*container-type:inline-size/);
-  assert.match(visual, /@container \(max-width:760px\)/);
-  assert.match(visual, /grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
-  assert.match(visual, /@container \(max-width:430px\)/);
-  assert.match(visual, /grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(visual, /Resumo compacto: kit à esquerda, recursos e testes à direita/);
+  assert.match(visual, /@container dossier \(min-width:680px\)/);
+  assert.match(visual, /\.character-summary-action[\s\S]*grid-row:1 \/ span 2/);
+  assert.match(visual, /\.character-summary-resources[\s\S]*grid-column:2[\s\S]*grid-row:1/);
+  assert.match(visual, /\.character-summary-tests[\s\S]*grid-column:2[\s\S]*grid-row:2/);
+  assert.match(visual, /character-summary-resources \.character-provision-grid > span[\s\S]*min-height:46px/);
+  assert.match(visual, /character-summary-tests \.character-summary-attribute[\s\S]*min-height:42px/);
+  assert.match(visual, /@container dossier \(max-width:679px\)/);
+  assert.match(visual, /@container dossier \(max-width:430px\)/);
 });
 
 test('Resumo da ficha oferece testes rápidos para todos os atributos', () => {
