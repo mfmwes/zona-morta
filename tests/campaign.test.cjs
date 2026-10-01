@@ -247,6 +247,23 @@ test('ameaças públicas preservam grupo para seleção compacta sem expor ficha
   assert.equal(json.includes('templateSnapshot'), false);
 });
 
+test('Trilha de Conflito mantém 30 ameaças em grupos sem perder instâncias derrotadas', () => {
+  const g = campaign();
+  const [ana, bia] = g.survivors;
+  g.conflict = conflictScene.createConflictScene({ name:'Horda', sceneNumber:1, day:g.day, time:'08:00', survivorIds:[ana.id, bia.id] });
+  const templates = threats.threatLibrary(g.threats);
+  const errante = templates.find(row => row.name === 'ERRANTE');
+  const corredor = templates.find(row => row.name === 'CORREDOR') ?? errante;
+  conflictScene.addThreatInstances(g.conflict, errante, 20);
+  conflictScene.addThreatInstances(g.conflict, corredor, 10);
+  g.conflict.threats[7].defeated = true;
+
+  const view = collaboration.projectPlayerGame(g, ana.id);
+  assert.equal(view.publicConflict.threats.length, 30);
+  assert.equal(view.publicConflict.threats[7].defeated, true);
+  assert.equal(view.publicConflict.threats.filter(row => row.groupName === errante.name).length >= 20, true);
+});
+
 test('dano de ameaça vira solicitação e Armadura reduz a severidade em um passo', () => {
   const g = campaign();
   const [ana] = g.survivors;
@@ -378,11 +395,21 @@ test('rota de spotlight permite pedir e cancelar sem criar iniciativa ou escreve
 
 test('HUD da ficha reutiliza alvo selecionado nas rolagens de ataque', () => {
   const hud = fs.readFileSync(require.resolve('../components/survivor-conflict-hud.tsx'), 'utf8');
+  const trail = fs.readFileSync(require.resolve('../components/conflict-trail.tsx'), 'utf8');
   const rolls = fs.readFileSync(require.resolve('../components/roll-dialog.tsx'), 'utf8');
+  assert.match(hud, /TRILHA DE CONFLITO/);
   assert.match(hud, /ALVOS DA CENA/);
+  assert.match(hud, /Localizar/);
   assert.match(hud, /Pedir Spotlight/);
   assert.match(hud, /DANO PENDENTE/);
   assert.match(hud, /targets-recent/);
+  assert.match(hud, /onThreatTarget=\{chooseTarget\}/);
+  assert.match(trail, /data-trail-key/);
+  assert.match(trail, /scrollIntoView/);
+  assert.match(trail, /is-spotlight/);
+  assert.match(trail, /is-target/);
+  assert.match(trail, /is-defeated/);
+  assert.doesNotMatch(trail, /próximo turno|ordem de turno|iniciativa/i);
   assert.match(rolls, /targetThreatId\?: string/);
   assert.match(rolls, /useState\(request\?\.targetThreatId/);
 });
