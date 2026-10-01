@@ -23,6 +23,10 @@ export function rollInfo(text: string) {
   const title = weapon ? `Ataque · ${weapon}`
     : /reação/i.test(action) ? `Reação${trait ? ` · ${trait}` : ""}`
     : `Teste${trait ? ` · ${trait}` : ""}`;
-  return { total, hope, fear, modifier, edge, outcome, title };
+  const targetMatch = text.match(/Alvo:\s*(.*?)\.\s*Resultado contra o alvo:\s*(ACERTO|FALHA)/i);
+  const target = targetMatch?.[1]?.trim() ?? "";
+  const targetResult = targetMatch?.[2]?.toUpperCase() === "ACERTO" ? "ACERTO"
+    : targetMatch?.[2]?.toUpperCase() === "FALHA" ? "FALHA" : "";
+  return { total, hope, fear, modifier, edge, outcome, title, target, targetResult };
 }
 
