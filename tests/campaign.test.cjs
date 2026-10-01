@@ -393,10 +393,11 @@ test('rota de spotlight permite pedir e cancelar sem criar iniciativa ou escreve
   assert.doesNotMatch(route, /addLog/);
 });
 
-test('HUD da ficha reutiliza alvo selecionado nas rolagens de ataque', () => {
+test('HUD e rolagem reutilizam a Trilha de Conflito e o alvo selecionado', () => {
   const hud = fs.readFileSync(require.resolve('../components/survivor-conflict-hud.tsx'), 'utf8');
   const trail = fs.readFileSync(require.resolve('../components/conflict-trail.tsx'), 'utf8');
   const rolls = fs.readFileSync(require.resolve('../components/roll-dialog.tsx'), 'utf8');
+  const survivorPanel = fs.readFileSync(require.resolve('../components/survivor-panel.tsx'), 'utf8');
   assert.match(hud, /TRILHA DE CONFLITO/);
   assert.match(hud, /ALVOS DA CENA/);
   assert.match(hud, /Localizar/);
@@ -410,8 +411,14 @@ test('HUD da ficha reutiliza alvo selecionado nas rolagens de ataque', () => {
   assert.match(trail, /is-target/);
   assert.match(trail, /is-defeated/);
   assert.doesNotMatch(trail, /próximo turno|ordem de turno|iniciativa/i);
+  assert.match(rolls, /roll-conflict-dock/);
+  assert.match(rolls, /<ConflictTrail/);
+  assert.match(rolls, /Pedir Spotlight/);
+  assert.match(rolls, /toggleSpotlightRequest/);
+  assert.match(rolls, /onThreatTarget=\{kind === "attack"/);
   assert.match(rolls, /targetThreatId\?: string/);
   assert.match(rolls, /useState\(request\?\.targetThreatId/);
+  assert.match(survivorPanel, /playerMode=\{playerMode\}/);
 });
 
 test('rota de dano exige o sobrevivente alvo e resolve PV ou Armadura no servidor', () => {
