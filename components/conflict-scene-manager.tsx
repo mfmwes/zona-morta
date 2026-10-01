@@ -14,7 +14,9 @@ import {
   endConflictScene,
   removeConflictParticipant,
   setConflictSpotlight,
+  publicConflictScene,
   type ConflictParticipantRef,
+  type PublicConflictScene,
 } from "@/lib/conflict";
 import { threatLibrary } from "@/lib/threats";
 
@@ -29,6 +31,92 @@ function participantLabel(game: GameState, ref: ConflictParticipantRef | null) {
   if (!ref) return null;
   if (ref.kind === "survivor") return game.survivors.find(person => person.id === ref.id)?.name ?? "Sobrevivente removido";
   return game.conflict?.threats.find(threat => threat.id === ref.id)?.name ?? "Ameaça removida";
+}
+
+
+function publicParticipantLabel(conflict: PublicConflictScene, ref: ConflictParticipantRef | null) {
+  if (!ref) return null;
+  if (ref.kind === "survivor") return conflict.survivors.find(person => person.id === ref.id)?.name ?? null;
+  return conflict.threats.find(threat => threat.id === ref.id)?.name ?? null;
+}
+
+export function PlayerConflictScene({ game, selfId = null }: { game: GameState; selfId?: string | null }) {
+  const conflict = game.publicConflict
+    ?? (game.conflict?.active ? publicConflictScene(game.conflict, game.survivors) : undefined);
+  if (!conflict?.active) return null;
+
+  const spotlightName = publicParticipantLabel(conflict, conflict.spotlight);
+  const ownSpotlight = conflict.spotlight?.kind === "survivor" && conflict.spotlight.id === selfId;
+
+  return <div className="conflict-manager conflict-public-view">
+    <section className="panel conflict-hero conflict-public-hero">
+      <div className="conflict-hero-main">
+        <div>
+          <p className="dossier-title">Cena {conflict.sceneNumber} · conflito ativo</p>
+          <h2>{conflict.name}</h2>
+          <p>Iniciado no Dia {conflict.startedDay} · {conflict.startedTime} · {conflict.survivors.length + conflict.threats.length} participante(s)</p>
+        </div>
+        <span className="conflict-public-badge">VISÃO DA MESA</span>
+      </div>
+
+      <div className={`conflict-spotlight${conflict.spotlight ? " has-focus" : ""}${ownSpotlight ? " is-self" : ""}`} role="status" aria-live="polite">
+        <div className="conflict-spotlight-icon"><Crosshair size={22} aria-hidden="true" /></div>
+        <div className="conflict-spotlight-copy">
+          <span className="conflict-spotlight-kicker"><span className="conflict-spotlight-dot" aria-hidden="true" /> SPOTLIGHT ATUAL</span>
+          <strong>{ownSpotlight ? "Seu personagem" : spotlightName ?? "Sem foco definido"}</strong>
+          <span>{conflict.spotlight
+            ? ownSpotlight
+              ? "Você está com o foco narrativo."
+              : conflict.spotlight.kind === "survivor" ? "Sobrevivente em foco narrativo" : "Ameaça em foco narrativo"
+            : "O mestre decide livremente quem recebe o foco."}</span>
+        </div>
+      </div>
+      <p className="conflict-rule-note">Esta visão mostra apenas informações públicas da cena. Dados mecânicos das ameaças e controles do mestre permanecem ocultos.</p>
+    </section>
+
+    <div className="conflict-public-grid">
+      <section className="panel panel-pad conflict-public-section">
+        <div className="conflict-section-heading"><div><p className="dossier-title">Equipe</p><h3>Sobreviventes em cena</h3></div><span className="tag">{conflict.survivors.length}</span></div>
+        <div className="conflict-public-list">
+          {conflict.survivors.map(person => {
+            const isFocused = conflict.spotlight?.kind === "survivor" && conflict.spotlight.id === person.id;
+            const isSelf = person.id === selfId;
+            return <article key={person.id} data-conflict-kind="survivor" data-conflict-id={person.id} className={`conflict-public-person${isFocused ? " is-focused" : ""}${isSelf ? " is-self" : ""}`}>
+              <div className="conflict-avatar">{person.portrait ? <img src={person.portrait} alt="" /> : person.name.slice(0,2).toUpperCase()}</div>
+              <div className="conflict-public-copy">
+                <div><b>{person.name}</b>{isSelf && <span className="tag">VOCÊ</span>}</div>
+                <small>Sobrevivente</small>
+              </div>
+              {isFocused && <span className="conflict-focus-badge"><Crosshair size={11} /> Spotlight</span>}
+            </article>;
+          })}
+          {!conflict.survivors.length && <p className="conflict-inline-empty">Nenhum sobrevivente público nesta cena.</p>}
+        </div>
+      </section>
+
+      <section className="panel panel-pad conflict-public-section">
+        <div className="conflict-section-heading"><div><p className="dossier-title">Pressão</p><h3>Ameaças visíveis</h3></div><span className="tag">{conflict.threats.length}</span></div>
+        <div className="conflict-public-threat-grid">
+          {conflict.threats.map(threat => {
+            const isFocused = conflict.spotlight?.kind === "threat" && conflict.spotlight.id === threat.id;
+            return <article key={threat.id} data-conflict-kind="threat" data-conflict-id={threat.id} className={`conflict-public-threat${isFocused ? " is-focused" : ""}${threat.defeated ? " is-defeated" : ""}`}>
+              <span className="conflict-threat-icon">{threat.defeated ? <Skull size={18} /> : <ShieldAlert size={18} />}</span>
+              <div className="conflict-public-copy">
+                <b>{threat.name}</b>
+                <small>{threat.defeated ? "Fora de combate" : "Ameaça em cena"}</small>
+                {threat.conditions.length > 0 && <div className="conflict-public-conditions">{threat.conditions.map(condition => <span className="tag" key={condition}>{condition}</span>)}</div>}
+              </div>
+              <div className="conflict-threat-tags">
+                {isFocused && <span className="conflict-focus-badge"><Crosshair size={11} /> Spotlight</span>}
+                {threat.defeated && <span className="tag">DERROTADA</span>}
+              </div>
+            </article>;
+          })}
+          {!conflict.threats.length && <p className="conflict-inline-empty">Nenhuma ameaça visível nesta cena.</p>}
+        </div>
+      </section>
+    </div>
+  </div>;
 }
 
 export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Edit }) {
