@@ -472,6 +472,15 @@ test('prévia dos jogadores mostra Spotlight e oculta Dificuldade e Limiares das
   assert.match(rolls, /Dificuldade e Limiares são ocultos e resolvidos pelo sistema/);
 });
 
+test('Testes rápidos usam container query e não quebram com Chat aberto', () => {
+  const visual = fs.readFileSync(require.resolve('../app/visual-system.css'), 'utf8');
+  assert.match(visual, /character-summary-tests[\s\S]*container-type:inline-size/);
+  assert.match(visual, /@container \(max-width:760px\)/);
+  assert.match(visual, /grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+  assert.match(visual, /@container \(max-width:430px\)/);
+  assert.match(visual, /grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+});
+
 test('Resumo da ficha oferece testes rápidos para todos os atributos', () => {
   const panel = fs.readFileSync(require.resolve('../components/survivor-panel.tsx'), 'utf8');
   const styles = fs.readFileSync(require.resolve('../app/globals.css'), 'utf8');
