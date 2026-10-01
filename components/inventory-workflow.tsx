@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Counter, Field, Pick } from "@/components/game-controls";
 import { ItemArt } from "@/components/item-art";
-import { addLog, ammunitionCount, ammunitionTypes, survivorHex, survivorStats, type AmmunitionType, type EquipmentSlot, type GameState, type InventoryItem } from "@/lib/game";
+import { addLog, ammunitionCount, ammunitionItemType, ammunitionTypes, survivorHex, survivorStats, type AmmunitionType, type EquipmentSlot, type GameState, type InventoryItem } from "@/lib/game";
 import { createId } from "@/lib/id";
 import { addStack, atSharedStorage, batteryStateFor, batteryTargets, catalogForItem, catalogItemCanUse, catalogItemIsConsumable, catalogItems, catalogKey, compatibleSlots, conditions,
   container, countsAsMedication, displacedSlots, equipItem, inventoryCategories, itemFromCatalog,
@@ -114,7 +114,10 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
   const targets = actionOptions.targets;
   const destination = targets.some(x => x.value === targetId) ? targetId : targets[0]?.value ?? "";
   const selectedSlot = slots.includes(slot) ? slot : slots[0];
-  const count = Math.max(1, Math.min(item.qty, amount));
+  const ammoType = ammunitionItemType(item);
+  const committedAmmo = ammoType ? Math.max(0, Math.min(item.qty, item.committedAmmo ?? 0)) : 0;
+  const movableUnits = Math.max(0, item.qty - committedAmmo);
+  const count = Math.max(1, Math.min(item.qty, ammoType ? Math.max(1, movableUnits) : item.qty, amount));
   const current = catalogForItem(item);
   const displaced = mode === "equip" && bearer && selectedSlot ? displacedSlots(bearer, item, selectedSlot).map(key => bearer[key]) : [];
   const provisionState = provisionItemInfo(item);
@@ -166,7 +169,10 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
         const found = container(draft, ownerId)?.find(entry => entry.id === item.id);
         if (found) {
           found.condition = conditionDraft;
-          if (allowCorrection) { found.qty = qtyDraft; found.load = loadDraft; }
+          if (allowCorrection) {
+            found.qty = Math.max(found.committedAmmo ?? 0, qtyDraft);
+            if (!ammunitionItemType(found)) found.load = loadDraft;
+          }
           message = ownerName(draft, ownerId) + ": registro de " + item.name + " atualizado.";
           addLog(draft, "inventário", message, person?.id);
         }
@@ -211,7 +217,7 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
   return <Dialog open={open} onOpenChange={openDialog}>
     <DialogTrigger asChild><Button size="sm" variant="outline" aria-label={`Ações de ${item.name}`}><ArrowLeftRight size={15} /> Ações</Button></DialogTrigger>
     <DialogContent className="inventory-dialog"><DialogHeader><DialogTitle className="inventory-action-title"><ItemArt name={item.name} category={current?.category ?? item.category} size="small" />{item.name}</DialogTitle>
-      <DialogDescription>{ownerName(game, ownerId)} · {item.qty} unidade(s) · {item.load} espaço(s) por unidade · {item.condition ?? "Estado não registrado"}{batteryStateFor(item) ? ` · bateria ${batteryStateFor(item)?.toLowerCase()}` : ""}</DialogDescription></DialogHeader>
+      <DialogDescription>{ownerName(game, ownerId)} · {item.qty} unidade(s) · {ammoType ? `${Math.ceil(item.qty / 4)} espaço(s) no total` : `${item.load} espaço(s) por unidade`} · {item.condition ?? "Estado não registrado"}{committedAmmo ? ` · ${committedAmmo} comprometida(s) nesta cena` : ""}{batteryStateFor(item) ? ` · bateria ${batteryStateFor(item)?.toLowerCase()}` : ""}</DialogDescription></DialogHeader>
       {current && <details className="inventory-reference"><summary>Consultar efeito e prazo</summary>
         <dl>{current.fields.map(field => <div key={field.label}><dt>{field.label}</dt><dd>{field.value}</dd></div>)}</dl></details>}
       <div className="inventory-action-tabs">
@@ -232,9 +238,10 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
         {actionOptions.canDiscard && <button type="button" aria-pressed={mode === "discard"} onClick={() => { setMode("discard"); setConfirmDiscard(false); }}>Deixar</button>}
       </div>
       {mode === "edit" && <><Pick label="Estado do item" value={conditionDraft} options={conditions} onChange={setConditionDraft} />
-        {allowCorrection && <div className="inventory-corrections"><Counter compact label="Quantidade total" value={qtyDraft} min={1} max={99} onChange={setQtyDraft} />
-          <Counter compact label="Carga por unidade" value={loadDraft} min={0} max={9} onChange={setLoadDraft} /></div>}
+        {allowCorrection && <div className="inventory-corrections"><Counter compact label="Quantidade total" value={qtyDraft} min={Math.max(1, committedAmmo)} max={99} onChange={setQtyDraft} />
+          {!ammoType && <Counter compact label="Carga por unidade" value={loadDraft} min={0} max={9} onChange={setLoadDraft} />}</div>}
         <p className="roll-hint">As alterações só entram na ficha ao salvar.</p></>}
+      {ammoType && committedAmmo > 0 && <p className="inventory-hint">Há <b>{committedAmmo}</b> unidade(s) comprometida(s) por disparos nesta cena. Elas permanecem no inventário e não podem ser transferidas, descartadas ou colocadas no carrinho até a próxima cena.</p>}
       {mode === "transfer" && destination && <Pick label="Destino" value={destination} options={targets} onChange={setTargetId} />}
       {mode === "transfer" && !destination && <p className="inventory-hint">Nenhum destino acessível neste local.</p>}
       {mode === "equip" && selectedSlot && <><Pick label="Espaço do kit" value={selectedSlot} options={slots.map(value => ({ value, label: slotLabels[value] }))} onChange={value => setSlot(value as EquipmentSlot)} />
@@ -283,7 +290,7 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
       {mode === "stock" && <p className="inventory-hint">Cada unidade física vira uma unidade nas reservas compartilhadas. O objeto sai do inventário para evitar contagem dupla.</p>}
       {mode === "discard" && <p className="inventory-hint inventory-danger">{confirmDiscard ? "Confirmar: as unidades serão retiradas da ficha e o descarte aparecerá no registro." : "Deixar para trás retira o item sem criar uma reserva nova no mapa."}</p>}
       {!["equip", "edit", "consume", "recharge", "fill-water", "fill-fuel", "empty-container"].includes(mode) && !(mode === "cart" && item.name === "Carrinho dobrável") && !(mode === "use" && !catalogItemIsConsumable(item)) &&
-        <Counter label="Unidades" value={count} min={1} max={item.qty} onChange={setAmount} compact />}
+        <Counter label="Unidades" value={count} min={1} max={Math.max(1, ammoType ? movableUnits : item.qty)} onChange={setAmount} compact />}
       {mode === "transfer" && destination && <p className="roll-hint">{count}× {item.name} → {ownerName(game, destination)}. Permanecem {item.qty - count} na origem.</p>}
       <DialogFooter><Button variant="outline" onClick={close}>Cancelar</Button>
         <Button variant={mode === "discard" ? "destructive" : "default"} disabled={(mode === "transfer" && !destination) || (mode === "equip" && !selectedSlot)
