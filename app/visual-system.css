@@ -1098,29 +1098,29 @@ html[data-theme="dark"] .project-helpers {
 }
 
 
-/* Threat manager: readable cards in the reference index. */
-.reference-panel .threat-manager {
+/* Threat manager: readable cards in its master-only section. */
+.threat-manager {
   display:grid;
   gap:18px;
 }
-.reference-panel .threat-manager-heading {
+.threat-manager-heading {
   display:flex;
   align-items:flex-start;
   justify-content:space-between;
   gap:16px;
   flex-wrap:wrap;
 }
-.reference-panel .threat-manager-heading > div {
+.threat-manager-heading > div {
   min-width:0;
   flex:1;
 }
-.reference-panel .threat-manager-toolbar {
+.threat-manager-toolbar {
   display:grid;
   grid-template-columns:minmax(240px,1fr) minmax(170px,240px) auto;
   align-items:end;
   gap:10px;
 }
-.reference-panel .threat-search {
+.threat-search {
   min-height:40px;
   display:flex;
   align-items:center;
@@ -1131,7 +1131,7 @@ html[data-theme="dark"] .project-helpers {
   background:var(--surface-raised);
   color:var(--muted-foreground);
 }
-.reference-panel .threat-search input {
+.threat-search input {
   min-width:0;
   width:100%;
   border:0;
@@ -1139,12 +1139,12 @@ html[data-theme="dark"] .project-helpers {
   background:transparent;
   color:var(--foreground);
 }
-.reference-panel .threat-grid {
+.threat-grid {
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));
   gap:12px;
 }
-.reference-panel .threat-card {
+.threat-card {
   display:grid;
   gap:12px;
   width:100%;
@@ -1161,19 +1161,19 @@ html[data-theme="dark"] .project-helpers {
   box-shadow:0 2px 8px #163a3608;
   transition:transform .16s,border-color .16s,box-shadow .16s;
 }
-.reference-panel .threat-card:hover {
+.threat-card:hover {
   transform:translateY(-2px);
   border-color:#76a498;
   box-shadow:0 8px 18px #163a3618;
 }
-.reference-panel .threat-card-heading {
+.threat-card-heading {
   display:grid;
   grid-template-columns:36px minmax(0,1fr) auto;
   align-items:center;
   gap:10px;
   min-width:0;
 }
-.reference-panel .threat-card-icon {
+.threat-card-icon {
   display:grid;
   place-items:center;
   width:36px;
@@ -1183,19 +1183,19 @@ html[data-theme="dark"] .project-helpers {
   background:color-mix(in srgb,#5e8e84 12%,var(--surface-raised));
   color:#4b766d;
 }
-.reference-panel .threat-card-identity {
+.threat-card-identity {
   display:grid;
   gap:3px;
   min-width:0;
 }
-.reference-panel .threat-card-meta {
+.threat-card-meta {
   display:block;
   color:var(--muted-foreground);
   font:700 .67rem var(--font-mono);
   letter-spacing:.04em;
   text-transform:uppercase;
 }
-.reference-panel .threat-card-title {
+.threat-card-title {
   display:block;
   overflow-wrap:anywhere;
   color:var(--foreground);
@@ -1203,7 +1203,7 @@ html[data-theme="dark"] .project-helpers {
   font-weight:850;
   line-height:1.2;
 }
-.reference-panel .threat-card-description {
+.threat-card-description {
   display:-webkit-box;
   min-height:2.5em;
   overflow:hidden;
@@ -1213,14 +1213,14 @@ html[data-theme="dark"] .project-helpers {
   -webkit-box-orient:vertical;
   -webkit-line-clamp:2;
 }
-.reference-panel .threat-card-stats {
+.threat-card-stats {
   display:grid;
   grid-template-columns:repeat(4,minmax(0,1fr));
   overflow:hidden;
   border:1px solid var(--border);
   border-radius:7px;
 }
-.reference-panel .threat-card-stats > span {
+.threat-card-stats > span {
   display:grid;
   gap:3px;
   min-width:0;
@@ -1228,10 +1228,10 @@ html[data-theme="dark"] .project-helpers {
   border-right:1px solid var(--border);
   background:color-mix(in srgb,var(--muted) 34%,transparent);
 }
-.reference-panel .threat-card-stats > span:last-child {
+.threat-card-stats > span:last-child {
   border-right:0;
 }
-.reference-panel .threat-card-stats small {
+.threat-card-stats small {
   display:block;
   overflow-wrap:anywhere;
   color:var(--muted-foreground);
@@ -1240,13 +1240,13 @@ html[data-theme="dark"] .project-helpers {
   letter-spacing:.05em;
   text-transform:uppercase;
 }
-.reference-panel .threat-card-stats b {
+.threat-card-stats b {
   display:block;
   color:var(--foreground);
   font:800 .84rem var(--font-mono);
   line-height:1.25;
 }
-.reference-panel .threat-card-attack {
+.threat-card-attack {
   display:grid;
   grid-template-columns:minmax(0,auto) minmax(0,1fr);
   align-items:start;
@@ -1254,12 +1254,12 @@ html[data-theme="dark"] .project-helpers {
   padding-top:10px;
   border-top:1px solid var(--border);
 }
-.reference-panel .threat-card-attack b {
+.threat-card-attack b {
   overflow-wrap:anywhere;
   color:var(--foreground);
   font-size:.78rem;
 }
-.reference-panel .threat-card-attack span {
+.threat-card-attack span {
   min-width:0;
   overflow-wrap:anywhere;
   color:var(--muted-foreground);
@@ -1267,37 +1267,37 @@ html[data-theme="dark"] .project-helpers {
   line-height:1.4;
   text-align:right;
 }
-html[data-theme="dark"] .reference-panel .threat-card,
-html[data-theme="dark"] .reference-panel .threat-search {
+html[data-theme="dark"] .threat-card,
+html[data-theme="dark"] .threat-search {
   border-color:var(--border);
   background:var(--card);
   color:var(--foreground);
 }
-html[data-theme="dark"] .reference-panel .threat-card-icon {
+html[data-theme="dark"] .threat-card-icon {
   background:#203431;
   color:#a9d0c6;
 }
-html[data-theme="dark"] .reference-panel .threat-card:hover {
+html[data-theme="dark"] .threat-card:hover {
   border-color:#5f887f;
   box-shadow:0 8px 20px #0000002e;
 }
 @media (max-width:760px) {
-  .reference-panel .threat-manager-toolbar {
+  .threat-manager-toolbar {
     grid-template-columns:1fr;
   }
-  .reference-panel .threat-manager-toolbar > .tag {
+  .threat-manager-toolbar > .tag {
     justify-self:start;
   }
-  .reference-panel .threat-card {
+  .threat-card {
     min-height:0;
   }
-  .reference-panel .threat-card-stats {
+  .threat-card-stats {
     grid-template-columns:repeat(2,minmax(0,1fr));
   }
-  .reference-panel .threat-card-stats > span:nth-child(2) {
+  .threat-card-stats > span:nth-child(2) {
     border-right:0;
   }
-  .reference-panel .threat-card-stats > span:nth-child(-n+2) {
+  .threat-card-stats > span:nth-child(-n+2) {
     border-bottom:1px solid var(--border);
   }
 }
