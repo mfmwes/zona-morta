@@ -31,6 +31,66 @@ export type ConflictScene = {
   notes: string;
 };
 
+export type PublicConflictSurvivor = {
+  id: string;
+  name: string;
+  portrait?: string;
+};
+
+export type PublicConflictThreat = {
+  id: string;
+  name: string;
+  defeated: boolean;
+  conditions: string[];
+};
+
+export type PublicConflictScene = {
+  id: string;
+  name: string;
+  active: true;
+  sceneNumber: number;
+  startedDay: number;
+  startedTime: string;
+  survivors: PublicConflictSurvivor[];
+  threats: PublicConflictThreat[];
+  spotlight: ConflictParticipantRef | null;
+};
+
+export function publicConflictScene(
+  scene: ConflictScene,
+  survivors: Array<{ id: string; name: string; portrait?: string }>,
+): PublicConflictScene | undefined {
+  if (!scene.active) return undefined;
+  const survivorById = new Map(survivors.map(person => [person.id, person]));
+  const publicSurvivors = scene.survivorIds.flatMap(id => {
+    const person = survivorById.get(id);
+    return person ? [{ id: person.id, name: person.name, ...(person.portrait ? { portrait: person.portrait } : {}) }] : [];
+  });
+  const publicThreats = scene.threats.map(threat => ({
+    id: threat.id,
+    name: threat.name,
+    defeated: threat.defeated,
+    conditions: [...threat.conditions],
+  }));
+  const spotlight = scene.spotlight
+    && (scene.spotlight.kind === "survivor"
+      ? publicSurvivors.some(person => person.id === scene.spotlight!.id)
+      : publicThreats.some(threat => threat.id === scene.spotlight!.id))
+    ? { ...scene.spotlight }
+    : null;
+  return {
+    id: scene.id,
+    name: scene.name,
+    active: true,
+    sceneNumber: scene.sceneNumber,
+    startedDay: scene.startedDay,
+    startedTime: scene.startedTime,
+    survivors: publicSurvivors,
+    threats: publicThreats,
+    spotlight,
+  };
+}
+
 function alphabeticLabel(index: number) {
   let value = Math.max(0, Math.trunc(index));
   let label = "";
