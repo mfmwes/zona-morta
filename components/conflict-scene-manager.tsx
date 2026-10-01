@@ -18,6 +18,7 @@ import {
   removeThreatCondition,
   resolveSurvivorDamageTier,
   parseThreatDamageFormula,
+  queueSurvivorDamage,
   setConflictSpotlight,
   setThreatHpMarked,
   setThreatStressMarked,
@@ -54,12 +55,42 @@ function publicParticipantLabel(conflict: PublicConflictScene, ref: ConflictPart
 }
 
 export function PlayerConflictScene({ game, selfId = null }: { game: GameState; selfId?: string | null }) {
+  const [resolvingDamage, setResolvingDamage] = useState<string | null>(null);
+  const [damageError, setDamageError] = useState("");
   const conflict = game.publicConflict
-    ?? (game.conflict?.active ? publicConflictScene(game.conflict, game.survivors) : undefined);
+    ?? (game.conflict?.active ? publicConflictScene(game.conflict, game.survivors, selfId) : undefined);
   if (!conflict?.active) return null;
 
   const spotlightName = publicParticipantLabel(conflict, conflict.spotlight);
   const ownSpotlight = conflict.spotlight?.kind === "survivor" && conflict.spotlight.id === selfId;
+  const self = selfId ? game.survivors.find(person => person.id === selfId) ?? null : null;
+  const selfStats = self ? survivorStats(self) : null;
+  const freeArmor = self && selfStats ? Math.max(0, selfStats.armor - (self.armorMarked ?? 0)) : 0;
+
+  async function resolvePendingDamage(requestId: string, resolution: "hp" | "armor") {
+    if (resolvingDamage) return;
+    setResolvingDamage(requestId);
+    setDamageError("");
+    try {
+      const response = await fetch(`/api/campaign/damage?campanha=${encodeURIComponent(game.campaignId)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId, resolution }),
+      });
+      const payload = await response.json() as { error?: string; resolution?: { hpMarks: number; armorUsed: number } };
+      if (!response.ok) throw new Error(payload.error || "Não foi possível resolver o dano.");
+      toast.success(resolution === "armor" ? "Armadura usada" : "Dano marcado", {
+        description: resolution === "armor"
+          ? `1 Armadura marcada · ${payload.resolution?.hpMarks ?? 0} PV recebidos.`
+          : `${payload.resolution?.hpMarks ?? 0} PV marcados.`,
+      });
+      window.dispatchEvent(new CustomEvent("zona-morta:campaign-refresh"));
+    } catch (error) {
+      setDamageError(error instanceof Error ? error.message : "Não foi possível resolver o dano.");
+    } finally {
+      setResolvingDamage(null);
+    }
+  }
 
   return <div className="conflict-manager conflict-public-view">
     <section className="panel conflict-hero conflict-public-hero">
@@ -86,6 +117,37 @@ export function PlayerConflictScene({ game, selfId = null }: { game: GameState; 
       </div>
       <p className="conflict-rule-note">Esta visão mostra apenas informações públicas da cena. Dados mecânicos das ameaças e controles do mestre permanecem ocultos.</p>
     </section>
+
+    {conflict.pendingDamage.length > 0 && <section className="panel panel-pad conflict-damage-inbox" aria-live="polite">
+      <div className="conflict-damage-inbox-heading">
+        <div><p className="dossier-title">Dano pendente</p><h3>Escolha como receber o impacto</h3>
+          <p>O dano só é marcado depois da sua decisão. Usar 1 espaço de Armadura reduz a severidade em um passo.</p></div>
+        <span className="tag">{conflict.pendingDamage.length}</span>
+      </div>
+      <div className="conflict-damage-request-list">
+        {conflict.pendingDamage.map(request => {
+          const armorHp = Math.max(0, request.tier.hpMarks - 1);
+          const busy = resolvingDamage === request.id;
+          return <article key={request.id} className="conflict-damage-request">
+            <div className="conflict-damage-source"><span className="conflict-threat-icon"><Swords size={17} /></span>
+              <div><small>{request.sourceName}</small><strong>{request.attackName}</strong></div>
+              <span className={`conflict-damage-tier is-${request.tier.key}`}>{request.tier.label}</span></div>
+            <div className="conflict-damage-numbers">
+              <span><small>Dano rolado</small><b>{request.damage}</b><em>{request.damageType}</em></span>
+              <span><small>PV sem Armadura</small><b>{request.tier.hpMarks}</b><em>a marcar</em></span>
+              <span><small>Armadura livre</small><b>{freeArmor}</b><em>{selfStats ? `de ${selfStats.armor}` : "espaços"}</em></span>
+            </div>
+            <div className="conflict-damage-actions">
+              <Button disabled={busy} onClick={() => void resolvePendingDamage(request.id, "hp")}>Marcar {request.tier.hpMarks} PV</Button>
+              <Button variant="outline" disabled={busy || freeArmor < 1} onClick={() => void resolvePendingDamage(request.id, "armor")}>
+                <ShieldAlert size={15} /> Usar 1 Armadura → {armorHp} PV
+              </Button>
+            </div>
+          </article>;
+        })}
+      </div>
+      {damageError && <p className="conflict-damage-error" role="alert">{damageError}</p>}
+    </section>}
 
     <div className="conflict-public-grid">
       <section className="panel panel-pad conflict-public-section">
@@ -306,7 +368,20 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
     const result = { d20, total, evasion: stats.evasion, hit, damage, tier, targetName: target.name, attackName: attack.name };
     setThreatActionResult(result);
     edit(draft => {
-      addLog(draft, "ameaça", `${actingThreat.name}: ${attack.name} contra ${target.name} — d20 ${d20} ${attack.bonus >= 0 ? "+" : "−"} ${Math.abs(attack.bonus)} = ${total} vs Evasão ${stats.evasion}: ${hit ? "ACERTO" : "FALHA"}.${hit ? ` Dano ${damage} ${attack.damageType} → ${tier.label.toUpperCase()} (${tier.hpMarks} PV). Aplique dano ou Armadura na ficha do alvo.` : ""}`);
+      const scene = draft.conflict;
+      if (!scene?.active) return;
+      const request = hit && tier.hpMarks > 0 ? queueSurvivorDamage(scene, {
+        targetSurvivorId: target.id,
+        sourceThreatId: actingThreat.id,
+        sourceName: actingThreat.name,
+        attackName: attack.name,
+        damage,
+        damageType: attack.damageType,
+        tier,
+        day: draft.day,
+        time: displayTime(draft.minutes),
+      }) : null;
+      addLog(draft, "ameaça", `${actingThreat.name}: ${attack.name} contra ${target.name} — d20 ${d20} ${attack.bonus >= 0 ? "+" : "−"} ${Math.abs(attack.bonus)} = ${total} vs Evasão ${stats.evasion}: ${hit ? "ACERTO" : "FALHA"}.${hit ? ` Dano ${damage} ${attack.damageType} → ${tier.label.toUpperCase()} (${tier.hpMarks} PV).${request ? " Aguardando decisão do alvo: PV ou Armadura." : ""}` : ""}`);
     });
   }
 
@@ -409,7 +484,7 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
             const isFocused = conflict.spotlight?.kind === "survivor" && conflict.spotlight.id === person.id;
             return <article key={person.id} data-conflict-kind="survivor" data-conflict-id={person.id} className={`conflict-person${isFocused ? " is-focused" : ""}`}>
               <div className="conflict-avatar">{person.portrait ? <img src={person.portrait} alt="" /> : person.name.slice(0,2).toUpperCase()}</div>
-              <div className="conflict-person-copy"><div className="conflict-person-name"><b>{person.name}</b>{isFocused && <span className="conflict-focus-badge"><Crosshair size={11} /> Spotlight</span>}</div><small>{person.archetype} · {person.specialty}</small>
+              <div className="conflict-person-copy"><div className="conflict-person-name"><b>{person.name}</b>{isFocused && <span className="conflict-focus-badge"><Crosshair size={11} /> Spotlight</span>}{(conflict.damageRequests ?? []).some(request => request.status === "pending" && request.targetSurvivorId === person.id) && <span className="conflict-damage-pending-badge">Dano pendente</span>}</div><small>{person.archetype} · {person.specialty}</small>
                 <div className="conflict-survivor-resources">
                   <ResourceMeter label="PV marcados" value={person.hp} max={stats.hp} tone="hp" />
                   <ResourceMeter label="Estresse" value={person.stress} max={6} tone="stress" />
