@@ -1,4 +1,4 @@
-import { addLog, survivorHex, survivorStats, type GameState } from "./game";
+import { addLog, displayTime, survivorHex, survivorStats, type GameState } from "./game";
 import { rollDie } from "./rolls";
 import { consumeShelterComfortRest } from "./shelter-projects";
 import { settleSceneAmmunition } from "./combat-resources";
