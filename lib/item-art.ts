@@ -1,15 +1,11 @@
 // The five 4×4 painted atlases contain sixteen isolated objects each.
 // The catalogue keeps names and mechanics independent from artwork.
-export type ArtSheet = "weapons" | "clothing" | "provisions" | "care" | "extra";
-export type ItemArtRef = { sheet: ArtSheet; cell: number; badge?: string };
+export type ArtSheet = "weapons" | "clothing" | "provisions" | "care" | "extra" | "custom-ammo" | "custom-gear" | "custom-supplies";
+export type ItemArtRef = { sheet: ArtSheet; cell: number };
 
 const named = new Map<string, ItemArtRef>();
 function register(sheet: ArtSheet, cell: number, names: string) {
   for (const name of names.split("|")) named.set(name.trim(), { sheet, cell });
-}
-function badgeItem(name: string, badge: string) {
-  const current = named.get(name);
-  if (current) named.set(name, { ...current, badge });
 }
 
 register("weapons", 0, "Faca resistente|Canivete robusto|Faca pequena|Canivete simples");
@@ -113,46 +109,46 @@ register("provisions", 13, "Carne seca embalada");
 register("provisions", 14, "Chocolate fechado");
 register("provisions", 15, "Refeição congelada|Ração de emergência|Comida (1 unidade)");
 
-named.set("Munição (1 carga)", { sheet: "weapons", cell: 10, badge: "M" });
-named.set("Munição de Pistola", { sheet: "weapons", cell: 10, badge: "P" });
-named.set("Munição de Espingarda", { sheet: "weapons", cell: 12, badge: "12" });
-named.set("Munição de Carabina", { sheet: "weapons", cell: 13, badge: "C" });
-named.set("Munição de Flechas", { sheet: "weapons", cell: 8, badge: "F" });
-named.set("Munição de Virotes", { sheet: "weapons", cell: 9, badge: "V" });
-named.set("Munição de Chumbinhos", { sheet: "weapons", cell: 7, badge: "BB" });
-named.set("Munição de Outra", { sheet: "weapons", cell: 11, badge: "?" });
-named.set("Kit de pilhas", { sheet: "care", cell: 9, badge: "BAT" });
-named.set("Sinalizador de mão", { sheet: "extra", cell: 7, badge: "SOS" });
+// Artes próprias para itens que antes eram diferenciados apenas por selo sobre um objeto reutilizado.
+register("custom-ammo", 0, "Munição (1 carga)");
+register("custom-ammo", 1, "Munição de Pistola");
+register("custom-ammo", 2, "Munição de Espingarda");
+register("custom-ammo", 3, "Munição de Carabina");
+register("custom-ammo", 4, "Munição de Flechas");
+register("custom-ammo", 5, "Munição de Virotes");
+register("custom-ammo", 6, "Munição de Chumbinhos");
+register("custom-ammo", 7, "Munição de Outra");
+register("custom-ammo", 8, "Kit de pilhas");
+register("custom-ammo", 9, "Sinalizador de mão");
 
-// Quando o mesmo objeto-base representa uma variação legítima, um selo curto
-// evita cartões visualmente idênticos sem trocar a arte por algo semanticamente errado.
-badgeItem("Traje de bombeiro", "BOM");
-badgeItem("Colete refletivo", "REF");
-badgeItem("Uniforme de segurança", "SEG");
-badgeItem("Roupa de trilha", "TR");
-badgeItem("Jaqueta de motociclista", "MOTO");
-badgeItem("Roupa térmica", "TERM");
-badgeItem("Mochila urbana", "U");
-badgeItem("Mochila de trilha", "TR");
-badgeItem("Mochila cargueira", "C");
-badgeItem("Lanterna pesada", "PES");
-badgeItem("Lanterna frontal", "FR");
-badgeItem("Kit de higiene", "HIG");
-badgeItem("Documento ou crachá", "ID");
-badgeItem("Fotografias e cartas", "FOTO");
-badgeItem("Filtro portátil", "FIL");
-badgeItem("Pastilhas de purificação", "H2O");
-badgeItem("Medicamento prescrito identificado", "RX");
-badgeItem("Antibiótico prescrito", "AB");
-badgeItem("Solução de limpeza lacrada", "ANT");
-badgeItem("Soro fisiológico lacrado", "SF");
-badgeItem("Água de torneira sem verificação", "?");
-badgeItem("Garrafa sem rótulo", "?");
-badgeItem("Bebida isotônica lacrada", "ISO");
-badgeItem("Bebida energética fechada", "EN");
-badgeItem("Cerveja ou vinho", "ALC");
-badgeItem("Aveia", "AV");
-badgeItem("Leite em pó", "LP");
+register("custom-gear", 0, "Traje de bombeiro");
+register("custom-gear", 1, "Colete refletivo");
+register("custom-gear", 2, "Uniforme de segurança");
+register("custom-gear", 3, "Roupa de trilha");
+register("custom-gear", 4, "Jaqueta de motociclista");
+register("custom-gear", 5, "Roupa térmica");
+register("custom-gear", 6, "Mochila urbana");
+register("custom-gear", 7, "Mochila de trilha");
+register("custom-gear", 8, "Mochila cargueira");
+register("custom-gear", 9, "Lanterna pesada");
+register("custom-gear", 10, "Lanterna frontal");
+register("custom-gear", 11, "Kit de higiene");
+register("custom-gear", 12, "Documento ou crachá");
+register("custom-gear", 13, "Fotografias e cartas");
+
+register("custom-supplies", 0, "Filtro portátil");
+register("custom-supplies", 1, "Pastilhas de purificação");
+register("custom-supplies", 2, "Medicamento prescrito identificado");
+register("custom-supplies", 3, "Antibiótico prescrito");
+register("custom-supplies", 4, "Solução de limpeza lacrada");
+register("custom-supplies", 5, "Soro fisiológico lacrado");
+register("custom-supplies", 6, "Água de torneira sem verificação");
+register("custom-supplies", 7, "Garrafa sem rótulo");
+register("custom-supplies", 8, "Bebida isotônica lacrada");
+register("custom-supplies", 9, "Bebida energética fechada");
+register("custom-supplies", 10, "Cerveja ou vinho");
+register("custom-supplies", 11, "Aveia");
+register("custom-supplies", 12, "Leite em pó");
 
 export function explicitItemArtFor(name: string): ItemArtRef | undefined { return named.get(name); }
 
@@ -164,7 +160,7 @@ export function itemArtFor(name: string, category = ""): ItemArtRef {
     [/mochila|bolsa/, { sheet: "clothing", cell: 8 }],
     [/remedio|medic|curativo|kit medico/, { sheet: "care", cell: 0 }],
     [/pistola|revolver/, { sheet: "weapons", cell: 10 }],
-    [/municao/, { sheet: "weapons", cell: 11, badge: "M" }],
+    [/municao/, { sheet: "custom-ammo", cell: 0 }],
     [/faca|canivete/, { sheet: "weapons", cell: 0 }],
     [/lanterna|luz/, { sheet: "care", cell: 9 }],
     [/agua|garrafa/, { sheet: "provisions", cell: 0 }],
@@ -178,7 +174,7 @@ export function itemArtFor(name: string, category = ""): ItemArtRef {
     "Luz, comunicação e informação": { sheet: "care", cell: 8 },
     "Abrigo, transporte e mochilas": { sheet: "clothing", cell: 8 },
     "Alimentos": { sheet: "provisions", cell: 15 }, "Bebidas": { sheet: "provisions", cell: 0 },
-    "Medicamentos e cuidado": { sheet: "care", cell: 0 }, "Munição": { sheet: "weapons", cell: 11, badge: "M" },
+    "Medicamentos e cuidado": { sheet: "care", cell: 0 }, "Munição": { sheet: "custom-ammo", cell: 0 },
   };
   return fallback[category] ?? { sheet: "clothing", cell: 10 };
 }
