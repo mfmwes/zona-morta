@@ -247,6 +247,25 @@ test('ameaças públicas preservam grupo para seleção compacta sem expor ficha
   assert.equal(json.includes('templateSnapshot'), false);
 });
 
+test('Cena de Conflito usa dashboard compacto, grupos e vocabulário visual consistente', () => {
+  const manager = fs.readFileSync(require.resolve('../components/conflict-scene-manager.tsx'), 'utf8');
+  const visual = fs.readFileSync(require.resolve('../app/visual-system.css'), 'utf8');
+  assert.match(manager, /conflict-overview-metrics/);
+  assert.match(manager, /conflict-workspace/);
+  assert.match(manager, /conflict-threat-groups/);
+  assert.match(manager, /conflict-threat-group-heading/);
+  assert.match(manager, /ThreatRoleIcon/);
+  assert.match(manager, /<Shield size=\{11\}/);
+  assert.match(manager, /<Gauge size=\{11\}/);
+  assert.match(manager, /<HeartPulse size=\{10\}/);
+  assert.match(manager, /<Zap size=\{10\}/);
+  assert.match(manager, /conflict-state-badge is-wounded/);
+  assert.match(manager, /conflict-state-badge is-defeated/);
+  assert.match(visual, /grid-template-columns:minmax\(285px,.68fr\) minmax\(0,2.15fr\)/);
+  assert.match(visual, /conflict-threat-grid/);
+  assert.match(visual, /repeat\(auto-fit,minmax\(275px,1fr\)\)/);
+});
+
 test('Trilha de Conflito mantém 30 ameaças em grupos sem perder instâncias derrotadas', () => {
   const g = campaign();
   const [ana, bia] = g.survivors;
