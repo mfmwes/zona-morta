@@ -39,6 +39,8 @@ export type ThreatTemplate = {
 export type ThreatInstance = {
   id: string;
   templateId: string;
+  /** Snapshot preserva a ficha usada quando a ameaça entrou em cena. */
+  templateSnapshot: ThreatTemplate;
   name: string;
   hpMarked: number;
   stressMarked: number;
@@ -200,6 +202,7 @@ export function instantiateThreat(template: ThreatTemplate, name?: string): Thre
   return {
     id: createId(),
     templateId: template.id,
+    templateSnapshot: structuredClone(template),
     name: name?.trim() || template.name,
     hpMarked: 0,
     stressMarked: 0,
