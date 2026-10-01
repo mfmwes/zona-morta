@@ -39,6 +39,7 @@ function validThreat(value: unknown) {
     && typeof threat.name === "string" && threat.name.length <= 100
     && Number.isInteger(threat.tier) && Number(threat.tier) >= 1 && Number(threat.tier) <= 4
     && typeof threat.role === "string" && threat.role.length <= 60
+    && (threat.image === undefined || (typeof threat.image === "string" && threat.image.length <= 12000))
     && typeof threat.description === "string" && threat.description.length <= 2000
     && typeof threat.motivations === "string" && threat.motivations.length <= 1200
     && Number.isInteger(threat.difficulty) && Number(threat.difficulty) >= 1 && Number(threat.difficulty) <= 99
@@ -155,6 +156,7 @@ function validState(value: unknown): value is GameState {
     && Array.isArray(state.survivors) && state.survivors.length <= 30
     && (state.npcs === undefined || (Array.isArray(state.npcs) && state.npcs.length <= 300
       && state.npcs.every(npc => npc && typeof npc.id === "string" && typeof npc.name === "string"
+        && (npc.portrait === undefined || (typeof npc.portrait === "string" && npc.portrait.length <= 12000))
         && typeof npc.hex === "string" && Array.isArray(npc.skills))))
     && (state.threats === undefined || (Array.isArray(state.threats) && state.threats.length <= 120
       && state.threats.every(validThreat)))
