@@ -46,19 +46,25 @@ function resourceLabel(value: number | null) {
 
 function ThreatCard({ threat, onOpen }: { threat: ThreatTemplate; onOpen: () => void }) {
   return <button type="button" className="threat-card" onClick={onOpen} aria-label={`Abrir ficha de ${threat.name}`}>
-    <div className="threat-card-heading">
+    <span className="threat-card-heading">
       <span className="threat-card-icon"><ShieldAlert size={18} aria-hidden="true" /></span>
-      <span><small>Patamar {threat.tier} · {threat.role}</small><strong>{threat.name}</strong></span>
+      <span className="threat-card-identity">
+        <span className="threat-card-meta">Patamar {threat.tier} · {threat.role}</span>
+        <span className="threat-card-title">{threat.name}</span>
+      </span>
       {threat.source === "custom" && <span className="tag">AUTORAL</span>}
-    </div>
-    <p>{threat.description || "Sem descrição cadastrada."}</p>
-    <div className="threat-card-stats">
+    </span>
+    <span className="threat-card-description">{threat.description || "Sem descrição cadastrada."}</span>
+    <span className="threat-card-stats" aria-label={`Dificuldade ${threat.difficulty}; Limiares ${thresholdsLabel(threat)}; PV ${resourceLabel(threat.maxHp)}; Estresse ${resourceLabel(threat.maxStress)}`}>
       <span><small>Dificuldade</small><b>{threat.difficulty}</b></span>
       <span><small>Limiares</small><b>{thresholdsLabel(threat)}</b></span>
       <span><small>PV</small><b>{resourceLabel(threat.maxHp)}</b></span>
       <span><small>Estresse</small><b>{resourceLabel(threat.maxStress)}</b></span>
-    </div>
-    {threat.attack && <div className="threat-card-attack"><b>{threat.attack.name}</b><span>{threat.attack.bonus >= 0 ? "+" : ""}{threat.attack.bonus} · {threat.attack.range} · {threat.attack.damage} {threat.attack.damageType}</span></div>}
+    </span>
+    {threat.attack && <span className="threat-card-attack">
+      <b>{threat.attack.name}</b>
+      <span>{threat.attack.bonus >= 0 ? "+" : ""}{threat.attack.bonus} · {threat.attack.range} · {threat.attack.damage} {threat.attack.damageType}</span>
+    </span>}
   </button>;
 }
 
