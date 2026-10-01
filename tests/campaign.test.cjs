@@ -84,9 +84,12 @@ test('rolagens históricas e novas mantêm dados, modificadores, resultados e no
   const translated = 'Hope: ação (Acuidade): Esperança 4 + Medo 9 − 2 + d6(3) = 14; Dificuldade 15. Falha com Medo · Experiências: com Hope (−1 Esperança).';
   assert.equal(localizeRollLog(legacy), translated);
   assert.deepEqual(rollInfo(legacy), rollInfo(translated));
-  assert.deepEqual(rollInfo(legacy), { total: '14', hope: '4', fear: '9', modifier: '−2', edge: ' + d6', outcome: 'FALHA COM MEDO', title: 'Teste · Acuidade' });
+  assert.deepEqual(rollInfo(legacy), { total: '14', hope: '4', fear: '9', modifier: '−2', edge: ' + d6', outcome: 'FALHA COM MEDO', title: 'Teste · Acuidade', target: '', targetResult: '' });
   assert.equal(localizeRollLog(translated), translated);
   assert.equal(rollInfo('Ana: ação (Força): Hope 12 + Fear 12 + 1 = 25; Dificuldade 20. Sucesso crítico.').outcome, 'CRÍTICO');
+  const targeted = rollInfo('Ana: ataque com Cano / bastão (Força): Esperança 8 + Medo 5 + 1 = 14; Alvo: ERRANTE A. Resultado contra o alvo: ACERTO. Sucesso com Esperança.');
+  assert.equal(targeted.target, 'ERRANTE A');
+  assert.equal(targeted.targetResult, 'ACERTO');
 });
 
 test('painel de construção não sombreia o Map nativo com ícone', () => {
@@ -141,6 +144,30 @@ test('Cena de Conflito acompanha instâncias e spotlight sem criar ordem de turn
   assert.equal(scene.active, false);
   assert.equal(scene.endedTime, '08:10');
   assert.equal(scene.spotlight, null);
+});
+
+test('alvos de conflito resolvem acerto e faixas de dano sem aplicar PV', () => {
+  const g = campaign();
+  const scene = conflictScene.createConflictScene({ name:'Teste', sceneNumber:1, day:g.day, time:'08:00' });
+  const template = threats.threatLibrary(g.threats).find(row => row.name === 'ERRANTE');
+  const instance = conflictScene.addThreatInstances(scene, template, 1)[0];
+
+  assert.deepEqual(conflictScene.resolveThreatDamageTier(template, 1), { key:'minor', label:'Menor', hpMarks:1 });
+  assert.deepEqual(conflictScene.resolveThreatDamageTier(template, template.majorThreshold), { key:'major', label:'Maior', hpMarks:2 });
+  assert.deepEqual(conflictScene.resolveThreatDamageTier(template, template.severeThreshold), { key:'severe', label:'Severo', hpMarks:3 });
+
+  const miss = conflictScene.resolveThreatAttack(instance, template.difficulty - 1, false, template.majorThreshold);
+  assert.equal(miss.hit, false);
+  assert.equal(miss.damageTier.hpMarks, 2);
+  assert.equal(instance.hpMarked, 0);
+
+  const hit = conflictScene.resolveThreatAttack(instance, template.difficulty, false, template.severeThreshold);
+  assert.equal(hit.hit, true);
+  assert.equal(hit.damageTier.label, 'Severo');
+  assert.equal(instance.hpMarked, 0);
+
+  const critical = conflictScene.resolveThreatAttack(instance, 1, true, 1);
+  assert.equal(critical.hit, true);
 });
 
 test('PV e Estresse das ameaças são trilhas marcadas a partir de zero', () => {
@@ -200,6 +227,15 @@ test('reiniciar cidade preserva fichas, ids e campanha mas limpa o mundo e estad
   assert.equal(g.survivors[0].abilityUses, undefined);
   assert.equal(g.survivors[0].restPlan, undefined);
   assert.equal(g.survivors[0].ammoSpentScene, undefined);
+});
+
+test('resolução privada de alvo existe sem enviar dificuldade ao cliente jogador', () => {
+  const route = fs.readFileSync(require.resolve('../app/api/campaign/target/route.ts'), 'utf8');
+  assert.match(route, /resolveThreatAttack/);
+  assert.match(route, /conflict\.survivorIds\.includes/);
+  assert.doesNotMatch(route, /difficulty:\s*resolution/);
+  assert.doesNotMatch(route, /majorThreshold:\s*resolution/);
+  assert.doesNotMatch(route, /severeThreshold:\s*resolution/);
 });
 
 test('persistência de conta mantém tabela e sincronização de sobreviventes fora do estado da cidade', () => {
