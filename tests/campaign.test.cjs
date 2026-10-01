@@ -1510,3 +1510,193 @@ test('gerador de encontro é local e a projeção pública não revela seus segr
   assert.deepEqual(view.shelter.projects[0].helperIds, []);
   assert.equal(view.shelter.projects[0].responsibleId, undefined);
 });
+
+
+test('integridade estrutural degrada de íntegra a destruída e suspende operação em 1/3', () => {
+  const g = campaign();
+  assert.equal(require('../lib/game.ts').establishShelter(g, '0,0'), true);
+  const barricades = shelterProjects.createShelterProject('barricades');
+  barricades.state = 'Concluído'; barricades.progress = barricades.requiredProgress;
+  g.shelter.projects.push(barricades);
+  assert.equal(shelterProjects.projectIntegrity(barricades), 3);
+  assert.equal(shelterProjects.projectOperational(g, g.shelter, barricades), true);
+
+  assert.equal(shelterProjects.applyProjectDamage(barricades, 1), 1);
+  assert.equal(barricades.state, 'Danificado');
+  assert.equal(shelterProjects.projectIntegrity(barricades), 2);
+  assert.equal(shelterProjects.projectOperational(g, g.shelter, barricades), true);
+
+  shelterProjects.applyProjectDamage(barricades, 1);
+  assert.equal(barricades.state, 'Inoperante');
+  assert.equal(shelterProjects.projectIntegrity(barricades), 1);
+  assert.equal(shelterProjects.projectOperational(g, g.shelter, barricades), false);
+
+  shelterProjects.applyProjectDamage(barricades, 1);
+  assert.equal(barricades.state, 'Destruído');
+  assert.equal(shelterProjects.projectIntegrity(barricades), 0);
+});
+
+test('incidentes usam Segurança e Portão para mitigar Impacto e distribuem dano comum', () => {
+  const g = campaign();
+  assert.equal(require('../lib/game.ts').establishShelter(g, '0,0'), true);
+  const gate = shelterProjects.createShelterProject('reinforced-gate');
+  gate.state = 'Concluído'; gate.progress = gate.requiredProgress;
+  const workshop = shelterProjects.createShelterProject('workshop', 'room-a');
+  workshop.state = 'Concluído'; workshop.progress = workshop.requiredProgress;
+  g.shelter.projects.push(gate, workshop);
+
+  const mitigation = shelterProjects.shelterIncidentMitigation(g, 'Invasão');
+  assert.equal(mitigation.amount, 2);
+  assert.ok(mitigation.sources.includes('Segurança do abrigo'));
+  assert.ok(mitigation.sources.includes('Portão reforçado'));
+
+  const result = shelterProjects.applyShelterIncident(g, {
+    kind: 'Invasão', impact: 3, targetProjectIds: [workshop.id],
+  });
+  assert.equal(result.ok, true);
+  assert.equal(result.remainingImpact, 1);
+  assert.equal(result.damaged.length, 1);
+  assert.equal(shelterProjects.projectIntegrity(workshop), 2);
+
+  const pantry = shelterProjects.createShelterProject('pantry', 'room-b');
+  pantry.state = 'Concluído'; pantry.progress = pantry.requiredProgress;
+  g.shelter.projects.push(pantry);
+  g.shelter.manualAdjustments.security = -2;
+  g.shelter.security = -1;
+  const spread = shelterProjects.applyShelterIncident(g, {
+    kind: 'Outro', impact: 3, targetProjectIds: [workshop.id, pantry.id],
+  });
+  assert.equal(spread.ok, true);
+  assert.equal(spread.unassignedImpact, 1);
+  assert.equal(shelterProjects.projectIntegrity(workshop), 1);
+  assert.equal(shelterProjects.projectIntegrity(pantry), 2);
+});
+
+test('reparo leve, reparo estrutural e restauração usam custos e trabalho por integridade', () => {
+  const g = campaign();
+  assert.equal(require('../lib/game.ts').establishShelter(g, '0,0'), true);
+  g.shelter.parts = 10; g.shelter.fuel = 5;
+  const generator = shelterProjects.createShelterProject('generator', 'utility-a');
+  generator.state = 'Concluído'; generator.progress = generator.requiredProgress;
+  g.shelter.projects.push(generator);
+
+  shelterProjects.applyProjectDamage(generator, 1);
+  let plan = shelterProjects.repairPlan(g, generator);
+  assert.equal(plan.requiredProgress, 1);
+  assert.deepEqual(plan.costs, {});
+  assert.equal(shelterProjects.startRepair(g, generator), null);
+  assert.equal(shelterProjects.advanceProject(generator, 1), true);
+  assert.equal(generator.state, 'Concluído');
+  assert.equal(shelterProjects.projectIntegrity(generator), 3);
+
+  shelterProjects.applyProjectDamage(generator, 2);
+  plan = shelterProjects.repairPlan(g, generator);
+  assert.equal(plan.requiredProgress, 2);
+  assert.deepEqual(plan.costs, { parts: 1 });
+  const partsBefore = g.shelter.parts;
+  assert.equal(shelterProjects.startRepair(g, generator), null);
+  assert.equal(g.shelter.parts, partsBefore - 1);
+  shelterProjects.advanceProject(generator, 2);
+  assert.equal(shelterProjects.projectIntegrity(generator), 3);
+
+  shelterProjects.applyProjectDamage(generator, 3);
+  plan = shelterProjects.repairPlan(g, generator);
+  assert.equal(plan.label, 'Restauração');
+  assert.equal(plan.requiredProgress, 2);
+  assert.deepEqual(plan.costs, { parts: 1, fuel: 1 });
+});
+
+test('Oficina reduz a primeira Peça paga em reparo do dia e bancada acelera trabalho', () => {
+  const g = campaign();
+  assert.equal(require('../lib/game.ts').establishShelter(g, '0,0'), true);
+  g.shelter.parts = 5;
+  const mechanic = { id:'maintainer', name:'Mara', role:'Mecânica', description:'', notes:'', hex:'0,0', home:'0,0', status:'Bem', infection:'Saudável', disposition:'Aliado', skills:['Mecânica','Construção'], active:true };
+  g.npcs.push(mechanic);
+
+  const workshop = shelterProjects.createShelterProject('workshop', 'room-a');
+  workshop.state = 'Concluído'; workshop.progress = workshop.requiredProgress; workshop.responsibleId = mechanic.id;
+  const bench = shelterProjects.createShelterProject('tool-bench', 'utility-a');
+  bench.state = 'Concluído'; bench.progress = bench.requiredProgress;
+  const barricades = shelterProjects.createShelterProject('barricades');
+  barricades.state = 'Concluído'; barricades.progress = barricades.requiredProgress; barricades.responsibleId = mechanic.id;
+  g.shelter.projects.push(workshop, bench, barricades);
+
+  shelterProjects.applyProjectDamage(barricades, 2);
+  const plan = shelterProjects.repairPlan(g, barricades);
+  assert.equal(plan.workshopDiscount, true);
+  assert.deepEqual(plan.costs, {});
+  assert.equal(shelterProjects.startRepair(g, barricades), null);
+  assert.equal(g.shelter.maintenanceDiscountDay, g.day);
+  const preview = shelterProjects.projectWorkPreview(g, g.shelter, barricades);
+  assert.ok(preview.repairBonus.sources.includes('Bancada de ferramentas'));
+  assert.ok(preview.points >= 2);
+});
+
+test('Conforto reduz Fear uma vez por dia e superlotação bloqueia o benefício', () => {
+  const g = campaign();
+  assert.equal(require('../lib/game.ts').establishShelter(g, '0,0'), true);
+  const dorm = shelterProjects.createShelterProject('dormitories', 'room-a');
+  dorm.state = 'Concluído'; dorm.progress = dorm.requiredProgress;
+  const common = shelterProjects.createShelterProject('common-area', 'room-b');
+  common.state = 'Concluído'; common.progress = common.requiredProgress;
+  g.shelter.projects.push(dorm, common);
+
+  assert.equal(shelterProjects.shelterMetrics(g.shelter, g).comfort, 2);
+  assert.equal(shelterProjects.shelterComfortFearReduction(g), 1);
+  const selections = g.survivors.map(person => ({
+    survivorId: person.id,
+    choices: [{ action:'fiction', targetId:person.id }, { action:'fiction', targetId:person.id }],
+  }));
+  let result = abilities.resolveGroupRest(g, 'short', selections, () => 1);
+  assert.equal(result.ok, true);
+  assert.equal(result.fear, 0);
+  result = abilities.resolveGroupRest(g, 'short', selections, () => 1);
+  assert.equal(result.ok, true);
+  assert.equal(result.fear, 1);
+
+  g.day += 1;
+  g.shelter.residents = 20;
+  assert.equal(shelterProjects.shelterOvercrowded(g), true);
+  assert.equal(shelterProjects.shelterComfortFearReduction(g), 0);
+});
+
+test('Refrigeração operacional conserva estoque e falha quando a geração fica inoperante', () => {
+  const g = campaign();
+  assert.equal(require('../lib/game.ts').establishShelter(g, '0,0'), true);
+  const mechanic = { id:'power-tech', name:'Ivo', role:'Mecânico', description:'', notes:'', hex:'0,0', home:'0,0', status:'Bem', infection:'Saudável', disposition:'Aliado', skills:['Mecânica'], active:true };
+  g.npcs.push(mechanic);
+  const generator = shelterProjects.createShelterProject('generator', 'utility-a');
+  generator.state = 'Concluído'; generator.progress = generator.requiredProgress; generator.responsibleId = mechanic.id;
+  const refrigeration = shelterProjects.createShelterProject('refrigeration', 'utility-b');
+  refrigeration.state = 'Concluído'; refrigeration.progress = refrigeration.requiredProgress;
+  g.shelter.projects.push(generator, refrigeration);
+  assert.equal(shelterProjects.shelterColdStorageActive(g), true);
+
+  shelterProjects.applyProjectDamage(generator, 2);
+  assert.equal(generator.state, 'Inoperante');
+  assert.equal(shelterProjects.shelterColdStorageActive(g), false);
+});
+
+test('Horta usa turnos de 4h, acumula Cultivo e gera comida perecível sem avançar o relógio ao agendar', () => {
+  const g = campaign();
+  assert.equal(require('../lib/game.ts').establishShelter(g, '0,0'), true);
+  const farmer = { id:'farmer', name:'Rosa', role:'Agricultora', description:'', notes:'', hex:'0,0', home:'0,0', status:'Bem', infection:'Saudável', disposition:'Aliado', skills:['Cultivo'], active:true };
+  g.npcs.push(farmer);
+  const garden = shelterProjects.createShelterProject('garden', 'yard-a');
+  garden.state = 'Concluído'; garden.progress = garden.requiredProgress; garden.responsibleId = farmer.id;
+  g.shelter.projects.push(garden);
+
+  const before = g.minutes;
+  assert.equal(shelterProjects.scheduleShelterWorkShift(g, garden, 4).ok, true);
+  assert.equal(g.minutes, before);
+  assert.equal(garden.workShift.purpose, 'operation');
+  assert.equal(campaignTime.advanceCampaignTime(g, 240).ok, true);
+  assert.equal(garden.operationProgress, 2);
+  assert.equal(g.shelter.food, 0);
+
+  assert.equal(shelterProjects.scheduleShelterWorkShift(g, garden, 4).ok, true);
+  assert.equal(campaignTime.advanceCampaignTime(g, 240).ok, true);
+  assert.equal(garden.operationProgress, 0);
+  assert.equal(g.shelter.food, 2);
+  assert.ok(g.shelter.provisionLots.some(lot => lot.label === 'Colheita da horta' && lot.qty === 2 && lot.expiresDay === g.day + 2));
+});
