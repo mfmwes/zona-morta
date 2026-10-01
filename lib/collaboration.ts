@@ -1,4 +1,5 @@
 import { addLog, ammunitionTypes, type AmmunitionType, type GameState, type InventoryItem, type NPC, type Survivor } from "./game";
+import { publicConflictScene } from "./conflict";
 import { cancelSurvivorWorkShift, joinShelterProjectAsSurvivor, leaveShelterProjectAsSurvivor, projectBaseOperational, scheduleSurvivorWorkShift } from "./shelter-projects";
 
 export function projectPlayerGame(game: GameState, survivorId: string): GameState {
@@ -37,6 +38,7 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
   // O catálogo mecânico de ameaças é ferramenta do mestre. A cena de conflito
   // terá sua própria projeção pública quando for implementada.
   visible.threats = [];
+  visible.publicConflict = game.conflict ? publicConflictScene(game.conflict, game.survivors) : undefined;
   delete visible.conflict;
   // A ficha do jogador mantém apenas o próprio histórico e o chat. Resultados
   // de outra ficha não precisam ser enviados para que a mesa os narre.
