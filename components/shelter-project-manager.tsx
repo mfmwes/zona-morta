@@ -488,15 +488,22 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
         ? <div className="construction-empty"><Hammer size={20} /><span>Nenhuma obra, dano ou reparo pendente. Use Nova construção quando quiser ampliar o abrigo.</span></div>
         : <div className="construction-active-grid">{activeProjects.map(project => {
           const progress = projectProgress(project);
+          const operation = projectDefinition(project.key)?.operationWork;
+          const operationActive = Boolean(operation && ["Concluído", "Danificado"].includes(project.state)
+            && (project.workShift?.purpose === "operation" || project.volunteerShifts?.some(shift => shift.purpose === "operation")));
           const damagePending = ["Danificado", "Inoperante", "Destruído"].includes(project.state);
           const preview = project.state === "Em construção" ? projectWorkPreview(game, shelter, project) : null;
           return <button type="button" key={project.id} className={`construction-active-card ${selectedKey === project.key ? "is-selected" : ""}`} onClick={() => setSelectedKey(project.key)}>
             <div className="construction-active-top"><span className={`construction-state is-${projectStateTone(project)}`}>{projectStateLabel(project)}</span><ChevronRight size={16} /></div>
             <b>{project.name}</b>
-            {damagePending ? <div className="construction-integrity-card"><span>{integrityGlyph(project)}</span><b>{projectIntegrity(project)}/3</b></div> : <>
-              <div className="construction-mini-progress"><span style={{ width: `${Math.min(100, progress.value / progress.required * 100)}%` }} /></div>
-              <small>{progress.value}/{progress.required} progresso{progress.repairing ? " de reparo" : ""}</small>
-            </>}
+            {damagePending ? <div className="construction-integrity-card"><span>{integrityGlyph(project)}</span><b>{projectIntegrity(project)}/3</b></div>
+              : operationActive && operation ? <>
+                <div className="construction-mini-progress"><span style={{ width: `${Math.min(100, (project.operationProgress ?? 0) / operation.requiredProgress * 100)}%` }} /></div>
+                <small>{project.operationProgress ?? 0}/{operation.requiredProgress} · {operation.label}</small>
+              </> : <>
+                <div className="construction-mini-progress"><span style={{ width: `${Math.min(100, progress.value / progress.required * 100)}%` }} /></div>
+                <small>{progress.value}/{progress.required} progresso{progress.repairing ? " de reparo" : ""}</small>
+              </>}
             <small>{project.workShift
               ? `⏱ Equipe NPC até ${displayTime(project.workShift.startMinute + project.workShift.durationMinutes)} · +${project.workShift.points} previsto`
               : project.volunteerShifts?.length
