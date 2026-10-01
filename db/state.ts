@@ -19,6 +19,30 @@ type CampaignListRow = CampaignMetaRow & {
   body: string | null;
 };
 
+type AccountCharacterRow = {
+  user_id: string;
+  survivor_id: string;
+  campaign_id: string;
+  body: string;
+  created_at: string;
+  updated_at: string;
+  campaign_name: string | null;
+  campaign_archived_at: string | null;
+};
+
+export type AccountCharacterSummary = {
+  id: string;
+  campaignId: string;
+  campaignName: string;
+  campaignArchived: boolean;
+  name: string;
+  archetype: string;
+  specialty: string;
+  level: number;
+  portrait?: string;
+  updatedAt: string;
+};
+
 export type CampaignSummary = {
   id: string;
   name: string;
@@ -48,6 +72,17 @@ async function ensureCampaignSchema() {
       archived_at text
     )`).run();
     await db.prepare("CREATE INDEX IF NOT EXISTS idx_campaigns_owner ON campaigns (owner_id, archived_at)").run();
+    await db.prepare(`CREATE TABLE IF NOT EXISTS user_characters (
+      user_id text NOT NULL,
+      survivor_id text NOT NULL,
+      campaign_id text NOT NULL,
+      body text NOT NULL,
+      created_at text NOT NULL,
+      updated_at text NOT NULL,
+      PRIMARY KEY (user_id, survivor_id)
+    )`).run();
+    await db.prepare("CREATE INDEX IF NOT EXISTS idx_user_characters_user ON user_characters (user_id, updated_at)").run();
+    await db.prepare("CREATE INDEX IF NOT EXISTS idx_user_characters_campaign ON user_characters (campaign_id)").run();
     await db.prepare(`INSERT OR IGNORE INTO campaigns (id, owner_id, name, created_at, updated_at, archived_at)
       SELECT cs.owner_id, cs.owner_id, 'Campanha principal', COALESCE(u.created_at, cs.updated_at), cs.updated_at, NULL
       FROM campaign_states cs LEFT JOIN users u ON u.id = cs.owner_id`).run();
@@ -122,7 +157,93 @@ export async function writeCampaign(campaignId: string, state: GameState, expect
       ).bind(body, now, campaignId, expectedRevision).run();
   if (!result.meta.changes) return null;
   await db.prepare("UPDATE campaigns SET updated_at = ? WHERE id = ?").bind(now, campaignId).run();
+  try {
+    await syncCampaignAccountCharacters(campaignId, state);
+  } catch (error) {
+    // O estado principal já foi salvo. A cópia da conta é redundante e será
+    // tentada novamente no próximo salvamento, sem transformar sucesso em conflito.
+    console.error("Falha ao sincronizar sobreviventes da conta", error);
+  }
   return expectedRevision + 1;
+}
+
+export async function syncCampaignAccountCharacters(campaignId: string, state: GameState) {
+  await ensureCampaignSchema();
+  const db = database();
+  const campaign = await db.prepare("SELECT owner_id FROM campaigns WHERE id = ?")
+    .bind(campaignId).first<{ owner_id: string }>();
+  if (!campaign) return;
+
+  const players = await db.prepare(
+    "SELECT user_id, survivor_id FROM campaign_players WHERE owner_id = ? AND revoked_at IS NULL AND user_id IS NOT NULL AND survivor_id IS NOT NULL"
+  ).bind(campaignId).all<{ user_id: string; survivor_id: string }>();
+  const playerOwners = new Map(players.results.map(row => [row.survivor_id, row.user_id]));
+  const now = new Date().toISOString();
+  const statements = [];
+
+  for (const survivor of state.survivors) {
+    const userId = playerOwners.get(survivor.id) ?? campaign.owner_id;
+    statements.push(
+      db.prepare("DELETE FROM user_characters WHERE campaign_id = ? AND survivor_id = ? AND user_id <> ?")
+        .bind(campaignId, survivor.id, userId)
+    );
+    statements.push(
+      db.prepare(`INSERT INTO user_characters (user_id, survivor_id, campaign_id, body, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(user_id, survivor_id) DO UPDATE SET
+          campaign_id = excluded.campaign_id,
+          body = excluded.body,
+          updated_at = excluded.updated_at`)
+        .bind(userId, survivor.id, campaignId, JSON.stringify(survivor), now, now)
+    );
+  }
+  if (statements.length) await db.batch(statements);
+}
+
+export async function listAccountCharacters(userId: string): Promise<AccountCharacterSummary[]> {
+  await ensureCampaignSchema();
+  const result = await database().prepare(`
+    SELECT uc.user_id, uc.survivor_id, uc.campaign_id, uc.body, uc.created_at, uc.updated_at,
+      c.name AS campaign_name, c.archived_at AS campaign_archived_at
+    FROM user_characters uc
+    LEFT JOIN campaigns c ON c.id = uc.campaign_id
+    WHERE uc.user_id = ?
+    ORDER BY uc.updated_at DESC
+  `).bind(userId).all<AccountCharacterRow>();
+
+  return result.results.flatMap(row => {
+    try {
+      const survivor = JSON.parse(row.body) as Survivor;
+      if (!survivor || typeof survivor.id !== "string" || typeof survivor.name !== "string") return [];
+      return [{
+        id: row.survivor_id,
+        campaignId: row.campaign_id,
+        campaignName: row.campaign_name ?? "Campanha arquivada",
+        campaignArchived: Boolean(row.campaign_archived_at),
+        name: survivor.name,
+        archetype: survivor.archetype,
+        specialty: survivor.specialty,
+        level: Math.max(1, survivor.level ?? 1),
+        ...(survivor.portrait ? { portrait: survivor.portrait } : {}),
+        updatedAt: row.updated_at,
+      }];
+    } catch {
+      return [];
+    }
+  });
+}
+
+export async function readAccountCharacter(userId: string, survivorId: string) {
+  await ensureCampaignSchema();
+  const row = await database().prepare(
+    "SELECT body FROM user_characters WHERE user_id = ? AND survivor_id = ?"
+  ).bind(userId, survivorId).first<{ body: string }>();
+  if (!row) return null;
+  try {
+    return JSON.parse(row.body) as Survivor;
+  } catch {
+    return null;
+  }
 }
 
 export type PlayerRow = { email: string; user_id: string | null; survivor_id: string | null; created_at: string };
