@@ -96,15 +96,15 @@ export const shelterMechanicalBenefits: Record<string, string[]> = {
   "improvised-alarm": ["A primeira invasão ou sabotagem do dia sofre −1 Impacto."],
   "evacuation-route": ["Mantém uma rota alternativa preparada para eventos de evacuação."],
   cistern: ["Reserva física para sistemas de água; não cria água automaticamente."],
-  "water-filter": ["Infraestrutura de tratamento de água; não cria água automaticamente."],
-  "community-kitchen": ["+1 Conforto quando operada."],
+  "water-filter": ["Trata água insegura no abrigo sem consumir Pastilhas de purificação quando estiver funcional."],
+  "community-kitchen": ["+1 Conforto quando operada.", "Substitui Panela leve e fonte de calor para preparo de alimentos no abrigo, sem consumir Combustível do Fogareiro."],
   pantry: ["Organiza estoque seco; conservação específica será aplicada apenas a itens compatíveis."],
   garden: ["4 pontos de trabalho de Cultivo produzem 2 porções de Comida."],
   "rain-collector": ["Captação preparada; produção depende de chuva/evento e não é automática."],
   refrigeration: ["Conserva automaticamente alimentos refrigeráveis no depósito enquanto estiver operacional e energizada."],
-  infirmary: ["+1 Conforto e infraestrutura para tratamento médico."],
+  infirmary: ["+1 Conforto.", "+1 em tentativas de limpar Exposição feitas no abrigo quando a Enfermaria estiver operacional."],
   quarantine: ["Infraestrutura para isolamento de casos de infecção."],
-  "medical-stock": ["Infraestrutura para organização de medicamentos."],
+  "medical-stock": ["+1 adicional em tentativas de limpar Exposição no abrigo quando o Estoque médico estiver operacional."],
   "recovery-space": ["+1 Conforto e +1 Capacidade."],
   generator: ["+1 Energia enquanto estiver operacional."],
   "solar-panels": ["+1 Energia enquanto estiver funcional."],
@@ -114,7 +114,7 @@ export const shelterMechanicalBenefits: Record<string, string[]> = {
   "fixed-radio": ["Habilita comunicação fixa enquanto houver energia e operador."],
   "elevated-antenna": ["Infraestrutura para ampliar comunicações futuras."],
   "communications-room": ["Infraestrutura para coordenação de comunicações."],
-  "route-board": ["Registra rotas conhecidas para futuras ações de logística."],
+  "route-board": ["Reduz em 30 min o tempo de travessias conhecidas que partem do abrigo ou retornam a ele, mínimo 30 min."],
   workshop: ["A primeira reparação paga iniciada no dia custa 1 Peça a menos, mínimo 0."],
   garage: ["Infraestrutura de manutenção para futuros veículos."],
   "tool-bench": ["+1 progresso em qualquer turno de reparo realizado no abrigo."],
@@ -525,6 +525,35 @@ export function consumeShelterComfortRest(game: GameState) {
   const reduction = shelterComfortFearReduction(game);
   if (reduction > 0) game.shelter.comfortRestDay = game.day;
   return reduction;
+}
+
+export function shelterTreatmentBonus(game: GameState, survivorId: string) {
+  const survivor = game.survivors.find(person => person.id === survivorId);
+  if (!survivor || !game.shelter.hex || survivorHex(game, survivor) !== game.shelter.hex)
+    return { bonus: 0, sources: [] as string[] };
+
+  let bonus = 0;
+  const sources: string[] = [];
+  const infirmary = game.shelter.projects?.find(project => project.key === "infirmary");
+  if (infirmary && projectOperational(game, game.shelter, infirmary)) {
+    bonus += 1;
+    sources.push("Enfermaria");
+  }
+  const medicalStock = game.shelter.projects?.find(project => project.key === "medical-stock");
+  if (medicalStock && projectOperational(game, game.shelter, medicalStock)) {
+    bonus += 1;
+    sources.push("Estoque médico");
+  }
+  return { bonus, sources };
+}
+
+export function shelterTravelMinutes(game: GameState, sourceHex: string, destinationHex: string, baseMinutes: number) {
+  const minutes = Math.max(1, Math.trunc(baseMinutes));
+  const shelterHex = game.shelter.hex;
+  if (!shelterHex || (sourceHex !== shelterHex && destinationHex !== shelterHex)) return minutes;
+  const routeBoard = game.shelter.projects?.find(project => project.key === "route-board");
+  if (!routeBoard || !projectOperational(game, game.shelter, routeBoard)) return minutes;
+  return Math.max(30, minutes - 30);
 }
 
 export type ShelterIncidentKind = "Invasão" | "Sabotagem" | "Incêndio" | "Tempestade" | "Curto elétrico" | "Inundação" | "Outro";
