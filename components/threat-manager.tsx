@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Field, Pick } from "@/components/game-controls";
+import { ImagePicker } from "@/components/image-picker";
 import { addLog, type GameState } from "@/lib/game";
 import { createId } from "@/lib/id";
 import {
@@ -47,7 +48,7 @@ function resourceLabel(value: number | null) {
 function ThreatCard({ threat, onOpen }: { threat: ThreatTemplate; onOpen: () => void }) {
   return <button type="button" className="threat-card" onClick={onOpen} aria-label={`Abrir ficha de ${threat.name}`}>
     <span className="threat-card-heading">
-      <span className="threat-card-icon"><ShieldAlert size={18} aria-hidden="true" /></span>
+      <span className={`threat-card-icon${threat.image ? " has-image" : ""}`}>{threat.image ? <img src={threat.image} alt="" /> : <ShieldAlert size={18} aria-hidden="true" />}</span>
       <span className="threat-card-identity">
         <span className="threat-card-meta">Patamar {threat.tier} · {threat.role}</span>
         <span className="threat-card-title">{threat.name}</span>
@@ -70,6 +71,7 @@ function ThreatCard({ threat, onOpen }: { threat: ThreatTemplate; onOpen: () => 
 
 function ThreatSheet({ threat }: { threat: ThreatTemplate }) {
   return <div className="threat-sheet">
+    {threat.image && <div className="threat-sheet-art"><img src={threat.image} alt="" /></div>}
     <div className="threat-sheet-meta">
       <span className="tag">PATAMAR {threat.tier}</span>
       <span className="tag">{threat.role.toUpperCase()}</span>
@@ -122,6 +124,8 @@ function ThreatEditor({ draft, onChange }: { draft: ThreatTemplate; onChange: (n
       <Field label="PV" type="number" value={draft.maxHp === null ? "" : String(draft.maxHp)} onChange={value => patch({ maxHp: nullableNumber(value, 1, 99) })} placeholder="—" />
       <Field label="Estresse" type="number" value={draft.maxStress === null ? "" : String(draft.maxStress)} onChange={value => patch({ maxStress: nullableNumber(value, 0, 99) })} placeholder="—" />
     </div>
+
+    <ImagePicker label="Imagem da ameaça" value={draft.image} onChange={image => patch({ image })} fallback={<ShieldAlert size={30} aria-hidden="true" />} />
 
     <Field label="Descrição" multiline value={draft.description} onChange={description => patch({ description })} placeholder="Aparência, comportamento e função ficcional." />
     <Field label="Motivações e táticas" multiline value={draft.motivations} onChange={motivations => patch({ motivations })} placeholder="O que busca e como costuma agir." />
