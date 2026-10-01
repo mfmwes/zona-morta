@@ -76,7 +76,10 @@ export function TableChat({
   const [speakerId, setSpeakerId] = useState(role === "jogador" ? survivorId ?? "" : "master");
   const [rollOpen, setRollOpen] = useState(false);
   const [rollRequest, setRollRequest] = useState<RollRequest | undefined>();
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const feedRef = useRef<HTMLDivElement>(null);
+  const latestRowIdRef = useRef<string | null>(null);
+  const rowCountRef = useRef(0);
 
   const rows = useMemo(() => {
     const relevant = game.log.filter(entry => ["chat", "dados", "dano"].includes(entry.kind));
@@ -94,11 +97,36 @@ export function TableChat({
     return grouped.reverse();
   }, [game.log]);
 
+  const latestRowId = rows.at(-1)?.entry.id ?? null;
+
   useEffect(() => {
     const feed = feedRef.current;
     if (!feed) return;
-    feed.scrollTo({ top: feed.scrollHeight, behavior: rows.length > 1 ? "smooth" : "auto" });
-  }, [rows.length]);
+
+    const previousLatest = latestRowIdRef.current;
+    const previousCount = rowCountRef.current;
+    const isNewRow = previousLatest !== null && latestRowId !== null && latestRowId !== previousLatest && rows.length > previousCount;
+
+    latestRowIdRef.current = latestRowId;
+    rowCountRef.current = rows.length;
+
+    const frame = window.requestAnimationFrame(() => {
+      feed.scrollTo({ top: feed.scrollHeight, behavior: previousLatest === null ? "auto" : "smooth" });
+    });
+
+    let highlightTimer: number | undefined;
+    if (isNewRow) {
+      setHighlightedId(latestRowId);
+      highlightTimer = window.setTimeout(() => {
+        setHighlightedId(current => current === latestRowId ? null : current);
+      }, 1600);
+    }
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      if (highlightTimer !== undefined) window.clearTimeout(highlightTimer);
+    };
+  }, [latestRowId, rows.length]);
 
   const player = survivorId ? game.survivors.find(person => person.id === survivorId) : null;
   const currentSpeaker = role === "jogador"
@@ -146,7 +174,7 @@ export function TableChat({
       {rows.map(row => {
         const who = actor(game, row.entry);
         const canDelete = role === "mestre" && !readOnly;
-        if (row.entry.kind === "chat") return <article key={row.entry.id} className="table-chat-message">
+        if (row.entry.kind === "chat") return <article key={row.entry.id} className={`table-chat-message${highlightedId === row.entry.id ? " is-new" : ""}`}>
           <Avatar name={who.name} portrait={who.portrait} />
           <div className="table-chat-message-body">
             <div className="table-chat-meta">
@@ -162,7 +190,7 @@ export function TableChat({
           const damage = damageInfo(row.damage?.text);
           const fearTone = /MEDO/.test(info.outcome);
           const critical = info.outcome === "CRÍTICO";
-          return <article key={row.entry.id} className="table-chat-roll">
+          return <article key={row.entry.id} className={`table-chat-roll${highlightedId === row.entry.id ? " is-new" : ""}`}>
             <div className="table-chat-roll-author">
               <Avatar name={who.name} portrait={who.portrait} />
               <div><strong>{who.name}</strong><span>{who.subtitle}</span></div>
@@ -195,7 +223,7 @@ export function TableChat({
         }
 
         const damage = damageInfo(row.entry.text);
-        return <article key={row.entry.id} className="table-chat-roll table-chat-roll--damage">
+        return <article key={row.entry.id} className={`table-chat-roll table-chat-roll--damage${highlightedId === row.entry.id ? " is-new" : ""}`}>
           <div className="table-chat-roll-author">
             <Avatar name={who.name} portrait={who.portrait} />
             <div><strong>{who.name}</strong><span>{who.subtitle}</span></div>
@@ -251,6 +279,9 @@ export function TableChat({
       {readOnly && <p className="table-chat-readonly">Prévia dos jogadores: chat em modo de leitura.</p>}
     </footer>
 
-    <RollDialog game={game} edit={edit} request={rollRequest} open={rollOpen} onOpenChange={setRollOpen} />
+    <RollDialog game={game} edit={edit} request={rollRequest} open={rollOpen} onOpenChange={value => {
+      setRollOpen(value);
+      if (!value) setRollRequest(undefined);
+    }} />
   </aside>;
 }
