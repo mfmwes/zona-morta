@@ -54,7 +54,7 @@ function RollForm({ game, edit, request }: { game: GameState; edit: Edit; reques
   const ammoNeeded = attackResources.ammoType;
   const ammoReady = attackResources.ammoReady;
   const ammoWarning = ammoNeeded && !ammoReady
-    ? `Sem carga de ${ammoNeeded} pronta para esta cena. A primeira ação de disparo da cena consome 1 carga compatível.` : "";
+    ? `Sem Munição de ${ammoNeeded} livre no inventário. O primeiro disparo desta categoria na cena compromete 1 unidade física.` : "";
   const target = difficulty.trim() === "" ? null : Number(difficulty);
   const targetValid = target === null || (Number.isInteger(target) && target >= 1 && target <= 99);
   const experienceCost = experiences.length;
@@ -80,7 +80,7 @@ function RollForm({ game, edit, request }: { game: GameState; edit: Edit; reques
 
   function damageLog(record: DamageRecord, status: string) {
     const situational = record.extra - record.equipment;
-    return `${survivor?.name ?? "Sobrevivente"}: ${record.weaponName} — ${record.formula}${record.equipment ? ` +${record.equipment} da Faca pequena` : ""}${situational ? ` ${situational >= 0 ? "+" : "−"}${Math.abs(situational)} situacional` : ""}${record.critical ? ` + ${record.criticalBonus} crítico` : ""} = ${record.total} dano físico (dados: ${record.dice.join(", ")}). ${status} Compare aos limiares do alvo; Barulho é aplicado por disparo e a carga de munição é consumida automaticamente na primeira ação compatível da cena.`;
+    return `${survivor?.name ?? "Sobrevivente"}: ${record.weaponName} — ${record.formula}${record.equipment ? ` +${record.equipment} da Faca pequena` : ""}${situational ? ` ${situational >= 0 ? "+" : "−"}${Math.abs(situational)} situacional` : ""}${record.critical ? ` + ${record.criticalBonus} crítico` : ""} = ${record.total} dano físico (dados: ${record.dice.join(", ")}). ${status} Compare aos limiares do alvo; Barulho é aplicado por disparo e uma unidade física de munição é comprometida na primeira ação compatível da cena.`;
   }
 
   function rollAction() {
@@ -126,7 +126,7 @@ function RollForm({ game, edit, request }: { game: GameState; edit: Edit; reques
       if (kind === "attack" && spent && !spent.ok) return;
       if (damage) addLog(draft, "dano", damageLog(damage, damageStatus), actor?.id);
       addLog(draft, "dados", text +
-        (spendsAmmo ? ` · 1 carga de ${ammoNeeded} consumida para a cena.` : ammoNeeded ? ` · carga de ${ammoNeeded} já aberta nesta cena.` : "") +
+        (spendsAmmo ? ` · 1 unidade de Munição de ${ammoNeeded} comprometida até a próxima cena.` : ammoNeeded ? ` · Munição de ${ammoNeeded} já comprometida nesta cena.` : "") +
         (attackNoise ? ` · Barulho +${attackNoise}.` : ""), actor?.id);
     });
     setLast(record); setLastDamage(damage); setStandaloneDamage(null); setConfirmedHit(false);
@@ -158,7 +158,7 @@ function RollForm({ game, edit, request }: { game: GameState; edit: Edit; reques
     {equipmentBonus !== 0 && <p className="roll-hint">{survivor?.protection}: {equipmentBonus} em {rollTrait}, já incluído nesta rolagem.</p>}
     {kind === "attack" && weaponSlot === "primary" && Boolean(modifiers?.primaryDamage) && <p className="roll-hint">Faca pequena: +1 ao dano desta arma, incluído automaticamente.</p>}
     {kind === "attack" && <Field label="Bônus situacional ao dano" value={damageExtra} onChange={value => { setDamageExtra(value); setStandaloneDamage(null); }} type="number" />}
-    {ammoWarning && <p className="inventory-hint inventory-danger" role="status">{ammoWarning} O aplicativo não desconta uma carga a cada tiro.</p>}
+    {ammoWarning && <p className="inventory-hint inventory-danger" role="status">{ammoWarning} Disparos seguintes da mesma categoria nesta cena não comprometem outra unidade.</p>}
     {handConflict && <p className="inventory-hint inventory-danger" role="alert">A arma principal ocupa as duas mãos. Guarde-a no inventário para usar a secundária.</p>}
     <fieldset className="roll-experiences"><legend>Experiences <small>+2 cada · 1 Hope por Experience pertinente</small></legend>
       {experienceOptions.length ? experienceOptions.map(option => <label key={option.id} className="roll-experience">
@@ -195,7 +195,7 @@ function RollForm({ game, edit, request }: { game: GameState; edit: Edit; reques
       <div className="roll-damage-actions"><Button size="sm" variant="outline" disabled={Boolean(standaloneDamage) || handConflict} onClick={rollStandaloneDamage}>Dano avulso</Button>
         {standaloneDamage && <Button size="sm" variant="ghost" onClick={() => setStandaloneDamage(null)}>Novo dano avulso</Button>}</div>
       {standaloneDamage && <output className="roll-damage-result"><strong>{standaloneDamage.total} dano físico avulso</strong><span>{standaloneDamage.formula}{standaloneDamage.equipment ? ` +${standaloneDamage.equipment} equipamento` : ""}{standaloneDamage.extra - standaloneDamage.equipment ? ` ${standaloneDamage.extra - standaloneDamage.equipment >= 0 ? "+" : "−"} ${Math.abs(standaloneDamage.extra - standaloneDamage.equipment)} situacional` : ""}{standaloneDamage.critical ? ` + ${standaloneDamage.criticalBonus} crítico` : ""} · dados {standaloneDamage.dice.join(", ")}</span></output>}
-      <p className="roll-hint">Compare o dano aos limiares do alvo. O sistema aplica o Barulho da arma a cada ação de disparo e consome 1 carga compatível apenas na primeira ação daquele tipo de munição na cena.</p>
+      <p className="roll-hint">Compare o dano aos limiares do alvo. O sistema aplica o Barulho da arma a cada ação de disparo e compromete 1 unidade física compatível apenas na primeira ação daquele tipo de munição na cena; ela é consumida ao iniciar a próxima cena.</p>
     </div>}
   </>;
 }
