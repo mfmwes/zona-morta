@@ -227,6 +227,11 @@
 .table-chat-dice-pair .hope b { color: #201800; font-weight: 900; }
 .table-chat-dice-pair .fear { background: var(--fear-surface); color: var(--fear-ink); }
 .table-chat-dice-pair b { margin-left: auto; color: #243e40; font-family: var(--font-mono); }
+.table-chat-dice-pair .fear b {
+  color: #f3e9ff;
+  font-weight: 900;
+  text-shadow: 0 1px 0 #00000047;
+}
 .table-chat-formula {
   display: flex;
   align-items: center;
