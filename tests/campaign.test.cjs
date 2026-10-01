@@ -170,6 +170,50 @@ test('alvos de conflito resolvem acerto e faixas de dano sem aplicar PV', () => 
   assert.equal(critical.hit, true);
 });
 
+test('dano confirmado no chat é aplicado uma única vez à ameaça', () => {
+  const g = campaign();
+  const scene = conflictScene.createConflictScene({ name:'Teste', sceneNumber:1, day:g.day, time:'08:00' });
+  const template = threats.threatLibrary(g.threats).find(row => row.name === 'ERRANTE');
+  const instance = conflictScene.addThreatInstances(scene, template, 1)[0];
+
+  const applied = conflictScene.applyThreatDamage(scene, instance.id, 2, 'roll-1');
+  assert.equal(applied.ok, true);
+  assert.equal(instance.hpMarked, 2);
+  assert.equal(instance.defeated, false);
+  const duplicate = conflictScene.applyThreatDamage(scene, instance.id, 2, 'roll-1');
+  assert.equal(duplicate.ok, false);
+  assert.equal(duplicate.reason, 'already-applied');
+  assert.equal(instance.hpMarked, 2);
+
+  const finishing = conflictScene.applyThreatDamage(scene, instance.id, 3, 'roll-2');
+  assert.equal(finishing.ok, true);
+  assert.equal(instance.hpMarked, template.maxHp);
+  assert.equal(instance.defeated, true);
+});
+
+test('condições de ameaça são públicas, únicas e removíveis', () => {
+  const g = campaign();
+  const scene = conflictScene.createConflictScene({ name:'Teste', sceneNumber:1, day:g.day, time:'08:00' });
+  const template = threats.threatLibrary(g.threats).find(row => row.name === 'ERRANTE');
+  const instance = conflictScene.addThreatInstances(scene, template, 1)[0];
+  assert.equal(conflictScene.addThreatCondition(instance, 'Vulnerável'), true);
+  assert.equal(conflictScene.addThreatCondition(instance, ' vulnerável '), false);
+  assert.deepEqual(instance.conditions, ['Vulnerável']);
+  assert.equal(conflictScene.removeThreatCondition(instance, 'Vulnerável'), true);
+  assert.deepEqual(instance.conditions, []);
+});
+
+test('ataque de ameaça interpreta dano e classifica pelos limiares do sobrevivente', () => {
+  assert.deepEqual(conflictScene.parseThreatDamageFormula('1d8+2'), { dice:1, die:8, flat:2 });
+  assert.deepEqual(conflictScene.parseThreatDamageFormula('2d6-1'), { dice:2, die:6, flat:-1 });
+  assert.deepEqual(conflictScene.parseThreatDamageFormula('3'), { dice:0, die:0, flat:3 });
+  assert.deepEqual(conflictScene.parseThreatDamageFormula('sem dano'), { dice:0, die:0, flat:0 });
+  assert.equal(conflictScene.parseThreatDamageFormula('x+y'), null);
+  assert.deepEqual(conflictScene.resolveSurvivorDamageTier(8, 14, 7), { key:'minor', label:'Menor', hpMarks:1 });
+  assert.deepEqual(conflictScene.resolveSurvivorDamageTier(8, 14, 8), { key:'major', label:'Maior', hpMarks:2 });
+  assert.deepEqual(conflictScene.resolveSurvivorDamageTier(8, 14, 14), { key:'severe', label:'Severo', hpMarks:3 });
+});
+
 test('PV e Estresse das ameaças são trilhas marcadas a partir de zero', () => {
   const g = campaign();
   const scene = conflictScene.createConflictScene({ name:'Teste', sceneNumber:1, day:g.day, time:'08:00' });
@@ -296,6 +340,7 @@ test('visão do jogador mostra só sua ficha, locais revelados e registros próp
   g.conflict = conflictScene.createConflictScene({ name:'Posto abandonado', sceneNumber:1, day:g.day, time:'08:00', survivorIds:[ana.id, bia.id] });
   const publicThreat = conflictScene.addThreatInstances(g.conflict, threats.threatLibrary(g.threats).find(row => row.name === 'ERRANTE'), 1)[0];
   conflictScene.setConflictSpotlight(g.conflict, { kind:'threat', id:publicThreat.id }, publicThreat.name, g.day, '08:02');
+  require('../lib/game.ts').addLog(g, 'ameaça', 'ERRANTE: Investida contra Ana — d20 10 + 0 = 10 vs Evasão 10: ACERTO. Dano 3 físico → MENOR (1 PV). Aplique dano ou Armadura na ficha do alvo.');
   require('../lib/game.ts').addLog(g, 'dados', 'Ana rolou', ana.id);
   require('../lib/game.ts').addLog(g, 'evento', 'Segredo do mestre');
   const visible = collaboration.projectPlayerGame(g, ana.id);
@@ -312,6 +357,7 @@ test('visão do jogador mostra só sua ficha, locais revelados e registros próp
   assert.deepEqual(visible.publicConflict.survivors.map(person => person.name), ['Ana', 'Bia']);
   assert.equal(visible.publicConflict.threats[0].name, 'ERRANTE');
   assert.deepEqual(visible.publicConflict.spotlight, { kind:'threat', id:publicThreat.id });
+  assert.equal(visible.log.some(entry => entry.kind === 'ameaça' && /Investida/.test(entry.text)), true);
   const publicConflictJson = JSON.stringify(visible.publicConflict);
   for (const privateField of ['difficulty', 'majorThreshold', 'severeThreshold', 'maxHp', 'maxStress', 'hpMarked', 'stressMarked', 'templateSnapshot', 'motivations', 'notes']) {
     assert.equal(publicConflictJson.includes(privateField), false, privateField);
