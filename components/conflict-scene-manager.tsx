@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Crosshair, Dice5, Plus, ShieldAlert, Skull, Swords, UserPlus, Users, X } from "lucide-react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Activity, Crosshair, Crown, Dice5, Dumbbell, Eye, Gauge, HeartPulse, Plus, RotateCcw, Shield, ShieldAlert, Skull, Swords, Tag, Trash2, UserPlus, Users, X, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -34,14 +34,28 @@ import { rollDie } from "@/lib/rolls";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 
-function ResourceMeter({ label, value, max, tone }: { label: string; value: number; max: number | null; tone: "hp" | "stress" | "hope" }) {
-  if (max === null) return <span className={`conflict-resource conflict-resource--${tone}`}><span><small>{label}</small><b>—</b></span></span>;
+function ResourceMeter({ label, value, max, tone, icon }: { label: string; value: number; max: number | null; tone: "hp" | "stress" | "hope"; icon?: ReactNode }) {
+  if (max === null) return <span className={`conflict-resource conflict-resource--${tone}`}><span><small>{icon}{label}</small><b>—</b></span></span>;
   const current = Math.max(0, Math.min(max, value));
   const percent = max > 0 ? Math.round((current / max) * 100) : 0;
   return <span className={`conflict-resource conflict-resource--${tone}`} aria-label={`${label} ${current} de ${max}`}>
-    <span><small>{label}</small><b>{current}/{max}</b></span>
+    <span><small>{icon}{label}</small><b>{current}/{max}</b></span>
     <span className="conflict-resource-track" aria-hidden="true"><span style={{ width: `${percent}%` }} /></span>
   </span>;
+}
+
+function ThreatStat({ label, value, tone, icon }: { label: string; value: ReactNode; tone: "difficulty" | "threshold"; icon: ReactNode }) {
+  return <span className={`conflict-stat conflict-stat--${tone}`}><small>{icon}{label}</small><b>{value}</b></span>;
+}
+
+function ThreatRoleIcon({ role, size = 17 }: { role: string; size?: number }) {
+  const value = role.toLocaleLowerCase("pt-BR");
+  if (value.includes("bruto") || value.includes("solo")) return <Dumbbell size={size} aria-hidden="true" />;
+  if (value.includes("atir")) return <Crosshair size={size} aria-hidden="true" />;
+  if (value.includes("embosc") || value.includes("furt")) return <Eye size={size} aria-hidden="true" />;
+  if (value.includes("líder") || value.includes("lider") || value.includes("chefe")) return <Crown size={size} aria-hidden="true" />;
+  if (value.includes("horda") || value.includes("grupo") || value.includes("minion")) return <Users size={size} aria-hidden="true" />;
+  return <ShieldAlert size={size} aria-hidden="true" />;
 }
 
 function participantLabel(game: GameState, ref: ConflictParticipantRef | null) {
