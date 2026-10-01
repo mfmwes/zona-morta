@@ -4207,3 +4207,208 @@ html[data-theme="dark"] .conflict-threat-primary-action {
     grid-template-columns:1fr;
   }
 }
+
+
+/* Imagens de PNJs e ameaças. */
+.image-picker {
+  display:grid;
+  grid-template-columns:110px minmax(0,1fr);
+  gap:12px;
+  align-items:start;
+  padding:10px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:color-mix(in srgb,var(--surface-soft) 42%,transparent);
+}
+.image-picker-preview {
+  display:grid;
+  place-items:center;
+  width:110px;
+  aspect-ratio:1;
+  overflow:hidden;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:var(--surface-raised);
+  color:var(--muted-foreground);
+  font:850 1.1rem var(--font-mono);
+}
+.image-picker-preview img {
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.image-picker-controls {
+  display:grid;
+  gap:7px;
+  min-width:0;
+}
+.image-picker-url {
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  align-items:center;
+  gap:7px;
+  min-width:0;
+  min-height:38px;
+  padding:4px 5px 4px 9px;
+  border:1px solid var(--border);
+  border-radius:6px;
+  background:var(--surface-raised);
+  color:var(--muted-foreground);
+}
+.image-picker-url input {
+  min-width:0;
+  border:0;
+  outline:0;
+  background:transparent;
+  color:var(--foreground);
+  font-size:.76rem;
+}
+.image-picker-actions {
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:6px;
+}
+.image-picker-upload {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  min-height:32px;
+  padding:5px 9px;
+  border:1px solid var(--border);
+  border-radius:6px;
+  background:var(--surface-raised);
+  color:var(--foreground);
+  cursor:pointer;
+  font-size:.68rem;
+  font-weight:800;
+}
+.image-picker-upload:hover {
+  border-color:#6e9c91;
+  background:color-mix(in srgb,#5e8e84 8%,var(--surface-raised));
+}
+.image-picker-upload input {
+  position:absolute;
+  width:1px;
+  height:1px;
+  overflow:hidden;
+  opacity:0;
+  pointer-events:none;
+}
+.image-picker-error {
+  margin:0;
+  color:#a84f42;
+  font-size:.68rem;
+}
+.npc-dialog-actions {
+  display:flex;
+  align-items:center;
+  gap:7px;
+}
+.npc-dialog-actions-spacer {
+  flex:1;
+}
+.npc-delete-button {
+  border-color:#d4aaa3 !important;
+  color:#9b4c41 !important;
+}
+.npc-public-details {
+  display:grid;
+  grid-template-columns:120px minmax(0,1fr);
+  gap:14px;
+  align-items:start;
+}
+.npc-public-portrait {
+  overflow:hidden;
+  width:120px;
+  aspect-ratio:1;
+  border:1px solid var(--border);
+  border-radius:9px;
+  background:var(--surface-soft);
+}
+.npc-public-portrait img {
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.threat-card-icon.has-image {
+  overflow:hidden;
+  padding:0;
+}
+.threat-card-icon.has-image img {
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.threat-sheet-art {
+  float:left;
+  width:132px;
+  aspect-ratio:1;
+  margin:0 14px 10px 0;
+  overflow:hidden;
+  border:1px solid var(--border);
+  border-radius:9px;
+  background:var(--surface-soft);
+}
+.threat-sheet-art img {
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.threat-sheet::after {
+  content:"";
+  display:block;
+  clear:both;
+}
+html[data-theme="dark"] .image-picker,
+html[data-theme="dark"] .image-picker-url,
+html[data-theme="dark"] .image-picker-preview,
+html[data-theme="dark"] .image-picker-upload,
+html[data-theme="dark"] .npc-public-portrait,
+html[data-theme="dark"] .threat-sheet-art {
+  border-color:#405550;
+}
+html[data-theme="dark"] .image-picker {
+  background:#192421;
+}
+html[data-theme="dark"] .image-picker-url,
+html[data-theme="dark"] .image-picker-preview,
+html[data-theme="dark"] .image-picker-upload {
+  background:#15201e;
+}
+html[data-theme="dark"] .npc-delete-button {
+  border-color:#714b44 !important;
+  color:#efaaa0 !important;
+}
+@media (max-width:620px) {
+  .image-picker {
+    grid-template-columns:1fr;
+  }
+  .image-picker-preview {
+    width:96px;
+  }
+  .image-picker-url {
+    grid-template-columns:auto minmax(0,1fr);
+  }
+  .image-picker-url > button {
+    grid-column:1 / -1;
+    width:100%;
+  }
+  .npc-public-details {
+    grid-template-columns:1fr;
+  }
+  .npc-public-portrait {
+    width:100px;
+  }
+  .npc-dialog-actions {
+    align-items:stretch;
+    flex-direction:column;
+  }
+  .npc-dialog-actions-spacer {
+    display:none;
+  }
+  .npc-dialog-actions > button {
+    width:100%;
+  }
+}
