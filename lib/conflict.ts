@@ -65,6 +65,7 @@ export type PublicConflictSurvivor = {
 export type PublicConflictThreat = {
   id: string;
   name: string;
+  groupName: string;
   defeated: boolean;
   conditions: string[];
 };
@@ -100,6 +101,7 @@ export function publicConflictScene(
   const publicThreats = scene.threats.map(threat => ({
     id: threat.id,
     name: threat.name,
+    groupName: threat.templateSnapshot.name,
     defeated: threat.defeated,
     conditions: [...threat.conditions],
   }));
