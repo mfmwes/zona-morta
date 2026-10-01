@@ -38,7 +38,7 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
   // O catálogo mecânico de ameaças é ferramenta do mestre. A cena de conflito
   // terá sua própria projeção pública quando for implementada.
   visible.threats = [];
-  visible.publicConflict = game.conflict ? publicConflictScene(game.conflict, game.survivors) : undefined;
+  visible.publicConflict = game.conflict ? publicConflictScene(game.conflict, game.survivors, survivorId) : undefined;
   delete visible.conflict;
   // A ficha do jogador mantém apenas o próprio histórico e o chat. Resultados
   // de outra ficha não precisam ser enviados para que a mesa os narre.
