@@ -13,6 +13,7 @@ type Props = {
   game: GameState;
   survivor: Survivor;
   playerMode: boolean;
+  playerPreview?: boolean;
   targetId: string;
   onTargetChange: (targetId: string) => void;
   onAttack: (targetId?: string) => void;
@@ -24,10 +25,12 @@ function normalize(value: string) {
 }
 
 export function SurvivorConflictHud({
-  game, survivor, playerMode, targetId, onTargetChange, onAttack, onOpenConflict,
+  game, survivor, playerMode, playerPreview = false, targetId, onTargetChange, onAttack, onOpenConflict,
 }: Props) {
   const conflict = game.publicConflict
     ?? (game.conflict?.active ? publicConflictScene(game.conflict, game.survivors, survivor.id) : undefined);
+  const playerPerspective = playerMode || playerPreview;
+
   const [targetOpen, setTargetOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [recentIds, setRecentIds] = useState<string[]>([]);
@@ -122,7 +125,11 @@ export function SurvivorConflictHud({
   }
 
   async function toggleSpotlightRequest() {
-    if (!playerMode || spotlightBusy) return;
+    if (!playerPerspective || spotlightBusy) return;
+    if (playerPreview && !playerMode) {
+      toast.info("Prévia dos jogadores", { description: "O jogador poderá pedir ou cancelar o Spotlight aqui. A prévia não altera a campanha." });
+      return;
+    }
     setSpotlightBusy(true);
     setError("");
     try {
@@ -200,7 +207,7 @@ export function SurvivorConflictHud({
 
         <Button size="sm" disabled={!selectedTarget} onClick={() => onAttack(selectedTarget?.id)}><Swords size={14} /> Atacar</Button>
 
-        {playerMode && <Button className="character-spotlight-request" size="sm" variant={conflict.spotlightRequested ? "secondary" : "outline"} disabled={spotlightBusy || ownSpotlight} onClick={() => void toggleSpotlightRequest()}>
+        {playerPerspective && <Button className="character-spotlight-request" size="sm" variant={conflict.spotlightRequested ? "secondary" : "outline"} disabled={spotlightBusy || ownSpotlight} onClick={() => void toggleSpotlightRequest()} title={playerPreview && !playerMode ? "Prévia: mostra o controle do jogador sem enviar a solicitação" : undefined}>
           <Crosshair size={14} /> {ownSpotlight ? "Seu Spotlight" : conflict.spotlightRequested ? "Spotlight solicitado" : "Pedir Spotlight"}
         </Button>}
         {onOpenConflict && <button type="button" className="character-conflict-link" onClick={onOpenConflict}>Ver cena ↗</button>}
