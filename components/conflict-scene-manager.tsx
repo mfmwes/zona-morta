@@ -1,0 +1,312 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { Crosshair, Plus, ShieldAlert, Skull, Swords, UserPlus, Users, X } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Counter, Field, Pick } from "@/components/game-controls";
+import { addLog, displayTime, survivorStats, survivorsAtHex, type GameState } from "@/lib/game";
+import {
+  addThreatInstances,
+  clearConflictSpotlight,
+  createConflictScene,
+  endConflictScene,
+  removeConflictParticipant,
+  setConflictSpotlight,
+  type ConflictParticipantRef,
+} from "@/lib/conflict";
+import { threatLibrary } from "@/lib/threats";
+
+type Edit = (fn: (draft: GameState) => void) => void;
+
+function threatHp(instance: NonNullable<GameState["conflict"]>["threats"][number]) {
+  const max = instance.templateSnapshot.maxHp;
+  return max === null ? null : Math.max(0, max - instance.hpMarked);
+}
+
+function participantLabel(game: GameState, ref: ConflictParticipantRef | null) {
+  if (!ref) return null;
+  if (ref.kind === "survivor") return game.survivors.find(person => person.id === ref.id)?.name ?? "Sobrevivente removido";
+  return game.conflict?.threats.find(threat => threat.id === ref.id)?.name ?? "Ameaça removida";
+}
+
+export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Edit }) {
+  const conflict = game.conflict;
+  const library = threatLibrary(game.threats);
+  const sectorName = game.hexes[game.partyHex]?.sector?.name ?? `Hex ${game.partyHex}`;
+  const [sceneName, setSceneName] = useState(`Conflito — ${sectorName}`);
+  const [survivorToAdd, setSurvivorToAdd] = useState("");
+  const [threatToAdd, setThreatToAdd] = useState("");
+  const [threatQuantity, setThreatQuantity] = useState(1);
+  const [notesDraft, setNotesDraft] = useState(conflict?.notes ?? "");
+
+  useEffect(() => {
+    setNotesDraft(conflict?.notes ?? "");
+  }, [conflict?.id, conflict?.notes]);
+
+  const availableSurvivors = useMemo(() => game.survivors
+    .filter(person => !conflict?.survivorIds.includes(person.id))
+    .map(person => ({ value: person.id, label: person.name })), [game.survivors, conflict?.survivorIds]);
+
+  const threatOptions = useMemo(() => [...library]
+    .sort((a, b) => a.tier - b.tier || a.name.localeCompare(b.name, "pt-BR"))
+    .map(threat => ({ value: threat.id, label: `Patamar ${threat.tier} · ${threat.name}` })), [library]);
+
+  useEffect(() => {
+    if (!availableSurvivors.some(option => option.value === survivorToAdd)) setSurvivorToAdd(availableSurvivors[0]?.value ?? "");
+  }, [availableSurvivors, survivorToAdd]);
+
+  useEffect(() => {
+    if (!threatOptions.some(option => option.value === threatToAdd)) setThreatToAdd(threatOptions[0]?.value ?? "");
+  }, [threatOptions, threatToAdd]);
+
+  function startConflict() {
+    const present = survivorsAtHex(game, game.partyHex).map(person => person.id);
+    edit(draft => {
+      draft.conflict = createConflictScene({
+        name: sceneName,
+        sceneNumber: draft.scene ?? 1,
+        day: draft.day,
+        time: displayTime(draft.minutes),
+        survivorIds: present,
+      });
+      addLog(draft, "conflito", `Conflito iniciado: ${draft.conflict.name}.`);
+    });
+    toast.success("Cena de Conflito iniciada", { description: present.length ? `${present.length} sobrevivente(s) presente(s) adicionado(s).` : "Adicione os participantes da cena." });
+  }
+
+  function addSurvivor() {
+    if (!survivorToAdd || !conflict) return;
+    const person = game.survivors.find(row => row.id === survivorToAdd);
+    if (!person) return;
+    edit(draft => {
+      const scene = draft.conflict;
+      if (!scene || !scene.active || scene.survivorIds.includes(person.id)) return;
+      scene.survivorIds.push(person.id);
+      addLog(draft, "conflito", `${person.name} entrou em ${scene.name}.`);
+    });
+    toast.success("Sobrevivente adicionado", { description: person.name });
+  }
+
+  function addThreats() {
+    if (!threatToAdd || !conflict) return;
+    const template = library.find(threat => threat.id === threatToAdd);
+    if (!template) return;
+    let names: string[] = [];
+    edit(draft => {
+      const scene = draft.conflict;
+      if (!scene || !scene.active) return;
+      const added = addThreatInstances(scene, template, threatQuantity);
+      names = added.map(threat => threat.name);
+      addLog(draft, "conflito", `${added.length} ameaça(s) adicionada(s) a ${scene.name}: ${names.join(", ")}.`);
+    });
+    if (names.length) toast.success(names.length === 1 ? "Ameaça adicionada" : "Ameaças adicionadas", { description: names.join(", ") });
+  }
+
+  function focus(ref: ConflictParticipantRef, name: string) {
+    edit(draft => {
+      const scene = draft.conflict;
+      if (!scene || !scene.active) return;
+      if (setConflictSpotlight(scene, ref, name, draft.day, displayTime(draft.minutes))) {
+        addLog(draft, "spotlight", `Spotlight → ${name}.`);
+      }
+    });
+  }
+
+  function remove(ref: ConflictParticipantRef, name: string) {
+    edit(draft => {
+      const scene = draft.conflict;
+      if (!scene || !scene.active) return;
+      removeConflictParticipant(scene, ref);
+      addLog(draft, "conflito", `${name} saiu de ${scene.name}.`);
+    });
+  }
+
+  function closeConflict() {
+    if (!conflict) return;
+    edit(draft => {
+      const scene = draft.conflict;
+      if (!scene || !scene.active) return;
+      const defeated = scene.threats.filter(threat => threat.defeated).length;
+      const focuses = scene.spotlightHistory.length;
+      endConflictScene(scene, draft.day, displayTime(draft.minutes));
+      addLog(draft, "conflito", `Conflito encerrado: ${scene.name}. ${defeated} ameaça(s) derrotada(s), ${focuses} mudança(s) de spotlight.`);
+    });
+    toast.success("Cena de Conflito encerrada");
+  }
+
+  function reopenConflict() {
+    edit(draft => {
+      if (!draft.conflict || draft.conflict.active) return;
+      draft.conflict.active = true;
+      delete draft.conflict.endedDay;
+      delete draft.conflict.endedTime;
+      addLog(draft, "conflito", `Conflito retomado: ${draft.conflict.name}.`);
+    });
+    toast.success("Conflito retomado");
+  }
+
+  if (!conflict) return <section className="conflict-empty panel panel-pad">
+    <div className="conflict-empty-icon"><Swords size={28} aria-hidden="true" /></div>
+    <div className="conflict-empty-copy">
+      <p className="dossier-title">Cena atual · conflito opcional</p>
+      <h2 className="section-title mt-1">Nenhum conflito ativo</h2>
+      <p className="intro-line mt-2">Inicie um conflito quando a ficção pedir acompanhamento de participantes, ameaças e spotlight. Não há iniciativa, fila ou turno automático.</p>
+    </div>
+    <div className="conflict-start-controls">
+      <Field label="Nome da cena de conflito" value={sceneName} onChange={setSceneName} placeholder="Ex.: Estacionamento do mercado" />
+      <Button onClick={startConflict}><Swords size={16} /> Iniciar conflito</Button>
+    </div>
+  </section>;
+
+  if (!conflict.active) return <div className="conflict-manager">
+    <section className="panel panel-pad conflict-summary">
+      <div><p className="dossier-title">Conflito encerrado</p><h2 className="section-title mt-1">{conflict.name}</h2>
+        <p className="intro-line mt-2">Começou no Dia {conflict.startedDay}, {conflict.startedTime}{conflict.endedDay ? ` · encerrou no Dia ${conflict.endedDay}, ${conflict.endedTime}` : ""}.</p></div>
+      <div className="conflict-summary-metrics">
+        <span><small>Sobreviventes</small><b>{conflict.survivorIds.length}</b></span>
+        <span><small>Ameaças</small><b>{conflict.threats.length}</b></span>
+        <span><small>Derrotadas</small><b>{conflict.threats.filter(threat => threat.defeated).length}</b></span>
+        <span><small>Spotlights</small><b>{conflict.spotlightHistory.length}</b></span>
+      </div>
+      <div className="conflict-summary-actions">
+        <Button variant="outline" onClick={reopenConflict}>Retomar conflito</Button>
+        <Button onClick={() => { setSceneName(`Conflito — ${sectorName}`); edit(draft => { delete draft.conflict; }); }}>Preparar novo conflito</Button>
+      </div>
+    </section>
+  </div>;
+
+  const spotlightName = participantLabel(game, conflict.spotlight);
+  const participantsCount = conflict.survivorIds.length + conflict.threats.length;
+
+  return <div className="conflict-manager">
+    <section className="panel conflict-hero">
+      <div className="conflict-hero-main">
+        <div><p className="dossier-title">Cena {conflict.sceneNumber} · conflito ativo</p><h2>{conflict.name}</h2>
+          <p>Dia {game.day} · {displayTime(game.minutes)} · {participantsCount} participante(s)</p></div>
+        <AlertDialog>
+          <AlertDialogTrigger asChild><Button size="sm" variant="outline">Encerrar conflito</Button></AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader><AlertDialogTitle>Encerrar {conflict.name}?</AlertDialogTitle>
+              <AlertDialogDescription>O conflito deixa de ficar ativo, mas participantes, ameaças e histórico de spotlight permanecem registrados. Isso não inicia uma nova cena narrativa.</AlertDialogDescription></AlertDialogHeader>
+            <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={closeConflict}>Encerrar conflito</AlertDialogAction></AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+
+      <div className="conflict-spotlight">
+        <div className="conflict-spotlight-icon"><Crosshair size={22} aria-hidden="true" /></div>
+        <div className="conflict-spotlight-copy">
+          <small>SPOTLIGHT ATUAL</small>
+          <strong>{spotlightName ?? "Sem foco definido"}</strong>
+          <span>{conflict.spotlight ? (conflict.spotlight.kind === "survivor" ? "Sobrevivente" : "Ameaça") : "O mestre decide livremente quem recebe o foco."}</span>
+        </div>
+        {conflict.spotlight && <Button size="sm" variant="ghost" onClick={() => edit(draft => { if (draft.conflict) clearConflictSpotlight(draft.conflict); })}>Limpar</Button>}
+      </div>
+      <p className="conflict-rule-note">Spotlight é apenas um marcador de foco narrativo. O sistema não bloqueia ações, não calcula iniciativa e não escolhe quem age depois.</p>
+    </section>
+
+    <div className="conflict-columns">
+      <section className="panel panel-pad conflict-participants">
+        <div className="conflict-section-heading"><div><p className="dossier-title">Equipe</p><h3>Sobreviventes</h3></div><span className="tag">{conflict.survivorIds.length}</span></div>
+        <div className="conflict-add-row">
+          <Pick label="Adicionar sobrevivente" value={survivorToAdd} options={availableSurvivors} onChange={setSurvivorToAdd} placeholder="Todos já estão na cena" disabled={!availableSurvivors.length} />
+          <Button size="sm" variant="outline" disabled={!survivorToAdd || !availableSurvivors.length} onClick={addSurvivor}><UserPlus size={15} /> Adicionar</Button>
+        </div>
+        <div className="conflict-survivor-list">
+          {conflict.survivorIds.map(id => {
+            const person = game.survivors.find(row => row.id === id);
+            if (!person) return <article key={id} className="conflict-person is-missing"><Users size={18} /><div><b>Sobrevivente indisponível</b><small>{id}</small></div><Button size="sm" variant="ghost" onClick={() => remove({ kind: "survivor", id }, "Sobrevivente indisponível")}><X size={15} /></Button></article>;
+            const stats = survivorStats(person);
+            const isFocused = conflict.spotlight?.kind === "survivor" && conflict.spotlight.id === person.id;
+            return <article key={person.id} className={`conflict-person${isFocused ? " is-focused" : ""}`}>
+              <div className="conflict-avatar">{person.portrait ? <img src={person.portrait} alt="" /> : person.name.slice(0,2).toUpperCase()}</div>
+              <div className="conflict-person-copy"><b>{person.name}</b><small>{person.archetype} · {person.specialty}</small>
+                <span>PV {Math.max(0, stats.hp - person.hp)}/{stats.hp} · Estresse {person.stress}/6 · Esperança {person.hope}/6</span></div>
+              <div className="conflict-person-actions">
+                <Button size="sm" variant={isFocused ? "default" : "outline"} onClick={() => focus({ kind: "survivor", id: person.id }, person.name)}><Crosshair size={14} /> {isFocused ? "Em foco" : "Spotlight"}</Button>
+                <Button size="sm" variant="ghost" aria-label={`Remover ${person.name} do conflito`} onClick={() => remove({ kind: "survivor", id: person.id }, person.name)}><X size={15} /></Button>
+              </div>
+            </article>;
+          })}
+          {!conflict.survivorIds.length && <p className="conflict-inline-empty">Nenhum sobrevivente adicionado.</p>}
+        </div>
+      </section>
+
+      <section className="panel panel-pad conflict-participants">
+        <div className="conflict-section-heading"><div><p className="dossier-title">Pressão</p><h3>Ameaças em cena</h3></div><span className="tag">{conflict.threats.length}</span></div>
+        <div className="conflict-threat-add">
+          <Pick label="Ameaça do catálogo" value={threatToAdd} options={threatOptions} onChange={setThreatToAdd} placeholder="Catálogo vazio" disabled={!threatOptions.length} />
+          <Counter compact label="Qtd." value={threatQuantity} min={1} max={12} onChange={setThreatQuantity} />
+          <Button size="sm" variant="outline" disabled={!threatToAdd || !threatOptions.length} onClick={addThreats}><Plus size={15} /> Adicionar</Button>
+        </div>
+        <div className="conflict-threat-list">
+          {conflict.threats.map(instance => {
+            const template = instance.templateSnapshot;
+            const hp = threatHp(instance);
+            const isFocused = conflict.spotlight?.kind === "threat" && conflict.spotlight.id === instance.id;
+            return <article key={instance.id} className={`conflict-threat${isFocused ? " is-focused" : ""}${instance.defeated ? " is-defeated" : ""}`}>
+              <div className="conflict-threat-heading">
+                <span className="conflict-threat-icon">{instance.defeated ? <Skull size={18} /> : <ShieldAlert size={18} />}</span>
+                <div><small>Patamar {template.tier} · {template.role}</small><b>{instance.name}</b></div>
+                {instance.defeated && <span className="tag">DERROTADA</span>}
+              </div>
+              <div className="conflict-threat-stats">
+                <span><small>Dificuldade</small><b>{template.difficulty}</b></span>
+                <span><small>Limiares</small><b>{template.majorThreshold ?? "—"} / {template.severeThreshold ?? "—"}</b></span>
+                <span><small>PV</small><b>{hp === null ? "—" : `${hp}/${template.maxHp}`}</b></span>
+                <span><small>Estresse</small><b>{template.maxStress === null ? "—" : `${Math.max(0, template.maxStress - instance.stressMarked)}/${template.maxStress}`}</b></span>
+              </div>
+              <div className="conflict-threat-controls">
+                {template.maxHp !== null && <Counter compact label="PV marcados" value={instance.hpMarked} min={0} max={template.maxHp} onChange={value => edit(draft => {
+                  const row = draft.conflict?.threats.find(threat => threat.id === instance.id);
+                  if (!row) return;
+                  row.hpMarked = value;
+                  row.defeated = value >= (row.templateSnapshot.maxHp ?? 999);
+                })} />}
+                {template.maxStress !== null && <Counter compact label="Estresse" value={instance.stressMarked} min={0} max={template.maxStress} onChange={value => edit(draft => {
+                  const row = draft.conflict?.threats.find(threat => threat.id === instance.id);
+                  if (row) row.stressMarked = value;
+                })} />}
+              </div>
+              <div className="conflict-threat-actions">
+                <Button size="sm" variant={isFocused ? "default" : "outline"} onClick={() => focus({ kind: "threat", id: instance.id }, instance.name)}><Crosshair size={14} /> {isFocused ? "Em foco" : "Spotlight"}</Button>
+                <Button size="sm" variant="outline" onClick={() => edit(draft => {
+                  const row = draft.conflict?.threats.find(threat => threat.id === instance.id);
+                  if (row) row.defeated = !row.defeated;
+                })}>{instance.defeated ? "Reativar" : "Marcar derrotada"}</Button>
+                <Button size="sm" variant="ghost" aria-label={`Remover ${instance.name} do conflito`} onClick={() => remove({ kind: "threat", id: instance.id }, instance.name)}><X size={15} /></Button>
+              </div>
+            </article>;
+          })}
+          {!conflict.threats.length && <p className="conflict-inline-empty">Nenhuma ameaça adicionada.</p>}
+        </div>
+      </section>
+    </div>
+
+    <div className="conflict-bottom-grid">
+      <section className="panel panel-pad">
+        <div className="conflict-section-heading"><div><p className="dossier-title">Ritmo narrativo</p><h3>Histórico de spotlight</h3></div><span className="tag">{conflict.spotlightHistory.length}</span></div>
+        <div className="conflict-spotlight-history">
+          {[...conflict.spotlightHistory].reverse().slice(0,18).map((event, index) => <div key={event.eventId} className="conflict-history-row">
+            <span>{conflict.spotlightHistory.length - index}</span>
+            <div><b>{event.name}</b><small>{event.kind === "survivor" ? "Sobrevivente" : "Ameaça"} · Dia {event.day} · {event.time}</small></div>
+          </div>)}
+          {!conflict.spotlightHistory.length && <p className="conflict-inline-empty">O histórico começa quando o mestre atribuir o primeiro spotlight.</p>}
+        </div>
+      </section>
+
+      <section className="panel panel-pad">
+        <div className="conflict-section-heading"><div><p className="dossier-title">Anotações</p><h3>Estado da cena</h3></div></div>
+        <Field label="Notas do mestre" multiline value={notesDraft} onChange={setNotesDraft} placeholder="Cobertura, perigos, objetivos, mudanças no ambiente…" />
+        <div className="conflict-notes-actions"><Button size="sm" variant="outline" disabled={notesDraft === conflict.notes} onClick={() => {
+          const notes = notesDraft.trim().slice(0, 4000);
+          edit(draft => { if (draft.conflict) draft.conflict.notes = notes; });
+          setNotesDraft(notes);
+          toast.success("Notas do conflito salvas");
+        }}>Salvar notas</Button></div>
+      </section>
+    </div>
+  </div>;
+}
