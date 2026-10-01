@@ -4,7 +4,7 @@ const content = require('../lib/content.json');
 const { explicitItemArtFor, itemArtFor } = require('../lib/item-art.ts');
 
 function visualKey(ref) {
-  return [ref.sheet, ref.cell, ref.badge ?? ''].join(':');
+  return [ref.sheet, ref.cell].join(':');
 }
 
 const excluded = new Set(['Consulta antes de sair e ao retornar', 'Suprimentos abstratos']);
@@ -27,13 +27,17 @@ test('catálogo mantém diversidade visual mínima e evita uma imagem genérica 
   assert.ok(largest.length <= 5, `Uma mesma aparência foi usada por ${largest.length} itens: ${largest.join(', ')}`);
 });
 
-test('munições possuem leitura visual própria por categoria', () => {
+test('munições possuem artes próprias e diferentes das armas que as disparam', () => {
   const names = [
     'Munição de Pistola', 'Munição de Espingarda', 'Munição de Carabina',
     'Munição de Flechas', 'Munição de Virotes', 'Munição de Chumbinhos', 'Munição de Outra',
   ];
-  const keys = names.map(name => visualKey(itemArtFor(name, 'Munição')));
-  assert.equal(new Set(keys).size, names.length);
+  const refs = names.map(name => itemArtFor(name, 'Munição'));
+  assert.ok(refs.every(ref => ref.sheet === 'custom-ammo'));
+  assert.equal(new Set(refs.map(visualKey)).size, names.length);
+  assert.notEqual(visualKey(itemArtFor('Munição de Pistola')), visualKey(itemArtFor('Pistola')));
+  assert.notEqual(visualKey(itemArtFor('Munição de Espingarda')), visualKey(itemArtFor('Espingarda')));
+  assert.notEqual(visualKey(itemArtFor('Munição de Carabina')), visualKey(itemArtFor('Carabina')));
 });
 
 test('itens antes confundidos por arte compartilhada agora são distinguíveis', () => {
@@ -50,5 +54,23 @@ test('itens antes confundidos por arte compartilhada agora são distinguíveis',
   ];
   for (const [a, b] of pairs) {
     assert.notEqual(visualKey(itemArtFor(a)), visualKey(itemArtFor(b)), `${a} e ${b} continuam visualmente idênticos`);
+  }
+});
+
+test('itens antes diferenciados por badge usam atlas próprios sem etiquetas', () => {
+  const migrated = [
+    'Kit de pilhas', 'Sinalizador de mão', 'Traje de bombeiro', 'Colete refletivo',
+    'Uniforme de segurança', 'Roupa de trilha', 'Jaqueta de motociclista', 'Roupa térmica',
+    'Mochila urbana', 'Mochila de trilha', 'Mochila cargueira', 'Lanterna pesada',
+    'Lanterna frontal', 'Kit de higiene', 'Documento ou crachá', 'Fotografias e cartas',
+    'Filtro portátil', 'Pastilhas de purificação', 'Medicamento prescrito identificado',
+    'Antibiótico prescrito', 'Solução de limpeza lacrada', 'Soro fisiológico lacrado',
+    'Água de torneira sem verificação', 'Garrafa sem rótulo', 'Bebida isotônica lacrada',
+    'Bebida energética fechada', 'Cerveja ou vinho', 'Aveia', 'Leite em pó',
+  ];
+  for (const name of migrated) {
+    const ref = itemArtFor(name);
+    assert.ok(ref.sheet.startsWith('custom-'), `${name} ainda não usa arte própria`);
+    assert.equal('badge' in ref, false, `${name} ainda depende de badge`);
   }
 });
