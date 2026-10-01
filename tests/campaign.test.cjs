@@ -142,6 +142,30 @@ test('Cena de Conflito acompanha instâncias e spotlight sem criar ordem de turn
   assert.equal(scene.spotlight, null);
 });
 
+test('PV e Estresse das ameaças são trilhas marcadas a partir de zero', () => {
+  const g = campaign();
+  const scene = conflictScene.createConflictScene({ name:'Teste', sceneNumber:1, day:g.day, time:'08:00' });
+  const template = threats.threatLibrary(g.threats).find(row => row.name === 'ERRANTE');
+  const instance = conflictScene.addThreatInstances(scene, template, 1)[0];
+  assert.equal(instance.hpMarked, 0);
+  assert.equal(instance.stressMarked, 0);
+  assert.equal(instance.defeated, false);
+
+  conflictScene.setThreatHpMarked(instance, 1);
+  assert.equal(instance.hpMarked, 1);
+  assert.equal(instance.defeated, false);
+
+  conflictScene.setThreatStressMarked(instance, 1);
+  assert.equal(instance.stressMarked, 1);
+
+  conflictScene.setThreatHpMarked(instance, template.maxHp);
+  assert.equal(instance.hpMarked, template.maxHp);
+  assert.equal(instance.defeated, true);
+
+  conflictScene.setThreatHpMarked(instance, template.maxHp - 1);
+  assert.equal(instance.defeated, false);
+});
+
 test('reiniciar cidade preserva fichas, ids e campanha mas limpa o mundo e estados temporários', () => {
   const g = campaign();
   const originalCampaignId = g.campaignId;
