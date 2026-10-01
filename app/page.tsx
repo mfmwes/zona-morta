@@ -636,7 +636,7 @@ export default function CampaignApp() {
             </Dialog>
           </div>}
         </>}
-        {activeTab === "sobreviventes" && <SurvivorPanel game={game} edit={edit} playerPreview={readOnlyPreview} playerMode={role === "jogador"} restPeers={restPeers} />}
+        {activeTab === "sobreviventes" && <SurvivorPanel game={game} edit={edit} playerPreview={readOnlyPreview} playerMode={role === "jogador"} restPeers={restPeers} onOpenConflict={() => setTab("conflito")} />}
         {activeTab === "comunidade" && <NpcPanel game={game} edit={edit} playerPreview={readOnlyPreview} />}
         {activeTab === "abrigo" && <ShelterPanel game={game} edit={edit} playerPreview={readOnlyPreview} playerSurvivorId={role === "jogador" ? survivorId : null} />}
         {activeTab === "conflito" && role === "mestre" && !playerPreview && <ConflictSceneManager game={game} edit={edit} />}
