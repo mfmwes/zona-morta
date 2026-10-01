@@ -1701,3 +1701,27 @@ test('Horta usa turnos de 4h, acumula Cultivo e gera comida perecível sem avan�
   assert.equal(g.shelter.food, 2);
   assert.ok(g.shelter.provisionLots.some(lot => lot.label === 'Colheita da horta' && lot.qty === 2 && lot.expiresDay === g.day + 2));
 });
+
+
+test('benefícios de instalações permanecem em 2/3 e param em 1/3 de Integridade', () => {
+  const g = campaign(); const ana = g.survivors[0];
+  assert.equal(require('../lib/game.ts').establishShelter(g, '0,0'), true);
+  ana.inventory = [item('Água de chuva coletada')];
+  const rain = ana.inventory[0];
+
+  const filter = shelterProjects.createShelterProject('water-filter', 'utility-a');
+  filter.state = 'Concluído'; filter.progress = filter.requiredProgress;
+  g.shelter.projects.push(filter);
+  let check = inventory.provisionPreparationCheck(g, ana.id, rain, 1);
+  assert.equal(check.ok, true);
+
+  shelterProjects.applyProjectDamage(filter, 1);
+  assert.equal(filter.state, 'Danificado');
+  check = inventory.provisionPreparationCheck(g, ana.id, rain, 1);
+  assert.equal(check.ok, true);
+
+  shelterProjects.applyProjectDamage(filter, 1);
+  assert.equal(filter.state, 'Inoperante');
+  check = inventory.provisionPreparationCheck(g, ana.id, rain, 1);
+  assert.equal(check.ok, false);
+});
