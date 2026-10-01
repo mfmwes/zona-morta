@@ -365,3 +365,29 @@
 @media (prefers-reduced-motion: reduce) {
   .table-chat { transition: none; }
 }
+
+
+/* Confirma visualmente a entrada mais recente sem depender de toast. */
+.table-chat-roll.is-new,
+.table-chat-message.is-new {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  border-radius: 8px;
+  scroll-margin-block: 12px;
+  animation: table-chat-entry-highlight 1.6s ease-out;
+}
+@keyframes table-chat-entry-highlight {
+  0%, 45% {
+    outline-color: color-mix(in srgb, var(--hope) 62%, transparent);
+  }
+  100% {
+    outline-color: transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .table-chat-roll.is-new,
+  .table-chat-message.is-new {
+    animation: none;
+    outline-color: color-mix(in srgb, var(--hope) 48%, transparent);
+  }
+}
