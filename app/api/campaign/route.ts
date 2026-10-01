@@ -1,4 +1,4 @@
-import { campaignExists, campaignOwnerId, findPlayer, readCampaign, syncCampaignAccountCharacters, wasRevoked, writeCampaign } from "@/db/state";
+import { campaignExists, campaignOwnerId, findPlayer, readCampaign, restoreAccountCharacterToCampaign, syncCampaignAccountCharacters, wasRevoked, writeCampaign } from "@/db/state";
 import { sameOrigin, siteUser } from "@/lib/auth";
 import { applyPlayerChange, projectPlayerGame, type PlayerLog, type ShelterWorkAction } from "@/lib/collaboration";
 import { ammunitionTypes, survivorStats, type AmmunitionType, type GameState, type Survivor } from "@/lib/game";
@@ -92,10 +92,21 @@ export async function GET(request: Request) {
       return Response.json({ error: "Campanha não encontrada." }, { status: 404 });
     }
     const data = await readCampaign(campaignId);
-    const state = preserveKnownSectors(data.state);
+    let state = preserveKnownSectors(data.state);
+    let currentRevision = data.revision;
     await syncCampaignAccountCharacters(campaignId, state);
+    if (member.survivor_id && !state.survivors.some(s => s.id === member.survivor_id)) {
+      const recovered = structuredClone(state);
+      if (await restoreAccountCharacterToCampaign(campaignId, user.id, member.survivor_id, recovered)) {
+        const savedRevision = await writeCampaign(campaignId, recovered, data.revision);
+        if (savedRevision !== null) {
+          state = recovered;
+          currentRevision = savedRevision;
+        }
+      }
+    }
     const characterId = member.survivor_id && state.survivors.some(s => s.id === member.survivor_id) ? member.survivor_id : null;
-    return Response.json({ revision: data.revision, state: projectPlayerGame(state, characterId ?? ""),
+    return Response.json({ revision: currentRevision, state: projectPlayerGame(state, characterId ?? ""),
       role: "jogador", ownerId: campaignId, survivorId: characterId, restPeers: restPeers(state) }, { headers: noStore });
   } catch (error) {
     console.error("Falha ao ler campanha", error);
