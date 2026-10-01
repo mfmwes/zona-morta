@@ -21,7 +21,7 @@ import { CharacterWizard } from "@/components/character-wizard";
 import { CampaignLibrary, type AccountCharacterSummary, type CampaignSummary } from "@/components/campaign-library";
 import { TableChat } from "@/components/table-chat";
 import { DayCloseDialog } from "@/components/day-close-dialog";
-import { addLog, defaultState, displayTime, resetCityPreservingSurvivors, survivorHex, type GameState, type Point, type Survivor } from "@/lib/game";
+import { addLog, displayTime, resetCityPreservingSurvivors, survivorHex, type GameState, type Point, type Survivor } from "@/lib/game";
 import { createId } from "@/lib/id";
 import { sectorProfiles } from "@/lib/sectors";
 import { adjustProvisionCount } from "@/lib/provisions";
