@@ -26,6 +26,8 @@ const npcGenerator = require('../lib/npc-generator.ts');
 const combatResources = require('../lib/combat-resources.ts');
 const { rollInfo } = require('../lib/roll-log.ts');
 const { traitLabel, traitStorageKey, localizeRollLog } = require('../lib/terminology.ts');
+const conflictScene = require('../lib/conflict.ts');
+const threats = require('../lib/threats.ts');
 
 test('custos em português e descrições antigas debitam os mesmos recursos', () => {
   for (const description of ['gaste 1 Hope', 'gaste 1 hope', 'gaste 1 Esperança']) {
@@ -106,6 +108,39 @@ function item(name, qty = 1, category) {
 }
 function physicalCount(s) { return s.inventory.reduce((sum, x) => sum + x.qty, 0) + ['primary','secondary','protection','outfit','bag','personal','pocket1','pocket2'].filter(key => s[key] && !(key === 'personal' && s.personal === s.bag)).length; }
 
+
+test('Cena de Conflito acompanha instâncias e spotlight sem criar ordem de turnos', () => {
+  const g = campaign();
+  const scene = conflictScene.createConflictScene({
+    name: 'Posto abandonado', sceneNumber: 3, day: g.day, time: '08:00',
+    survivorIds: g.survivors.map(person => person.id),
+  });
+  g.conflict = scene;
+  const template = threats.threatLibrary(g.threats).find(row => row.name === 'ERRANTE');
+  assert.ok(template);
+
+  const added = conflictScene.addThreatInstances(scene, template, 3);
+  assert.deepEqual(added.map(row => row.name), ['ERRANTE A', 'ERRANTE B', 'ERRANTE C']);
+  assert.equal(scene.threats.length, 3);
+
+  template.difficulty = 99;
+  assert.equal(scene.threats[0].templateSnapshot.difficulty, 11);
+
+  assert.equal(conflictScene.setConflictSpotlight(scene, { kind:'survivor', id:g.survivors[0].id }, g.survivors[0].name, 1, '08:01'), true);
+  assert.equal(conflictScene.setConflictSpotlight(scene, { kind:'survivor', id:g.survivors[0].id }, g.survivors[0].name, 1, '08:02'), false);
+  assert.equal(conflictScene.setConflictSpotlight(scene, { kind:'threat', id:added[0].id }, added[0].name, 1, '08:03'), true);
+  assert.equal(scene.spotlightHistory.length, 2);
+  assert.deepEqual(scene.spotlight, { kind:'threat', id:added[0].id });
+
+  conflictScene.removeConflictParticipant(scene, { kind:'threat', id:added[0].id });
+  assert.equal(scene.spotlight, null);
+  assert.equal(scene.threats.length, 2);
+
+  conflictScene.endConflictScene(scene, 1, '08:10');
+  assert.equal(scene.active, false);
+  assert.equal(scene.endedTime, '08:10');
+  assert.equal(scene.spotlight, null);
+});
 
 test('reiniciar cidade preserva fichas, ids e campanha mas limpa o mundo e estados temporários', () => {
   const g = campaign();
@@ -197,6 +232,8 @@ test('visão do jogador mostra só sua ficha, locais revelados e registros próp
     notes: '', revealed: false, searches: [] });
   known.events.push({ id: 'e', text: 'Surge um grupo', trigger: 'relógio secreto', revealed: false });
   g.shelter.notes = 'reserva secreta';
+  g.conflict = conflictScene.createConflictScene({ name:'Conflito secreto', sceneNumber:1, day:g.day, time:'08:00', survivorIds:[ana.id] });
+  conflictScene.addThreatInstances(g.conflict, threats.threatLibrary(g.threats).find(row => row.name === 'ERRANTE'), 1);
   require('../lib/game.ts').addLog(g, 'dados', 'Ana rolou', ana.id);
   require('../lib/game.ts').addLog(g, 'evento', 'Segredo do mestre');
   const visible = collaboration.projectPlayerGame(g, ana.id);
@@ -208,6 +245,8 @@ test('visão do jogador mostra só sua ficha, locais revelados e registros próp
   assert.equal(JSON.stringify(visible).includes('Porta oculta'), false);
   assert.equal(JSON.stringify(visible).includes('relógio secreto'), false);
   assert.equal(JSON.stringify(visible).includes('reserva secreta'), false);
+  assert.equal(JSON.stringify(visible).includes('Conflito secreto'), false);
+  assert.equal(visible.conflict, undefined);
   assert.equal(visible.hexes['0,0'].points[0].name, 'Depósito');
   assert.equal(visible.hexes['0,0'].points[0].notes, '');
   assert.equal(visible.hexes['0,0'].points[0].searches.length, 0);
