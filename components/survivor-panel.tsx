@@ -21,10 +21,10 @@ import { EmptyItemArt, ItemArt } from "@/components/item-art";
 import { AbilityArt } from "@/components/ability-art";
 import { RollDialog, type RollRequest } from "@/components/roll-dialog";
 import { Counter, Field, Pick } from "@/components/game-controls";
-import { absoluteMinutes, addLog, content, survivorHex, survivorStats, traits, type EquipmentSlot, type GameState, type Infection, type Survivor } from "@/lib/game";
-import { activeCart, ammoTypeFor, ammoTypes, atSharedStorage, batteryStateFor, cartStoredLoad, catalogForItem, countsAsMedication, discardItem, stowSlot } from "@/lib/inventory";
+import { absoluteMinutes, addLog, ammunitionCount, ammunitionItemType, ammunitionTypes, content, survivorHex, survivorStats, traits, type EquipmentSlot, type GameState, type Infection, type Survivor } from "@/lib/game";
+import { activeCart, atSharedStorage, batteryStateFor, cartStoredLoad, catalogForItem, countsAsMedication, discardItem, stowSlot } from "@/lib/inventory";
 import { provisionBreakdown, provisionDisplay, provisionItemInfo } from "@/lib/provision-items";
-import { equipmentModifiers, getPrimary, getProtection, getSecondary } from "@/lib/equipment";
+import { equipmentModifiers, getPrimary, getProtection, getSecondary, weaponAmmoType } from "@/lib/equipment";
 import { rollDie } from "@/lib/rolls";
 import { consumeDailyProvision } from "@/lib/survival";
 import { adjustProvisionCount } from "@/lib/provisions";
@@ -302,6 +302,11 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
   const hopeEffect = hopeSeparator >= 0 ? hopeFeature.slice(hopeSeparator + 1).trim() : hopeFeature;
   const primary = selected ? getPrimary(selected.primary) : null;
   const secondary = selected ? getSecondary(selected.secondary) : null;
+  const primaryAmmoType = selected ? weaponAmmoType(selected.primary) : null;
+  const primaryAmmoTotal = selected && primaryAmmoType ? ammunitionCount(selected.inventory, primaryAmmoType) : 0;
+  const primaryAmmoAvailable = selected && primaryAmmoType ? ammunitionCount(selected.inventory, primaryAmmoType, true) : 0;
+  const primaryAmmoCommitted = Math.max(0, primaryAmmoTotal - primaryAmmoAvailable);
+  const totalAmmoUnits = selected ? ammunitionTypes.reduce((sum, type) => sum + ammunitionCount(selected.inventory, type), 0) : 0;
   const protection = selected ? getProtection(selected.protection) : null;
   const modifiers = selected ? equipmentModifiers(selected) : null;
   const personal = selected ? content.personal.find(a => a.name === selected.personal) : null;
@@ -507,7 +512,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
                 <div className="character-provision-grid">
                   <span><Utensils size={18} aria-hidden="true" /><b>{selected.food}</b><small>Comida</small></span>
                   <span><Droplets size={18} aria-hidden="true" /><b>{selected.water}</b><small>Água</small></span>
-                  <span><Crosshair size={18} aria-hidden="true" /><b>{selected.ammo}</b><small>Munição</small></span>
+                  <span><Crosshair size={18} aria-hidden="true" /><b>{totalAmmoUnits}</b><small>Munição</small></span>
                 </div>
                 <div className="character-load-line"><span><Backpack size={16} aria-hidden="true" /> Carga pessoal</span><b>{stats.carried}/{stats.capacity}</b></div>
                 <Progress value={Math.min(100, stats.carried / Math.max(1, stats.capacity) * 100)} />
@@ -572,7 +577,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
                 return <div className="character-equipment" key={slot}>{selected[slot] ? <ItemArt name={selected[slot]!} category={pocketItem?.category} size="large" /> : <EmptyItemArt size="large" />}<div><span>BOLSO {index + 1}</span><h4>{selected[slot] || "Bolso vazio"}</h4><p>{selected[slot] ? "Item de acesso rápido · 0 carga enquanto ativo." : "Aceita objetos compactos marcados com Carga/Guarda 0."}</p></div></div>;
               })}
             </section>
-            <p className="character-rule-note">Uma carga de munição compatível é consumida automaticamente na primeira ação de disparo daquele tipo na cena. Armas, proteção e traje em uso não ocupam espaço guardado. O Carrinho dobrável é um contêiner separado de 4 espaços e exige as duas mãos enquanto é conduzido; os dois bolsos aceitam objetos compactos compatíveis.</p>
+            <p className="character-rule-note">Munição é um item físico do inventário. O primeiro disparo de cada categoria na cena compromete 1 unidade compatível; ela permanece visível e bloqueada até a próxima cena, quando é consumida. Até 4 unidades do mesmo tipo ocupam 1 espaço de carga. Armas, proteção e traje em uso não ocupam espaço guardado.</p>
           </TabsContent>
           <TabsContent value="habilidades" className="character-tab-content">
             <section className="character-hope-feature" aria-labelledby="hope-feature-title">
@@ -603,7 +608,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
               <div className="character-stock-grid">
                 <div className="metric"><span className="smallcaps subtle">Comida disponível</span><strong>{foodProvision?.total ?? selected.food}</strong><p className="text-xs subtle mt-2">{foodProvision?.loose ?? selected.food} soltas · {foodProvision?.itemsReady ?? 0} em itens{foodProvision?.itemsWaiting ? ` · ${foodProvision.itemsWaiting} aguardando preparo/verificação` : ""}</p><Counter compact label="Porções soltas" value={selected.food} max={99} onChange={value => change(selected.id, s => { adjustProvisionCount(s, "food", value); })} /></div>
                 <div className="metric"><span className="smallcaps subtle">Água disponível</span><strong>{waterProvision?.total ?? selected.water}</strong><p className="text-xs subtle mt-2">{waterProvision?.loose ?? selected.water} soltas · {waterProvision?.itemsReady ?? 0} em itens{waterProvision?.itemsWaiting ? ` · ${waterProvision.itemsWaiting} aguardando verificação` : ""}</p><Counter compact label="Porções soltas" value={selected.water} max={99} onChange={value => change(selected.id, s => { adjustProvisionCount(s, "water", value); })} /></div>
-                <Counter label="Munição · cargas" value={selected.ammo} max={99} onChange={value => change(selected.id, s => { s.ammo = value; })} />
+                <div className="metric"><span className="smallcaps subtle">Munição física</span><strong>{totalAmmoUnits}</strong><p className="text-xs subtle mt-2">{ammunitionTypes.filter(type => ammunitionCount(selected.inventory, type) > 0).map(type => `${type}: ${ammunitionCount(selected.inventory, type)}`).join(" · ") || "Nenhuma unidade no inventário"}</p></div>
               </div>
               {(selected.provisionLots ?? []).length > 0 && <p className="character-rule-note">Perecíveis: {selected.provisionLots!.map(lot => `${lot.qty} porção(ões) de ${lot.resource === "food" ? "comida" : "água"} (${lot.label}) · vence no amanhecer do dia ${lot.expiresDay}`).join("; ")}.</p>}
               <div className="character-consume-actions"><Button size="sm" variant="outline" disabled={selected.food < 1 || selected.foodConsumedDay === game.day} onClick={() => edit(draft => {
@@ -613,7 +618,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
                   if (consumeDailyProvision(draft, selected.id, "water")) toast.success("Água solta de hoje registrada.");
                 })}><Droplets size={15} /> {selected.waterConsumedDay === game.day ? "Água de hoje registrada" : "Beber 1 porção solta"}</Button></div>
               <p className="roll-hint">Para registrar alimentação/hidratação do dia, use <b>Comer/Beber</b> ou <b>Ações → Consumir</b> no item. Alterar o contador manualmente corrige o estoque, mas não registra que o personagem consumiu.</p>
-              <div className="character-provision-actions">{!playerMode && <ProvisionTransferDialog key={selected.id} game={game} edit={edit} survivorId={selected.id} />}<Pick label="Tipo de munição" value={ammoTypeFor(selected)} options={["Indefinida", ...ammoTypes]} onChange={value => change(selected.id, s => { s.ammoType = value; })} /></div>
+              <div className="character-provision-actions">{!playerMode && <ProvisionTransferDialog key={selected.id} game={game} edit={edit} survivorId={selected.id} />}</div>
             </section>
             <section className="character-surface"><SectionHeading index="02" title="Kit ativo" />
               {([ ["primary","Arma principal","Armas primárias"], ["secondary","Arma secundária","Armas secundárias"], ["protection","Proteção","Proteções"], ["outfit","Traje vestido","Trajes e acessórios"], ["personal","Item pessoal","Abrigo, transporte e mochilas"], ["bag","Bolsa / mochila","Abrigo, transporte e mochilas"] ] as const)
@@ -633,10 +638,14 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
               {inventoryGroups.map(([category, items]) => <div className="character-inventory-group" key={category}><h4>{category}</h4>
                 <Accordion type="multiple">{items.map(item => { const catalog = catalogForItem(item); const provisionState = provisionItemInfo(item); return <AccordionItem value={item.id} key={item.id} className="character-item">
                   <ItemContextMenu game={game} edit={edit} ownerId={selected.id} item={item} selfOnly={playerMode}>
-                    <div className="character-item-row inventory-context-target"><AccordionTrigger className="character-item-trigger"><ItemArt name={item.name} category={category} /><span className="character-item-name">{item.name}<small>{provisionState.resource ? provisionDisplay(item) : `${item.condition || "Estado não registrado"} · ${item.load * item.qty} espaço(s)${batteryStateFor(item) ? ` · bateria ${batteryStateFor(item)?.toLowerCase()}` : ""}`}</small></span><span className="character-item-meta">×{item.qty}</span></AccordionTrigger>
+                    <div className="character-item-row inventory-context-target"><AccordionTrigger className="character-item-trigger"><ItemArt name={item.name} category={category} /><span className="character-item-name">{item.name}<small>{provisionState.resource ? provisionDisplay(item) : ammunitionItemType(item)
+  ? `${Math.ceil(item.qty / 4)} espaço(s) por este stack${item.committedAmmo ? ` · ${item.committedAmmo} comprometida(s) nesta cena` : ""}`
+  : `${item.condition || "Estado não registrado"} · ${item.load * item.qty} espaço(s)${batteryStateFor(item) ? ` · bateria ${batteryStateFor(item)?.toLowerCase()}` : ""}`}</small></span><span className="character-item-meta">×{item.qty}</span></AccordionTrigger>
                       <ItemActionsDialog game={game} edit={edit} ownerId={selected.id} item={item} allowCorrection={!playerPreview} selfOnly={playerMode} /></div>
                   </ItemContextMenu>
-                  <AccordionContent className="character-item-detail"><div className="character-chips"><span>{category}</span><span>Estado: {item.condition || "Sem registro"}</span>{provisionState.resource ? <><span>{provisionState.remaining} porção(ões) restantes</span><span>{provisionState.status}</span>{item.opened && <span>Aberto</span>}{item.expiresDay && <span>Vence no dia {item.expiresDay}</span>}</> : <span>{item.load + " espaço(s) por unidade"}</span>}{item.armorMarked ? <span>Armadura marcada: {item.armorMarked}</span> : null}{batteryStateFor(item) && <span>Bateria: {batteryStateFor(item)}</span>}{item.foundDay && <span>Encontrado no dia {item.foundDay}</span>}</div>
+                  <AccordionContent className="character-item-detail"><div className="character-chips"><span>{category}</span><span>Estado: {item.condition || "Sem registro"}</span>{provisionState.resource ? <><span>{provisionState.remaining} porção(ões) restantes</span><span>{provisionState.status}</span>{item.opened && <span>Aberto</span>}{item.expiresDay && <span>Vence no dia {item.expiresDay}</span>}</>
+  : ammunitionItemType(item) ? <><span>Tipo: {ammunitionItemType(item)}</span><span>Até 4 unidades = 1 espaço</span>{item.committedAmmo ? <span>{item.committedAmmo} unidade(s) bloqueada(s) até a próxima cena</span> : null}</>
+  : <span>{item.load + " espaço(s) por unidade"}</span>}{item.armorMarked ? <span>Armadura marcada: {item.armorMarked}</span> : null}{batteryStateFor(item) && <span>Bateria: {batteryStateFor(item)}</span>}{item.foundDay && <span>Encontrado no dia {item.foundDay}</span>}</div>
                     {catalog && <dl>{catalog.fields.map(field => <div key={field.label}><dt>{field.label}</dt><dd>{field.value}</dd></div>)}</dl>}
                     {item.name === "Carrinho dobrável" && <div className="character-rule-note mt-3"><b>{item.cartDeployed ? "Aberto e sendo conduzido" : "Dobrado"}</b>{item.cartDeployed ? ` · ${cartStoredLoad(item.cartItems ?? [])}/4 espaços · exige duas mãos` : " · ocupa 1 espaço de carga"}{(item.cartItems?.length ?? 0) > 0 && <span> · Conteúdo: {item.cartItems!.map(entry => `${entry.qty}× ${entry.name}`).join(", ")}</span>}</div>}
                   </AccordionContent>
@@ -689,10 +698,10 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
               <div className="character-quick-stat"><Dice5 size={20} aria-hidden="true" /><span>Proficiência<small>dados de dano</small></span><strong>{selected.proficiency ?? 1}</strong></div>
               <DamageThresholds major={stats.major} severe={stats.severe} />
             </div>
-            <div className="character-quick-attack"><span><Swords size={17} aria-hidden="true" /> ATAQUE PRONTO</span><strong>{selected.primary || "Sem arma principal"}</strong><small>{primary ? `${primary.damage} · ${primary.range}` : "Veja o kit de combate"}</small><div><span>Munição</span><b>{selected.ammo} carga(s)</b></div></div>
+            <div className="character-quick-attack"><span><Swords size={17} aria-hidden="true" /> ATAQUE PRONTO</span><strong>{selected.primary || "Sem arma principal"}</strong><small>{primary ? `${primary.damage} · ${primary.range}` : "Veja o kit de combate"}</small><div><span>{primaryAmmoType ? `Munição · ${primaryAmmoType}` : "Munição"}</span><b>{primaryAmmoType ? `${primaryAmmoAvailable} livre(s)${primaryAmmoCommitted ? ` + ${primaryAmmoCommitted} comprometida` : ""}` : "não usa"}</b></div></div>
             <div className="character-quick-rolls"><button type="button" onClick={() => setRollRequest({ survivorId: selected.id, kind: "action" })}><Dice5 size={16} aria-hidden="true" /> Teste</button><button type="button" disabled={!primary} onClick={() => setRollRequest({ survivorId: selected.id, kind: "attack", weapon: "primary" })}><Crosshair size={16} aria-hidden="true" /> Ataque</button></div>
           </div>
-          <div className="character-quick-mobile"><span title="Vida disponível"><Heart size={16} aria-hidden="true" /><b>{stats.hp-selected.hp}/{stats.hp}</b><small>Vida</small></span><span title="Estresse marcado"><Zap size={16} aria-hidden="true" /><b>{selected.stress}/6</b><small>Stress</small></span><span title="Esperança"><Sparkles size={16} aria-hidden="true" /><b>{selected.hope}/6</b><small>Hope</small></span><span title="Evasão"><Crosshair size={16} aria-hidden="true" /><b>{stats.evasion}</b><small>EV</small></span><button type="button" onClick={() => setActiveTab("combate")} aria-label="Abrir combate e controles de recursos"><Shield size={16} aria-hidden="true" /><b>{Math.max(0, stats.armor-(selected.armorMarked ?? 0))}</b><small>Combate</small></button><button type="button" className="character-quick-mobile-weapon" onClick={() => setActiveTab("combate")}><Swords size={14} aria-hidden="true" /><strong>{selected.primary || "Sem arma principal"}</strong><span>{primary ? `${primary.damage} · ${primary.range}` : "Ver ataque"}</span><span>{selected.ammo} carga(s)</span></button></div>
+          <div className="character-quick-mobile"><span title="Vida disponível"><Heart size={16} aria-hidden="true" /><b>{stats.hp-selected.hp}/{stats.hp}</b><small>Vida</small></span><span title="Estresse marcado"><Zap size={16} aria-hidden="true" /><b>{selected.stress}/6</b><small>Stress</small></span><span title="Esperança"><Sparkles size={16} aria-hidden="true" /><b>{selected.hope}/6</b><small>Hope</small></span><span title="Evasão"><Crosshair size={16} aria-hidden="true" /><b>{stats.evasion}</b><small>EV</small></span><button type="button" onClick={() => setActiveTab("combate")} aria-label="Abrir combate e controles de recursos"><Shield size={16} aria-hidden="true" /><b>{Math.max(0, stats.armor-(selected.armorMarked ?? 0))}</b><small>Combate</small></button><button type="button" className="character-quick-mobile-weapon" onClick={() => setActiveTab("combate")}><Swords size={14} aria-hidden="true" /><strong>{selected.primary || "Sem arma principal"}</strong><span>{primary ? `${primary.damage} · ${primary.range}` : "Ver ataque"}</span><span>{primaryAmmoType ? `${primaryAmmoAvailable} livre(s)` : "sem munição"}</span></button></div>
         </aside>
       </div>
       {rollRequest && <RollDialog game={game} edit={edit} request={rollRequest} open onOpenChange={opened => { if (!opened) setRollRequest(null); }} />}
