@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import { defaultState, type GameState } from "@/lib/game";
+import { defaultState, type GameState, type Survivor } from "@/lib/game";
 import { preserveKnownSectors } from "@/lib/sectors";
 import { normalizeShelter } from "@/lib/shelter-projects";
 import { randomToken, tokenHash } from "@/lib/auth";
