@@ -15,6 +15,7 @@ import { DayCloseDialog } from "@/components/day-close-dialog";
 import { FormerShelterProjects, ShelterProjectsManager } from "@/components/shelter-project-manager";
 import { ShelterVisualDashboard } from "@/components/shelter-dashboard";
 import { RuntimeErrorBoundary } from "@/components/runtime-error-boundary";
+import { ThreatManager } from "@/components/threat-manager";
 import { ammunitionCount, ammunitionItemType, ammunitionTypes, content, establishShelter, recoverFormerStock, shelterPopulationBreakdown, survivorPositionGroups, survivorsAtHex, type GameState } from "@/lib/game";
 import { shelterColdStorageActive, shelterMetrics } from "@/lib/shelter-projects";
 import { atSharedStorage, batteryStateFor, catalogForItem } from "@/lib/inventory";
@@ -279,7 +280,7 @@ export function ShelterPanel({ game, edit, playerPreview, playerSurvivorId }: { 
   </div>;
 }
 
-export function ReferencePanel() {
+export function ReferencePanel({ game, edit, playerPreview }: { game: GameState; edit: Edit; playerPreview: boolean }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("Todas");
   const [page, setPage] = useState(1);
@@ -335,15 +336,11 @@ export function ReferencePanel() {
         </nav>}
       </TabsContent>
       <TabsContent value="ameacas">
-        <div className="mb-4"><h2 className="section-title">Adversários e perigos · nível 1</h2>
-          <p className="intro-line mt-1">Ataques comuns de infectados não causam Exposição. Mordida requer a oportunidade indicada na característica.</p></div>
-        <div className="grid gap-3 lg:grid-cols-2">
-          {content.adversaries.map(a => <article key={a.name} className="list-card text-sm leading-relaxed">
-            <p className="dossier-title">{a.name}</p><p className="mt-2">{a.intro}</p>
-            <p className="mt-2 font-bold">Dificuldade {a.stats}</p>{a.attack && <p className="mt-1"><b>ATQ</b> {a.attack}</p>}
-            {a.features.map((f,i) => <p key={i} className="mt-2 border-t pt-2">{f}</p>)}
-          </article>)}
-        </div>
+        {playerPreview ? <div className="threat-manager-locked">
+          <ShieldAlert size={28} aria-hidden="true" />
+          <div><h2 className="section-title">Gerenciador de ameaças</h2>
+            <p className="intro-line mt-1">As fichas mecânicas de ameaças ficam reservadas ao mestre. Informações reveladas durante uma Cena de Conflito serão apresentadas aos jogadores pela própria cena.</p></div>
+        </div> : <ThreatManager game={game} edit={edit} />}
       </TabsContent>
       <TabsContent value="procedimentos">
         <div className="grid gap-4 lg:grid-cols-2">
