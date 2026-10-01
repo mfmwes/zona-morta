@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import { defaultState, type GameState, type Survivor } from "@/lib/game";
+import { addLog, defaultState, type GameState, type Survivor } from "@/lib/game";
 import { preserveKnownSectors } from "@/lib/sectors";
 import { normalizeShelter } from "@/lib/shelter-projects";
 import { randomToken, tokenHash } from "@/lib/auth";
@@ -279,6 +279,29 @@ export async function readAccountCharacter(userId: string, survivorId: string) {
     return JSON.parse(row.body) as Survivor;
   } catch {
     return null;
+  }
+}
+
+export async function restoreAccountCharacterToCampaign(campaignId: string, userId: string, survivorId: string, state: GameState) {
+  if (state.survivors.some(person => person.id === survivorId)) return false;
+  await ensureCampaignSchema();
+  const row = await database().prepare(
+    "SELECT body FROM user_characters WHERE user_id = ? AND survivor_id = ? AND campaign_id = ?"
+  ).bind(userId, survivorId, campaignId).first<{ body: string }>();
+  if (!row) return false;
+  try {
+    const survivor = JSON.parse(row.body) as Survivor;
+    if (!survivor || survivor.id !== survivorId || typeof survivor.name !== "string") return false;
+    survivor.hex = survivor.hex && state.hexes[survivor.hex] ? survivor.hex : state.partyHex;
+    delete survivor.restPlan;
+    delete survivor.ammoSpentScene;
+    delete survivor.ammoSpentType;
+    delete survivor.ammoSpentTypes;
+    state.survivors.push(survivor);
+    addLog(state, "sobrevivente", `${survivor.name} foi restaurado da cópia salva na conta.`, survivor.id);
+    return true;
+  } catch {
+    return false;
   }
 }
 
