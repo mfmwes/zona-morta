@@ -174,6 +174,20 @@ export function clearConflictSpotlight(scene: ConflictScene) {
   scene.spotlight = null;
 }
 
+
+export function setThreatHpMarked(threat: ThreatInstance, marked: number) {
+  const max = threat.templateSnapshot.maxHp;
+  if (max === null) return;
+  threat.hpMarked = Math.max(0, Math.min(max, Math.trunc(marked || 0)));
+  threat.defeated = threat.hpMarked >= max;
+}
+
+export function setThreatStressMarked(threat: ThreatInstance, marked: number) {
+  const max = threat.templateSnapshot.maxStress;
+  if (max === null) return;
+  threat.stressMarked = Math.max(0, Math.min(max, Math.trunc(marked || 0)));
+}
+
 export function removeConflictParticipant(scene: ConflictScene, participant: ConflictParticipantRef) {
   if (participant.kind === "survivor") {
     scene.survivorIds = scene.survivorIds.filter(id => id !== participant.id);
