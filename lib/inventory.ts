@@ -95,7 +95,11 @@ function accessibleNamedQuantity(game: GameState, ownerId: string, name: string)
   return accessContainers(game, ownerId).reduce((sum, items) => sum + items.filter(item => item.name === name).reduce((n, item) => n + item.qty, 0), 0);
 }
 function completedFacility(game: GameState, ...keys: string[]) {
-  return Boolean(game.shelter.hex && keys.some(key => game.shelter.projects?.some(project => project.key === key && project.state === "Concluído")));
+  return Boolean(game.shelter.hex && keys.some(key => game.shelter.projects?.some(project => {
+    if (project.key !== key || !["Concluído", "Danificado"].includes(project.state)) return false;
+    const integrity = project.integrity ?? (project.state === "Danificado" ? 2 : 3);
+    return integrity >= 2;
+  })));
 }
 function ownerHolder(game: GameState, ownerId: string) {
   return ownerId === "shared" ? game.shelter : game.survivors.find(person => person.id === ownerId);
