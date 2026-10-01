@@ -89,6 +89,10 @@ export function SurvivorConflictHud({
     onTargetChange(id);
     setTargetOpen(false);
     setQuery("");
+    if (!id) {
+      try { window.localStorage.removeItem(storageKey); } catch {}
+      return;
+    }
     const nextRecent = [id, ...recentIds.filter(value => value !== id)].slice(0, 5);
     setRecentIds(nextRecent);
     try {
