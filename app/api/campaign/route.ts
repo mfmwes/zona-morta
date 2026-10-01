@@ -131,6 +131,7 @@ function validState(value: unknown): value is GameState {
     && (state.threats === undefined || (Array.isArray(state.threats) && state.threats.length <= 120
       && state.threats.every(validThreat)))
     && validConflict(state.conflict)
+    && state.publicConflict === undefined
     && state.survivors.every(s => Number.isInteger(s.armorMarked) && s.armorMarked >= 0 && s.armorMarked <= 20
       && (s.hex === undefined || (typeof s.hex === "string" && Boolean(state.hexes?.[s.hex])))
       && (s.outfit === undefined || typeof s.outfit === "string")
