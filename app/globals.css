@@ -441,27 +441,10 @@ button { cursor: pointer; } button:disabled { cursor: not-allowed; }
 .item-art[data-sheet=clothing],.item-art[data-sheet=extra] { --art-wash:#e9eee5; }
 .item-art[data-sheet=provisions] { --art-wash:#f0ede1; }
 .item-art[data-sheet=care] { --art-wash:#e9eeee; }
+.item-art[data-sheet=custom-ammo] { --art-wash:#eee8d8; }
+.item-art[data-sheet=custom-gear] { --art-wash:#e5ede7; }
+.item-art[data-sheet=custom-supplies] { --art-wash:#eeeadd; }
 .item-art-visual { display:block; width:100%; height:100%; background-repeat:no-repeat; background-size:400% 400%; }
-.item-art { position:relative; }
-.item-art-badge {
-  position:absolute;
-  right:3px;
-  bottom:3px;
-  display:grid;
-  place-items:center;
-  min-width:15px;
-  height:15px;
-  padding:0 3px;
-  border:1px solid color-mix(in srgb,#d8c472 72%,#243633);
-  border-radius:4px;
-  background:color-mix(in srgb,#162321 82%,#d6bb52);
-  color:#fff4c2;
-  box-shadow:0 1px 3px rgba(0,0,0,.28);
-  font:900 .46rem/1 var(--font-mono);
-  letter-spacing:.02em;
-}
-.item-art--small .item-art-badge { right:2px; bottom:2px; min-width:13px; height:13px; font-size:.4rem; }
-.item-art--large .item-art-badge { right:4px; bottom:4px; min-width:18px; height:18px; font-size:.52rem; }
 
 .item-art--small { width:38px; height:38px; border-radius:7px; }
 .item-art--large { width:60px; height:60px; border-radius:10px; }
