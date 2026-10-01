@@ -1358,7 +1358,8 @@ test('reparo usa custo e progresso próprios sem apagar construção concluída'
   assert.equal(barricades.state, 'Danificado');
   const beforeParts = g.shelter.parts;
   assert.equal(shelterProjects.startRepair(g.shelter, barricades), null);
-  assert.equal(g.shelter.parts, beforeParts - 1);
+  assert.equal(g.shelter.parts, beforeParts); // dano leve (2/3) não consome Peças
+  assert.equal(barricades.requiredRepairProgress, 1);
   assert.equal(barricades.progress, barricades.requiredProgress);
   const result = shelterProjects.runShelterWorkShift(g, 4);
   assert.equal(result.ok, true);
