@@ -95,28 +95,24 @@ export function ConflictTrail({
             const isTarget = threat.id === targetId;
             const interactive = !threat.defeated && (mode === "master" ? Boolean(onParticipantSpotlight) : Boolean(onThreatTarget));
             const title = `${threat.name}${threat.defeated ? " · derrotada" : ""}${isSpotlight ? " · Spotlight" : ""}${isTarget ? " · seu alvo" : ""}${threat.conditions.length ? ` · ${threat.conditions.join(", ")}` : ""}`;
-            return <button
-              type="button"
-              key={threat.id}
-              data-trail-key={`threat:${threat.id}`}
-              className={`conflict-trail-node is-threat${isSpotlight ? " is-spotlight" : ""}${isTarget ? " is-target" : ""}${threat.defeated ? " is-defeated" : ""}`}
-              disabled={!interactive}
-              onClick={() => {
-                if (mode === "master") onParticipantSpotlight?.({ kind: "threat", id: threat.id }, threat.name);
-                else onThreatTarget?.(threat.id);
-              }}
-              title={title}
-              aria-label={mode === "master"
-                ? `${threat.name}. ${threat.defeated ? "Derrotada." : "Clique para dar Spotlight."}`
-                : `${threat.name}. ${threat.defeated ? "Derrotada e indisponível como alvo." : isTarget ? "Alvo selecionado." : "Clique para selecionar como alvo."}`}
-            >
+            const body = <>
               <span className="conflict-trail-node-core">
                 {threat.defeated ? <Skull size={17} /> : <span className="conflict-trail-initials">{threatShortLabel(threat)}</span>}
                 {isSpotlight && <span className="conflict-trail-spotlight-mark"><Crosshair size={11} /></span>}
                 {isTarget && <span className="conflict-trail-target-mark"><Target size={11} /></span>}
               </span>
               <span className="conflict-trail-node-label">{threatShortLabel(threat)}</span>
-            </button>;
+            </>;
+            const className = `conflict-trail-node is-threat${isSpotlight ? " is-spotlight" : ""}${isTarget ? " is-target" : ""}${threat.defeated ? " is-defeated" : ""}`;
+            const ariaLabel = mode === "master"
+              ? `${threat.name}. ${threat.defeated ? "Derrotada." : "Clique para dar Spotlight."}`
+              : `${threat.name}. ${threat.defeated ? "Derrotada e indisponível como alvo." : isTarget ? "Alvo selecionado." : interactive ? "Clique para selecionar como alvo." : "Ameaça em cena."}`;
+            return interactive
+              ? <button type="button" key={threat.id} data-trail-key={`threat:${threat.id}`} className={className} onClick={() => {
+                  if (mode === "master") onParticipantSpotlight?.({ kind: "threat", id: threat.id }, threat.name);
+                  else onThreatTarget?.(threat.id);
+                }} title={title} aria-label={ariaLabel}>{body}</button>
+              : <span tabIndex={0} key={threat.id} data-trail-key={`threat:${threat.id}`} className={className} title={title} aria-label={ariaLabel}>{body}</span>;
           })}
         </div>
       </div>)}
