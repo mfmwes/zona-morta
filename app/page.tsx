@@ -1,4 +1,5 @@
 "use client";
+import { localizeRollLog } from "@/lib/terminology";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -611,7 +612,7 @@ export default function CampaignApp() {
           <div className="flex items-center justify-between gap-3"><div><p className="dossier-title">Registro</p><h2 className="section-title mt-1">Últimos acontecimentos</h2></div>
             <span className="tag">{game.log.length} entradas</span></div>
           <div className="mt-3 grid gap-2">{game.log.slice(0,12).map(entry=><div key={entry.id} className="border-t pt-2 text-sm leading-relaxed">
-            <span className="font-mono text-xs text-[#367478] mr-3">D{entry.day} {entry.time} · {entry.kind}</span>{entry.text}</div>)}</div>
+            <span className="font-mono text-xs text-[#367478] mr-3">D{entry.day} {entry.time} · {entry.kind}</span>{entry.kind === "dados" ? localizeRollLog(entry.text) : entry.text}</div>)}</div>
         </section>}
       </main>
     </div>
