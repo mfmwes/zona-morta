@@ -1,10 +1,21 @@
-import { campaignOwnerId, findPlayer, readCampaign, reservePlayerCharacter, writeCampaign } from "@/db/state";
+import { campaignOwnerId, findPlayer, listAccountCharacters, readCampaign, reservePlayerCharacter, writeCampaign } from "@/db/state";
 import { sameOrigin, siteUser } from "@/lib/auth";
 import { createSurvivorFromDraft } from "@/lib/character-creation";
 import { projectPlayerGame } from "@/lib/collaboration";
 import { addLog } from "@/lib/game";
 
 export const dynamic = "force-dynamic";
+
+export async function GET(request: Request) {
+  const user = await siteUser(request);
+  if (!user) return Response.json({ error: "Acesso restrito." }, { status: 401, headers: { "Cache-Control": "no-store" } });
+  try {
+    return Response.json({ characters: await listAccountCharacters(user.id) }, { headers: { "Cache-Control": "no-store" } });
+  } catch (error) {
+    console.error("Falha ao listar sobreviventes da conta", error);
+    return Response.json({ error: "Não foi possível abrir seus sobreviventes." }, { status: 503, headers: { "Cache-Control": "no-store" } });
+  }
+}
 
 export async function POST(request: Request) {
   const user = await siteUser(request);
