@@ -1,18 +1,23 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Crosshair, Plus, ShieldAlert, Skull, Swords, UserPlus, Users, X } from "lucide-react";
+import { Crosshair, Dice5, Plus, ShieldAlert, Skull, Swords, UserPlus, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Counter, Field, Pick } from "@/components/game-controls";
 import { addLog, displayTime, survivorStats, survivorsAtHex, type GameState } from "@/lib/game";
 import {
+  addThreatCondition,
   addThreatInstances,
   clearConflictSpotlight,
   createConflictScene,
   endConflictScene,
   removeConflictParticipant,
+  removeThreatCondition,
+  resolveSurvivorDamageTier,
+  parseThreatDamageFormula,
   setConflictSpotlight,
   setThreatHpMarked,
   setThreatStressMarked,
@@ -21,6 +26,7 @@ import {
   type PublicConflictScene,
 } from "@/lib/conflict";
 import { threatLibrary } from "@/lib/threats";
+import { rollDie } from "@/lib/rolls";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 
@@ -134,6 +140,13 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
   const [survivorToAdd, setSurvivorToAdd] = useState("");
   const [threatToAdd, setThreatToAdd] = useState("");
   const [threatQuantity, setThreatQuantity] = useState(1);
+  const [conditionDrafts, setConditionDrafts] = useState<Record<string, string>>({});
+  const [actingThreatId, setActingThreatId] = useState<string | null>(null);
+  const [threatTargetId, setThreatTargetId] = useState("");
+  const [threatActionResult, setThreatActionResult] = useState<{
+    d20: number; total: number; evasion: number; hit: boolean; damage: number;
+    tier: ReturnType<typeof resolveSurvivorDamageTier>; targetName: string; attackName: string;
+  } | null>(null);
   const [notesDraft, setNotesDraft] = useState(conflict?.notes ?? "");
 
   useEffect(() => {
@@ -155,6 +168,13 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
     .sort((a, b) => a.tier - b.tier || a.name.localeCompare(b.name, "pt-BR"))
     .map(threat => ({ value: threat.id, label: `Patamar ${threat.tier} · ${threat.name}` })), [library]);
 
+
+  const actingThreat = actingThreatId ? conflict?.threats.find(threat => threat.id === actingThreatId) ?? null : null;
+  const threatTargets = useMemo(() => (conflict?.survivorIds ?? []).flatMap(id => {
+    const person = game.survivors.find(row => row.id === id);
+    return person ? [{ value: person.id, label: person.name }] : [];
+  }), [conflict?.survivorIds, game.survivors]);
+
   useEffect(() => {
     if (!availableSurvivors.some(option => option.value === survivorToAdd)) setSurvivorToAdd(availableSurvivors[0]?.value ?? "");
   }, [availableSurvivors, survivorToAdd]);
@@ -162,6 +182,11 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
   useEffect(() => {
     if (!threatOptions.some(option => option.value === threatToAdd)) setThreatToAdd(threatOptions[0]?.value ?? "");
   }, [threatOptions, threatToAdd]);
+
+
+  useEffect(() => {
+    if (!threatTargets.some(option => option.value === threatTargetId)) setThreatTargetId(threatTargets[0]?.value ?? "");
+  }, [threatTargets, threatTargetId]);
 
   function startConflict() {
     const present = survivorsAtHex(game, game.partyHex).map(person => person.id);
@@ -222,6 +247,66 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
       if (!scene || !scene.active) return;
       removeConflictParticipant(scene, ref);
       addLog(draft, "conflito", `${name} saiu de ${scene.name}.`);
+    });
+  }
+
+
+  function addCondition(threatId: string) {
+    const value = (conditionDrafts[threatId] ?? "").trim();
+    if (!value) return;
+    let added = false;
+    let threatName = "Ameaça";
+    edit(draft => {
+      const threat = draft.conflict?.threats.find(row => row.id === threatId);
+      if (!threat) return;
+      threatName = threat.name;
+      added = addThreatCondition(threat, value);
+      if (added) addLog(draft, "conflito", `${threat.name} recebeu a condição ${value}.`);
+    });
+    if (added) {
+      setConditionDrafts(current => ({ ...current, [threatId]: "" }));
+      toast.success("Condição adicionada", { description: `${threatName}: ${value}` });
+    }
+  }
+
+  function removeCondition(threatId: string, condition: string) {
+    edit(draft => {
+      const threat = draft.conflict?.threats.find(row => row.id === threatId);
+      if (!threat) return;
+      if (removeThreatCondition(threat, condition))
+        addLog(draft, "conflito", `${threat.name} perdeu a condição ${condition}.`);
+    });
+  }
+
+  function openThreatAction(threatId: string) {
+    const threat = conflict?.threats.find(row => row.id === threatId);
+    if (!threat?.templateSnapshot.attack) return;
+    setActingThreatId(threatId);
+    setThreatTargetId(threatTargets[0]?.value ?? "");
+    setThreatActionResult(null);
+  }
+
+  function rollThreatAction() {
+    if (!actingThreat?.templateSnapshot.attack || !threatTargetId) return;
+    const target = game.survivors.find(person => person.id === threatTargetId);
+    if (!target) return;
+    const attack = actingThreat.templateSnapshot.attack;
+    const stats = survivorStats(target);
+    const d20 = rollDie(20);
+    const total = d20 + attack.bonus;
+    const hit = total >= stats.evasion;
+    let damage = 0;
+    const parsed = parseThreatDamageFormula(attack.damage);
+    if (hit && parsed) {
+      damage = parsed.flat;
+      for (let index = 0; index < parsed.dice; index++) damage += rollDie(parsed.die);
+      damage = Math.max(0, damage);
+    }
+    const tier = resolveSurvivorDamageTier(stats.major, stats.severe, damage);
+    const result = { d20, total, evasion: stats.evasion, hit, damage, tier, targetName: target.name, attackName: attack.name };
+    setThreatActionResult(result);
+    edit(draft => {
+      addLog(draft, "ameaça", `${actingThreat.name}: ${attack.name} contra ${target.name} — d20 ${d20} ${attack.bonus >= 0 ? "+" : "−"} ${Math.abs(attack.bonus)} = ${total} vs Evasão ${stats.evasion}: ${hit ? "ACERTO" : "FALHA"}.${hit ? ` Dano ${damage} ${attack.damageType} → ${tier.label.toUpperCase()} (${tier.hpMarks} PV). Aplique dano ou Armadura na ficha do alvo.` : ""}`);
     });
   }
 
@@ -366,20 +451,35 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
                 <ResourceMeter label="PV marcados" value={instance.hpMarked} max={template.maxHp} tone="hp" />
                 <ResourceMeter label="Estresse" value={instance.stressMarked} max={template.maxStress} tone="stress" />
               </div>
-              {(template.maxHp !== null || template.maxStress !== null) && <details className="conflict-threat-details">
-                <summary>Ajustar recursos</summary>
-                <div className="conflict-threat-controls">
-                  {template.maxHp !== null && <Counter compact label="PV marcados" value={instance.hpMarked} min={0} max={template.maxHp} onChange={value => edit(draft => {
-                    const row = draft.conflict?.threats.find(threat => threat.id === instance.id);
-                    if (row) setThreatHpMarked(row, value);
-                  })} />}
-                  {template.maxStress !== null && <Counter compact label="Estresse marcado" value={instance.stressMarked} min={0} max={template.maxStress} onChange={value => edit(draft => {
-                    const row = draft.conflict?.threats.find(threat => threat.id === instance.id);
-                    if (row) setThreatStressMarked(row, value);
-                  })} />}
+              <details className="conflict-threat-details">
+                <summary>Recursos e condições{instance.conditions.length ? ` · ${instance.conditions.length}` : ""}</summary>
+                <div className="conflict-threat-detail-body">
+                  {(template.maxHp !== null || template.maxStress !== null) && <div className="conflict-threat-controls">
+                    {template.maxHp !== null && <Counter compact label="PV marcados" value={instance.hpMarked} min={0} max={template.maxHp} onChange={value => edit(draft => {
+                      const row = draft.conflict?.threats.find(threat => threat.id === instance.id);
+                      if (row) setThreatHpMarked(row, value);
+                    })} />}
+                    {template.maxStress !== null && <Counter compact label="Estresse marcado" value={instance.stressMarked} min={0} max={template.maxStress} onChange={value => edit(draft => {
+                      const row = draft.conflict?.threats.find(threat => threat.id === instance.id);
+                      if (row) setThreatStressMarked(row, value);
+                    })} />}
+                  </div>}
+                  <div className="conflict-condition-block">
+                    <span className="field-label">Condições públicas</span>
+                    {instance.conditions.length > 0 && <div className="conflict-condition-tags">
+                      {instance.conditions.map(condition => <button type="button" key={condition} onClick={() => removeCondition(instance.id, condition)} title="Remover condição"><span>{condition}</span><X size={11} /></button>)}
+                    </div>}
+                    <div className="conflict-condition-editor">
+                      <input value={conditionDrafts[instance.id] ?? ""} maxLength={100} onChange={event => setConditionDrafts(current => ({ ...current, [instance.id]: event.target.value }))} onKeyDown={event => {
+                        if (event.key === "Enter") { event.preventDefault(); addCondition(instance.id); }
+                      }} placeholder="Ex.: Vulnerável, Preso, Em chamas…" aria-label={`Nova condição para ${instance.name}`} />
+                      <Button type="button" size="sm" variant="outline" disabled={!(conditionDrafts[instance.id] ?? "").trim()} onClick={() => addCondition(instance.id)}><Plus size={13} /> Adicionar</Button>
+                    </div>
+                  </div>
                 </div>
-              </details>}
+              </details>
               <div className="conflict-threat-actions">
+                {template.attack && <Button size="sm" onClick={() => openThreatAction(instance.id)} disabled={instance.defeated}><Swords size={14} /> Atacar</Button>}
                 <Button size="sm" variant={isFocused ? "default" : "outline"} onClick={() => focus({ kind: "threat", id: instance.id }, instance.name)}><Crosshair size={14} /> {isFocused ? "Em foco" : "Spotlight"}</Button>
                 <Button size="sm" variant="outline" onClick={() => edit(draft => {
                   const row = draft.conflict?.threats.find(threat => threat.id === instance.id);
@@ -417,5 +517,33 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
         }}>Salvar notas</Button></div>
       </section>
     </div>
+
+    <Dialog open={Boolean(actingThreat)} onOpenChange={open => { if (!open) { setActingThreatId(null); setThreatActionResult(null); } }}>
+      {actingThreat?.templateSnapshot.attack && <DialogContent className="sm:max-w-[560px]">
+        <DialogHeader>
+          <p className="dossier-title">Ação da ameaça</p>
+          <DialogTitle>{actingThreat.name} · {actingThreat.templateSnapshot.attack.name}</DialogTitle>
+          <DialogDescription>Role o ataque da ameaça contra a Evasão de um sobrevivente. O dano é classificado pelos Limiares do alvo, mas PV e Armadura continuam sendo resolvidos na ficha.</DialogDescription>
+        </DialogHeader>
+        <div className="threat-action-summary">
+          <span><small>ATQ</small><b>{actingThreat.templateSnapshot.attack.bonus >= 0 ? "+" : ""}{actingThreat.templateSnapshot.attack.bonus}</b></span>
+          <span><small>Alcance</small><b>{actingThreat.templateSnapshot.attack.range}</b></span>
+          <span><small>Dano</small><b>{actingThreat.templateSnapshot.attack.damage}</b></span>
+          <span><small>Tipo</small><b>{actingThreat.templateSnapshot.attack.damageType}</b></span>
+        </div>
+        <Pick label="Alvo" value={threatTargetId} options={threatTargets} onChange={value => { setThreatTargetId(value); setThreatActionResult(null); }} placeholder="Nenhum sobrevivente na cena" disabled={!threatTargets.length} />
+        {threatActionResult && <div className={`threat-action-result ${threatActionResult.hit ? "is-hit" : "is-miss"}`}>
+          <div><span>d20</span><strong>{threatActionResult.d20}</strong></div>
+          <div><span>Total</span><strong>{threatActionResult.total}</strong></div>
+          <div><span>Evasão</span><strong>{threatActionResult.evasion}</strong></div>
+          <div><span>Resultado</span><strong>{threatActionResult.hit ? "ACERTO" : "FALHA"}</strong></div>
+          {threatActionResult.hit && <p><b>{threatActionResult.damage} de dano</b> · {threatActionResult.tier.label} → <b>{threatActionResult.tier.hpMarks} PV</b>. O alvo ainda pode usar Armadura conforme as regras.</p>}
+        </div>}
+        <DialogFooter>
+          <Button variant="outline" onClick={() => { setActingThreatId(null); setThreatActionResult(null); }}>Fechar</Button>
+          <Button disabled={!threatTargetId} onClick={rollThreatAction}><Dice5 size={15} /> Rolar ataque</Button>
+        </DialogFooter>
+      </DialogContent>}
+    </Dialog>
   </div>;
 }
