@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Counter, Field, Pick } from "@/components/game-controls";
+import { ConflictTrail } from "@/components/conflict-trail";
 import { addLog, displayTime, survivorStats, survivorsAtHex, type GameState } from "@/lib/game";
 import {
   addThreatCondition,
@@ -105,18 +106,17 @@ export function PlayerConflictScene({ game, selfId = null }: { game: GameState; 
         <span className="conflict-public-badge">VISÃO DA MESA</span>
       </div>
 
-      <div className={`conflict-spotlight${conflict.spotlight ? " has-focus" : ""}${ownSpotlight ? " is-self" : ""}`} role="status" aria-live="polite">
-        <div className="conflict-spotlight-icon"><Crosshair size={22} aria-hidden="true" /></div>
-        <div className="conflict-spotlight-copy">
-          <span className="conflict-spotlight-kicker"><span className="conflict-spotlight-dot" aria-hidden="true" /> SPOTLIGHT ATUAL</span>
-          <strong>{ownSpotlight ? "Seu personagem" : spotlightName ?? "Sem foco definido"}</strong>
-          <span>{conflict.spotlight
-            ? ownSpotlight
-              ? "Você está com o foco narrativo."
-              : conflict.spotlight.kind === "survivor" ? "Sobrevivente em foco narrativo" : "Ameaça em foco narrativo"
-            : "O mestre decide livremente quem recebe o foco."}</span>
-        </div>
+      <div className="conflict-trail-full-status" role="status" aria-live="polite">
+        <span><Crosshair size={14} /> Spotlight <b>{ownSpotlight ? "VOCÊ" : spotlightName ?? "sem foco"}</b></span>
+        <small>A Trilha de Conflito mostra presença e foco narrativo; não representa iniciativa.</small>
       </div>
+      <ConflictTrail
+        survivors={conflict.survivors}
+        threats={conflict.threats}
+        spotlight={conflict.spotlight}
+        selfId={selfId}
+        mode="player"
+      />
       <p className="conflict-rule-note">Esta visão mostra apenas informações públicas da cena. Dados mecânicos das ameaças e controles do mestre permanecem ocultos.</p>
     </section>
 
@@ -216,13 +216,6 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
   useEffect(() => {
     setNotesDraft(conflict?.notes ?? "");
   }, [conflict?.id, conflict?.notes]);
-
-  useEffect(() => {
-    if (!conflict?.spotlight) return;
-    const { kind, id } = conflict.spotlight;
-    const target = document.querySelector<HTMLElement>(`[data-conflict-kind="${kind}"][data-conflict-id="${id}"]`);
-    target?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [conflict?.spotlight?.kind, conflict?.spotlight?.id]);
 
   const availableSurvivors = useMemo(() => game.survivors
     .filter(person => !conflict?.survivorIds.includes(person.id))
@@ -477,15 +470,30 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
         </AlertDialog>
       </div>
 
-      <div className={`conflict-spotlight${conflict.spotlight ? " has-focus" : ""}`} role="status" aria-live="polite">
-        <div className="conflict-spotlight-icon"><Crosshair size={22} aria-hidden="true" /></div>
-        <div className="conflict-spotlight-copy">
-          <span className="conflict-spotlight-kicker"><span className="conflict-spotlight-dot" aria-hidden="true" /> SPOTLIGHT ATUAL</span>
-          <strong>{spotlightName ?? "Sem foco definido"}</strong>
-          <span>{conflict.spotlight ? (conflict.spotlight.kind === "survivor" ? "Sobrevivente em foco narrativo" : "Ameaça em foco narrativo") : "O mestre decide livremente quem recebe o foco."}</span>
-        </div>
+      <div className="conflict-trail-full-status" role="status" aria-live="polite">
+        <span><Crosshair size={14} /> Spotlight <b>{spotlightName ?? "sem foco"}</b></span>
+        <small>Clique em um participante para mover o Spotlight. A posição na trilha não muda.</small>
         {conflict.spotlight && <Button size="sm" variant="ghost" onClick={() => edit(draft => { if (draft.conflict) clearConflictSpotlight(draft.conflict); })}>Limpar</Button>}
       </div>
+      <ConflictTrail
+        survivors={conflict.survivorIds.flatMap(id => {
+          const person = game.survivors.find(row => row.id === id);
+          return person ? [{ id: person.id, name: person.name, ...(person.portrait ? { portrait: person.portrait } : {}), requested: Boolean(conflict.spotlightRequests?.includes(person.id)) }] : [];
+        })}
+        threats={conflict.threats.map(threat => ({
+          id: threat.id,
+          name: threat.name,
+          groupName: threat.templateSnapshot.name,
+          defeated: threat.defeated,
+          conditions: [...threat.conditions],
+        }))}
+        spotlight={conflict.spotlight}
+        mode="master"
+        onParticipantSpotlight={(ref, name) => {
+          if (ref.kind === "survivor" && conflict.spotlightRequests?.includes(ref.id)) grantRequestedSpotlight(ref.id);
+          else focus(ref, name);
+        }}
+      />
       {(conflict.spotlightRequests?.length ?? 0) > 0 && <div className="conflict-spotlight-requests">
         <span>Querem o Spotlight</span>
         <div>{(conflict.spotlightRequests ?? []).map(id => {
