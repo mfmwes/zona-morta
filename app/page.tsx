@@ -70,6 +70,13 @@ export default function CampaignApp() {
   const roleRef = useRef<"mestre" | "jogador" | "convidado">("mestre");
   const sending = useRef(false);
   const paused = useRef(false);
+
+  useEffect(() => {
+    const showRollInChat = () => setChatOpen(true);
+    window.addEventListener("zona-morta:roll-completed", showRollInChat);
+    return () => window.removeEventListener("zona-morta:roll-completed", showRollInChat);
+  }, []);
+
   const apiPath = useCallback(() => {
     const owner = new URLSearchParams(window.location.search).get("campanha");
     return owner ? "/api/campaign?campanha=" + encodeURIComponent(owner) : "/api/campaign";
