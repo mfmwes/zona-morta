@@ -111,7 +111,7 @@ export function PlayerConflictScene({ game, selfId = null }: { game: GameState; 
         <small>A Trilha de Conflito mostra presença e foco narrativo; não representa iniciativa.</small>
       </div>
       <ConflictTrail
-        survivors={conflict.survivors}
+        survivors={conflict.survivors.map(person => ({ ...person, requested: person.id === selfId && conflict.spotlightRequested }))}
         threats={conflict.threats}
         spotlight={conflict.spotlight}
         selfId={selfId}
