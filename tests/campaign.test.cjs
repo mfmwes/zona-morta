@@ -414,6 +414,7 @@ test('transferência não cria porções quando se pede mais do que existe', () 
 
 test('habilidades gastam recursos, respeitam cena, expedição e alvo sem repetir uso', () => {
   const g = campaign(); const a = g.survivors[0];
+  a.hope = 2;
   const action = 'Uma vez por cena, gaste 1 Hope para abrir um caminho.';
   assert.equal(abilities.recordAbilityUse(g, a.id, 'teste', 'Caminho', action, 'hope1'), true);
   assert.equal(a.hope, 1);
