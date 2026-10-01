@@ -153,10 +153,13 @@ export function NpcPanel({ game, edit, playerPreview }: { game: GameState; edit:
 }
 
 function PublicNpcDetails({ npc, game }: { npc: NPC; game: GameState }) {
-  return <div className="grid gap-3 text-sm"><p><b>{npc.role || "Pessoa da comunidade"}</b> · {npc.status} · {npc.disposition}</p>
-    <p className="flex items-center gap-1"><MapPin size={15} /> {locationLabel(game, npc)}</p>{npc.description && <p>{npc.description}</p>}
-    {npc.skills.length > 0 && <p><b>Capacidades:</b> {npc.skills.join(", ")}</p>}{npc.duty && <p><b>Função no abrigo:</b> {npc.duty}</p>}
-    {npc.publicNotes && <p className="character-rule-note">{npc.publicNotes}</p>}</div>;
+  return <div className="npc-public-details">
+    {npc.portrait && <div className="npc-public-portrait"><img src={npc.portrait} alt="" /></div>}
+    <div className="grid gap-3 text-sm"><p><b>{npc.role || "Pessoa da comunidade"}</b> · {npc.status} · {npc.disposition}</p>
+      <p className="flex items-center gap-1"><MapPin size={15} /> {locationLabel(game, npc)}</p>{npc.description && <p>{npc.description}</p>}
+      {npc.skills.length > 0 && <p><b>Capacidades:</b> {npc.skills.join(", ")}</p>}{npc.duty && <p><b>Função no abrigo:</b> {npc.duty}</p>}
+      {npc.publicNotes && <p className="character-rule-note">{npc.publicNotes}</p>}</div>
+  </div>;
 }
 
 function NpcForm({ game, draft, setDraft, hexOptions }: { game: GameState; draft: NPC; setDraft: (value: NPC) => void; hexOptions: { value: string; label: string }[] }) {
