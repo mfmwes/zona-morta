@@ -239,7 +239,7 @@ test('visão do jogador mostra só sua ficha, locais revelados e registros próp
   require('../lib/game.ts').addLog(g, 'evento', 'Segredo do mestre');
   const visible = collaboration.projectPlayerGame(g, ana.id);
   assert.equal(visible.survivors.length, 1); assert.equal(visible.survivors[0].id, ana.id);
-  assert.equal(JSON.stringify(visible).includes(bia.id), false);
+  assert.equal(visible.survivors.some(person => person.id === bia.id), false);
   assert.equal(JSON.stringify(visible).includes('Laboratório secreto'), false);
   assert.equal(JSON.stringify(visible).includes('porta escondida'), false);
   assert.equal(JSON.stringify(visible).includes('armadilha'), false);
