@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { content } = require('../lib/game.ts');
+const content = require('../lib/content.json');
 const { explicitItemArtFor, itemArtFor } = require('../lib/item-art.ts');
 
 function visualKey(ref) {
