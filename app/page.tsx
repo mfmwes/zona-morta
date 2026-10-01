@@ -117,7 +117,7 @@ export default function CampaignApp() {
       setOwnerId(data.ownerId);
       setSurvivorId(data.survivorId ?? null);
       setRestPeers(data.restPeers ?? []);
-      if (data.role === "jogador") setTab("sobreviventes");
+      if (data.role === "jogador" && !current.current) setTab("sobreviventes");
       current.current = data.state ?? null;
       pending.current = null;
       pendingBefore.current = null;
