@@ -10,7 +10,7 @@ import { traitLabel, dualityLabel } from "@/lib/terminology";
 import { addLog, content, traits, type GameState } from "@/lib/game";
 import { equipmentModifiers, getPrimary, getSecondary } from "@/lib/equipment";
 import { applyAttackResources, attackResourceState } from "@/lib/combat-resources";
-import { resolveThreatAttack, type ThreatAttackResolution } from "@/lib/conflict";
+import { publicConflictScene, resolveThreatAttack, type ThreatAttackResolution } from "@/lib/conflict";
 import { parseWeaponDamage, resolveActionRoll, resolveAttackHit, resolveRollResources, resolveWeaponDamage, rollDie, type ActionOutcome, type Edge, type RollKind } from "@/lib/rolls";
 
 type Edit = (fn: (draft: GameState) => void) => void;
@@ -24,7 +24,7 @@ function outcomeLabel(roll: RollRecord) {
   return `${roll.outcome.success ? "Sucesso" : "Falha"} com ${dualityLabel(roll.outcome.with)}`;
 }
 
-function RollForm({ game, edit, request, onCompleted }: { game: GameState; edit: Edit; request?: RollRequest; onCompleted: () => void }) {
+function RollForm({ game, edit, request, onCompleted, hideThreatSecrets = false }: { game: GameState; edit: Edit; request?: RollRequest; onCompleted: () => void; hideThreatSecrets?: boolean }) {
   const requestedSurvivor = request?.survivorId ? game.survivors.find(s => s.id === request.survivorId) : null;
   const initialWeaponSlot: "primary" | "secondary" = request?.weapon
     ?? (requestedSurvivor && !requestedSurvivor.primary && requestedSurvivor.secondary ? "secondary" : "primary");
@@ -65,8 +65,11 @@ function RollForm({ game, edit, request, onCompleted }: { game: GameState; edit:
   const ammoReady = attackResources.ammoReady;
   const ammoWarning = ammoNeeded && !ammoReady
     ? `Sem Munição de ${ammoNeeded} livre no inventário. O primeiro disparo desta categoria na cena compromete 1 unidade física.` : "";
-  const masterThreats = game.conflict?.active ? game.conflict.threats : [];
-  const publicThreats = game.publicConflict?.active ? game.publicConflict.threats : [];
+  const masterThreats = !hideThreatSecrets && game.conflict?.active ? game.conflict.threats : [];
+  const projectedConflict = hideThreatSecrets && game.conflict?.active && survivor
+    ? publicConflictScene(game.conflict, game.survivors, survivor.id)
+    : game.publicConflict;
+  const publicThreats = projectedConflict?.active ? projectedConflict.threats : [];
   const sceneTargets = (masterThreats.length ? masterThreats : publicThreats).filter(threat => !threat.defeated);
   const targetOptions = sceneTargets.map(threat => ({ value: threat.id, label: threat.name }));
   const selectedMasterThreat = targetThreatId ? masterThreats.find(threat => threat.id === targetThreatId) ?? null : null;
@@ -266,9 +269,9 @@ function RollForm({ game, edit, request, onCompleted }: { game: GameState; edit:
       {kind === "attack" && targetThreatId && <div className="roll-target-locked">
         <span>Alvo selecionado</span>
         <strong>{selectedTargetName ?? "Alvo indisponível"}</strong>
-        <small>{selectedMasterThreat
+        <small>{selectedMasterThreat && !hideThreatSecrets
           ? `Dificuldade ${selectedMasterThreat.templateSnapshot.difficulty} · Limiares ${selectedMasterThreat.templateSnapshot.majorThreshold ?? "—"} / ${selectedMasterThreat.templateSnapshot.severeThreshold ?? "—"}`
-          : "Dificuldade e Limiares são resolvidos em sigilo pelo sistema."}</small>
+          : "Dificuldade e Limiares são ocultos e resolvidos pelo sistema."}</small>
         <button type="button" onClick={() => { setTargetThreatId(""); clearResult(); }}>Usar defesa manual</button>
       </div>}
     </div>
@@ -328,8 +331,8 @@ function RollForm({ game, edit, request, onCompleted }: { game: GameState; edit:
   </div>;
 }
 
-export function RollDialog({ game, edit, request, open, onOpenChange }: {
-  game: GameState; edit: Edit; request?: RollRequest; open?: boolean; onOpenChange?: (open: boolean) => void;
+export function RollDialog({ game, edit, request, open, onOpenChange, hideThreatSecrets = false }: {
+  game: GameState; edit: Edit; request?: RollRequest; open?: boolean; onOpenChange?: (open: boolean) => void; hideThreatSecrets?: boolean;
 }) {
   const [localOpen, setLocalOpen] = useState(false);
   const visible = open ?? localOpen;
@@ -339,6 +342,6 @@ export function RollDialog({ game, edit, request, open, onOpenChange }: {
   }
   return <Dialog open={visible} onOpenChange={changeOpen}>
     {open === undefined && <DialogTrigger asChild><Button size="sm"><Dice5 /> Rolar dados</Button></DialogTrigger>}
-    {visible && <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[650px]"><RollForm game={game} edit={edit} request={request} onCompleted={() => changeOpen(false)} /></DialogContent>}
+    {visible && <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[650px]"><RollForm game={game} edit={edit} request={request} hideThreatSecrets={hideThreatSecrets} onCompleted={() => changeOpen(false)} /></DialogContent>}
   </Dialog>;
 }
