@@ -7,6 +7,10 @@ const named = new Map<string, ItemArtRef>();
 function register(sheet: ArtSheet, cell: number, names: string) {
   for (const name of names.split("|")) named.set(name.trim(), { sheet, cell });
 }
+function badgeItem(name: string, badge: string) {
+  const current = named.get(name);
+  if (current) named.set(name, { ...current, badge });
+}
 
 register("weapons", 0, "Faca resistente|Canivete robusto|Faca pequena|Canivete simples");
 register("weapons", 1, "Facão");
@@ -102,9 +106,8 @@ register("provisions", 7, "Pão embalado|Sanduíche pronto");
 register("provisions", 8, "Fruta firme|Frutas variadas");
 register("provisions", 9, "Verduras de horta|Raízes colhidas");
 register("provisions", 10, "Macarrão seco");
-register("provisions", 11, "Arroz cru|Farinha / mistura seca");
+register("provisions", 11, "Arroz cru|Farinha / mistura seca|Leite em pó");
 register("provisions", 12, "Aveia");
-register("provisions", 15, "Leite em pó");
 register("provisions", 12, "Barra de cereal|Pacote de bolachas|Nozes e sementes");
 register("provisions", 13, "Carne seca embalada");
 register("provisions", 14, "Chocolate fechado");
@@ -120,6 +123,36 @@ named.set("Munição de Chumbinhos", { sheet: "weapons", cell: 7, badge: "BB" })
 named.set("Munição de Outra", { sheet: "weapons", cell: 11, badge: "?" });
 named.set("Kit de pilhas", { sheet: "care", cell: 9, badge: "BAT" });
 named.set("Sinalizador de mão", { sheet: "extra", cell: 7, badge: "SOS" });
+
+// Quando o mesmo objeto-base representa uma variação legítima, um selo curto
+// evita cartões visualmente idênticos sem trocar a arte por algo semanticamente errado.
+badgeItem("Traje de bombeiro", "BOM");
+badgeItem("Colete refletivo", "REF");
+badgeItem("Uniforme de segurança", "SEG");
+badgeItem("Roupa de trilha", "TR");
+badgeItem("Jaqueta de motociclista", "MOTO");
+badgeItem("Roupa térmica", "TERM");
+badgeItem("Mochila urbana", "U");
+badgeItem("Mochila de trilha", "TR");
+badgeItem("Mochila cargueira", "C");
+badgeItem("Lanterna pesada", "PES");
+badgeItem("Lanterna frontal", "FR");
+badgeItem("Kit de higiene", "HIG");
+badgeItem("Documento ou crachá", "ID");
+badgeItem("Fotografias e cartas", "FOTO");
+badgeItem("Filtro portátil", "FIL");
+badgeItem("Pastilhas de purificação", "H2O");
+badgeItem("Medicamento prescrito identificado", "RX");
+badgeItem("Antibiótico prescrito", "AB");
+badgeItem("Solução de limpeza lacrada", "ANT");
+badgeItem("Soro fisiológico lacrado", "SF");
+badgeItem("Água de torneira sem verificação", "?");
+badgeItem("Garrafa sem rótulo", "?");
+badgeItem("Bebida isotônica lacrada", "ISO");
+badgeItem("Bebida energética fechada", "EN");
+badgeItem("Cerveja ou vinho", "ALC");
+badgeItem("Aveia", "AV");
+badgeItem("Leite em pó", "LP");
 
 export function explicitItemArtFor(name: string): ItemArtRef | undefined { return named.get(name); }
 
