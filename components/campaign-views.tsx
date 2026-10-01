@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BookOpen, ChevronLeft, ChevronRight, Hammer, House, LayoutGrid, List, Moon, Package, ShieldAlert, Users } from "lucide-react";
+import { BookOpen, ChevronLeft, ChevronRight, Hammer, House, LayoutGrid, List, Moon, Package, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -15,7 +15,6 @@ import { DayCloseDialog } from "@/components/day-close-dialog";
 import { FormerShelterProjects, ShelterProjectsManager } from "@/components/shelter-project-manager";
 import { ShelterVisualDashboard } from "@/components/shelter-dashboard";
 import { RuntimeErrorBoundary } from "@/components/runtime-error-boundary";
-import { ThreatReference } from "@/components/threat-manager";
 import { ammunitionCount, ammunitionItemType, ammunitionTypes, content, establishShelter, recoverFormerStock, shelterPopulationBreakdown, survivorPositionGroups, survivorsAtHex, type GameState } from "@/lib/game";
 import { shelterColdStorageActive, shelterMetrics } from "@/lib/shelter-projects";
 import { atSharedStorage, batteryStateFor, catalogForItem } from "@/lib/inventory";
@@ -280,15 +279,11 @@ export function ShelterPanel({ game, edit, playerPreview, playerSurvivorId }: { 
   </div>;
 }
 
-export function ReferencePanel({ game, showThreats = false }: { game: GameState; showThreats?: boolean }) {
+export function ReferencePanel() {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("Todas");
   const [page, setPage] = useState(1);
   const [view, setView] = useState<"grid" | "list">("grid");
-  const [referenceTab, setReferenceTab] = useState("itens");
-  useEffect(() => {
-    if (!showThreats && referenceTab === "ameacas") setReferenceTab("itens");
-  }, [showThreats, referenceTab]);
   const categories = useMemo(() => ["Todas", ...new Set(content.catalog.map(i => i.category))], []);
   const matches = content.catalog.filter(item => (category === "Todas" || item.category === category)
     && `${item.name} ${item.fields.map(f=>f.value).join(" ")}`.toLowerCase().includes(query.toLowerCase()));
@@ -297,10 +292,9 @@ export function ReferencePanel({ game, showThreats = false }: { game: GameState;
   const visible = matches.slice((page - 1) * pageSize, page * pageSize);
 
   return <div className="panel panel-pad reference-panel">
-    <Tabs value={referenceTab} onValueChange={setReferenceTab}>
+    <Tabs defaultValue="itens">
       <TabsList className="mb-5 max-w-full overflow-x-auto reference-tabs"><TabsTrigger value="itens"><Package /> Itens</TabsTrigger>
-        <TabsTrigger value="procedimentos"><BookOpen /> Procedimentos</TabsTrigger>
-        {showThreats && <TabsTrigger value="ameacas"><ShieldAlert /> Ameaças</TabsTrigger>}</TabsList>
+        <TabsTrigger value="procedimentos"><BookOpen /> Procedimentos</TabsTrigger></TabsList>
       <TabsContent value="itens">
         <div className="flex flex-wrap items-end justify-between gap-4 mb-4"><div><h2 className="section-title">Catálogo de exploração</h2>
           <p className="intro-line mt-1">{content.catalog.length} itens do catálogo. A carga e os efeitos seguem a alfa.</p></div>
@@ -371,9 +365,6 @@ export function ReferencePanel({ game, showThreats = false }: { game: GameState;
             <p className="mt-2">Depois das 2 horas sem limpeza, Exposto passa a Infectado no próximo amanhecer; depois Sintomático (−1 em Agilidade e Força); depois Terminal, com três cenas significativas restantes. Não há cura conhecida após a infecção se estabelecer nesta alfa.</p></article>
         </div>
       </TabsContent>
-      {showThreats && <TabsContent value="ameacas">
-        <ThreatReference game={game} />
-      </TabsContent>}
     </Tabs>
   </div>;
 }
