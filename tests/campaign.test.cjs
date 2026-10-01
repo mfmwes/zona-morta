@@ -413,29 +413,30 @@ test('limiares acompanham nível e ausência de proteção; modificadores do kit
   s.kitCondition.secondary = 'Íntegro'; assert.equal(equipment.equipmentModifiers(s).armor, 2);
 });
 
-test('tipo de munição não se mistura e o abrigo mantém estoques separados', () => {
+test('munição física transfere por tipo e o abrigo usa os mesmos itens', () => {
   const g = campaign(); const [a,b] = g.survivors;
-  a.ammo = 3; a.ammoType = 'Espingarda'; b.ammo = 2; b.ammoType = 'Pistola';
-  const before = JSON.stringify(g);
-  assert.equal(inventory.transferProvisions(g, a.id, b.id, 'ammo', 1), false);
-  assert.equal(JSON.stringify(g), before);
-  b.ammo = 0;
-  assert.equal(inventory.transferProvisions(g, a.id, b.id, 'ammo', 2), true);
-  assert.equal(b.ammoType, 'Espingarda'); assert.equal(b.ammo, 2); assert.equal(a.ammo, 1);
-  assert.equal(inventory.transferProvisions(g, b.id, 'shared', 'ammo', 1), true);
+  a.inventory = [item('Munição de Espingarda', 3)];
+  b.inventory = [item('Munição de Pistola', 2)];
+  assert.equal(inventory.transferProvisions(g, a.id, b.id, 'ammo', 2, 'Espingarda'), true);
+  assert.equal(require('../lib/game.ts').ammunitionCount(a.inventory, 'Espingarda'), 1);
+  assert.equal(require('../lib/game.ts').ammunitionCount(b.inventory, 'Espingarda'), 2);
+  assert.equal(require('../lib/game.ts').ammunitionCount(b.inventory, 'Pistola'), 2);
+  assert.equal(inventory.transferProvisions(g, b.id, 'shared', 'ammo', 1, 'Espingarda'), true);
   assert.equal(require('../lib/game.ts').shelterAmmoCount(g.shelter, 'Espingarda'), 1);
-  assert.equal(require('../lib/game.ts').shelterAmmoCount(g.shelter, 'Pistola'), 0);
-  b.ammo = 0;
   require('../lib/game.ts').setShelterAmmoCount(g.shelter, 'Pistola', 2);
   assert.equal(inventory.transferProvisions(g, 'shared', b.id, 'ammo', 1, 'Pistola'), true);
-  assert.equal(b.ammoType, 'Pistola'); assert.equal(require('../lib/game.ts').shelterAmmoCount(g.shelter, 'Pistola'), 1);
+  assert.equal(require('../lib/game.ts').ammunitionCount(b.inventory, 'Pistola'), 3);
+  assert.equal(require('../lib/game.ts').shelterAmmoCount(g.shelter, 'Pistola'), 1);
 });
 
-test('munição de armas encontradas é reconhecida no cálculo da carga', () => {
-  const s = survivor(); s.primary = 'Pistola compacta'; s.ammoType = 'Pistola'; s.ammo = 2;
+test('munição física ocupa 1 espaço por até quatro unidades do mesmo tipo', () => {
+  const s = survivor();
+  s.inventory = [item('Munição de Pistola', 4)];
   assert.equal(survivorStats(s).load.ammo, 1);
-  s.primary = 'Fuzil de patrulha'; assert.equal(survivorStats(s).load.ammo, 2);
-  s.ammoType = 'Carabina'; assert.equal(survivorStats(s).load.ammo, 1);
+  s.inventory[0].qty = 5;
+  assert.equal(survivorStats(s).load.ammo, 2);
+  s.inventory.push(item('Munição de Carabina', 1));
+  assert.equal(survivorStats(s).load.ammo, 3);
 });
 
 test('transações rejeitam valores inválidos e acesso remoto sem alterar o estado', () => {
@@ -729,21 +730,34 @@ test('cozinhar alimento complexo exige água, panela e calor e consome os recurs
   assert.equal(ana.inventory.some(entry => entry.name === 'Combustível (1 unidade)'), false);
 });
 
-test('recursos de ataque gastam uma carga por tipo na cena e aplicam Barulho em todo disparo', () => {
+test('disparos comprometem uma unidade física por tipo e a troca de cena consome', () => {
   const g = campaign(); const a = g.survivors[0];
-  a.primary = 'Pistola'; a.ammoType = 'Pistola'; a.ammo = 2; g.scene = 3; g.noise = 0;
+  a.primary = 'Pistola'; a.inventory = [item('Munição de Pistola', 2), item('Munição de Carabina', 1)];
+  g.scene = 3; g.noise = 0;
   let state = combatResources.attackResourceState(g, a, 'Pistola', '+2');
   assert.equal(state.ammoReady, true); assert.equal(state.spendsAmmo, true);
   assert.equal(combatResources.applyAttackResources(g, a.id, 'Pistola', '+2').ok, true);
-  assert.equal(a.ammo, 1); assert.equal(g.noise, 2);
+  assert.equal(require('../lib/game.ts').ammunitionCount(a.inventory, 'Pistola'), 2);
+  assert.equal(require('../lib/game.ts').ammunitionCount(a.inventory, 'Pistola', true), 1);
+  assert.equal(a.inventory.find(x => x.ammunitionType === 'Pistola').committedAmmo, 1);
+  assert.equal(g.noise, 2);
   assert.equal(combatResources.applyAttackResources(g, a.id, 'Pistola', '+2').ok, true);
-  assert.equal(a.ammo, 1); assert.equal(g.noise, 4);
+  assert.equal(a.inventory.find(x => x.ammunitionType === 'Pistola').committedAmmo, 1);
+  assert.equal(g.noise, 4);
 
-  a.primary = 'Carabina'; a.ammoType = 'Carabina'; a.ammo = 1;
+  a.primary = 'Carabina';
   assert.equal(combatResources.applyAttackResources(g, a.id, 'Carabina', '+3').ok, true);
-  assert.equal(a.ammo, 0); assert.equal(g.noise, 5);
-  a.primary = 'Pistola'; a.ammoType = 'Pistola';
+  assert.equal(require('../lib/game.ts').ammunitionCount(a.inventory, 'Carabina', true), 0);
+  assert.equal(g.noise, 5);
+  a.primary = 'Pistola';
   assert.equal(combatResources.attackResourceState(g, a, 'Pistola', '+2').covered, true);
+
+  abilities.beginScene(g);
+  assert.equal(g.scene, 4);
+  assert.equal(require('../lib/game.ts').ammunitionCount(a.inventory, 'Pistola'), 1);
+  assert.equal(require('../lib/game.ts').ammunitionCount(a.inventory, 'Carabina'), 0);
+  assert.equal(a.inventory.some(x => x.committedAmmo), false);
+  assert.equal(combatResources.attackResourceState(g, a, 'Pistola', '+2').covered, false);
 });
 
 test('caixa clínica vira Medicamentos sem apagar o estojo reutilizável', () => {
