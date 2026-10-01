@@ -14,8 +14,22 @@ export type CampaignSummary = {
   updatedAt: string;
 };
 
-export function CampaignLibrary({ campaigns, onRefresh, onSignOut }: {
+export type AccountCharacterSummary = {
+  id: string;
+  campaignId: string;
+  campaignName: string;
+  campaignArchived: boolean;
+  name: string;
+  archetype: string;
+  specialty: string;
+  level: number;
+  portrait?: string;
+  updatedAt: string;
+};
+
+export function CampaignLibrary({ campaigns, characters, onRefresh, onSignOut }: {
   campaigns: CampaignSummary[];
+  characters: AccountCharacterSummary[];
   onRefresh: () => void | Promise<void>;
   onSignOut: () => void | Promise<void>;
 }) {
@@ -116,6 +130,26 @@ export function CampaignLibrary({ campaigns, onRefresh, onSignOut }: {
       <section className="mb-8">
         <div className="flex items-center gap-2 mb-3"><ShieldCheck size={19} /><div><p className="dossier-title">Como mestre</p><h2 className="section-title mt-1">Campanhas que você conduz</h2></div></div>
         {owned.length ? cards(owned) : <div className="panel panel-pad"><p className="intro-line">Você ainda não criou uma campanha nesta conta.</p></div>}
+      </section>
+
+      <section className="mb-8">
+        <div className="flex items-center gap-2 mb-3"><UserRound size={19} /><div><p className="dossier-title">Conta</p><h2 className="section-title mt-1">Seus sobreviventes salvos</h2></div></div>
+        {characters.length ? <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {characters.map(character => <article key={`${character.id}-${character.campaignId}`} className="list-card library-character-card">
+            <div className="flex items-center gap-3">
+              <span className="library-character-avatar">{character.portrait
+                ? <img src={character.portrait} alt="" />
+                : character.name.charAt(0).toUpperCase()}</span>
+              <div className="min-w-0"><p className="dossier-title">Sobrevivente da conta</p><h3 className="font-extrabold mt-1 break-words">{character.name}</h3></div>
+            </div>
+            <div className="mt-4 grid gap-1 text-sm subtle">
+              <span>{character.archetype} · {character.specialty}</span>
+              <span>Nível {character.level}</span>
+              <span>{character.campaignArchived ? "Campanha arquivada" : character.campaignName}</span>
+            </div>
+            {!character.campaignArchived && <div className="mt-4"><Button size="sm" variant="outline" onClick={() => openCampaign(character.campaignId)}><BookOpen size={15} /> Abrir campanha</Button></div>}
+          </article>)}
+        </div> : <div className="panel panel-pad"><p className="intro-line">Quando uma ficha for criada ou atualizada em uma campanha, uma cópia vinculada à sua conta aparecerá aqui.</p></div>}
       </section>
 
       <section>
