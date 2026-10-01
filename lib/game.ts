@@ -4,6 +4,7 @@ import { equipmentModifiers, getProtection, weaponAmmoType } from "./equipment";
 import { createId } from "./id";
 import { transferPortionLots } from "./provisions";
 import { groupedProvisionPortions } from "./provision-items";
+import { defaultThreatTemplates, type ThreatTemplate } from "./threats";
 
 export { content };
 
@@ -360,6 +361,8 @@ export type GameState = {
   hexes: Record<string, HexState>;
   survivors: Survivor[];
   npcs: NPC[];
+  /** Catálogo de ameaças da campanha. Ausente em campanhas antigas = catálogo-base. */
+  threats?: ThreatTemplate[];
   shelter: ShelterState;
   formerShelters?: ShelterState[];
   log: { id: string; day: number; time: string; kind: string; text: string; actorId?: string; actorName?: string; actorPortrait?: string }[];
@@ -419,7 +422,7 @@ export function defaultState(options: { startSectorId?: string; withShelter?: bo
   const withShelter = options.withShelter === true;
   const state: GameState = {
     campaignId: createId(), day: 1, minutes: 480, partyHex: "0,0", fear: 0, noise: 0,
-    scene: 1, expedition: 1, shortRest: 1, longRest: 1, hexes, survivors: [], npcs: [], formerShelters: [],
+    scene: 1, expedition: 1, shortRest: 1, longRest: 1, hexes, survivors: [], npcs: [], threats: defaultThreatTemplates(), formerShelters: [],
     shelter: { hex: withShelter ? "0,0" : null,
       name: startSector ? `Abrigo — ${startSector.name}` : "Abrigo",
       capacity: withShelter ? 8 : 0, residents: 0,
@@ -440,6 +443,7 @@ export function defaultState(options: { startSectorId?: string; withShelter?: bo
 
 export function resetCityPreservingSurvivors(state: GameState, options: { startSectorId?: string; withShelter?: boolean } = {}) {
   const campaignId = state.campaignId;
+  const threats = state.threats === undefined ? undefined : structuredClone(state.threats);
   const survivors = structuredClone(state.survivors).map(person => {
     const preserved = normalizeSurvivorAmmunition({ ...person, hex: "0,0" } as Survivor);
     for (const item of [...preserved.inventory]) {
@@ -458,6 +462,7 @@ export function resetCityPreservingSurvivors(state: GameState, options: { startS
   const fresh = defaultState(options);
   fresh.campaignId = campaignId;
   fresh.survivors = survivors;
+  if (threats !== undefined) fresh.threats = threats;
   if (survivors.length) addLog(fresh, "sobrevivente", `${survivors.length} sobrevivente(s) da conta foram preservados ao reiniciar a cidade.`);
   Object.assign(state, fresh);
   return survivors.length;
