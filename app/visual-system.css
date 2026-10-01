@@ -2035,3 +2035,55 @@ html[data-theme="dark"] .conflict-resource--hope b { color:#ffe48a; }
     transition:none;
   }
 }
+
+
+/* Rolagens: alvo da Cena de Conflito. */
+.roll-target-locked {
+  display:grid;
+  gap:3px;
+  min-height:74px;
+  padding:9px 10px;
+  border:1px solid #b9cfc8;
+  border-left:3px solid #4f8c82;
+  border-radius:7px;
+  background:color-mix(in srgb,#5f9f94 8%,var(--surface-raised));
+}
+.roll-target-locked > span {
+  color:var(--muted-foreground);
+  font-size:.62rem;
+  font-weight:800;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+}
+.roll-target-locked > strong {
+  overflow:hidden;
+  color:var(--foreground);
+  font-size:.87rem;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.roll-target-locked > small {
+  color:var(--muted-foreground);
+  font-size:.68rem;
+  line-height:1.35;
+}
+.roll-target-locked > button {
+  justify-self:start;
+  margin-top:2px;
+  padding:0;
+  border:0;
+  background:transparent;
+  color:#3f776f;
+  font-size:.67rem;
+  font-weight:800;
+  text-decoration:underline;
+  text-underline-offset:2px;
+}
+html[data-theme="dark"] .roll-target-locked {
+  border-color:#42615b;
+  border-left-color:#78aea4;
+  background:#1a2d2a;
+}
+html[data-theme="dark"] .roll-target-locked > button {
+  color:#a8d5ca;
+}
