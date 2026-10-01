@@ -108,7 +108,7 @@ export function CampaignLibrary({ campaigns, characters, onRefresh, onSignOut }:
     <div className="mx-auto max-w-6xl">
       <header className="library-hero flex flex-wrap items-start justify-between gap-4 mb-7">
         <div><p className="eyebrow">Daggerheart / Zona Morta</p><h1 className="page-title mt-1">Seus dossiês</h1>
-          <p className="intro-line mt-2 max-w-2xl">Suas campanhas ficam vinculadas à conta. O convite é necessário apenas para entrar em uma nova mesa; depois ela permanece aqui.</p></div>
+          <p className="intro-line mt-2 max-w-2xl">Campanhas e sobreviventes ficam vinculados à sua conta. Reiniciar uma cidade não apaga as fichas preservadas.</p></div>
         <Button variant="outline" onClick={() => void onSignOut()}><LogOut size={16} /> Sair</Button>
       </header>
 
