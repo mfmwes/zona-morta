@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Crosshair, Dice5, Sparkles, Swords, Target, Zap } from "lucide-react";
+import { Crosshair, Dice5, Sparkles, Swords, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
