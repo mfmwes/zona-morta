@@ -6,7 +6,7 @@ const ts = require('typescript');
 require.extensions['.ts'] = (module, path) => module._compile(ts.transpileModule(fs.readFileSync(path, 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
 }).outputText, path);
-const { defaultState, initialSurvivor, survivorStats, content } = require('../lib/game.ts');
+const { defaultState, initialSurvivor, resetCityPreservingSurvivors, survivorStats, content } = require('../lib/game.ts');
 const inventory = require('../lib/inventory.ts');
 const itemActions = require('../lib/item-actions.ts');
 const hexActions = require('../lib/hex-actions.ts');
@@ -44,6 +44,52 @@ function item(name, qty = 1, category) {
   return inventory.itemFromCatalog(entry, qty, 'Íntegro', 1);
 }
 function physicalCount(s) { return s.inventory.reduce((sum, x) => sum + x.qty, 0) + ['primary','secondary','protection','outfit','bag','personal','pocket1','pocket2'].filter(key => s[key] && !(key === 'personal' && s.personal === s.bag)).length; }
+
+
+test('reiniciar cidade preserva fichas, ids e campanha mas limpa o mundo e estados temporários', () => {
+  const g = campaign();
+  const originalCampaignId = g.campaignId;
+  const [ana] = g.survivors;
+  ana.hex = '1,0';
+  ana.hp = 2;
+  ana.hope = 4;
+  ana.inventory = [item('Pé de cabra')];
+  ana.abilityUses = { exemplo: 'scene:1' };
+  ana.restPlan = { kind:'short', choices:[] };
+  ana.ammoSpentScene = 1;
+  g.shelter.food = 17;
+  g.day = 9;
+  g.minutes = 900;
+  g.hexes['0,0'].notes = 'cidade antiga';
+
+  const count = resetCityPreservingSurvivors(g, { withShelter:true });
+  assert.equal(count, 2);
+  assert.equal(g.campaignId, originalCampaignId);
+  assert.equal(g.day, 1);
+  assert.equal(g.minutes, 480);
+  assert.equal(g.shelter.food, 0);
+  assert.equal(g.shelter.hex, '0,0');
+  assert.equal(g.survivors.length, 2);
+  assert.equal(g.survivors[0].id, ana.id);
+  assert.equal(g.survivors[0].name, ana.name);
+  assert.equal(g.survivors[0].hp, 2);
+  assert.equal(g.survivors[0].hope, 4);
+  assert.equal(g.survivors[0].hex, '0,0');
+  assert.equal(g.survivors[0].inventory[0].name, 'Pé de cabra');
+  assert.equal(g.survivors[0].abilityUses, undefined);
+  assert.equal(g.survivors[0].restPlan, undefined);
+  assert.equal(g.survivors[0].ammoSpentScene, undefined);
+});
+
+test('persistência de conta mantém tabela e sincronização de sobreviventes fora do estado da cidade', () => {
+  const schema = fs.readFileSync(require.resolve('../db/schema.ts'), 'utf8');
+  const state = fs.readFileSync(require.resolve('../db/state.ts'), 'utf8');
+  const page = fs.readFileSync(require.resolve('../app/page.tsx'), 'utf8');
+  assert.match(schema, /sqliteTable\("user_characters"/);
+  assert.match(state, /syncCampaignAccountCharacters\(campaignId, state\)/);
+  assert.match(state, /INSERT INTO user_characters/);
+  assert.match(page, /resetCityPreservingSurvivors/);
+});
 
 test('jogador cria ficha válida sem poder injetar recursos ou escolhas fora do arquétipo', () => {
   const archetype = content.archetypes[0];
