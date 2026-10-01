@@ -65,6 +65,55 @@ function validThreat(value: unknown) {
     && ["base", "custom"].includes(String(threat.source));
 }
 
+function validConflict(value: unknown) {
+  if (value === undefined) return true;
+  if (!value || typeof value !== "object") return false;
+  const conflict = value as Record<string, unknown>;
+  const spotlight = conflict.spotlight as Record<string, unknown> | null | undefined;
+  const threats = conflict.threats;
+  const history = conflict.spotlightHistory;
+  const participant = (row: Record<string, unknown>) =>
+    ["survivor", "threat"].includes(String(row.kind))
+    && typeof row.id === "string" && row.id.length <= 120;
+  return typeof conflict.id === "string" && conflict.id.length <= 120
+    && typeof conflict.name === "string" && conflict.name.length <= 100
+    && typeof conflict.active === "boolean"
+    && Number.isInteger(conflict.sceneNumber) && Number(conflict.sceneNumber) >= 1 && Number(conflict.sceneNumber) <= 999999
+    && Number.isInteger(conflict.startedDay) && Number(conflict.startedDay) >= 1 && Number(conflict.startedDay) <= 99999
+    && typeof conflict.startedTime === "string" && conflict.startedTime.length <= 20
+    && (conflict.endedDay === undefined || (Number.isInteger(conflict.endedDay) && Number(conflict.endedDay) >= 1 && Number(conflict.endedDay) <= 99999))
+    && (conflict.endedTime === undefined || (typeof conflict.endedTime === "string" && conflict.endedTime.length <= 20))
+    && Array.isArray(conflict.survivorIds) && conflict.survivorIds.length <= 30
+    && conflict.survivorIds.every(id => typeof id === "string" && id.length <= 120)
+    && Array.isArray(threats) && threats.length <= 80
+    && threats.every(instance => {
+      if (!instance || typeof instance !== "object") return false;
+      const row = instance as Record<string, unknown>;
+      return typeof row.id === "string" && row.id.length <= 120
+        && typeof row.templateId === "string" && row.templateId.length <= 120
+        && validThreat(row.templateSnapshot)
+        && typeof row.name === "string" && row.name.length <= 100
+        && Number.isInteger(row.hpMarked) && Number(row.hpMarked) >= 0 && Number(row.hpMarked) <= 99
+        && Number.isInteger(row.stressMarked) && Number(row.stressMarked) >= 0 && Number(row.stressMarked) <= 99
+        && Array.isArray(row.conditions) && row.conditions.length <= 20
+        && row.conditions.every(condition => typeof condition === "string" && condition.length <= 100)
+        && typeof row.notes === "string" && row.notes.length <= 2000
+        && typeof row.defeated === "boolean";
+    })
+    && (spotlight === null || spotlight === undefined || participant(spotlight))
+    && Array.isArray(history) && history.length <= 120
+    && history.every(event => {
+      if (!event || typeof event !== "object") return false;
+      const row = event as Record<string, unknown>;
+      return participant(row)
+        && typeof row.eventId === "string" && row.eventId.length <= 120
+        && typeof row.name === "string" && row.name.length <= 100
+        && Number.isInteger(row.day) && Number(row.day) >= 1 && Number(row.day) <= 99999
+        && typeof row.time === "string" && row.time.length <= 20;
+    })
+    && typeof conflict.notes === "string" && conflict.notes.length <= 4000;
+}
+
 function validState(value: unknown): value is GameState {
   if (!value || typeof value !== "object") return false;
   const state = value as Partial<GameState>;
@@ -81,6 +130,7 @@ function validState(value: unknown): value is GameState {
         && typeof npc.hex === "string" && Array.isArray(npc.skills))))
     && (state.threats === undefined || (Array.isArray(state.threats) && state.threats.length <= 120
       && state.threats.every(validThreat)))
+    && validConflict(state.conflict)
     && state.survivors.every(s => Number.isInteger(s.armorMarked) && s.armorMarked >= 0 && s.armorMarked <= 20
       && (s.hex === undefined || (typeof s.hex === "string" && Boolean(state.hexes?.[s.hex])))
       && (s.outfit === undefined || typeof s.outfit === "string")
