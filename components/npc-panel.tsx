@@ -1,9 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { MapPin, Plus, Sparkles, Users } from "lucide-react";
+import { MapPin, Plus, Sparkles, Trash2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { ImagePicker } from "@/components/image-picker";
 import { Field, Pick } from "@/components/game-controls";
 import { createId } from "@/lib/id";
 import { addLog, communityCapabilities, type GameState, type NPC, type NpcDisposition, type NpcStatus } from "@/lib/game";
@@ -36,6 +38,7 @@ export function NpcPanel({ game, edit, playerPreview }: { game: GameState; edit:
   const [tone, setTone] = useState<EncounterTone>("Aleatório");
   const [generationHex, setGenerationHex] = useState(game.shelter.hex ?? game.partyHex);
   const [generated, setGenerated] = useState<GeneratedNpc[]>([]);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const npcs = game.npcs;
   const filtered = useMemo(() => npcs.filter(npc => {
     const atShelter = Boolean(game.shelter.hex && npc.hex === game.shelter.hex);
@@ -83,6 +86,29 @@ export function NpcPanel({ game, edit, playerPreview }: { game: GameState; edit:
     setGeneratorOpen(false);
   }
 
+  function deleteNpc() {
+    const npc = game.npcs.find(person => person.id === deleteId);
+    if (!npc) { setDeleteId(null); return; }
+    edit(state => {
+      state.npcs = state.npcs.filter(person => person.id !== npc.id);
+      const shelters = [state.shelter, ...(state.formerShelters ?? [])];
+      for (const shelter of shelters) {
+        for (const project of shelter.projects ?? []) {
+          if (project.responsibleId === npc.id) delete project.responsibleId;
+          project.helperIds = (project.helperIds ?? []).filter(id => id !== npc.id);
+          if (project.workShift) project.workShift.workerIds = project.workShift.workerIds.filter(id => id !== npc.id);
+        }
+        for (const post of shelter.posts ?? []) {
+          if (post.responsibleId === npc.id) delete post.responsibleId;
+          post.helperIds = (post.helperIds ?? []).filter(id => id !== npc.id);
+        }
+      }
+      addLog(state, "comunidade", `${npc.name} foi removido(a) do registro de PNJs.`);
+    });
+    setDeleteId(null);
+    setOpen(false);
+  }
+
   return <div className="npc-panel">
     <div className="flex flex-wrap items-start justify-between gap-4 mb-5"><div><p className="dossier-title">Pessoas da campanha</p><h2 className="section-title mt-1">PNJs e comunidade</h2>
       <p className="intro-line mt-2">Pessoas identificadas podem morar em uma base, acompanhar o grupo ou permanecer em outro lugar.</p></div>
@@ -96,8 +122,20 @@ export function NpcPanel({ game, edit, playerPreview }: { game: GameState; edit:
     <Dialog open={open} onOpenChange={setOpen}><DialogContent className="npc-dialog"><DialogHeader><DialogTitle>{draft.id ? draft.name || "PNJ" : "Novo PNJ"}</DialogTitle>
       <DialogDescription>{playerPreview ? "Informações públicas da comunidade." : "Ficha leve: registra situação e vínculos sem criar outra ficha completa de sobrevivente."}</DialogDescription></DialogHeader>
       {playerPreview ? <PublicNpcDetails npc={draft} game={game} /> : <NpcForm game={game} draft={draft} setDraft={setDraft} hexOptions={hexOptions} />}
-      <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Fechar</Button>{!playerPreview && <Button disabled={!draft.name.trim()} onClick={save}>Salvar PNJ</Button>}</DialogFooter>
+      <DialogFooter className="npc-dialog-actions">
+        {!playerPreview && draft.id && <Button variant="outline" className="npc-delete-button" onClick={() => setDeleteId(draft.id)}><Trash2 size={15} /> Excluir PNJ</Button>}
+        <span className="npc-dialog-actions-spacer" />
+        <Button variant="outline" onClick={() => setOpen(false)}>Fechar</Button>
+        {!playerPreview && <Button disabled={!draft.name.trim()} onClick={save}>Salvar PNJ</Button>}
+      </DialogFooter>
     </DialogContent></Dialog>
+    <AlertDialog open={Boolean(deleteId)} onOpenChange={value => { if (!value) setDeleteId(null); }}>
+      <AlertDialogContent>
+        <AlertDialogHeader><AlertDialogTitle>Excluir {game.npcs.find(person => person.id === deleteId)?.name ?? "PNJ"}?</AlertDialogTitle>
+          <AlertDialogDescription>O PNJ será removido da campanha e também deixará funções, postos e equipes de trabalho do abrigo. Esta ação não transforma a pessoa novamente em morador sem nome.</AlertDialogDescription></AlertDialogHeader>
+        <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction variant="destructive" onClick={deleteNpc}>Excluir PNJ</AlertDialogAction></AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
     {!playerPreview && <Dialog open={generatorOpen} onOpenChange={setGeneratorOpen}><DialogContent className="npc-dialog"><DialogHeader><DialogTitle>Gerar PNJ ou encontro</DialogTitle>
       <DialogDescription>Gerador local: cria rascunhos ficcionais, sem usar API nem inventar moradores legados.</DialogDescription></DialogHeader>
       <div className="grid gap-4"><div className="grid gap-3 sm:grid-cols-2"><Pick label="Quantidade" value={String(quantity)} options={[1,2,3,4,5,6].map(value => ({ value: String(value), label: String(value) }))} onChange={value => setQuantity(Number(value))} />
@@ -129,7 +167,7 @@ function NpcForm({ game, draft, setDraft, hexOptions }: { game: GameState; draft
     <div className="grid gap-3 sm:grid-cols-3"><Pick label="Estado" value={draft.status} options={statuses} onChange={value => update("status", value as NpcStatus)} />
       <Pick label="Infecção" value={draft.infection} options={[...infections]} onChange={value => update("infection", value as NPC["infection"])} />
       <Pick label="Disposição" value={draft.disposition} options={dispositions} onChange={value => update("disposition", value as NpcDisposition)} /></div>
-    <Field label="Retrato (URL opcional)" value={draft.portrait ?? ""} onChange={value => update("portrait", value || undefined)} placeholder="https://..." />
+    <ImagePicker label="Retrato do PNJ" value={draft.portrait} onChange={value => update("portrait", value)} fallback={draft.name.slice(0, 2).toUpperCase() || "PNJ"} />
     <label className="field"><span className="field-label">Descrição</span><textarea value={draft.description} onChange={event => update("description", event.target.value)} placeholder="Aparência, vínculo e o que importa na ficção." /></label>
     <Field label="Capacidades (separe por vírgulas)" value={draft.skills.join(", ")} onChange={value => update("skills", value.split(","))} placeholder={communityCapabilities.join(", ")} />
     <div className="grid gap-3 sm:grid-cols-2"><Pick label="Hex atual" value={draft.hex} options={hexOptions} onChange={value => update("hex", value)} />
