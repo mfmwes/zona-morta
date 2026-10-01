@@ -299,3 +299,49 @@ export function ThreatManager({ game, edit }: { game: GameState; edit: Edit }) {
     </AlertDialog>
   </div>;
 }
+
+
+export function ThreatReference({ game }: { game: GameState }) {
+  const library = threatLibrary(game.threats);
+  const [query, setQuery] = useState("");
+  const [role, setRole] = useState("Todas");
+  const [viewId, setViewId] = useState<string | null>(null);
+
+  const roles = useMemo(() => ["Todas", ...new Set(library.map(threat => threat.role).filter(Boolean))], [library]);
+  const visible = useMemo(() => {
+    const normalized = query.trim().toLocaleLowerCase("pt-BR");
+    return library.filter(threat => (role === "Todas" || threat.role === role)
+      && (!normalized || `${threat.name} ${threat.role} ${threat.description} ${threat.motivations} ${threat.tags.join(" ")}`.toLocaleLowerCase("pt-BR").includes(normalized)))
+      .sort((a, b) => a.tier - b.tier || a.name.localeCompare(b.name, "pt-BR"));
+  }, [library, query, role]);
+
+  const viewed = viewId ? library.find(threat => threat.id === viewId) ?? null : null;
+
+  return <div className="threat-reference">
+    <div className="threat-manager-heading">
+      <div><h2 className="section-title">Consulta de ameaças</h2>
+        <p className="intro-line mt-1">Referência rápida do mestre. Para criar, editar ou excluir fichas, use o Gerenciador de ameaças no menu lateral.</p></div>
+      <span className="tag">{library.length} fichas</span>
+    </div>
+
+    <div className="threat-manager-toolbar">
+      <div className="threat-search"><Search size={16} aria-hidden="true" /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Buscar ameaça, função ou tag…" aria-label="Buscar ameaças" /></div>
+      <Pick label="Função" value={role} options={roles} onChange={setRole} />
+      <span className="tag">{visible.length} resultados</span>
+    </div>
+
+    <div className="threat-grid">
+      {visible.map(threat => <ThreatCard key={threat.id} threat={threat} onOpen={() => setViewId(threat.id)} />)}
+    </div>
+    {!visible.length && <div className="threat-empty"><ShieldAlert size={26} /><b>Nenhuma ameaça encontrada.</b><span>Ajuste a busca ou o filtro de função.</span></div>}
+
+    <Dialog open={Boolean(viewed)} onOpenChange={open => { if (!open) setViewId(null); }}>
+      {viewed && <DialogContent className="threat-detail-dialog sm:max-w-[720px]">
+        <DialogHeader><p className="dossier-title">Consulta do mestre</p><DialogTitle>{viewed.name}</DialogTitle>
+          <DialogDescription>Ficha mecânica completa da ameaça nesta campanha.</DialogDescription></DialogHeader>
+        <ThreatSheet threat={viewed} />
+        <DialogFooter><Button variant="outline" onClick={() => setViewId(null)}>Fechar</Button></DialogFooter>
+      </DialogContent>}
+    </Dialog>
+  </div>;
+}
