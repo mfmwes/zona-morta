@@ -2239,3 +2239,211 @@ html[data-theme="dark"] .conflict-condition-editor input {
     border-right:0;
   }
 }
+
+
+/* Cena de Conflito: caixa de dano pendente do jogador. */
+.conflict-damage-inbox {
+  display:grid;
+  gap:12px;
+  border-color:#c9955c;
+  background:
+    linear-gradient(135deg,color-mix(in srgb,#d98a45 8%,var(--surface-raised)),var(--surface-raised) 58%);
+  box-shadow:inset 4px 0 #c67a3c,0 7px 18px #8c5c2c14;
+}
+.conflict-damage-inbox-heading {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+}
+.conflict-damage-inbox-heading h3 {
+  margin:2px 0 3px;
+  color:var(--foreground);
+  font-size:1rem;
+}
+.conflict-damage-inbox-heading p:last-child {
+  margin:0;
+  color:var(--muted-foreground);
+  font-size:.75rem;
+  line-height:1.45;
+}
+.conflict-damage-request-list {
+  display:grid;
+  gap:9px;
+}
+.conflict-damage-request {
+  display:grid;
+  gap:10px;
+  padding:11px;
+  border:1px solid #d8c2a3;
+  border-radius:8px;
+  background:var(--surface-raised);
+}
+.conflict-damage-source {
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  align-items:center;
+  gap:9px;
+}
+.conflict-damage-source > div {
+  display:grid;
+  gap:2px;
+  min-width:0;
+}
+.conflict-damage-source small {
+  overflow:hidden;
+  color:var(--muted-foreground);
+  font:700 .61rem var(--font-mono);
+  letter-spacing:.04em;
+  text-overflow:ellipsis;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+.conflict-damage-source strong {
+  overflow:hidden;
+  color:var(--foreground);
+  font-size:.86rem;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.conflict-damage-tier {
+  padding:4px 7px;
+  border-radius:999px;
+  font:850 .59rem var(--font-mono);
+  letter-spacing:.05em;
+  text-transform:uppercase;
+}
+.conflict-damage-tier.is-minor {
+  background:#e7efe8;
+  color:#48664f;
+}
+.conflict-damage-tier.is-major {
+  background:#f1e7cd;
+  color:#795b1f;
+}
+.conflict-damage-tier.is-severe {
+  background:#f1d8d3;
+  color:#8c4339;
+}
+.conflict-damage-tier.is-none {
+  background:var(--surface-soft);
+  color:var(--muted-foreground);
+}
+.conflict-damage-numbers {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  overflow:hidden;
+  border:1px solid var(--border);
+  border-radius:7px;
+}
+.conflict-damage-numbers > span {
+  display:grid;
+  gap:1px;
+  min-width:0;
+  padding:7px 8px;
+  border-right:1px solid var(--border);
+  background:color-mix(in srgb,var(--muted) 25%,transparent);
+}
+.conflict-damage-numbers > span:last-child { border-right:0; }
+.conflict-damage-numbers small {
+  color:var(--muted-foreground);
+  font-size:.55rem;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+.conflict-damage-numbers b {
+  color:var(--foreground);
+  font:900 .9rem var(--font-mono);
+}
+.conflict-damage-numbers em {
+  overflow:hidden;
+  color:var(--muted-foreground);
+  font-size:.6rem;
+  font-style:normal;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.conflict-damage-actions {
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:7px;
+}
+.conflict-damage-error {
+  margin:0;
+  padding:8px 9px;
+  border:1px solid #d8a79e;
+  border-radius:6px;
+  background:#f7e8e5;
+  color:#8b4037;
+  font-size:.72rem;
+}
+.conflict-damage-pending-badge {
+  display:inline-flex;
+  align-items:center;
+  min-height:21px;
+  padding:2px 6px;
+  border:1px solid #d2a36b;
+  border-radius:999px;
+  background:#f3e4cd;
+  color:#7a5221;
+  font:850 .54rem var(--font-mono);
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+html[data-theme="dark"] .conflict-damage-inbox {
+  border-color:#715338;
+  background:linear-gradient(135deg,#30251d,#1a2525 58%);
+  box-shadow:inset 4px 0 #b16d35,0 7px 18px #0000002b;
+}
+html[data-theme="dark"] .conflict-damage-request {
+  border-color:#5f4a35;
+  background:var(--card);
+}
+html[data-theme="dark"] .conflict-damage-tier.is-minor {
+  background:#243229;
+  color:#b7d2bc;
+}
+html[data-theme="dark"] .conflict-damage-tier.is-major {
+  background:#3a301d;
+  color:#e6c77d;
+}
+html[data-theme="dark"] .conflict-damage-tier.is-severe {
+  background:#3b2623;
+  color:#efaaa0;
+}
+html[data-theme="dark"] .conflict-damage-pending-badge {
+  border-color:#7b5c39;
+  background:#392d20;
+  color:#e6c78b;
+}
+html[data-theme="dark"] .conflict-damage-error {
+  border-color:#714b44;
+  background:#352321;
+  color:#efb1a7;
+}
+@media (max-width:680px) {
+  .conflict-damage-source {
+    grid-template-columns:auto minmax(0,1fr);
+  }
+  .conflict-damage-source > .conflict-damage-tier {
+    grid-column:1 / -1;
+    justify-self:start;
+  }
+  .conflict-damage-numbers {
+    grid-template-columns:1fr;
+  }
+  .conflict-damage-numbers > span {
+    border-right:0;
+    border-bottom:1px solid var(--border);
+  }
+  .conflict-damage-numbers > span:last-child {
+    border-bottom:0;
+  }
+  .conflict-damage-actions {
+    display:grid;
+    grid-template-columns:1fr;
+  }
+}
