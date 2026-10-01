@@ -18,7 +18,7 @@ import { ReferencePanel, ShelterPanel } from "@/components/campaign-views";
 import { PlayersPanel } from "@/components/players-panel";
 import { AuthPanel } from "@/components/auth-panel";
 import { CharacterWizard } from "@/components/character-wizard";
-import { CampaignLibrary, type CampaignSummary } from "@/components/campaign-library";
+import { CampaignLibrary, type AccountCharacterSummary, type CampaignSummary } from "@/components/campaign-library";
 import { TableChat } from "@/components/table-chat";
 import { DayCloseDialog } from "@/components/day-close-dialog";
 import { addLog, defaultState, displayTime, resetCityPreservingSurvivors, survivorHex, type GameState, type Point, type Survivor } from "@/lib/game";
@@ -42,6 +42,7 @@ export default function CampaignApp() {
   const [game, setGame] = useState<GameState | null>(null);
   const [loading, setLoading] = useState(true);
   const [campaigns, setCampaigns] = useState<CampaignSummary[]>([]);
+  const [accountCharacters, setAccountCharacters] = useState<AccountCharacterSummary[]>([]);
   const [showLibrary, setShowLibrary] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [needsAuth, setNeedsAuth] = useState(false);
@@ -77,12 +78,17 @@ export default function CampaignApp() {
     try {
       const campaignId = new URLSearchParams(window.location.search).get("campanha")?.trim() ?? "";
       if (!campaignId) {
-        const response = await fetch("/api/campaigns", { cache: "no-store" });
-        const payload = await response.json() as { error?: string; campaigns?: CampaignSummary[] };
-        if (response.status === 401) { setNeedsAuth(true); setShowLibrary(false); setLoadError(""); setGame(null); return; }
-        if (!response.ok) throw new Error(payload.error || "Falha ao abrir seus dossiês.");
+        const [campaignResponse, characterResponse] = await Promise.all([
+          fetch("/api/campaigns", { cache: "no-store" }),
+          fetch("/api/characters", { cache: "no-store" }),
+        ]);
+        const payload = await campaignResponse.json() as { error?: string; campaigns?: CampaignSummary[] };
+        const characterPayload = await characterResponse.json() as { error?: string; characters?: AccountCharacterSummary[] };
+        if (campaignResponse.status === 401) { setNeedsAuth(true); setShowLibrary(false); setLoadError(""); setGame(null); return; }
+        if (!campaignResponse.ok) throw new Error(payload.error || "Falha ao abrir seus dossiês.");
         setNeedsAuth(false);
         setCampaigns(payload.campaigns ?? []);
+        setAccountCharacters(characterResponse.ok ? (characterPayload.characters ?? []) : []);
         setShowLibrary(true);
         setGame(null); current.current = null;
         setLoadError("");
@@ -357,7 +363,7 @@ export default function CampaignApp() {
 
   if (needsAuth) return <AuthPanel onAuthenticated={loadCampaign} />;
 
-  if (showLibrary) return <CampaignLibrary campaigns={campaigns} onRefresh={loadCampaign} onSignOut={async () => {
+  if (showLibrary) return <CampaignLibrary campaigns={campaigns} characters={accountCharacters} onRefresh={loadCampaign} onSignOut={async () => {
     await fetch("/api/auth", { method: "DELETE" });
     window.location.assign("/");
   }} />;
