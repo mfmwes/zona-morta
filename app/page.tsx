@@ -17,7 +17,7 @@ import { SurvivorPanel, type RestPeer } from "@/components/survivor-panel";
 import { NpcPanel } from "@/components/npc-panel";
 import { ReferencePanel, ShelterPanel } from "@/components/campaign-views";
 import { ThreatManager } from "@/components/threat-manager";
-import { ConflictSceneManager } from "@/components/conflict-scene-manager";
+import { ConflictSceneManager, PlayerConflictScene } from "@/components/conflict-scene-manager";
 import { PlayersPanel } from "@/components/players-panel";
 import { AuthPanel } from "@/components/auth-panel";
 import { CharacterWizard } from "@/components/character-wizard";
@@ -398,8 +398,14 @@ export default function CampaignApp() {
   </section></main>;
 
   const readOnlyPreview = playerPreview || role === "jogador";
+  const publicConflictActive = role === "jogador"
+    ? Boolean(game.publicConflict?.active)
+    : playerPreview ? Boolean(game.conflict?.active) : false;
+  const activeTab = tab === "conflito" && readOnlyPreview && !publicConflictActive
+    ? (role === "jogador" ? "sobreviventes" : "referencias")
+    : tab;
   const title = { mapa: "Exploração", sobreviventes: "Sobreviventes", comunidade: "PNJs e comunidade", abrigo: "Abrigo e reservas",
-    conflito: "Cena de conflito", ameacas: "Gerenciador de ameaças", referencias: "Arquivo de campo", jogadores: "Jogadores e acessos" }[tab] || "Campanha";
+    conflito: "Cena de conflito", ameacas: "Gerenciador de ameaças", referencias: "Arquivo de campo", jogadores: "Jogadores e acessos" }[activeTab] || "Campanha";
   const nav = [
     { value: "mapa", label: "Mapa e hexes", icon: Map },
     { value: "sobreviventes", label: "Sobreviventes", icon: Users },
@@ -408,12 +414,14 @@ export default function CampaignApp() {
     ...(role === "mestre" && !playerPreview ? [
       { value: "conflito", label: game.conflict?.active ? "Conflito ativo" : "Conflito", icon: Swords },
       { value: "ameacas", label: "Ameaças", icon: ShieldAlert },
+    ] : publicConflictActive ? [
+      { value: "conflito", label: "Conflito ativo", icon: Swords },
     ] : []),
     { value: "referencias", label: "Regras e itens", icon: BookOpen },
     ...(role === "mestre" ? [{ value: "jogadores", label: "Jogadores", icon: Users }] : []),
   ];
 
-  return <Tabs value={tab} onValueChange={setTab} className="w-full">
+  return <Tabs value={activeTab} onValueChange={setTab} className="w-full">
     <SidebarProvider className={`app-shell ${chatOpen ? "chat-open" : "chat-closed"}`}>
     <Sidebar collapsible="none" className="rail">
       <div className="flex items-center gap-3 px-2">
@@ -423,9 +431,9 @@ export default function CampaignApp() {
       <div className="px-3"><span className="smallcaps text-[#81d0cb]">Dossiê de campanha</span>
         <p className="text-sm text-[#a9c0bc] mt-1">Cidade em descoberta · mapa aberto</p></div>
       <TabsList aria-label="Seções da campanha" className="rail-nav bg-transparent h-auto w-full p-0">
-        {nav.map((item,index) => <TabsTrigger value={item.value} key={item.value} className={index >= 4 ? "rail-nav-extra" : undefined} aria-current={tab===item.value ? "page" : undefined}>
+        {nav.map((item,index) => <TabsTrigger value={item.value} key={item.value} className={index >= 4 ? "rail-nav-extra" : undefined} aria-current={activeTab===item.value ? "page" : undefined}>
           <item.icon size={17} />{item.label}</TabsTrigger>)}
-        <DropdownMenu><DropdownMenuTrigger asChild><button type="button" className="rail-more" aria-label="Mais seções" aria-current={nav.slice(4).some(item => item.value === tab) ? "page" : undefined}><MoreHorizontal size={19} /><span>Mais</span></button></DropdownMenuTrigger>
+        <DropdownMenu><DropdownMenuTrigger asChild><button type="button" className="rail-more" aria-label="Mais seções" aria-current={nav.slice(4).some(item => item.value === activeTab) ? "page" : undefined}><MoreHorizontal size={19} /><span>Mais</span></button></DropdownMenuTrigger>
           <DropdownMenuContent align="end" side="top" className="min-w-48">{nav.slice(4).map(item => <DropdownMenuItem key={item.value} onSelect={() => setTab(item.value)}><item.icon size={16} />{item.label}</DropdownMenuItem>)}</DropdownMenuContent>
         </DropdownMenu>
       </TabsList>
@@ -454,7 +462,7 @@ export default function CampaignApp() {
             title={playerPreview ? "Desativar prévia dos jogadores" : "Ativar prévia dos jogadores"}
             onClick={() => {
               const nextPreview = !playerPreview;
-              if (nextPreview && (tab === "ameacas" || tab === "conflito")) setTab("referencias");
+              if (nextPreview && (tab === "ameacas" || (tab === "conflito" && !game.conflict?.active))) setTab("referencias");
               setPlayerPreview(nextPreview);
             }}>
             {playerPreview ? <Eye size={16} /> : <EyeOff size={16} />}<span>{playerPreview ? "Prévia ativa" : "Prévia dos jogadores"}</span>
@@ -480,15 +488,15 @@ export default function CampaignApp() {
       <main className="page">
         <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
           <div><p className="eyebrow">Daggerheart / Zona Morta</p><h1 className="page-title mt-1">{title}</h1>
-            <p className="intro-line mt-2">{tab === "mapa" ? "Explore a partir do que o grupo avista. Registre apenas o que a ficção tornou real." :
-              tab === "sobreviventes" ? "Históricos, arquétipos e recursos prontos para jogar." :
-              tab === "comunidade" ? "Acompanhe pessoas importantes, vínculos e a comunidade entre os hexes." :
-              tab === "abrigo" ? "Organize reservas e descanso. Estabeleça um abrigo quando o grupo encontrar um lugar." :
-              tab === "conflito" ? "Acompanhe participantes, ameaças e spotlight sem criar iniciativa ou ordem de turnos." :
-              tab === "ameacas" ? "Crie, adapte e consulte as ameaças mecânicas usadas pelo mestre durante a campanha." :
-              tab === "jogadores" ? "Compartilhe a campanha e acompanhe quem entrou na mesa." :
+            <p className="intro-line mt-2">{activeTab === "mapa" ? "Explore a partir do que o grupo avista. Registre apenas o que a ficção tornou real." :
+              activeTab === "sobreviventes" ? "Históricos, arquétipos e recursos prontos para jogar." :
+              activeTab === "comunidade" ? "Acompanhe pessoas importantes, vínculos e a comunidade entre os hexes." :
+              activeTab === "abrigo" ? "Organize reservas e descanso. Estabeleça um abrigo quando o grupo encontrar um lugar." :
+              activeTab === "conflito" ? (readOnlyPreview ? "Acompanhe as informações públicas do conflito e quem está com o spotlight." : "Acompanhe participantes, ameaças e spotlight sem criar iniciativa ou ordem de turnos.") :
+              activeTab === "ameacas" ? "Crie, adapte e consulte as ameaças mecânicas usadas pelo mestre durante a campanha." :
+              activeTab === "jogadores" ? "Compartilhe a campanha e acompanhe quem entrou na mesa." :
               "Consulte itens e procedimentos durante a sessão."}</p></div>
-          {!readOnlyPreview && tab === "mapa" &&
+          {!readOnlyPreview && activeTab === "mapa" &&
             <AlertDialog>
               <AlertDialogTrigger asChild><Button variant="outline" size="sm"><RotateCcw /> Reiniciar cidade</Button></AlertDialogTrigger>
               <AlertDialogContent>
@@ -622,14 +630,15 @@ export default function CampaignApp() {
             </Dialog>
           </div>}
         </>}
-        {tab === "sobreviventes" && <SurvivorPanel game={game} edit={edit} playerPreview={readOnlyPreview} playerMode={role === "jogador"} restPeers={restPeers} />}
-        {tab === "comunidade" && <NpcPanel game={game} edit={edit} playerPreview={readOnlyPreview} />}
-        {tab === "abrigo" && <ShelterPanel game={game} edit={edit} playerPreview={readOnlyPreview} playerSurvivorId={role === "jogador" ? survivorId : null} />}
-        {tab === "conflito" && role === "mestre" && !playerPreview && <ConflictSceneManager game={game} edit={edit} />}
-        {tab === "ameacas" && role === "mestre" && !playerPreview && <section className="panel panel-pad"><ThreatManager game={game} edit={edit} /></section>}
-        {tab === "referencias" && <ReferencePanel />}
-        {tab === "jogadores" && role === "mestre" && <PlayersPanel game={game} ownerId={ownerId} />}
-        {tab === "mapa" && !readOnlyPreview && <section className="panel panel-pad mt-5">
+        {activeTab === "sobreviventes" && <SurvivorPanel game={game} edit={edit} playerPreview={readOnlyPreview} playerMode={role === "jogador"} restPeers={restPeers} />}
+        {activeTab === "comunidade" && <NpcPanel game={game} edit={edit} playerPreview={readOnlyPreview} />}
+        {activeTab === "abrigo" && <ShelterPanel game={game} edit={edit} playerPreview={readOnlyPreview} playerSurvivorId={role === "jogador" ? survivorId : null} />}
+        {activeTab === "conflito" && role === "mestre" && !playerPreview && <ConflictSceneManager game={game} edit={edit} />}
+        {activeTab === "conflito" && readOnlyPreview && publicConflictActive && <PlayerConflictScene game={game} selfId={role === "jogador" ? survivorId : null} />}
+        {activeTab === "ameacas" && role === "mestre" && !playerPreview && <section className="panel panel-pad"><ThreatManager game={game} edit={edit} /></section>}
+        {activeTab === "referencias" && <ReferencePanel />}
+        {activeTab === "jogadores" && role === "mestre" && <PlayersPanel game={game} ownerId={ownerId} />}
+        {activeTab === "mapa" && !readOnlyPreview && <section className="panel panel-pad mt-5">
           <div className="flex items-center justify-between gap-3"><div><p className="dossier-title">Registro</p><h2 className="section-title mt-1">Últimos acontecimentos</h2></div>
             <span className="tag">{game.log.length} entradas</span></div>
           <div className="mt-3 grid gap-2">{game.log.slice(0,12).map(entry=><div key={entry.id} className="border-t pt-2 text-sm leading-relaxed">
