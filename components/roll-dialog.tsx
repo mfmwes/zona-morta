@@ -14,7 +14,7 @@ import { resolveThreatAttack, type ThreatAttackResolution } from "@/lib/conflict
 import { parseWeaponDamage, resolveActionRoll, resolveAttackHit, resolveRollResources, resolveWeaponDamage, rollDie, type ActionOutcome, type Edge, type RollKind } from "@/lib/rolls";
 
 type Edit = (fn: (draft: GameState) => void) => void;
-export type RollRequest = { survivorId?: string; kind?: RollKind; trait?: string; weapon?: "primary" | "secondary"; experience?: "origin" | "free" };
+export type RollRequest = { survivorId?: string; kind?: RollKind; trait?: string; weapon?: "primary" | "secondary"; experience?: "origin" | "free"; targetThreatId?: string };
 type RollRecord = { outcome: ActionOutcome; kind: RollKind; trait: string; traitBonus: number; weaponName: string | null; actorId: string; experiences: string[]; symptom: number; other: number; equipment: number };
 type DamageRecord = ReturnType<typeof resolveWeaponDamage> & { weaponName: string; formula: string; critical: boolean; equipment: number };
 
@@ -33,7 +33,7 @@ function RollForm({ game, edit, request, onCompleted }: { game: GameState; edit:
   const [trait, setTrait] = useState(request?.trait ?? "Agilidade");
   const [weaponSlot, setWeaponSlot] = useState<"primary" | "secondary">(initialWeaponSlot);
   const [difficulty, setDifficulty] = useState(request?.kind === "attack" || request?.survivorId ? "" : "12");
-  const [targetThreatId, setTargetThreatId] = useState("");
+  const [targetThreatId, setTargetThreatId] = useState(request?.targetThreatId ?? "");
   const [extra, setExtra] = useState("0");
   const [edge, setEdge] = useState<Edge>("none");
   const [experiences, setExperiences] = useState<Array<"origin" | "free">>(request?.experience ? [request.experience] : []);
