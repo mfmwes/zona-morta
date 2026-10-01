@@ -3190,3 +3190,68 @@ button { cursor: pointer; } button:disabled { cursor: not-allowed; }
   height:100%;
   object-fit:cover;
 }
+
+
+/* Qualidade de vida do modal de rolagens. */
+.roll-form {
+  display: grid;
+  gap: 12px;
+}
+.roll-advanced {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--background) 92%, var(--muted) 8%);
+}
+.roll-advanced > summary {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 11px;
+  cursor: pointer;
+  color: var(--muted-foreground);
+  font-size: .8rem;
+  font-weight: 800;
+  list-style: none;
+  user-select: none;
+}
+.roll-advanced > summary::-webkit-details-marker { display: none; }
+.roll-advanced > summary::after {
+  content: "+";
+  color: var(--muted-foreground);
+  font: 800 1rem var(--font-mono);
+}
+.roll-advanced[open] > summary {
+  border-bottom: 1px solid var(--border);
+  color: var(--foreground);
+}
+.roll-advanced[open] > summary::after { content: "−"; }
+.roll-advanced-body {
+  display: grid;
+  gap: 10px;
+  padding: 11px;
+}
+.roll-error {
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--destructive) 38%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--destructive) 9%, transparent);
+  color: var(--destructive);
+  font-size: .8rem;
+  line-height: 1.45;
+}
+.roll-shortcut-hint {
+  margin-left: auto;
+  color: var(--muted-foreground);
+  font-size: .7rem;
+  line-height: 1.35;
+}
+@media (max-width: 540px) {
+  .roll-shortcut-hint {
+    width: 100%;
+    margin-left: 0;
+  }
+}
