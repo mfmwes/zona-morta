@@ -32,6 +32,7 @@ const threats = require('../lib/threats.ts');
 test('custos em português e descrições antigas debitam os mesmos recursos', () => {
   for (const description of ['gaste 1 Hope', 'gaste 1 hope', 'gaste 1 Esperança']) {
     const game = campaign();
+    game.survivors[0].hope = 2;
     assert.equal(abilities.recordAbilityUse(game, game.survivors[0].id, 'custo', 'Apoio', description, 'hope1'), true);
     assert.equal(game.survivors[0].hope, 1);
     assert.match(game.log[0].text, /1 Esperança/);
@@ -45,7 +46,7 @@ test('custos em português e descrições antigas debitam os mesmos recursos', (
   assert.deepEqual(abilities.abilityCosts('gaste 1 Esperança ou use sem pagar Esperança'), ['hope1', 'free']);
   const game = campaign();
   assert.equal(abilities.recordAbilityUse(game, game.survivors[0].id, 'custo', 'Apoio', 'gaste 3 Esperança', 'hope3'), false);
-  assert.equal(game.survivors[0].hope, 2);
+  assert.equal(game.survivors[0].hope, 0);
 });
 
 test('Acuidade exibe o novo termo e usa o atributo das fichas existentes no ataque', () => {
