@@ -4079,3 +4079,131 @@ html[data-theme="dark"] .conflict-threat-primary-action {
     grid-column:2;
   }
 }
+
+
+/* Cena de Conflito: correções responsivas baseadas na área útil. */
+.conflict-manager {
+  container-type:inline-size;
+}
+
+.conflict-workspace {
+  grid-template-columns:minmax(290px,330px) minmax(0,1fr);
+  gap:12px;
+}
+
+.conflict-team-panel .conflict-add-row {
+  grid-template-columns:1fr;
+  gap:6px;
+}
+
+.conflict-team-panel .conflict-add-row > button {
+  width:100%;
+}
+
+.conflict-threat-grid {
+  grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+}
+
+.conflict-threat--compact {
+  container-type:inline-size;
+}
+
+.conflict-threat--compact .conflict-stat small > span {
+  min-width:0;
+}
+
+.conflict-threat--compact .conflict-stat small,
+.conflict-threat--compact .conflict-resource small {
+  white-space:nowrap;
+}
+
+.conflict-threat--compact .conflict-threat-heading {
+  align-items:start;
+}
+
+.conflict-threat--compact .conflict-threat-tags {
+  align-self:start;
+}
+
+.conflict-threat--compact .conflict-threat-actions {
+  grid-template-columns:minmax(70px,1.1fr) minmax(72px,1fr) minmax(72px,1fr) 30px;
+}
+
+@container (max-width: 980px) {
+  .conflict-workspace {
+    grid-template-columns:1fr;
+  }
+
+  .conflict-team-panel .conflict-survivor-list {
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  }
+
+  .conflict-team-panel .conflict-add-row {
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:end;
+  }
+
+  .conflict-team-panel .conflict-add-row > button {
+    width:auto;
+  }
+}
+
+@container (max-width: 760px) {
+  .conflict-team-panel .conflict-add-row,
+  .conflict-threat-add {
+    grid-template-columns:1fr;
+  }
+
+  .conflict-team-panel .conflict-add-row > button,
+  .conflict-threat-add > button {
+    width:100%;
+  }
+
+  .conflict-threat-add .number-control {
+    min-width:0;
+  }
+
+  .conflict-threat-grid {
+    grid-template-columns:1fr;
+  }
+
+  .conflict-overview-metrics {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .conflict-overview-metric.is-spotlight {
+    grid-column:1 / -1;
+  }
+}
+
+@container (max-width: 340px) {
+  .conflict-threat--compact .conflict-stat small > span {
+    display:none;
+  }
+
+  .conflict-threat--compact .conflict-threat-actions {
+    grid-template-columns:1fr 1fr;
+  }
+
+  .conflict-threat--compact .conflict-threat-actions > button:last-child {
+    grid-column:2;
+  }
+}
+
+@media (min-width:1500px) {
+  .conflict-workspace {
+    grid-template-columns:minmax(290px,330px) minmax(0,1fr);
+  }
+}
+
+@media (max-width:1180px) {
+  .conflict-workspace {
+    grid-template-columns:minmax(290px,330px) minmax(0,1fr);
+  }
+}
+
+@media (max-width:900px) {
+  .conflict-workspace {
+    grid-template-columns:1fr;
+  }
+}
