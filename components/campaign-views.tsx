@@ -285,6 +285,10 @@ export function ReferencePanel({ game, showThreats = false }: { game: GameState;
   const [category, setCategory] = useState("Todas");
   const [page, setPage] = useState(1);
   const [view, setView] = useState<"grid" | "list">("grid");
+  const [referenceTab, setReferenceTab] = useState("itens");
+  useEffect(() => {
+    if (!showThreats && referenceTab === "ameacas") setReferenceTab("itens");
+  }, [showThreats, referenceTab]);
   const categories = useMemo(() => ["Todas", ...new Set(content.catalog.map(i => i.category))], []);
   const matches = content.catalog.filter(item => (category === "Todas" || item.category === category)
     && `${item.name} ${item.fields.map(f=>f.value).join(" ")}`.toLowerCase().includes(query.toLowerCase()));
@@ -293,7 +297,7 @@ export function ReferencePanel({ game, showThreats = false }: { game: GameState;
   const visible = matches.slice((page - 1) * pageSize, page * pageSize);
 
   return <div className="panel panel-pad reference-panel">
-    <Tabs defaultValue="itens">
+    <Tabs value={referenceTab} onValueChange={setReferenceTab}>
       <TabsList className="mb-5 max-w-full overflow-x-auto reference-tabs"><TabsTrigger value="itens"><Package /> Itens</TabsTrigger>
         <TabsTrigger value="procedimentos"><BookOpen /> Procedimentos</TabsTrigger>
         {showThreats && <TabsTrigger value="ameacas"><ShieldAlert /> Ameaças</TabsTrigger>}</TabsList>
