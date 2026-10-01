@@ -18,6 +18,7 @@ import { revealSector } from "@/lib/sectors";
 import { rollDie } from "@/lib/rolls";
 import { normalizedSector, recordSearch, searchError, type SearchInput } from "@/lib/exploration";
 import { movementSources, performHexAction, type HexQuickAction } from "@/lib/hex-actions";
+import { shelterTravelMinutes } from "@/lib/shelter-projects";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 
@@ -33,6 +34,15 @@ function labelLines(name: string) {
 
 function dice100() {
   return rollDie(100);
+}
+
+function travelDurationLabel(minutes: number) {
+  const value = Math.max(1, Math.trunc(minutes));
+  const hours = Math.floor(value / 60);
+  const rest = value % 60;
+  if (!hours) return `${rest} min`;
+  if (!rest) return `${hours} h`;
+  return `${hours}h${String(rest).padStart(2, "0")}`;
 }
 
 function dice12() {
@@ -148,7 +158,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
   const visible = !playerPreview || record.discovery !== "desconhecido";
   const [partyQ, partyR] = (game.partyHex || "0,0").split(",").map(Number);
   const canTravel = hexDistance(area.q-partyQ, area.r-partyR) === 1;
-  const travelMinutes = record.routeHours * 60;
+  const travelMinutes = shelterTravelMinutes(game, game.partyHex, selected, record.routeHours * 60);
   const actualMembersHere = survivorsAtHex(game, selected);
   const nearbyGroups = movementSources(game, selected);
   const canMakeBase = actualMembersHere.length > 0 && record.discovery === "explorado" && game.shelter.hex !== selected;
@@ -166,6 +176,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
     ?? publicGroups.find(group => group.main)
     ?? publicGroups[0];
   const activeSourceHex = activeGroup?.hex ?? game.partyHex;
+  const activeTravelMinutes = shelterTravelMinutes(game, activeSourceHex, selected, record.routeHours * 60);
   const [activeQ, activeR] = activeSourceHex.split(",").map(Number);
   const activeAdjacentToSelected = hexDistance(area.q - activeQ, area.r - activeR) === 1;
   const activeCanMoveSelected = activeAdjacentToSelected && record.discovery !== "desconhecido";
@@ -245,20 +256,20 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
                   : activeAdjacentToSelected
                     ? record.discovery === "desconhecido"
                       ? "Este setor está ao lado do grupo ativo. Avistar não gasta tempo."
-                      : `O grupo ativo pode chegar aqui em ${record.routeHours} h de travessia.`
+                      : `O grupo ativo pode chegar aqui em ${travelDurationLabel(activeTravelMinutes)} de travessia${activeTravelMinutes < record.routeHours * 60 ? " com o Quadro de rotas" : ""}.`
                     : nearbyGroups.length > 0
                       ? "Outro grupo está próximo. Selecione o marcador dele antes de planejar este deslocamento."
                       : "Nenhum grupo está em um hex vizinho deste setor."}</p></div>
               <div className="flex flex-wrap gap-2">
                 {record.discovery === "desconhecido" && activeAdjacentToSelected && <Button size="sm" onClick={observe}>Avistar setor</Button>}
                 {activeCanMoveSelected &&
-                  <Button size="sm" disabled={game.minutes+travelMinutes>=1440} onClick={() => openMovement(selected)}><Footprints /> {activeGroupHex === game.partyHex ? "Separar sobreviventes" : "Mover / dividir subgrupo"}</Button>}
+                  <Button size="sm" disabled={game.minutes+activeTravelMinutes>=1440} onClick={() => openMovement(selected)}><Footprints /> {activeGroupHex === game.partyHex ? "Separar sobreviventes" : "Mover / dividir subgrupo"}</Button>}
                 {activeGroupHex === game.partyHex && selected !== game.partyHex && canTravel && record.discovery !== "desconhecido" &&
                   <Button size="sm" variant="outline" disabled={game.minutes+travelMinutes>=1440} onClick={travel}><Route /> Mover grupo principal</Button>}
                 {actualMembersHere.length > 0 && <span className="tag">Grupo presente</span>}
               </div>
             </div>
-            {activeCanMoveSelected && game.minutes+travelMinutes>=1440 && <p className="text-sm subtle mt-2">O trajeto do grupo ativo cruzaria o fim do dia. Feche o dia ou ajuste a ficção antes de prosseguir.</p>}
+            {activeCanMoveSelected && game.minutes+activeTravelMinutes>=1440 && <p className="text-sm subtle mt-2">O trajeto do grupo ativo cruzaria o fim do dia. Feche o dia ou ajuste a ficção antes de prosseguir.</p>}
           </div>
           {canMakeBase && (game.shelter.hex ? <ShelterMoveDialog game={game} edit={edit} mode="relocate" destination={selected} /> : <Button size="sm" variant="outline" className="mt-3" onClick={() => edit(draft => { establishShelter(draft, selected); })}>
             <House /> Estabelecer abrigo aqui</Button>)}
