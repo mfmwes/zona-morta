@@ -486,7 +486,7 @@ export function establishShelter(state: GameState, key: string, manifest: Shelte
       transportShelterStock(state.shelter, destination, { stocks: {
         food: state.shelter.food, water: state.shelter.water, medications: state.shelter.medications,
         pistolAmmo: state.shelter.pistolAmmo, fuel: state.shelter.fuel, parts: state.shelter.parts,
-      }, ammoStocks: Object.fromEntries(ammunitionTypes.map(type => [type, shelterAmmoCount(state.shelter, type)])) as Partial<Record<AmmunitionType, number>>, itemIds: (state.shelter.inventory ?? []).map(item => item.id), residents: state.shelter.residents,
+      }, itemIds: (state.shelter.inventory ?? []).map(item => item.id), residents: state.shelter.residents,
         npcIds: residentNpcs(state, null).map(npc => npc.id) });
       transportShelterNpcs(state, null, key, residentNpcs(state, null).map(npc => npc.id));
       state.shelter = destination;
@@ -665,10 +665,11 @@ export function recoverFormerStock(state: GameState, hex: string, receiverId: st
       if (receiver[key] + quantity > 99) return false;
       transferPortionLots(site, receiver, key, quantity);
     } else if (key === "pistolAmmo") {
-      if (receiver.ammo + quantity > 99 || (receiver.ammo > 0 && receiver.ammoType !== "Pistola")
-        || shelterAmmoCount(site, "Pistola") < quantity) return false;
+      if (shelterAmmoCount(site, "Pistola") < quantity || ammunitionCount(receiver.inventory, "Pistola") + quantity > 99) return false;
       setShelterAmmoCount(site, "Pistola", shelterAmmoCount(site, "Pistola") - quantity);
-      receiver.ammo += quantity; receiver.ammoType = "Pistola";
+      const stack = receiver.inventory.find(item => ammunitionItemType(item) === "Pistola" && !(item.committedAmmo ?? 0));
+      if (stack && stack.qty + quantity <= 99) stack.qty += quantity;
+      else receiver.inventory.push(createAmmunitionItem("Pistola", quantity));
     } else {
       const names = { parts: "Peças (1 unidade)", medications: "Medicamentos (1 unidade)", fuel: "Combustível (1 unidade)" };
       if (!(key in names)) return false;
@@ -690,13 +691,12 @@ export function recoverFormerAmmo(state: GameState, hex: string, receiverId: str
   const receiver = state.survivors.find(s => s.id === receiverId);
   if (!site || !receiver || survivorHex(state, receiver) !== hex || !Number.isInteger(quantity) || quantity < 1) return false;
   const available = shelterAmmoCount(site, type);
-  if (available < quantity || receiver.ammo + quantity > 99) return false;
-  const currentType = receiver.ammoType ?? "Indefinida";
-  if (receiver.ammo > 0 && currentType !== type) return false;
+  if (available < quantity || ammunitionCount(receiver.inventory, type) + quantity > 99) return false;
   setShelterAmmoCount(site, type, available - quantity);
-  receiver.ammo += quantity;
-  receiver.ammoType = type;
-  addLog(state, "provisões", `${receiver.name} recuperou ${quantity} carga(s) de ${type} da antiga base no hex ${hex}.`, receiver.id);
+  const stack = receiver.inventory.find(item => ammunitionItemType(item) === type && !(item.committedAmmo ?? 0));
+  if (stack && stack.qty + quantity <= 99) stack.qty += quantity;
+  else receiver.inventory.push(createAmmunitionItem(type, quantity));
+  addLog(state, "provisões", `${receiver.name} recuperou ${quantity} unidade(s) de Munição de ${type} da antiga base no hex ${hex}.`, receiver.id);
   return true;
 }
 
