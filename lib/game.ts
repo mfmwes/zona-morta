@@ -368,6 +368,25 @@ export function defaultState(options: { startSectorId?: string; withShelter?: bo
   return state;
 }
 
+export function resetCityPreservingSurvivors(state: GameState, options: { startSectorId?: string; withShelter?: boolean } = {}) {
+  const campaignId = state.campaignId;
+  const survivors = structuredClone(state.survivors).map(person => {
+    const preserved = { ...person, hex: "0,0" } as Survivor;
+    delete preserved.restPlan;
+    delete preserved.ammoSpentScene;
+    delete preserved.ammoSpentType;
+    delete preserved.ammoSpentTypes;
+    delete preserved.abilityUses;
+    return preserved;
+  });
+  const fresh = defaultState(options);
+  fresh.campaignId = campaignId;
+  fresh.survivors = survivors;
+  if (survivors.length) addLog(fresh, "sobrevivente", `${survivors.length} sobrevivente(s) da conta foram preservados ao reiniciar a cidade.`);
+  Object.assign(state, fresh);
+  return survivors.length;
+}
+
 /** Shelter and survivor positions are separate; any group physically present may establish a base. */
 export function establishShelter(state: GameState, key: string, manifest: ShelterManifest = {}) {
   const present = survivorsAtHex(state, key);
