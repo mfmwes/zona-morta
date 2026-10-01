@@ -21,7 +21,7 @@ import { CharacterWizard } from "@/components/character-wizard";
 import { CampaignLibrary, type CampaignSummary } from "@/components/campaign-library";
 import { TableChat } from "@/components/table-chat";
 import { DayCloseDialog } from "@/components/day-close-dialog";
-import { addLog, defaultState, displayTime, survivorHex, type GameState, type Point, type Survivor } from "@/lib/game";
+import { addLog, defaultState, displayTime, resetCityPreservingSurvivors, survivorHex, type GameState, type Point, type Survivor } from "@/lib/game";
 import { createId } from "@/lib/id";
 import { sectorProfiles } from "@/lib/sectors";
 import { adjustProvisionCount } from "@/lib/provisions";
@@ -488,12 +488,13 @@ export default function CampaignApp() {
                   <Button variant="outline" onClick={downloadBackup}><Download /> Baixar cópia</Button>
                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
                   <AlertDialogAction variant="destructive" onClick={() => {
-                    edit(draft => Object.assign(draft, defaultState({
+                    let preserved = 0;
+                    edit(draft => { preserved = resetCityPreservingSurvivors(draft, {
                       startSectorId: startSectorId === "random" ? undefined : startSectorId,
                       withShelter: startWithShelter,
-                    })));
+                    }); });
                     setTab("mapa"); setPlayerPreview(false);
-                    toast.success("Cidade reiniciada", { description: "Mapa, sobreviventes, reservas e diário foram reiniciados nesta campanha." });
+                    toast.success("Cidade reiniciada", { description: `Mapa, reservas e diário foram reiniciados. ${preserved} sobrevivente(s) foram preservados.` });
                   }}>Reiniciar cidade</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
