@@ -187,7 +187,7 @@ export function SurvivorConflictHud({
     </div>
 
     <ConflictTrail
-      survivors={conflict.survivors}
+      survivors={conflict.survivors.map(person => ({ ...person, requested: person.id === survivor.id && conflict.spotlightRequested }))}
       threats={conflict.threats}
       spotlight={conflict.spotlight}
       selfId={survivor.id}
