@@ -42,7 +42,7 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
   delete visible.conflict;
   // A ficha do jogador mantém apenas o próprio histórico e o chat. Resultados
   // de outra ficha não precisam ser enviados para que a mesa os narre.
-  visible.log = visible.log.filter(entry => entry.kind === "chat" || entry.actorId === survivorId);
+  visible.log = visible.log.filter(entry => entry.kind === "chat" || entry.kind === "ameaça" || entry.actorId === survivorId);
   for (const hex of Object.values(visible.hexes)) {
     hex.notes = "";
     hex.infestation = null;
