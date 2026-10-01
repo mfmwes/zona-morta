@@ -17,6 +17,8 @@ import {
   removeConflictParticipant,
   removeThreatCondition,
   resolveSurvivorDamageTier,
+  grantConflictSpotlight,
+  cancelConflictSpotlightRequest,
   parseThreatDamageFormula,
   queueSurvivorDamage,
   setConflictSpotlight,
@@ -303,6 +305,24 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
     });
   }
 
+
+  function grantRequestedSpotlight(survivorId: string) {
+    const person = game.survivors.find(row => row.id === survivorId);
+    if (!person) return;
+    edit(draft => {
+      const scene = draft.conflict;
+      if (!scene?.active) return;
+      grantConflictSpotlight(scene, person.id, person.name, draft.day, displayTime(draft.minutes));
+      addLog(draft, "spotlight", `Spotlight → ${person.name}.`);
+    });
+  }
+
+  function dismissSpotlightRequest(survivorId: string) {
+    edit(draft => {
+      if (draft.conflict?.active) cancelConflictSpotlightRequest(draft.conflict, survivorId);
+    });
+  }
+
   function remove(ref: ConflictParticipantRef, name: string) {
     edit(draft => {
       const scene = draft.conflict;
@@ -466,7 +486,18 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
         </div>
         {conflict.spotlight && <Button size="sm" variant="ghost" onClick={() => edit(draft => { if (draft.conflict) clearConflictSpotlight(draft.conflict); })}>Limpar</Button>}
       </div>
-      <p className="conflict-rule-note">Spotlight é apenas um marcador de foco narrativo. O sistema não bloqueia ações, não calcula iniciativa e não escolhe quem age depois.</p>
+      {(conflict.spotlightRequests?.length ?? 0) > 0 && <div className="conflict-spotlight-requests">
+        <span>Querem o Spotlight</span>
+        <div>{(conflict.spotlightRequests ?? []).map(id => {
+          const person = game.survivors.find(row => row.id === id);
+          if (!person) return null;
+          return <span key={id} className="conflict-spotlight-request-chip"><b>{person.name}</b>
+            <button type="button" onClick={() => grantRequestedSpotlight(id)}>Dar Spotlight</button>
+            <button type="button" onClick={() => dismissSpotlightRequest(id)} aria-label={`Dispensar pedido de ${person.name}`}><X size={12} /></button>
+          </span>;
+        })}</div>
+      </div>}
+      <p className="conflict-rule-note">Spotlight é apenas um marcador de foco narrativo. Pedidos indicam interesse em agir, mas não criam fila, iniciativa ou prioridade automática.</p>
     </section>
 
     <div className="conflict-columns">
