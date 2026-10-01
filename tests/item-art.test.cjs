@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- CommonJS tests load the TypeScript artwork registry through Node. */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const content = require('../lib/content.json');
-const { explicitItemArtFor, itemArtFor } = require('../lib/item-art.ts');
+const fs = require('node:fs');
+const { explicitItemArtFor, itemArtFor, itemArtUrl } = require('../lib/item-art.ts');
 
 function visualKey(ref) {
   return [ref.sheet, ref.cell].join(':');
@@ -72,5 +74,18 @@ test('itens antes diferenciados por badge usam atlas próprios sem etiquetas', (
     const ref = itemArtFor(name);
     assert.ok(ref.sheet.startsWith('custom-'), `${name} ainda não usa arte própria`);
     assert.equal('badge' in ref, false, `${name} ainda depende de badge`);
+  }
+});
+
+test('equipamentos substituídos carregam atlas pintados e munições conservam o SVG aprovado', () => {
+  for (const sheet of ['custom-gear', 'custom-supplies']) {
+    const image = fs.readFileSync(`public${itemArtUrl(sheet)}`);
+    assert.equal(image.subarray(0, 4).toString(), 'RIFF');
+    assert.equal(image.subarray(8, 12).toString(), 'WEBP');
+  }
+  const ammunition = fs.readFileSync(`public${itemArtUrl(itemArtFor('Munição de Pistola').sheet)}`, 'utf8');
+  assert.match(ammunition, /<svg\b/);
+  for (const name of ['Lanterna pesada', 'Kit de pilhas', 'Sinalizador de mão', 'Filtro portátil']) {
+    assert.match(itemArtUrl(itemArtFor(name).sheet), /\.webp$/);
   }
 });

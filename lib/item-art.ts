@@ -1,4 +1,4 @@
-// The five 4×4 painted atlases contain sixteen isolated objects each.
+// Painted 4×4 atlases share one illustrated style; ammunition retains its approved SVG art.
 // The catalogue keeps names and mechanics independent from artwork.
 export type ArtSheet = "weapons" | "clothing" | "provisions" | "care" | "extra" | "custom-ammo" | "custom-gear" | "custom-supplies";
 export type ItemArtRef = { sheet: ArtSheet; cell: number };
@@ -118,8 +118,8 @@ register("custom-ammo", 4, "Munição de Flechas");
 register("custom-ammo", 5, "Munição de Virotes");
 register("custom-ammo", 6, "Munição de Chumbinhos");
 register("custom-ammo", 7, "Munição de Outra");
-register("custom-ammo", 8, "Kit de pilhas");
-register("custom-ammo", 9, "Sinalizador de mão");
+register("custom-gear", 14, "Kit de pilhas");
+register("custom-gear", 15, "Sinalizador de mão");
 
 register("custom-gear", 0, "Traje de bombeiro");
 register("custom-gear", 1, "Colete refletivo");
@@ -151,6 +151,10 @@ register("custom-supplies", 11, "Aveia");
 register("custom-supplies", 12, "Leite em pó");
 
 export function explicitItemArtFor(name: string): ItemArtRef | undefined { return named.get(name); }
+
+export function itemArtUrl(sheet: ArtSheet): string {
+  return `/item-art/${sheet}.${sheet === "custom-ammo" ? "svg" : "webp"}`;
+}
 
 export function itemArtFor(name: string, category = ""): ItemArtRef {
   const exact = named.get(name);

@@ -16,7 +16,7 @@ const provisions = require('../lib/provisions.ts');
 const abilities = require('../lib/abilities.ts');
 const collaboration = require('../lib/collaboration.ts');
 const { createSurvivorFromDraft } = require('../lib/character-creation.ts');
-const { explicitItemArtFor, itemArtFor } = require('../lib/item-art.ts');
+const { explicitItemArtFor, itemArtFor, itemArtUrl } = require('../lib/item-art.ts');
 const exploration = require('../lib/exploration.ts');
 const { revealSector, preserveKnownSectors } = require('../lib/sectors.ts');
 const { parseWeaponDamage, resolveActionRoll, resolveRollResources } = require('../lib/rolls.ts');
@@ -116,7 +116,7 @@ test('cada item físico do catálogo tem miniatura ilustrada válida', () => {
     const art = explicitItemArtFor(entry.name);
     assert.ok(art, `Sem arte para ${entry.category}: ${entry.name}`);
     assert.ok(Number.isInteger(art.cell) && art.cell >= 0 && art.cell < 16);
-    assert.ok(fs.statSync(`public/item-art/${art.sheet}.webp`).size > 1000);
+    assert.ok(fs.statSync(`public${itemArtUrl(art.sheet)}`).size > 1000);
   }
   assert.deepEqual(itemArtFor('Lanterna inventada', 'Outros'), { sheet: 'care', cell: 9 });
   assert.deepEqual(itemArtFor('Objeto inédito', 'Ferramentas, acesso e reparo'), { sheet: 'clothing', cell: 10 });
