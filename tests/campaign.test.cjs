@@ -214,6 +214,59 @@ test('ataque de ameaça interpreta dano e classifica pelos limiares do sobrevive
   assert.deepEqual(conflictScene.resolveSurvivorDamageTier(8, 14, 14), { key:'severe', label:'Severo', hpMarks:3 });
 });
 
+test('dano de ameaça vira solicitação e Armadura reduz a severidade em um passo', () => {
+  const g = campaign();
+  const [ana] = g.survivors;
+  g.conflict = conflictScene.createConflictScene({ name:'Teste', sceneNumber:1, day:g.day, time:'08:00', survivorIds:[ana.id] });
+  const template = threats.threatLibrary(g.threats).find(row => row.name === 'ERRANTE');
+  const instance = conflictScene.addThreatInstances(g.conflict, template, 1)[0];
+  const tier = conflictScene.resolveSurvivorDamageTier(8, 14, 9);
+  const request = conflictScene.queueSurvivorDamage(g.conflict, {
+    targetSurvivorId: ana.id, sourceThreatId: instance.id, sourceName: instance.name,
+    attackName:'Investida', damage:9, damageType:'físico', tier, day:g.day, time:'08:01',
+  });
+  assert.ok(request);
+  assert.equal(request.status, 'pending');
+  assert.equal(request.tier.hpMarks, 2);
+
+  const stats = survivorStats(ana);
+  assert.ok(stats.armor > 0);
+  const result = conflictScene.resolveSurvivorDamageRequest(
+    g.conflict, request.id, ana, { hp:stats.hp, armor:stats.armor }, 'armor', g.day, '08:02',
+  );
+  assert.equal(result.ok, true);
+  assert.equal(result.armorUsed, 1);
+  assert.equal(result.hpMarks, 1);
+  assert.equal(ana.armorMarked, 1);
+  assert.equal(ana.hp, 1);
+  assert.equal(request.status, 'resolved');
+  assert.equal(conflictScene.resolveSurvivorDamageRequest(
+    g.conflict, request.id, ana, { hp:stats.hp, armor:stats.armor }, 'hp', g.day, '08:03',
+  ).ok, false);
+});
+
+test('solicitação de dano pública aparece somente para o sobrevivente alvo', () => {
+  const g = campaign();
+  const [ana, bia] = g.survivors;
+  g.conflict = conflictScene.createConflictScene({ name:'Teste', sceneNumber:1, day:g.day, time:'08:00', survivorIds:[ana.id, bia.id] });
+  const template = threats.threatLibrary(g.threats).find(row => row.name === 'ERRANTE');
+  const instance = conflictScene.addThreatInstances(g.conflict, template, 1)[0];
+  const tier = conflictScene.resolveSurvivorDamageTier(8, 14, 8);
+  conflictScene.queueSurvivorDamage(g.conflict, {
+    targetSurvivorId: ana.id, sourceThreatId: instance.id, sourceName: instance.name,
+    attackName:'Investida', damage:8, damageType:'físico', tier, day:g.day, time:'08:01',
+  });
+
+  const anaView = collaboration.projectPlayerGame(g, ana.id);
+  const biaView = collaboration.projectPlayerGame(g, bia.id);
+  assert.equal(anaView.publicConflict.pendingDamage.length, 1);
+  assert.equal(anaView.publicConflict.pendingDamage[0].attackName, 'Investida');
+  assert.equal(biaView.publicConflict.pendingDamage.length, 0);
+  const publicJson = JSON.stringify(anaView.publicConflict.pendingDamage[0]);
+  assert.equal(publicJson.includes(ana.id), false);
+  assert.equal(publicJson.includes(instance.id), false);
+});
+
 test('PV e Estresse das ameaças são trilhas marcadas a partir de zero', () => {
   const g = campaign();
   const scene = conflictScene.createConflictScene({ name:'Teste', sceneNumber:1, day:g.day, time:'08:00' });
@@ -280,6 +333,14 @@ test('resolução privada de alvo existe sem enviar dificuldade ao cliente jogad
   assert.doesNotMatch(route, /difficulty:\s*resolution/);
   assert.doesNotMatch(route, /majorThreshold:\s*resolution/);
   assert.doesNotMatch(route, /severeThreshold:\s*resolution/);
+});
+
+test('rota de dano exige o sobrevivente alvo e resolve PV ou Armadura no servidor', () => {
+  const route = fs.readFileSync(require.resolve('../app/api/campaign/damage/route.ts'), 'utf8');
+  assert.match(route, /resolveSurvivorDamageRequest/);
+  assert.match(route, /pending\.targetSurvivorId !== member!\.survivor_id/);
+  assert.match(route, /\["hp", "armor"\]/);
+  assert.match(route, /writeCampaign/);
 });
 
 test('persistência de conta mantém tabela e sincronização de sobreviventes fora do estado da cidade', () => {
