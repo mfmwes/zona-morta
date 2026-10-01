@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronDown,
+  Crosshair,
   Dice5,
   MessageSquare,
   Send,
@@ -48,7 +49,11 @@ function damageInfo(text?: string) {
   const status = /não aplicado/i.test(text) ? "não aplicado"
     : /potencial|pendente/i.test(text) ? "potencial"
     : "aplicável";
-  return total ? { total, weapon, formula, status } : null;
+  const target = text.match(/Alvo:\s*(.*?)\./i)?.[1]?.trim() ?? "";
+  const tierMatch = text.match(/Faixa (?:de dano|potencial):\s*(SEM DANO|MENOR|MAIOR|SEVERO)\s*\((\d+)\s*PV\)/i);
+  const tier = tierMatch?.[1] ? tierMatch[1].toLocaleUpperCase("pt-BR") : "";
+  const hpMarks = tierMatch?.[2] ? Number(tierMatch[2]) : null;
+  return total ? { total, weapon, formula, status, target, tier, hpMarks } : null;
 }
 
 function Avatar({ name, portrait }: { name: string; portrait?: string }) {
@@ -208,10 +213,16 @@ export function TableChat({
                 <span className="fear"><Zap size={13} /> Medo <b>{info.fear}</b></span>
               </div>
               <div className="table-chat-formula"><span>Fórmula</span><b>1d12 + 1d12{info.modifier ? ` ${info.modifier}` : ""}{info.edge}</b></div>
+              {info.target && <div className={`table-chat-target${info.targetResult === "ACERTO" ? " is-hit" : info.targetResult === "FALHA" ? " is-miss" : ""}`}>
+                <Crosshair size={15} />
+                <span><small>Alvo</small><strong>{info.target}</strong></span>
+                {info.targetResult && <b>{info.targetResult}</b>}
+              </div>}
               {damage && <div className="table-chat-damage">
                 <span><Swords size={14} /> Dano automático</span>
                 <strong>{damage.total} <small>dano físico · {damage.status}</small></strong>
                 <small>{damage.weapon}{damage.formula ? ` · ${damage.formula}` : ""}</small>
+                {damage.tier && <div className="table-chat-damage-tier"><span>Dano {damage.tier}</span><b>{damage.hpMarks ?? 0} PV</b><small>{damage.status === "não aplicado" ? "não aplicado" : "a marcar"}</small></div>}
               </div>}
               <details className="table-chat-roll-details">
                 <summary>Detalhes <ChevronDown size={13} /></summary>
