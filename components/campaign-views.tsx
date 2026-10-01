@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BookOpen, ChevronLeft, ChevronRight, Hammer, House, LayoutGrid, List, Moon, Package, ShieldAlert, Users } from "lucide-react";
+import { BookOpen, ChevronLeft, ChevronRight, Hammer, House, LayoutGrid, List, Moon, Package, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -15,7 +15,6 @@ import { DayCloseDialog } from "@/components/day-close-dialog";
 import { FormerShelterProjects, ShelterProjectsManager } from "@/components/shelter-project-manager";
 import { ShelterVisualDashboard } from "@/components/shelter-dashboard";
 import { RuntimeErrorBoundary } from "@/components/runtime-error-boundary";
-import { ThreatManager } from "@/components/threat-manager";
 import { ammunitionCount, ammunitionItemType, ammunitionTypes, content, establishShelter, recoverFormerStock, shelterPopulationBreakdown, survivorPositionGroups, survivorsAtHex, type GameState } from "@/lib/game";
 import { shelterColdStorageActive, shelterMetrics } from "@/lib/shelter-projects";
 import { atSharedStorage, batteryStateFor, catalogForItem } from "@/lib/inventory";
@@ -280,7 +279,7 @@ export function ShelterPanel({ game, edit, playerPreview, playerSurvivorId }: { 
   </div>;
 }
 
-export function ReferencePanel({ game, edit, playerPreview }: { game: GameState; edit: Edit; playerPreview: boolean }) {
+export function ReferencePanel() {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("Todas");
   const [page, setPage] = useState(1);
@@ -295,7 +294,6 @@ export function ReferencePanel({ game, edit, playerPreview }: { game: GameState;
   return <div className="panel panel-pad reference-panel">
     <Tabs defaultValue="itens">
       <TabsList className="mb-5 max-w-full overflow-x-auto reference-tabs"><TabsTrigger value="itens"><Package /> Itens</TabsTrigger>
-        {!playerPreview && <TabsTrigger value="ameacas"><ShieldAlert /> Ameaças</TabsTrigger>}
         <TabsTrigger value="procedimentos"><BookOpen /> Procedimentos</TabsTrigger></TabsList>
       <TabsContent value="itens">
         <div className="flex flex-wrap items-end justify-between gap-4 mb-4"><div><h2 className="section-title">Catálogo de exploração</h2>
@@ -335,9 +333,6 @@ export function ReferencePanel({ game, edit, playerPreview }: { game: GameState;
             <Button size="sm" variant="outline" disabled={page === pageCount} aria-label="Próxima página" onClick={() => setPage(value => value + 1)}>Próxima <ChevronRight size={16} /></Button></div>
         </nav>}
       </TabsContent>
-      {!playerPreview && <TabsContent value="ameacas">
-        <ThreatManager game={game} edit={edit} />
-      </TabsContent>}
       <TabsContent value="procedimentos">
         <div className="grid gap-4 lg:grid-cols-2">
           <article className="list-card leading-relaxed"><h2 className="section-title">Rolagem de ação</h2>
