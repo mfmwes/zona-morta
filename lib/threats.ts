@@ -23,6 +23,7 @@ export type ThreatTemplate = {
   name: string;
   tier: number;
   role: string;
+  image?: string;
   description: string;
   motivations: string;
   difficulty: number;
@@ -168,6 +169,7 @@ export function createThreatTemplate(): ThreatTemplate {
     name: "Nova ameaça",
     tier: 1,
     role: "Padrão",
+    image: undefined,
     description: "",
     motivations: "",
     difficulty: 10,
@@ -222,6 +224,7 @@ export function sanitizeThreatTemplate(template: ThreatTemplate): ThreatTemplate
     name: template.name.trim().slice(0, 100) || "Ameaça sem nome",
     tier: Math.max(1, Math.min(4, Math.trunc(template.tier || 1))),
     role: template.role.trim().slice(0, 60) || "Padrão",
+    image: template.image?.trim() ? template.image.trim().slice(0, 12_000) : undefined,
     description: template.description.trim().slice(0, 2000),
     motivations: template.motivations.trim().slice(0, 1200),
     difficulty: Math.max(1, Math.min(99, Math.trunc(template.difficulty || 1))),
