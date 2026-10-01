@@ -29,6 +29,7 @@ import { rollDie } from "@/lib/rolls";
 import { consumeDailyProvision } from "@/lib/survival";
 import { adjustProvisionCount } from "@/lib/provisions";
 import { abilityAvailable, abilityCosts, abilityPeriod, costLabels, periodLabels, recordAbilityUse, resolveGroupRest, restActionLabels, restActionsFor, type AbilityCost, type RestAction, type RestChoice, type RestKind } from "@/lib/abilities";
+import { shelterTreatmentBonus } from "@/lib/shelter-projects";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 const infectionStates: Infection[] = ["Saudável", "Exposto", "Infectado", "Sintomático", "Terminal"];
@@ -337,6 +338,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
     ...(selected?.inventory.filter(item => countsAsMedication(item)).map(item => ({ value: item.id, label: item.name + " · " + item.qty })) ?? []),
   ];
   const chosenMedicine = medicineSources.some(option => option.value === treatmentSource) ? treatmentSource : medicineSources[0]?.value ?? "";
+  const treatmentSupport = selected ? shelterTreatmentBonus(game, selected.id) : { bonus: 0, sources: [] as string[] };
   const foodProvision = selected ? provisionBreakdown(selected, "food") : null;
   const waterProvision = selected ? provisionBreakdown(selected, "water") : null;
 
@@ -391,7 +393,8 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
     if (!selected || selected.infection !== "Exposto" || selected.treatmentAttempted ||
         (selected.exposureDeadline ?? 0) < absoluteMinutes(game) || !chosenMedicine || !cleanWaterConfirmed) return;
     const hope = rollDie(12), fear = rollDie(12);
-    const total = hope + fear + (selected.attributes.Conhecimento ?? 0);
+    const support = shelterTreatmentBonus(game, selected.id);
+    const total = hope + fear + (selected.attributes.Conhecimento ?? 0) + support.bonus;
     const success = hope === fear || total >= 13;
     edit(draft => {
       const s = draft.survivors.find(x => x.id === selected.id);
@@ -412,7 +415,8 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
       if (hope === fear) { s.hope = Math.min(6, s.hope + 1); s.stress = Math.max(0, s.stress - 1); }
       else if (hope > fear) s.hope = Math.min(6, s.hope + 1);
       else draft.fear = Math.min(12, draft.fear + 1);
-      addLog(draft, "tratamento", s.name + ": limpeza de Exposição (" + hope + " Hope / " + fear + " Fear + Conhecimento = " + total +
+      addLog(draft, "tratamento", s.name + ": limpeza de Exposição (" + hope + " Hope / " + fear + " Fear + Conhecimento" +
+        (support.bonus ? " + " + support.bonus + " infraestrutura [" + support.sources.join(" + ") + "]" : "") + " = " + total +
         ", Dificuldade 13). " + (success ? "Saudável" : "Permanece Exposto") + ". Gastou 1 Medicamentos de " + sourceLabel + ".", s.id);
     });
     setTreatmentOpen(false); setCleanWaterConfirmed(false);
@@ -654,7 +658,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
               {selected.infection === "Exposto" && <div className="character-treatment"><b>Janela: até {deadlineLabel(selected.exposureDeadline)}</b><span>{selected.treatmentAttempted ? "Tentativa já usada" : "Uma tentativa possível"} · {medicineSources.length} fonte(s) de Medicamentos acessível(is)</span>
                 {!playerMode ? <>
                 <Dialog open={treatmentOpen} onOpenChange={value => { setTreatmentOpen(value); if (!value) setCleanWaterConfirmed(false); }}><DialogTrigger asChild><Button size="sm" disabled={selected.treatmentAttempted || (selected.exposureDeadline ?? 0) < absoluteMinutes(game) || !chosenMedicine}><Stethoscope size={16} /> Tentar limpar exposição</Button></DialogTrigger>
-                  <DialogContent><DialogHeader><DialogTitle>Tratamento imediato</DialogTitle><DialogDescription>Escolha 1 Medicamentos acessível, confirme água limpa e role Conhecimento contra 13. Uma tentativa por Exposição.</DialogDescription></DialogHeader>
+                  <DialogContent><DialogHeader><DialogTitle>Tratamento imediato</DialogTitle><DialogDescription>Escolha 1 Medicamentos acessível, confirme água limpa e role Conhecimento contra 13. Uma tentativa por Exposição.{treatmentSupport.bonus ? ` Infraestrutura do abrigo: +${treatmentSupport.bonus} (${treatmentSupport.sources.join(" + ")}).` : ""}</DialogDescription></DialogHeader>
                     <Pick label="Fonte do tratamento" value={chosenMedicine} options={medicineSources} onChange={setTreatmentSource} />
                     <label className="inventory-ready"><input type="checkbox" checked={cleanWaterConfirmed} onChange={event => setCleanWaterConfirmed(event.target.checked)} /><span>Há água limpa e condições de cuidar da ferida nesta cena.</span></label>
                     <DialogFooter><Button variant="outline" onClick={() => setTreatmentOpen(false)}>Cancelar</Button><Button disabled={!cleanWaterConfirmed || !chosenMedicine} onClick={treatExposure}>Confirmar e rolar</Button></DialogFooter></DialogContent>
