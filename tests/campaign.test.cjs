@@ -1000,6 +1000,7 @@ test('apresentação visual é pública, independente do chat e pode ser fechada
   const route = fs.readFileSync(require.resolve('../app/api/campaign/route.ts'), 'utf8');
 
   assert.match(component, /Mostrar aos jogadores/);
+  assert.match(component, /mode="presentation"/);
   assert.match(component, /não é enviada ao Chat da Mesa/);
   assert.match(component, /setDismissedId\(presentation\.id\)/);
   assert.match(component, /delete draft\.presentation/);
@@ -1011,7 +1012,11 @@ test('apresentação visual é pública, independente do chat e pode ser fechada
   assert.match(visual, /bottom:58px/);
   assert.match(visual, /\.table-presentation-overlay[\s\S]*position:fixed/);
   assert.match(route, /validPresentation\(state\.presentation\)/);
-  assert.match(route, /value\.image\.length <= 12000/);
+  assert.match(route, /value\.image\.length <= 100000/);
+  const imageUtils = fs.readFileSync(require.resolve('../lib/client-image.ts'), 'utf8');
+  assert.match(imageUtils, /encodePresentationImage/);
+  assert.match(imageUtils, /presentationImageMaxLength = 100_000/);
+  assert.match(visual, /image-picker\.is-presentation/);
 });
 
 test('ferramentas de PNJ permitem imagem por link/upload e exclusão com limpeza de vínculos', () => {
