@@ -24,6 +24,7 @@ import { CharacterWizard } from "@/components/character-wizard";
 import { CampaignLibrary, type AccountCharacterSummary, type CampaignSummary } from "@/components/campaign-library";
 import { TableChat } from "@/components/table-chat";
 import { DayCloseDialog } from "@/components/day-close-dialog";
+import { TablePresentationControl, TablePresentationViewer } from "@/components/table-presentation";
 import { addLog, displayTime, resetCityPreservingSurvivors, survivorHex, type GameState, type Point, type Survivor } from "@/lib/game";
 import { createId } from "@/lib/id";
 import { sectorProfiles } from "@/lib/sectors";
@@ -428,6 +429,8 @@ export default function CampaignApp() {
   ];
 
   return <Tabs value={activeTab} onValueChange={setTab} className="w-full">
+    {role === "mestre" && !playerPreview && <TablePresentationControl game={game} edit={edit} />}
+    <TablePresentationViewer presentation={game.presentation} enabled={readOnlyPreview} />
     <SidebarProvider className={`app-shell ${chatOpen ? "chat-open" : "chat-closed"}`}>
     <Sidebar collapsible="none" className="rail">
       <div className="flex items-center gap-3 px-2">
