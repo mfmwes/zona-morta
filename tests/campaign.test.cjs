@@ -988,6 +988,32 @@ test('NPC que fica em uma base antiga não é transportado sem ser selecionado',
   assert.equal(g.formerShelters[0].hex, '0,0');
 });
 
+test('apresentação visual é pública, independente do chat e pode ser fechada só no cliente', () => {
+  const g = campaign();
+  g.presentation = { id:'imagem-1', image:'https://example.com/foto.jpg', title:'Porta-retrato', caption:'Uma família diante do prédio.', active:true };
+  const projected = collaboration.projectPlayerGame(g, g.survivors[0].id);
+  assert.deepEqual(projected.presentation, g.presentation);
+
+  const component = fs.readFileSync(require.resolve('../components/table-presentation.tsx'), 'utf8');
+  const page = fs.readFileSync(require.resolve('../app/page.tsx'), 'utf8');
+  const visual = fs.readFileSync(require.resolve('../app/visual-system.css'), 'utf8');
+  const route = fs.readFileSync(require.resolve('../app/api/campaign/route.ts'), 'utf8');
+
+  assert.match(component, /Mostrar aos jogadores/);
+  assert.match(component, /não é enviada ao Chat da Mesa/);
+  assert.match(component, /setDismissedId\(presentation\.id\)/);
+  assert.match(component, /delete draft\.presentation/);
+  assert.match(component, /id: createId\(\)/);
+  assert.doesNotMatch(component, /addLog|table-chat|kind:\s*["']chat["']/);
+  assert.match(page, /<TablePresentationControl game=\{game\} edit=\{edit\}/);
+  assert.match(page, /<TablePresentationViewer presentation=\{game\.presentation\} enabled=\{readOnlyPreview\}/);
+  assert.match(visual, /\.table-presentation-trigger[\s\S]*position:fixed/);
+  assert.match(visual, /bottom:58px/);
+  assert.match(visual, /\.table-presentation-overlay[\s\S]*position:fixed/);
+  assert.match(route, /validPresentation\(state\.presentation\)/);
+  assert.match(route, /value\.image\.length <= 12000/);
+});
+
 test('ferramentas de PNJ permitem imagem por link/upload e exclusão com limpeza de vínculos', () => {
   const panel = fs.readFileSync(require.resolve('../components/npc-panel.tsx'), 'utf8');
   const picker = fs.readFileSync(require.resolve('../components/image-picker.tsx'), 'utf8');
