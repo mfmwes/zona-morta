@@ -1006,10 +1006,12 @@ test('apresentação visual é pública, independente do chat e pode ser fechada
   assert.match(component, /delete draft\.presentation/);
   assert.match(component, /id: createId\(\)/);
   assert.doesNotMatch(component, /addLog|table-chat|kind:\s*["']chat["']/);
+  assert.match(page, /rail-presentation-slot/);
   assert.match(page, /<TablePresentationControl game=\{game\} edit=\{edit\}/);
   assert.match(page, /<TablePresentationViewer presentation=\{game\.presentation\} enabled=\{readOnlyPreview\}/);
   assert.match(visual, /\.table-presentation-trigger[\s\S]*position:fixed/);
-  assert.match(visual, /bottom:58px/);
+  assert.match(visual, /rail-presentation-slot \.table-presentation-trigger[\s\S]*position:static/);
+  assert.match(visual, /rail-presentation-slot \+ \.rail-foot[\s\S]*margin-top:0/);
   assert.match(visual, /\.table-presentation-overlay[\s\S]*position:fixed/);
   assert.match(route, /validPresentation\(state\.presentation\)/);
   assert.match(route, /value\.image\.length <= 100000/);
