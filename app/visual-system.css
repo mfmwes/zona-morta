@@ -4887,3 +4887,23 @@ html[data-theme="dark"] .table-presentation-trigger.is-active {
     min-height:130px;
   }
 }
+
+
+/* Desktop: apresentação ocupa o espaço livre da barra lateral, acima do rodapé. */
+@media (min-width:1001px) {
+  .rail-presentation-slot {
+    margin-top:auto;
+    padding:0 12px 14px;
+  }
+  .rail-presentation-slot + .rail-foot {
+    margin-top:0;
+  }
+  .rail-presentation-slot .table-presentation-trigger {
+    position:static;
+    left:auto;
+    bottom:auto;
+    width:max-content;
+    max-width:100%;
+    box-shadow:none;
+  }
+}
