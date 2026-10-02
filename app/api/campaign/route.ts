@@ -146,7 +146,7 @@ function validConflict(value: unknown) {
 function validPresentation(value: GameState["presentation"] | undefined) {
   return value === undefined || Boolean(value
     && typeof value.id === "string" && value.id.length <= 120
-    && typeof value.image === "string" && value.image.length > 0 && value.image.length <= 12000
+    && typeof value.image === "string" && value.image.length > 0 && value.image.length <= 100000
     && (value.title === undefined || (typeof value.title === "string" && value.title.length <= 120))
     && (value.caption === undefined || (typeof value.caption === "string" && value.caption.length <= 500))
     && typeof value.active === "boolean");
