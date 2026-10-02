@@ -18,7 +18,7 @@ const collaboration = require('../lib/collaboration.ts');
 const { createSurvivorFromDraft } = require('../lib/character-creation.ts');
 const { explicitItemArtFor, itemArtFor, itemArtUrl } = require('../lib/item-art.ts');
 const exploration = require('../lib/exploration.ts');
-const { revealSector, preserveKnownSectors } = require('../lib/sectors.ts');
+const { revealSector, preserveKnownSectors, assignCustomSector, redrawSector, sectorProfiles } = require('../lib/sectors.ts');
 const { parseWeaponDamage, resolveActionRoll, resolveRollResources } = require('../lib/rolls.ts');
 const shelterProjects = require('../lib/shelter-projects.ts');
 const campaignTime = require('../lib/time.ts');
@@ -1019,6 +1019,49 @@ test('144 pares de dualidade: críticos, Hope/Fear, recursos e dificuldade', () 
     assert.equal(resources.hope, 6); assert.equal(resources.stress, 0); assert.equal(resources.fear, 12);
   }
   assert.deepEqual(counts, { critical:12, hope:66, fear:66 });
+});
+
+test('mestre pode revelar hex distante, nomear setor e substituir sem perder conteúdo', () => {
+  const g = campaign();
+  const distant = Object.entries(g.hexes).find(([, hex]) => hex.discovery === 'desconhecido');
+  assert.ok(distant);
+  const [id, hex] = distant;
+  assert.equal(hex.sector, null);
+
+  const point = { id:'ponto-remoto', name:'Farmácia', kind:'comércio', signal:'Placa caída', access:'', notes:'', revealed:false, searches:[] };
+  const event = { id:'evento-remoto', text:'Sirenes ao longe', trigger:'ao entrar', revealed:false };
+  hex.points.push(point); hex.events.push(event);
+
+  const custom = assignCustomSector(g, id, '  Hospital   São Vicente  ');
+  g.hexes[id].discovery = 'avistado';
+  assert.equal(custom.name, 'Hospital São Vicente');
+  assert.match(custom.id, /^custom-/);
+  assert.equal(g.hexes[id].points[0].id, point.id);
+  assert.equal(g.hexes[id].events[0].id, event.id);
+
+  const customId = custom.id;
+  const proceduralIdsBefore = new Set(sectorProfiles.map(profile => profile.id));
+  assert.equal(proceduralIdsBefore.has(customId), false);
+
+  const redrawn = redrawSector(g, id);
+  g.hexes[id].discovery = 'explorado';
+  assert.equal(proceduralIdsBefore.has(redrawn.id), true);
+  assert.notEqual(redrawn.id, customId);
+  assert.equal(g.hexes[id].points[0].name, 'Farmácia');
+  assert.equal(g.hexes[id].events[0].text, 'Sirenes ao longe');
+});
+
+test('Ferramentas do mestre expõem revelação direta sem mostrar o controle na prévia', () => {
+  const explorer = fs.readFileSync(require.resolve('../components/hex-explorer.tsx'), 'utf8');
+  assert.match(explorer, /Revelação direta do mestre/);
+  assert.match(explorer, /Sortear e revelar/);
+  assert.match(explorer, /Definir nome/);
+  assert.match(explorer, /Estado após revelar/);
+  assert.match(explorer, /assignCustomSector/);
+  assert.match(explorer, /redrawSector/);
+  assert.match(explorer, /Substituir o setor deste hex/);
+  assert.match(explorer, /pontos, eventos, buscas, infestação e anotações permanecem registrados/);
+  assert.match(explorer, /!playerPreview && <>/);
 });
 
 test('mapa: setores só são fixados na descoberta e permanecem após salvar e reabrir', () => {
