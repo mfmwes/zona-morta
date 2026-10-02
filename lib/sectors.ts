@@ -57,6 +57,35 @@ export function revealSector(state: GameState, key: string) {
   return hex.sector;
 }
 
+/** GM override: redraw one hex without consuming custom sectors or duplicating another procedural profile. */
+export function redrawSector(state: GameState, key: string) {
+  const hex = state.hexes[key];
+  if (!hex) throw new Error(`Hex desconhecido: ${key}`);
+  const previousId = hex.sector?.id;
+  const usedElsewhere = new Set(Object.entries(state.hexes)
+    .filter(([hexKey]) => hexKey !== key)
+    .map(([, record]) => record.sector?.id)
+    .filter(Boolean));
+  let available = sectorProfiles.filter(profile => !usedElsewhere.has(profile.id) && profile.id !== previousId);
+  if (!available.length) available = sectorProfiles.filter(profile => !usedElsewhere.has(profile.id));
+  if (!available.length) throw new Error("Não há mais setores disponíveis para revelar.");
+  const bytes = new Uint32Array(1);
+  crypto.getRandomValues(bytes);
+  hex.sector = structuredClone(available[bytes[0] % available.length]);
+  return hex.sector;
+}
+
+/** GM override: names a hex directly. Custom IDs never reserve entries from the procedural pool. */
+export function assignCustomSector(state: GameState, key: string, name: string) {
+  const hex = state.hexes[key];
+  if (!hex) throw new Error(`Hex desconhecido: ${key}`);
+  const cleanName = name.trim().replace(/\s+/g, " ").slice(0, 80);
+  if (!cleanName) throw new Error("Informe um nome para o setor.");
+  const sector: Sector = { id: `custom-${createId()}`, name: cleanName, border: "", invites: [] };
+  hex.sector = sector;
+  return sector;
+}
+
 /** Keep names that were already visible before the map became procedural. */
 export function preserveKnownSectors(state: GameState) {
   if (!state.campaignId) state.campaignId = "campanha-anterior";
