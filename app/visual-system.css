@@ -4683,3 +4683,183 @@ html[data-theme="dark"] .character-summary-tests .character-summary-attribute:ho
     grid-template-columns:repeat(2,minmax(0,1fr));
   }
 }
+
+
+/* Apresentação visual da mesa: ferramenta do mestre e pop-out dos jogadores. */
+.table-presentation-trigger {
+  position:fixed;
+  z-index:91;
+  left:15px;
+  bottom:58px;
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  min-height:36px;
+  max-width:208px;
+  padding:7px 10px;
+  border:1px solid #53746e;
+  border-radius:6px;
+  background:#163538;
+  color:#eef5ee;
+  box-shadow:0 3px 12px #0d25273d;
+  font-size:.72rem;
+  font-weight:800;
+}
+.table-presentation-trigger:hover { background:#285052; }
+.table-presentation-trigger.is-active {
+  border-color:#c6a45e;
+  background:#31483e;
+  color:#fff5cc;
+}
+.table-presentation-trigger > i {
+  width:7px;
+  height:7px;
+  flex:none;
+  border-radius:50%;
+  background:#f4cc63;
+  box-shadow:0 0 0 3px #f4cc6320;
+}
+.table-presentation-dialog .image-picker { margin-top:2px; }
+.table-presentation-editor { display:grid; gap:12px; }
+.table-presentation-dialog-actions {
+  display:flex;
+  align-items:center;
+  gap:7px;
+}
+.table-presentation-dialog-spacer { flex:1; }
+
+.table-presentation-overlay {
+  position:fixed;
+  inset:0;
+  z-index:140;
+  display:grid;
+  place-items:center;
+  padding:clamp(14px,3vw,34px);
+}
+.table-presentation-backdrop {
+  position:absolute;
+  inset:0;
+  border:0;
+  background:rgba(3,10,11,.76);
+  backdrop-filter:blur(5px);
+}
+.table-presentation-card {
+  position:relative;
+  z-index:1;
+  display:grid;
+  grid-template-rows:auto minmax(0,1fr) auto auto;
+  gap:10px;
+  width:min(1120px,92vw);
+  max-height:90dvh;
+  padding:14px;
+  overflow:hidden;
+  border:1px solid #48635d;
+  border-radius:12px;
+  background:#10191a;
+  color:#eef4ef;
+  box-shadow:0 30px 90px #0009;
+}
+.table-presentation-card > header {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+}
+.table-presentation-card > header > div:first-child {
+  display:grid;
+  gap:3px;
+  min-width:0;
+}
+.table-presentation-card h2 {
+  margin:0;
+  overflow-wrap:anywhere;
+  color:#f5f7f4;
+  font-size:clamp(1.05rem,2vw,1.45rem);
+  line-height:1.2;
+}
+.table-presentation-view-actions {
+  display:flex;
+  gap:6px;
+  flex:none;
+}
+.table-presentation-image {
+  display:grid;
+  place-items:center;
+  min-height:0;
+  overflow:auto;
+  border:1px solid #334846;
+  border-radius:8px;
+  background:#080d0e;
+}
+.table-presentation-image img {
+  display:block;
+  width:auto;
+  max-width:100%;
+  height:auto;
+  max-height:68dvh;
+  object-fit:contain;
+}
+.table-presentation-overlay.is-expanded {
+  padding:8px;
+}
+.table-presentation-overlay.is-expanded .table-presentation-card {
+  width:calc(100vw - 16px);
+  max-height:calc(100dvh - 16px);
+}
+.table-presentation-overlay.is-expanded .table-presentation-image img {
+  max-height:82dvh;
+}
+.table-presentation-caption {
+  margin:0;
+  color:#d6e0db;
+  font-size:.9rem;
+  line-height:1.5;
+}
+.table-presentation-local-note {
+  color:#8fa39d;
+  font-size:.68rem;
+}
+html[data-theme="dark"] .table-presentation-trigger {
+  border-color:#536264;
+  background:#232b2d;
+  color:#edf3ee;
+}
+html[data-theme="dark"] .table-presentation-trigger:hover { background:#303c3d; }
+html[data-theme="dark"] .table-presentation-trigger.is-active {
+  border-color:#957842;
+  background:#3b3523;
+  color:#ffe8a0;
+}
+
+@media (max-width:1000px) {
+  .table-presentation-trigger {
+    bottom:15px;
+    left:148px;
+  }
+}
+@media (max-width:620px) {
+  .table-presentation-trigger {
+    left:53px;
+    bottom:calc(68px + env(safe-area-inset-bottom));
+    min-width:37px;
+    max-width:37px;
+    padding:8px;
+    justify-content:center;
+  }
+  .table-presentation-trigger span,
+  .table-presentation-trigger > i { display:none; }
+  .table-presentation-overlay { padding:7px; }
+  .table-presentation-card {
+    width:calc(100vw - 14px);
+    max-height:calc(100dvh - 14px);
+    padding:10px;
+  }
+  .table-presentation-image img { max-height:68dvh; }
+  .table-presentation-local-note { display:none; }
+  .table-presentation-dialog-actions {
+    align-items:stretch;
+    flex-direction:column;
+  }
+  .table-presentation-dialog-spacer { display:none; }
+  .table-presentation-dialog-actions > button { width:100%; }
+}
