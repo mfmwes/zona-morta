@@ -429,7 +429,6 @@ export default function CampaignApp() {
   ];
 
   return <Tabs value={activeTab} onValueChange={setTab} className="w-full">
-    {role === "mestre" && !playerPreview && <TablePresentationControl game={game} edit={edit} />}
     <TablePresentationViewer presentation={game.presentation} enabled={readOnlyPreview} />
     <SidebarProvider className={`app-shell ${chatOpen ? "chat-open" : "chat-closed"}`}>
     <Sidebar collapsible="none" className="rail">
@@ -446,6 +445,9 @@ export default function CampaignApp() {
           <DropdownMenuContent align="end" side="top" className="min-w-48">{nav.slice(4).map(item => <DropdownMenuItem key={item.value} onSelect={() => setTab(item.value)}><item.icon size={16} />{item.label}</DropdownMenuItem>)}</DropdownMenuContent>
         </DropdownMenu>
       </TabsList>
+      {role === "mestre" && !playerPreview && <div className="rail-presentation-slot">
+        <TablePresentationControl game={game} edit={edit} />
+      </div>}
       <div className="rail-foot"><b>Dia {game.day}</b> · {displayTime(game.minutes)}
         <p>Um hex pode guardar muitos lugares, pistas e acontecimentos.</p></div>
     </Sidebar>
