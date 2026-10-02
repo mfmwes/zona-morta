@@ -4863,3 +4863,27 @@ html[data-theme="dark"] .table-presentation-trigger.is-active {
   .table-presentation-dialog-spacer { display:none; }
   .table-presentation-dialog-actions > button { width:100%; }
 }
+
+
+/* Apresentação ampla no seletor de imagem. */
+.image-picker.is-presentation {
+  grid-template-columns:minmax(180px,.85fr) minmax(0,1.15fr);
+}
+.image-picker.is-presentation .image-picker-preview {
+  width:100%;
+  min-height:150px;
+  aspect-ratio:16 / 9;
+}
+.image-picker.is-presentation .image-picker-preview img {
+  object-fit:contain;
+  background:#0d1415;
+}
+@media (max-width:620px) {
+  .image-picker.is-presentation {
+    grid-template-columns:1fr;
+  }
+  .image-picker.is-presentation .image-picker-preview {
+    width:100%;
+    min-height:130px;
+  }
+}
