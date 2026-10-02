@@ -63,7 +63,7 @@ export function TablePresentationControl({ game, edit }: { game: GameState; edit
           <ImagePicker label="Imagem" mode="presentation" value={image || undefined} onChange={value => setImage(value ?? "")} fallback={<ImageIcon size={34} aria-hidden="true" />} />
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Título opcional" value={title} onChange={setTitle} placeholder="Ex.: Fotografia encontrada" />
-            <Field label="Legenda opcional" value={caption} onChange={setCaption} placeholder="O que os jogadores podem ler junto da imagem" />
+            <Field label="Legenda opcional" value={caption} onChange={setCaption} multiline placeholder="O que os jogadores podem ler junto da imagem" />
           </div>
         </div>
         <DialogFooter className="table-presentation-dialog-actions">
