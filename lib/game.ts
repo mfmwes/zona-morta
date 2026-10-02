@@ -348,6 +348,14 @@ export type Survivor = {
   };
 };
 
+export type TablePresentation = {
+  id: string;
+  image: string;
+  title?: string;
+  caption?: string;
+  active: boolean;
+};
+
 export type GameState = {
   campaignId: string;
   day: number;
@@ -368,6 +376,8 @@ export type GameState = {
   conflict?: ConflictScene;
   /** Projeção pública efêmera enviada apenas aos jogadores; nunca é persistida pelo mestre. */
   publicConflict?: PublicConflictScene;
+  /** Imagem atualmente apresentada à mesa. É pública e não pertence ao chat. */
+  presentation?: TablePresentation;
   shelter: ShelterState;
   formerShelters?: ShelterState[];
   log: { id: string; day: number; time: string; kind: string; text: string; actorId?: string; actorName?: string; actorPortrait?: string }[];
