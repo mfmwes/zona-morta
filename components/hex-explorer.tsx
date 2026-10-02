@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ChevronDown, Compass, Dice5, Eye, Footprints, House, MapPin, Package, Route, Search, Users, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ShelterMoveDialog } from "@/components/shelter-move";
 import { SurvivorMoveDialog } from "@/components/survivor-move-dialog";
@@ -13,8 +14,8 @@ import { HexGeneratorDialog, type HexGeneratorKind, type HexGeneratorRequest } f
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { Counter, Field, Pick } from "@/components/game-controls";
-import { content, establishShelter, hexDistance, hexKey, survivorsAtHex, type GameState, type Point } from "@/lib/game";
-import { revealSector } from "@/lib/sectors";
+import { addLog, content, establishShelter, hexDistance, hexKey, survivorsAtHex, type GameState, type Point } from "@/lib/game";
+import { assignCustomSector, redrawSector, revealSector } from "@/lib/sectors";
 import { rollDie } from "@/lib/rolls";
 import { normalizedSector, recordSearch, searchError, type SearchInput } from "@/lib/exploration";
 import { movementSources, performHexAction, type HexQuickAction } from "@/lib/hex-actions";
@@ -69,6 +70,9 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
   const [lootTable, setLootTable] = useState("");
   const [rolledLoot, setRolledLoot] = useState<{ table: string; roll: number } | null>(null);
   const [gmOpen, setGmOpen] = useState(false);
+  const [masterRevealState, setMasterRevealState] = useState<"avistado" | "explorado">("avistado");
+  const [customSectorName, setCustomSectorName] = useState("");
+  const [pendingSectorOverride, setPendingSectorOverride] = useState<{ mode: "random" | "custom"; discovery: "avistado" | "explorado"; name?: string } | null>(null);
   const [compact, setCompact] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [mapOverview, setMapOverview] = useState(false);
@@ -214,6 +218,47 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
     setGmOpen(true);
   }
 
+
+  function applySectorOverride(action: { mode: "random" | "custom"; discovery: "avistado" | "explorado"; name?: string }) {
+    let revealedName = "";
+    let previousName = "";
+    edit(draft => {
+      const hex = draft.hexes[selected];
+      if (!hex) return;
+      previousName = hex.sector?.name ?? "";
+      const sector = action.mode === "custom"
+        ? assignCustomSector(draft, selected, action.name ?? "")
+        : hex.sector ? redrawSector(draft, selected) : revealSector(draft, selected);
+      hex.discovery = action.discovery;
+      revealedName = sector.name;
+      addLog(draft, "mapa", action.mode === "custom"
+        ? `O mestre definiu o hex ${selected} como ${sector.name} e o marcou como ${action.discovery}.`
+        : `O mestre revelou à distância o hex ${selected} como ${sector.name} (${action.discovery}).`);
+    });
+    if (!revealedName) return;
+    setPendingSectorOverride(null);
+    if (action.mode === "custom") setCustomSectorName("");
+    toast.success(action.mode === "custom" ? "Setor definido manualmente" : "Setor revelado à distância", {
+      description: previousName && previousName !== revealedName
+        ? `${previousName} foi substituído por ${revealedName}.`
+        : `${revealedName} · ${action.discovery}.`,
+    });
+  }
+
+  function requestSectorOverride(mode: "random" | "custom") {
+    const name = customSectorName.trim();
+    if (mode === "custom" && !name) {
+      toast.error("Informe um nome para o setor.");
+      return;
+    }
+    const action = { mode, discovery: masterRevealState, ...(mode === "custom" ? { name } : {}) };
+    if (record.sector) {
+      setPendingSectorOverride(action);
+      return;
+    }
+    applySectorOverride(action);
+  }
+
   function openRelocation(id: string) {
     selectHex(id);
     setRelocateDestination(id);
@@ -291,6 +336,24 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
               })} />
             <Pick label="Travessia" value={String(record.routeHours)} options={["1", "2"]}
               onChange={value => edit(draft => { draft.hexes[selected].routeHours = Number(value) as 1 | 2; })} />
+          </div>
+          <div className="hex-master-reveal mt-4 rounded-md border border-dashed p-3">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div><p className="dossier-title">Revelação direta do mestre</p>
+                <p className="text-sm subtle mt-1">Revele qualquer hex sem proximidade. O procedimento normal de exploração continua sendo o padrão para os jogadores.</p></div>
+              {record.sector && <span className="tag">Atual: {record.sector.name}</span>}
+            </div>
+            <div className="grid gap-3 mt-3 sm:grid-cols-2">
+              <Pick label="Estado após revelar" value={masterRevealState} options={["avistado", "explorado"]}
+                onChange={value => setMasterRevealState(value as "avistado" | "explorado")} />
+              <Field label="Nome personalizado" value={customSectorName} onChange={setCustomSectorName}
+                placeholder="Ex.: Hospital São Vicente" />
+            </div>
+            <div className="flex flex-wrap gap-2 mt-3">
+              <Button size="sm" variant="outline" onClick={() => requestSectorOverride("random")}><Dice5 size={15} /> Sortear e revelar</Button>
+              <Button size="sm" onClick={() => requestSectorOverride("custom")} disabled={!customSectorName.trim()}><MapPin size={15} /> Definir nome</Button>
+            </div>
+            <p className="text-xs subtle mt-2">Setores personalizados recebem um ID próprio e não retiram opções do sorteio procedural.</p>
           </div>
           {record.infestation === null ? <div className="mt-3 rounded-md border border-dashed border-[#a7c1bd] p-3">
             <p className="text-sm font-bold">Infestação · ?</p>
@@ -510,6 +573,21 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
         ? "Use “Ampliar” para ler os setores no mapa." : "Deslize o mapa para os lados ou use “Ver tudo” para conferir a cidade inteira."}</p>
       <p className="intro-line mt-4">O setor ganha nome e sinais quando é avistado. Um hex pode conter vários pontos; seus interiores continuam em aberto até a exploração.</p>
     </section>
+
+    <AlertDialog open={Boolean(pendingSectorOverride)} onOpenChange={open => { if (!open) setPendingSectorOverride(null); }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Substituir o setor deste hex?</AlertDialogTitle>
+          <AlertDialogDescription>
+            O hex {selected} já está definido como “{record.sector?.name ?? "setor atual"}”. A substituição altera apenas o setor e o estado de descoberta; pontos, eventos, buscas, infestação e anotações permanecem registrados.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction onClick={() => pendingSectorOverride && applySectorOverride(pendingSectorOverride)}>Substituir setor</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
 
     {generatorRequest && <HexGeneratorDialog game={game} edit={edit} request={generatorRequest}
       onOpenChange={open => { if (!open) setGeneratorRequest(null); }} />}
