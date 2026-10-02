@@ -143,6 +143,15 @@ function validConflict(value: unknown) {
     && typeof conflict.notes === "string" && conflict.notes.length <= 4000;
 }
 
+function validPresentation(value: GameState["presentation"] | undefined) {
+  return value === undefined || Boolean(value
+    && typeof value.id === "string" && value.id.length <= 120
+    && typeof value.image === "string" && value.image.length > 0 && value.image.length <= 12000
+    && (value.title === undefined || (typeof value.title === "string" && value.title.length <= 120))
+    && (value.caption === undefined || (typeof value.caption === "string" && value.caption.length <= 500))
+    && typeof value.active === "boolean");
+}
+
 function validState(value: unknown): value is GameState {
   if (!value || typeof value !== "object") return false;
   const state = value as Partial<GameState>;
@@ -162,6 +171,7 @@ function validState(value: unknown): value is GameState {
       && state.threats.every(validThreat)))
     && validConflict(state.conflict)
     && state.publicConflict === undefined
+    && validPresentation(state.presentation)
     && state.survivors.every(s => Number.isInteger(s.armorMarked) && s.armorMarked >= 0 && s.armorMarked <= 20
       && (s.hex === undefined || (typeof s.hex === "string" && Boolean(state.hexes?.[s.hex])))
       && (s.outfit === undefined || typeof s.outfit === "string")
