@@ -60,7 +60,7 @@ export function TablePresentationControl({ game, edit }: { game: GameState; edit
           <DialogDescription>A imagem abre em um pop-out próprio na tela dos jogadores e não é enviada ao Chat da Mesa.</DialogDescription>
         </DialogHeader>
         <div className="table-presentation-editor">
-          <ImagePicker label="Imagem" value={image || undefined} onChange={value => setImage(value ?? "")} fallback={<ImageIcon size={34} aria-hidden="true" />} />
+          <ImagePicker label="Imagem" mode="presentation" value={image || undefined} onChange={value => setImage(value ?? "")} fallback={<ImageIcon size={34} aria-hidden="true" />} />
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Título opcional" value={title} onChange={setTitle} placeholder="Ex.: Fotografia encontrada" />
             <Field label="Legenda opcional" value={caption} onChange={setCaption} placeholder="O que os jogadores podem ler junto da imagem" />
