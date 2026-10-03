@@ -1,5 +1,6 @@
 import { addLog, ammunitionTypes, type AmmunitionType, type GameState, type InventoryItem, type NPC, type Survivor } from "./game";
 import { publicConflictScene } from "./conflict";
+import { shelterCommunity } from "./shelter-residents";
 import { publicNpcs } from "./npc-presentation";
 import { cancelSurvivorWorkShift, joinShelterProjectAsSurvivor, leaveShelterProjectAsSurvivor, projectBaseOperational, scheduleSurvivorWorkShift } from "./shelter-projects";
 
@@ -9,6 +10,8 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
     const actor = entry.actorId ? game.survivors.find(person => person.id === entry.actorId) : null;
     return actor ? { ...entry, actorName: entry.actorName ?? actor.name, actorPortrait: entry.actorPortrait ?? actor.portrait } : entry;
   });
+  visible.publicShelterCommunity = structuredClone(shelterCommunity(game, true));
+  visible.publicShelterCommunity.residents = visible.publicShelterCommunity.residents.map(person => { const safe = { ...person }; delete safe.home; return safe; });
   visible.survivors = visible.survivors.filter(person => person.id === survivorId);
   // The player projection intentionally omits private GM notes, the NPC's home
   // and consumption bookkeeping. Public notes are the explicit sharing channel.
@@ -61,7 +64,7 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
   return visible;
 }
 
-const immutable = ["id", "name", "level", "proficiency", "origin", "past", "archetype", "specialty", "hex",
+const immutable = ["id", "name", "level", "proficiency", "origin", "past", "archetype", "specialty", "hex", "home",
   "attributes", "freeExperience", "techniques", "infection", "exposureDeadline", "treatmentAttempted", "terminalScenes"] as const;
 const editable = ["portrait", "primary", "secondary", "protection", "outfit", "personal", "bag", "transport", "pocket1", "pocket2", "equippedItems", "kitCondition",
   "hp", "armorMarked", "stress", "hope", "food", "water", "foodConsumedDay", "waterConsumedDay", "provisionLots",

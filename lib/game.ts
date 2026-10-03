@@ -300,6 +300,8 @@ export type Survivor = {
   id: string;
   name: string;
   portrait?: string;
+  /** Vínculo de moradia independente da posição atual. */
+  home?: string;
   /** Posição individual. Ausente em campanhas antigas = posição do grupo principal (partyHex). */
   hex?: string;
   level?: number;
@@ -382,6 +384,8 @@ export type GameState = {
   conflict?: ConflictScene;
   /** Projeção pública efêmera enviada apenas aos jogadores; nunca é persistida pelo mestre. */
   publicConflict?: PublicConflictScene;
+  /** Resumo público derivado; não contém fichas completas dos outros jogadores. */
+  publicShelterCommunity?: { residents: import("./shelter-residents").ShelterResident[]; present: number };
   /** Imagem atualmente apresentada à mesa. É pública e não pertence ao chat. */
   presentation?: TablePresentation;
   shelter: ShelterState;
@@ -473,6 +477,7 @@ export function resetCityPreservingSurvivors(state: GameState, options: { startS
       delete item.committedAmmo;
       if (item.qty <= 0) preserved.inventory.splice(preserved.inventory.indexOf(item), 1);
     }
+    delete preserved.home;
     delete preserved.restPlan;
     delete preserved.ammoSpentScene;
     delete preserved.ammoSpentType;
@@ -640,16 +645,18 @@ export function shelterPopulationBreakdown(state: GameState, shelter: ShelterSta
   const hex = shelter.hex;
   const living = (npc: NPC) => npc.active && npc.status !== "Morto" && npc.status !== "Desaparecido";
   const namedResidents = (state.npcs ?? []).filter(npc => living(npc) && npc.home === (hex ?? undefined));
+  const survivorResidents = hex ? state.survivors.filter(person => person.home === hex) : [];
   const namedPresent = (state.npcs ?? []).filter(npc => living(npc) && npc.hex === (hex ?? state.partyHex));
   const survivorsPresent = survivorsAtHex(state, hex ?? state.partyHex);
   return {
-    residents: shelter.residents + namedResidents.length,
+    residents: shelter.residents + namedResidents.length + survivorResidents.length,
     unidentifiedResidents: shelter.residents,
     namedResidents,
+    survivorResidents,
     present: shelter.residents + namedPresent.length + survivorsPresent.length,
     namedPresent,
     survivorsPresent,
-    field: namedResidents.filter(npc => npc.hex !== hex).length,
+    field: namedResidents.filter(npc => npc.hex !== hex).length + survivorResidents.filter(person => survivorHex(state, person) !== hex).length,
   };
 }
 
