@@ -2160,6 +2160,9 @@ test('gerador de encontro é local e a projeção pública não revela seus segr
   assert.ok(drafts.some(npc => npc.skills.includes('Medicina')));
   const g = campaign();
   g.npcs.push({ ...drafts[0], id: 'generated' });
+  assert.equal(g.npcs[0].visibleToPlayers, false);
+  assert.deepEqual(collaboration.projectPlayerGame(g, g.survivors[0].id).npcs, []);
+  g.npcs[0].visibleToPlayers = true;
   g.shelter.projects.push({ ...shelterProjects.createShelterProject('barricades'), responsibleId: 'generated', helperIds: ['generated'] });
   const view = collaboration.projectPlayerGame(g, g.survivors[0].id);
   assert.equal('notes' in view.npcs[0], false);

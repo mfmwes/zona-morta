@@ -57,7 +57,7 @@ export function generateNpcDrafts(options: { quantity: number; context: Encounte
     const offer = pick(offers, random);
     const secret = pick(secrets, random);
     drafts.push({
-      name, role: profession.role, description: `${profession.role} encontrado(a) em contexto ${options.context.toLowerCase()}; mantém os olhos atentos ao entorno.`,
+      name, visibleToPlayers: false, role: profession.role, description: `${profession.role} encontrado(a) em contexto ${options.context.toLowerCase()}; mantém os olhos atentos ao entorno.`,
       notes: `Segredo gerado: ${secret}.`, publicNotes: `${immediateNeed.charAt(0).toUpperCase()}${immediateNeed.slice(1)}. ${offer.charAt(0).toUpperCase()}${offer.slice(1)}.`,
       hex: options.hex, home: options.context === "Abrigo" ? options.home : undefined,
       status, infection, disposition: disposition(options.tone, random), skills, duty: "", active: status !== "Desaparecido",

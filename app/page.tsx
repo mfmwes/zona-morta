@@ -27,6 +27,7 @@ import { DayCloseDialog } from "@/components/day-close-dialog";
 import { TablePresentationControl, TablePresentationViewer } from "@/components/table-presentation";
 import { addLog, displayTime, resetCityPreservingSurvivors, survivorHex, type GameState, type Point, type Survivor } from "@/lib/game";
 import { createId } from "@/lib/id";
+import { npcPlayerView } from "@/lib/npc-presentation";
 import { sectorProfiles } from "@/lib/sectors";
 import { adjustProvisionCount } from "@/lib/provisions";
 import { beginExpedition, beginScene } from "@/lib/abilities";
@@ -405,6 +406,7 @@ export default function CampaignApp() {
   </section></main>;
 
   const readOnlyPreview = playerPreview || role === "jogador";
+  const communityView = readOnlyPreview ? npcPlayerView(game) : game;
   const publicConflictActive = role === "jogador"
     ? Boolean(game.publicConflict?.active)
     : playerPreview ? Boolean(game.conflict?.active) : false;
@@ -614,7 +616,7 @@ export default function CampaignApp() {
               <p className="scene-supplies-note">Comida e Água em porções (4 = 1 unidade); Peças em unidades. Sem abrigo, registre apenas o que o grupo consegue transportar.</p>
             </section>
           </div>}
-          <HexExplorer key={game.campaignId} game={game} edit={edit} playerPreview={readOnlyPreview} teamPeers={restPeers} />
+          <HexExplorer key={game.campaignId} game={communityView} edit={edit} playerPreview={readOnlyPreview} teamPeers={restPeers} />
           {!readOnlyPreview && <div className="panel panel-pad mt-5 flex flex-wrap items-center gap-3">
             <div className="mr-auto"><b>Relógio da expedição</b><p className="text-xs subtle">Ao anoitecer, registre o descanso na ficha, mesmo sem abrigo.</p></div>
             {[30,60,120].map(amount=><Button key={amount} size="sm" variant="outline" disabled={game.minutes+amount>=1440}
@@ -642,8 +644,8 @@ export default function CampaignApp() {
           </div>}
         </>}
         {activeTab === "sobreviventes" && <SurvivorPanel game={game} edit={edit} playerPreview={readOnlyPreview} playerMode={role === "jogador"} restPeers={restPeers} onOpenConflict={() => setTab("conflito")} />}
-        {activeTab === "comunidade" && <NpcPanel game={game} edit={edit} playerPreview={readOnlyPreview} />}
-        {activeTab === "abrigo" && <ShelterPanel game={game} edit={edit} playerPreview={readOnlyPreview} playerSurvivorId={role === "jogador" ? survivorId : null} />}
+        {activeTab === "comunidade" && <NpcPanel game={communityView} edit={edit} playerPreview={readOnlyPreview} />}
+        {activeTab === "abrigo" && <ShelterPanel game={communityView} edit={edit} playerPreview={readOnlyPreview} playerSurvivorId={role === "jogador" ? survivorId : null} />}
         {activeTab === "conflito" && role === "mestre" && !playerPreview && <ConflictSceneManager game={game} edit={edit} />}
         {activeTab === "conflito" && readOnlyPreview && publicConflictActive && <PlayerConflictScene game={game} selfId={role === "jogador" ? survivorId : null} />}
         {activeTab === "ameacas" && role === "mestre" && !playerPreview && <section className="panel panel-pad"><ThreatManager game={game} edit={edit} /></section>}
