@@ -124,7 +124,7 @@ function RollForm({ game, edit, request, onCompleted, hideThreatSecrets = false 
     const extraDamage = Math.max(-99, Math.min(99, Math.trunc(Number(damageExtra) || 0)));
     const dice = Array.from({ length: proficiency }, () => rollDie(formula.die));
     const result = resolveWeaponDamage(dice, formula.die, formula.flat, extraDamage + equipmentDamage, critical);
-    return { ...result, weaponName: weapon.name, formula: `${proficiency}d${formula.die}${formula.flat >= 0 ? "+" : ""}${formula.flat}`, critical, equipment: equipmentDamage };
+    return { ...result, weaponName: weapon.name, formula: `${proficiency}d${formula.die}${formula.flat ? `${formula.flat > 0 ? "+" : ""}${formula.flat}` : ""}`, critical, equipment: equipmentDamage };
   }
 
   function damageLog(record: DamageRecord, status: string) {
