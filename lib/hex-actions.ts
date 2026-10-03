@@ -1,6 +1,5 @@
 import {
   addLog,
-  content,
   establishShelter,
   hexDistance,
   hexKey,
@@ -10,6 +9,7 @@ import {
   type GameState,
 } from "./game";
 import { revealSector } from "./sectors";
+import { adjacentHexes, parseHex } from "./world";
 import { advanceCampaignTime } from "./time";
 import { shelterTravelMinutes, survivorActiveShelterShift } from "./shelter-projects";
 
@@ -30,24 +30,23 @@ function travelDurationLabel(minutes: number) {
 }
 
 export function movementSources(game: GameState, destination: string) {
-  const target = content.hexes.find(hex => hexKey(hex.q, hex.r) === destination);
-  if (!target) return [];
+  const target = parseHex(destination);
+  if (!target || !game.hexes[destination]) return [];
   return survivorPositionGroups(game).filter(group => {
     if (group.hex === destination || group.members.length === 0) return false;
-    const source = content.hexes.find(hex => hexKey(hex.q, hex.r) === group.hex);
+    const source = game.hexes[group.hex] ? parseHex(group.hex) : null;
     return Boolean(source && hexDistance(target.q - source!.q, target.r - source!.r) === 1);
   });
 }
 
 function revealAround(game: GameState, id: string) {
-  const area = content.hexes.find(hex => hexKey(hex.q, hex.r) === id);
+  const area = parseHex(id);
   if (!area) return;
   const destination = revealSector(game, id);
   game.hexes[id].discovery = "explorado";
-  for (const neighbor of content.hexes) {
-    if (hexDistance(neighbor.q - area.q, neighbor.r - area.r) !== 1) continue;
+  for (const neighbor of adjacentHexes(id)) {
     const key = hexKey(neighbor.q, neighbor.r);
-    if (game.hexes[key].discovery === "desconhecido") {
+    if (game.hexes[key]?.discovery === "desconhecido") {
       revealSector(game, key);
       game.hexes[key].discovery = "avistado";
     }
@@ -68,8 +67,8 @@ export function moveSurvivors(game: GameState, destination: string, survivorIds:
   const sourceHex = survivorHex(game, people[0]);
   if (!people.every(person => survivorHex(game, person) === sourceHex)) return { ok: false, message: "" };
 
-  const source = content.hexes.find(hex => hexKey(hex.q, hex.r) === sourceHex);
-  const target = content.hexes.find(hex => hexKey(hex.q, hex.r) === destination);
+  const source = game.hexes[sourceHex] ? parseHex(sourceHex) : null;
+  const target = parseHex(destination);
   if (!source || !target || hexDistance(target.q - source.q, target.r - source.r) !== 1) return { ok: false, message: "" };
 
   const travelMinutes = shelterTravelMinutes(game, sourceHex, destination, record.routeHours * 60);
@@ -101,7 +100,7 @@ export function moveSurvivors(game: GameState, destination: string, survivorIds:
 }
 
 export function hexActionOptions(game: GameState, id: string) {
-  const area = content.hexes.find(hex => hexKey(hex.q, hex.r) === id);
+  const area = parseHex(id);
   const record = game.hexes[id];
   if (!area || !record) return null;
 
@@ -140,7 +139,6 @@ export function hexActionOptions(game: GameState, id: string) {
 export function performHexAction(game: GameState, id: string, action: HexQuickAction) {
   const options = hexActionOptions(game, id);
   if (!options) return { ok: false, message: "" };
-  const { record } = options;
 
   if (action.type === "observe") {
     if (!options.canObserve) return { ok: false, message: "" };

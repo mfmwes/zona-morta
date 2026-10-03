@@ -2,6 +2,7 @@ import content from "./content.json";
 import { normalizeSurvivorAmmunition, type GameState, type HexState, type InventoryItem, type Survivor } from "./game";
 import { createId } from "./id";
 import { normalizeShelter } from "./shelter-projects";
+import { type Terrain } from "./world";
 
 export type Sector = { id: string; name: string; border: string; invites: string[] };
 
@@ -41,10 +42,31 @@ export const sectorProfiles: Sector[] = [
   ...extraSectors,
 ];
 
-export function drawSector(hexes: Record<string, HexState>): Sector {
+const landscapes: Record<Exclude<Terrain, "urban">, { names: string[]; border: string; invites: string[] }> = {
+  rural: { names: ["Campos abandonados", "Sítios isolados", "Pastagens vazias", "Pomar esquecido"], border: "cercas gastas, caminhos de terra e construções espaçadas", invites: ["observar as construções", "seguir os caminhos entre os campos"] },
+  forest: { names: ["Mata fechada", "Clareira silenciosa", "Bosque antigo", "Vale arborizado"], border: "copas densas, vegetação e sinais de passagem no chão", invites: ["examinar os rastros", "buscar uma passagem entre as árvores"] },
+  mountain: { names: ["Encosta rochosa", "Passo da serra", "Vale pedregoso", "Crista elevada"], border: "rochas expostas, desníveis e vento entre os morros", invites: ["avaliar a subida", "procurar um ponto de observação"] },
+  swamp: { names: ["Brejo profundo", "Margem alagada", "Várzea silenciosa", "Ilhas de junco"], border: "água parada, juncos e trechos de solo firme", invites: ["testar o terreno", "observar os canais de água"] },
+};
+
+function generatedSector(terrain: Terrain): Sector {
+  const landscape = terrain === "urban" ? null : landscapes[terrain];
+  const urban = sectorProfiles[crypto.getRandomValues(new Uint32Array(1))[0] % sectorProfiles.length];
+  const index = crypto.getRandomValues(new Uint32Array(1))[0];
+  return {
+    id: `generated-${createId()}`,
+    name: landscape ? landscape.names[index % landscape.names.length] : urban.name,
+    border: landscape?.border ?? urban.border,
+    invites: [...(landscape?.invites ?? urban.invites)],
+  };
+}
+
+export function drawSector(hexes: Record<string, HexState>, terrain: Terrain = "urban"): Sector {
+  if (terrain !== "urban") return generatedSector(terrain);
   const used = new Set(Object.values(hexes).map(hex => hex.sector?.id).filter(Boolean));
   const available = sectorProfiles.filter(profile => !used.has(profile.id));
-  if (!available.length) throw new Error("Não há mais setores disponíveis para revelar.");
+  // A landscape can recur in a larger world; its identity and saved details cannot.
+  if (!available.length) return generatedSector(terrain);
   const bytes = new Uint32Array(1);
   crypto.getRandomValues(bytes);
   return structuredClone(available[bytes[0] % available.length]);
@@ -53,7 +75,7 @@ export function drawSector(hexes: Record<string, HexState>): Sector {
 export function revealSector(state: GameState, key: string) {
   const hex = state.hexes[key];
   if (!hex) throw new Error(`Hex desconhecido: ${key}`);
-  if (!hex.sector) hex.sector = drawSector(state.hexes);
+  if (!hex.sector) hex.sector = drawSector(state.hexes, hex.terrain ?? "urban");
   return hex.sector;
 }
 
@@ -61,6 +83,10 @@ export function revealSector(state: GameState, key: string) {
 export function redrawSector(state: GameState, key: string) {
   const hex = state.hexes[key];
   if (!hex) throw new Error(`Hex desconhecido: ${key}`);
+  if (hex.terrain && hex.terrain !== "urban") {
+    hex.sector = generatedSector(hex.terrain);
+    return hex.sector;
+  }
   const previousId = hex.sector?.id;
   const usedElsewhere = new Set(Object.entries(state.hexes)
     .filter(([hexKey]) => hexKey !== key)
@@ -68,7 +94,10 @@ export function redrawSector(state: GameState, key: string) {
     .filter(Boolean));
   let available = sectorProfiles.filter(profile => !usedElsewhere.has(profile.id) && profile.id !== previousId);
   if (!available.length) available = sectorProfiles.filter(profile => !usedElsewhere.has(profile.id));
-  if (!available.length) throw new Error("Não há mais setores disponíveis para revelar.");
+  if (!available.length) {
+    hex.sector = generatedSector("urban");
+    return hex.sector;
+  }
   const bytes = new Uint32Array(1);
   crypto.getRandomValues(bytes);
   hex.sector = structuredClone(available[bytes[0] % available.length]);
