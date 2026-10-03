@@ -1,5 +1,6 @@
 import { addLog, ammunitionTypes, type AmmunitionType, type GameState, type InventoryItem, type NPC, type Survivor } from "./game";
 import { publicConflictScene } from "./conflict";
+import { publicNpcs } from "./npc-presentation";
 import { cancelSurvivorWorkShift, joinShelterProjectAsSurvivor, leaveShelterProjectAsSurvivor, projectBaseOperational, scheduleSurvivorWorkShift } from "./shelter-projects";
 
 export function projectPlayerGame(game: GameState, survivorId: string): GameState {
@@ -11,7 +12,7 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
   visible.survivors = visible.survivors.filter(person => person.id === survivorId);
   // The player projection intentionally omits private GM notes, the NPC's home
   // and consumption bookkeeping. Public notes are the explicit sharing channel.
-  visible.npcs = (visible.npcs ?? []).map(npc => ({
+  visible.npcs = publicNpcs(visible.npcs ?? []).map(npc => ({
     id: npc.id, name: npc.name, portrait: npc.portrait, role: npc.role, description: npc.description,
     publicNotes: npc.publicNotes, hex: npc.hex, status: npc.status, infection: npc.infection,
     disposition: npc.disposition, skills: npc.skills, duty: npc.duty, active: npc.active,

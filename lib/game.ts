@@ -266,6 +266,8 @@ export type NpcDisposition = "Hostil" | "Desconfiado" | "Neutro" | "Aliado" | "L
 /** Uma ficha leve de personagem da campanha; não substitui uma ficha de sobrevivente. */
 export type NPC = {
   id: string;
+  /** Absent in older saves means visible. Hidden NPCs stay in the GM campaign. */
+  visibleToPlayers?: boolean;
   name: string;
   portrait?: string;
   role: string;

@@ -166,6 +166,7 @@ function validState(value: unknown): value is GameState {
     && Array.isArray(state.survivors) && state.survivors.length <= 30
     && (state.npcs === undefined || (Array.isArray(state.npcs) && state.npcs.length <= 300
       && state.npcs.every(npc => npc && typeof npc.id === "string" && typeof npc.name === "string"
+        && (npc.visibleToPlayers === undefined || typeof npc.visibleToPlayers === "boolean")
         && (npc.portrait === undefined || (typeof npc.portrait === "string" && npc.portrait.length <= 12000))
         && typeof npc.hex === "string" && Array.isArray(npc.skills))))
     && (state.threats === undefined || (Array.isArray(state.threats) && state.threats.length <= 120
