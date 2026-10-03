@@ -6,6 +6,7 @@ import { transferPortionLots } from "./provisions";
 import { groupedProvisionPortions } from "./provision-items";
 import { defaultThreatTemplates, type ThreatTemplate } from "./threats";
 import type { ConflictScene, PublicConflictScene } from "./conflict";
+import type { Terrain, Passage } from "./world";
 
 export { content };
 
@@ -25,6 +26,8 @@ export type Point = {
 };
 
 export type HexState = {
+  terrain?: Terrain;
+  passage?: Passage;
   sector: Sector | null;
   discovery: Discovery;
   infestation: number | null;

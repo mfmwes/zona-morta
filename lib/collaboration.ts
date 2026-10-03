@@ -47,6 +47,8 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
     hex.notes = "";
     hex.infestation = null;
     if (hex.discovery === "desconhecido") {
+      delete hex.terrain;
+      delete hex.passage;
       hex.sector = null; hex.signs = ""; hex.points = []; hex.events = [];
       continue;
     }

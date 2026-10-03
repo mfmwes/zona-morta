@@ -1,20 +1,23 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ChevronDown, Compass, Dice5, Eye, Footprints, House, MapPin, Package, Route, Search, Users, ZoomIn, ZoomOut } from "lucide-react";
+import { ChevronDown, Compass, Dice5, Eye, Footprints, House, MapPin, Package, Route, Search, Users, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ShelterMoveDialog } from "@/components/shelter-move";
 import { SurvivorMoveDialog } from "@/components/survivor-move-dialog";
+import { WorldMapViewport } from "@/components/world-map-viewport";
+import { WorldExpansionDialog } from "@/components/world-expansion-dialog";
+import { hexCenter, parseHex, passages, terrains, worldHexes, type Terrain, type Passage } from "@/lib/world";
 import { MapGroupMarker } from "@/components/map-group-marker";
 import { HexContextMenu } from "@/components/hex-context-menu";
 import { HexGeneratorDialog, type HexGeneratorKind, type HexGeneratorRequest } from "@/components/hex-generator-dialog";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { Counter, Field, Pick } from "@/components/game-controls";
-import { addLog, content, establishShelter, hexDistance, hexKey, survivorsAtHex, type GameState, type Point } from "@/lib/game";
+import { addLog, content, establishShelter, hexDistance, survivorsAtHex, type GameState, type Point } from "@/lib/game";
 import { assignCustomSector, redrawSector, revealSector } from "@/lib/sectors";
 import { rollDie } from "@/lib/rolls";
 import { normalizedSector, recordSearch, searchError, type SearchInput } from "@/lib/exploration";
@@ -56,7 +59,8 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
   playerPreview: boolean;
   teamPeers?: { id: string; name: string; hex?: string; portrait?: string }[];
 }) {
-  const [selected, setSelected] = useState(game.partyHex);
+  const [selectedId, setSelected] = useState(game.partyHex);
+  const selected = game.hexes[selectedId] ? selectedId : game.partyHex;
   const [signsDraft, setSignsDraft] = useState<{ key: string; source: string; value: string } | null>(null);
   const [notesDraft, setNotesDraft] = useState<{ key: string; source: string; value: string } | null>(null);
   const [generatorRequest, setGeneratorRequest] = useState<HexGeneratorRequest | null>(null);
@@ -75,13 +79,14 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
   const [pendingSectorOverride, setPendingSectorOverride] = useState<{ mode: "random" | "custom"; discovery: "avistado" | "explorado"; name?: string } | null>(null);
   const [compact, setCompact] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [mapOverview, setMapOverview] = useState(false);
+  const [expansionOpen, setExpansionOpen] = useState(false);
+  const [focusHex, setFocusHex] = useState(game.partyHex);
   const [relocateOpen, setRelocateOpen] = useState(false);
   const [relocateDestination, setRelocateDestination] = useState<string | null>(null);
   const [moveOpen, setMoveOpen] = useState(false);
   const [moveDestination, setMoveDestination] = useState<string | null>(null);
   const [activeGroupHex, setActiveGroupHex] = useState(game.partyHex);
-  const mapViewport = useRef<HTMLDivElement>(null);
+
 
   useEffect(() => {
     const query = window.matchMedia("(max-width: 1279px)");
@@ -89,18 +94,6 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
     update(); query.addEventListener("change", update);
     return () => query.removeEventListener("change", update);
   }, []);
-  useEffect(() => {
-    if (!compact || mapOverview) return;
-    const frame = requestAnimationFrame(() => {
-      const node = mapViewport.current;
-      if (node) {
-        const [q,r] = selected.split(",").map(Number);
-        const center = (300 + Math.sqrt(3) * 53 * (q + r/2)) * 1.2;
-        node.scrollLeft = Math.max(0, center - node.clientWidth / 2);
-      }
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [compact, mapOverview, selected]);
 
   function selectHex(id: string) {
     if (id !== selected) {
@@ -111,7 +104,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
     if (compact) setSheetOpen(true);
   }
 
-  const area = content.hexes.find(h => hexKey(h.q, h.r) === selected)!;
+  const area = parseHex(selected)!;
   const record = game.hexes[selected];
   const sectorName = record.sector?.name ?? "Setor ainda não revelado";
   const signs = signsDraft?.key === selected && signsDraft.source === record.signs ? signsDraft.value : record.signs;
@@ -186,6 +179,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
   const activeCanMoveSelected = activeAdjacentToSelected && record.discovery !== "desconhecido";
   function selectGroup(hex: string) {
     setActiveGroupHex(hex);
+    setFocusHex(hex);
     selectHex(hex);
   }
 
@@ -275,6 +269,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div><p className="dossier-title">Hex {selected}</p><h2 className="text-xl font-extrabold mt-1">{record.discovery !== "desconhecido" && visible ? sectorName : "Além do horizonte"}</h2></div>
         <div className="flex flex-wrap gap-2"><span className="tag">{record.discovery}</span>
+          {visible && <span className="tag">{terrains[record.terrain ?? "urban"]}{record.passage && record.passage !== "none" ? ` · ${passages[record.passage]}` : ""}</span>}
           {!playerPreview && <span className={record.infestation !== null && record.infestation >= 4 ? "tag tag-danger" : "tag"}>
             Infestação {record.infestation === null ? "?" : `${record.infestation}/5`}
           </span>}
@@ -325,6 +320,13 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
             </Button></CollapsibleTrigger>
             <CollapsibleContent className="pt-4">
           <h3 className="section-title mb-3">Estado do setor</h3>
+          <div className="grid gap-3 sm:grid-cols-2 mb-3">
+            <Pick label="Terreno" value={record.terrain ?? "urban"} options={Object.entries(terrains).map(([value, label]) => ({ value, label }))}
+              onChange={value => edit(draft => { draft.hexes[selected].terrain = value as Terrain; })} />
+            <Pick label="Via" value={record.passage ?? "none"} options={Object.entries(passages).map(([value, label]) => ({ value, label }))}
+              onChange={value => edit(draft => { draft.hexes[selected].passage = value as Passage; })} />
+          </div>
+          <Button size="sm" variant="outline" className="mb-3" onClick={() => { setSheetOpen(false); setExpansionOpen(true); }}><Plus /> Expandir a partir deste hex</Button>
           <div className="grid gap-3 sm:grid-cols-2">
             <Pick label="Descoberta" value={record.discovery}
               options={actualMembersHere.length > 0 || selected === game.shelter.hex
@@ -459,11 +461,10 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
 
   return <div className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(345px,.75fr)]">
     <section className="panel panel-pad min-w-0 self-start">
-      <div className="flex items-center justify-between gap-3 mb-4">
-        <div><p className="dossier-title">Cidade / 19 áreas</p><h2 className="section-title mt-1">Mapa de exploração</h2></div>
-        <div className="flex items-center gap-2"><span className="tag">1 hex ≈ 2 km</span>
-          <Button size="sm" variant="outline" className="map-zoom-toggle" onClick={() => setMapOverview(value => !value)}
-            aria-pressed={mapOverview}>{mapOverview ? <ZoomIn /> : <ZoomOut />}{mapOverview ? "Ampliar" : "Ver tudo"}</Button></div>
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+        <div><p className="dossier-title">Mundo / {Object.keys(game.hexes).length} áreas</p><h2 className="section-title mt-1">Mapa de exploração</h2></div>
+        <div className="flex flex-wrap items-center gap-2"><span className="tag">1 hex ≈ 2 km</span>
+          {!playerPreview && <Button size="sm" variant="outline" onClick={() => setExpansionOpen(true)}><Plus /> Expandir mundo</Button>}</div>
       </div>
       {activeGroup && <div className="map-active-group" role="status" aria-live="polite">
         <span className="map-active-group-icon">{activeGroup.main ? <Footprints size={16} /> : <Users size={16} />}</span>
@@ -471,17 +472,15 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
         <em>Hex {activeGroup.hex}</em>
       </div>}
       <div className="map-surface">
-        <div ref={mapViewport} className={`map-viewport ${mapOverview ? "overview" : ""}`}>
-        <svg viewBox="0 0 600 485" aria-label="Mapa de dezenove hexágonos da campanha" role="img">
+        <WorldMapViewport hexes={game.hexes} activeHex={activeSourceHex} selected={selected} focusHex={focusHex} playerPreview={playerPreview} onSelect={selectHex}>
           <defs><pattern id="setor-avistado" width="8" height="8" patternUnits="userSpaceOnUse">
             <rect width="8" height="8" fill="#2d4d50" />
             <path d="M-2 8L8-2M2 10L10 2" stroke="#527478" strokeWidth="1" opacity=".58" />
           </pattern></defs>
-          {content.hexes.map(hex => {
-            const id = hexKey(hex.q, hex.r);
+          {worldHexes(game.hexes).map(hex => {
+            const id = hex.id;
             const state = game.hexes[id];
-            const x = 300 + Math.sqrt(3) * 53 * (hex.q + hex.r/2);
-            const y = 242 + 1.5 * 53 * hex.r;
+            const { x, y } = hexCenter(hex);
             const polygon = Array.from({length: 6}, (_, i) => {
               const a = (Math.PI/180) * (60*i-30);
               return `${x + 51*Math.cos(a)},${y + 51*Math.sin(a)}`;
@@ -489,7 +488,8 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
             const discovered = state.discovery === "explorado";
             const observed = state.discovery === "avistado";
             const nearby = hexDistance(hex.q-activeQ, hex.r-activeR) === 1;
-            const fill = discovered ? "#35686a" : observed ? "url(#setor-avistado)" : "#17282d";
+            const terrainColors = { urban: "#35686a", rural: "#636544", forest: "#365a3e", mountain: "#505c6d", swamp: "#45625b" };
+            const fill = discovered ? terrainColors[state.terrain ?? "urban"] : observed ? "url(#setor-avistado)" : "#17282d";
             const title = discovered || observed ? state.sector?.name ?? "Setor sem nome" : "Fora do horizonte";
             const shownPoints = playerPreview
               ? state.discovery === "desconhecido" ? 0 : state.points.filter(point => point.revealed).length
@@ -509,7 +509,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
               <g role="button" tabIndex={0} className="map-cell" aria-pressed={id === selected}
                 aria-label={`${id}: ${title}${nearby ? ", adjacente ao grupo ativo" : ""}${id === game.shelter.hex ? ", abrigo" : ""}${formerBase ? ", antiga base com depósito" : ""}${membersHere.length ? `, sobreviventes: ${membersHere.map(person => person.name).join(", ")}` : ""}`}
                 onClick={() => selectHex(id)} onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectHex(id); } }}>
-                <title>{title} · Hex {id}</title>
+                <title>{title} · Hex {id}{discovered || observed ? ` · ${terrains[state.terrain ?? "urban"]}${state.passage && state.passage !== "none" ? ` · ${passages[state.passage]}` : ""}` : ""}</title>
                 <polygon points={polygon} className={`map-hex ${id === selected ? "selected" : ""} ${nearby ? "nearby" : ""}`}
                   fill={fill} stroke={observed ? "#759897" : "#49666a"} strokeWidth="2" />
                 <text x={x} y={y-17} textAnchor="middle" fontSize="10" fill="#c4d8d3" fontFamily="monospace">{id}</text>
@@ -544,8 +544,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
               </g>
             </HexContextMenu>;
           })}
-        </svg>
-        </div>
+        </WorldMapViewport>
         <div className="map-caption">
           <span><i className="legend-swatch" style={{background:"#35686a"}} /> Explorado</span>
           <span><i className="legend-swatch legend-observed" /> Avistado</span>
@@ -569,11 +568,12 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
           <span><b>{group.main ? "Principal" : group.members.length === 1 ? group.members[0].name : group.members.map(person => person.name.split(" ")[0]).join(" · ")}</b><small>Hex {group.hex}</small></span>
         </button>)}
       </div>
-      <p className="map-pan-hint text-sm subtle mt-2">Clique ou toque nas pegadas/retratos para escolher o grupo ativo; apenas os hexes adjacentes a ele ficam destacados. Clique em um hex para abrir os detalhes e, no computador, use o botão direito para ações rápidas. {mapOverview
-        ? "Use “Ampliar” para ler os setores no mapa." : "Deslize o mapa para os lados ou use “Ver tudo” para conferir a cidade inteira."}</p>
+      <p className="text-sm subtle mt-2">Clique ou toque nas pegadas/retratos para escolher o grupo ativo; os hexes adjacentes a ele ficam destacados. Clique em um hex para abrir os detalhes e, no computador, use o botão direito para ações rápidas.</p>
       <p className="intro-line mt-4">O setor ganha nome e sinais quando é avistado. Um hex pode conter vários pontos; seus interiores continuam em aberto até a exploração.</p>
     </section>
 
+    {expansionOpen && !playerPreview && <WorldExpansionDialog game={game} origin={selected} edit={edit} onClose={() => setExpansionOpen(false)}
+      onExpanded={id => { setSelected(id); setFocusHex(id); setSearchId(null); setSignsDraft(null); setNotesDraft(null); }} />}
     <AlertDialog open={Boolean(pendingSectorOverride)} onOpenChange={open => { if (!open) setPendingSectorOverride(null); }}>
       <AlertDialogContent>
         <AlertDialogHeader>
@@ -594,7 +594,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
     {moveDestination && <SurvivorMoveDialog game={game} edit={edit} destination={moveDestination}
       open={moveOpen} onOpenChange={setMoveOpen}
       preferredSourceHex={activeGroupHex}
-      onMoved={destination => { setActiveGroupHex(destination); setSelected(destination); }} />}
+      onMoved={destination => { setActiveGroupHex(destination); setSelected(destination); setFocusHex(destination); }} />}
     {relocateDestination && <ShelterMoveDialog game={game} edit={edit} mode="relocate" destination={relocateDestination}
       open={relocateOpen} onOpenChange={setRelocateOpen} hideTrigger />}
     {compact ? <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>

@@ -3,6 +3,7 @@ import { sameOrigin, siteUser } from "@/lib/auth";
 import { applyPlayerChange, projectPlayerGame, type PlayerLog, type ShelterWorkAction } from "@/lib/collaboration";
 import { ammunitionTypes, survivorStats, type AmmunitionType, type GameState, type Survivor } from "@/lib/game";
 import { preserveKnownSectors } from "@/lib/sectors";
+import { validWorld } from "@/lib/world";
 
 export const dynamic = "force-dynamic";
 const noStore = { "Cache-Control": "no-store" };
@@ -161,7 +162,7 @@ function validState(value: unknown): value is GameState {
     && Number.isInteger(state.fear) && state.fear! >= 0 && state.fear! <= 12
     && Number.isInteger(state.noise) && state.noise! >= 0 && state.noise! <= 5
     && typeof state.partyHex === "string" && /^-?\d+,-?\d+$/.test(state.partyHex)
-    && Boolean(state.hexes && typeof state.hexes === "object")
+    && validWorld(state.hexes) && Boolean(state.hexes[state.partyHex!])
     && Array.isArray(state.survivors) && state.survivors.length <= 30
     && (state.npcs === undefined || (Array.isArray(state.npcs) && state.npcs.length <= 300
       && state.npcs.every(npc => npc && typeof npc.id === "string" && typeof npc.name === "string"
@@ -251,7 +252,8 @@ export async function PUT(request: Request) {
     if (!campaignId || await campaignOwnerId(campaignId) !== user.id)
       return Response.json({ error: "Somente o mestre pode alterar a campanha inteira." }, { status: 403 });
     const raw = await request.text();
-    if (raw.length > 400_000) return Response.json({ error: "Registro grande demais." }, { status: 413 });
+    // Leave room under the database's 2 MB row limit, including multibyte text.
+    if (new TextEncoder().encode(raw).byteLength > 1_800_000) return Response.json({ error: "Registro grande demais." }, { status: 413 });
     const payload = JSON.parse(raw) as { revision?: number; state?: unknown };
     if (!Number.isInteger(payload.revision) || (payload.revision ?? -1) < 0 || !validState(payload.state))
       return Response.json({ error: "Dados da campanha inválidos." }, { status: 400 });

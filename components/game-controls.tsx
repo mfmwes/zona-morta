@@ -3,19 +3,20 @@
 import { useId } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export function Pick({ label, value, options, onChange, placeholder = "Escolha", disabled = false }: {
+export function Pick({ label, value, options, onChange, placeholder = "Escolha", disabled = false, contentClassName }: {
   label: string;
   value: string;
   options: (string | { value: string; label: string })[];
   onChange: (value: string) => void;
   placeholder?: string;
   disabled?: boolean;
+  contentClassName?: string;
 }) {
   return <div className="field">
     <span className="field-label">{label}</span>
     <Select value={value || undefined} onValueChange={onChange} disabled={disabled}>
       <SelectTrigger aria-label={label} className="w-full bg-white"><SelectValue placeholder={placeholder} /></SelectTrigger>
-      <SelectContent>{options.map(option => {
+      <SelectContent className={contentClassName}>{options.map(option => {
         const value = typeof option === "string" ? option : option.value;
         const title = typeof option === "string" ? option : option.label;
         return <SelectItem key={value} value={value}>{title}</SelectItem>;
