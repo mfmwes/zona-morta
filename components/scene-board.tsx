@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
 import {
   Copy, Eye, EyeOff, Hand, Layers, Lock, Minus, MousePointer2, Plus, RotateCcw, RotateCw,
-  Square, Trash2, Type, Unlock, User, ZoomIn, ZoomOut,
+  Search, Square, Trash2, Type, Unlock, User, ZoomIn, ZoomOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { survivorIsDown, type GameState } from "@/lib/game";
@@ -50,24 +50,65 @@ type WallDraft = { pointerId: number; start: ScenePoint; end: ScenePoint };
 type FogDraft = { pointerId: number; start: ScenePoint; end: ScenePoint; mode: "reveal" | "conceal" };
 
 type LibraryPiece = { kind: SceneObjectKind; label: string; variant?: string };
-const libraryGroups: { label: string; pieces: LibraryPiece[] }[] = [
-  { label: "Ambiente", pieces: [
+type LibraryGroup = { id: string; label: string; shortLabel: string; pieces: LibraryPiece[] };
+
+const libraryGroups: LibraryGroup[] = [
+  { id: "ambiente", label: "Ambiente e marcação", shortLabel: "Ambiente", pieces: [
     { kind: "zone", label: "Sala / área", variant: "room" },
     { kind: "text", label: "Texto" },
     { kind: "prop", label: "Pista / objetivo", variant: "marker" },
+    { kind: "prop", label: "Tapete", variant: "rug" },
+    { kind: "furniture", label: "Divisória", variant: "partition" },
+    { kind: "prop", label: "Escada", variant: "stairs" },
   ] },
-  { label: "Mobiliário", pieces: [
+  { id: "casa", label: "Casa e mobiliário", shortLabel: "Casa", pieces: [
     { kind: "furniture", label: "Mesa", variant: "table" },
+    { kind: "furniture", label: "Mesa de jantar", variant: "dining-table" },
+    { kind: "furniture", label: "Mesa de centro", variant: "coffee-table" },
     { kind: "furniture", label: "Cadeira", variant: "chair" },
+    { kind: "furniture", label: "Poltrona", variant: "armchair" },
     { kind: "furniture", label: "Sofá", variant: "sofa" },
     { kind: "furniture", label: "Armário", variant: "cabinet" },
+    { kind: "furniture", label: "Guarda-roupa", variant: "wardrobe" },
     { kind: "furniture", label: "Estante", variant: "shelf" },
     { kind: "furniture", label: "Cama", variant: "bed" },
-    { kind: "furniture", label: "Balcão", variant: "counter" },
+    { kind: "furniture", label: "Beliche", variant: "bunkbed" },
+    { kind: "furniture", label: "Criado-mudo", variant: "nightstand" },
+    { kind: "furniture", label: "Geladeira", variant: "fridge" },
+    { kind: "furniture", label: "Fogão", variant: "stove" },
+    { kind: "furniture", label: "Máquina de lavar", variant: "washer" },
+    { kind: "furniture", label: "Televisão", variant: "television" },
+  ] },
+  { id: "banheiro", label: "Banheiro", shortLabel: "Banheiro", pieces: [
     { kind: "furniture", label: "Pia", variant: "sink" },
     { kind: "furniture", label: "Vaso sanitário", variant: "toilet" },
+    { kind: "furniture", label: "Chuveiro", variant: "shower" },
+    { kind: "furniture", label: "Banheira", variant: "bathtub" },
   ] },
-  { label: "Sobrevivência", pieces: [
+  { id: "trabalho", label: "Escritório e comércio", shortLabel: "Trabalho", pieces: [
+    { kind: "furniture", label: "Escrivaninha", variant: "desk" },
+    { kind: "furniture", label: "Cadeira de escritório", variant: "office-chair" },
+    { kind: "furniture", label: "Computador", variant: "computer" },
+    { kind: "furniture", label: "Arquivo", variant: "filing-cabinet" },
+    { kind: "furniture", label: "Balcão", variant: "counter" },
+    { kind: "furniture", label: "Caixa registradora", variant: "checkout" },
+    { kind: "furniture", label: "Prateleira comercial", variant: "store-shelf" },
+    { kind: "furniture", label: "Freezer", variant: "freezer" },
+    { kind: "furniture", label: "Máquina de vendas", variant: "vending" },
+    { kind: "furniture", label: "Bancada de trabalho", variant: "workbench" },
+    { kind: "furniture", label: "Armário de ferramentas", variant: "tool-cabinet" },
+    { kind: "furniture", label: "Armário metálico", variant: "locker" },
+  ] },
+  { id: "hospital", label: "Hospital e emergência", shortLabel: "Hospital", pieces: [
+    { kind: "furniture", label: "Cama hospitalar", variant: "hospital-bed" },
+    { kind: "furniture", label: "Maca", variant: "stretcher" },
+    { kind: "furniture", label: "Cadeira de rodas", variant: "wheelchair" },
+    { kind: "furniture", label: "Mesa cirúrgica", variant: "surgery-table" },
+    { kind: "furniture", label: "Biombo hospitalar", variant: "privacy-screen" },
+    { kind: "prop", label: "Suporte de soro", variant: "iv-stand" },
+    { kind: "prop", label: "Caixa médica", variant: "med-crate" },
+  ] },
+  { id: "sobrevivencia", label: "Sobrevivência e ruínas", shortLabel: "Ruínas", pieces: [
     { kind: "prop", label: "Caixa", variant: "crate" },
     { kind: "prop", label: "Barricada", variant: "barricade" },
     { kind: "prop", label: "Entulho", variant: "debris" },
@@ -75,33 +116,51 @@ const libraryGroups: { label: string; pieces: LibraryPiece[] }[] = [
     { kind: "prop", label: "Barril", variant: "barrel" },
     { kind: "prop", label: "Palete", variant: "pallet" },
     { kind: "prop", label: "Corpo", variant: "body" },
+    { kind: "prop", label: "Sacos de areia", variant: "sandbags" },
+    { kind: "prop", label: "Fogueira", variant: "campfire" },
+    { kind: "prop", label: "Barraca", variant: "tent" },
+    { kind: "prop", label: "Caixa d'água", variant: "water-tank" },
+    { kind: "prop", label: "Lixeira", variant: "trash-bin" },
   ] },
-  { label: "Veículos", pieces: [
+  { id: "rua", label: "Rua e veículos", shortLabel: "Rua", pieces: [
     { kind: "prop", label: "Carro", variant: "car" },
+    { kind: "prop", label: "Caminhonete", variant: "pickup" },
+    { kind: "prop", label: "Van", variant: "van" },
     { kind: "prop", label: "Ambulância", variant: "ambulance" },
+    { kind: "prop", label: "Ônibus", variant: "bus" },
+    { kind: "prop", label: "Motocicleta", variant: "motorcycle" },
+    { kind: "prop", label: "Bicicleta", variant: "bicycle" },
+    { kind: "prop", label: "Caçamba", variant: "dumpster" },
+    { kind: "prop", label: "Cone", variant: "traffic-cone" },
+    { kind: "prop", label: "Barreira de trânsito", variant: "road-barrier" },
+    { kind: "prop", label: "Poste de luz", variant: "streetlight" },
   ] },
 ];
 
 const visualSizes: Record<string, { width: number; height: number }> = {
-  table: { width: 130, height: 80 },
-  chair: { width: 56, height: 56 },
-  sofa: { width: 150, height: 68 },
-  cabinet: { width: 90, height: 48 },
-  shelf: { width: 140, height: 42 },
-  bed: { width: 90, height: 150 },
-  counter: { width: 160, height: 52 },
-  sink: { width: 76, height: 62 },
-  toilet: { width: 62, height: 82 },
-  crate: { width: 62, height: 62 },
-  barricade: { width: 140, height: 48 },
-  debris: { width: 100, height: 76 },
-  generator: { width: 100, height: 72 },
-  barrel: { width: 58, height: 58 },
-  pallet: { width: 110, height: 78 },
-  body: { width: 62, height: 120 },
-  car: { width: 168, height: 84 },
-  ambulance: { width: 190, height: 90 },
-  marker: { width: 58, height: 58 },
+  room: { width: 320, height: 220 }, marker: { width: 58, height: 58 },
+  rug: { width: 140, height: 90 }, partition: { width: 150, height: 28 }, stairs: { width: 120, height: 150 },
+  table: { width: 130, height: 80 }, "dining-table": { width: 170, height: 90 }, "coffee-table": { width: 110, height: 64 },
+  chair: { width: 56, height: 56 }, armchair: { width: 76, height: 76 }, sofa: { width: 150, height: 68 },
+  cabinet: { width: 90, height: 48 }, wardrobe: { width: 120, height: 58 }, shelf: { width: 140, height: 42 },
+  bed: { width: 90, height: 150 }, bunkbed: { width: 92, height: 160 }, nightstand: { width: 52, height: 52 },
+  fridge: { width: 72, height: 86 }, stove: { width: 76, height: 70 }, washer: { width: 70, height: 70 }, television: { width: 105, height: 34 },
+  sink: { width: 76, height: 62 }, toilet: { width: 62, height: 82 }, shower: { width: 82, height: 82 }, bathtub: { width: 140, height: 72 },
+  desk: { width: 150, height: 72 }, "office-chair": { width: 62, height: 62 }, computer: { width: 66, height: 44 },
+  "filing-cabinet": { width: 72, height: 92 }, counter: { width: 160, height: 52 }, checkout: { width: 130, height: 70 },
+  "store-shelf": { width: 160, height: 46 }, freezer: { width: 130, height: 70 }, vending: { width: 76, height: 102 },
+  workbench: { width: 160, height: 68 }, "tool-cabinet": { width: 100, height: 58 }, locker: { width: 96, height: 62 },
+  "hospital-bed": { width: 96, height: 160 }, stretcher: { width: 72, height: 150 }, wheelchair: { width: 76, height: 76 },
+  "surgery-table": { width: 78, height: 158 }, "privacy-screen": { width: 150, height: 24 }, "iv-stand": { width: 48, height: 48 },
+  "med-crate": { width: 66, height: 66 },
+  crate: { width: 62, height: 62 }, barricade: { width: 140, height: 48 }, debris: { width: 100, height: 76 },
+  generator: { width: 100, height: 72 }, barrel: { width: 58, height: 58 }, pallet: { width: 110, height: 78 },
+  body: { width: 62, height: 120 }, sandbags: { width: 140, height: 58 }, campfire: { width: 62, height: 62 },
+  tent: { width: 120, height: 105 }, "water-tank": { width: 86, height: 86 }, "trash-bin": { width: 70, height: 70 },
+  car: { width: 168, height: 84 }, pickup: { width: 178, height: 86 }, van: { width: 184, height: 90 },
+  ambulance: { width: 190, height: 90 }, bus: { width: 250, height: 96 }, motorcycle: { width: 112, height: 52 },
+  bicycle: { width: 100, height: 48 }, dumpster: { width: 120, height: 72 }, "traffic-cone": { width: 46, height: 46 },
+  "road-barrier": { width: 150, height: 42 }, streetlight: { width: 42, height: 42 },
 };
 
 function safeBoard(game: GameState): SceneBoardState {
@@ -208,6 +267,9 @@ export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edi
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [tool, setTool] = useState<Tool>("select");
   const [multiSelect, setMultiSelect] = useState(false);
+  const [libraryMode, setLibraryMode] = useState<"objects" | "tokens">("objects");
+  const [libraryCategory, setLibraryCategory] = useState("all");
+  const [libraryQuery, setLibraryQuery] = useState("");
   const [zoom, setZoom] = useState(.8);
   const [drag, setDrag] = useState<Drag | null>(null);
   const [pan, setPan] = useState<Pan | null>(null);
@@ -230,6 +292,22 @@ export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edi
   const placedThreatIds = new Set((scene?.objects ?? [])
     .filter(object => object.kind === "token" && object.tokenKind === "threat" && object.refId)
     .map(object => object.refId!));
+  const normalizedLibraryQuery = libraryQuery.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
+  const visibleLibraryGroups = libraryGroups
+    .filter(group => libraryCategory === "all" || group.id === libraryCategory)
+    .map(group => ({
+      ...group,
+      pieces: group.pieces.filter(piece => !normalizedLibraryQuery
+        || (piece.label + " " + group.label).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR").includes(normalizedLibraryQuery)),
+    }))
+    .filter(group => group.pieces.length > 0);
+  const visibleSurvivors = game.survivors.filter(person => !normalizedLibraryQuery
+    || person.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR").includes(normalizedLibraryQuery));
+  const visibleNpcs = game.npcs.filter(person => person.active && (!normalizedLibraryQuery
+    || person.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR").includes(normalizedLibraryQuery))).slice(0, 40);
+  const visibleThreats = activeConflictThreats.filter(threat => !normalizedLibraryQuery
+    || (threat.name + " " + threat.templateSnapshot.role).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR").includes(normalizedLibraryQuery));
+
 
   function selectScene(id: string) {
     setChosenScene(id);
@@ -620,33 +698,57 @@ export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edi
     </div>}
 
     <div className={"scene-board-layout" + (readonly ? " is-readonly" : "")}>
-      {!readonly && <aside className="panel panel-pad scene-palette">
-        <p className="dossier-title">Biblioteca visual</p>
-        <p className="scene-palette-note">Estrutura é desenhada pela barra acima. Os objetos abaixo usam leitura de planta para continuar legíveis mesmo com zoom baixo.</p>
-        {libraryGroups.map(group => <section className="scene-library-group" key={group.label}>
-          <b>{group.label}</b>
-          <div className="scene-piece-grid">{group.pieces.map(piece => <button type="button" key={piece.label} onClick={() => add(piece.kind, piece.label, piece.variant)}>
-            {piece.kind === "text" ? <Type size={15} /> : <ObjectVisual variant={piece.variant} compact />}<span>{piece.label}</span></button>)}</div>
-        </section>)}
-        <div className="scene-token-section"><b>Sobreviventes</b>{game.survivors.map(person => <button type="button" className="scene-library-person" key={person.id}
-          onClick={() => add("token", person.name, "survivor", { tokenKind: "survivor", refId: person.id })}>
-          <span className="scene-library-avatar">{person.portrait ? <img src={person.portrait} alt="" /> : <User size={14} />}</span><span>{person.name}</span></button>)}</div>
-        <div className="scene-token-section"><b>PNJs</b>{game.npcs.filter(person => person.active).slice(0, 30).map(person => <button type="button" className="scene-library-person" key={person.id}
-          onClick={() => add("token", person.name, "npc", { tokenKind: "npc", refId: person.id })}>
-          <span className="scene-library-avatar">{person.portrait ? <img src={person.portrait} alt="" style={portraitStyle(person.portraitFrame)} /> : <User size={14} />}</span><span>{person.name}</span></button>)}</div>
-        {activeConflictThreats.length > 0 && <div className="scene-token-section scene-conflict-token-library">
-          <b>Ameaças do conflito</b><small>{game.conflict?.name}</small>
-          {activeConflictThreats.map(threat => {
-            const placed = placedThreatIds.has(threat.id);
-            return <button type="button" className={"scene-library-person" + (threat.defeated ? " is-defeated" : "")} key={threat.id} disabled={placed}
-              onClick={() => add("token", threat.name, "threat", { tokenKind: "threat", refId: threat.id, width: 64, height: 64 })}>
-              <span className="scene-library-avatar is-threat">{threat.templateSnapshot.image ? <img src={threat.templateSnapshot.image} alt="" /> : <User size={14} />}</span>
-              <span>{threat.name}<small>{placed ? "Já está na cena" : threat.defeated ? "Fora de combate" : threat.templateSnapshot.role}</small></span>
-            </button>;
-          })}
-        </div>}
-        <div className="scene-token-section"><b>Outros</b><button type="button" className="scene-library-person"
-          onClick={() => add("token", "Ameaça", "threat", { tokenKind: "threat" })}><span className="scene-library-avatar is-threat"><User size={14} /></span><span>Ameaça genérica</span></button></div>
+      {!readonly && <aside className="panel scene-palette">
+        <div className="scene-library-head">
+          <div className="scene-library-title-row"><div><p className="dossier-title">Biblioteca visual</p><small>{libraryGroups.reduce((sum, group) => sum + group.pieces.length, 0)} objetos disponíveis</small></div>
+            <div className="scene-library-mode" role="tablist" aria-label="Tipo de item da biblioteca">
+              <button type="button" className={libraryMode === "objects" ? "is-active" : ""} onClick={() => setLibraryMode("objects")}>Objetos</button>
+              <button type="button" className={libraryMode === "tokens" ? "is-active" : ""} onClick={() => setLibraryMode("tokens")}>Personagens</button>
+            </div>
+          </div>
+          <label className="scene-library-search"><Search size={15} aria-hidden="true" /><input type="search" value={libraryQuery}
+            onChange={event => setLibraryQuery(event.target.value)} placeholder={libraryMode === "objects" ? "Buscar cama, veículo, hospital…" : "Buscar personagem…"} /></label>
+          {libraryMode === "objects" && <div className="scene-library-categories" aria-label="Categorias da biblioteca">
+            <button type="button" className={libraryCategory === "all" ? "is-active" : ""} onClick={() => setLibraryCategory("all")}>Todos</button>
+            {libraryGroups.map(group => <button type="button" key={group.id} className={libraryCategory === group.id ? "is-active" : ""}
+              onClick={() => setLibraryCategory(group.id)}>{group.shortLabel}</button>)}
+          </div>}
+        </div>
+
+        <div className="scene-library-scroll">
+          {libraryMode === "objects" ? <>
+            <p className="scene-palette-note">Clique para inserir. Os tamanhos iniciais seguem a proporção aproximada de uma planta e continuam ajustáveis no inspetor.</p>
+            {visibleLibraryGroups.map(group => <section className="scene-library-group" key={group.id}>
+              <div className="scene-library-group-heading"><b>{group.label}</b><span>{group.pieces.length}</span></div>
+              <div className="scene-piece-grid">{group.pieces.map(piece => <button type="button" key={piece.label}
+                title={"Adicionar " + piece.label} onClick={() => add(piece.kind, piece.label, piece.variant)}>
+                {piece.kind === "text" ? <Type size={17} /> : <ObjectVisual variant={piece.variant} compact />}<span>{piece.label}</span></button>)}</div>
+            </section>)}
+            {visibleLibraryGroups.length === 0 && <p className="scene-library-empty">Nenhum objeto encontrado para “{libraryQuery.trim()}”.</p>}
+          </> : <>
+            <p className="scene-palette-note">Tokens usam os retratos e estados já registrados no sistema.</p>
+            {visibleSurvivors.length > 0 && <div className="scene-token-section"><b>Sobreviventes</b>{visibleSurvivors.map(person => <button type="button" className="scene-library-person" key={person.id}
+              onClick={() => add("token", person.name, "survivor", { tokenKind: "survivor", refId: person.id })}>
+              <span className="scene-library-avatar">{person.portrait ? <img src={person.portrait} alt="" /> : <User size={14} />}</span><span>{person.name}</span></button>)}</div>}
+            {visibleNpcs.length > 0 && <div className="scene-token-section"><b>PNJs</b>{visibleNpcs.map(person => <button type="button" className="scene-library-person" key={person.id}
+              onClick={() => add("token", person.name, "npc", { tokenKind: "npc", refId: person.id })}>
+              <span className="scene-library-avatar">{person.portrait ? <img src={person.portrait} alt="" style={portraitStyle(person.portraitFrame)} /> : <User size={14} />}</span><span>{person.name}</span></button>)}</div>}
+            {visibleThreats.length > 0 && <div className="scene-token-section scene-conflict-token-library">
+              <b>Ameaças do conflito</b><small>{game.conflict?.name}</small>
+              {visibleThreats.map(threat => {
+                const placed = placedThreatIds.has(threat.id);
+                return <button type="button" className={"scene-library-person" + (threat.defeated ? " is-defeated" : "")} key={threat.id} disabled={placed}
+                  onClick={() => add("token", threat.name, "threat", { tokenKind: "threat", refId: threat.id, width: 64, height: 64 })}>
+                  <span className="scene-library-avatar is-threat">{threat.templateSnapshot.image ? <img src={threat.templateSnapshot.image} alt="" /> : <User size={14} />}</span>
+                  <span>{threat.name}<small>{placed ? "Já está na cena" : threat.defeated ? "Fora de combate" : threat.templateSnapshot.role}</small></span>
+                </button>;
+              })}
+            </div>}
+            <div className="scene-token-section"><b>Outros</b><button type="button" className="scene-library-person"
+              onClick={() => add("token", "Ameaça", "threat", { tokenKind: "threat" })}><span className="scene-library-avatar is-threat"><User size={14} /></span><span>Ameaça genérica</span></button></div>
+            {visibleSurvivors.length === 0 && visibleNpcs.length === 0 && visibleThreats.length === 0 && normalizedLibraryQuery && <p className="scene-library-empty">Nenhum personagem encontrado.</p>}
+          </>}
+        </div>
       </aside>}
 
       <div className="panel scene-workspace">

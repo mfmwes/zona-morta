@@ -23,6 +23,22 @@ const {
   wallEndpoints,
 } = require('../lib/scene-board.ts');
 
+test('biblioteca visual expandida mantém busca, categorias e catálogo amplo', () => {
+  const source = fs.readFileSync(require.resolve('../components/scene-board.tsx'), 'utf8');
+  const start = source.indexOf('const libraryGroups');
+  const end = source.indexOf('const visualSizes', start);
+  assert.ok(start >= 0 && end > start);
+  const catalog = source.slice(start, end);
+  assert.ok((catalog.match(/\{ kind:/g) ?? []).length >= 60);
+  for (const label of ['Beliche', 'Cadeira de rodas', 'Máquina de vendas', 'Sacos de areia', 'Caminhonete', 'Motocicleta']) {
+    assert.match(catalog, new RegExp(label));
+  }
+  assert.match(source, /scene-library-search/);
+  assert.match(source, /libraryCategory/);
+  assert.match(source, /libraryMode/);
+  assert.match(source, />Personagens</);
+});
+
 test('cena visual começa privada, com grade e snap ativos', () => {
   const scene = createSceneBoardScene('Hospital');
   assert.equal(scene.name, 'Hospital');
