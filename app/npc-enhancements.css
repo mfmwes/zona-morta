@@ -47,3 +47,28 @@ html[data-theme="dark"] .npc-capability-option input { accent-color: #98c8a9; }
   .npc-visibility-control > button { margin-left: auto; }
   .npc-visibility-summary small { flex-basis: 100%; margin-left: 0; }
 }
+.npc-frame-editor { padding: 15px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-soft); }
+.npc-frame-heading { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:14px; }
+.npc-frame-heading b { display:flex; gap:7px; align-items:center; font-size:.9rem; }
+.npc-frame-heading > span { font-size:.75rem; color:var(--ink-soft); margin-left:auto; }
+.npc-frame-layout { display:grid; grid-template-columns:180px minmax(0,1fr); gap:20px; align-items:start; }
+.npc-frame-preview { width:180px; height:180px; overflow:hidden; border-radius:50%; background:var(--card); border:2px solid var(--primary); cursor:grab; touch-action:none; user-select:none; }
+.npc-frame-preview:active { cursor:grabbing; }
+.npc-avatar .npc-framed-image, .npc-frame-preview .npc-framed-image { display:block; width:100%; height:100%; object-fit:cover; max-width:none; pointer-events:none; }
+.npc-frame-controls { display:grid; gap:12px; min-width:0; }
+.npc-frame-controls > p { font-size:.78rem; line-height:1.5; color:var(--ink-soft); }
+.npc-frame-slider { display:grid; gap:5px; }
+.npc-frame-slider > span { display:flex; justify-content:space-between; gap:10px; font-size:.78rem; }
+.npc-frame-slider output { color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+.npc-frame-slider input { width:100%; accent-color:var(--primary); }
+.npc-frame-result { display:flex; align-items:center; gap:10px; }
+.npc-frame-result small { display:flex; align-items:center; gap:5px; font-size:.75rem; color:var(--ink-soft); }
+.npc-public-portrait.npc-complete-portrait { aspect-ratio:auto; }
+.npc-public-portrait.npc-complete-portrait img { height:auto; object-fit:contain; }
+@media(max-width:600px) {
+  .npc-frame-layout { grid-template-columns:1fr; gap:15px; }
+  .npc-frame-preview { margin:auto; }
+  .npc-frame-heading > span { margin-left:0; }
+}
+
+.image-picker.is-npc .image-picker-preview img { object-fit:contain; }

@@ -45,7 +45,7 @@ export async function encodeSquareImage(file: File, size = 224) {
 
 export const presentationImageMaxLength = 100_000;
 
-export async function encodePresentationImage(file: File, maxDimension = 1400) {
+export async function encodePresentationImage(file: File, maxDimension = 1400, maxLength = presentationImageMaxLength) {
   if (!file.type.startsWith("image/") || file.size > 12_000_000)
     throw new Error("Escolha uma imagem de até 12 MB.");
 
@@ -72,11 +72,16 @@ export async function encodePresentationImage(file: File, maxDimension = 1400) {
       context.drawImage(image, 0, 0, width, height);
       for (const quality of [.82, .7, .58, .46]) {
         const encoded = canvas.toDataURL("image/webp", quality);
-        if (encoded.length <= presentationImageMaxLength) return encoded;
+        if (encoded.length <= maxLength) return encoded;
       }
     }
     throw new Error("A imagem não pôde ser reduzida o suficiente. Tente outra ou use um link.");
   } finally {
     URL.revokeObjectURL(url);
   }
+}
+
+/** Preserve the entire NPC image within the existing campaign storage budget. */
+export function encodeNpcPortrait(file: File) {
+  return encodePresentationImage(file, 640, storedImageMaxLength);
 }

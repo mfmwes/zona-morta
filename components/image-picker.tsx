@@ -3,7 +3,7 @@
 import { useEffect, useState, type ChangeEvent, type ReactNode } from "react";
 import { Image as ImageIcon, Link2, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { encodePresentationImage, encodeSquareImage, normalizeImageReference } from "@/lib/client-image";
+import { encodeNpcPortrait, encodePresentationImage, encodeSquareImage, normalizeImageReference } from "@/lib/client-image";
 
 export function ImagePicker({
   label = "Imagem",
@@ -16,7 +16,7 @@ export function ImagePicker({
   value?: string;
   onChange: (value: string | undefined) => void;
   fallback?: ReactNode;
-  mode?: "square" | "presentation";
+  mode?: "square" | "presentation" | "npc";
 }) {
   const [urlDraft, setUrlDraft] = useState(value && !value.startsWith("data:image/") ? value : "");
   const [error, setError] = useState("");
@@ -34,7 +34,7 @@ export function ImagePicker({
     setBusy(true);
     setError("");
     try {
-      onChange(mode === "presentation" ? await encodePresentationImage(file) : await encodeSquareImage(file));
+      onChange(mode === "presentation" ? await encodePresentationImage(file) : mode === "npc" ? await encodeNpcPortrait(file) : await encodeSquareImage(file));
       setUrlDraft("");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Não foi possível carregar essa imagem.");
@@ -59,7 +59,7 @@ export function ImagePicker({
     setError("");
   }
 
-  return <section className={`image-picker${mode === "presentation" ? " is-presentation" : ""}`}>
+  return <section className={`image-picker${mode === "npc" ? " is-presentation is-npc" : mode === "presentation" ? " is-presentation" : ""}`}>
     <div className="image-picker-preview" role="img" aria-label={label + " atual"}>
       {value ? <img src={value} alt="" /> : <span>{fallback ?? <ImageIcon size={28} aria-hidden="true" />}</span>}
     </div>

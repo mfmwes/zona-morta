@@ -13,7 +13,7 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
   // The player projection intentionally omits private GM notes, the NPC's home
   // and consumption bookkeeping. Public notes are the explicit sharing channel.
   visible.npcs = publicNpcs(visible.npcs ?? []).map(npc => ({
-    id: npc.id, name: npc.name, portrait: npc.portrait, role: npc.role, description: npc.description,
+    id: npc.id, name: npc.name, portrait: npc.portrait, portraitFrame: npc.portraitFrame, role: npc.role, description: npc.description,
     publicNotes: npc.publicNotes, hex: npc.hex, status: npc.status, infection: npc.infection,
     disposition: npc.disposition, skills: npc.skills, duty: npc.duty, active: npc.active,
     accompaniesParty: npc.accompaniesParty,

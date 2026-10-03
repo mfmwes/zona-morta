@@ -1,3 +1,4 @@
+import { validPortraitFrame } from "@/lib/portrait-frame";
 import { campaignExists, campaignOwnerId, findPlayer, readCampaign, restoreAccountCharacterToCampaign, syncCampaignAccountCharacters, wasRevoked, writeCampaign } from "@/db/state";
 import { sameOrigin, siteUser } from "@/lib/auth";
 import { applyPlayerChange, projectPlayerGame, type PlayerLog, type ShelterWorkAction } from "@/lib/collaboration";
@@ -167,6 +168,7 @@ function validState(value: unknown): value is GameState {
     && (state.npcs === undefined || (Array.isArray(state.npcs) && state.npcs.length <= 300
       && state.npcs.every(npc => npc && typeof npc.id === "string" && typeof npc.name === "string"
         && (npc.visibleToPlayers === undefined || typeof npc.visibleToPlayers === "boolean")
+        && (npc.portraitFrame === undefined || validPortraitFrame(npc.portraitFrame))
         && (npc.portrait === undefined || (typeof npc.portrait === "string" && npc.portrait.length <= 12000))
         && typeof npc.hex === "string" && Array.isArray(npc.skills))))
     && (state.threats === undefined || (Array.isArray(state.threats) && state.threats.length <= 120
