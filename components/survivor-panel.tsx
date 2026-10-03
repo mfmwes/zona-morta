@@ -3,7 +3,7 @@
 
 import { useMemo, useState, type ChangeEvent, type ReactNode } from "react";
 import {
-  Activity, Backpack, BookOpen, Crosshair, Dice5, Droplets, Footprints, Heart, Search,
+  Activity, Backpack, BookOpen, Check, Crosshair, Dice5, Droplets, Footprints, Heart, Search,
   HeartPulse, History, Minus, Plus, Shield, ShieldCheck, Sparkles,
   Moon, ShoppingCart, Stethoscope, Swords, Upload, Utensils, Zap,
 } from "lucide-react";
@@ -30,7 +30,8 @@ import { equipmentModifiers, getPrimary, getProtection, getSecondary, unarmedAtt
 import { rollDie } from "@/lib/rolls";
 import { consumeDailyProvision } from "@/lib/survival";
 import { adjustProvisionCount } from "@/lib/provisions";
-import { abilityAvailable, abilityCosts, abilityPeriod, costLabels, periodLabels, recordAbilityUse, resolveGroupRest, restActionLabels, restActionsFor, type AbilityCost, type RestAction, type RestChoice, type RestKind } from "@/lib/abilities";
+import { abilityCosts, abilityPeriod, costLabels, periodLabels, recordAbilityUse, resolveGroupRest, restActionLabels, restActionsFor, type AbilityCost, type RestAction, type RestChoice, type RestKind } from "@/lib/abilities";
+import { abilityUseOptions, abilityUseState } from "@/lib/ability-presentation";
 import { shelterTreatmentBonus } from "@/lib/shelter-projects";
 
 type Edit = (fn: (draft: GameState) => void) => void;
@@ -203,19 +204,20 @@ function RestPlanner({ game, edit, selected, playerMode, playerPreview, restPeer
   </section>;
 }
 
-function AbilityUseControl({ game, edit, survivorId, abilityId, name, effect, hopeFeature = false, buttonLabel }: {
+function AbilityUseControl({ game, edit, survivorId, abilityId, name, effect, hopeFeature = false, buttonLabel, context: controlledContext, onContextChange }: {
   game: GameState; edit: Edit; survivorId: string; abilityId: string; name: string; effect: string; hopeFeature?: boolean; buttonLabel?: string;
+  context?: string; onContextChange?: (value: string) => void;
 }) {
   const period = abilityPeriod(effect);
   const costs = abilityCosts(effect, hopeFeature);
   const [open, setOpen] = useState(false);
   const [cost, setCost] = useState<AbilityCost>(costs[0]);
-  const [context, setContext] = useState("");
+  const [localContext, setLocalContext] = useState("");
+  const context = controlledContext ?? localContext;
+  const setContext = onContextChange ?? setLocalContext;
   const person = game.survivors.find(s => s.id === survivorId);
   const placeOrPatient = period === "place" || period === "patient";
-  const currentHex = person ? survivorHex(game, person) : game.partyHex;
-  const target = period === "place" && !context.trim() ? `hex ${currentHex}` : context;
-  const available = abilityAvailable(game, survivorId, abilityId, effect, target);
+  const { currentHex, target, available, used, label } = abilityUseState(game, survivorId, abilityId, effect, context);
   const canPay = person && (cost === "free" || cost === "hope1" && person.hope >= 1 || cost === "hope3" && person.hope >= 3 ||
     cost === "stress1" && person.stress < 6 || cost === "armor1" && (person.armorMarked ?? 0) < survivorStats(person).armor);
   if (!period && costs.length === 1 && costs[0] === "free" && !hopeFeature) return null;
@@ -227,8 +229,8 @@ function AbilityUseControl({ game, edit, survivorId, abilityId, name, effect, ho
     setOpen(false);
   }
   return <Dialog open={open} onOpenChange={setOpen}>
-    <DialogTrigger asChild><Button size="sm" variant="outline" disabled={(!placeOrPatient && !available) || (hopeFeature && !canPay)}>
-      {!available ? `Usada ${period === "scene" ? "nesta cena" : period === "day" ? "hoje" : "neste período"}`
+    <DialogTrigger asChild><Button size="sm" variant="outline" className={used ? "character-ability-used-control" : undefined} disabled={(!placeOrPatient && !available) || (hopeFeature && !canPay)}>
+      {used ? <><Check size={14} aria-hidden="true" />{label}</>
         : hopeFeature && !canPay ? "Exige 3 Esperança" : buttonLabel ?? "Registrar uso"}
     </Button></DialogTrigger>
     <DialogContent className="ability-use-dialog"><DialogHeader><DialogTitle>Usar {name}</DialogTitle>
@@ -239,7 +241,7 @@ function AbilityUseControl({ game, edit, survivorId, abilityId, name, effect, ho
         onChange={setContext} placeholder={period === "patient" ? "Ex.: Joana" : `hex ${currentHex}`} />}
       {costs.length > 1 && <Pick label="Custo desta opção" value={cost} options={costs.map(value => ({ value, label: costLabels[value] }))} onChange={value => setCost(value as AbilityCost)} />}
       {costs.length === 1 && <p className="inventory-hint"><b>Custo:</b> {costLabels[cost]}.</p>}
-      {!available && <p className="inventory-danger" role="status">Esta habilidade já foi usada neste período ou neste alvo/local.</p>}
+      {used && <p className="inventory-danger" role="status">{label}. {placeOrPatient ? "Você pode indicar outro alvo/local acima." : "Aguarde a renovação do limite para usar novamente."}</p>}
       {!canPay && <p className="inventory-danger" role="status">O recurso disponível não cobre o custo escolhido.</p>}
       <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
         <Button disabled={!available || !canPay} onClick={register}>Confirmar uso</Button></DialogFooter>
@@ -255,21 +257,22 @@ function AbilityCard({ game, edit, survivorId, abilityId, name, category, effect
   const frequency = period ? periodLabels[period] : undefined;
   const cost = text.match(/(?:gaste|marque) \d+ (?:Hope|Stress|Esperança|Estresse)/i)?.[0];
   const reaction = /reaç[aã]o|ap[oó]s .* rolagem|antes de um ataque/i.test(text);
-  const restDivider = name === "Mãos firmes" ? effect?.indexOf("\nDurante um descanso curto:") ?? -1 : -1;
-  return <AccordionItem value={`${category}-${name}`} className="character-ability">
+  const [contexts, setContexts] = useState<Record<string, string>>({});
+  const options = abilityUseOptions(abilityId, name, text);
+  const usedOptions = options.map(option => ({ ...option, ...abilityUseState(game, survivorId, option.abilityId, option.effect, contexts[option.abilityId]) })).filter(option => option.used);
+  const usage = usedOptions.length === 0 ? "available" : usedOptions.length === options.length ? "used" : "partial";
+  return <AccordionItem value={`${category}-${name}`} className={`character-ability${usedOptions.length ? " character-ability--used" : ""}`} data-usage={usage}>
     <AccordionTrigger className="character-ability-trigger">
       <AbilityArt abilityId={abilityId} />
       <span className="character-ability-main"><span className="character-ability-title">{name}</span>
         <span className="character-ability-meta"><span>{category}</span>{frequency && <span>{frequency}</span>}{cost && <span>{cost}</span>}{reaction && <span>Reação</span>}</span>
+        {usedOptions.length > 0 && <span className="character-ability-status" role="status">{usedOptions.map(option => <span className="character-ability-used-label" key={option.abilityId}><Check size={13} aria-hidden="true" />{option.scope && `${option.scope}: `}{option.label}</span>)}{usage === "partial" && <span>Outro uso disponível</span>}</span>}
         <span className="character-ability-preview">{text}</span>
       </span>
     </AccordionTrigger>
     <AccordionContent className="character-ability-detail"><p>{text}</p>
-      {effect && <div className="character-ability-actions">{restDivider >= 0 ? <>
-        <AbilityUseControl game={game} edit={edit} survivorId={survivorId} abilityId={`${abilityId}:cena`} name={`${name} · cena`} effect={effect.slice(0, restDivider)} buttonLabel="Usar na cena" />
-        <AbilityUseControl game={game} edit={edit} survivorId={survivorId} abilityId={`${abilityId}:descanso`} name={`${name} · descanso`} effect={effect.slice(restDivider + 1)} buttonLabel="Usar no descanso" />
-      </> : <AbilityUseControl game={game} edit={edit} survivorId={survivorId}
-        abilityId={abilityId} name={name} effect={effect} />}</div>}
+      {effect && <div className="character-ability-actions">{options.map(option => <AbilityUseControl key={option.abilityId} game={game} edit={edit} survivorId={survivorId}
+        {...option} context={contexts[option.abilityId] ?? ""} onContextChange={value => setContexts(previous => ({ ...previous, [option.abilityId]: value }))} />)}</div>}
     </AccordionContent>
   </AccordionItem>;
 }
