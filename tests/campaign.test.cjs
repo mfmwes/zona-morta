@@ -1252,6 +1252,40 @@ test('ações contextuais abrem, carregam e esvaziam o carrinho sem slot de tran
   assert.equal(result.ok, true);
 });
 
+test('ataque desarmado usa Força ou Acuidade, Proficiência d4 e não consome munição', () => {
+  const profile = equipment.unarmedAttack;
+  assert.equal(profile.name, 'Ataque desarmado');
+  assert.equal(profile.damage, 'd4');
+  assert.equal(profile.range, 'Corpo a corpo');
+  assert.equal(profile.trait, 'Força');
+
+  const g = campaign(); const ana = g.survivors[0];
+  ana.primary = ''; ana.secondary = ''; ana.proficiency = 3; g.noise = 0;
+  const resources = combatResources.attackResourceState(g, ana, profile.name, profile.noise);
+  assert.equal(resources.ammoType, null);
+  assert.equal(resources.ammoReady, true);
+  assert.equal(resources.spendsAmmo, false);
+  assert.equal(resources.noise, 0);
+  assert.equal(combatResources.applyAttackResources(g, ana.id, profile.name, profile.noise).ok, true);
+  assert.equal(g.noise, 0);
+
+  const formula = parseWeaponDamage(profile.damage);
+  assert.deepEqual(formula, { die: 4, flat: 0 });
+  const damage = resolveWeaponDamage([1, 2, 4], formula.die, formula.flat, 0, false);
+  assert.equal(damage.total, 7);
+
+  const dialog = fs.readFileSync(require.resolve('../components/roll-dialog.tsx'), 'utf8');
+  const panel = fs.readFileSync(require.resolve('../components/survivor-panel.tsx'), 'utf8');
+  assert.match(dialog, /weapon\?: "primary" \| "secondary" \| "unarmed"/);
+  assert.match(dialog, /Atributo do ataque desarmado/);
+  assert.match(dialog, /value: "Força"/);
+  assert.match(dialog, /value: "Finesse"/);
+  assert.match(dialog, /label: "Ataque desarmado"/);
+  assert.match(panel, /Ataque desarmado/);
+  assert.match(panel, /weapon: "unarmed"/);
+  assert.match(panel, /quickAttack\.slot/);
+});
+
 test('pá dobrável pode ser empunhada usando os dados de Pá curta', () => {
   const s = survivor(); s.inventory = [item('Pá dobrável')];
   const shovel = s.inventory[0];
