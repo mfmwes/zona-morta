@@ -2,6 +2,7 @@ import { addLog, ammunitionTypes, type AmmunitionType, type GameState, type Inve
 import { publicConflictScene } from "./conflict";
 import { shelterCommunity } from "./shelter-residents";
 import { publicNpcs } from "./npc-presentation";
+import { projectPlayerSceneBoard } from "./scene-board";
 import { cancelSurvivorWorkShift, joinShelterProjectAsSurvivor, leaveShelterProjectAsSurvivor, projectBaseOperational, scheduleSurvivorWorkShift } from "./shelter-projects";
 
 export function projectPlayerGame(game: GameState, survivorId: string): GameState {
@@ -44,6 +45,8 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
   visible.threats = [];
   visible.publicConflict = game.conflict ? publicConflictScene(game.conflict, game.survivors, survivorId) : undefined;
   delete visible.conflict;
+  // Cenas privadas e objetos ocultos nunca entram na projeção entregue ao jogador.
+  visible.sceneBoard = projectPlayerSceneBoard(game.sceneBoard);
   // A ficha do jogador mantém apenas o próprio histórico e o chat. Resultados
   // de outra ficha não precisam ser enviados para que a mesa os narre.
   visible.log = visible.log.filter(entry => entry.kind === "chat" || entry.kind === "ameaça" || entry.actorId === survivorId);

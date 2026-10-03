@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { BookOpen, Brain, Clock3, Download, Droplets, Ear, Eye, EyeOff, House, LogOut, Map, MessageSquare, MoreHorizontal, Package, RotateCcw, Settings, ShieldAlert, Swords, Upload, Users, Utensils, Volume2 } from "lucide-react";
+import { BookOpen, Brain, Clock3, Download, Droplets, Ear, Eye, EyeOff, House, LogOut, Layers, Map, MessageSquare, MoreHorizontal, Package, RotateCcw, Settings, ShieldAlert, Swords, Upload, Users, Utensils, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -25,6 +25,7 @@ import { TableChat } from "@/components/table-chat";
 import { RecentEvents } from "@/components/recent-events";
 import { DayCloseDialog } from "@/components/day-close-dialog";
 import { TablePresentationControl, TablePresentationViewer } from "@/components/table-presentation";
+import { SceneBoard } from "@/components/scene-board";
 import { addLog, displayTime, resetCityPreservingSurvivors, survivorHex, type GameState, type Point, type Survivor } from "@/lib/game";
 import { createId } from "@/lib/id";
 import { npcPlayerView } from "@/lib/npc-presentation";
@@ -413,10 +414,11 @@ export default function CampaignApp() {
   const activeTab = tab === "conflito" && readOnlyPreview && !publicConflictActive
     ? (role === "jogador" ? "sobreviventes" : "referencias")
     : tab;
-  const title = { mapa: "Exploração", sobreviventes: "Sobreviventes", comunidade: "PNJs e comunidade", abrigo: "Abrigo e reservas",
+  const title = { mapa: "Exploração", cena: "Cena visual", sobreviventes: "Sobreviventes", comunidade: "PNJs e comunidade", abrigo: "Abrigo e reservas",
     conflito: "Cena de conflito", ameacas: "Gerenciador de ameaças", referencias: "Arquivo de campo", jogadores: "Jogadores e acessos" }[activeTab] || "Campanha";
   const nav = [
     { value: "mapa", label: "Mapa e hexes", icon: Map },
+    { value: "cena", label: "Cena visual", icon: Layers },
     { value: "sobreviventes", label: "Sobreviventes", icon: Users },
     { value: "comunidade", label: "PNJs e comunidade", icon: Users },
     { value: "abrigo", label: "Abrigo e reservas", icon: House },
@@ -502,6 +504,7 @@ export default function CampaignApp() {
         <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
           <div><p className="eyebrow">Daggerheart / Zona Morta</p><h1 className="page-title mt-1">{title}</h1>
             <p className="intro-line mt-2">{activeTab === "mapa" ? "Explore a partir do que o grupo avista. Registre apenas o que a ficção tornou real." :
+              activeTab === "cena" ? (readOnlyPreview ? "Acompanhe a cena visual apresentada pelo mestre." : "Monte ambientes com paredes, portas, objetos e tokens sem transformar a cena em um mapa tático rígido.") :
               activeTab === "sobreviventes" ? "Históricos, arquétipos e recursos prontos para jogar." :
               activeTab === "comunidade" ? "Acompanhe pessoas importantes, vínculos e a comunidade entre os hexes." :
               activeTab === "abrigo" ? "Organize reservas e descanso. Estabeleça um abrigo quando o grupo encontrar um lugar." :
@@ -643,6 +646,7 @@ export default function CampaignApp() {
             </Dialog>
           </div>}
         </>}
+        {activeTab === "cena" && <SceneBoard game={game} edit={edit} playerPreview={readOnlyPreview} />}
         {activeTab === "sobreviventes" && <SurvivorPanel game={game} edit={edit} playerPreview={readOnlyPreview} playerMode={role === "jogador"} restPeers={restPeers} onOpenConflict={() => setTab("conflito")} />}
         {activeTab === "comunidade" && <NpcPanel game={communityView} edit={edit} playerPreview={readOnlyPreview} />}
         {activeTab === "abrigo" && <ShelterPanel game={communityView} edit={edit} playerPreview={readOnlyPreview} playerSurvivorId={role === "jogador" ? survivorId : null} />}

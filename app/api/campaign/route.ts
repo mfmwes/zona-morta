@@ -5,6 +5,7 @@ import { applyPlayerChange, projectPlayerGame, type PlayerLog, type ShelterWorkA
 import { ammunitionTypes, survivorStats, type AmmunitionType, type GameState, type Survivor } from "@/lib/game";
 import { preserveKnownSectors } from "@/lib/sectors";
 import { validWorld } from "@/lib/world";
+import { validSceneBoardState } from "@/lib/scene-board";
 
 export const dynamic = "force-dynamic";
 const noStore = { "Cache-Control": "no-store" };
@@ -174,6 +175,7 @@ function validState(value: unknown): value is GameState {
     && (state.threats === undefined || (Array.isArray(state.threats) && state.threats.length <= 120
       && state.threats.every(validThreat)))
     && validConflict(state.conflict)
+    && validSceneBoardState(state.sceneBoard)
     && state.publicShelterCommunity === undefined
     && state.publicConflict === undefined
     && validPresentation(state.presentation)

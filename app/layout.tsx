@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "./visual-system.css";
 import "./chat.css";
+import "./scene-board.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeToggle } from "@/components/theme-toggle";
 

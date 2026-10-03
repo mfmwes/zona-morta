@@ -7,6 +7,7 @@ import { groupedProvisionPortions } from "./provision-items";
 import { defaultThreatTemplates, type ThreatTemplate } from "./threats";
 import type { ConflictScene, PublicConflictScene } from "./conflict";
 import type { Terrain, Passage } from "./world";
+import type { SceneBoardState } from "./scene-board";
 
 export { content };
 
@@ -388,6 +389,8 @@ export type GameState = {
   publicShelterCommunity?: { residents: import("./shelter-residents").ShelterResident[]; present: number };
   /** Imagem atualmente apresentada à mesa. É pública e não pertence ao chat. */
   presentation?: TablePresentation;
+  /** Plantas visuais leves usadas para representar cenas, posições e objetos da mesa. */
+  sceneBoard?: SceneBoardState;
   shelter: ShelterState;
   formerShelters?: ShelterState[];
   log: { id: string; day: number; time: string; kind: string; text: string; actorId?: string; actorName?: string; actorPortrait?: string }[];
@@ -448,6 +451,7 @@ export function defaultState(options: { startSectorId?: string; withShelter?: bo
   const state: GameState = {
     campaignId: createId(), day: 1, minutes: 480, partyHex: "0,0", fear: 0, noise: 0,
     scene: 1, expedition: 1, shortRest: 1, longRest: 1, hexes, survivors: [], npcs: [], threats: defaultThreatTemplates(), formerShelters: [],
+    sceneBoard: { scenes: [] },
     shelter: { hex: withShelter ? "0,0" : null,
       name: startSector ? `Abrigo — ${startSector.name}` : "Abrigo",
       capacity: withShelter ? 8 : 0, residents: 0,
