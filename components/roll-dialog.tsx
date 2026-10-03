@@ -8,13 +8,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Field, Pick } from "@/components/game-controls";
 import { traitLabel, dualityLabel } from "@/lib/terminology";
 import { addLog, content, traits, type GameState } from "@/lib/game";
-import { equipmentModifiers, getPrimary, getSecondary } from "@/lib/equipment";
+import { equipmentModifiers, getPrimary, getSecondary, unarmedAttack } from "@/lib/equipment";
 import { applyAttackResources, attackResourceState } from "@/lib/combat-resources";
 import { publicConflictScene, resolveThreatAttack, type ThreatAttackResolution } from "@/lib/conflict";
 import { parseWeaponDamage, resolveActionRoll, resolveAttackHit, resolveRollResources, resolveWeaponDamage, rollDie, type ActionOutcome, type Edge, type RollKind } from "@/lib/rolls";
 
 type Edit = (fn: (draft: GameState) => void) => void;
-export type RollRequest = { survivorId?: string; kind?: RollKind; trait?: string; weapon?: "primary" | "secondary"; experience?: "origin" | "free"; targetThreatId?: string };
+export type RollRequest = { survivorId?: string; kind?: RollKind; trait?: string; weapon?: "primary" | "secondary" | "unarmed"; experience?: "origin" | "free"; targetThreatId?: string };
 type RollRecord = { outcome: ActionOutcome; kind: RollKind; trait: string; traitBonus: number; weaponName: string | null; actorId: string; experiences: string[]; symptom: number; other: number; equipment: number };
 type DamageRecord = ReturnType<typeof resolveWeaponDamage> & { weaponName: string; formula: string; critical: boolean; equipment: number };
 
@@ -26,12 +26,13 @@ function outcomeLabel(roll: RollRecord) {
 
 function RollForm({ game, edit, request, onCompleted, hideThreatSecrets = false }: { game: GameState; edit: Edit; request?: RollRequest; onCompleted: () => void; hideThreatSecrets?: boolean }) {
   const requestedSurvivor = request?.survivorId ? game.survivors.find(s => s.id === request.survivorId) : null;
-  const initialWeaponSlot: "primary" | "secondary" = request?.weapon
-    ?? (requestedSurvivor && !requestedSurvivor.primary && requestedSurvivor.secondary ? "secondary" : "primary");
+  const initialWeaponSlot: "primary" | "secondary" | "unarmed" = request?.weapon
+    ?? (requestedSurvivor?.primary ? "primary" : requestedSurvivor?.secondary ? "secondary" : "unarmed");
   const [person, setPerson] = useState(request?.survivorId ?? "");
   const [kind, setKind] = useState<RollKind>(request?.kind ?? "action");
   const [trait, setTrait] = useState(request?.trait ?? "Agilidade");
-  const [weaponSlot, setWeaponSlot] = useState<"primary" | "secondary">(initialWeaponSlot);
+  const [weaponSlot, setWeaponSlot] = useState<"primary" | "secondary" | "unarmed">(initialWeaponSlot);
+  const [unarmedTrait, setUnarmedTrait] = useState<"Força" | "Finesse">("Força");
   const [difficulty, setDifficulty] = useState(request?.kind === "attack" || request?.survivorId ? "" : "12");
   const [targetThreatId, setTargetThreatId] = useState(request?.targetThreatId ?? "");
   const [extra, setExtra] = useState("0");
@@ -53,9 +54,13 @@ function RollForm({ game, edit, request, onCompleted, hideThreatSecrets = false 
     { id: "origin" as const, name: origin?.experience || survivor.origin },
     { id: "free" as const, name: survivor.freeExperience },
   ] : [];
-  const weapon = kind === "attack" && survivor ? weaponSlot === "secondary"
-    ? getSecondary(survivor.secondary)
-    : getPrimary(survivor.primary) : null;
+  const weapon = kind === "attack" && survivor
+    ? weaponSlot === "unarmed"
+      ? { ...unarmedAttack, trait: unarmedTrait }
+      : weaponSlot === "secondary"
+        ? getSecondary(survivor.secondary)
+        : getPrimary(survivor.primary)
+    : null;
   const modifiers = survivor ? equipmentModifiers(survivor) : null;
   const rollTrait = kind === "attack" ? weapon?.trait ?? trait : trait;
   const equipmentBonus = modifiers?.traits[rollTrait] ?? 0;
@@ -90,7 +95,7 @@ function RollForm({ game, edit, request, onCompleted, hideThreatSecrets = false 
     : experienceCost > (survivor?.hope ?? 0)
       ? "Esperança insuficiente para as Experiências declaradas."
       : kind === "attack" && !weapon
-        ? "Selecione um sobrevivente com uma arma equipada."
+        ? "Selecione um sobrevivente e uma forma de ataque."
         : kind === "attack" && weapon && !parseWeaponDamage(weapon.damage)
           ? "A arma selecionada não possui uma fórmula de dano válida."
           : handConflict
@@ -124,7 +129,12 @@ function RollForm({ game, edit, request, onCompleted, hideThreatSecrets = false 
 
   function damageLog(record: DamageRecord, status: string) {
     const situational = record.extra - record.equipment;
-    return `${survivor?.name ?? "Sobrevivente"}: ${record.weaponName} — ${record.formula}${record.equipment ? ` +${record.equipment} da Faca pequena` : ""}${situational ? ` ${situational >= 0 ? "+" : "−"}${Math.abs(situational)} situacional` : ""}${record.critical ? ` + ${record.criticalBonus} crítico` : ""} = ${record.total} dano físico (dados: ${record.dice.join(", ")}). ${status} Barulho é aplicado por disparo e uma unidade física de munição é comprometida na primeira ação compatível da cena.`;
+    const resourceNote = attackResources.ammoType
+      ? " Barulho é aplicado por disparo e uma unidade física de munição é comprometida na primeira ação compatível da cena."
+      : attackResources.noise
+        ? " O Barulho do ataque é aplicado normalmente."
+        : " Este ataque não consome munição.";
+    return `${survivor?.name ?? "Sobrevivente"}: ${record.weaponName} — ${record.formula}${record.equipment ? ` +${record.equipment} da Faca pequena` : ""}${situational ? ` ${situational >= 0 ? "+" : "−"}${Math.abs(situational)} situacional` : ""}${record.critical ? ` + ${record.criticalBonus} crítico` : ""} = ${record.total} dano físico (dados: ${record.dice.join(", ")}). ${status}${resourceNote}`;
   }
 
   async function resolveSceneTarget(attackTotal: number, critical: boolean, damageTotal: number): Promise<ThreatAttackResolution | null> {
@@ -260,10 +270,17 @@ function RollForm({ game, edit, request, onCompleted, hideThreatSecrets = false 
     <div className="grid gap-3 sm:grid-cols-2">
       {request?.survivorId ? <div className="roll-locked"><span>Sobrevivente</span><strong>{survivor?.name ?? "Não encontrado"}</strong></div> : <Pick label="Sobrevivente" value={person} options={game.survivors.map(s => ({ value: s.id, label: s.name }))} onChange={value => {
         const next = game.survivors.find(s => s.id === value);
-        setPerson(value); setExperiences([]); setWeaponSlot(next?.primary ? "primary" : next?.secondary ? "secondary" : "primary"); clearResult();
+        setPerson(value); setExperiences([]); setWeaponSlot(next?.primary ? "primary" : next?.secondary ? "secondary" : "unarmed"); clearResult();
       }} placeholder="Rolagem livre" />}
-      {kind === "attack" ? <Pick label="Arma equipada" value={weaponSlot} options={[{ value: "primary", label: survivor?.primary || "Primária" }, ...(survivor?.secondary ? [{ value: "secondary", label: survivor.secondary }] : [])]} onChange={value => { setWeaponSlot(value as "primary" | "secondary"); clearResult(); }} disabled={!survivor} />
+      {kind === "attack" ? <Pick label="Forma de ataque" value={weaponSlot} options={[
+        ...(survivor?.primary ? [{ value: "primary", label: survivor.primary }] : []),
+        ...(survivor?.secondary ? [{ value: "secondary", label: survivor.secondary }] : []),
+        { value: "unarmed", label: "Ataque desarmado" },
+      ]} onChange={value => { setWeaponSlot(value as "primary" | "secondary" | "unarmed"); clearResult(); }} disabled={!survivor} />
         : <Pick label="Atributo" value={trait} options={traits.map(value => ({ value, label: traitLabel(value) }))} onChange={value => { setTrait(value); clearResult(); }} />}
+      {kind === "attack" && weaponSlot === "unarmed" && <Pick label="Atributo do ataque desarmado" value={unarmedTrait}
+        options={[{ value: "Força", label: traitLabel("Força") }, { value: "Finesse", label: traitLabel("Finesse") }]}
+        onChange={value => { setUnarmedTrait(value as "Força" | "Finesse"); clearResult(); }} disabled={!survivor} />}
       {kind === "attack" && targetOptions.length > 0 && <Pick label="Alvo da Cena de Conflito" value={targetThreatId} options={targetOptions} onChange={value => { setTargetThreatId(value); setDifficulty(""); clearResult(); }} placeholder="Sem alvo definido" />}
       {(kind !== "attack" || !targetThreatId) && <Field label={kind === "attack" ? "Defesa manual (opcional)" : "Dificuldade (opcional)"} value={difficulty} onChange={value => { setDifficulty(value); if (kind === "attack") setConfirmedHit(false); else clearResult(); }} type="number" placeholder="Mestre decide" />}
       {kind === "attack" && targetThreatId && <div className="roll-target-locked">
@@ -275,7 +292,7 @@ function RollForm({ game, edit, request, onCompleted, hideThreatSecrets = false 
         <button type="button" onClick={() => { setTargetThreatId(""); clearResult(); }}>Usar defesa manual</button>
       </div>}
     </div>
-    {kind === "attack" && <div className="roll-weapon-note"><Crosshair size={17} aria-hidden="true" /><span>{weapon ? `${weapon.name} · ${traitLabel(rollTrait)} ${survivor && survivor.attributes[rollTrait] >= 0 ? "+" : ""}${survivor?.attributes[rollTrait] ?? 0} · ${weapon.range} · ${weapon.damage}` : "Escolha um sobrevivente e sua arma equipada."}</span></div>}
+    {kind === "attack" && <div className="roll-weapon-note"><Crosshair size={17} aria-hidden="true" /><span>{weapon ? `${weapon.name} · ${traitLabel(rollTrait)} ${survivor && survivor.attributes[rollTrait] >= 0 ? "+" : ""}${survivor?.attributes[rollTrait] ?? 0} · ${weapon.range} · ${weapon.damage}${weaponSlot === "unarmed" ? " · dano físico" : ""}` : "Escolha um sobrevivente e uma forma de ataque."}</span></div>}
     {equipmentBonus !== 0 && <p className="roll-hint">{survivor?.protection}: {equipmentBonus} em {traitLabel(rollTrait)}, já incluído nesta rolagem.</p>}
     {kind === "attack" && weaponSlot === "primary" && Boolean(modifiers?.primaryDamage) && <p className="roll-hint">Faca pequena: +1 ao dano desta arma, incluído automaticamente.</p>}
     {ammoWarning && <p className="inventory-hint inventory-danger" role="status">{ammoWarning} Disparos seguintes da mesma categoria nesta cena não comprometem outra unidade.</p>}
