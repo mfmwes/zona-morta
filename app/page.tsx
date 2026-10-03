@@ -1,5 +1,4 @@
 "use client";
-import { localizeRollLog } from "@/lib/terminology";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -23,6 +22,7 @@ import { AuthPanel } from "@/components/auth-panel";
 import { CharacterWizard } from "@/components/character-wizard";
 import { CampaignLibrary, type AccountCharacterSummary, type CampaignSummary } from "@/components/campaign-library";
 import { TableChat } from "@/components/table-chat";
+import { RecentEvents } from "@/components/recent-events";
 import { DayCloseDialog } from "@/components/day-close-dialog";
 import { TablePresentationControl, TablePresentationViewer } from "@/components/table-presentation";
 import { addLog, displayTime, resetCityPreservingSurvivors, survivorHex, type GameState, type Point, type Survivor } from "@/lib/game";
@@ -649,12 +649,7 @@ export default function CampaignApp() {
         {activeTab === "ameacas" && role === "mestre" && !playerPreview && <section className="panel panel-pad"><ThreatManager game={game} edit={edit} /></section>}
         {activeTab === "referencias" && <ReferencePanel />}
         {activeTab === "jogadores" && role === "mestre" && <PlayersPanel game={game} ownerId={ownerId} />}
-        {activeTab === "mapa" && !readOnlyPreview && <section className="panel panel-pad mt-5">
-          <div className="flex items-center justify-between gap-3"><div><p className="dossier-title">Registro</p><h2 className="section-title mt-1">Últimos acontecimentos</h2></div>
-            <span className="tag">{game.log.length} entradas</span></div>
-          <div className="mt-3 grid gap-2">{game.log.slice(0,12).map(entry=><div key={entry.id} className="border-t pt-2 text-sm leading-relaxed">
-            <span className="font-mono text-xs text-[#367478] mr-3">D{entry.day} {entry.time} · {entry.kind}</span>{entry.kind === "dados" ? localizeRollLog(entry.text) : entry.text}</div>)}</div>
-        </section>}
+        {activeTab === "mapa" && !readOnlyPreview && <RecentEvents game={game} edit={edit} role={role} readOnly={playerPreview} />}
       </main>
     </div>
     {chatOpen && <button type="button" className="table-chat-backdrop" aria-label="Fechar chat" onClick={() => setChatOpen(false)} />}
