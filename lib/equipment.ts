@@ -21,6 +21,19 @@ export const protections = entries("Proteções").map(entry => {
   return { name: entry.name, major, severe, armor: Number(field(entry, "Armadura (espaços)")),
     stored: stored(entry), effect: field(entry, "Efeito") };
 });
+
+/** Perfil virtual usado quando o sobrevivente ataca sem uma arma equipada.
+ * Daggerheart usa Proficiência d4 e permite Força ou Acuidade no ataque. */
+export const unarmedAttack = {
+  name: "Ataque desarmado",
+  trait: "Força",
+  range: "Corpo a corpo",
+  damage: "d4",
+  hands: "Nenhuma",
+  noise: "0",
+  stored: 0,
+  note: "Use Força ou Acuidade. O dano é Proficiência d4 físico.",
+} as const;
 const primaryAliases: Record<string, string> = {
   "Pá dobrável": "Pá curta",
 };
