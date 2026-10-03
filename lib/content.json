@@ -6384,46 +6384,61 @@
   "adversaries": [
     {
       "name": "INFECTADO DISPERSO",
-      "intro": "Patamar 1 Lacaio. Um recém-transformado sozinho, perigoso quando vários bloqueiam uma fuga. Motivações e Táticas: seguir ruído, cercar, obstruir passagem.",
+      "intro": "Patamar 1 Lacaio. Um recém-transformado isolado. Sozinho é previsível; em grupo, torna corredores e saídas perigosos. Motivações e Táticas: seguir ruído, cercar, bloquear passagem.",
       "stats": "10 | Limiares — | PV 1 | Estresse 1",
       "attack": "+0 | Unhas e empurrão | Corpo a corpo | 3 físico",
       "features": [
-        "Lacaio (4) — Passiva: cai ao receber qualquer dano; para cada 4 de dano causado, um Lacaio adicional ao alcance e que seria atingido pode ser derrotado, conforme a característica Lacaio do SRD. Não some quatro lacaios como um único adversário para ataques.",
-        "Agarre impreciso — Ação: contra alvo Corpo a corpo, faça ataque normal; no sucesso, em vez de dano, deixe o alvo temporariamente Restrito. O alvo pode se soltar com ação plausível.",
-        "Mordida — Ação: somente contra alvo já Restrito ou indefeso; anuncie, dê chance de reação Agilidade (12) ou bloqueio com Armadura que cubra o local. Siga seção 5."
+        "Lacaio (4) — Passiva: qualquer dano derrota este Lacaio. Para cada 4 pontos de dano causados pelo mesmo ataque, derrote 1 Lacaio adicional que esteja ao alcance do ataque e pudesse ser atingido. Não some vários Lacaios como um único alvo.",
+        "Agarre impreciso — Ação: ataque um alvo Corpo a corpo. No sucesso, em vez de causar dano, deixe o alvo temporariamente Restrito. Ele pode se soltar com uma ação plausível; peça rolagem apenas se houver risco ou pressão.",
+        "Mordida — Ação: somente contra alvo já Restrito ou indefeso e exige um novo Foco. Anuncie a tentativa. O alvo escolhe entre reação de Agilidade (12) ou marcar 1 espaço de Armadura que cubra o contato. Falha na reação causa Exposição; a Mordida não causa PV."
+      ],
+      "tags": [
+        "Infectado",
+        "Lacaio"
       ]
     },
     {
       "name": "ERRANTE",
-      "intro": "Patamar 1 Padrão. Corpo lento, persistente, ainda reconhecível. Motivações e Táticas: aproximar-se do som, empurrar presas para um canto, segurar.",
+      "intro": "Patamar 1 Padrão. Corpo lento e persistente, ainda reconhecível como humano. Motivações e Táticas: aproximar-se do som, empurrar presas para cantos, segurar.",
       "stats": "11 | Limiares 7/14 | PV 3 | Estresse 2",
       "attack": "+0 | Investida curta | Corpo a corpo | 1d6+2 físico",
       "features": [
-        "Agarrar — Ação: marque 1 Estresse para atacar alguém Corpo a corpo; no sucesso, cause o dano básico e deixe o alvo temporariamente Restrito. Diga onde os braços prenderam.",
-        "Mordida — Ação: somente contra alvo já Restrito ou indefeso; use a reação/bloqueio da seção 5. O Errante precisa de outro Foco para morder após Agarrar.",
-        "Rastro lento — Passiva: não persegue carro em movimento nem alcança alguém que já tomou uma rota de retirada sem barreiras; pode aguardar em gargalos."
+        "Agarrar — Ação: marque 1 Estresse e ataque um alvo Corpo a corpo. No sucesso, cause o dano básico e deixe o alvo temporariamente Restrito.",
+        "Mordida — Ação: somente contra alvo já Restrito ou indefeso e exige um novo Foco após Agarrar. Anuncie a tentativa. O alvo escolhe entre reação de Agilidade (12) ou marcar 1 espaço de Armadura que cubra o contato. Falha na reação causa Exposição; a Mordida não causa PV.",
+        "Passo arrastado — Passiva: não alcança um veículo em movimento nem alguém que já abriu uma rota de retirada sem barreiras. Pode, porém, permanecer em gargalos e obrigar o grupo a escolher outra passagem."
+      ],
+      "tags": [
+        "Infectado"
       ]
     },
     {
       "name": "CORREDOR",
-      "intro": "Patamar 1 Emboscador. Infectado recente que acelera ao detectar presa. Motivações e Táticas: surgir de trás de obstáculos, alcançar o último do grupo, separar.",
+      "intro": "Patamar 1 Emboscador. Infectado recente que acelera assim que detecta uma presa. Motivações e Táticas: surgir de trás de obstáculos, alcançar o último do grupo, separar.",
       "stats": "13 | Limiares 7/14 | PV 3 | Estresse 2",
       "attack": "+1 | Choque e garras | Corpo a corpo | 1d8+2 físico",
       "features": [
-        "Arrancada — Passiva: ao receber Foco, pode alcançar alvo em Longe se houver percurso desimpedido; antes de atacá-lo, marque 1 Estresse. Se não puder pagar, mova só como adversário comum.",
-        "Derrubar — Reação: após acertar um alvo isolado, marque 1 Estresse para deixá-lo temporariamente Restrito pelo peso do corpo, em vez de infligir o dano do ataque.",
-        "Mordida — Ação: somente alvo já Restrito ou indefeso; seção 5, exigindo Foco próprio."
+        "Arrancada — Passiva: ao receber Foco, pode alcançar um alvo em Longe se houver percurso desimpedido. Para atacar depois dessa arrancada no mesmo Foco, marque 1 Estresse antes do ataque. Se não puder pagar, faça apenas o deslocamento normal.",
+        "Derrubar — Reação: depois de acertar um alvo isolado, marque 1 Estresse para, em vez de causar o dano do ataque, deixá-lo temporariamente Restrito sob o peso do corpo.",
+        "Mordida — Ação: somente contra alvo já Restrito ou indefeso e exige um novo Foco. Anuncie a tentativa. O alvo escolhe entre reação de Agilidade (12) ou marcar 1 espaço de Armadura que cubra o contato. Falha na reação causa Exposição; a Mordida não causa PV."
+      ],
+      "tags": [
+        "Infectado",
+        "Rápido"
       ]
     },
     {
       "name": "AGARRADOR",
-      "intro": "Patamar 1 Bruto. Ombros largos, braços fortes e pouco equilíbrio. Motivações e Táticas: fechar porta com o corpo, capturar alguém, impedir retirada.",
+      "intro": "Patamar 1 Bruto. Ombros largos, braços fortes e pouco equilíbrio. Motivações e Táticas: fechar passagens com o corpo, capturar alguém, impedir retirada.",
       "stats": "12 | Limiares 9/17 | PV 5 | Estresse 3",
       "attack": "+1 | Braços esmagadores | Corpo a corpo | 1d8+2 físico",
       "features": [
-        "Imobilizar — Ação: marque 1 Estresse; faça ataque padrão. No sucesso, o alvo sofre dano normal e fica temporariamente Restrito. Um aliado Muito perto pode tentar livrá-lo, Força ou Acuidade (12).",
-        "Mordida — Ação: somente contra alvo já Restrito ou indefeso; seção 5. Necessita novo Foco após Imobilizar.",
-        "Desequilíbrio — Passiva: uma barricada baixa, escada estreita ou empurrão bem descrito cria abertura plausível para fugir ou derrubá-lo; peça rolagem só se houver risco."
+        "Imobilizar — Ação: marque 1 Estresse e faça o ataque básico contra um alvo Corpo a corpo. No sucesso, cause o dano normal e deixe o alvo temporariamente Restrito. Um aliado Muito perto pode tentar libertá-lo com Força ou Finesse (12).",
+        "Mordida — Ação: somente contra alvo já Restrito ou indefeso e exige um novo Foco após Imobilizar. Anuncie a tentativa. O alvo escolhe entre reação de Agilidade (12) ou marcar 1 espaço de Armadura que cubra o contato. Falha na reação causa Exposição; a Mordida não causa PV.",
+        "Desequilíbrio — Passiva: barricadas baixas, escadas estreitas, pisos instáveis ou um empurrão bem preparado podem criar abertura para fugir ou derrubá-lo. Só peça rolagem quando houver risco real na tentativa."
+      ],
+      "tags": [
+        "Infectado",
+        "Bruto"
       ]
     },
     {
@@ -6432,61 +6447,85 @@
       "stats": "11 | Limiares 8/16 | PV 4 | Estresse 2",
       "attack": "+0 | Peso morto | Corpo a corpo | 1d6+3 físico",
       "features": [
-        "Nuvem irritante — Reação: quando perde o último PV em Corpo a corpo, pessoas Muito perto fazem reação de Agilidade (12); na falha marcam 1 Estresse. Na reação crítica, ignoram até os respingos. A nuvem não causa Exposição.",
-        "Mordida — Ação: somente contra alvo já Restrito ou indefeso; seção 5.",
-        "Odor — Passiva: o grupo pode detectá-lo antes de vê-lo em corredor sem ventilação."
+        "Nuvem irritante — Reação: quando perde o último PV por um ataque Corpo a corpo, cada pessoa Muito perto faz uma reação de Agilidade (12). Na falha, marca 1 Estresse. A nuvem não causa Exposição.",
+        "Mordida — Ação: somente contra alvo já Restrito ou indefeso e exige um novo Foco. Anuncie a tentativa. O alvo escolhe entre reação de Agilidade (12) ou marcar 1 espaço de Armadura que cubra o contato. Falha na reação causa Exposição; a Mordida não causa PV.",
+        "Odor forte — Passiva: em um espaço fechado ou pouco ventilado, o grupo percebe seu cheiro antes de vê-lo, desde que exista uma rota de ar plausível."
+      ],
+      "tags": [
+        "Infectado",
+        "Especial"
       ]
     },
     {
       "name": "CEGO",
-      "intro": "Patamar 1 Padrão. Olhos destruídos, procura vibração e som. Motivações e Táticas: seguir motores, emboscar ruídos, perder o alvo silencioso.",
+      "intro": "Patamar 1 Padrão. Os olhos foram destruídos; ele procura vibração e som. Motivações e Táticas: seguir motores, atacar fontes de ruído, perder alvos silenciosos.",
       "stats": "11 | Limiares 7/13 | PV 3 | Estresse 2",
       "attack": "+0 | Golpe na direção do som | Corpo a corpo | 1d6+2 físico",
       "features": [
-        "Audição obsessiva — Passiva: sabe a direção geral de qualquer fonte de Barulho 3+ na mesma cena, mas não enxerga uma pessoa silenciosa e parada em outra cobertura. Barulho pode ser usado para desviá-lo.",
-        "Agarre — Ação: marque 1 Estresse para tentar restringir um alvo Corpo a corpo no lugar do dano de um ataque bem-sucedido.",
-        "Mordida — Ação: alvo Restrito ou indefeso; seção 5."
+        "Audição obsessiva — Passiva: sabe a direção geral de qualquer fonte que leve o Barulho da cena a 3 ou mais. Não localiza com precisão uma pessoa silenciosa e parada atrás de cobertura; outras fontes de som podem desviá-lo.",
+        "Agarre às cegas — Ação: marque 1 Estresse e ataque um alvo Corpo a corpo. No sucesso, em vez de causar dano, deixe o alvo temporariamente Restrito.",
+        "Mordida — Ação: somente contra alvo já Restrito ou indefeso e exige um novo Foco. Anuncie a tentativa. O alvo escolhe entre reação de Agilidade (12) ou marcar 1 espaço de Armadura que cubra o contato. Falha na reação causa Exposição; a Mordida não causa PV."
+      ],
+      "tags": [
+        "Infectado",
+        "Sensorial"
       ]
     },
     {
       "name": "MASSA DE INFECTADOS",
-      "intro": "Patamar 1 Horda (2 infectados/PV, aproximadamente 12 corpos). Uma frente que ocupa rua e empurra contra vitrines. Motivações e Táticas: convergir ao ruído, pressionar passagens, separar fugitivos. A Horda nunca é recompensa por “ganhar Medo” sem chegada telegrafada.",
+      "intro": "Patamar 1 Horda. Aproximadamente 12 corpos comprimidos numa frente que ocupa a rua; cada PV representa cerca de 2 infectados ainda ativos. Motivações e Táticas: convergir ao ruído, pressionar passagens, separar fugitivos. A Horda nunca surge apenas porque o mestre ganhou Medo: sua chegada deve ter sido anunciada na ficção.",
       "stats": "12 | Limiares 9/17 | PV 6 | Estresse 2",
       "attack": "+2 | Frente de corpos | Perto | 1d10+3 físico",
       "features": [
-        "Horda — Passiva: com 3 ou mais PV marcados, o ataque básico cai para 1d6+2 físico; descreva dispersão de corpos.",
-        "Fechar a rua — Ação: ocupe uma saída de até Perto e mostre uma alternativa arriscada. Passar através da massa exige ação de Agilidade ou Força (15), se houver caminho; fracasso significa recuo ou alvo temporariamente Restrito, não mordida automática.",
-        "Mordida na massa — Ação: somente contra alvo já Restrito/indefeso dentro da massa. Use a reação/bloqueio da seção 5. Ela toma o Foco da Horda.",
-        "Dispersar — Passiva: se barulho se afastar ou um bloqueio for fechado, sobreviventes podem fugir sem zerar PV; ofereça rotas como solução."
+        "Horda — Passiva: quando tiver 3 ou mais PV marcados, reduza o dano do ataque básico para 1d6+2 físico e descreva a massa já dispersa.",
+        "Fechar a rua — Ação: bloqueie uma passagem ou saída Perto e mostre ao grupo ao menos uma alternativa arriscada. Se existir caminho através da massa, atravessá-la exige Agilidade ou Força (15). Na falha, o sobrevivente recua ou fica temporariamente Restrito; nunca sofre Mordida automática.",
+        "Mordida na massa — Ação: somente contra alvo já Restrito ou indefeso dentro da massa e exige o Foco da Horda. Anuncie a tentativa. O alvo escolhe entre reação de Agilidade (12) ou marcar 1 espaço de Armadura que cubra o contato. Falha na reação causa Exposição; a Mordida não causa PV.",
+        "Dispersar — Passiva: se a fonte de Barulho se afastar ou uma barreira separar a massa, os sobreviventes podem escapar sem reduzir a Horda a 0 PV. Trate fuga e bloqueio como soluções válidas."
+      ],
+      "tags": [
+        "Infectado",
+        "Horda"
       ]
     },
     {
       "name": "SAQUEADOR CAUTELOSO",
-      "intro": "Patamar 1 Padrão. Pessoa armada que prefere voltar viva. Motivações e Táticas: avaliar superioridade, ameaçar, negociar suprimentos, fugir ferida.",
+      "intro": "Patamar 1 Padrão. Pessoa armada que prefere sair viva a vencer uma troca de tiros. Motivações e Táticas: avaliar superioridade, ameaçar, negociar suprimentos, fugir ferida.",
       "stats": "12 | Limiares 7/14 | PV 3 | Estresse 2",
       "attack": "+1 | Pistola velha | Longe | 1d8+2 físico",
       "features": [
-        "Tiro que denuncia — Passiva: disparar aumenta Barulho em +2 na cena. Depois de uma troca longa, descreva recarga e oportunidade de negociação. A munição de PNJ não é saque infinito.",
-        "Pedir trégua — Reação: após marcar 2 PV, oferece recuo por suprimento ou informação; não é obrigatoriamente sincero."
+        "Tiro que denuncia — Passiva: cada ação em que dispara a pistola aumenta o Barulho em +2. Depois de uma troca prolongada, mostre sinais de pouca munição, recarga ou hesitação; a munição do saqueador nunca vira estoque infinito ao ser saqueada.",
+        "Pedir trégua — Reação: quando marcar o segundo PV, pode oferecer recuo em troca de suprimento, passagem ou informação. A proposta abre negociação, mas não obriga nenhum lado a confiar no outro."
+      ],
+      "tags": [
+        "Humano",
+        "Armado"
       ]
     },
     {
       "name": "VIGIA DE PASSAGEM",
-      "intro": "Patamar 1 Atirador. Pessoa que guarda uma passagem por um motivo a definir quando surgir na ficção. Motivações e Táticas: anunciar presença, pedir distância, usar cobertura e aceitar rendição.",
+      "intro": "Patamar 1 Atirador. Pessoa que guarda uma passagem por um motivo definido quando surge na ficção. Motivações e Táticas: anunciar presença, exigir distância, usar cobertura, aceitar rendição.",
       "stats": "13 | Limiares 8/16 | PV 4 | Estresse 3",
       "attack": "+1 | Carabina | Muito longe | 1d8+3 físico",
       "features": [
-        "Advertência — Ação: em vez de atirar numa pessoa, atire em superfície próxima (+3 Barulho); um alvo que compreenda a ordem sabe qual saída o vigia quer liberar. Não causa dano automático.",
-        "Recuar para cobertura — Reação: quando atacado e há cobertura Perto, marque 1 Estresse para se mover até ela antes do próximo Foco; isto não cancela o ataque já resolvido."
+        "Tiro de advertência — Ação: em vez de atacar uma pessoa, dispare contra uma superfície próxima e aumente o Barulho em +3. Quem compreender a ordem entende qual área o vigia quer manter livre. O tiro não causa dano automático.",
+        "Recuar para cobertura — Reação: depois de resolver um ataque feito contra o vigia, se houver cobertura Perto, marque 1 Estresse para se mover até ela antes do próximo Foco. Esse movimento nunca cancela nem altera o ataque já resolvido."
+      ],
+      "tags": [
+        "Humano",
+        "Armado",
+        "Atirador"
       ]
     },
     {
       "name": "AMBIENTE: PORTA ALARMADA",
-      "intro": "Patamar 1 Ambiente. Porta de ferro e alarme alimentado por bateria. Motivações e Táticas: impedir acesso, atrair atenção, permitir saída lateral.",
+      "intro": "Patamar 1 Ambiente. Porta de ferro ligada a um alarme alimentado por bateria. Motivações e Táticas: impedir acesso, denunciar invasão, obrigar o grupo a escolher outra entrada.",
       "stats": "12 | Limiares — | PV — | Estresse —",
-      "attack": "— | Alarme | Perto | sem dano",
       "features": [
-        "Bateria ativa — Reação: se for arrombada sem desarmar, +2 Barulho; anuncie LED e fios visíveis. Acuidade (12) com tempo desarma; outra abordagem plausível pode contornar. Sucesso com Medo pode gastar tempo ou quebrar ferramenta, mas não adicionar automaticamente outro +2 por causa do mesmo alarme."
+        "Bateria ativa — Reação: se a porta for arrombada sem desarmar o sistema, aumente o Barulho em +2 e mostre o alarme disparando. Se ele continuar tocando, aplique a regra de alarme contínuo e leve o Barulho a 5. Um LED, fios ou caixa de controle anunciam o risco; com tempo, Finesse (12) pode desarmá-lo. Sucesso com Medo pode cobrar tempo ou danificar uma ferramenta, mas não repete o mesmo +2 automaticamente."
+      ],
+      "tags": [
+        "Ambiente",
+        "Alarme"
       ]
     }
   ]
