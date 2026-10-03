@@ -3364,3 +3364,28 @@ button { cursor: pointer; } button:disabled { cursor: not-allowed; }
   .threat-sheet-attack { grid-template-columns:1fr 1fr; }
   .threat-editor-grid,.threat-editor-attack-grid { grid-template-columns:1fr; }
 }
+
+
+/* Survivor marked-resource semantics */
+.character-condition.fallen{
+  border-color:#d89a8f;
+  background:#7a352fae;
+  color:#fff0eb;
+  box-shadow:0 0 0 1px #d89a8f2b inset;
+}
+.character-conflict-fallen{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin:8px 0 0;
+  padding:9px 11px;
+  border:1px solid #a95f56;
+  border-radius:6px;
+  background:#6f312b;
+  color:#fff0eb;
+  font-size:.75rem;
+}
+.character-conflict-fallen svg{flex:none;color:#efb0a6}
+.character-conflict-fallen b{font:800 .72rem var(--font-mono);letter-spacing:.05em}
+.character-resource-health.is-maxed .character-resource-top strong,
+.character-resource-health.is-maxed .character-resource-top>span{color:#ffc2b7}

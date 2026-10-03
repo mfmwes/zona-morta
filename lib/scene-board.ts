@@ -25,7 +25,7 @@ export type SceneBoardObject = {
   /** Snapshot público efêmero usado pelos tokens na visão dos jogadores. */
   tokenImage?: string;
   tokenImageFrame?: PortraitFrame;
-  tokenState?: "active" | "injured" | "dead" | "defeated";
+  tokenState?: "active" | "injured" | "down" | "dead" | "defeated";
 };
 
 export type SceneBoardScene = {
@@ -337,7 +337,7 @@ export type SceneTokenSnapshot = {
   label: string;
   image?: string;
   imageFrame?: PortraitFrame;
-  state?: "active" | "injured" | "dead" | "defeated";
+  state?: "active" | "injured" | "down" | "dead" | "defeated";
 };
 
 export function hydrateSceneBoardTokens(board: SceneBoardState | undefined, snapshots: SceneTokenSnapshot[]) {
@@ -430,6 +430,6 @@ export function validSceneBoardState(value: unknown): value is SceneBoardState |
       && (object.refId === undefined || (typeof object.refId === "string" && object.refId.length <= 120))
       && (object.tokenImage === undefined || (typeof object.tokenImage === "string" && object.tokenImage.length <= 12_000))
       && (object.tokenImageFrame === undefined || validPortraitFrame(object.tokenImageFrame))
-      && (object.tokenState === undefined || ["active", "injured", "dead", "defeated"].includes(object.tokenState))));
+      && (object.tokenState === undefined || ["active", "injured", "down", "dead", "defeated"].includes(object.tokenState))));
   });
 }

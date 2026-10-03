@@ -6,7 +6,7 @@ import {
   Square, Trash2, Type, Unlock, User, ZoomIn, ZoomOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { GameState } from "@/lib/game";
+import { survivorIsDown, type GameState } from "@/lib/game";
 import { createId } from "@/lib/id";
 import { portraitFrame, type PortraitFrame } from "@/lib/portrait-frame";
 import {
@@ -135,7 +135,7 @@ function tokenPresentation(game: GameState, object: SceneBoardObject) {
       label = person.name;
       image = person.portrait ?? image;
       const full = game.survivors.find(entry => entry.id === object.refId);
-      if (full) state = full.hp > 0 ? "injured" : "active";
+      if (full) state = survivorIsDown(full) ? "down" : full.hp > 0 ? "injured" : "active";
     }
   } else if (object.tokenKind === "npc" && object.refId) {
     const person = game.npcs.find(entry => entry.id === object.refId);
@@ -167,7 +167,7 @@ function face(object: SceneBoardObject, game: GameState) {
   if (object.kind === "zone" || object.kind === "text") return <span>{object.label}</span>;
   if (object.kind === "token") {
     const token = tokenPresentation(game, object);
-    const stateLabel = token.state === "injured" ? "FERIDO" : token.state === "dead" ? "MORTO" : token.state === "defeated" ? "FORA DE COMBATE" : "";
+    const stateLabel = token.state === "injured" ? "FERIDO" : token.state === "down" ? "CAÍDO" : token.state === "dead" ? "MORTO" : token.state === "defeated" ? "FORA DE COMBATE" : "";
     return <><b className="scene-token-face">
       {token.image ? <img src={token.image} alt="" draggable={false} style={token.frame ? portraitStyle(token.frame) : undefined} /> : <span>{token.label.slice(0, 2).toUpperCase()}</span>}
     </b><small className="scene-token-name">{token.label}</small>{stateLabel && <em className={"scene-token-state is-" + token.state}>{stateLabel}</em>}</>;
@@ -678,7 +678,7 @@ export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edi
                     + (selectedIds.includes(object.id) ? " is-selected" : "") + (!shown.visibleToPlayers && !readonly ? " is-hidden" : "")
                     + (shown.locked ? " is-locked" : "") + (shown.parentWallId ? " is-attached" : "")
                     + (shown.kind === "door" ? " scene-door-" + (shown.doorState ?? "closed") : "")
-                    + (tokenView?.state === "defeated" || tokenView?.state === "dead" ? " is-out" : "")}
+                    + (tokenView?.state === "defeated" || tokenView?.state === "dead" || tokenView?.state === "down" ? " is-out" : "")}
                   style={{ left: shown.x, top: shown.y, width: shown.width, height: shown.height, transform: "rotate(" + shown.rotation + "deg)" }}
                   onPointerDown={event => selectObject(event, object)} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag}
                   onDoubleClick={event => { if (!readonly && tool === "select" && object.kind === "door") { event.stopPropagation(); toggleDoor(object.id); } }}>

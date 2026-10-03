@@ -6,7 +6,7 @@ const ts = require('typescript');
 require.extensions['.ts'] = (module, path) => module._compile(ts.transpileModule(fs.readFileSync(path, 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
 }).outputText, path);
-const { defaultState, initialSurvivor, resetCityPreservingSurvivors, survivorStats, content } = require('../lib/game.ts');
+const { defaultState, initialSurvivor, resetCityPreservingSurvivors, survivorIsDown, survivorStats, content } = require('../lib/game.ts');
 const inventory = require('../lib/inventory.ts');
 const itemActions = require('../lib/item-actions.ts');
 const hexActions = require('../lib/hex-actions.ts');
@@ -112,6 +112,33 @@ function item(name, qty = 1, category) {
 }
 function physicalCount(s) { return s.inventory.reduce((sum, x) => sum + x.qty, 0) + ['primary','secondary','protection','outfit','bag','personal','pocket1','pocket2'].filter(key => s[key] && !(key === 'personal' && s.personal === s.bag)).length; }
 
+
+test('sobreviventes usam recursos marcados a partir de zero e caem no máximo de PV', () => {
+  const person = survivor();
+  const stats = survivorStats(person);
+  assert.equal(person.hp, 0);
+  assert.equal(person.armorMarked, 0);
+  assert.equal(person.stress, 0);
+  assert.equal(person.hope, 0);
+  assert.equal(survivorIsDown(person), false);
+
+  person.hp = stats.hp - 1;
+  assert.equal(survivorIsDown(person), false);
+  person.hp = stats.hp;
+  assert.equal(survivorIsDown(person), true);
+  person.hp = Math.max(0, stats.hp - 1);
+  assert.equal(survivorIsDown(person), false);
+});
+
+test('interface exibe PV e Armadura como trilhas marcadas, sem inverter para valores restantes', () => {
+  const source = fs.readFileSync(require.resolve('../components/survivor-panel.tsx'), 'utf8');
+  assert.match(source, /label="PV marcados"/);
+  assert.match(source, /current=\{selected\.hp\}/);
+  assert.match(source, /label="Armadura marcada"/);
+  assert.match(source, /current=\{selected\.armorMarked \?\? 0\}/);
+  assert.doesNotMatch(source, /current=\{stats\.hp-selected\.hp\}/);
+  assert.match(source, /CAÍDO/);
+});
 
 test('Cena de Conflito acompanha instâncias e spotlight sem criar ordem de turnos', () => {
   const g = campaign();

@@ -25,7 +25,7 @@ function restPeers(state: GameState) {
       specialty: person.specialty,
       hex: person.hex ?? state.partyHex,
       infection: person.infection,
-      hp: Math.max(0, stats.hp - person.hp),
+      hp: Math.max(0, Math.min(stats.hp, person.hp)),
       hpMax: stats.hp,
       stress: person.stress,
       hope: person.hope,

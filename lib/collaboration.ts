@@ -1,4 +1,4 @@
-import { addLog, ammunitionTypes, type AmmunitionType, type GameState, type InventoryItem, type NPC, type Survivor } from "./game";
+import { addLog, ammunitionTypes, survivorIsDown, survivorStats, type AmmunitionType, type GameState, type InventoryItem, type NPC, type Survivor } from "./game";
 import { publicConflictScene } from "./conflict";
 import { shelterCommunity } from "./shelter-residents";
 import { publicNpcs } from "./npc-presentation";
@@ -12,7 +12,7 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
       refId: person.id,
       label: person.name,
       image: person.portrait,
-      state: person.hp > 0 ? "injured" as const : "active" as const,
+      state: survivorIsDown(person) ? "down" as const : person.hp > 0 ? "injured" as const : "active" as const,
     })),
     ...(game.npcs ?? []).map(person => ({
       tokenKind: "npc" as const,
@@ -225,8 +225,8 @@ export function applyPlayerChange(game: GameState, survivorId: string, before: S
     || (fearDelta === 1 && !logs.some(log => log?.kind === "dados"))
     || !Object.keys(after).every(key => allowedKeys.has(key))
     || immutable.some(key => JSON.stringify(before[key]) !== JSON.stringify(after[key]))
-    || !Number.isInteger(after.hp) || after.hp < 0 || after.hp > 20
-    || !Number.isInteger(after.armorMarked) || after.armorMarked < 0 || after.armorMarked > 20
+    || !Number.isInteger(after.hp) || after.hp < 0 || after.hp > survivorStats(after).hp
+    || !Number.isInteger(after.armorMarked) || after.armorMarked < 0 || after.armorMarked > survivorStats(after).armor
     || !Number.isInteger(after.stress) || after.stress < 0 || after.stress > 6
     || !Number.isInteger(after.hope) || after.hope < 0 || after.hope > 6
     || ![after.food, after.water, after.ammo].every(value => Number.isInteger(value) && value >= 0 && value <= 99)

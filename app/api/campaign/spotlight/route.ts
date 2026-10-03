@@ -2,6 +2,7 @@ import { campaignOwnerId, findPlayer, readCampaign, writeCampaign } from "@/db/s
 import { sameOrigin, siteUser } from "@/lib/auth";
 import { projectPlayerGame } from "@/lib/collaboration";
 import { cancelConflictSpotlightRequest, requestConflictSpotlight } from "@/lib/conflict";
+import { survivorIsDown } from "@/lib/game";
 
 export const dynamic = "force-dynamic";
 const noStore = { "Cache-Control": "no-store" };
@@ -41,6 +42,9 @@ export async function POST(request: Request) {
         return Response.json({ error: "Não há conflito ativo." }, { status: 409 });
       if (!scene.survivorIds.includes(member.survivor_id))
         return Response.json({ error: "Seu personagem não participa deste conflito." }, { status: 403 });
+      const survivor = data.state.survivors.find(person => person.id === member.survivor_id);
+      if (payload.action === "request" && survivor && survivorIsDown(survivor))
+        return Response.json({ error: "Sobreviventes caídos não podem pedir Spotlight." }, { status: 409 });
 
       if (payload.action === "request") requestConflictSpotlight(scene, member.survivor_id);
       else cancelConflictSpotlightRequest(scene, member.survivor_id);

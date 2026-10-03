@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ConflictTrail } from "@/components/conflict-trail";
 import { publicConflictScene } from "@/lib/conflict";
-import { survivorStats, type GameState, type Survivor } from "@/lib/game";
+import { survivorIsDown, survivorStats, type GameState, type Survivor } from "@/lib/game";
 
 type Props = {
   game: GameState;
@@ -92,6 +92,7 @@ export function SurvivorConflictHud({
   const firstDamage = pendingDamage[0] ?? null;
   const stats = survivorStats(survivor);
   const freeArmor = Math.max(0, stats.armor - (survivor.armorMarked ?? 0));
+  const down = survivorIsDown(survivor);
 
   const recentThreats = recentIds.flatMap(id => {
     const threat = livingThreats.find(row => row.id === id);
@@ -125,7 +126,7 @@ export function SurvivorConflictHud({
   }
 
   async function toggleSpotlightRequest() {
-    if (!playerPerspective || spotlightBusy) return;
+    if (!playerPerspective || spotlightBusy || down) return;
     if (playerPreview && !playerMode) {
       toast.info("Prévia dos jogadores", { description: "O jogador poderá pedir ou cancelar o Spotlight aqui. A prévia não altera a campanha." });
       return;
@@ -205,14 +206,16 @@ export function SurvivorConflictHud({
           </PopoverContent>
         </Popover>
 
-        <Button size="sm" disabled={!selectedTarget} onClick={() => onAttack(selectedTarget?.id)}><Swords size={14} /> Atacar</Button>
+        <Button size="sm" disabled={!selectedTarget || down} onClick={() => onAttack(selectedTarget?.id)}><Swords size={14} /> {down ? "Caído" : "Atacar"}</Button>
 
-        {playerPerspective && <Button className="character-spotlight-request" size="sm" variant={conflict.spotlightRequested ? "secondary" : "outline"} disabled={spotlightBusy || ownSpotlight} onClick={() => void toggleSpotlightRequest()} title={playerPreview && !playerMode ? "Prévia: mostra o controle do jogador sem enviar a solicitação" : undefined}>
+        {playerPerspective && <Button className="character-spotlight-request" size="sm" variant={conflict.spotlightRequested ? "secondary" : "outline"} disabled={spotlightBusy || ownSpotlight || down} onClick={() => void toggleSpotlightRequest()} title={playerPreview && !playerMode ? "Prévia: mostra o controle do jogador sem enviar a solicitação" : undefined}>
           <Crosshair size={14} /> {ownSpotlight ? "Seu Spotlight" : conflict.spotlightRequested ? "Spotlight solicitado" : "Pedir Spotlight"}
         </Button>}
         {onOpenConflict && <button type="button" className="character-conflict-link" onClick={onOpenConflict}>Ver cena ↗</button>}
       </div>
     </div>
+
+    {down && <div className="character-conflict-fallen" role="status"><ShieldAlert size={16} /><span><b>CAÍDO</b> · PV marcados {survivor.hp}/{stats.hp}. Reduza os PV marcados para voltar a agir no conflito.</span></div>}
 
     <ConflictTrail
       survivors={conflict.survivors.map(person => ({ ...person, requested: person.id === survivor.id && conflict.spotlightRequested }))}

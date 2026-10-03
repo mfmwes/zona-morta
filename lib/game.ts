@@ -775,6 +775,10 @@ export function survivorStats(s: Survivor) {
   };
 }
 
+export function survivorIsDown(s: Survivor) {
+  return s.hp >= survivorStats(s).hp;
+}
+
 export function initialSurvivor(input: Omit<Survivor,
   "id" | "portrait" | "level" | "proficiency" | "bag" | "hp" | "armorMarked" | "stress" | "hope" | "infection" | "exposureDeadline" | "treatmentAttempted" |
   "terminalScenes" | "food" | "water" | "ammo" | "inventory" | "notes">): Survivor {
