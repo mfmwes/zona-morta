@@ -207,3 +207,26 @@ html[data-theme="dark"] .scene-furniture>small,html[data-theme="dark"] .scene-pr
  .scene-palette .scene-object-visual.is-compact{width:30px;height:24px;min-width:30px;min-height:24px}
 }
 @media(max-width:480px){.scene-library-group .scene-piece-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+
+/* Scene Board — fog of war and interactive doors */
+.scene-toolstrip button:disabled{opacity:.38;cursor:not-allowed;background:transparent;border-color:transparent;color:var(--ink-soft)}
+.scene-viewport.tool-reveal .scene-stage,.scene-viewport.tool-conceal .scene-stage{cursor:crosshair}
+.scene-fog-overlay{position:absolute;inset:0;z-index:30;width:100%;height:100%;pointer-events:none}
+.scene-fog-overlay .scene-fog-fill{fill:#101617}
+.scene-fog-overlay.is-master{opacity:.58}
+.scene-fog-overlay.is-player{opacity:.96}
+.scene-fog-draft{position:absolute;z-index:45;pointer-events:none;border:2px dashed #edf2ef;border-radius:3px;box-shadow:0 0 0 1px rgba(16,22,23,.5),inset 0 0 0 1px rgba(255,255,255,.16)}
+.scene-fog-draft.is-reveal{background:rgba(71,157,143,.26);border-color:#8cd5c5}
+.scene-fog-draft.is-conceal{background:rgba(109,61,57,.34);border-color:#d7a29a}
+.scene-door-closed .scene-door-leaf{width:100%;transform:rotate(0deg);background:#816b52}
+.scene-door-open .scene-door-leaf{width:78%;transform:rotate(-78deg);background:#9b7c59}
+.scene-door-open{border-bottom-style:dashed;border-bottom-color:#857d70}
+.scene-door-open:after,.scene-door-closed:after{position:absolute;right:0;bottom:-17px;padding:1px 4px;border-radius:3px;background:rgba(38,49,50,.86);color:#fff;font-size:8px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.scene-door-open:after{content:"aberta"}.scene-door-closed:after{content:"fechada"}
+.scene-fog-status{display:flex;align-items:center;gap:6px;color:var(--ink-soft);font-size:.68rem}
+html[data-theme="dark"] .scene-fog-overlay.is-master{opacity:.68}
+@media(max-width:760px){
+ .scene-fog-overlay.is-master{opacity:.52}
+ .scene-door-open:after,.scene-door-closed:after{font-size:7px}
+}

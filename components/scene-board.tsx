@@ -11,12 +11,17 @@ import { createId } from "@/lib/id";
 import { portraitFrame, type PortraitFrame } from "@/lib/portrait-frame";
 import {
   clampSceneDelta,
+  coverAllSceneFog,
+  coverSceneFogArea,
   createFixtureOnWall,
   createSceneBoardObject,
   createSceneBoardScene,
   createWallFromDrag,
+  fogAreaFromPoints,
   moveSceneObjects,
   projectPlayerSceneBoard,
+  revealAllSceneFog,
+  revealSceneFogArea,
   rotateWallWithFixtures,
   sceneBoardLimits,
   snapScenePoint,
@@ -29,7 +34,7 @@ import {
 } from "@/lib/scene-board";
 
 type Edit = (fn: (draft: GameState) => void) => void;
-type Tool = "select" | "pan" | "wall" | "door" | "window";
+type Tool = "select" | "pan" | "wall" | "door" | "window" | "reveal" | "conceal";
 type Drag = {
   pointerId: number;
   clientX: number;
@@ -42,6 +47,7 @@ type Drag = {
 };
 type Pan = { pointerId: number; clientX: number; clientY: number; scrollLeft: number; scrollTop: number };
 type WallDraft = { pointerId: number; start: ScenePoint; end: ScenePoint };
+type FogDraft = { pointerId: number; start: ScenePoint; end: ScenePoint; mode: "reveal" | "conceal" };
 
 type LibraryPiece = { kind: SceneObjectKind; label: string; variant?: string };
 const libraryGroups: { label: string; pieces: LibraryPiece[] }[] = [
@@ -169,6 +175,20 @@ function face(object: SceneBoardObject, game: GameState) {
   return <><ObjectVisual variant={object.variant} /><small>{object.label}</small></>;
 }
 
+
+function FogOverlay({ scene, readonly }: { scene: SceneBoardScene; readonly: boolean }) {
+  if (!scene.fogEnabled) return null;
+  const maskId = "scene-fog-" + scene.id;
+  return <svg className={"scene-fog-overlay" + (readonly ? " is-player" : " is-master")}
+    viewBox={"0 0 " + scene.width + " " + scene.height} preserveAspectRatio="none" aria-hidden="true">
+    <defs><mask id={maskId}>
+      <rect x="0" y="0" width={scene.width} height={scene.height} fill="white" />
+      {(scene.revealedAreas ?? []).map(area => <rect key={area.id} x={area.x} y={area.y} width={area.width} height={area.height} fill="black" />)}
+    </mask></defs>
+    <rect x="0" y="0" width={scene.width} height={scene.height} className="scene-fog-fill" mask={"url(#" + maskId + ")"} />
+  </svg>;
+}
+
 function withAttachedFixtures(scene: SceneBoardScene, ids: string[]) {
   const expanded = new Set(ids);
   for (const id of ids) {
@@ -192,9 +212,11 @@ export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edi
   const [drag, setDrag] = useState<Drag | null>(null);
   const [pan, setPan] = useState<Pan | null>(null);
   const [wallDraft, setWallDraft] = useState<WallDraft | null>(null);
+  const [fogDraft, setFogDraft] = useState<FogDraft | null>(null);
   const dragRef = useRef<Drag | null>(null);
   const panRef = useRef<Pan | null>(null);
   const wallDraftRef = useRef<WallDraft | null>(null);
+  const fogDraftRef = useRef<FogDraft | null>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
 
@@ -303,6 +325,55 @@ export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edi
     setSelectedIds([wall.id]);
   }
 
+  function beginFog(event: ReactPointerEvent<HTMLElement>) {
+    if (readonly || !scene || !scene.fogEnabled || (tool !== "reveal" && tool !== "conceal")) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const point = scenePoint(event.clientX, event.clientY);
+    const draft: FogDraft = { pointerId: event.pointerId, start: point, end: point, mode: tool };
+    fogDraftRef.current = draft;
+    setFogDraft(draft);
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  }
+
+  function updateFog(event: ReactPointerEvent<HTMLDivElement>) {
+    const current = fogDraftRef.current;
+    if (!current || current.pointerId !== event.pointerId) return;
+    const next = { ...current, end: scenePoint(event.clientX, event.clientY) };
+    fogDraftRef.current = next;
+    setFogDraft(next);
+  }
+
+  function finishFog(event: ReactPointerEvent<HTMLDivElement>) {
+    const current = fogDraftRef.current;
+    if (!current || current.pointerId !== event.pointerId || !scene) return;
+    fogDraftRef.current = null;
+    setFogDraft(null);
+    const area = fogAreaFromPoints(scene, current.start, scenePoint(event.clientX, event.clientY));
+    if (!area) return;
+    patchScene(target => {
+      if (current.mode === "reveal") revealSceneFogArea(target, area);
+      else coverSceneFogArea(target, area);
+    });
+  }
+
+  function toggleFog() {
+    if (!scene) return;
+    const next = !scene.fogEnabled;
+    patchScene(target => {
+      target.fogEnabled = next;
+      target.revealedAreas ??= [];
+    });
+    setTool(next ? "reveal" : "select");
+  }
+
+  function toggleDoor(objectId: string) {
+    patchScene(target => {
+      const door = target.objects.find(object => object.id === objectId && object.kind === "door");
+      if (door) door.doorState = (door.doorState ?? "closed") === "closed" ? "open" : "closed";
+    });
+  }
+
   function placeFixture(event: ReactPointerEvent<HTMLButtonElement>, wall: SceneBoardObject) {
     if ((tool !== "door" && tool !== "window") || readonly || !scene) return;
     event.preventDefault();
@@ -317,6 +388,7 @@ export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edi
   function selectObject(event: ReactPointerEvent<HTMLButtonElement>, object: SceneBoardObject) {
     if (tool === "pan") return;
     if (tool === "wall") { beginWall(event); return; }
+    if (tool === "reveal" || tool === "conceal") { beginFog(event); return; }
     if (tool === "door" || tool === "window") {
       if (object.kind === "wall") placeFixture(event, object);
       return;
@@ -509,6 +581,7 @@ export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edi
   const live = board.activeSceneId === scene.id && scene.visibleToPlayers;
   const walls = scene.objects.filter(object => object.kind === "wall");
   const preview = wallDraft ? wallGeometry(wallDraft.start, wallDraft.end, walls, snapEnabled) : null;
+  const fogPreview = fogDraft ? fogAreaFromPoints(scene, fogDraft.start, fogDraft.end) : null;
 
   return <section className="scene-board-root">
     <header className="panel panel-pad scene-board-header">
@@ -524,6 +597,9 @@ export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edi
         <Button size="sm" variant="outline" onClick={centerScene}>Centralizar</Button>
         {!readonly && <><Button size="sm" variant="outline" onClick={() => patchScene(target => { target.showGrid = !target.showGrid; })}>{scene.showGrid ? "Ocultar grade" : "Mostrar grade"}</Button>
           <Button size="sm" variant={snapEnabled ? "default" : "outline"} onClick={() => patchScene(target => { target.snapToGrid = target.snapToGrid === false; })}>Snap {snapEnabled ? "ligado" : "desligado"}</Button>
+          <Button size="sm" variant={scene.fogEnabled ? "default" : "outline"} onClick={toggleFog}>{scene.fogEnabled ? <EyeOff size={15} /> : <Eye size={15} />} Fog {scene.fogEnabled ? "ativo" : "desligado"}</Button>
+          {scene.fogEnabled && <><Button size="sm" variant="outline" onClick={() => patchScene(revealAllSceneFog)}>Revelar tudo</Button>
+            <Button size="sm" variant="outline" onClick={() => patchScene(coverAllSceneFog)}>Cobrir tudo</Button></>}
           {live ? <Button size="sm" variant="outline" onClick={hide}><EyeOff size={15} /> Ocultar da mesa</Button>
             : <Button size="sm" onClick={present}><Eye size={15} /> Apresentar</Button>}</>}
       </div>
@@ -535,6 +611,8 @@ export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edi
       <button type="button" className={tool === "wall" ? "is-active" : ""} onClick={() => setTool("wall")}><Minus size={17} /><span>Desenhar parede</span></button>
       <button type="button" className={tool === "door" ? "is-active" : ""} onClick={() => setTool("door")}><Square size={15} /><span>Porta na parede</span></button>
       <button type="button" className={tool === "window" ? "is-active" : ""} onClick={() => setTool("window")}><Square size={15} /><span>Janela na parede</span></button>
+      <button type="button" disabled={!scene.fogEnabled} className={tool === "reveal" ? "is-active" : ""} onClick={() => setTool("reveal")}><Eye size={15} /><span>Revelar área</span></button>
+      <button type="button" disabled={!scene.fogEnabled} className={tool === "conceal" ? "is-active" : ""} onClick={() => setTool("conceal")}><EyeOff size={15} /><span>Ocultar área</span></button>
       <span className="scene-toolstrip-spacer" />
       <button type="button" className={multiSelect ? "is-active" : ""} aria-pressed={multiSelect} onClick={() => setMultiSelect(value => !value)}>
         <Layers size={15} /><span>Múltipla</span>{selectedIds.length > 0 && <b>{selectedIds.length}</b>}
@@ -585,11 +663,12 @@ export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edi
               style={{ width: scene.width, height: scene.height, transform: "scale(" + zoom + ")" }}
               onPointerDown={event => {
                 if (tool === "wall") beginWall(event);
+                else if (tool === "reveal" || tool === "conceal") beginFog(event);
                 else if (tool === "select") setSelectedIds([]);
               }}
-              onPointerMove={updateWall}
-              onPointerUp={finishWall}
-              onPointerCancel={finishWall}>
+              onPointerMove={event => { updateWall(event); updateFog(event); }}
+              onPointerUp={event => { finishWall(event); finishFog(event); }}
+              onPointerCancel={event => { finishWall(event); finishFog(event); }}>
               {scene.objects.map(object => {
                 const moving = drag?.movingIds.includes(object.id);
                 const shown = moving ? { ...object, x: object.x + (drag?.dx ?? 0), y: object.y + (drag?.dy ?? 0) } : object;
@@ -598,9 +677,11 @@ export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edi
                   className={"scene-object scene-" + shown.kind + (shown.variant ? " scene-" + shown.variant : "")
                     + (selectedIds.includes(object.id) ? " is-selected" : "") + (!shown.visibleToPlayers && !readonly ? " is-hidden" : "")
                     + (shown.locked ? " is-locked" : "") + (shown.parentWallId ? " is-attached" : "")
+                    + (shown.kind === "door" ? " scene-door-" + (shown.doorState ?? "closed") : "")
                     + (tokenView?.state === "defeated" || tokenView?.state === "dead" ? " is-out" : "")}
                   style={{ left: shown.x, top: shown.y, width: shown.width, height: shown.height, transform: "rotate(" + shown.rotation + "deg)" }}
-                  onPointerDown={event => selectObject(event, object)} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag}>
+                  onPointerDown={event => selectObject(event, object)} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag}
+                  onDoubleClick={event => { if (!readonly && tool === "select" && object.kind === "door") { event.stopPropagation(); toggleDoor(object.id); } }}>
                   {face(shown, game)}
                   {shown.locked && !readonly && <span className="scene-object-lock"><Lock size={9} /></span>}
                 </button>;
@@ -609,11 +690,15 @@ export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edi
                 left: preview.x, top: preview.y, width: preview.width, height: preview.height,
                 transform: "rotate(" + preview.rotation + "deg)",
               }} />}
+              <FogOverlay scene={scene} readonly={readonly} />
+              {fogPreview && <div className={"scene-fog-draft is-" + fogDraft?.mode} style={{ left: fogPreview.x, top: fogPreview.y, width: fogPreview.width, height: fogPreview.height }} />}
             </div>
           </div>
         </div>
         <footer className="scene-hint">
           {tool === "wall" ? "Arraste para desenhar. Pontas próximas se encaixam automaticamente e linhas quase retas são alinhadas."
+            : tool === "reveal" ? "Arraste um retângulo sobre a planta para revelar essa área aos jogadores. Objetos totalmente fora das áreas reveladas não são enviados."
+            : tool === "conceal" ? "Arraste sobre uma área revelada para cobri-la novamente. Isso também remove da visão pública os objetos que ficarem fora da área visível."
             : tool === "door" || tool === "window" ? "Clique em uma parede para inserir " + (tool === "door" ? "uma porta" : "uma janela") + " vinculada a ela."
             : tool === "pan" ? "Arraste em qualquer ponto para mover a câmera. A roda do mouse continua controlando o zoom."
             : multiSelect ? "Toque em vários objetos para montar a seleção. Desative “Múltipla” e arraste um deles para mover o grupo."
@@ -632,6 +717,9 @@ export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edi
             <Button size="sm" variant="outline" onClick={() => patchSelected(object => { if (!object.locked) object.width = Math.min(2000, object.width + 20); })}>+ largura</Button>
             <Button size="sm" variant="outline" onClick={() => patchSelected(object => { if (!object.locked) object.height = Math.max(12, object.height - 20); })}>− altura</Button>
             <Button size="sm" variant="outline" onClick={() => patchSelected(object => { if (!object.locked) object.height = Math.min(1600, object.height + 20); })}>+ altura</Button></div>}
+          {selected?.kind === "door" && <Button variant="outline" onClick={() => toggleDoor(selected.id)}><Square size={15} /> Porta {(selected.doorState ?? "closed") === "closed" ? "fechada · abrir" : "aberta · fechar"}</Button>}
+          {selected?.kind === "zone" && scene.fogEnabled && <div className="scene-inspector-buttons"><Button size="sm" variant="outline" onClick={() => patchScene(target => { revealSceneFogArea(target, { x: selected.x, y: selected.y, width: selected.width, height: selected.height }); })}><Eye size={14} /> Revelar sala</Button>
+            <Button size="sm" variant="outline" onClick={() => patchScene(target => { coverSceneFogArea(target, { x: selected.x, y: selected.y, width: selected.width, height: selected.height }); })}><EyeOff size={14} /> Ocultar sala</Button></div>}
           {selected && <div className="scene-inspector-buttons"><Button size="sm" variant="outline" disabled={Boolean(selected.locked)} onClick={() => rotateSelected(-15)}><RotateCcw size={14} /> −15°</Button>
             <Button size="sm" variant="outline" disabled={Boolean(selected.locked)} onClick={() => rotateSelected(15)}><RotateCw size={14} /> +15°</Button></div>}
           <Button variant="outline" onClick={toggleLock}>

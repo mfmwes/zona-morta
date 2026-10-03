@@ -4,6 +4,7 @@ import { validPortraitFrame, type PortraitFrame } from "./portrait-frame";
 export type SceneObjectKind = "zone" | "wall" | "door" | "window" | "furniture" | "prop" | "text" | "token";
 export type SceneTokenKind = "survivor" | "npc" | "threat" | "custom";
 export type ScenePoint = { x: number; y: number };
+export type SceneFogArea = { id: string; x: number; y: number; width: number; height: number };
 
 export type SceneBoardObject = {
   id: string;
@@ -18,6 +19,7 @@ export type SceneBoardObject = {
   visibleToPlayers: boolean;
   locked?: boolean;
   parentWallId?: string;
+  doorState?: "closed" | "open";
   tokenKind?: SceneTokenKind;
   refId?: string;
   /** Snapshot público efêmero usado pelos tokens na visão dos jogadores. */
@@ -33,6 +35,9 @@ export type SceneBoardScene = {
   height: number;
   showGrid: boolean;
   snapToGrid?: boolean;
+  /** Quando ativo, apenas áreas explicitamente reveladas ficam disponíveis aos jogadores. */
+  fogEnabled?: boolean;
+  revealedAreas?: SceneFogArea[];
   visibleToPlayers: boolean;
   objects: SceneBoardObject[];
 };
@@ -45,6 +50,7 @@ export type SceneBoardState = {
 export const sceneBoardLimits = {
   maxScenes: 24,
   maxObjectsPerScene: 250,
+  maxFogAreas: 320,
   minWidth: 600,
   maxWidth: 4000,
   minHeight: 500,
@@ -71,6 +77,8 @@ export function createSceneBoardScene(name = "Nova cena"): SceneBoardScene {
     height: 1000,
     showGrid: true,
     snapToGrid: true,
+    fogEnabled: false,
+    revealedAreas: [],
     visibleToPlayers: false,
     objects: [],
   };
@@ -182,6 +190,7 @@ export function createFixtureOnWall(kind: "door" | "window", wall: SceneBoardObj
   fixture.y = Math.round(center.y - fixture.height / 2);
   fixture.rotation = wall.rotation;
   fixture.parentWallId = wall.id;
+  if (kind === "door") fixture.doorState = "closed";
   fixture.visibleToPlayers = wall.visibleToPlayers;
   return fixture;
 }
@@ -241,6 +250,87 @@ export function rotateWallWithFixtures(scene: SceneBoardScene, wallId: string, d
   return true;
 }
 
+
+function normalizeFogArea(scene: SceneBoardScene, area: Omit<SceneFogArea, "id">): Omit<SceneFogArea, "id"> | null {
+  const x1 = Math.max(0, Math.min(scene.width, Math.round(area.x)));
+  const y1 = Math.max(0, Math.min(scene.height, Math.round(area.y)));
+  const x2 = Math.max(0, Math.min(scene.width, Math.round(area.x + area.width)));
+  const y2 = Math.max(0, Math.min(scene.height, Math.round(area.y + area.height)));
+  const x = Math.min(x1, x2);
+  const y = Math.min(y1, y2);
+  const width = Math.abs(x2 - x1);
+  const height = Math.abs(y2 - y1);
+  if (width < 12 || height < 12) return null;
+  return { x, y, width, height };
+}
+
+export function fogAreaFromPoints(scene: SceneBoardScene, start: ScenePoint, end: ScenePoint) {
+  return normalizeFogArea(scene, { x: start.x, y: start.y, width: end.x - start.x, height: end.y - start.y });
+}
+
+function intersects(a: Pick<SceneFogArea, "x" | "y" | "width" | "height">, b: Pick<SceneFogArea, "x" | "y" | "width" | "height">) {
+  return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+}
+
+function contains(a: Pick<SceneFogArea, "x" | "y" | "width" | "height">, b: Pick<SceneFogArea, "x" | "y" | "width" | "height">) {
+  return b.x >= a.x && b.y >= a.y && b.x + b.width <= a.x + a.width && b.y + b.height <= a.y + a.height;
+}
+
+function subtractArea(source: SceneFogArea, cover: Omit<SceneFogArea, "id">): SceneFogArea[] {
+  if (!intersects(source, cover)) return [source];
+  const ix1 = Math.max(source.x, cover.x);
+  const iy1 = Math.max(source.y, cover.y);
+  const ix2 = Math.min(source.x + source.width, cover.x + cover.width);
+  const iy2 = Math.min(source.y + source.height, cover.y + cover.height);
+  const pieces: SceneFogArea[] = [];
+  const push = (x: number, y: number, width: number, height: number) => {
+    if (width >= 12 && height >= 12) pieces.push({ id: createId(), x: Math.round(x), y: Math.round(y), width: Math.round(width), height: Math.round(height) });
+  };
+  push(source.x, source.y, source.width, iy1 - source.y);
+  push(source.x, iy2, source.width, source.y + source.height - iy2);
+  push(source.x, iy1, ix1 - source.x, iy2 - iy1);
+  push(ix2, iy1, source.x + source.width - ix2, iy2 - iy1);
+  return pieces;
+}
+
+export function revealSceneFogArea(scene: SceneBoardScene, input: Omit<SceneFogArea, "id">) {
+  const area = normalizeFogArea(scene, input);
+  if (!area) return false;
+  scene.revealedAreas ??= [];
+  if (scene.revealedAreas.some(existing => contains(existing, area))) return false;
+  scene.revealedAreas = scene.revealedAreas.filter(existing => !contains(area, existing));
+  if (scene.revealedAreas.length >= sceneBoardLimits.maxFogAreas) return false;
+  scene.revealedAreas.push({ id: createId(), ...area });
+  return true;
+}
+
+export function coverSceneFogArea(scene: SceneBoardScene, input: Omit<SceneFogArea, "id">) {
+  const area = normalizeFogArea(scene, input);
+  if (!area) return false;
+  const before = scene.revealedAreas ?? [];
+  const next = before.flatMap(existing => subtractArea(existing, area)).slice(0, sceneBoardLimits.maxFogAreas);
+  const changed = JSON.stringify(before.map(({ x, y, width, height }) => ({ x, y, width, height })))
+    !== JSON.stringify(next.map(({ x, y, width, height }) => ({ x, y, width, height })));
+  scene.revealedAreas = next;
+  return changed;
+}
+
+export function revealAllSceneFog(scene: SceneBoardScene) {
+  scene.revealedAreas = [{ id: createId(), x: 0, y: 0, width: scene.width, height: scene.height }];
+}
+
+export function coverAllSceneFog(scene: SceneBoardScene) {
+  scene.revealedAreas = [];
+}
+
+export function sceneObjectFogVisible(scene: SceneBoardScene, object: SceneBoardObject) {
+  if (!scene.fogEnabled) return true;
+  const areas = scene.revealedAreas ?? [];
+  if (!areas.length) return false;
+  const bounds = { x: object.x, y: object.y, width: object.width, height: object.height };
+  return areas.some(area => intersects(area, bounds));
+}
+
 export type SceneTokenSnapshot = {
   tokenKind: SceneTokenKind;
   refId: string;
@@ -275,13 +365,15 @@ export function projectPlayerSceneBoard(board: SceneBoardState | undefined): Sce
   if (!board?.activeSceneId) return board ? { scenes: [] } : undefined;
   const active = board.scenes.find(scene => scene.id === board.activeSceneId && scene.visibleToPlayers);
   if (!active) return { scenes: [] };
-  const visibleIds = new Set(active.objects.filter(object => object.visibleToPlayers).map(object => object.id));
+  const fogVisible = active.objects.filter(object => object.visibleToPlayers && sceneObjectFogVisible(active, object));
+  const visibleIds = new Set(fogVisible.map(object => object.id));
   return {
     activeSceneId: active.id,
     scenes: [{
       ...structuredClone(active),
-      objects: active.objects
-        .filter(object => object.visibleToPlayers && (!object.parentWallId || visibleIds.has(object.parentWallId)))
+      revealedAreas: structuredClone(active.revealedAreas ?? []),
+      objects: fogVisible
+        .filter(object => !object.parentWallId || visibleIds.has(object.parentWallId))
         .map(object => structuredClone(object)),
     }],
   };
@@ -306,6 +398,12 @@ export function validSceneBoardState(value: unknown): value is SceneBoardState |
       || !finiteInt(scene.height, sceneBoardLimits.minHeight, sceneBoardLimits.maxHeight)
       || typeof scene.showGrid !== "boolean"
       || (scene.snapToGrid !== undefined && typeof scene.snapToGrid !== "boolean")
+      || (scene.fogEnabled !== undefined && typeof scene.fogEnabled !== "boolean")
+      || (scene.revealedAreas !== undefined && (!Array.isArray(scene.revealedAreas) || scene.revealedAreas.length > sceneBoardLimits.maxFogAreas
+        || !scene.revealedAreas.every(area => area && typeof area.id === "string" && area.id.length > 0 && area.id.length <= 120
+          && finiteInt(area.x, 0, scene.width) && finiteInt(area.y, 0, scene.height)
+          && finiteInt(area.width, 12, scene.width) && finiteInt(area.height, 12, scene.height)
+          && area.x + area.width <= scene.width && area.y + area.height <= scene.height)))
       || typeof scene.visibleToPlayers !== "boolean"
       || !Array.isArray(scene.objects) || scene.objects.length > sceneBoardLimits.maxObjectsPerScene) return false;
 
@@ -327,6 +425,7 @@ export function validSceneBoardState(value: unknown): value is SceneBoardState |
       && (object.locked === undefined || typeof object.locked === "boolean")
       && (object.parentWallId === undefined || (typeof object.parentWallId === "string" && object.parentWallId.length <= 120
         && walls.has(object.parentWallId) && (object.kind === "door" || object.kind === "window")))
+      && (object.doorState === undefined || ((object.kind === "door") && ["closed", "open"].includes(object.doorState)))
       && (object.tokenKind === undefined || ["survivor", "npc", "threat", "custom"].includes(object.tokenKind))
       && (object.refId === undefined || (typeof object.refId === "string" && object.refId.length <= 120))
       && (object.tokenImage === undefined || (typeof object.tokenImage === "string" && object.tokenImage.length <= 12_000))

@@ -8,13 +8,16 @@ require.extensions['.ts'] = (module, path) => module._compile(ts.transpileModule
 }).outputText, path);
 
 const {
+  coverSceneFogArea,
   createFixtureOnWall,
   createSceneBoardObject,
   createSceneBoardScene,
   createWallFromDrag,
+  fogAreaFromPoints,
   hydrateSceneBoardTokens,
   moveSceneObjects,
   projectPlayerSceneBoard,
+  revealSceneFogArea,
   rotateWallWithFixtures,
   validSceneBoardState,
   wallEndpoints,
@@ -26,6 +29,8 @@ test('cena visual começa privada, com grade e snap ativos', () => {
   assert.equal(scene.visibleToPlayers, false);
   assert.equal(scene.showGrid, true);
   assert.equal(scene.snapToGrid, true);
+  assert.equal(scene.fogEnabled, false);
+  assert.deepEqual(scene.revealedAreas, []);
   assert.equal(scene.objects.length, 0);
   assert.equal(validSceneBoardState({ scenes: [scene] }), true);
 });
@@ -70,6 +75,44 @@ test('objeto bloqueado não é movido diretamente', () => {
   const before = { x: crate.x, y: crate.y };
   moveSceneObjects(scene, [crate.id], 200, 200);
   assert.deepEqual({ x: crate.x, y: crate.y }, before);
+});
+
+test('fog revela apenas objetos dentro das áreas liberadas e pode cobrir novamente', () => {
+  const scene = createSceneBoardScene('Hospital');
+  scene.visibleToPlayers = true;
+  scene.fogEnabled = true;
+  const roomA = createSceneBoardObject('prop', 'Mesa visível', 'table');
+  roomA.x = 100; roomA.y = 100;
+  const roomB = createSceneBoardObject('prop', 'Caixa escondida', 'crate');
+  roomB.x = 900; roomB.y = 500;
+  scene.objects.push(roomA, roomB);
+
+  const area = fogAreaFromPoints(scene, { x: 40, y: 40 }, { x: 500, y: 400 });
+  assert.ok(area);
+  assert.equal(revealSceneFogArea(scene, area), true);
+
+  let projected = projectPlayerSceneBoard({ scenes: [scene], activeSceneId: scene.id });
+  assert.deepEqual(projected.scenes[0].objects.map(object => object.label), ['Mesa visível']);
+  assert.equal(projected.scenes[0].revealedAreas.length, 1);
+
+  assert.equal(coverSceneFogArea(scene, { x: 0, y: 0, width: 600, height: 500 }), true);
+  projected = projectPlayerSceneBoard({ scenes: [scene], activeSceneId: scene.id });
+  assert.equal(projected.scenes[0].objects.length, 0);
+});
+
+test('porta criada em parede começa fechada e aceita estado aberto válido', () => {
+  const wall = createWallFromDrag({ x: 100, y: 100 }, { x: 500, y: 100 }, [], true);
+  const door = createFixtureOnWall('door', wall, { x: 260, y: 100 });
+  assert.equal(door.doorState, 'closed');
+  door.doorState = 'open';
+  const scene = createSceneBoardScene('Entrada');
+  scene.objects.push(wall, door);
+  assert.equal(validSceneBoardState({ scenes: [scene] }), true);
+
+  const crate = createSceneBoardObject('prop', 'Caixa', 'crate');
+  crate.doorState = 'open';
+  scene.objects.push(crate);
+  assert.equal(validSceneBoardState({ scenes: [scene] }), false);
 });
 
 test('tokens podem receber retrato e estado públicos sem alterar a referência mecânica', () => {
