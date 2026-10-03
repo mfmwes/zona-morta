@@ -21,6 +21,10 @@ export type ThreatAttack = {
 export type ThreatTemplate = {
   id: string;
   name: string;
+  /** Revisão da ficha-base. Ausente em campanhas antigas. */
+  baseRevision?: number;
+  /** Ficha-base adaptada manualmente nesta campanha; não recebe atualização automática. */
+  baseCustomized?: boolean;
   tier: number;
   role: string;
   image?: string;
@@ -56,7 +60,10 @@ type LegacyAdversary = {
   stats: string;
   attack?: string;
   features: string[];
+  tags?: string[];
 };
+
+export const BASE_THREAT_REVISION = 2;
 
 function slug(value: string) {
   return value.toLocaleLowerCase("pt-BR")
@@ -118,7 +125,8 @@ function parseAttack(attack?: string): ThreatAttack | null {
 function parseFeature(text: string, index: number): ThreatFeature {
   const [head, ...effectParts] = text.split(/\s+—\s+/);
   const kindMatch = head.match(/\b(Passiva|Ação|Reação)\b/i);
-  const name = head.replace(/\s*\((?:[^)]*)\)\s*$/, "").trim();
+  // Remove apenas marcadores de tipo; parâmetros mecânicos como "Lacaio (4)" fazem parte do nome.
+  const name = head.replace(/\s*\((?:Passiva|Ação|Reação)\)\s*$/i, "").trim();
   const effect = effectParts.join(" — ").replace(/^\s*(?:Passiva|Ação|Reação):\s*/i, "").trim();
   const kind = kindMatch
     ? ({ passiva: "Passiva", "ação": "Ação", "reação": "Reação" } as Record<string, ThreatFeatureKind>)[kindMatch[1].toLocaleLowerCase("pt-BR")] ?? "Outro"
@@ -136,6 +144,8 @@ function fromLegacy(adversary: LegacyAdversary): ThreatTemplate {
   return {
     id: `base:${slug(adversary.name)}`,
     name: adversary.name,
+    baseRevision: BASE_THREAT_REVISION,
+    baseCustomized: false,
     tier: intro.tier,
     role: intro.role,
     description: intro.description,
@@ -143,7 +153,9 @@ function fromLegacy(adversary: LegacyAdversary): ThreatTemplate {
     ...parseStats(adversary.stats),
     attack: parseAttack(adversary.attack),
     features: adversary.features.map(parseFeature),
-    tags: [/infectado/i.test(adversary.name + " " + adversary.intro) ? "Infectado" : "", /ambiente/i.test(adversary.name + " " + adversary.intro) ? "Ambiente" : ""].filter(Boolean),
+    tags: adversary.tags?.length
+      ? [...new Set(adversary.tags.map(tag => tag.trim()).filter(Boolean))]
+      : [/infectado/i.test(adversary.name + " " + adversary.intro) ? "Infectado" : "", /ambiente/i.test(adversary.name + " " + adversary.intro) ? "Ambiente" : ""].filter(Boolean),
     source: "base",
   };
 }
@@ -155,7 +167,22 @@ export function defaultThreatTemplates() {
 }
 
 export function threatLibrary(value?: ThreatTemplate[]) {
-  return value === undefined ? defaultThreatTemplates() : value;
+  if (value === undefined) return defaultThreatTemplates();
+
+  const currentById = new Map(baseTemplates.map(template => [template.id, template] as const));
+  const merged = value.map(template => {
+    if (template.source !== "base" || template.baseCustomized) return structuredClone(template);
+    const current = currentById.get(template.id);
+    if (!current) return structuredClone(template);
+    if ((template.baseRevision ?? 0) >= BASE_THREAT_REVISION) return structuredClone(template);
+    return structuredClone(current);
+  });
+
+  const known = new Set(merged.map(template => template.id));
+  for (const current of baseTemplates) {
+    if (!known.has(current.id)) merged.push(structuredClone(current));
+  }
+  return merged;
 }
 
 export function baseThreatTemplate(id: string) {
@@ -196,6 +223,8 @@ export function duplicateThreatTemplate(template: ThreatTemplate): ThreatTemplat
     id: createId(),
     name: `${template.name} (cópia)`,
     source: "custom",
+    baseRevision: undefined,
+    baseCustomized: undefined,
     features: template.features.map(feature => ({ ...feature, id: createId() })),
   };
 }
@@ -247,5 +276,7 @@ export function sanitizeThreatTemplate(template: ThreatTemplate): ThreatTemplate
     })),
     tags: [...new Set(template.tags.map(tag => tag.trim()).filter(Boolean))].slice(0, 12).map(tag => tag.slice(0, 40)),
     source: template.source === "base" ? "base" : "custom",
+    baseRevision: template.source === "base" ? template.baseRevision : undefined,
+    baseCustomized: template.source === "base" ? Boolean(template.baseCustomized) : undefined,
   };
 }
