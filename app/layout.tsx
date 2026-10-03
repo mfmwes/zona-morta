@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import "./visual-system.css";
+import "./hex-discovered-points.css";
 import "./chat.css";
 import "./scene-board.css";
 import { Toaster } from "@/components/ui/sonner";

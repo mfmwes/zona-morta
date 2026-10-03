@@ -382,11 +382,11 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
           </Collapsible>
         </>}
         <div className="divider" />
-        <div className="flex items-center gap-2"><MapPin size={18} /><h3 className="section-title">Pontos descobertos</h3><span className="tag">{exposedPoints.length}</span></div>
+        <div className="hex-points-heading"><MapPin size={18} aria-hidden="true" /><h3 className="section-title">Pontos descobertos</h3><span className="tag">{exposedPoints.length}</span></div>
         {exposedPoints.length === 0 && <p className="intro-line mt-3">Nenhum ponto registrado ainda. Convites não são achados garantidos.</p>}
-        <div className="grid gap-3 mt-3">
-          {exposedPoints.map(point => <article key={point.id} className="list-card text-sm leading-relaxed">
-            <div className="flex items-start justify-between gap-2"><b className="text-[1rem]">{point.name}</b>
+        {exposedPoints.length > 0 && <div key={selected} className="hex-points-list" role="region" aria-label={`Pontos descobertos do hex ${selected}`} tabIndex={0}>
+          {exposedPoints.map(point => <article key={point.id} className="hex-point-card list-card text-sm">
+            <div className="hex-point-heading"><b>{point.name}</b>
               {!playerPreview && <label className="flex items-center gap-2 text-xs whitespace-nowrap"><Switch size="sm" checked={point.revealed}
                 onCheckedChange={checked => edit(draft => { const found = draft.hexes[selected].points.find(p=>p.id===point.id); if(found) found.revealed=checked; })} /> Público</label>}</div>
             {point.signal && <p className="mt-1">{point.signal}</p>}
@@ -445,7 +445,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
               </div>}
             </>}
           </article>)}
-        </div>
+        </div>}
         {exposedEvents.length > 0 && <div className="mt-5"><h3 className="section-title mb-2">Eventos registrados</h3>
           {exposedEvents.map(event => <div className="list-card text-sm" key={event.id}>
             <b>{event.trigger}</b><p className="mt-1">{event.text}</p>

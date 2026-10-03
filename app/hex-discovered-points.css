@@ -1,0 +1,58 @@
+/* Keep the title and count outside the scrollable list, including in the mobile sheet. */
+.hex-points-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.hex-points-heading > svg,
+.hex-points-heading > .tag { flex: none; }
+.hex-points-heading > h3 { min-width: 0; }
+
+.hex-points-list {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  max-height: min(28rem, 50vh);
+  max-height: min(28rem, 50dvh);
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--muted-foreground) var(--card);
+  margin-top: 12px;
+  padding: 3px;
+  scroll-padding-block: 3px;
+  border-radius: var(--radius);
+}
+.hex-points-list:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.hex-points-list > .hex-point-card {
+  min-width: 0;
+  margin: 0;
+  padding: 10px 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.hex-point-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 6px 10px;
+}
+.hex-point-heading > b {
+  flex: 1 1 12rem;
+  min-width: 0;
+  font-size: .95rem;
+  line-height: 1.35;
+}
+.hex-point-heading > label { flex: none; }
+
+@media (max-width: 1279px) {
+  .hex-points-list {
+    max-height: min(24rem, 45vh);
+    max-height: min(24rem, 45dvh);
+  }
+}
