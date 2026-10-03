@@ -78,14 +78,15 @@ export function ShelterVisualDashboard({ game }: { game: GameState }) {
   const selectedProgress = selectedProject ? projectProgress(selectedProject) : null;
   const metrics = shelterMetrics(shelter, game);
   const population = shelterPopulationBreakdown(game);
-  const overcrowded = shelterOvercrowded(game, shelter);
+  const present = game.publicShelterCommunity?.present ?? population.present;
+  const overcrowded = game.publicShelterCommunity ? present > metrics.capacity : shelterOvercrowded(game, shelter);
   const food = provisionBreakdown(shelter, "food");
   const water = provisionBreakdown(shelter, "water");
   const occupied = new Map(facilities.filter(project => project.slotId).map(project => [project.slotId!, project]));
   const unplaced = facilities.filter(project => !project.slotId);
 
   const summary = [
-    { label: "Pessoas", value: `${population.present}/${metrics.capacity}`, note: overcrowded ? "SUPERLOTADO · Conforto suspenso" : "presentes / capacidade", icon: Users },
+    { label: "Pessoas", value: `${present}/${metrics.capacity}`, note: overcrowded ? "SUPERLOTADO · Conforto suspenso" : "presentes / capacidade", icon: Users },
     { label: "Comida", value: food.total, note: "porções disponíveis", icon: Utensils },
     { label: "Água", value: water.total, note: "porções disponíveis", icon: Droplets },
     { label: "Energia", value: metrics.energy, note: metrics.power ? `${metrics.power.production} produzida · ${metrics.power.consumption} usada` : "saldo estrutural", icon: Zap },

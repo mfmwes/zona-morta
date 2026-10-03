@@ -13,9 +13,11 @@ import { ItemArt } from "@/components/item-art";
 import { ShelterMoveDialog } from "@/components/shelter-move";
 import { DayCloseDialog } from "@/components/day-close-dialog";
 import { FormerShelterProjects, ShelterProjectsManager } from "@/components/shelter-project-manager";
+import { shelterCommunity } from "@/lib/shelter-residents";
+import { ShelterResidents } from "@/components/shelter-residents";
 import { ShelterVisualDashboard } from "@/components/shelter-dashboard";
 import { RuntimeErrorBoundary } from "@/components/runtime-error-boundary";
-import { ammunitionCount, ammunitionItemType, ammunitionTypes, content, establishShelter, recoverFormerStock, shelterPopulationBreakdown, survivorPositionGroups, survivorsAtHex, type GameState } from "@/lib/game";
+import { ammunitionCount, ammunitionItemType, ammunitionTypes, content, establishShelter, recoverFormerStock, survivorPositionGroups, survivorsAtHex, type GameState } from "@/lib/game";
 import { shelterColdStorageActive, shelterMetrics } from "@/lib/shelter-projects";
 import { atSharedStorage, batteryStateFor, catalogForItem } from "@/lib/inventory";
 import { provisionBreakdown, provisionDisplay, provisionItemInfo, provisionShelfLabel } from "@/lib/provision-items";
@@ -42,8 +44,7 @@ export function ShelterPanel({ game, edit, playerPreview, playerSurvivorId }: { 
   const recipient = cacheVisitors.find(person => person.id === cacheRecipient) ?? cacheVisitors[0];
   const shelterFood = provisionBreakdown(s, "food");
   const shelterWater = provisionBreakdown(s, "water");
-  const population = shelterPopulationBreakdown(game);
-  const namedResidents = population.namedResidents;
+  const population = playerPreview ? game.publicShelterCommunity ?? shelterCommunity(game, true) : shelterCommunity(game);
   const metrics = shelterMetrics(s, game);
   const refrigerationInstalled = Boolean(s.projects?.some(project => project.key === "refrigeration"));
   const coldStorageActive = shelterColdStorageActive(game, s);
@@ -152,10 +153,7 @@ export function ShelterPanel({ game, edit, playerPreview, playerSurvivorId }: { 
   </section>;
 
   const communityContent = <section className="panel panel-pad">
-    <div className="flex items-start justify-between gap-3 flex-wrap"><div><p className="dossier-title">Comunidade</p><h3 className="section-title mt-1">Pessoas e necessidades</h3></div><span className="tag">{population.present}/{metrics.capacity} presentes</span></div>
-    <div className="shelter-community-counts mt-4"><span><b>{population.residents}</b> residentes</span><span><b>{population.present}</b> presentes agora</span><span><b>{population.field}</b> residente(s) em campo</span></div>
-    <p className="text-sm mt-3">{population.unidentifiedResidents} morador(es) não identificado(s) e {namedResidents.length} pessoa(s) identificada(s) pertencem a esta base. Pessoas mortas ou desaparecidas não entram nas contagens ativas.</p>
-    {namedResidents.length > 0 && <div className="shelter-resident-grid mt-4">{namedResidents.map(npc => <div className="list-card text-sm" key={npc.id}><b>{npc.name}</b>{npc.role && <span className="subtle"> · {npc.role}</span>}{npc.hex !== s.hex && <p className="mt-1 text-xs subtle">Em campo no hex {npc.hex}</p>}{npc.duty && <p className="mt-1 text-xs subtle">Função livre: {npc.duty}</p>}</div>)}</div>}
+    <ShelterResidents key={s.hex} game={game} edit={edit} playerPreview={playerPreview} capacity={metrics.capacity} />
     {!playerPreview && s.residents > 0 && <Dialog open={convertOpen} onOpenChange={setConvertOpen}><DialogTrigger asChild><Button size="sm" variant="outline" className="mt-4" onClick={() => { setConvertName(""); setConvertRole(""); }}>Identificar um morador</Button></DialogTrigger>
       <DialogContent><DialogHeader><DialogTitle>Converter morador em PNJ</DialogTitle><DialogDescription>Isso reduz apenas a contagem sem nome e cria uma pessoa identificada; nenhum nome é inventado automaticamente.</DialogDescription></DialogHeader>
         <div className="grid gap-3"><Field label="Nome" value={convertName} onChange={setConvertName} placeholder="Nome da pessoa" /><Field label="Função / papel" value={convertRole} onChange={setConvertRole} placeholder="Opcional" /></div>
