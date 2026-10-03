@@ -21,6 +21,8 @@ import { rollInfo } from "@/lib/roll-log";
 import { localizeRollLog } from "@/lib/terminology";
 import { addLog, type GameState } from "@/lib/game";
 import { applyThreatDamage } from "@/lib/conflict";
+import { isChatLog } from "@/lib/history";
+import { HistoryClearButton } from "@/components/history-clear-button";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 type Role = "mestre" | "jogador" | "convidado";
@@ -111,7 +113,7 @@ export function TableChat({
   const rowCountRef = useRef(0);
 
   const rows = useMemo(() => {
-    const relevant = game.log.filter(entry => ["chat", "dados", "dano", "ameaça"].includes(entry.kind));
+    const relevant = game.log.filter(isChatLog);
     const grouped: ChatRow[] = [];
     for (let index = 0; index < relevant.length; index += 1) {
       const entry = relevant[index];
@@ -204,6 +206,7 @@ export function TableChat({
       </div>
       <div className="table-chat-header-actions">
         <span>{rows.length}</span>
+        <HistoryClearButton game={game} edit={edit} scope="chat" role={role} readOnly={readOnly} iconOnly />
         <button type="button" onClick={onClose} aria-label="Fechar chat"><X size={18} /></button>
       </div>
     </header>
