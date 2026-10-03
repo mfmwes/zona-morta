@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import type { GameState } from "@/lib/game";
 import { createId } from "@/lib/id";
+import { portraitFrame, type PortraitFrame } from "@/lib/portrait-frame";
 import {
   clampSceneDelta,
   createFixtureOnWall,
@@ -42,37 +43,130 @@ type Drag = {
 type Pan = { pointerId: number; clientX: number; clientY: number; scrollLeft: number; scrollTop: number };
 type WallDraft = { pointerId: number; start: ScenePoint; end: ScenePoint };
 
-const pieces: { kind: SceneObjectKind; label: string; variant?: string }[] = [
-  { kind: "zone", label: "Sala / área", variant: "room" },
-  { kind: "furniture", label: "Mesa", variant: "table" },
-  { kind: "furniture", label: "Cadeira", variant: "chair" },
-  { kind: "furniture", label: "Armário", variant: "cabinet" },
-  { kind: "furniture", label: "Cama", variant: "bed" },
-  { kind: "prop", label: "Caixa", variant: "crate" },
-  { kind: "prop", label: "Barricada", variant: "barricade" },
-  { kind: "prop", label: "Entulho", variant: "debris" },
-  { kind: "prop", label: "Carro", variant: "car" },
-  { kind: "prop", label: "Corpo", variant: "body" },
-  { kind: "prop", label: "Pista / objetivo", variant: "marker" },
-  { kind: "text", label: "Texto" },
+type LibraryPiece = { kind: SceneObjectKind; label: string; variant?: string };
+const libraryGroups: { label: string; pieces: LibraryPiece[] }[] = [
+  { label: "Ambiente", pieces: [
+    { kind: "zone", label: "Sala / área", variant: "room" },
+    { kind: "text", label: "Texto" },
+    { kind: "prop", label: "Pista / objetivo", variant: "marker" },
+  ] },
+  { label: "Mobiliário", pieces: [
+    { kind: "furniture", label: "Mesa", variant: "table" },
+    { kind: "furniture", label: "Cadeira", variant: "chair" },
+    { kind: "furniture", label: "Sofá", variant: "sofa" },
+    { kind: "furniture", label: "Armário", variant: "cabinet" },
+    { kind: "furniture", label: "Estante", variant: "shelf" },
+    { kind: "furniture", label: "Cama", variant: "bed" },
+    { kind: "furniture", label: "Balcão", variant: "counter" },
+    { kind: "furniture", label: "Pia", variant: "sink" },
+    { kind: "furniture", label: "Vaso sanitário", variant: "toilet" },
+  ] },
+  { label: "Sobrevivência", pieces: [
+    { kind: "prop", label: "Caixa", variant: "crate" },
+    { kind: "prop", label: "Barricada", variant: "barricade" },
+    { kind: "prop", label: "Entulho", variant: "debris" },
+    { kind: "prop", label: "Gerador", variant: "generator" },
+    { kind: "prop", label: "Barril", variant: "barrel" },
+    { kind: "prop", label: "Palete", variant: "pallet" },
+    { kind: "prop", label: "Corpo", variant: "body" },
+  ] },
+  { label: "Veículos", pieces: [
+    { kind: "prop", label: "Carro", variant: "car" },
+    { kind: "prop", label: "Ambulância", variant: "ambulance" },
+  ] },
 ];
 
-const glyph: Record<string, string> = {
-  table: "▰", chair: "▣", cabinet: "▥", bed: "▰", crate: "▦",
-  barricade: "╳", debris: "✦", car: "▱", body: "†", marker: "◆",
+const visualSizes: Record<string, { width: number; height: number }> = {
+  table: { width: 130, height: 80 },
+  chair: { width: 56, height: 56 },
+  sofa: { width: 150, height: 68 },
+  cabinet: { width: 90, height: 48 },
+  shelf: { width: 140, height: 42 },
+  bed: { width: 90, height: 150 },
+  counter: { width: 160, height: 52 },
+  sink: { width: 76, height: 62 },
+  toilet: { width: 62, height: 82 },
+  crate: { width: 62, height: 62 },
+  barricade: { width: 140, height: 48 },
+  debris: { width: 100, height: 76 },
+  generator: { width: 100, height: 72 },
+  barrel: { width: 58, height: 58 },
+  pallet: { width: 110, height: 78 },
+  body: { width: 62, height: 120 },
+  car: { width: 168, height: 84 },
+  ambulance: { width: 190, height: 90 },
+  marker: { width: 58, height: 58 },
 };
 
 function safeBoard(game: GameState): SceneBoardState {
   return game.sceneBoard ?? { scenes: [] };
 }
 
-function face(object: SceneBoardObject) {
+function ObjectVisual({ variant, compact = false }: { variant?: string; compact?: boolean }) {
+  return <span className={"scene-object-visual visual-" + (variant ?? "generic") + (compact ? " is-compact" : "")} aria-hidden="true">
+    <i className="visual-a" /><i className="visual-b" /><i className="visual-c" /><i className="visual-d" />
+  </span>;
+}
+
+function portraitStyle(frame?: PortraitFrame) {
+  const crop = portraitFrame(frame);
+  return {
+    objectPosition: crop.x + "% " + crop.y + "%",
+    transformOrigin: crop.x + "% " + crop.y + "%",
+    transform: "scale(" + crop.zoom + ")",
+  };
+}
+
+function tokenPresentation(game: GameState, object: SceneBoardObject) {
+  let label = object.label;
+  let image = object.tokenImage;
+  let frame = object.tokenImageFrame;
+  let state = object.tokenState;
+  if (object.tokenKind === "survivor" && object.refId) {
+    const person = game.survivors.find(entry => entry.id === object.refId)
+      ?? game.publicConflict?.survivors.find(entry => entry.id === object.refId);
+    if (person) {
+      label = person.name;
+      image = person.portrait ?? image;
+      const full = game.survivors.find(entry => entry.id === object.refId);
+      if (full) state = full.hp > 0 ? "injured" : "active";
+    }
+  } else if (object.tokenKind === "npc" && object.refId) {
+    const person = game.npcs.find(entry => entry.id === object.refId);
+    if (person) {
+      label = person.name;
+      image = person.portrait ?? image;
+      frame = person.portraitFrame ?? frame;
+      state = person.status === "Morto" ? "dead" : person.status === "Ferido" || person.status === "Grave" ? "injured" : "active";
+    }
+  } else if (object.tokenKind === "threat" && object.refId) {
+    const threat = game.conflict?.threats.find(entry => entry.id === object.refId);
+    const publicThreat = game.publicConflict?.threats.find(entry => entry.id === object.refId);
+    if (threat) {
+      label = threat.name;
+      image = threat.templateSnapshot.image ?? image;
+      state = threat.defeated ? "defeated" : "active";
+    } else if (publicThreat) {
+      label = publicThreat.name;
+      state = publicThreat.defeated ? "defeated" : "active";
+    }
+  }
+  return { label, image, frame, state };
+}
+
+function face(object: SceneBoardObject, game: GameState) {
   if (object.kind === "wall") return <span className="scene-wall-line" />;
   if (object.kind === "door") return <><span className="scene-door-leaf" /><small>{object.label}</small></>;
   if (object.kind === "window") return <><span className="scene-window-line" /><small>{object.label}</small></>;
   if (object.kind === "zone" || object.kind === "text") return <span>{object.label}</span>;
-  if (object.kind === "token") return <><b className="scene-token-face">{object.label.slice(0, 2).toUpperCase()}</b><small>{object.label}</small></>;
-  return <><b className="scene-piece-glyph">{glyph[object.variant ?? ""] ?? "■"}</b><small>{object.label}</small></>;
+  if (object.kind === "token") {
+    const token = tokenPresentation(game, object);
+    const stateLabel = token.state === "injured" ? "FERIDO" : token.state === "dead" ? "MORTO" : token.state === "defeated" ? "FORA DE COMBATE" : "";
+    return <><b className="scene-token-face">
+      {token.image ? <img src={token.image} alt="" draggable={false} style={token.frame ? portraitStyle(token.frame) : undefined} /> : <span>{token.label.slice(0, 2).toUpperCase()}</span>}
+    </b><small className="scene-token-name">{token.label}</small>{stateLabel && <em className={"scene-token-state is-" + token.state}>{stateLabel}</em>}</>;
+  }
+  return <><ObjectVisual variant={object.variant} /><small>{object.label}</small></>;
 }
 
 function withAttachedFixtures(scene: SceneBoardScene, ids: string[]) {
@@ -110,6 +204,10 @@ export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edi
   const selectedObjects = scene?.objects.filter(object => selectedIds.includes(object.id)) ?? [];
   const selected = selectedObjects.length === 1 ? selectedObjects[0] : undefined;
   const snapEnabled = scene?.snapToGrid !== false;
+  const activeConflictThreats = game.conflict?.active ? game.conflict.threats : [];
+  const placedThreatIds = new Set((scene?.objects ?? [])
+    .filter(object => object.kind === "token" && object.tokenKind === "threat" && object.refId)
+    .map(object => object.refId!));
 
   function selectScene(id: string) {
     setChosenScene(id);
@@ -147,6 +245,8 @@ export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edi
   function add(kind: SceneObjectKind, label: string, variant?: string, token?: Partial<SceneBoardObject>) {
     if (readonly || !scene) return;
     const object = { ...createSceneBoardObject(kind, label, variant), ...token };
+    const visualSize = variant ? visualSizes[variant] : undefined;
+    if (visualSize) { object.width = visualSize.width; object.height = visualSize.height; }
     object.x = 110 + ((scene.objects.length * 43) % Math.max(120, scene.width - object.width - 160));
     object.y = 100 + ((scene.objects.length * 31) % Math.max(100, scene.height - object.height - 140));
     if (snapEnabled) {
@@ -443,15 +543,32 @@ export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edi
 
     <div className={"scene-board-layout" + (readonly ? " is-readonly" : "")}>
       {!readonly && <aside className="panel panel-pad scene-palette">
-        <p className="dossier-title">Objetos</p>
-        <p className="scene-palette-note">Estrutura é desenhada pela barra acima. Aqui ficam áreas, móveis e marcadores.</p>
-        <div className="scene-piece-grid">{pieces.map(piece => <button type="button" key={piece.label} onClick={() => add(piece.kind, piece.label, piece.variant)}>
-          {piece.kind === "text" ? <Type size={15} /> : <Square size={15} />}<span>{piece.label}</span></button>)}</div>
-        <div className="scene-token-section"><b>Sobreviventes</b>{game.survivors.map(person => <button type="button" key={person.id}
-          onClick={() => add("token", person.name, "survivor", { tokenKind: "survivor", refId: person.id })}><User size={14} />{person.name}</button>)}</div>
-        <div className="scene-token-section"><b>PNJs</b>{game.npcs.filter(person => person.active).slice(0, 24).map(person => <button type="button" key={person.id}
-          onClick={() => add("token", person.name, "npc", { tokenKind: "npc", refId: person.id })}><User size={14} />{person.name}</button>)}</div>
-        <div className="scene-token-section"><b>Outros</b><button type="button" onClick={() => add("token", "Ameaça", "threat", { tokenKind: "threat" })}><User size={14} />Ameaça</button></div>
+        <p className="dossier-title">Biblioteca visual</p>
+        <p className="scene-palette-note">Estrutura é desenhada pela barra acima. Os objetos abaixo usam leitura de planta para continuar legíveis mesmo com zoom baixo.</p>
+        {libraryGroups.map(group => <section className="scene-library-group" key={group.label}>
+          <b>{group.label}</b>
+          <div className="scene-piece-grid">{group.pieces.map(piece => <button type="button" key={piece.label} onClick={() => add(piece.kind, piece.label, piece.variant)}>
+            {piece.kind === "text" ? <Type size={15} /> : <ObjectVisual variant={piece.variant} compact />}<span>{piece.label}</span></button>)}</div>
+        </section>)}
+        <div className="scene-token-section"><b>Sobreviventes</b>{game.survivors.map(person => <button type="button" className="scene-library-person" key={person.id}
+          onClick={() => add("token", person.name, "survivor", { tokenKind: "survivor", refId: person.id })}>
+          <span className="scene-library-avatar">{person.portrait ? <img src={person.portrait} alt="" /> : <User size={14} />}</span><span>{person.name}</span></button>)}</div>
+        <div className="scene-token-section"><b>PNJs</b>{game.npcs.filter(person => person.active).slice(0, 30).map(person => <button type="button" className="scene-library-person" key={person.id}
+          onClick={() => add("token", person.name, "npc", { tokenKind: "npc", refId: person.id })}>
+          <span className="scene-library-avatar">{person.portrait ? <img src={person.portrait} alt="" style={portraitStyle(person.portraitFrame)} /> : <User size={14} />}</span><span>{person.name}</span></button>)}</div>
+        {activeConflictThreats.length > 0 && <div className="scene-token-section scene-conflict-token-library">
+          <b>Ameaças do conflito</b><small>{game.conflict?.name}</small>
+          {activeConflictThreats.map(threat => {
+            const placed = placedThreatIds.has(threat.id);
+            return <button type="button" className={"scene-library-person" + (threat.defeated ? " is-defeated" : "")} key={threat.id} disabled={placed}
+              onClick={() => add("token", threat.name, "threat", { tokenKind: "threat", refId: threat.id, width: 64, height: 64 })}>
+              <span className="scene-library-avatar is-threat">{threat.templateSnapshot.image ? <img src={threat.templateSnapshot.image} alt="" /> : <User size={14} />}</span>
+              <span>{threat.name}<small>{placed ? "Já está na cena" : threat.defeated ? "Fora de combate" : threat.templateSnapshot.role}</small></span>
+            </button>;
+          })}
+        </div>}
+        <div className="scene-token-section"><b>Outros</b><button type="button" className="scene-library-person"
+          onClick={() => add("token", "Ameaça", "threat", { tokenKind: "threat" })}><span className="scene-library-avatar is-threat"><User size={14} /></span><span>Ameaça genérica</span></button></div>
       </aside>}
 
       <div className="panel scene-workspace">
@@ -476,13 +593,15 @@ export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edi
               {scene.objects.map(object => {
                 const moving = drag?.movingIds.includes(object.id);
                 const shown = moving ? { ...object, x: object.x + (drag?.dx ?? 0), y: object.y + (drag?.dy ?? 0) } : object;
+                const tokenView = shown.kind === "token" ? tokenPresentation(game, shown) : null;
                 return <button type="button" key={object.id}
                   className={"scene-object scene-" + shown.kind + (shown.variant ? " scene-" + shown.variant : "")
                     + (selectedIds.includes(object.id) ? " is-selected" : "") + (!shown.visibleToPlayers && !readonly ? " is-hidden" : "")
-                    + (shown.locked ? " is-locked" : "") + (shown.parentWallId ? " is-attached" : "")}
+                    + (shown.locked ? " is-locked" : "") + (shown.parentWallId ? " is-attached" : "")
+                    + (tokenView?.state === "defeated" || tokenView?.state === "dead" ? " is-out" : "")}
                   style={{ left: shown.x, top: shown.y, width: shown.width, height: shown.height, transform: "rotate(" + shown.rotation + "deg)" }}
                   onPointerDown={event => selectObject(event, object)} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag}>
-                  {face(shown)}
+                  {face(shown, game)}
                   {shown.locked && !readonly && <span className="scene-object-lock"><Lock size={9} /></span>}
                 </button>;
               })}

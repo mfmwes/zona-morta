@@ -12,6 +12,7 @@ const {
   createSceneBoardObject,
   createSceneBoardScene,
   createWallFromDrag,
+  hydrateSceneBoardTokens,
   moveSceneObjects,
   projectPlayerSceneBoard,
   rotateWallWithFixtures,
@@ -69,6 +70,28 @@ test('objeto bloqueado não é movido diretamente', () => {
   const before = { x: crate.x, y: crate.y };
   moveSceneObjects(scene, [crate.id], 200, 200);
   assert.deepEqual({ x: crate.x, y: crate.y }, before);
+});
+
+test('tokens podem receber retrato e estado públicos sem alterar a referência mecânica', () => {
+  const scene = createSceneBoardScene('Encontro');
+  scene.visibleToPlayers = true;
+  const survivor = createSceneBoardObject('token', 'Nome antigo', 'survivor');
+  survivor.tokenKind = 'survivor';
+  survivor.refId = 'survivor-1';
+  scene.objects.push(survivor);
+  const hydrated = hydrateSceneBoardTokens({ scenes: [scene], activeSceneId: scene.id }, [{
+    tokenKind: 'survivor',
+    refId: 'survivor-1',
+    label: 'Maitê',
+    image: 'data:image/png;base64,abc',
+    state: 'injured',
+  }]);
+  const token = hydrated.scenes[0].objects[0];
+  assert.equal(token.refId, 'survivor-1');
+  assert.equal(token.label, 'Maitê');
+  assert.equal(token.tokenImage, 'data:image/png;base64,abc');
+  assert.equal(token.tokenState, 'injured');
+  assert.equal(validSceneBoardState(hydrated), true);
 });
 
 test('projeção pública envia somente cena ativa e não vaza peça de parede oculta', () => {

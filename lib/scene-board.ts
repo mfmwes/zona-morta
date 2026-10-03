@@ -1,4 +1,5 @@
 import { createId } from "./id";
+import { validPortraitFrame, type PortraitFrame } from "./portrait-frame";
 
 export type SceneObjectKind = "zone" | "wall" | "door" | "window" | "furniture" | "prop" | "text" | "token";
 export type SceneTokenKind = "survivor" | "npc" | "threat" | "custom";
@@ -19,6 +20,10 @@ export type SceneBoardObject = {
   parentWallId?: string;
   tokenKind?: SceneTokenKind;
   refId?: string;
+  /** Snapshot público efêmero usado pelos tokens na visão dos jogadores. */
+  tokenImage?: string;
+  tokenImageFrame?: PortraitFrame;
+  tokenState?: "active" | "injured" | "dead" | "defeated";
 };
 
 export type SceneBoardScene = {
@@ -236,6 +241,36 @@ export function rotateWallWithFixtures(scene: SceneBoardScene, wallId: string, d
   return true;
 }
 
+export type SceneTokenSnapshot = {
+  tokenKind: SceneTokenKind;
+  refId: string;
+  label: string;
+  image?: string;
+  imageFrame?: PortraitFrame;
+  state?: "active" | "injured" | "dead" | "defeated";
+};
+
+export function hydrateSceneBoardTokens(board: SceneBoardState | undefined, snapshots: SceneTokenSnapshot[]) {
+  if (!board) return undefined;
+  const byKey = new Map(snapshots.map(snapshot => [snapshot.tokenKind + ":" + snapshot.refId, snapshot] as const));
+  const hydrated = structuredClone(board);
+  for (const scene of hydrated.scenes) {
+    for (const object of scene.objects) {
+      if (object.kind !== "token" || !object.tokenKind || !object.refId) continue;
+      const snapshot = byKey.get(object.tokenKind + ":" + object.refId);
+      if (!snapshot) continue;
+      object.label = snapshot.label.trim().slice(0, 120) || object.label;
+      if (snapshot.image?.trim()) object.tokenImage = snapshot.image.trim().slice(0, 12_000);
+      else delete object.tokenImage;
+      if (snapshot.imageFrame && validPortraitFrame(snapshot.imageFrame)) object.tokenImageFrame = structuredClone(snapshot.imageFrame);
+      else delete object.tokenImageFrame;
+      if (snapshot.state) object.tokenState = snapshot.state;
+      else delete object.tokenState;
+    }
+  }
+  return hydrated;
+}
+
 export function projectPlayerSceneBoard(board: SceneBoardState | undefined): SceneBoardState | undefined {
   if (!board?.activeSceneId) return board ? { scenes: [] } : undefined;
   const active = board.scenes.find(scene => scene.id === board.activeSceneId && scene.visibleToPlayers);
@@ -293,6 +328,9 @@ export function validSceneBoardState(value: unknown): value is SceneBoardState |
       && (object.parentWallId === undefined || (typeof object.parentWallId === "string" && object.parentWallId.length <= 120
         && walls.has(object.parentWallId) && (object.kind === "door" || object.kind === "window")))
       && (object.tokenKind === undefined || ["survivor", "npc", "threat", "custom"].includes(object.tokenKind))
-      && (object.refId === undefined || (typeof object.refId === "string" && object.refId.length <= 120))));
+      && (object.refId === undefined || (typeof object.refId === "string" && object.refId.length <= 120))
+      && (object.tokenImage === undefined || (typeof object.tokenImage === "string" && object.tokenImage.length <= 12_000))
+      && (object.tokenImageFrame === undefined || validPortraitFrame(object.tokenImageFrame))
+      && (object.tokenState === undefined || ["active", "injured", "dead", "defeated"].includes(object.tokenState))));
   });
 }

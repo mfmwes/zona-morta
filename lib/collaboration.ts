@@ -2,10 +2,35 @@ import { addLog, ammunitionTypes, type AmmunitionType, type GameState, type Inve
 import { publicConflictScene } from "./conflict";
 import { shelterCommunity } from "./shelter-residents";
 import { publicNpcs } from "./npc-presentation";
-import { projectPlayerSceneBoard } from "./scene-board";
+import { hydrateSceneBoardTokens, projectPlayerSceneBoard, type SceneTokenSnapshot } from "./scene-board";
 import { cancelSurvivorWorkShift, joinShelterProjectAsSurvivor, leaveShelterProjectAsSurvivor, projectBaseOperational, scheduleSurvivorWorkShift } from "./shelter-projects";
 
 export function projectPlayerGame(game: GameState, survivorId: string): GameState {
+  const sceneTokenSnapshots: SceneTokenSnapshot[] = [
+    ...game.survivors.map(person => ({
+      tokenKind: "survivor" as const,
+      refId: person.id,
+      label: person.name,
+      image: person.portrait,
+      state: person.hp > 0 ? "injured" as const : "active" as const,
+    })),
+    ...(game.npcs ?? []).map(person => ({
+      tokenKind: "npc" as const,
+      refId: person.id,
+      label: person.name,
+      image: person.portrait,
+      imageFrame: person.portraitFrame,
+      state: person.status === "Morto" ? "dead" as const
+        : person.status === "Ferido" || person.status === "Grave" ? "injured" as const : "active" as const,
+    })),
+    ...(game.conflict?.threats ?? []).map(threat => ({
+      tokenKind: "threat" as const,
+      refId: threat.id,
+      label: threat.name,
+      image: threat.templateSnapshot.image,
+      state: threat.defeated ? "defeated" as const : "active" as const,
+    })),
+  ];
   const visible = structuredClone(game);
   visible.log = visible.log.map(entry => {
     const actor = entry.actorId ? game.survivors.find(person => person.id === entry.actorId) : null;
@@ -46,7 +71,7 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
   visible.publicConflict = game.conflict ? publicConflictScene(game.conflict, game.survivors, survivorId) : undefined;
   delete visible.conflict;
   // Cenas privadas e objetos ocultos nunca entram na projeção entregue ao jogador.
-  visible.sceneBoard = projectPlayerSceneBoard(game.sceneBoard);
+  visible.sceneBoard = projectPlayerSceneBoard(hydrateSceneBoardTokens(game.sceneBoard, sceneTokenSnapshots));
   // A ficha do jogador mantém apenas o próprio histórico e o chat. Resultados
   // de outra ficha não precisam ser enviados para que a mesa os narre.
   visible.log = visible.log.filter(entry => entry.kind === "chat" || entry.kind === "ameaça" || entry.actorId === survivorId);
