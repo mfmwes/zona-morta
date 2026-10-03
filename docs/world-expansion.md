@@ -32,6 +32,8 @@ podem reaparecer com identidades e registros independentes.
 
 O mapa permite arrastar com mouse ou toque, ampliar/reduzir, ver tudo,
 centralizar o grupo ativo ou o hex selecionado e buscar nomes ou coordenadas.
+Sobre o mapa, a roda do mouse amplia ou reduz mantendo o ponto sob o cursor
+na mesma posição da tela. Fora do mapa, a roda continua rolando a página.
 Com o mapa em foco, as setas também movem a visão.
 
 Campanhas existentes e snapshots mantêm o formato anterior: os campos novos

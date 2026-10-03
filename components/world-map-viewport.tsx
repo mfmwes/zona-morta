@@ -42,6 +42,34 @@ export function WorldMapViewport({ hexes, activeHex, selected, focusHex, playerP
     return () => cancelAnimationFrame(frame);
   }, [focusHex]);
 
+  useEffect(() => {
+    const node = viewport.current;
+    if (!node) return;
+    function wheel(event: WheelEvent) {
+      if (!event.deltaY || !Number.isFinite(event.deltaY)) return;
+      // A non-passive listener keeps page scrolling from competing with map zoom.
+      event.preventDefault();
+      if (drag.current) return;
+      const rect = node!.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? rect.height : 1;
+      const delta = Math.max(-180, Math.min(180, event.deltaY * unit));
+      const factor = Math.exp(delta * 0.002);
+      const anchorX = (event.clientX - rect.left) / rect.width - 0.5;
+      const anchorY = (event.clientY - rect.top) / rect.height - 0.5;
+      setCamera(previous => {
+        const width = Math.max(180, Math.min(Math.max(1200, fitWidth * 2), previous.width * factor));
+        return {
+          x: previous.x + anchorX * (previous.width - width),
+          y: previous.y + anchorY * (previous.width - width) / aspect,
+          width,
+        };
+      });
+    }
+    node.addEventListener("wheel", wheel, { passive: false });
+    return () => node.removeEventListener("wheel", wheel);
+  }, [aspect, fitWidth]);
+
   function center(id: string) {
     const point = parseHex(id);
     if (point) setCamera(previous => ({ ...previous, ...hexCenter(point) }));
@@ -104,7 +132,7 @@ export function WorldMapViewport({ hexes, activeHex, selected, focusHex, playerP
       onPointerCancel={() => { drag.current = null; suppressClick.current = false; }}
       onClickCapture={event => { if (suppressClick.current) { event.preventDefault(); event.stopPropagation(); suppressClick.current = false; } }}>
       <svg viewBox={`${camera.x - camera.width / 2} ${camera.y - camera.width / aspect / 2} ${camera.width} ${camera.width / aspect}`}
-        aria-label={`Mapa de exploração com ${Object.keys(hexes).length} hexes. Arraste para navegar; use as setas quando o mapa estiver em foco.`}
+        aria-label={`Mapa de exploração com ${Object.keys(hexes).length} hexes. Arraste para navegar, use a roda do mouse para ampliar ou reduzir e as setas quando o mapa estiver em foco.`}
         role="img" tabIndex={0} onKeyDown={event => {
           if (event.target !== event.currentTarget) return;
           const moves: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
@@ -114,6 +142,6 @@ export function WorldMapViewport({ hexes, activeHex, selected, focusHex, playerP
           }
         }}>{children}</svg>
     </div>
-    <p className="world-map-hint">Arraste o mapa para navegar. Use o zoom para ler os setores e “Ver tudo” para conferir o mundo.</p>
+    <p className="world-map-hint">Arraste para navegar. Role a roda do mouse sobre o mapa para ampliar ou reduzir; “Ver tudo” mostra o mundo inteiro.</p>
   </>;
 }
