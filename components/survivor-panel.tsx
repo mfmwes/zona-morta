@@ -26,7 +26,7 @@ import { traitLabel, localizeRollLog } from "@/lib/terminology";
 import { absoluteMinutes, addLog, ammunitionCount, ammunitionItemType, ammunitionTypes, content, survivorHex, survivorStats, traits, type EquipmentSlot, type GameState, type Infection, type Survivor } from "@/lib/game";
 import { activeCart, atSharedStorage, batteryStateFor, cartStoredLoad, catalogForItem, countsAsMedication, discardItem, stowSlot } from "@/lib/inventory";
 import { provisionBreakdown, provisionDisplay, provisionItemInfo } from "@/lib/provision-items";
-import { equipmentModifiers, getPrimary, getProtection, getSecondary, weaponAmmoType } from "@/lib/equipment";
+import { equipmentModifiers, getPrimary, getProtection, getSecondary, unarmedAttack, weaponAmmoType } from "@/lib/equipment";
 import { rollDie } from "@/lib/rolls";
 import { consumeDailyProvision } from "@/lib/survival";
 import { adjustProvisionCount } from "@/lib/provisions";
@@ -305,6 +305,11 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
   const hopeEffect = hopeSeparator >= 0 ? hopeFeature.slice(hopeSeparator + 1).trim() : hopeFeature;
   const primary = selected ? getPrimary(selected.primary) : null;
   const secondary = selected ? getSecondary(selected.secondary) : null;
+  const quickAttack = primary
+    ? { slot: "primary" as const, name: selected?.primary || primary.name, category: "Armas primárias", details: `${primary.damage} · ${primary.range} · ${traitLabel(primary.trait)}` }
+    : secondary
+      ? { slot: "secondary" as const, name: selected?.secondary || secondary.name, category: "Armas secundárias", details: `${secondary.damage} · ${secondary.range} · ${traitLabel(secondary.trait)}` }
+      : { slot: "unarmed" as const, name: unarmedAttack.name, category: "", details: `${unarmedAttack.damage} · ${unarmedAttack.range} · Força ou Acuidade` };
   const primaryAmmoType = selected ? weaponAmmoType(selected.primary) : null;
   const primaryAmmoTotal = selected && primaryAmmoType ? ammunitionCount(selected.inventory, primaryAmmoType) : 0;
   const primaryAmmoAvailable = selected && primaryAmmoType ? ammunitionCount(selected.inventory, primaryAmmoType, true) : 0;
@@ -508,7 +513,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
         playerPreview={playerPreview}
         targetId={combatTargetId}
         onTargetChange={setCombatTargetId}
-        onAttack={targetId => beginRoll({ survivorId: selected.id, kind: "attack", weapon: "primary", targetThreatId: targetId })}
+        onAttack={targetId => beginRoll({ survivorId: selected.id, kind: "attack", weapon: quickAttack.slot, targetThreatId: targetId })}
         onOpenConflict={onOpenConflict}
       />
 
@@ -518,8 +523,8 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
           <TabsContent value="resumo" className="character-tab-content">
             <div className="character-summary-grid">
               <section className="character-surface character-summary-action"><SectionHeading index="01" title="Pronto para agir" aside={<span className="character-micro">KIT ATIVO</span>} />
-                <div className="character-active-weapon">{selected.primary ? <ItemArt name={selected.primary} category="Armas primárias" /> : <EmptyItemArt />}<div><span>Arma principal</span><strong>{selected.primary || "Sem arma principal"}</strong><small>{primary ? `${primary.damage} · ${primary.range} · ${traitLabel(primary.trait)}` : "Dados da arma no kit"}</small></div>
-                  <Button size="sm" variant="outline" className="character-weapon-roll" onClick={() => beginRoll({ survivorId: selected.id, kind: "attack", weapon: "primary" })}><Dice5 size={16} /> Atacar</Button></div>
+                <div className="character-active-weapon">{quickAttack.category ? <ItemArt name={quickAttack.name} category={quickAttack.category} /> : <EmptyItemArt />}<div><span>{primary ? "Arma principal" : secondary ? "Arma disponível" : "Sem arma equipada"}</span><strong>{quickAttack.name}</strong><small>{quickAttack.details}</small></div>
+                  <Button size="sm" variant="outline" className="character-weapon-roll" onClick={() => beginRoll({ survivorId: selected.id, kind: "attack", weapon: quickAttack.slot })}><Dice5 size={16} /> {quickAttack.slot === "unarmed" ? "Desarmado" : "Atacar"}</Button></div>
                 {selected.secondary && <div className="character-info-row"><ItemArt name={selected.secondary} category="Armas secundárias" size="small" /><span>Secundária</span><b>{selected.secondary}</b></div>}
                 <div className="character-info-row">{selected.protection ? <ItemArt name={selected.protection} category="Proteções" size="small" /> : <EmptyItemArt />}<span>Proteção</span><b>{selected.protection || "Sem proteção"}</b></div>
                 {selected.outfit && <div className="character-info-row"><ItemArt name={selected.outfit} category="Trajes e acessórios" size="small" /><span>Traje</span><b>{selected.outfit}</b></div>}
@@ -601,8 +606,9 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
               <div className="character-proficiency"><ShieldCheck size={18} aria-hidden="true" /><span>Proficiência registrada</span>{playerMode ? <b>{selected.proficiency ?? 1}</b> : <Counter compact label="Proficiência" value={selected.proficiency ?? 1} min={1} max={9} onChange={value => change(selected.id, s => { s.proficiency = value; })} />}</div>
             </section>
             <section className="character-surface"><SectionHeading index="02" title="Armas e kit ativo" />
-              <div className="character-equipment">{selected.primary ? <ItemArt name={selected.primary} category="Armas primárias" size="large" /> : <EmptyItemArt size="large" />}<div><span>PRIMÁRIA</span><h4>{selected.primary || "Sem arma principal"}</h4>{primary && <><p><b>{primary.damage}</b> dano · {primary.range} · {traitLabel(primary.trait)} · {primary.hands === "Uma" ? "uma mão" : "duas mãos"}</p><div className="character-chips"><span>Ruído: {primary.noise}</span><span>Carga guardada: {primary.stored}</span></div><p>{primary.note}</p></>}
-                <Button size="sm" className="mt-2" disabled={!primary} onClick={() => beginRoll({ survivorId: selected.id, kind: "attack", weapon: "primary" })}><Dice5 size={16} /> Rolar ataque</Button>{!primary && <button type="button" className="character-text-link" onClick={() => setActiveTab("inventario")}>Equipar uma arma no inventário ↗</button>}{Boolean(modifiers?.primaryDamage) && <p>+{modifiers?.primaryDamage} ao dano pela Faca pequena (automático).</p>}</div></div>
+              <div className="character-equipment">{selected.primary ? <ItemArt name={selected.primary} category="Armas primárias" size="large" /> : <EmptyItemArt size="large" />}<div><span>PRIMÁRIA</span><h4>{selected.primary || "Sem arma principal"}</h4>{primary ? <><p><b>{primary.damage}</b> dano · {primary.range} · {traitLabel(primary.trait)} · {primary.hands === "Uma" ? "uma mão" : "duas mãos"}</p><div className="character-chips"><span>Ruído: {primary.noise}</span><span>Carga guardada: {primary.stored}</span></div><p>{primary.note}</p>
+                <Button size="sm" className="mt-2" onClick={() => beginRoll({ survivorId: selected.id, kind: "attack", weapon: "primary" })}><Dice5 size={16} /> Rolar ataque</Button></> : <><p><b>{unarmedAttack.damage}</b> dano · {unarmedAttack.range} · Força ou Acuidade</p><p>Ataques desarmados usam a Proficiência para determinar a quantidade de d4.</p>
+                <Button size="sm" variant="outline" className="mt-2" onClick={() => beginRoll({ survivorId: selected.id, kind: "attack", weapon: "unarmed" })}><Dice5 size={16} /> Ataque desarmado</Button><button type="button" className="character-text-link" onClick={() => setActiveTab("inventario")}>Equipar uma arma no inventário ↗</button></>}{Boolean(modifiers?.primaryDamage) && <p>+{modifiers?.primaryDamage} ao dano pela Faca pequena (automático).</p>}</div></div>
               {selected.secondary && <div className="character-equipment"><ItemArt name={selected.secondary} category="Armas secundárias" size="large" /><div><span>SECUNDÁRIA</span><h4>{selected.secondary}</h4>{secondary && <><p><b>{secondary.damage}</b> dano · {secondary.range} · {traitLabel(secondary.trait)}</p><div className="character-chips"><span>Carga guardada: {secondary.stored}</span></div><p>{secondary.effect}</p></>}
                 <Button size="sm" variant="outline" className="mt-2" onClick={() => beginRoll({ survivorId: selected.id, kind: "attack", weapon: "secondary" })}><Dice5 size={16} /> Rolar secundária</Button></div></div>}
               <div className="character-equipment">{selected.protection ? <ItemArt name={selected.protection} category="Proteções" size="large" /> : <EmptyItemArt size="large" />}<div><span>PROTEÇÃO VESTIDA</span><h4>{selected.protection || "Sem proteção"}</h4>{protection && <><p>Limiar maior {stats.major} · severo {stats.severe} · {stats.armor} espaços de armadura</p><p>{protection.effect}</p></>}</div></div>
@@ -614,7 +620,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
                 return <div className="character-equipment" key={slot}>{selected[slot] ? <ItemArt name={selected[slot]!} category={pocketItem?.category} size="large" /> : <EmptyItemArt size="large" />}<div><span>BOLSO {index + 1}</span><h4>{selected[slot] || "Bolso vazio"}</h4><p>{selected[slot] ? "Item de acesso rápido · 0 carga enquanto ativo." : "Aceita objetos compactos marcados com Carga guardada 0."}</p></div></div>;
               })}
             </section>
-            <p className="character-rule-note">Munição é um item físico do inventário. O primeiro disparo de cada categoria na cena compromete 1 unidade compatível; ela permanece visível e bloqueada até a próxima cena, quando é consumida. Até 4 unidades do mesmo tipo ocupam 1 espaço de carga. Armas, proteção e traje em uso não ocupam espaço guardado.</p>
+            <p className="character-rule-note">Sem arma, o sobrevivente ainda pode fazer um <b>Ataque desarmado</b>: escolha Força ou Acuidade e role Proficiência d4 de dano físico. Munição é um item físico do inventário. O primeiro disparo de cada categoria na cena compromete 1 unidade compatível; ela permanece visível e bloqueada até a próxima cena, quando é consumida. Até 4 unidades do mesmo tipo ocupam 1 espaço de carga. Armas, proteção e traje em uso não ocupam espaço guardado.</p>
           </TabsContent>
           <TabsContent value="habilidades" className="character-tab-content">
             <section className="character-hope-feature" aria-labelledby="hope-feature-title">
