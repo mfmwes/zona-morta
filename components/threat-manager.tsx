@@ -11,6 +11,7 @@ import { ImagePicker } from "@/components/image-picker";
 import { addLog, type GameState } from "@/lib/game";
 import { createId } from "@/lib/id";
 import {
+  BASE_THREAT_REVISION,
   baseThreatTemplate,
   createThreatTemplate,
   defaultThreatTemplates,
@@ -203,6 +204,10 @@ export function ThreatManager({ game, edit }: { game: GameState; edit: Edit }) {
   function saveDraft() {
     if (!draft) return;
     const next = sanitizeThreatTemplate(draft);
+    if (next.source === "base") {
+      next.baseRevision = BASE_THREAT_REVISION;
+      next.baseCustomized = true;
+    }
     edit(state => {
       const threats = ensureLibrary(state);
       const index = threats.findIndex(threat => threat.id === next.id);
