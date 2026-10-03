@@ -38,3 +38,30 @@ html[data-theme="dark"] .scene-live{color:#bce8d7;background:#214437;border-colo
 @media(max-width:1180px){.scene-board-layout{grid-template-columns:190px minmax(0,1fr)}.scene-inspector{position:static;grid-column:1/-1;max-height:none}}
 @media(max-width:760px){.scene-board-layout{grid-template-columns:1fr}.scene-palette,.scene-inspector{position:static;max-height:none}.scene-piece-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.scene-viewport{min-height:420px;height:62dvh}.scene-board-actions>button{flex:1 1 auto}}
 @media(max-width:480px){.scene-piece-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.scene-inspector-buttons{grid-template-columns:1fr}}
+
+
+/* Scene Board — construction workflow v2 */
+.scene-toolstrip{display:flex;align-items:center;gap:6px;padding:7px;overflow-x:auto;scrollbar-width:thin}
+.scene-toolstrip button{display:flex;align-items:center;gap:6px;flex:0 0 auto;min-height:36px;padding:7px 10px;border:1px solid transparent;border-radius:7px;background:transparent;color:var(--foreground);font-size:.72rem;font-weight:760;cursor:pointer}
+.scene-toolstrip button:hover{background:var(--surface-soft);border-color:var(--border)}
+.scene-toolstrip button.is-active{background:var(--accent);border-color:var(--primary);color:var(--primary)}
+.scene-toolstrip button b{display:grid;place-items:center;min-width:18px;height:18px;padding:0 4px;border-radius:99px;background:var(--primary);color:var(--primary-foreground);font-size:.62rem}
+.scene-toolstrip-spacer{flex:1 1 auto;min-width:10px}
+.scene-palette-note{margin-top:-7px;color:var(--ink-soft);font-size:.7rem;line-height:1.45}
+.scene-viewport.tool-pan,.scene-viewport.tool-pan .scene-stage,.scene-viewport.tool-pan .scene-object{cursor:grab}
+.scene-viewport.tool-pan.is-panning,.scene-viewport.tool-pan.is-panning .scene-stage,.scene-viewport.tool-pan.is-panning .scene-object{cursor:grabbing}
+.scene-viewport.tool-wall .scene-stage,.scene-viewport.tool-door .scene-stage,.scene-viewport.tool-window .scene-stage{cursor:crosshair}
+.scene-wall-draft{position:absolute;z-index:12;border-radius:2px;background:#2c7773;box-shadow:0 0 0 2px rgba(255,255,255,.7),0 0 0 4px rgba(44,119,115,.35);transform-origin:center;pointer-events:none}
+.scene-object.is-locked{cursor:not-allowed}.scene-object.is-locked:not(.is-selected){filter:saturate(.72)}
+.scene-object-lock{position:absolute;right:-7px;top:-7px;display:grid;place-items:center;width:17px;height:17px;border-radius:50%;background:#29383a;color:#fff;border:2px solid #e8e5dd;box-shadow:0 1px 4px rgba(0,0,0,.25);pointer-events:none}
+.scene-object.is-attached.is-selected:before{content:"vinculado";position:absolute;left:50%;top:-22px;transform:translateX(-50%);padding:2px 5px;border-radius:4px;background:#334f50;color:#fff;font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.scene-inspector-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.scene-attached-note{padding:8px 9px;border:1px dashed var(--border);border-radius:7px;background:var(--surface-soft);color:var(--ink-soft);font-size:.7rem;line-height:1.45}
+html[data-theme="dark"] .scene-toolstrip button.is-active{color:#bfe8df;background:#203e3c}
+html[data-theme="dark"] .scene-object-lock{border-color:#31383a}
+@media(max-width:760px){
+ .scene-toolstrip{position:sticky;top:58px;z-index:20;background:var(--card)}
+ .scene-toolstrip button span{white-space:nowrap}
+ .scene-toolstrip-spacer{display:none}
+ .scene-viewport.tool-pan{touch-action:none}
+}
