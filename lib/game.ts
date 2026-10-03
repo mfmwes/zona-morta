@@ -270,6 +270,7 @@ export type NPC = {
   visibleToPlayers?: boolean;
   name: string;
   portrait?: string;
+  portraitFrame?: import("./portrait-frame").PortraitFrame;
   role: string;
   description: string;
   notes: string;

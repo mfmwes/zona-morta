@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { NpcPortrait, NpcPortraitEditor } from "@/components/npc-portrait";
 import { ImagePicker } from "@/components/image-picker";
 import { NpcCapabilities, NpcCapabilityChips } from "@/components/npc-capabilities";
 import { Field, Pick } from "@/components/game-controls";
@@ -134,7 +135,7 @@ export function NpcPanel({ game, edit, playerPreview }: { game: GameState; edit:
     {!playerPreview && <p className="npc-visibility-summary"><Eye size={14} /> {npcs.length - hiddenCount} visível(is) <span>·</span><EyeOff size={14} /> {hiddenCount} oculto(s) <small>Use o olhinho para revelar um encontro.</small></p>}
     <div className="npc-grid mt-5">{filtered.length ? filtered.map(npc => <article key={npc.id} className={`npc-card ${!npcVisibleToPlayers(npc) ? "npc-card-hidden" : ""}`}>
       <button type="button" className="npc-card-open" aria-label={`Abrir ficha de ${npc.name}`} onClick={() => editNpc(npc)}>
-        <span className="npc-avatar" style={npc.portrait ? { backgroundImage: `url(${JSON.stringify(npc.portrait)})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}>{npc.portrait ? "" : npc.name.slice(0, 1).toUpperCase()}</span>
+        <span className="npc-avatar">{npc.portrait ? <NpcPortrait src={npc.portrait} frame={npc.portraitFrame} /> : npc.name.slice(0, 1).toUpperCase()}</span>
         <span className="npc-card-copy"><strong>{npc.name}</strong><small>{npc.role || "Função não registrada"}</small>
           <span className="npc-card-meta"><MapPin size={13} /> {locationLabel(game, npc)}</span>
           <span className="npc-card-labels"><span className={`npc-status npc-status-${npc.status.toLowerCase()}`}>{npc.status}</span>
@@ -182,7 +183,7 @@ export function NpcPanel({ game, edit, playerPreview }: { game: GameState; edit:
 
 function PublicNpcDetails({ npc, game }: { npc: NPC; game: GameState }) {
   return <div className="npc-public-details">
-    {npc.portrait && <div className="npc-public-portrait"><img src={npc.portrait} alt="" /></div>}
+    {npc.portrait && <div className="npc-public-portrait npc-complete-portrait"><img src={npc.portrait} alt="" /></div>}
     <div className="grid gap-3 text-sm"><p><b>{npc.role || "Pessoa da comunidade"}</b> · {npc.status} · {npc.disposition}</p>
       <p className="flex items-center gap-1"><MapPin size={15} /> {locationLabel(game, npc)}</p>{npc.description && <p>{npc.description}</p>}
       {npc.skills.length > 0 && <div><b>Capacidades:</b><NpcCapabilityChips skills={npc.skills} /></div>}{npc.duty && <p><b>Função no abrigo:</b> {npc.duty}</p>}
@@ -204,7 +205,8 @@ function NpcForm({ game, draft, setDraft, hexOptions }: { game: GameState; draft
     <div className="grid gap-3 sm:grid-cols-3"><Pick contentClassName="z-[110]" label="Estado" value={draft.status} options={statuses} onChange={value => update("status", value as NpcStatus)} />
       <Pick contentClassName="z-[110]" label="Infecção" value={draft.infection} options={[...infections]} onChange={value => update("infection", value as NPC["infection"])} />
       <Pick contentClassName="z-[110]" label="Disposição" value={draft.disposition} options={dispositions} onChange={value => update("disposition", value as NpcDisposition)} /></div>
-    <ImagePicker label="Retrato do PNJ" value={draft.portrait} onChange={value => update("portrait", value)} fallback={draft.name.slice(0, 2).toUpperCase() || "PNJ"} />
+    <ImagePicker label="Retrato do PNJ" mode="npc" value={draft.portrait} onChange={value => setDraft({ ...draft, portrait: value, portraitFrame: undefined })} fallback={draft.name.slice(0, 2).toUpperCase() || "PNJ"} />
+    {draft.portrait && <NpcPortraitEditor key={draft.portrait} src={draft.portrait} frame={draft.portraitFrame} onChange={value => update("portraitFrame", value)} />}
     <label className="field"><span className="field-label">Descrição</span><textarea value={draft.description} onChange={event => update("description", event.target.value)} placeholder="Aparência, vínculo e o que importa na ficção." /></label>
     <NpcCapabilities skills={draft.skills} onChange={value => update("skills", value)} />
     <div className="grid gap-3 sm:grid-cols-2"><Pick contentClassName="z-[110]" label="Hex atual" value={draft.hex} options={hexOptions} onChange={value => update("hex", value)} />
