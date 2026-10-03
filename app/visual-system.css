@@ -4907,3 +4907,43 @@ html[data-theme="dark"] .table-presentation-trigger.is-active {
     box-shadow:none;
   }
 }
+
+/* Used abilities stay readable and expandable; only the artwork loses contrast. */
+.character-ability--used {
+  --used-surface: #f0f1ed;
+  --used-hover: #e9ece6;
+  --used-border: #bbc2bb;
+  --used-title: #4d5654;
+  --used-copy: #545e5c;
+  --used-tag: #e0e4e1;
+  --used-tag-ink: #404b46;
+  border-color: var(--used-border) !important;
+  background: var(--used-surface);
+  box-shadow: none;
+  opacity: .94;
+}
+.character-ability--used[data-usage="partial"] { opacity: .98; }
+.character-ability--used[data-state="open"], .character-ability--used:hover, .character-ability--used:focus-within { opacity: 1; }
+html .character-ability--used .character-ability-trigger:hover { background: var(--used-hover); }
+html .character-ability--used .character-ability-title { color: var(--used-title); }
+html .character-ability--used .character-ability-preview { color: var(--used-copy); }
+html .character-ability--used .character-ability-meta span,
+html .character-ability--used .character-ability-meta span:first-child { background: var(--used-tag); color: var(--used-tag-ink); }
+.character-ability--used .ability-art { filter: grayscale(1); opacity: .58; box-shadow: none; }
+.character-ability-status { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 8px; color: var(--used-copy); font-size: .75rem; font-weight: 500; }
+.character-ability-used-label { display: inline-flex; align-items: center; gap: 5px; padding: 3px 6px; border: 1px solid var(--used-border); border-radius: 4px; background: var(--used-tag); color: var(--used-tag-ink); font-weight: 700; overflow-wrap: anywhere; }
+.character-ability-used-label svg { flex: none; }
+.character-ability-actions { flex-wrap: wrap; gap: 8px; }
+.character-ability-used-control { height: auto; min-height: 2rem; white-space: normal; }
+.character-ability-used-control:disabled { opacity: 1; color: var(--used-tag-ink); border-color: var(--used-border); background: var(--used-tag); }
+html[data-theme="dark"] .character-ability--used {
+  --used-surface: #252a29;
+  --used-hover: #303633;
+  --used-border: #58635d;
+  --used-title: #c4cbc8;
+  --used-copy: #b1bab6;
+  --used-tag: #343c38;
+  --used-tag-ink: #d3dcd6;
+  border-color: var(--used-border) !important;
+  background: var(--used-surface);
+}
