@@ -567,7 +567,7 @@ test('persistência de conta mantém tabela e sincronização de sobreviventes f
   const state = fs.readFileSync(require.resolve('../db/state.ts'), 'utf8');
   const page = fs.readFileSync(require.resolve('../app/page.tsx'), 'utf8');
   assert.match(schema, /sqliteTable\("user_characters"/);
-  assert.match(state, /syncCampaignAccountCharacters\(campaignId, state\)/);
+  assert.match(state, /syncCampaignAccountCharacters\(campaignId, persisted\)/);
   assert.match(state, /INSERT INTO user_characters/);
   assert.match(page, /resetCityPreservingSurvivors/);
 });
