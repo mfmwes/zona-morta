@@ -20,6 +20,16 @@ export const campaignStates = sqliteTable("campaign_states", {
   updatedAt: text("updated_at").notNull(),
 });
 
+export const campaignPresentations = sqliteTable("campaign_presentations", {
+  ownerId: text("owner_id").primaryKey(),
+  id: text("id").notNull(),
+  image: text("image").notNull(),
+  title: text("title"),
+  caption: text("caption"),
+  active: integer("active").notNull().default(1),
+  updatedAt: text("updated_at").notNull(),
+});
+
 export const campaignPlayers = sqliteTable("campaign_players", {
   ownerId: text("owner_id").notNull(),
   email: text("email").notNull(),

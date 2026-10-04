@@ -1,10 +1,11 @@
 import { env } from "cloudflare:workers";
-import { addLog, defaultState, normalizeSurvivorAmmunition, type GameState, type Survivor } from "@/lib/game";
+import { addLog, defaultState, normalizeSurvivorAmmunition, type GameState, type Survivor, type TablePresentation } from "@/lib/game";
 import { preserveKnownSectors } from "@/lib/sectors";
 import { normalizeShelter } from "@/lib/shelter-projects";
 import { randomToken, tokenHash } from "@/lib/auth";
 
 type Row = { revision: number; body: string };
+type PresentationRow = { id: string; image: string; title: string | null; caption: string | null; active: number; updated_at: string };
 type CampaignMetaRow = {
   id: string;
   owner_id: string;
@@ -83,6 +84,15 @@ async function ensureCampaignSchema() {
     )`).run();
     await db.prepare("CREATE INDEX IF NOT EXISTS idx_user_characters_user ON user_characters (user_id, updated_at)").run();
     await db.prepare("CREATE INDEX IF NOT EXISTS idx_user_characters_campaign ON user_characters (campaign_id)").run();
+    await db.prepare(`CREATE TABLE IF NOT EXISTS campaign_presentations (
+      owner_id text PRIMARY KEY NOT NULL,
+      id text NOT NULL,
+      image text NOT NULL,
+      title text,
+      caption text,
+      active integer NOT NULL DEFAULT 1,
+      updated_at text NOT NULL
+    )`).run();
     await db.prepare(`INSERT OR IGNORE INTO campaigns (id, owner_id, name, created_at, updated_at, archived_at)
       SELECT cs.owner_id, cs.owner_id, 'Campanha principal', COALESCE(u.created_at, cs.updated_at), cs.updated_at, NULL
       FROM campaign_states cs LEFT JOIN users u ON u.id = cs.owner_id`).run();
@@ -134,6 +144,18 @@ export async function readCampaign(campaignId: string) {
   }
   if (!row) throw new Error("Falha ao iniciar campanha.");
   const state = preserveKnownSectors(JSON.parse(row.body) as GameState);
+  // Apresentações antigas ficavam dentro do JSON principal e podiam tornar
+  // toda leitura/projeção da campanha pesada. Migre uma vez para a tabela leve.
+  const legacyPresentation = state.presentation;
+  if (legacyPresentation?.image) {
+    try {
+      const existing = await db.prepare("SELECT 1 FROM campaign_presentations WHERE owner_id = ?").bind(campaignId).first();
+      if (!existing) await writeCampaignPresentation(campaignId, legacyPresentation);
+    } catch (error) {
+      console.error("Falha ao migrar apresentação legada", error);
+    }
+  }
+  delete state.presentation;
   normalizeShelter(state.shelter);
   for (const site of state.formerShelters ?? []) normalizeShelter(site);
   for (const survivor of state.survivors) {
@@ -146,7 +168,13 @@ export async function readCampaign(campaignId: string) {
 export async function writeCampaign(campaignId: string, state: GameState, expectedRevision: number) {
   await ensureCampaignSchema();
   const now = new Date().toISOString();
-  const body = JSON.stringify(state);
+  // A imagem apresentada à mesa é persistida separadamente. Nunca volte a
+  // incorporar esse payload ao corpo principal da campanha.
+  const persisted = { ...state };
+  delete persisted.presentation;
+  delete persisted.publicConflict;
+  delete persisted.publicShelterCommunity;
+  const body = JSON.stringify(persisted);
   const db = database();
   const result = expectedRevision === 0
     ? await db.prepare(
@@ -158,7 +186,7 @@ export async function writeCampaign(campaignId: string, state: GameState, expect
   if (!result.meta.changes) return null;
   await db.prepare("UPDATE campaigns SET updated_at = ? WHERE id = ?").bind(now, campaignId).run();
   try {
-    await syncCampaignAccountCharacters(campaignId, state);
+    await syncCampaignAccountCharacters(campaignId, persisted);
   } catch (error) {
     // O estado principal já foi salvo. A cópia da conta é redundante e será
     // tentada novamente no próximo salvamento, sem transformar sucesso em conflito.
@@ -319,6 +347,57 @@ export async function campaignOwnerId(campaignId: string) {
   const row = await database().prepare("SELECT owner_id FROM campaigns WHERE id = ? AND archived_at IS NULL")
     .bind(campaignId).first<{ owner_id: string }>();
   return row?.owner_id ?? null;
+}
+
+
+function presentationFromRow(row: PresentationRow | null): TablePresentation | undefined {
+  if (!row) return undefined;
+  return {
+    id: row.id,
+    image: row.image,
+    ...(row.title ? { title: row.title } : {}),
+    ...(row.caption ? { caption: row.caption } : {}),
+    active: Boolean(row.active),
+  };
+}
+
+export async function campaignPresentationVersion(campaignId: string) {
+  await ensureCampaignSchema();
+  const row = await database().prepare(
+    "SELECT id, active, updated_at FROM campaign_presentations WHERE owner_id = ?"
+  ).bind(campaignId).first<{ id: string; active: number; updated_at: string }>();
+  return row ? `${row.id}:${row.active}:${row.updated_at}` : "none";
+}
+
+export async function readCampaignPresentation(campaignId: string) {
+  await ensureCampaignSchema();
+  const row = await database().prepare(
+    "SELECT id, image, title, caption, active, updated_at FROM campaign_presentations WHERE owner_id = ?"
+  ).bind(campaignId).first<PresentationRow>();
+  return presentationFromRow(row);
+}
+
+export async function writeCampaignPresentation(campaignId: string, presentation: TablePresentation) {
+  await ensureCampaignSchema();
+  const now = new Date().toISOString();
+  await database().prepare(`INSERT INTO campaign_presentations (owner_id, id, image, title, caption, active, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(owner_id) DO UPDATE SET
+      id = excluded.id,
+      image = excluded.image,
+      title = excluded.title,
+      caption = excluded.caption,
+      active = excluded.active,
+      updated_at = excluded.updated_at`)
+    .bind(campaignId, presentation.id, presentation.image, presentation.title ?? null, presentation.caption ?? null,
+      presentation.active ? 1 : 0, now).run();
+  return `${presentation.id}:${presentation.active ? 1 : 0}:${now}`;
+}
+
+export async function clearCampaignPresentation(campaignId: string) {
+  await ensureCampaignSchema();
+  await database().prepare("DELETE FROM campaign_presentations WHERE owner_id = ?").bind(campaignId).run();
+  return "none";
 }
 
 export async function listCampaignsForUser(userId: string) {

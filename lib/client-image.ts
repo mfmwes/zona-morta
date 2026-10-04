@@ -5,7 +5,7 @@ export const storedImageMaxLength = 12_000;
 export function normalizeImageReference(value: string | undefined) {
   const trimmed = value?.trim() ?? "";
   if (!trimmed) return undefined;
-  if (trimmed.startsWith("data:image/")) return trimmed.slice(0, storedImageMaxLength);
+  if (trimmed.startsWith("data:image/")) return trimmed.length <= storedImageMaxLength ? trimmed : undefined;
   if (/^https?:\/\//i.test(trimmed)) return trimmed.slice(0, 2_000);
   return undefined;
 }
@@ -43,9 +43,9 @@ export async function encodeSquareImage(file: File, size = 224) {
 }
 
 
-export const presentationImageMaxLength = 100_000;
+export const presentationImageMaxLength = 60_000;
 
-export async function encodePresentationImage(file: File, maxDimension = 1400, maxLength = presentationImageMaxLength) {
+export async function encodePresentationImage(file: File, maxDimension = 1200, maxLength = presentationImageMaxLength) {
   if (!file.type.startsWith("image/") || file.size > 12_000_000)
     throw new Error("Escolha uma imagem de até 12 MB.");
 

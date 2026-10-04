@@ -1015,37 +1015,39 @@ test('NPC que fica em uma base antiga não é transportado sem ser selecionado',
   assert.equal(g.formerShelters[0].hex, '0,0');
 });
 
-test('apresentação visual é pública, independente do chat e pode ser fechada só no cliente', () => {
+test('apresentação visual usa canal separado e não infla o JSON principal da campanha', () => {
   const g = campaign();
   g.presentation = { id:'imagem-1', image:'https://example.com/foto.jpg', title:'Porta-retrato', caption:'Uma família diante do prédio.', active:true };
   const projected = collaboration.projectPlayerGame(g, g.survivors[0].id);
-  assert.deepEqual(projected.presentation, g.presentation);
+  assert.equal(projected.presentation, undefined);
 
   const component = fs.readFileSync(require.resolve('../components/table-presentation.tsx'), 'utf8');
   const page = fs.readFileSync(require.resolve('../app/page.tsx'), 'utf8');
   const visual = fs.readFileSync(require.resolve('../app/visual-system.css'), 'utf8');
-  const route = fs.readFileSync(require.resolve('../app/api/campaign/route.ts'), 'utf8');
+  const route = fs.readFileSync(require.resolve('../app/api/campaign/presentation/route.ts'), 'utf8');
+  const state = fs.readFileSync(require.resolve('../db/state.ts'), 'utf8');
+  const imageUtils = fs.readFileSync(require.resolve('../lib/client-image.ts'), 'utf8');
 
   assert.match(component, /Mostrar aos jogadores/);
   assert.match(component, /mode="presentation"/);
-  assert.match(component, /não é enviada ao Chat da Mesa/);
+  assert.match(component, /\/api\/campaign\/presentation/);
   assert.match(component, /setDismissedId\(presentation\.id\)/);
-  assert.match(component, /delete draft\.presentation/);
-  assert.match(component, /id: createId\(\)/);
-  assert.doesNotMatch(component, /addLog|table-chat|kind:\s*["']chat["']/);
+  assert.doesNotMatch(component, /edit\(draft|draft\.presentation|addLog|table-chat|kind:\s*["']chat["']/);
   assert.match(page, /rail-presentation-slot/);
-  assert.match(page, /<TablePresentationControl game=\{game\} edit=\{edit\}/);
-  assert.match(page, /<TablePresentationViewer presentation=\{game\.presentation\} enabled=\{readOnlyPreview\}/);
-  assert.match(visual, /\.table-presentation-trigger[\s\S]*position:fixed/);
-  assert.match(visual, /rail-presentation-slot \.table-presentation-trigger[\s\S]*position:static/);
-  assert.match(visual, /rail-presentation-slot \+ \.rail-foot[\s\S]*margin-top:0/);
-  assert.match(visual, /\.table-presentation-overlay[\s\S]*position:fixed/);
-  assert.match(route, /validPresentation\(state\.presentation\)/);
-  assert.match(route, /value\.image\.length <= 100000/);
-  const imageUtils = fs.readFileSync(require.resolve('../lib/client-image.ts'), 'utf8');
+  assert.match(page, /<TablePresentationControl campaignId=\{game\.campaignId\} presentation=\{presentation\}/);
+  assert.match(page, /<TablePresentationViewer presentation=\{presentation\} enabled=\{readOnlyPreview\}/);
+  assert.match(page, /refreshPresentation/);
+  assert.match(page, /2500/);
+  assert.match(route, /campaignPresentationVersion/);
+  assert.match(route, /writeCampaignPresentation/);
+  assert.match(route, /clearCampaignPresentation/);
+  assert.match(state, /campaign_presentations/);
+  assert.match(state, /delete persisted\.presentation/);
+  assert.match(state, /delete state\.presentation/);
   assert.match(imageUtils, /encodePresentationImage/);
-  assert.match(imageUtils, /presentationImageMaxLength = 100_000/);
-  assert.match(visual, /image-picker\.is-presentation/);
+  assert.match(imageUtils, /presentationImageMaxLength = 60_000/);
+  assert.match(visual, /\.table-presentation-trigger[\s\S]*position:fixed/);
+  assert.match(visual, /\.table-presentation-overlay[\s\S]*position:fixed/);
 });
 
 test('ferramentas de PNJ permitem imagem por link/upload e exclusão com limpeza de vínculos', () => {

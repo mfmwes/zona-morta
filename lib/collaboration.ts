@@ -32,6 +32,7 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
     })),
   ];
   const visible = structuredClone(game);
+  delete visible.presentation;
   visible.log = visible.log.map(entry => {
     const actor = entry.actorId ? game.survivors.find(person => person.id === entry.actorId) : null;
     return actor ? { ...entry, actorName: entry.actorName ?? actor.name, actorPortrait: entry.actorPortrait ?? actor.portrait } : entry;

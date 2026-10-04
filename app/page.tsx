@@ -26,7 +26,7 @@ import { RecentEvents } from "@/components/recent-events";
 import { DayCloseDialog } from "@/components/day-close-dialog";
 import { TablePresentationControl, TablePresentationViewer } from "@/components/table-presentation";
 import { SceneBoard } from "@/components/scene-board";
-import { addLog, displayTime, resetCityPreservingSurvivors, survivorHex, type GameState, type Point, type Survivor } from "@/lib/game";
+import { addLog, displayTime, resetCityPreservingSurvivors, survivorHex, type GameState, type Point, type Survivor, type TablePresentation } from "@/lib/game";
 import { createId } from "@/lib/id";
 import { npcPlayerView } from "@/lib/npc-presentation";
 import { sectorProfiles } from "@/lib/sectors";
@@ -46,6 +46,7 @@ type ModelContext = { registerTool: (tool: ModelTool, options: { signal: AbortSi
 
 export default function CampaignApp() {
   const [game, setGame] = useState<GameState | null>(null);
+  const [presentation, setPresentation] = useState<TablePresentation | undefined>();
   const [loading, setLoading] = useState(true);
   const [campaigns, setCampaigns] = useState<CampaignSummary[]>([]);
   const [accountCharacters, setAccountCharacters] = useState<AccountCharacterSummary[]>([]);
@@ -70,6 +71,7 @@ export default function CampaignApp() {
   const importInput = useRef<HTMLInputElement>(null);
   const current = useRef<GameState | null>(null);
   const revision = useRef(0);
+  const presentationVersion = useRef("");
   const pending = useRef<GameState | null>(null);
   const pendingBefore = useRef<GameState | null>(null);
   const roleRef = useRef<"mestre" | "jogador" | "convidado">("mestre");
@@ -87,6 +89,32 @@ export default function CampaignApp() {
     return owner ? "/api/campaign?campanha=" + encodeURIComponent(owner) : "/api/campaign";
   }, []);
 
+  const presentationPath = useCallback((since = "") => {
+    const owner = new URLSearchParams(window.location.search).get("campanha")?.trim() ?? "";
+    const base = owner
+      ? "/api/campaign/presentation?campanha=" + encodeURIComponent(owner)
+      : "/api/campaign/presentation";
+    return since ? base + (base.includes("?") ? "&" : "?") + "since=" + encodeURIComponent(since) : base;
+  }, []);
+
+  const refreshPresentation = useCallback(async (force = false) => {
+    const campaignId = new URLSearchParams(window.location.search).get("campanha")?.trim() ?? "";
+    if (!campaignId) {
+      presentationVersion.current = "";
+      setPresentation(undefined);
+      return;
+    }
+    try {
+      const response = await fetch(presentationPath(force ? "" : presentationVersion.current), { cache: "no-store" });
+      if (!response.ok) return;
+      const data = await response.json() as { changed?: boolean; version?: string; presentation?: TablePresentation };
+      if (data.version) presentationVersion.current = data.version;
+      if (data.changed !== false) setPresentation(data.presentation);
+    } catch {
+      // A apresentação é auxiliar; falhas temporárias não derrubam o dossiê.
+    }
+  }, [presentationPath]);
+
   const loadCampaign = useCallback(async () => {
     try {
       const campaignId = new URLSearchParams(window.location.search).get("campanha")?.trim() ?? "";
@@ -103,6 +131,7 @@ export default function CampaignApp() {
         setCampaigns(payload.campaigns ?? []);
         setAccountCharacters(characterResponse.ok ? (characterPayload.characters ?? []) : []);
         setShowLibrary(true);
+        setPresentation(undefined); presentationVersion.current = "";
         setGame(null); current.current = null;
         setLoadError("");
         return;
@@ -126,14 +155,26 @@ export default function CampaignApp() {
       pendingBefore.current = null;
       paused.current = false;
       setGame(data.state ?? null); setStatus("salvo"); setSaveError(""); setLoadError("");
+      void refreshPresentation(true);
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : "Falha ao abrir a campanha.");
     } finally { setLoading(false); }
-  }, [apiPath]);
+  }, [apiPath, refreshPresentation]);
 
   // This starts network I/O; loadCampaign updates state only after the request resolves.
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void loadCampaign(); }, [loadCampaign]);
+
+  // A apresentação da mesa usa um canal pequeno e independente do estado
+  // principal. O endpoint devolve a imagem apenas quando a versão muda.
+  useEffect(() => {
+    const campaignId = new URLSearchParams(window.location.search).get("campanha")?.trim() ?? "";
+    if (!campaignId) return;
+    const timer = window.setInterval(() => {
+      if (current.current) void refreshPresentation(false);
+    }, 2500);
+    return () => window.clearInterval(timer);
+  }, [refreshPresentation]);
 
   useEffect(() => {
     const refresh = () => { if (!pending.current && !sending.current) void loadCampaign(); };
@@ -433,7 +474,7 @@ export default function CampaignApp() {
   ];
 
   return <Tabs value={activeTab} onValueChange={setTab} className="w-full">
-    <TablePresentationViewer presentation={game.presentation} enabled={readOnlyPreview} />
+    <TablePresentationViewer presentation={presentation} enabled={readOnlyPreview} />
     <SidebarProvider className={`app-shell ${chatOpen ? "chat-open" : "chat-closed"}`}>
     <Sidebar collapsible="none" className="rail">
       <div className="flex items-center gap-3 px-2">
@@ -450,7 +491,7 @@ export default function CampaignApp() {
         </DropdownMenu>
       </TabsList>
       {role === "mestre" && !playerPreview && <div className="rail-presentation-slot">
-        <TablePresentationControl game={game} edit={edit} />
+        <TablePresentationControl campaignId={game.campaignId} presentation={presentation} onPresentationChange={setPresentation} />
       </div>}
       <div className="rail-foot"><b>Dia {game.day}</b> · {displayTime(game.minutes)}
         <p>Um hex pode guardar muitos lugares, pistas e acontecimentos.</p></div>
