@@ -491,7 +491,7 @@ export default function CampaignApp() {
         </DropdownMenu>
       </TabsList>
       {role === "mestre" && !playerPreview && <div className="rail-presentation-slot">
-        <TablePresentationControl campaignId={game.campaignId} presentation={presentation} onPresentationChange={setPresentation} />
+        <TablePresentationControl campaignId={ownerId} presentation={presentation} onPresentationChange={setPresentation} />
       </div>}
       <div className="rail-foot"><b>Dia {game.day}</b> · {displayTime(game.minutes)}
         <p>Um hex pode guardar muitos lugares, pistas e acontecimentos.</p></div>
