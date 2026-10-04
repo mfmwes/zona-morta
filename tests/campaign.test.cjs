@@ -1034,7 +1034,8 @@ test('apresentação visual usa canal separado e não infla o JSON principal da 
   assert.match(component, /setDismissedId\(presentation\.id\)/);
   assert.doesNotMatch(component, /edit\(draft|draft\.presentation|addLog|table-chat|kind:\s*["']chat["']/);
   assert.match(page, /rail-presentation-slot/);
-  assert.match(page, /<TablePresentationControl campaignId=\{ownerId\} presentation=\{presentation\}/);\n  assert.doesNotMatch(page, /<TablePresentationControl campaignId=\{game\.campaignId\}/);
+  assert.match(page, /<TablePresentationControl campaignId=\{ownerId\} presentation=\{presentation\}/);
+  assert.doesNotMatch(page, /<TablePresentationControl campaignId=\{game\.campaignId\}/);
   assert.match(page, /<TablePresentationViewer presentation=\{presentation\} enabled=\{readOnlyPreview\}/);
   assert.match(page, /refreshPresentation/);
   assert.match(page, /2500/);
