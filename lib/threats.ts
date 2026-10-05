@@ -43,6 +43,7 @@ export type ThreatTemplate = {
 
 export type ThreatInstance = {
   id: string;
+  eventOrigin?: import("./game").HexEventOrigin;
   templateId: string;
   /** Snapshot preserva a ficha usada quando a ameaça entrou em cena. */
   templateSnapshot: ThreatTemplate;

@@ -7,6 +7,7 @@
   },
   "scripts": {
     "test": "node --test tests/*.test.mjs tests/*.test.cjs",
+    "lint:hex-events": "eslint lib/hex-event-actions.ts lib/hex-event-links.ts lib/exploration.ts components/hex-event-action-dialog.tsx components/hex-search-dialog.tsx components/hex-generator-dialog.tsx components/hex-explorer.tsx components/hex-context-menu.tsx tests/hex-event-actions.test.cjs tests/hex-search.test.cjs",
     "dev": "vite dev",
     "build": "vite build",
     "start": "wrangler dev --config dist/server/wrangler.json --local",

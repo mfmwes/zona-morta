@@ -42,13 +42,44 @@
   align-items: flex-start;
   gap: 6px 10px;
 }
-.hex-point-heading > b {
+.hex-point-heading > div {
   flex: 1 1 12rem;
   min-width: 0;
   font-size: .95rem;
   line-height: 1.35;
 }
 .hex-point-heading > label { flex: none; }
+
+.hex-content-tools { margin-bottom: 20px; }
+.hex-location-path {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+}
+.hex-location-path > span { min-width: 0; padding: 12px; overflow-wrap: anywhere; }
+.hex-location-path > span + span { border-left: 1px solid var(--border); }
+.hex-location-path small { display: block; color: var(--muted-foreground); font-size: .72rem; margin-bottom: 4px; }
+.hex-location-path b { font-size: .9rem; }
+.hex-search-step { display: grid; gap: 12px; padding-top: 14px; border-top: 1px solid var(--border); }
+.hex-search-step h3 { display: flex; align-items: center; gap: 9px; margin: 0; font-size: .95rem; font-weight: 750; }
+.hex-search-step h3 > span { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 50%; color: var(--primary-foreground); background: var(--primary); font-size: .75rem; flex: none; }
+.hex-search-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; min-width: 0; }
+.hex-search-choices > label { display: flex; align-items: flex-start; gap: 9px; border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; cursor: pointer; background: var(--card); min-width: 0; }
+.hex-search-choices input { flex: none; margin-top: 3px; accent-color: var(--primary); }
+.hex-search-choices b { display: block; font-size: .84rem; }
+.hex-search-choices small { display: block; color: var(--muted-foreground); font-size: .76rem; line-height: 1.4; margin-top: 4px; }
+.hex-search-choices label:has(input:checked) { border-color: var(--primary); background: var(--accent); }
+.hex-search-choices label:has(input:disabled) { opacity: .65; cursor: default; }
+.hex-search-choices label:has(input:focus-visible) { outline: 2px solid var(--ring); outline-offset: 2px; }
+.hex-search-history { padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); }
+.hex-search-history > b { font-size: .8rem; }
+@media (max-width: 480px) {
+  .hex-search-choices, .hex-location-path { grid-template-columns: minmax(0, 1fr); }
+  .hex-location-path > span + span { border-left: 0; border-top: 1px solid var(--border); }
+  .hex-search-dialog [data-slot=dialog-footer] { align-items: stretch; }
+}
 
 @media (max-width: 1279px) {
   .hex-points-list {

@@ -6,6 +6,7 @@ import { ammunitionTypes, survivorStats, type AmmunitionType, type GameState, ty
 import { preserveKnownSectors } from "@/lib/sectors";
 import { validWorld } from "@/lib/world";
 import { validSceneBoardState } from "@/lib/scene-board";
+import { validHexEventOrigin } from "@/lib/hex-event-links";
 
 export const dynamic = "force-dynamic";
 const noStore = { "Cache-Control": "no-store" };
@@ -95,6 +96,7 @@ function validConflict(value: unknown) {
       const row = instance as Record<string, unknown>;
       return typeof row.id === "string" && row.id.length <= 120
         && typeof row.templateId === "string" && row.templateId.length <= 120
+        && validHexEventOrigin(row.eventOrigin)
         && validThreat(row.templateSnapshot)
         && typeof row.name === "string" && row.name.length <= 100
         && Number.isInteger(row.hpMarked) && Number(row.hpMarked) >= 0 && Number(row.hpMarked) <= 99
@@ -168,6 +170,7 @@ function validState(value: unknown): value is GameState {
     && Array.isArray(state.survivors) && state.survivors.length <= 30
     && (state.npcs === undefined || (Array.isArray(state.npcs) && state.npcs.length <= 300
       && state.npcs.every(npc => npc && typeof npc.id === "string" && typeof npc.name === "string"
+        && validHexEventOrigin(npc.eventOrigin)
         && (npc.visibleToPlayers === undefined || typeof npc.visibleToPlayers === "boolean")
         && (npc.portraitFrame === undefined || validPortraitFrame(npc.portraitFrame))
         && (npc.portrait === undefined || (typeof npc.portrait === "string" && npc.portrait.length <= 12000))

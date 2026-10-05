@@ -14,6 +14,10 @@ export { content };
 export type Discovery = "desconhecido" | "avistado" | "explorado";
 export type Infection = "Saudável" | "Exposto" | "Infectado" | "Sintomático" | "Terminal";
 
+export type HexEventActionKind = "point" | "npc" | "threat" | "clue";
+/** Vínculo reservado ao mestre, também usado para impedir uma segunda criação. */
+export type HexEventOrigin = { hexId: string; eventId: string; action: HexEventActionKind };
+
 export type Point = {
   id: string;
   name: string;
@@ -22,6 +26,9 @@ export type Point = {
   access: string;
   notes: string;
   revealed: boolean;
+  eventOrigin?: HexEventOrigin;
+  /** Destino de uma pista. O texto público é decidido separadamente pelo mestre. */
+  clueTargetHex?: string;
   /** Metadados procedurais opcionais mantêm campanhas antigas compatíveis. */
   generatorKind?: "locais" | "comercios";
   generatorRoll?: number;
@@ -47,6 +54,13 @@ export type HexEvent = {
   generatorKind?: "eventos";
   generatorRoll?: number;
   generatorCategory?: string;
+  /** Ausente em eventos antigos. Cada ação pode ser confirmada uma única vez. */
+  actionLinks?: {
+    pointId?: string;
+    npcId?: string;
+    cluePointId?: string;
+    threat?: { conflictId: string; threatIds: string[] };
+  };
 };
 
 export type HexState = {
@@ -290,6 +304,7 @@ export type NpcDisposition = "Hostil" | "Desconfiado" | "Neutro" | "Aliado" | "L
 /** Uma ficha leve de personagem da campanha; não substitui uma ficha de sobrevivente. */
 export type NPC = {
   id: string;
+  eventOrigin?: HexEventOrigin;
   /** Absent in older saves means visible. Hidden NPCs stay in the GM campaign. */
   visibleToPlayers?: boolean;
   name: string;

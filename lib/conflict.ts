@@ -180,13 +180,15 @@ export function addThreatInstances(scene: ConflictScene, template: ThreatTemplat
   const allNames = new Set(scene.threats.map(threat => threat.name));
   const added: ThreatInstance[] = [];
   let candidateIndex = 0;
+  const baseName = template.name.trim().slice(0, 100) || "Ameaça";
 
   for (let index = 0; index < count; index++) {
-    const needsSuffix = count > 1 || existingSameTemplate.length > 0 || added.length > 0 || allNames.has(template.name);
-    let name = template.name;
+    const needsSuffix = count > 1 || existingSameTemplate.length > 0 || added.length > 0 || allNames.has(baseName);
+    let name = baseName;
     if (needsSuffix) {
       do {
-        name = `${template.name} ${alphabeticLabel(candidateIndex++)}`;
+        const suffix = alphabeticLabel(candidateIndex++);
+        name = `${baseName.slice(0, 99 - suffix.length)} ${suffix}`;
       } while (allNames.has(name));
     }
     allNames.add(name);

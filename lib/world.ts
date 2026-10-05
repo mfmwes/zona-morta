@@ -1,4 +1,5 @@
 import type { GameState, HexState } from "./game";
+import { validEventActionLinks, validHexEventOrigin } from "./hex-event-links";
 
 export const terrains = { urban: "Urbano", rural: "Rural", forest: "Floresta", mountain: "Montanha", swamp: "Pântano" } as const;
 export type Terrain = keyof typeof terrains;
@@ -83,6 +84,8 @@ export function validWorld(value: unknown): value is Record<string, HexState> {
     && typeof point.access === "string" && point.access.length <= 1200
     && typeof point.notes === "string" && point.notes.length <= 2400
     && typeof point.revealed === "boolean"
+    && validHexEventOrigin(point.eventOrigin)
+    && (point.clueTargetHex === undefined || (typeof point.clueTargetHex === "string" && Boolean(parseHex(point.clueTargetHex))))
     && Array.isArray(point.searches) && point.searches.length <= 80
     && (point.generatorKind === undefined || ["locais", "comercios"].includes(point.generatorKind))
     && (point.generatorRoll === undefined || (Number.isInteger(point.generatorRoll) && point.generatorRoll >= 1 && point.generatorRoll <= 100))
@@ -95,6 +98,7 @@ export function validWorld(value: unknown): value is Record<string, HexState> {
     && typeof event.text === "string" && event.text.length <= 2400
     && typeof event.trigger === "string" && event.trigger.length <= 240
     && typeof event.revealed === "boolean"
+    && validEventActionLinks(event.actionLinks)
     && (event.triggerType === undefined || ["manual", "enter", "search", "noise", "night"].includes(event.triggerType))
     && (event.triggerValue === undefined || (Number.isInteger(event.triggerValue) && event.triggerValue >= 0 && event.triggerValue <= 1440))
     && (event.status === undefined || ["pending", "active", "resolved", "archived"].includes(event.status))

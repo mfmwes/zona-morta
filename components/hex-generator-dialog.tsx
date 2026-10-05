@@ -27,10 +27,10 @@ function pointFromResult(text: string) {
 }
 
 function kindLabel(kind: HexGeneratorKind | "manual") {
-  if (kind === "locais") return "B1 · Local";
-  if (kind === "comercios") return "B2 · Comércio";
-  if (kind === "eventos") return "B3 · Evento";
-  return "Ponto manual";
+  if (kind === "locais") return "Gerar local · B1";
+  if (kind === "comercios") return "Gerar comércio · B2";
+  if (kind === "eventos") return "Gerar evento · B3";
+  return "Adicionar local";
 }
 
 function triggerText(type: keyof typeof eventTriggerLabels, value: number) {
@@ -160,7 +160,8 @@ export function HexGeneratorDialog({
       <DialogHeader>
         <DialogTitle>{kindLabel(request.kind)}</DialogTitle>
         <DialogDescription>
-          Hex {request.hexId} · {sectorName}. O sorteio considera terreno, setor, infestação, Barulho e resultados já usados.
+          Setor do mapa: {sectorName} · Hex {request.hexId}.
+          {request.kind === "eventos" ? " Prepare um acontecimento neste setor." : " Registre um lugar dentro deste setor. Depois, o grupo poderá vasculhar suas áreas internas."}
         </DialogDescription>
       </DialogHeader>
 
@@ -212,7 +213,7 @@ export function HexGeneratorDialog({
           ]}
           onChange={value => setManualKind(value as "local" | "comércio")}
         />}
-        <Field label="Lugar" value={pointName} onChange={setPointName} placeholder="Nome do ponto" />
+        <Field label="Nome do local dentro deste setor" value={pointName} onChange={setPointName} placeholder="Ex.: Oficina do Arnaldo" />
         <Field
           label="Primeiro sinal"
           value={pointSignal}
@@ -231,7 +232,7 @@ export function HexGeneratorDialog({
           <Field label="Risco sugerido" value={pointRisk} onChange={setPointRisk} placeholder="Risco aparente" />
         </div>}
         {request.kind !== "manual" && <Pick
-          label="Tabela de busca sugerida"
+          label="Tabela de achados para vasculhar o local"
           value={pointLootTable}
           placeholder="Sem sugestão"
           options={gameContent.lootTables.map(table => table.name)}
@@ -254,7 +255,7 @@ export function HexGeneratorDialog({
         <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
         {request.kind === "eventos"
           ? <Button disabled={!result.trim()} onClick={saveEvent}><Dice5 size={16} /> Preparar evento</Button>
-          : <Button disabled={!pointName.trim()} onClick={savePoint}><MapPin size={16} /> Registrar ponto</Button>}
+          : <Button disabled={!pointName.trim()} onClick={savePoint}><MapPin size={16} /> Registrar local</Button>}
       </DialogFooter>
     </DialogContent>
   </Dialog>;

@@ -1,4 +1,4 @@
-import { addLog, content, survivorsAtHex, type GameState } from "./game";
+import { addLog, content, survivorsAtHex, type GameState, type Point } from "./game";
 import { createId } from "./id";
 import { advanceCampaignTime } from "./time";
 
@@ -8,13 +8,33 @@ export type SearchInput = {
 };
 export const normalizedSector = (name: string) => name.trim().replace(/\s+/g, " ").toLocaleLowerCase("pt-BR");
 
+/** `sector` nas buscas antigas representa uma área interna, não o setor do mapa. */
+export function searchAreaLabel(point: Point, area: string) {
+  return normalizedSector(area) === normalizedSector(point.name) ? "Área principal" : area;
+}
+
+export function searchAvailabilityError(game: GameState, hexId: string, pointId: string): string | null {
+  const hex = game.hexes[hexId];
+  const point = hex?.points.find(p => p.id === pointId);
+  if (!point) return "Este local não está mais registrado no hex.";
+  if (hex.discovery !== "explorado") return "Explore este hex antes de buscar nos locais.";
+  if (survivorsAtHex(game, hexId).length === 0) return "É preciso haver pelo menos um sobrevivente neste hex antes de procurar itens.";
+  return null;
+}
+
+export function searchAreaError(point: Point, area: string): string | null {
+  if (!area.trim()) return "Informe a área interna que será vasculhada.";
+  if (point.searches.some(search => normalizedSector(search.sector) === normalizedSector(area))) return "Esta área interna já foi vasculhada. Escolha outra área que exista neste local.";
+  return null;
+}
+
 export function searchError(game: GameState, input: SearchInput): string | null {
-  if (survivorsAtHex(game, input.hex).length === 0) return "É preciso haver pelo menos um sobrevivente neste hex antes de procurar itens.";
-  const hex = game.hexes[input.hex];
-  const point = hex?.points.find(p => p.id === input.pointId);
-  if (hex?.discovery !== "explorado" || !point) return "Este ponto precisa estar em um hex explorado.";
-  if (!input.sector.trim() || !input.result.trim()) return "Informe o setor e o resultado da busca.";
-  if (point.searches.some(search => normalizedSector(search.sector) === normalizedSector(input.sector))) return "Este setor já foi vasculhado.";
+  const availabilityError = searchAvailabilityError(game, input.hex, input.pointId);
+  if (availabilityError) return availabilityError;
+  const point = game.hexes[input.hex].points.find(p => p.id === input.pointId)!;
+  const areaError = searchAreaError(point, input.sector);
+  if (areaError) return areaError;
+  if (!input.result.trim()) return "Registre o resultado da busca, inclusive quando nada for encontrado.";
   if (!Number.isInteger(input.minutes) || input.minutes < 1 || game.minutes + input.minutes >= 1440) return "A busca precisa terminar antes da passagem de dia.";
   if (input.mode === "specific" && !input.what.trim()) return "Descreva o que procuram e o objetivo.";
   if (input.mode === "open" && (!content.lootTables.some(t => t.name === input.table) || !Number.isInteger(input.roll) || input.roll! < 1 || input.roll! > 12)) return "Role o achado na tabela do local.";
