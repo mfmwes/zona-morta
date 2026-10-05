@@ -416,7 +416,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
               {point.risk && <span className="tag">Risco: {point.risk}</span>}
               {point.lootTable && <span className="tag">Busca: {point.lootTable}</span>}
             </div>}
-            {!playerPreview && point.notes && <p className="mt-2 subtle"><b>Reservado:</b> {point.notes}</p>
+            {!playerPreview && point.notes && <p className="mt-2 subtle"><b>Reservado:</b> {point.notes}</p>}
             {point.searches.length > 0 && <div className="mt-3 border-t pt-2">
               {point.searches.map(search => <p key={search.id} className="mt-1">
                 <b>{search.mode === "open" ? "Busca aberta" : "Busca específica"}:</b>
