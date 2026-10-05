@@ -75,10 +75,38 @@ export function mapBounds(hexes: HexCoordinate[]) {
 export function validWorld(value: unknown): value is Record<string, HexState> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const entries = Object.entries(value);
+  const validPoint = (point: HexState["points"][number]) => Boolean(point
+    && typeof point.id === "string" && point.id.length <= 120
+    && typeof point.name === "string" && point.name.length <= 120
+    && ["local", "comércio"].includes(point.kind)
+    && typeof point.signal === "string" && point.signal.length <= 2000
+    && typeof point.access === "string" && point.access.length <= 1200
+    && typeof point.notes === "string" && point.notes.length <= 2400
+    && typeof point.revealed === "boolean"
+    && Array.isArray(point.searches) && point.searches.length <= 80
+    && (point.generatorKind === undefined || ["locais", "comercios"].includes(point.generatorKind))
+    && (point.generatorRoll === undefined || (Number.isInteger(point.generatorRoll) && point.generatorRoll >= 1 && point.generatorRoll <= 100))
+    && (point.generatorCategory === undefined || (typeof point.generatorCategory === "string" && point.generatorCategory.length <= 80))
+    && (point.condition === undefined || (typeof point.condition === "string" && point.condition.length <= 240))
+    && (point.risk === undefined || (typeof point.risk === "string" && point.risk.length <= 240))
+    && (point.lootTable === undefined || (typeof point.lootTable === "string" && point.lootTable.length <= 120)));
+  const validEvent = (event: HexState["events"][number]) => Boolean(event
+    && typeof event.id === "string" && event.id.length <= 120
+    && typeof event.text === "string" && event.text.length <= 2400
+    && typeof event.trigger === "string" && event.trigger.length <= 240
+    && typeof event.revealed === "boolean"
+    && (event.triggerType === undefined || ["manual", "enter", "search", "noise", "night"].includes(event.triggerType))
+    && (event.triggerValue === undefined || (Number.isInteger(event.triggerValue) && event.triggerValue >= 0 && event.triggerValue <= 1440))
+    && (event.status === undefined || ["pending", "active", "resolved", "archived"].includes(event.status))
+    && (event.guidance === undefined || (typeof event.guidance === "string" && event.guidance.length <= 1600))
+    && (event.generatorKind === undefined || event.generatorKind === "eventos")
+    && (event.generatorRoll === undefined || (Number.isInteger(event.generatorRoll) && event.generatorRoll >= 1 && event.generatorRoll <= 100))
+    && (event.generatorCategory === undefined || (typeof event.generatorCategory === "string" && event.generatorCategory.length <= 80)));
   return entries.length > 0 && entries.length <= MAX_WORLD_HEXES && entries.every(([id, hex]) =>
     parseHex(id) && hex && typeof hex === "object"
     && ["desconhecido", "avistado", "explorado"].includes(hex.discovery)
-    && [1, 2].includes(hex.routeHours) && Array.isArray(hex.points) && Array.isArray(hex.events)
+    && [1, 2].includes(hex.routeHours) && Array.isArray(hex.points) && hex.points.length <= 120 && hex.points.every(validPoint)
+    && Array.isArray(hex.events) && hex.events.length <= 160 && hex.events.every(validEvent)
     && (hex.terrain === undefined || Object.hasOwn(terrains, hex.terrain))
     && (hex.passage === undefined || Object.hasOwn(passages, hex.passage)));
 }

@@ -22,8 +22,31 @@ export type Point = {
   access: string;
   notes: string;
   revealed: boolean;
+  /** Metadados procedurais opcionais mantêm campanhas antigas compatíveis. */
+  generatorKind?: "locais" | "comercios";
+  generatorRoll?: number;
+  generatorCategory?: string;
+  condition?: string;
+  risk?: string;
+  lootTable?: string;
   searches: { id: string; what: string; why: string; sector: string; minutes: number; result: string;
     mode?: "specific" | "open"; table?: string; roll?: number }[];
+};
+
+export type HexEventTriggerType = "manual" | "enter" | "search" | "noise" | "night";
+export type HexEventStatus = "pending" | "active" | "resolved" | "archived";
+export type HexEvent = {
+  id: string;
+  text: string;
+  trigger: string;
+  revealed: boolean;
+  triggerType?: HexEventTriggerType;
+  triggerValue?: number;
+  status?: HexEventStatus;
+  guidance?: string;
+  generatorKind?: "eventos";
+  generatorRoll?: number;
+  generatorCategory?: string;
 };
 
 export type HexState = {
@@ -36,7 +59,7 @@ export type HexState = {
   notes: string;
   routeHours: 1 | 2;
   points: Point[];
-  events: { id: string; text: string; trigger: string; revealed: boolean }[];
+  events: HexEvent[];
 };
 
 export type EquipmentSlot = "primary" | "secondary" | "protection" | "outfit" | "personal" | "bag" | "pocket1" | "pocket2";

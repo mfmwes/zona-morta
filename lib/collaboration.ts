@@ -85,10 +85,23 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
       hex.sector = null; hex.signs = ""; hex.points = []; hex.events = [];
       continue;
     }
-    hex.points = hex.points.filter(point => point.revealed).map(point => ({
-      ...point, notes: "", access: "", searches: [],
-    }));
-    hex.events = hex.events.filter(event => event.revealed).map(event => ({ ...event, trigger: "" }));
+    hex.points = hex.points.filter(point => point.revealed).map(point => {
+      const visiblePoint = { ...point, notes: "", access: "", searches: [] };
+      delete visiblePoint.risk;
+      delete visiblePoint.lootTable;
+      delete visiblePoint.generatorKind;
+      delete visiblePoint.generatorRoll;
+      return visiblePoint;
+    });
+    hex.events = hex.events
+      .filter(event => event.revealed && (event.status === undefined || event.status === "active" || event.status === "resolved"))
+      .map(event => {
+        const visibleEvent = { ...event, trigger: "", guidance: "" };
+        delete visibleEvent.triggerValue;
+        delete visibleEvent.generatorKind;
+        delete visibleEvent.generatorRoll;
+        return visibleEvent;
+      });
   }
   return visible;
 }

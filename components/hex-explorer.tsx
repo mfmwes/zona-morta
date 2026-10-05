@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ChevronDown, Compass, Dice5, Eye, Footprints, House, MapPin, Package, Route, Search, Users, Plus } from "lucide-react";
+import { Archive, CheckCircle2, ChevronDown, Compass, Dice5, Eye, Footprints, House, MapPin, Package, Play, Route, Search, Trash2, Undo2, Users, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -23,6 +23,7 @@ import { rollDie } from "@/lib/rolls";
 import { normalizedSector, recordSearch, searchError, type SearchInput } from "@/lib/exploration";
 import { movementSources, performHexAction, type HexQuickAction } from "@/lib/hex-actions";
 import { shelterTravelMinutes } from "@/lib/shelter-projects";
+import { eventStatus, eventTriggerLabel, eventTriggerReady, generateHexContent } from "@/lib/hex-generators";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 
@@ -34,10 +35,6 @@ function labelLines(name: string) {
   if (!parts.length) return [first.length > 13 ? `${first.slice(0, 12)}…` : first];
   const rest = parts.join(" ");
   return [first.length > 13 ? `${first.slice(0, 12)}…` : first, rest.length > 13 ? `${rest.slice(0, 12)}…` : rest];
-}
-
-function dice100() {
-  return rollDie(100);
 }
 
 function travelDurationLabel(minutes: number) {
@@ -117,7 +114,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
     setSearchId(point.id);
     setSearchMode("specific"); setSearchWhat(""); setSearchResult("");
     setOtherSector(false); setSearchSector(""); setSearchMinutes(30);
-    setLootTable(""); setRolledLoot(null);
+    setLootTable(point.lootTable ?? ""); setRolledLoot(null);
   }
 
   function rollLoot() {
@@ -151,7 +148,10 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
   }
 
   const exposedPoints = playerPreview ? record.points.filter(p => p.revealed) : record.points;
-  const exposedEvents = playerPreview ? record.events.filter(e => e.revealed) : record.events;
+  const exposedEvents = playerPreview
+    ? record.events.filter(event => event.revealed && ["active", "resolved"].includes(eventStatus(event)))
+    : record.events.filter(event => eventStatus(event) !== "archived");
+  const archivedEvents = playerPreview ? [] : record.events.filter(event => eventStatus(event) === "archived");
   const visible = !playerPreview || record.discovery !== "desconhecido";
   const [partyQ, partyR] = (game.partyHex || "0,0").split(",").map(Number);
   const canTravel = hexDistance(area.q-partyQ, area.r-partyR) === 1;
@@ -197,9 +197,8 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
 
   function openGenerator(id: string, kind: HexGeneratorKind) {
     selectHex(id);
-    const roll = dice100();
-    const row = content.generators[kind].find(entry => entry.roll === roll)!;
-    setGeneratorRequest({ hexId: id, kind, roll, text: row.text });
+    const generated = generateHexContent(game, id, kind);
+    setGeneratorRequest({ hexId: id, kind, generated });
   }
 
   function openManualPoint(id: string) {
@@ -210,6 +209,26 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
   function openMasterTools(id: string) {
     selectHex(id);
     setGmOpen(true);
+  }
+
+
+  function updateEventStatus(eventId: string, status: "pending" | "active" | "resolved" | "archived") {
+    edit(draft => {
+      const event = draft.hexes[selected]?.events.find(row => row.id === eventId);
+      if (!event) return;
+      event.status = status;
+      const sector = draft.hexes[selected].sector?.name ?? `Hex ${selected}`;
+      const action = status === "active" ? "ativado" : status === "resolved" ? "resolvido" : status === "archived" ? "arquivado" : "reaberto";
+      addLog(draft, "evento", `${sector}: evento ${action} — ${event.text}`);
+    });
+  }
+
+  function deleteEvent(eventId: string) {
+    edit(draft => {
+      const hex = draft.hexes[selected];
+      if (!hex) return;
+      hex.events = hex.events.filter(event => event.id !== eventId);
+    });
   }
 
 
@@ -391,7 +410,13 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
                 onCheckedChange={checked => edit(draft => { const found = draft.hexes[selected].points.find(p=>p.id===point.id); if(found) found.revealed=checked; })} /> Público</label>}</div>
             {point.signal && <p className="mt-1">{point.signal}</p>}
             {point.access && <p className="mt-2"><b>Acesso:</b> {point.access}</p>}
-            {!playerPreview && point.notes && <p className="mt-2 subtle"><b>Reservado:</b> {point.notes}</p>}
+            {!playerPreview && (point.generatorCategory || point.condition || point.risk || point.lootTable) && <div className="flex flex-wrap gap-2 mt-2">
+              {point.generatorCategory && <span className="tag">{point.generatorCategory}</span>}
+              {point.condition && <span className="tag">Condição: {point.condition}</span>}
+              {point.risk && <span className="tag">Risco: {point.risk}</span>}
+              {point.lootTable && <span className="tag">Busca: {point.lootTable}</span>}
+            </div>}
+            {!playerPreview && point.notes && <p className="mt-2 subtle"><b>Reservado:</b> {point.notes}</p>
             {point.searches.length > 0 && <div className="mt-3 border-t pt-2">
               {point.searches.map(search => <p key={search.id} className="mt-1">
                 <b>{search.mode === "open" ? "Busca aberta" : "Busca específica"}:</b>
@@ -446,10 +471,50 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
             </>}
           </article>)}
         </div>}
-        {exposedEvents.length > 0 && <div className="mt-5"><h3 className="section-title mb-2">Eventos registrados</h3>
-          {exposedEvents.map(event => <div className="list-card text-sm" key={event.id}>
-            <b>{event.trigger}</b><p className="mt-1">{event.text}</p>
-          </div>)}
+        {(exposedEvents.length > 0 || archivedEvents.length > 0) && <div className="mt-5">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <h3 className="section-title">Eventos</h3>
+            {!playerPreview && <span className="tag">{exposedEvents.length} ativos/pendentes · {archivedEvents.length} arquivados</span>}
+          </div>
+          <div className="grid gap-2">
+            {exposedEvents.map(event => {
+              const status = eventStatus(event);
+              const ready = !playerPreview && eventTriggerReady(game, selected, event);
+              return <div className={`list-card text-sm hex-event-card hex-event-${status}`} key={event.id}>
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap gap-2 items-center">
+                      <b>{eventTriggerLabel(event)}</b>
+                      {!playerPreview && <span className="tag">{status === "pending" ? ready ? "PRONTO" : "PENDENTE" : status === "active" ? "ATIVO" : "RESOLVIDO"}</span>}
+                      {!playerPreview && event.generatorCategory && <span className="tag">{event.generatorCategory}</span>}
+                    </div>
+                    <p className="mt-1">{event.text}</p>
+                    {!playerPreview && event.guidance && <p className="mt-2 subtle"><b>Orientação:</b> {event.guidance}</p>}
+                  </div>
+                  {!playerPreview && <label className="flex items-center gap-2 text-xs whitespace-nowrap"><Switch size="sm" checked={event.revealed}
+                    onCheckedChange={checked => edit(draft => { const found = draft.hexes[selected].events.find(row=>row.id===event.id); if(found) found.revealed=checked; })} /> Público</label>}
+                </div>
+                {!playerPreview && <div className="flex flex-wrap gap-2 mt-3">
+                  {status === "pending" && <Button size="sm" variant={ready ? "default" : "outline"} onClick={() => updateEventStatus(event.id, "active")}><Play size={14} /> Ativar</Button>}
+                  {status === "active" && <Button size="sm" variant="outline" onClick={() => updateEventStatus(event.id, "resolved")}><CheckCircle2 size={14} /> Resolver</Button>}
+                  {status === "resolved" && <Button size="sm" variant="outline" onClick={() => updateEventStatus(event.id, "active")}><Undo2 size={14} /> Reabrir</Button>}
+                  <Button size="sm" variant="ghost" onClick={() => updateEventStatus(event.id, "archived")}><Archive size={14} /> Arquivar</Button>
+                </div>}
+              </div>;
+            })}
+          </div>
+          {!playerPreview && archivedEvents.length > 0 && <Collapsible className="mt-3">
+            <CollapsibleTrigger asChild><Button size="sm" variant="ghost"><Archive size={14} /> Arquivados ({archivedEvents.length})</Button></CollapsibleTrigger>
+            <CollapsibleContent className="grid gap-2 mt-2">
+              {archivedEvents.map(event => <div className="list-card text-sm" key={event.id}>
+                <b>{eventTriggerLabel(event)}</b><p className="mt-1">{event.text}</p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  <Button size="sm" variant="outline" onClick={() => updateEventStatus(event.id, "resolved")}><Undo2 size={14} /> Restaurar</Button>
+                  <Button size="sm" variant="ghost" onClick={() => deleteEvent(event.id)}><Trash2 size={14} /> Excluir</Button>
+                </div>
+              </div>)}
+            </CollapsibleContent>
+          </Collapsible>}
         </div>}
         {!playerPreview && record.discovery !== "desconhecido" && record.sector && record.sector.invites.length > 0 && <div className="mt-5 rounded-md border border-dashed border-[#b2c8c5] p-3">
           <p className="dossier-title mb-2 flex items-center gap-1"><Compass size={14} /> Convites possíveis</p>

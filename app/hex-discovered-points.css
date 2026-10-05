@@ -56,3 +56,25 @@
     max-height: min(24rem, 45dvh);
   }
 }
+
+
+/* Procedural hex events */
+.hex-event-card {
+  border-left-width: 3px;
+}
+.hex-event-pending {
+  border-left-color: #a98b55;
+}
+.hex-event-active {
+  border-left-color: #4c8d7e;
+}
+.hex-event-resolved {
+  border-left-color: #6e7e80;
+  opacity: .9;
+}
+html[data-theme="dark"] .hex-event-pending {
+  border-left-color: #c5a46a;
+}
+html[data-theme="dark"] .hex-event-active {
+  border-left-color: #70b3a2;
+}

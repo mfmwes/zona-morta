@@ -6,18 +6,17 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Field, Pick } from "@/components/game-controls";
+import { Counter, Field, Pick } from "@/components/game-controls";
 import { addLog, content as gameContent, type GameState, type Point } from "@/lib/game";
+import { eventTriggerLabels, generateHexContent, type GeneratedHexContent, type HexGeneratorKind } from "@/lib/hex-generators";
 import { createId } from "@/lib/id";
-import { rollDie } from "@/lib/rolls";
 
 type Edit = (fn: (draft: GameState) => void) => void;
-export type HexGeneratorKind = "locais" | "comercios" | "eventos";
+export type { HexGeneratorKind } from "@/lib/hex-generators";
 export type HexGeneratorRequest = {
   hexId: string;
   kind: HexGeneratorKind | "manual";
-  roll?: number;
-  text?: string;
+  generated?: GeneratedHexContent;
 };
 
 function pointFromResult(text: string) {
@@ -34,6 +33,10 @@ function kindLabel(kind: HexGeneratorKind | "manual") {
   return "Ponto manual";
 }
 
+function triggerText(type: keyof typeof eventTriggerLabels, value: number) {
+  return type === "noise" ? `${eventTriggerLabels.noise} ${value}` : eventTriggerLabels[type];
+}
+
 export function HexGeneratorDialog({
   game,
   edit,
@@ -45,39 +48,53 @@ export function HexGeneratorDialog({
   request: HexGeneratorRequest;
   onOpenChange: (open: boolean) => void;
 }) {
-  const generatedPoint = request.kind === "eventos" || request.kind === "manual"
+  const initial = request.generated;
+  const initialPoint = request.kind === "eventos" || request.kind === "manual"
     ? { name: "", signal: "" }
-    : pointFromResult(request.text ?? "");
+    : pointFromResult(initial?.publicText ?? "");
 
-  const [roll, setRoll] = useState<number | null>(request.roll ?? null);
-  const [result, setResult] = useState(request.text ?? "");
-  const [pointName, setPointName] = useState(generatedPoint.name);
-  const [pointSignal, setPointSignal] = useState(generatedPoint.signal);
-  const [pointAccess, setPointAccess] = useState("");
-  const [pointNotes, setPointNotes] = useState("");
+  const [generated, setGenerated] = useState<GeneratedHexContent | undefined>(initial);
+  const [result, setResult] = useState(initial?.publicText ?? "");
+  const [pointName, setPointName] = useState(initialPoint.name);
+  const [pointSignal, setPointSignal] = useState(initialPoint.signal);
+  const [pointAccess, setPointAccess] = useState(initial?.suggestedAccess ?? "");
+  const [pointNotes, setPointNotes] = useState(initial?.gmGuidance ?? "");
+  const [pointCondition, setPointCondition] = useState(initial?.suggestedCondition ?? "");
+  const [pointRisk, setPointRisk] = useState(initial?.suggestedRisk ?? "");
+  const [pointLootTable, setPointLootTable] = useState(initial?.suggestedLootTable ?? "");
   const [pointRevealed, setPointRevealed] = useState(true);
   const [manualKind, setManualKind] = useState<"local" | "comércio">("local");
-  const [eventTrigger, setEventTrigger] = useState("");
+  const [eventTriggerType, setEventTriggerType] = useState<keyof typeof eventTriggerLabels>(initial?.suggestedTriggerType ?? "manual");
+  const [eventTriggerValue, setEventTriggerValue] = useState(initial?.suggestedTriggerValue ?? 3);
+  const [eventGuidance, setEventGuidance] = useState(initial?.gmGuidance ?? "");
   const [eventRevealed, setEventRevealed] = useState(true);
 
   const record = game.hexes[request.hexId];
   const sectorName = record?.sector?.name ?? `Hex ${request.hexId}`;
-  const generated = request.kind !== "manual";
+  const isGenerated = request.kind !== "manual";
+
+  function applyGenerated(next: GeneratedHexContent) {
+    setGenerated(next);
+    setResult(next.publicText);
+    if (next.kind === "eventos") {
+      setEventTriggerType(next.suggestedTriggerType ?? "manual");
+      setEventTriggerValue(next.suggestedTriggerValue ?? 3);
+      setEventGuidance(next.gmGuidance);
+      return;
+    }
+    const point = pointFromResult(next.publicText);
+    setPointName(point.name);
+    setPointSignal(point.signal);
+    setPointAccess(next.suggestedAccess ?? "");
+    setPointNotes(next.gmGuidance);
+    setPointCondition(next.suggestedCondition ?? "");
+    setPointRisk(next.suggestedRisk ?? "");
+    setPointLootTable(next.suggestedLootTable ?? "");
+  }
 
   function reroll() {
     if (request.kind === "manual") return;
-    const nextRoll = rollDie(100);
-    const row = gameContent.generators[request.kind].find(entry => entry.roll === nextRoll);
-    if (!row) return;
-    setRoll(nextRoll);
-    setResult(row.text);
-    if (request.kind !== "eventos") {
-      const point = pointFromResult(row.text);
-      setPointName(point.name);
-      setPointSignal(point.signal);
-      setPointAccess("");
-      setPointNotes("");
-    }
+    applyGenerated(generateHexContent(game, request.hexId, request.kind));
   }
 
   function savePoint() {
@@ -95,6 +112,14 @@ export function HexGeneratorDialog({
       access: pointAccess.trim(),
       notes: pointNotes.trim(),
       revealed: pointRevealed,
+      ...(generated && request.kind !== "manual" && request.kind !== "eventos" ? {
+        generatorKind: request.kind,
+        generatorRoll: generated.roll,
+        generatorCategory: generated.categoryLabel,
+      } : {}),
+      ...(pointCondition.trim() ? { condition: pointCondition.trim() } : {}),
+      ...(pointRisk.trim() ? { risk: pointRisk.trim() } : {}),
+      ...(pointLootTable ? { lootTable: pointLootTable } : {}),
       searches: [],
     };
     edit(draft => {
@@ -106,17 +131,27 @@ export function HexGeneratorDialog({
   }
 
   function saveEvent() {
-    if (!result || !eventTrigger.trim()) return;
+    if (!result.trim()) return;
+    const trigger = triggerText(eventTriggerType, eventTriggerValue);
     edit(draft => {
       draft.hexes[request.hexId].events.push({
         id: createId(),
-        text: result,
-        trigger: eventTrigger.trim(),
+        text: result.trim(),
+        trigger,
+        triggerType: eventTriggerType,
+        ...(eventTriggerType === "noise" ? { triggerValue: eventTriggerValue } : {}),
+        status: "pending",
+        guidance: eventGuidance.trim(),
         revealed: eventRevealed,
+        ...(generated ? {
+          generatorKind: "eventos",
+          generatorRoll: generated.roll,
+          generatorCategory: generated.categoryLabel,
+        } : {}),
       });
-      addLog(draft, "evento", `${draft.hexes[request.hexId].sector?.name ?? `Hex ${request.hexId}`}: ${result}`);
+      addLog(draft, "evento", `${draft.hexes[request.hexId].sector?.name ?? `Hex ${request.hexId}`}: evento preparado — ${result.trim()}`);
     });
-    toast.success("Evento registrado.", { description: sectorName });
+    toast.success("Evento preparado.", { description: `${sectorName} · ${trigger}` });
     onOpenChange(false);
   }
 
@@ -125,29 +160,47 @@ export function HexGeneratorDialog({
       <DialogHeader>
         <DialogTitle>{kindLabel(request.kind)}</DialogTitle>
         <DialogDescription>
-          Hex {request.hexId} · {sectorName}. Este fluxo é aberto pelo menu contextual do hex.
+          Hex {request.hexId} · {sectorName}. O sorteio considera terreno, setor, infestação, Barulho e resultados já usados.
         </DialogDescription>
       </DialogHeader>
 
-      {generated && <div className="list-card text-sm leading-relaxed" aria-live="polite">
+      {isGenerated && generated && <div className="list-card text-sm leading-relaxed" aria-live="polite">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="tag">{kindLabel(request.kind)} · {String(roll ?? 0).padStart(2, "0")}</span>
+          <div className="flex flex-wrap gap-2">
+            <span className="tag">{kindLabel(request.kind)} · {String(generated.roll).padStart(2, "0")}</span>
+            <span className="tag">{generated.categoryLabel}</span>
+          </div>
           <Button size="sm" variant="outline" onClick={reroll}><RotateCcw size={15} /> Rolar novamente</Button>
         </div>
-        <p className="mt-3">{result}</p>
-        <p className="text-xs subtle mt-2">O resultado é uma proposta. Adapte à ficção antes de registrar.</p>
+        <p className="mt-3">{generated.publicText}</p>
+        <p className="text-xs subtle mt-2"><b>Contexto usado:</b> {generated.contextLabel}</p>
+        {generated.gmGuidance && <p className="text-xs subtle mt-2"><b>Orientação reservada:</b> {generated.gmGuidance}</p>}
       </div>}
 
       {request.kind === "eventos" ? <div className="grid gap-3">
+        <Field label="Texto que pode chegar aos jogadores" value={result} onChange={setResult} multiline />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Pick
+            label="Gatilho"
+            value={eventTriggerType}
+            options={Object.entries(eventTriggerLabels).map(([value, label]) => ({ value, label }))}
+            onChange={value => setEventTriggerType(value as keyof typeof eventTriggerLabels)}
+          />
+          {eventTriggerType === "noise" && <Counter compact label="Barulho mínimo" value={eventTriggerValue} max={5} onChange={setEventTriggerValue} />}
+        </div>
         <Field
-          label="Gatilho que tornou o evento pertinente"
-          value={eventTrigger}
-          onChange={setEventTrigger}
-          placeholder="Barulho, horário, retorno, abertura..."
+          label="Orientação do mestre"
+          value={eventGuidance}
+          onChange={setEventGuidance}
+          multiline
+          placeholder="Informação que não deve aparecer para os jogadores."
         />
+        <div className="character-rule-note">
+          O evento será salvo como <b>Pendente</b>. Quando o gatilho for atendido, o sistema sinaliza “Pronto”; o mestre decide quando ativar.
+        </div>
         <label className="flex items-center gap-2 text-sm">
           <Switch checked={eventRevealed} onCheckedChange={setEventRevealed} />
-          Revelar aos jogadores
+          Mostrar aos jogadores quando o evento for ativado
         </label>
       </div> : <div className="grid gap-3">
         {request.kind === "manual" && <Pick
@@ -173,6 +226,17 @@ export function HexGeneratorDialog({
           onChange={setPointAccess}
           placeholder="Porta, rota, ocupação, obstáculo..."
         />
+        {request.kind !== "manual" && <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Condição" value={pointCondition} onChange={setPointCondition} placeholder="Estado do lugar" />
+          <Field label="Risco sugerido" value={pointRisk} onChange={setPointRisk} placeholder="Risco aparente" />
+        </div>}
+        {request.kind !== "manual" && <Pick
+          label="Tabela de busca sugerida"
+          value={pointLootTable}
+          placeholder="Sem sugestão"
+          options={gameContent.lootTables.map(table => table.name)}
+          onChange={setPointLootTable}
+        />}
         <Field
           label="Notas do mestre"
           value={pointNotes}
@@ -189,7 +253,7 @@ export function HexGeneratorDialog({
       <DialogFooter>
         <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
         {request.kind === "eventos"
-          ? <Button disabled={!result || !eventTrigger.trim()} onClick={saveEvent}><Dice5 size={16} /> Registrar evento</Button>
+          ? <Button disabled={!result.trim()} onClick={saveEvent}><Dice5 size={16} /> Preparar evento</Button>
           : <Button disabled={!pointName.trim()} onClick={savePoint}><MapPin size={16} /> Registrar ponto</Button>}
       </DialogFooter>
     </DialogContent>
