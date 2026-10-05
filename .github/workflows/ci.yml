@@ -43,6 +43,9 @@ jobs:
       - name: Executar testes
         run: pnpm test
 
+      - name: Validar ações de eventos
+        run: pnpm lint:hex-events
+
       - name: Validar build
         run: pnpm build
 

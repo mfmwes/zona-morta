@@ -91,6 +91,10 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
       delete visiblePoint.lootTable;
       delete visiblePoint.generatorKind;
       delete visiblePoint.generatorRoll;
+      delete visiblePoint.generatorCategory;
+      delete visiblePoint.condition;
+      delete visiblePoint.eventOrigin;
+      delete visiblePoint.clueTargetHex;
       return visiblePoint;
     });
     hex.events = hex.events
@@ -98,8 +102,11 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
       .map(event => {
         const visibleEvent = { ...event, trigger: "", guidance: "" };
         delete visibleEvent.triggerValue;
+        delete visibleEvent.triggerType;
         delete visibleEvent.generatorKind;
         delete visibleEvent.generatorRoll;
+        delete visibleEvent.generatorCategory;
+        delete visibleEvent.actionLinks;
         return visibleEvent;
       });
   }

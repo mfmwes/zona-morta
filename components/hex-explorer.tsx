@@ -24,6 +24,9 @@ import { normalizedSector, recordSearch, searchError, type SearchInput } from "@
 import { movementSources, performHexAction, type HexQuickAction } from "@/lib/hex-actions";
 import { shelterTravelMinutes } from "@/lib/shelter-projects";
 import { eventStatus, eventTriggerLabel, eventTriggerReady, generateHexContent } from "@/lib/hex-generators";
+import { HexEventActionDialog, type HexEventActionRequest } from "@/components/hex-event-action-dialog";
+import { eventActionLinkLabels, eventActionUsed, hexEventActionLabels } from "@/lib/hex-event-actions";
+import type { HexEventActionKind } from "@/lib/game";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 
@@ -61,6 +64,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
   const [signsDraft, setSignsDraft] = useState<{ key: string; source: string; value: string } | null>(null);
   const [notesDraft, setNotesDraft] = useState<{ key: string; source: string; value: string } | null>(null);
   const [generatorRequest, setGeneratorRequest] = useState<HexGeneratorRequest | null>(null);
+  const [eventActionRequest, setEventActionRequest] = useState<HexEventActionRequest | null>(null);
   const [searchId, setSearchId] = useState<string | null>(null);
   const [searchMode, setSearchMode] = useState<"specific" | "open">("specific");
   const [searchWhat, setSearchWhat] = useState("");
@@ -409,7 +413,11 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
               {!playerPreview && <label className="flex items-center gap-2 text-xs whitespace-nowrap"><Switch size="sm" checked={point.revealed}
                 onCheckedChange={checked => edit(draft => { const found = draft.hexes[selected].points.find(p=>p.id===point.id); if(found) found.revealed=checked; })} /> Público</label>}</div>
             {point.signal && <p className="mt-1">{point.signal}</p>}
-            {point.access && <p className="mt-2"><b>Acesso:</b> {point.access}</p>}
+            {!playerPreview && point.clueTargetHex && <Button size="sm" variant="outline" className="mt-2"
+              disabled={!game.hexes[point.clueTargetHex]} onClick={() => { setFocusHex(point.clueTargetHex!); selectHex(point.clueTargetHex!); }}>
+              <Route size={14} /> Destino da pista: {point.clueTargetHex} · {game.hexes[point.clueTargetHex]?.sector?.name ?? "setor ainda não revelado"}
+            </Button>}
+            {!playerPreview && point.access && <p className="mt-2"><b>Acesso:</b> {point.access}</p>}
             {!playerPreview && (point.generatorCategory || point.condition || point.risk || point.lootTable) && <div className="flex flex-wrap gap-2 mt-2">
               {point.generatorCategory && <span className="tag">{point.generatorCategory}</span>}
               {point.condition && <span className="tag">Condição: {point.condition}</span>}
@@ -417,7 +425,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
               {point.lootTable && <span className="tag">Busca: {point.lootTable}</span>}
             </div>}
             {!playerPreview && point.notes && <p className="mt-2 subtle"><b>Reservado:</b> {point.notes}</p>}
-            {point.searches.length > 0 && <div className="mt-3 border-t pt-2">
+            {!playerPreview && point.searches.length > 0 && <div className="mt-3 border-t pt-2">
               {point.searches.map(search => <p key={search.id} className="mt-1">
                 <b>{search.mode === "open" ? "Busca aberta" : "Busca específica"}:</b>
                 {search.mode === "open" ? ` d12 ${search.roll} · ${search.table}` : ` ${search.what}${search.why ? ` para ${search.why}` : ""}`}
@@ -484,7 +492,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div className="flex flex-wrap gap-2 items-center">
-                      <b>{eventTriggerLabel(event)}</b>
+                      <b>{playerPreview ? "Evento" : eventTriggerLabel(event)}</b>
                       {!playerPreview && <span className="tag">{status === "pending" ? ready ? "PRONTO" : "PENDENTE" : status === "active" ? "ATIVO" : "RESOLVIDO"}</span>}
                       {!playerPreview && event.generatorCategory && <span className="tag">{event.generatorCategory}</span>}
                     </div>
@@ -500,6 +508,19 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
                   {status === "resolved" && <Button size="sm" variant="outline" onClick={() => updateEventStatus(event.id, "active")}><Undo2 size={14} /> Reabrir</Button>}
                   <Button size="sm" variant="ghost" onClick={() => updateEventStatus(event.id, "archived")}><Archive size={14} /> Arquivar</Button>
                 </div>}
+                {!playerPreview && ["active", "pending"].includes(status) && <div className="flex flex-wrap gap-2 mt-3" role="group" aria-label="Ações do evento">
+                  {(Object.keys(hexEventActionLabels) as HexEventActionKind[]).map(type => {
+                    const used = eventActionUsed(game, selected, event, type);
+                    return <Button key={type} size="sm" variant="outline" disabled={used}
+                      title={used ? "Esta ação já foi registrada para o evento." : "Preparar e revisar antes de confirmar"}
+                      onClick={() => setEventActionRequest({ hexId: selected, eventId: event.id, type })}>
+                      {used ? <CheckCircle2 size={14} /> : <Plus size={14} />}{hexEventActionLabels[type]}
+                    </Button>;
+                  })}
+                </div>}
+                {!playerPreview && event.actionLinks && <div className="flex flex-wrap gap-2 mt-2" aria-label="Vínculos do evento">
+                  {eventActionLinkLabels(game, selected, event).map(label => <span key={label} className="tag">{label}</span>)}
+                </div>}
               </div>;
             })}
           </div>
@@ -508,6 +529,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
             <CollapsibleContent className="grid gap-2 mt-2">
               {archivedEvents.map(event => <div className="list-card text-sm" key={event.id}>
                 <b>{eventTriggerLabel(event)}</b><p className="mt-1">{event.text}</p>
+                {eventActionLinkLabels(game, selected, event).map(label => <span key={label} className="tag mt-2 mr-2">{label}</span>)}
                 <div className="flex flex-wrap gap-2 mt-2">
                   <Button size="sm" variant="outline" onClick={() => updateEventStatus(event.id, "resolved")}><Undo2 size={14} /> Restaurar</Button>
                   <Button size="sm" variant="ghost" onClick={() => deleteEvent(event.id)}><Trash2 size={14} /> Excluir</Button>
@@ -654,6 +676,8 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
       </AlertDialogContent>
     </AlertDialog>
 
+    {eventActionRequest && !playerPreview && <HexEventActionDialog key={`${eventActionRequest.hexId}:${eventActionRequest.eventId}:${eventActionRequest.type}`}
+      game={game} edit={edit} request={eventActionRequest} onClose={() => setEventActionRequest(null)} />}
     {generatorRequest && <HexGeneratorDialog game={game} edit={edit} request={generatorRequest}
       onOpenChange={open => { if (!open) setGeneratorRequest(null); }} />}
     {moveDestination && <SurvivorMoveDialog game={game} edit={edit} destination={moveDestination}
