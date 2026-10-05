@@ -46,6 +46,8 @@ test('gerador contextual mantém d100 completo e produz metadados úteis', () =>
 test('terreno e infestação alteram o peso dos resultados sem excluir a tabela', () => {
   const forest = defaultState();
   forest.hexes['0,0'].terrain = 'forest';
+  // Isola o terreno: defaultState sorteia um setor que também influencia os pesos.
+  delete forest.hexes['0,0'].sector;
   const forestRandom = rng(42);
   let openCount = 0;
   for (let i = 0; i < 400; i++) {
@@ -54,7 +56,7 @@ test('terreno e infestação alteram o peso dos resultados sem excluir a tabela'
   assert.ok(openCount > 250, `áreas abertas em floresta: ${openCount}`);
 
   const low = defaultState();
-  const high = defaultState();
+  const high = structuredClone(low);
   low.hexes['0,0'].infestation = 0;
   high.hexes['0,0'].infestation = 5;
   const lowRandom = rng(99);

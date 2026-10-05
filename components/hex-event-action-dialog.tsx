@@ -55,7 +55,7 @@ export function HexEventActionDialog({ game, edit, request, onClose }: {
     <DialogContent className="inventory-dialog sm:max-w-2xl">
       <DialogHeader>
         <DialogTitle>{hexEventActionLabels[action.type]}</DialogTitle>
-        <DialogDescription>Hex {request.hexId} · {hex?.sector?.name ?? "Setor ainda não revelado"}. Revise os dados e confirme a ação do evento.</DialogDescription>
+        <DialogDescription>Setor do mapa: {hex?.sector?.name ?? "Setor ainda não revelado"} · Hex {request.hexId}. Revise os dados e confirme a ação do evento.</DialogDescription>
       </DialogHeader>
       <div className="list-card text-sm"><b>Evento de origem</b><p className="mt-1">{event?.text ?? "Evento removido"}</p>
         {event?.guidance && <p className="subtle mt-2"><b>Orientação reservada:</b> {event.guidance}</p>}
@@ -66,18 +66,18 @@ export function HexEventActionDialog({ game, edit, request, onClose }: {
       {linking && <p className="text-sm subtle">O vínculo usa o cadastro escolhido com seus dados e sua visibilidade atuais.</p>}
 
       {!linking && action.type === "point" && <div className="grid gap-3">
-        <Field label="Nome do ponto" value={action.name} onChange={name => patch(action, { name })} />
-        <Pick label="Tipo do ponto" value={action.kind} options={["local", "comércio"]} onChange={kind => patch(action, { kind: kind as "local" | "comércio" })} />
+        <Field label="Nome do local dentro deste setor" value={action.name} onChange={name => patch(action, { name })} />
+        <Pick label="Tipo do local" value={action.kind} options={["local", "comércio"]} onChange={kind => patch(action, { kind: kind as "local" | "comércio" })} />
         <Field label="Sinal público" multiline value={action.signal} onChange={signal => patch(action, { signal })} />
         <Field label="Acesso reservado" value={action.access} onChange={access => patch(action, { access })} />
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Condição" value={action.condition} onChange={condition => patch(action, { condition })} />
           <Field label="Risco reservado" value={action.risk} onChange={risk => patch(action, { risk })} />
         </div>
-        <Pick label="Tabela de busca" value={action.lootTable || "__none"} options={[{ value: "__none", label: "Sem sugestão" }, ...content.lootTables.map(row => row.name)]}
+        <Pick label="Tabela de achados para vasculhar o local" value={action.lootTable || "__none"} options={[{ value: "__none", label: "Sem sugestão" }, ...content.lootTables.map(row => row.name)]}
           onChange={value => patch(action, { lootTable: value === "__none" ? "" : value })} />
         <Field label="Notas reservadas" multiline value={action.notes} onChange={notes => patch(action, { notes })} />
-        <label className="flex items-center gap-2 text-sm"><Switch checked={action.revealed} onCheckedChange={revealed => patch(action, { revealed })} /> Mostrar este ponto aos jogadores</label>
+        <label className="flex items-center gap-2 text-sm"><Switch checked={action.revealed} onCheckedChange={revealed => patch(action, { revealed })} /> Mostrar este local aos jogadores</label>
       </div>}
       {!linking && action.type === "npc" && <div className="grid gap-3">
         <div className="grid gap-3 sm:grid-cols-2">
@@ -101,7 +101,7 @@ export function HexEventActionDialog({ game, edit, request, onClose }: {
         <Pick label="Destino reservado da pista" value={action.targetHex} options={Object.entries(game.hexes)
           .filter(([id]) => id !== request.hexId).map(([id, target]) => ({ value: id, label: `${id} · ${target.sector?.name ?? "setor ainda não revelado"}` }))}
           onChange={targetHex => patch(action, { targetHex })} />
-        <p className="text-xs subtle">A pista ficará nos pontos deste hex. O destino continua reservado; escreva no texto público apenas o que os jogadores descobrem.</p>
+        <p className="text-xs subtle">A pista ficará nos locais e pistas deste setor. O destino continua reservado; escreva no texto público apenas o que os jogadores descobrem.</p>
         <Field label="Notas reservadas" multiline value={action.notes} onChange={notes => patch(action, { notes })} />
         <label className="flex items-center gap-2 text-sm"><Switch checked={action.revealed} onCheckedChange={revealed => patch(action, { revealed })} /> Mostrar esta pista aos jogadores</label>
       </div>}

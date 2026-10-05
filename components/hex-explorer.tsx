@@ -17,10 +17,10 @@ import { HexGeneratorDialog, type HexGeneratorKind, type HexGeneratorRequest } f
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { Counter, Field, Pick } from "@/components/game-controls";
-import { addLog, content, establishShelter, hexDistance, survivorsAtHex, type GameState, type Point } from "@/lib/game";
+import { addLog, establishShelter, hexDistance, survivorsAtHex, type GameState } from "@/lib/game";
 import { assignCustomSector, redrawSector, revealSector } from "@/lib/sectors";
-import { rollDie } from "@/lib/rolls";
-import { normalizedSector, recordSearch, searchError, type SearchInput } from "@/lib/exploration";
+import { searchAreaLabel, searchAvailabilityError } from "@/lib/exploration";
+import { HexSearchDialog, type HexSearchRequest } from "@/components/hex-search-dialog";
 import { movementSources, performHexAction, type HexQuickAction } from "@/lib/hex-actions";
 import { shelterTravelMinutes } from "@/lib/shelter-projects";
 import { eventStatus, eventTriggerLabel, eventTriggerReady, generateHexContent } from "@/lib/hex-generators";
@@ -49,10 +49,6 @@ function travelDurationLabel(minutes: number) {
   return `${hours}h${String(rest).padStart(2, "0")}`;
 }
 
-function dice12() {
-  return rollDie(12);
-}
-
 export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
   game: GameState;
   edit: Edit;
@@ -65,15 +61,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
   const [notesDraft, setNotesDraft] = useState<{ key: string; source: string; value: string } | null>(null);
   const [generatorRequest, setGeneratorRequest] = useState<HexGeneratorRequest | null>(null);
   const [eventActionRequest, setEventActionRequest] = useState<HexEventActionRequest | null>(null);
-  const [searchId, setSearchId] = useState<string | null>(null);
-  const [searchMode, setSearchMode] = useState<"specific" | "open">("specific");
-  const [searchWhat, setSearchWhat] = useState("");
-  const [otherSector, setOtherSector] = useState(false);
-  const [searchSector, setSearchSector] = useState("");
-  const [searchMinutes, setSearchMinutes] = useState(30);
-  const [searchResult, setSearchResult] = useState("");
-  const [lootTable, setLootTable] = useState("");
-  const [rolledLoot, setRolledLoot] = useState<{ table: string; roll: number } | null>(null);
+  const [searchRequest, setSearchRequest] = useState<HexSearchRequest | null>(null);
   const [gmOpen, setGmOpen] = useState(false);
   const [masterRevealState, setMasterRevealState] = useState<"avistado" | "explorado">("avistado");
   const [customSectorName, setCustomSectorName] = useState("");
@@ -99,7 +87,6 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
   function selectHex(id: string) {
     if (id !== selected) {
       setSelected(id);
-      setSearchId(null);
       setSignsDraft(null); setNotesDraft(null);
     }
     if (compact) setSheetOpen(true);
@@ -112,44 +99,6 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
   const notes = notesDraft?.key === selected && notesDraft.source === record.notes ? notesDraft.value : record.notes;
   const setSigns = (value: string) => setSignsDraft({ key: selected, source: record.signs, value });
   const setNotes = (value: string) => setNotesDraft({ key: selected, source: record.notes, value });
-
-  function startSearch(point: Point) {
-    if (searchId === point.id) { setSearchId(null); return; }
-    setSearchId(point.id);
-    setSearchMode("specific"); setSearchWhat(""); setSearchResult("");
-    setOtherSector(false); setSearchSector(""); setSearchMinutes(30);
-    setLootTable(point.lootTable ?? ""); setRolledLoot(null);
-  }
-
-  function rollLoot() {
-    const table = content.lootTables.find(entry => entry.name === lootTable);
-    if (!table || rolledLoot) return;
-    const roll = dice12();
-    setRolledLoot({ table: table.name, roll });
-    setSearchResult(table.entries[roll - 1].text);
-  }
-
-  function searchInput(point: Point): SearchInput {
-    return { hex: selected, pointId: point.id, sector: otherSector ? searchSector : point.name, what: searchWhat,
-      result: searchResult, minutes: searchMinutes, mode: searchMode,
-      ...(rolledLoot && searchMode === "open" ? { table: rolledLoot.table, roll: rolledLoot.roll } : {}) };
-  }
-
-  function saveSearch(point: Point) {
-    const input = searchInput(point);
-    if (searchError(game, input)) return;
-    edit(draft => { recordSearch(draft, input); });
-    setSearchId(null); setSearchWhat(""); setSearchSector(""); setSearchResult(""); setRolledLoot(null);
-  }
-
-  function searchSectorTaken(point: Point) {
-    const sector = otherSector ? searchSector.trim() : point.name;
-    return Boolean(sector) && point.searches.some(search => normalizedSector(search.sector) === normalizedSector(sector));
-  }
-
-  function canRecordSearch(point: Point) {
-    return searchError(game, searchInput(point)) === null;
-  }
 
   const exposedPoints = playerPreview ? record.points.filter(p => p.revealed) : record.points;
   const exposedEvents = playerPreview
@@ -201,12 +150,14 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
 
   function openGenerator(id: string, kind: HexGeneratorKind) {
     selectHex(id);
+    setSheetOpen(false);
     const generated = generateHexContent(game, id, kind);
     setGeneratorRequest({ hexId: id, kind, generated });
   }
 
   function openManualPoint(id: string) {
     selectHex(id);
+    setSheetOpen(false);
     setGeneratorRequest({ hexId: id, kind: "manual" });
   }
 
@@ -290,7 +241,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
 
   const detailPanel = <section className="panel panel-pad min-w-0">
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <div><p className="dossier-title">Hex {selected}</p><h2 className="text-xl font-extrabold mt-1">{record.discovery !== "desconhecido" && visible ? sectorName : "Além do horizonte"}</h2></div>
+        <div><p className="dossier-title">Setor do mapa · Hex {selected}</p><h2 className="text-xl font-extrabold mt-1">{record.discovery !== "desconhecido" && visible ? sectorName : "Além do horizonte"}</h2></div>
         <div className="flex flex-wrap gap-2"><span className="tag">{record.discovery}</span>
           {visible && <span className="tag">{terrains[record.terrain ?? "urban"]}{record.passage && record.passage !== "none" ? ` · ${passages[record.passage]}` : ""}</span>}
           {!playerPreview && <span className={record.infestation !== null && record.infestation >= 4 ? "tag tag-danger" : "tag"}>
@@ -342,7 +293,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
               <ChevronDown size={18} className={gmOpen ? "rotate-180" : ""} />
             </Button></CollapsibleTrigger>
             <CollapsibleContent className="pt-4">
-          <h3 className="section-title mb-3">Estado do setor</h3>
+          <h3 className="section-title mb-3">Estado do setor do mapa</h3>
           <div className="grid gap-3 sm:grid-cols-2 mb-3">
             <Pick label="Terreno" value={record.terrain ?? "urban"} options={Object.entries(terrains).map(([value, label]) => ({ value, label }))}
               onChange={value => edit(draft => { draft.hexes[selected].terrain = value as Terrain; })} />
@@ -397,19 +348,24 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
             <Field label="Anotações reservadas" value={notes} onChange={setNotes} multiline placeholder="Acessos, posição de ameaças e fatos fixados." />
             <Button size="sm" variant="outline" onClick={() => edit(draft => { draft.hexes[selected].signs = signs.trim(); draft.hexes[selected].notes = notes.trim(); })}>Salvar anotações</Button>
           </div>
-          <div className="divider" />
-          <div className="character-rule-note">
-            <b>Tabelas de conteúdo movidas para o mapa.</b> Use o botão direito do mouse em um hex revelado para abrir B1 Local, B2 Comércio, B3 Evento ou criar um ponto manualmente.
-          </div>
             </CollapsibleContent>
           </Collapsible>
         </>}
         <div className="divider" />
-        <div className="hex-points-heading"><MapPin size={18} aria-hidden="true" /><h3 className="section-title">Pontos descobertos</h3><span className="tag">{exposedPoints.length}</span></div>
-        {exposedPoints.length === 0 && <p className="intro-line mt-3">Nenhum ponto registrado ainda. Convites não são achados garantidos.</p>}
-        {exposedPoints.length > 0 && <div key={selected} className="hex-points-list" role="region" aria-label={`Pontos descobertos do hex ${selected}`} tabIndex={0}>
+        {!playerPreview && record.discovery !== "desconhecido" && <div className="hex-content-tools">
+          <p className="text-sm subtle">Este setor contém locais e eventos. Dentro de cada local, o grupo pode vasculhar áreas como salas ou depósitos.</p>
+          <div className="flex flex-wrap gap-2 mt-3" role="group" aria-label="Adicionar conteúdo ao setor">
+            <Button size="sm" variant="outline" onClick={() => openGenerator(selected, "locais")}><Dice5 size={15} /> Gerar local</Button>
+            <Button size="sm" variant="outline" onClick={() => openGenerator(selected, "comercios")}><Dice5 size={15} /> Gerar comércio</Button>
+            <Button size="sm" variant="outline" onClick={() => openGenerator(selected, "eventos")}><Dice5 size={15} /> Gerar evento</Button>
+            <Button size="sm" variant="ghost" onClick={() => openManualPoint(selected)}><Plus size={15} /> Adicionar local</Button>
+          </div>
+        </div>}
+        <div className="hex-points-heading"><MapPin size={18} aria-hidden="true" /><h3 className="section-title">Locais e pistas neste setor</h3><span className="tag">{exposedPoints.length}</span></div>
+        {exposedPoints.length === 0 && <p className="intro-line mt-3">Nenhum local ou pista registrado neste setor.</p>}
+        {exposedPoints.length > 0 && <div key={selected} className="hex-points-list" role="region" aria-label={`Locais e pistas do setor ${selected}`} tabIndex={0}>
           {exposedPoints.map(point => <article key={point.id} className="hex-point-card list-card text-sm">
-            <div className="hex-point-heading"><b>{point.name}</b>
+            <div className="hex-point-heading"><div><p className="dossier-title">{point.clueTargetHex ? "Pista" : point.kind === "comércio" ? "Comércio neste setor" : "Local neste setor"}</p><b>{point.name}</b></div>
               {!playerPreview && <label className="flex items-center gap-2 text-xs whitespace-nowrap"><Switch size="sm" checked={point.revealed}
                 onCheckedChange={checked => edit(draft => { const found = draft.hexes[selected].points.find(p=>p.id===point.id); if(found) found.revealed=checked; })} /> Público</label>}</div>
             {point.signal && <p className="mt-1">{point.signal}</p>}
@@ -422,67 +378,27 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
               {point.generatorCategory && <span className="tag">{point.generatorCategory}</span>}
               {point.condition && <span className="tag">Condição: {point.condition}</span>}
               {point.risk && <span className="tag">Risco: {point.risk}</span>}
-              {point.lootTable && <span className="tag">Busca: {point.lootTable}</span>}
+              {point.lootTable && <span className="tag">Tabela de achados: {point.lootTable}</span>}
             </div>}
             {!playerPreview && point.notes && <p className="mt-2 subtle"><b>Reservado:</b> {point.notes}</p>}
-            {!playerPreview && point.searches.length > 0 && <div className="mt-3 border-t pt-2">
-              {point.searches.map(search => <p key={search.id} className="mt-1">
-                <b>{search.mode === "open" ? "Busca aberta" : "Busca específica"}:</b>
-                {search.mode === "open" ? ` d12 ${search.roll} · ${search.table}` : ` ${search.what}${search.why ? ` para ${search.why}` : ""}`}
-                {` · ${search.sector} · ${search.minutes} min. `}<b>Resultado:</b> {search.result}
-              </p>)}
-            </div>}
-            {!playerPreview && <>
-              <Button size="sm" variant="ghost" className="mt-2" disabled={actualMembersHere.length === 0} onClick={() => startSearch(point)}><Search /> Buscar itens</Button>
-              {actualMembersHere.length === 0 && <p className="text-xs subtle mt-1">É preciso haver pelo menos um sobrevivente neste hex para buscar. Os registros anteriores continuam disponíveis.</p>}
-              {searchId === point.id && <div className="hex-search-panel grid gap-3 mt-3 rounded-md border border-[#bbd3ce] bg-[#edf3f0] p-4">
-                <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Tipo de busca">
-                  <Button size="sm" variant={searchMode === "specific" ? "default" : "outline"} aria-pressed={searchMode === "specific"}
-                    onClick={() => { setSearchMode("specific"); setSearchResult(""); setRolledLoot(null); }}>Específica</Button>
-                  <Button size="sm" variant={searchMode === "open" ? "default" : "outline"} aria-pressed={searchMode === "open"}
-                    onClick={() => { setSearchMode("open"); setSearchResult(""); setSearchMinutes(30); }}>Aberta · d12</Button>
-                </div>
-                {searchMode === "specific" ? <>
-                  <p className="text-sm subtle">Diga o objetivo, confira sinais e risco e registre o resultado. Uma busca específica não usa a tabela d12.</p>
-                  <Field label="O que procuram e para quê?" value={searchWhat} onChange={setSearchWhat}
-                    placeholder="Ex.: Peças para reparar o portão" />
-                  <Field label="Resultado ou pista" value={searchResult} onChange={setSearchResult}
-                    placeholder="Ex.: 1 Peças nas caixas; ocupam 1 espaço" />
-                </> : <>
-                  <p className="text-sm subtle">Escolha a coluna do lugar real. Um d12 indica um achado incidental para todo o grupo.</p>
-                  <Pick label="Tipo de local" value={lootTable} options={content.lootTables.map(entry => entry.name)}
-                    onChange={value => { setLootTable(value); setRolledLoot(null); setSearchResult(""); }} />
-                  {!rolledLoot ? <Button size="sm" variant="outline" disabled={!lootTable} onClick={rollLoot}><Dice5 /> Rolar 1d12</Button>
-                    : <div className="list-card"><span className="tag">d12 {rolledLoot.roll} · {rolledLoot.table}</span>
-                        <p className="mt-2 font-bold">{content.lootTables.find(entry => entry.name === rolledLoot.table)?.entries[rolledLoot.roll - 1].text}</p>
-                        <p className="text-xs subtle mt-2">Se contradiz os sinais, ajuste o achado sem rolar novamente. Resolva acesso e posse na ficção.</p>
-                      </div>}
-                  {rolledLoot && <Field label="Achado registrado" value={searchResult} onChange={setSearchResult} />}
-                </>}
-                <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Tempo da busca">
-                  <span className="text-sm font-bold mr-1">Tempo</span>
-                  {[30,60].map(minutes => <Button key={minutes} size="sm" variant={searchMinutes === minutes ? "default" : "outline"}
-                    aria-pressed={searchMinutes === minutes} onClick={() => setSearchMinutes(minutes)}>
-                    {minutes === 30 ? "30 min" : "1 hora"}</Button>)}
-                </div>
-                <div><button type="button" className="hex-search-sector-link text-sm font-bold text-[#276f72] underline underline-offset-2"
-                  onClick={() => { setOtherSector(value => !value); setSearchSector(""); }}>
-                  {otherSector ? "Usar este ponto como setor" : "Buscar em outro setor deste ponto"}</button>
-                  {otherSector && <div className="mt-2"><Field label="Qual setor diferente?" value={searchSector}
-                    onChange={setSearchSector} placeholder="Ex.: depósito dos fundos" /></div>}</div>
-                {searchSectorTaken(point) && <p className="text-sm text-red-700">Este setor já foi vasculhado. Escolha outro setor que exista no lugar.</p>}
-                {game.minutes + searchMinutes >= 1440 && <p className="text-sm text-red-700">O tempo informado atravessa o fim do dia. Feche o dia antes de registrar.</p>}
-                <Button size="sm" disabled={!canRecordSearch(point)} onClick={() => saveSearch(point)}>
-                  Registrar {searchMode === "open" ? "achado" : "resultado"} e avançar {searchMinutes} min
-                </Button>
-              </div>}
+            {!playerPreview && point.searches.length > 0 && <Collapsible className="mt-3 border-t pt-2">
+              <CollapsibleTrigger asChild><Button size="sm" variant="ghost"><ChevronDown size={14} /> Áreas vasculhadas ({point.searches.length})</Button></CollapsibleTrigger>
+              <CollapsibleContent className="grid gap-2 pt-2">{point.searches.map(search => <div key={search.id} className="hex-search-history text-sm">
+                <b>{searchAreaLabel(point, search.sector)}</b><p>{search.result}</p>
+                <p className="text-xs subtle mt-1">{search.mode === "open" ? `Achado por d12 ${search.roll} · ${search.table}` : `${search.what}${search.why ? ` para ${search.why}` : ""}`} · {search.minutes} min</p>
+              </div>)}</CollapsibleContent>
+            </Collapsible>}
+            {!playerPreview && !point.clueTargetHex && <>
+              <Button size="sm" variant="outline" className="mt-3" disabled={Boolean(searchAvailabilityError(game, selected, point.id))}
+                onClick={() => { setSheetOpen(false); setSearchRequest({ hexId: selected, pointId: point.id }); }}><Search size={15} /> Buscar neste local</Button>
+              {searchAvailabilityError(game, selected, point.id) && <p className="text-xs subtle mt-1">{searchAvailabilityError(game, selected, point.id)}</p>}
             </>}
           </article>)}
         </div>}
         {(exposedEvents.length > 0 || archivedEvents.length > 0) && <div className="mt-5">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
             <h3 className="section-title">Eventos</h3>
-            {!playerPreview && <span className="tag">{exposedEvents.length} ativos/pendentes · {archivedEvents.length} arquivados</span>}
+            {!playerPreview && <span className="tag">{exposedEvents.filter(event => ["active", "pending"].includes(eventStatus(event))).length} ativos/pendentes · {archivedEvents.length} arquivados</span>}
           </div>
           <div className="grid gap-2">
             {exposedEvents.map(event => {
@@ -508,16 +424,20 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
                   {status === "resolved" && <Button size="sm" variant="outline" onClick={() => updateEventStatus(event.id, "active")}><Undo2 size={14} /> Reabrir</Button>}
                   <Button size="sm" variant="ghost" onClick={() => updateEventStatus(event.id, "archived")}><Archive size={14} /> Arquivar</Button>
                 </div>}
-                {!playerPreview && ["active", "pending"].includes(status) && <div className="flex flex-wrap gap-2 mt-3" role="group" aria-label="Ações do evento">
+                {!playerPreview && ["active", "pending"].includes(status) && <Collapsible className="mt-3">
+                  <CollapsibleTrigger asChild><Button size="sm" variant="outline"><Plus size={14} /> Criar a partir deste evento <ChevronDown size={14} /></Button></CollapsibleTrigger>
+                  <CollapsibleContent><p className="text-xs subtle mt-2">Registre um elemento neste setor. Cada ação abre um formulário para revisar antes de confirmar.</p>
+                  <div className="flex flex-wrap gap-2 mt-2" role="group" aria-label="Ações do evento">
                   {(Object.keys(hexEventActionLabels) as HexEventActionKind[]).map(type => {
                     const used = eventActionUsed(game, selected, event, type);
                     return <Button key={type} size="sm" variant="outline" disabled={used}
                       title={used ? "Esta ação já foi registrada para o evento." : "Preparar e revisar antes de confirmar"}
-                      onClick={() => setEventActionRequest({ hexId: selected, eventId: event.id, type })}>
+                      onClick={() => { setSheetOpen(false); setEventActionRequest({ hexId: selected, eventId: event.id, type }); }}>
                       {used ? <CheckCircle2 size={14} /> : <Plus size={14} />}{hexEventActionLabels[type]}
                     </Button>;
                   })}
-                </div>}
+                  </div></CollapsibleContent>
+                </Collapsible>}
                 {!playerPreview && event.actionLinks && <div className="flex flex-wrap gap-2 mt-2" aria-label="Vínculos do evento">
                   {eventActionLinkLabels(game, selected, event).map(label => <span key={label} className="tag">{label}</span>)}
                 </div>}
@@ -656,11 +576,11 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
         </button>)}
       </div>
       <p className="text-sm subtle mt-2">Clique ou toque nas pegadas/retratos para escolher o grupo ativo; os hexes adjacentes a ele ficam destacados. Clique em um hex para abrir os detalhes e, no computador, use o botão direito para ações rápidas.</p>
-      <p className="intro-line mt-4">O setor ganha nome e sinais quando é avistado. Um hex pode conter vários pontos; seus interiores continuam em aberto até a exploração.</p>
+      <p className="intro-line mt-4">O setor ganha nome e sinais quando é avistado. Um hex pode conter vários locais; suas áreas internas continuam em aberto até a exploração.</p>
     </section>
 
     {expansionOpen && !playerPreview && <WorldExpansionDialog game={game} origin={selected} edit={edit} onClose={() => setExpansionOpen(false)}
-      onExpanded={id => { setSelected(id); setFocusHex(id); setSearchId(null); setSignsDraft(null); setNotesDraft(null); }} />}
+      onExpanded={id => { setSelected(id); setFocusHex(id); setSignsDraft(null); setNotesDraft(null); }} />}
     <AlertDialog open={Boolean(pendingSectorOverride)} onOpenChange={open => { if (!open) setPendingSectorOverride(null); }}>
       <AlertDialogContent>
         <AlertDialogHeader>
@@ -677,9 +597,11 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
     </AlertDialog>
 
     {eventActionRequest && !playerPreview && <HexEventActionDialog key={`${eventActionRequest.hexId}:${eventActionRequest.eventId}:${eventActionRequest.type}`}
-      game={game} edit={edit} request={eventActionRequest} onClose={() => setEventActionRequest(null)} />}
-    {generatorRequest && <HexGeneratorDialog game={game} edit={edit} request={generatorRequest}
-      onOpenChange={open => { if (!open) setGeneratorRequest(null); }} />}
+      game={game} edit={edit} request={eventActionRequest} onClose={() => { setEventActionRequest(null); if (compact) setSheetOpen(true); }} />}
+    {searchRequest && !playerPreview && <HexSearchDialog key={`${searchRequest.hexId}:${searchRequest.pointId}`}
+      game={game} edit={edit} request={searchRequest} onClose={() => { setSearchRequest(null); if (compact) setSheetOpen(true); }} />}
+    {generatorRequest && !playerPreview && <HexGeneratorDialog game={game} edit={edit} request={generatorRequest}
+      onOpenChange={open => { if (!open) { setGeneratorRequest(null); if (compact) setSheetOpen(true); } }} />}
     {moveDestination && <SurvivorMoveDialog game={game} edit={edit} destination={moveDestination}
       open={moveOpen} onOpenChange={setMoveOpen}
       preferredSourceHex={activeGroupHex}

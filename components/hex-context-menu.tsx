@@ -108,13 +108,13 @@ export function HexContextMenu({
       {!playerPreview && record.discovery !== "desconhecido" && <>
         <ContextMenuSeparator />
         <ContextMenuSub>
-          <ContextMenuSubTrigger><Dice5 /> Tabelas do hex</ContextMenuSubTrigger>
+          <ContextMenuSubTrigger><Dice5 /> Gerar conteúdo neste setor</ContextMenuSubTrigger>
           <ContextMenuSubContent className="inventory-context-submenu">
-            <ContextMenuItem onSelect={() => onGenerate("locais")}><Dice5 /> B1 · Local</ContextMenuItem>
-            <ContextMenuItem onSelect={() => onGenerate("comercios")}><Dice5 /> B2 · Comércio</ContextMenuItem>
-            <ContextMenuItem onSelect={() => onGenerate("eventos")}><Dice5 /> B3 · Evento</ContextMenuItem>
+            <ContextMenuItem onSelect={() => onGenerate("locais")}><Dice5 /> Gerar local · B1</ContextMenuItem>
+            <ContextMenuItem onSelect={() => onGenerate("comercios")}><Dice5 /> Gerar comércio · B2</ContextMenuItem>
+            <ContextMenuItem onSelect={() => onGenerate("eventos")}><Dice5 /> Gerar evento · B3</ContextMenuItem>
             <ContextMenuSeparator />
-            <ContextMenuItem onSelect={onCreatePoint}><Plus /> Criar ponto manualmente</ContextMenuItem>
+            <ContextMenuItem onSelect={onCreatePoint}><Plus /> Adicionar local manualmente</ContextMenuItem>
           </ContextMenuSubContent>
         </ContextMenuSub>
 

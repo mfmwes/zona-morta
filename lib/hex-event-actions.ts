@@ -12,7 +12,7 @@ export type HexEventAction =
   | { type: "threat"; templateId: string; quantity: number; notes: string; conflictId: string | null; sceneName: string };
 
 export const hexEventActionLabels: Record<HexEventActionKind, string> = {
-  point: "Criar ponto", npc: "Criar PNJ", threat: "Adicionar ameaça", clue: "Criar pista",
+  point: "Criar local", npc: "Criar PNJ", threat: "Adicionar ameaça", clue: "Criar pista",
 };
 
 function sameOrigin(origin: HexEventOrigin | undefined, hexId: string, eventId: string, action: HexEventActionKind) {

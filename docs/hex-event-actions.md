@@ -2,7 +2,7 @@
 
 Nos detalhes do hex, o mestre pode preparar quatro ações para eventos **Pendentes** ou **Ativos**. Eventos antigos sem estado continuam sendo tratados como ativos.
 
-- **Criar ponto:** revise nome, tipo, sinal, acesso, condição, risco e tabela de busca. O resultado entra nos pontos descobertos do hex, com buscas inicialmente vazias.
+- **Criar local:** revise nome, tipo, sinal, acesso, condição, risco e tabela de achados. O resultado entra nos locais e pistas do setor, com buscas inicialmente vazias.
 - **Criar PNJ:** revise nome, profissão, descrição, estado, infecção, disposição e capacidades. O PNJ fica neste hex, sem entrar automaticamente no abrigo ou acompanhar o grupo.
 - **Adicionar ameaça:** escolha uma ficha da biblioteca e a quantidade. Com conflito ativo, as instâncias são adicionadas àquela cena. Sem conflito ativo, a confirmação inicia uma cena com os sobreviventes presentes no hex do evento, usando o gerenciador existente.
 - **Criar pista:** escolha outro hex existente como destino e escreva o texto público. A pista é um ponto no hex de origem; o mestre pode usar seu botão de destino para navegar no mapa. Isso não revela, renomeia ou explora o destino.
