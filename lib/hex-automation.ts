@@ -322,7 +322,8 @@ export function startSearch(game: GameState, input: StartSearch): string | null 
   const available = searchAvailabilityError(game, input.hexId, input.pointId);
   if (available) return available;
   const area = prep?.areas.find(row => row.id === input.areaId);
-  if (!prep || !area) return "Prepare o local e escolha uma área existente.";\n  if (area.searchable === false) return "Esta área existe na exploração, mas não possui uma busca de recursos própria.";
+  if (!prep || !area) return "Prepare o local e escolha uma área existente.";
+  if (area.searchable === false) return "Esta área existe na exploração, mas não possui uma busca de recursos própria.";
   if (!input.id || input.id.length > 120 || input.objective.length > 2400 || input.purpose.length > 2400) return "Confira os dados da busca.";
   if (area.excludedRolls?.length && (!area.exclusionReason?.trim() || new Set(area.excludedRolls).size >= 12)) return "Registre por que os resultados contradizem a ficção e mantenha algum achado plausível.";
   if (prep.attempts.some(row => row.areaId === area.id) || point!.searches.some(row => normalizedSector(searchAreaLabel(point!, row.sector)) === normalizedSector(area.name))) return "Esta área já tem uma busca registrada. Retome a operação existente.";
