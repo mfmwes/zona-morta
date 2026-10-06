@@ -57,7 +57,8 @@ export function MasterOverview({ game, onNavigate, masterActions }: Props) {
   const exposed = game.survivors.filter(person => person.infection === "Exposto");
   const nowAbsolute = absoluteMinutes(game);
 
-  const hasActionAttention = playerActionState(game).operations.some(op => op.day === game.day && op.attention);
+  const actionState = playerActionState(game);
+  const hasActionAttention = actionState.policy.paused || actionState.operations.some(op => op.day === game.day && op.attention);
   const attention = [
     ...(game.conflict?.active ? [{
       id: "conflict",
@@ -133,10 +134,9 @@ export function MasterOverview({ game, onNavigate, masterActions }: Props) {
             <span><b>{item.title}</b><small>{item.detail}</small></span>
             <Button size="sm" variant="outline" onClick={() => onNavigate(item.action)}>{item.actionLabel}</Button>
           </article>) : !hasActionAttention && <div className="master-overview-clear"><span>Sem pendências urgentes.</span><small>A mesa pode seguir a exploração normalmente.</small></div>}
+          {masterActions && <MasterContextActions game={game} controls={masterActions} context={{kind:"overview"}} />}
         </div>
       </section>
-
-      {masterActions && <MasterContextActions game={game} controls={masterActions} context={{kind:"overview"}} />}
 
       <section className="master-overview-card">
         <header><div><Search size={18} /><span><b>Em andamento</b><small>Buscas e trabalhos que já foram iniciados.</small></span></div></header>

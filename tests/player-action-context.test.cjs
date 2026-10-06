@@ -70,6 +70,6 @@ test('mestre administra depósitos, entregas, descanso e tokens no contexto; vis
  assert.ok(supplies.includes('Retiradas do depósito'));assert.ok(supplies.includes('Depósito de itens próprios'));assert.equal(supplies.includes('Entregas entre sobreviventes'),false);
  assert.ok(inventory.includes('Entregas entre sobreviventes'));assert.equal(inventory.includes('Retiradas do depósito'),false);
  assert.ok(rest.includes('Conclusão de descanso'));assert.ok(scene.includes('Mover o próprio token'));assert.equal(scene.includes('Pausar ações'),false);
- const overview=renderMaster({kind:'overview'});
+ const overview=renderMaster({kind:'overview'},game=>{ const state=require('../lib/player-actions.ts').playerActionState(game);game.playerActions={...state,operations:[{id:'request',type:'exception',day:game.day,initiatorId:game.survivors[0].id,attention:'Porta bloqueada',purpose:'Abrir a porta'}]}; });
  assert.ok(overview.includes('Pausar ações dos jogadores'));assert.ok(overview.includes('Pedidos e consequências'));assert.equal(overview.includes('Áreas de busca liberadas'),false);assert.equal(overview.includes('Retiradas do depósito'),false);
 });
