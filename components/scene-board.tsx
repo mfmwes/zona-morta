@@ -5,6 +5,9 @@ import {
   Copy, Eye, EyeOff, Hand, Layers, Lock, Minus, MousePointer2, Plus, RotateCcw, RotateCw,
   Search, Square, Trash2, Type, Unlock, User, ZoomIn, ZoomOut,
 } from "lucide-react";
+import { toast } from "sonner";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Field } from "@/components/game-controls";
 import { Button } from "@/components/ui/button";
 import { survivorIsDown, type GameState } from "@/lib/game";
 import { createId } from "@/lib/id";
@@ -263,6 +266,10 @@ export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edi
     () => readonly ? projectPlayerSceneBoard(safeBoard(game)) ?? { scenes: [] } : safeBoard(game),
     [game, readonly],
   );
+  const [workspaceMode, setWorkspaceMode] = useState<"prepare" | "session">(() => board.activeSceneId ? "session" : "prepare");
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newSceneName, setNewSceneName] = useState("Nova cena");
   const [chosenScene, setChosenScene] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [tool, setTool] = useState<Tool>("select");
@@ -288,6 +295,8 @@ export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edi
   const selectedObjects = scene?.objects.filter(object => selectedIds.includes(object.id)) ?? [];
   const selected = selectedObjects.length === 1 ? selectedObjects[0] : undefined;
   const snapEnabled = scene?.snapToGrid !== false;
+  const showLibrary = !readonly && (workspaceMode === "prepare" || libraryOpen);
+  const showInspector = !readonly && (workspaceMode === "prepare" || selectedObjects.length > 0);
   const activeConflictThreats = game.conflict?.active ? game.conflict.threats : [];
   const placedThreatIds = new Set((scene?.objects ?? [])
     .filter(object => object.kind === "token" && object.tokenKind === "threat" && object.refId)
@@ -317,14 +326,33 @@ export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edi
 
   function createScene() {
     if (readonly) return;
-    const name = window.prompt("Nome da nova cena:", "Nova cena")?.trim();
+    const name = newSceneName.trim().slice(0, 120);
     if (!name) return;
+    if (board.scenes.length >= sceneBoardLimits.maxScenes) {
+      toast.error(`A campanha já tem ${sceneBoardLimits.maxScenes} cenas visuais.`);
+      return;
+    }
     const created = createSceneBoardScene(name);
     edit(draft => {
       draft.sceneBoard ??= { scenes: [] };
       if (draft.sceneBoard.scenes.length < sceneBoardLimits.maxScenes) draft.sceneBoard.scenes.push(created);
     });
     selectScene(created.id);
+    setCreateOpen(false);
+    setWorkspaceMode("prepare");
+    toast.success("Cena criada", { description: "Monte o ambiente e apresente quando estiver pronto." });
+  }
+
+  function openCreateScene() {
+    if (readonly) return;
+    setNewSceneName("Nova cena");
+    setCreateOpen(true);
+  }
+
+  function switchWorkspaceMode(mode: "prepare" | "session") {
+    setWorkspaceMode(mode);
+    setLibraryOpen(false);
+    setTool("select");
   }
 
   function patchScene(fn: (target: SceneBoardScene) => void) {
@@ -344,6 +372,10 @@ export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edi
 
   function add(kind: SceneObjectKind, label: string, variant?: string, token?: Partial<SceneBoardObject>) {
     if (readonly || !scene) return;
+    if (scene.objects.length >= sceneBoardLimits.maxObjectsPerScene) {
+      toast.error(`Esta cena já tem ${sceneBoardLimits.maxObjectsPerScene} objetos.`);
+      return;
+    }
     const object = { ...createSceneBoardObject(kind, label, variant), ...token };
     const visualSize = variant ? visualSizes[variant] : undefined;
     if (visualSize) { object.width = visualSize.width; object.height = visualSize.height; }
@@ -587,7 +619,7 @@ export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edi
   }
 
   function present() {
-    if (!scene) return;
+    if (readonly || !scene) return;
     edit(draft => {
       draft.sceneBoard ??= { scenes: [] };
       const target = draft.sceneBoard.scenes.find(entry => entry.id === scene.id);
@@ -595,15 +627,17 @@ export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edi
       target.visibleToPlayers = true;
       draft.sceneBoard.activeSceneId = target.id;
     });
+    toast.success("Cena apresentada", { description: scene.name });
   }
 
   function hide() {
-    if (!scene) return;
+    if (readonly || !scene) return;
     edit(draft => {
       const target = draft.sceneBoard?.scenes.find(entry => entry.id === scene.id);
       if (target) target.visibleToPlayers = false;
       if (draft.sceneBoard?.activeSceneId === scene.id) delete draft.sceneBoard.activeSceneId;
     });
+    toast.success("Cena ocultada da mesa");
   }
 
   function duplicateSelection() {
@@ -649,12 +683,23 @@ export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edi
     patchSelected(object => { object.locked = shouldLock; });
   }
 
-  if (!scene) return <section className="panel panel-pad scene-board-empty">
+  const creationDialog = !readonly && <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+    <DialogContent><DialogHeader><DialogTitle>Criar cena visual</DialogTitle>
+      <DialogDescription>A cena começa privada. Você escolhe quando apresentá-la aos jogadores.</DialogDescription></DialogHeader>
+      <form onSubmit={event => { event.preventDefault(); createScene(); }}>
+        <Field label="Nome da cena" value={newSceneName} onChange={setNewSceneName} placeholder="Ex.: Corredores do hospital" />
+        <DialogFooter className="mt-4"><Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>Cancelar</Button>
+          <Button type="submit" disabled={!newSceneName.trim() || board.scenes.length >= sceneBoardLimits.maxScenes}>Criar cena</Button></DialogFooter>
+      </form>
+    </DialogContent>
+  </Dialog>;
+
+  if (!scene) return <><section className="panel panel-pad scene-board-empty">
     <Layers size={38} />
     <div><p className="dossier-title">Cena visual</p><h2 className="section-title mt-1">{readonly ? "Nenhuma cena está sendo apresentada" : "Comece com uma tela em branco"}</h2>
       <p className="intro-line mt-2">{readonly ? "Quando o mestre apresentar uma cena ela aparecerá aqui." : "Monte corredores, portas, objetos e posições sem transformar o jogo em um mapa tático rígido."}</p></div>
-    {!readonly && <Button onClick={createScene}><Plus size={16} /> Criar primeira cena</Button>}
-  </section>;
+    {!readonly && <Button onClick={openCreateScene}><Plus size={16} /> Criar primeira cena</Button>}
+  </section>{creationDialog}</>;
 
   const live = board.activeSceneId === scene.id && scene.visibleToPlayers;
   const walls = scene.objects.filter(object => object.kind === "wall");
@@ -667,38 +712,53 @@ export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edi
         <span className={live ? "tag scene-live" : "tag"}>{live ? <Eye size={13} /> : <EyeOff size={13} />}{live ? "AO VIVO" : readonly ? "Não apresentada" : "Privada"}</span></div></div>
       {!readonly && <div className="scene-tabs">{board.scenes.map(entry => <button type="button" key={entry.id}
         className={entry.id === scene.id ? "is-active" : ""} onClick={() => selectScene(entry.id)}>{entry.name}</button>)}
-        <button type="button" onClick={createScene}><Plus size={14} /> Nova</button></div>}
+        <button type="button" disabled={board.scenes.length >= sceneBoardLimits.maxScenes} onClick={openCreateScene}><Plus size={14} /> Nova</button></div>}
       <div className="scene-board-actions">
-        <Button size="sm" variant="outline" onClick={() => changeZoom(zoom - .1)}><ZoomOut size={15} /></Button>
+        <Button size="sm" variant="outline" aria-label="Diminuir zoom" onClick={() => changeZoom(zoom - .1)}><ZoomOut size={15} /></Button>
         <span className="scene-zoom">{Math.round(zoom * 100)}%</span>
-        <Button size="sm" variant="outline" onClick={() => changeZoom(zoom + .1)}><ZoomIn size={15} /></Button>
+        <Button size="sm" variant="outline" aria-label="Aumentar zoom" onClick={() => changeZoom(zoom + .1)}><ZoomIn size={15} /></Button>
         <Button size="sm" variant="outline" onClick={centerScene}>Centralizar</Button>
-        {!readonly && <><Button size="sm" variant="outline" onClick={() => patchScene(target => { target.showGrid = !target.showGrid; })}>{scene.showGrid ? "Ocultar grade" : "Mostrar grade"}</Button>
-          <Button size="sm" variant={snapEnabled ? "default" : "outline"} onClick={() => patchScene(target => { target.snapToGrid = target.snapToGrid === false; })}>Snap {snapEnabled ? "ligado" : "desligado"}</Button>
-          <Button size="sm" variant={scene.fogEnabled ? "default" : "outline"} onClick={toggleFog}>{scene.fogEnabled ? <EyeOff size={15} /> : <Eye size={15} />} Fog {scene.fogEnabled ? "ativo" : "desligado"}</Button>
-          {scene.fogEnabled && <><Button size="sm" variant="outline" onClick={() => patchScene(revealAllSceneFog)}>Revelar tudo</Button>
-            <Button size="sm" variant="outline" onClick={() => patchScene(coverAllSceneFog)}>Cobrir tudo</Button></>}
+        {!readonly && <>
           {live ? <Button size="sm" variant="outline" onClick={hide}><EyeOff size={15} /> Ocultar da mesa</Button>
             : <Button size="sm" onClick={present}><Eye size={15} /> Apresentar</Button>}</>}
       </div>
     </header>
 
+    {!readonly && <>
+      <div className="scene-session-bar">
+        <div className="scene-workflow-switch" role="group" aria-label="Modo de uso da cena">
+          <Button size="sm" variant={workspaceMode === "prepare" ? "default" : "outline"} aria-pressed={workspaceMode === "prepare"} onClick={() => switchWorkspaceMode("prepare")}>Montar cena</Button>
+          <Button size="sm" variant={workspaceMode === "session" ? "default" : "outline"} aria-pressed={workspaceMode === "session"} onClick={() => switchWorkspaceMode("session")}>Conduzir sessão</Button>
+        </div>
+        <p role="status">{live ? "A mesa vê esta cena. Mudanças nos elementos visíveis aparecem para os jogadores." : board.activeSceneId ? `Você está preparando esta cena. A mesa vê: ${board.scenes.find(entry => entry.id === board.activeSceneId)?.name ?? "outra cena"}.` : "Esta cena está privada. Use Apresentar para mostrá-la à mesa."}</p>
+      </div>
+      <details className="panel scene-display-settings"><summary>Grade e visibilidade</summary><div className="scene-board-actions">
+        <Button size="sm" variant="outline" onClick={() => patchScene(target => { target.showGrid = !target.showGrid; })}>{scene.showGrid ? "Ocultar grade" : "Mostrar grade"}</Button>
+          <Button size="sm" variant={snapEnabled ? "default" : "outline"} onClick={() => patchScene(target => { target.snapToGrid = target.snapToGrid === false; })}>Encaixe {snapEnabled ? "ligado" : "desligado"}</Button>
+          <Button size="sm" variant={scene.fogEnabled ? "default" : "outline"} onClick={toggleFog}>{scene.fogEnabled ? <EyeOff size={15} /> : <Eye size={15} />} Névoa {scene.fogEnabled ? "ativa" : "desligada"}</Button>
+          {scene.fogEnabled && <><Button size="sm" variant="outline" onClick={() => patchScene(revealAllSceneFog)}>Revelar tudo</Button>
+            <Button size="sm" variant="outline" onClick={() => patchScene(coverAllSceneFog)}>Cobrir tudo</Button></>}
+      </div></details>
+    </>}
+
     {!readonly && <div className="panel scene-toolstrip" role="toolbar" aria-label="Ferramentas da cena">
-      <button type="button" className={tool === "select" ? "is-active" : ""} onClick={() => setTool("select")}><MousePointer2 size={16} /><span>Selecionar</span></button>
-      <button type="button" className={tool === "pan" ? "is-active" : ""} onClick={() => setTool("pan")}><Hand size={16} /><span>Mover câmera</span></button>
-      <button type="button" className={tool === "wall" ? "is-active" : ""} onClick={() => setTool("wall")}><Minus size={17} /><span>Desenhar parede</span></button>
-      <button type="button" className={tool === "door" ? "is-active" : ""} onClick={() => setTool("door")}><Square size={15} /><span>Porta na parede</span></button>
-      <button type="button" className={tool === "window" ? "is-active" : ""} onClick={() => setTool("window")}><Square size={15} /><span>Janela na parede</span></button>
-      <button type="button" disabled={!scene.fogEnabled} className={tool === "reveal" ? "is-active" : ""} onClick={() => setTool("reveal")}><Eye size={15} /><span>Revelar área</span></button>
-      <button type="button" disabled={!scene.fogEnabled} className={tool === "conceal" ? "is-active" : ""} onClick={() => setTool("conceal")}><EyeOff size={15} /><span>Ocultar área</span></button>
+      <button type="button" className={tool === "select" ? "is-active" : ""} aria-pressed={tool === "select"} onClick={() => setTool("select")}><MousePointer2 size={16} /><span>Selecionar</span></button>
+      <button type="button" className={tool === "pan" ? "is-active" : ""} aria-pressed={tool === "pan"} onClick={() => setTool("pan")}><Hand size={16} /><span>Mover câmera</span></button>
+      {workspaceMode === "prepare" && <><button type="button" className={tool === "wall" ? "is-active" : ""} aria-pressed={tool === "wall"} onClick={() => setTool("wall")}><Minus size={17} /><span>Desenhar parede</span></button>
+      <button type="button" className={tool === "door" ? "is-active" : ""} aria-pressed={tool === "door"} onClick={() => setTool("door")}><Square size={15} /><span>Porta na parede</span></button>
+      <button type="button" className={tool === "window" ? "is-active" : ""} aria-pressed={tool === "window"} onClick={() => setTool("window")}><Square size={15} /><span>Janela na parede</span></button>
+      </>}
+      <button type="button" disabled={!scene.fogEnabled} className={tool === "reveal" ? "is-active" : ""} aria-pressed={tool === "reveal"} onClick={() => setTool("reveal")}><Eye size={15} /><span>Revelar área</span></button>
+      <button type="button" disabled={!scene.fogEnabled} className={tool === "conceal" ? "is-active" : ""} aria-pressed={tool === "conceal"} onClick={() => setTool("conceal")}><EyeOff size={15} /><span>Ocultar área</span></button>
+      {workspaceMode === "session" && <button type="button" aria-pressed={libraryOpen} className={libraryOpen ? "is-active" : ""} onClick={() => { setLibraryMode("tokens"); setLibraryOpen(value => !value); }}><User size={15} /><span>Adicionar personagens</span></button>}
       <span className="scene-toolstrip-spacer" />
       <button type="button" className={multiSelect ? "is-active" : ""} aria-pressed={multiSelect} onClick={() => setMultiSelect(value => !value)}>
         <Layers size={15} /><span>Múltipla</span>{selectedIds.length > 0 && <b>{selectedIds.length}</b>}
       </button>
     </div>}
 
-    <div className={"scene-board-layout" + (readonly ? " is-readonly" : "")}>
-      {!readonly && <aside className="panel scene-palette">
+    <div className={"scene-board-layout scene-workflow-layout" + (readonly ? " is-readonly" : "") + (showLibrary ? " has-library" : "") + (showInspector ? " has-inspector" : "")}>
+      {showLibrary && <aside className="panel scene-palette">
         <div className="scene-library-head">
           <div className="scene-library-title-row"><div><p className="dossier-title">Biblioteca visual</p><small>{libraryGroups.reduce((sum, group) => sum + group.pieces.length, 0)} objetos disponíveis</small></div>
             <div className="scene-library-mode" role="tablist" aria-label="Tipo de item da biblioteca">
@@ -808,7 +868,7 @@ export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edi
         </footer>
       </div>
 
-      {!readonly && <aside className="panel panel-pad scene-inspector">
+      {showInspector && <aside className="panel panel-pad scene-inspector">
         <div className="scene-inspector-heading"><p className="dossier-title">Inspetor</p>{selectedObjects.length > 1 && <span className="tag">{selectedObjects.length} selecionados</span>}</div>
         {!selectedObjects.length ? <p className="subtle text-sm">Selecione uma peça. Objetos bloqueados continuam selecionáveis, mas não se movem por acidente.</p> : <>
           {selected && <label>Nome<input key={selected.id} defaultValue={selected.label} maxLength={120} onBlur={event => {
@@ -841,5 +901,6 @@ export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edi
         </>}
       </aside>}
     </div>
+    {creationDialog}
   </section>;
 }

@@ -94,9 +94,10 @@ export function TablePresentationControl({
         <DialogHeader>
           <p className="dossier-title">Ferramenta do mestre</p>
           <DialogTitle>Exibir imagem aos jogadores</DialogTitle>
-          <DialogDescription>A apresentação usa um canal leve separado do dossiê da campanha, sem regravar o estado principal.</DialogDescription>
+          <DialogDescription>A imagem abre na tela dos jogadores, com o título e a legenda que você definir.</DialogDescription>
         </DialogHeader>
         <div className="table-presentation-editor">
+          {active && <p className="table-presentation-status" role="status">Em exibição: <b>{active.title || "Imagem sem título"}</b>. Você pode trocar a imagem ou encerrar a exibição para todos.</p>}
           <ImagePicker label="Imagem" mode="presentation" value={image || undefined} onChange={value => setImage(value ?? "")} fallback={<ImageIcon size={34} aria-hidden="true" />} />
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Título opcional" value={title} onChange={setTitle} placeholder="Ex.: Fotografia encontrada" />
@@ -136,7 +137,11 @@ export function TablePresentationViewer({ presentation, enabled }: {
 
   useEffect(() => { setExpanded(false); }, [presentation?.id]);
 
-  if (!visible || !presentation) return null;
+  if (!enabled || !presentation?.active) return null;
+  if (!visible) return <button type="button" className="table-presentation-trigger table-presentation-reopen"
+    onClick={() => setDismissedId(null)} aria-label="Reabrir imagem apresentada pelo mestre" title={presentation.title || "Reabrir imagem"}>
+    <ImageIcon size={17} aria-hidden="true" /><span>Reabrir imagem</span>
+  </button>;
 
   return <div className={`table-presentation-overlay${expanded ? " is-expanded" : ""}`} role="dialog" aria-modal="true" aria-label={presentation.title || "Imagem apresentada pelo mestre"}>
     <button type="button" className="table-presentation-backdrop" aria-label="Fechar imagem" onClick={() => setDismissedId(presentation.id)} />

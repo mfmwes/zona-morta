@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Eye, EyeOff, MapPin, Plus, Sparkles, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -33,6 +34,7 @@ function locationLabel(game: GameState, npc: NPC) {
 }
 
 export function NpcPanel({ game, edit, playerPreview }: { game: GameState; edit: Edit; playerPreview: boolean }) {
+  const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("Todos");
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<NPC>(() => blankNpc(game));
@@ -44,19 +46,25 @@ export function NpcPanel({ game, edit, playerPreview }: { game: GameState; edit:
   const [generated, setGenerated] = useState<GeneratedNpc[]>([]);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const npcs = game.npcs;
-  const filtered = useMemo(() => npcs.filter(npc => {
-    if (playerPreview && !npcVisibleToPlayers(npc)) return false;
-    if (filter === "Ocultos" && !playerPreview) return !npcVisibleToPlayers(npc);
+  const availableNpcs = useMemo(() => npcs.filter(npc => !playerPreview || npcVisibleToPlayers(npc)), [npcs, playerPreview]);
+  const effectiveFilter = playerPreview && filter === "Ocultos" ? "Todos" : filter;
+  function matchesFilter(npc: NPC, value: Filter) {
     const atShelter = Boolean(game.shelter.hex && npc.hex === game.shelter.hex);
     const inField = npc.hex === game.partyHex && !atShelter;
-    if (filter === "No abrigo") return atShelter;
-    if (filter === "Em campo") return inField;
-    if (filter === "Outros locais") return !atShelter && !inField;
-    if (filter === "Feridos") return npc.status === "Ferido" || npc.status === "Grave";
-    if (filter === "Infectados") return npc.infection !== "Saudável";
-    if (filter === "Mortos/Desaparecidos") return npc.status === "Morto" || npc.status === "Desaparecido";
+    if (value === "Ocultos") return !npcVisibleToPlayers(npc);
+    if (value === "No abrigo") return atShelter;
+    if (value === "Em campo") return inField;
+    if (value === "Outros locais") return !atShelter && !inField;
+    if (value === "Feridos") return npc.status === "Ferido" || npc.status === "Grave";
+    if (value === "Infectados") return npc.infection !== "Saudável";
+    if (value === "Mortos/Desaparecidos") return npc.status === "Morto" || npc.status === "Desaparecido";
     return true;
-  }), [filter, game.partyHex, game.shelter.hex, npcs, playerPreview]);
+  }
+  const normalize = (text: string) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
+  const needle = normalize(query.trim());
+  const filtered = availableNpcs.filter(npc => matchesFilter(npc, effectiveFilter)
+    && (!needle || normalize(`${npc.name} ${npc.role} ${npc.skills.join(" ")} ${npc.duty ?? ""} ${locationLabel(game, npc)}`).includes(needle)))
+    .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
   const publicDraft = playerPreview ? npcs.find(npc => npc.id === draft.id && npcVisibleToPlayers(npc)) : null;
   const hiddenCount = npcs.filter(npc => !npcVisibleToPlayers(npc)).length;
   const hexOptions = Object.keys(game.hexes).map(hex => ({ value: hex, label: `${hex} · ${game.hexes[hex].sector?.name ?? "setor oculto"}` }));
@@ -74,6 +82,7 @@ export function NpcPanel({ game, edit, playerPreview }: { game: GameState; edit:
       else { const created = { ...next, id: createId() }; state.npcs.push(created); if (npcVisibleToPlayers(created)) addLog(state, "comunidade", `${created.name} foi registrado(a) na comunidade.`); }
     });
     setOpen(false);
+    toast.success(draft.id ? "PNJ atualizado" : "PNJ registrado", { description: name });
   }
   function toggleVisibility(npc: NPC) {
     if (playerPreview) return;
@@ -99,6 +108,7 @@ export function NpcPanel({ game, edit, playerPreview }: { game: GameState; edit:
       }
       if (names.length) addLog(state, "comunidade", `${names.join(", ")} ${names.length === 1 ? "foi registrado(a)" : "foram registrados(as)"} por encontro local.`);
     });
+    toast.success(`${generated.length} PNJ(s) adicionado(s)`, { description: "Estão ocultos dos jogadores até você revelá-los." });
     setGenerated([]);
     setGeneratorOpen(false);
   }
@@ -130,8 +140,13 @@ export function NpcPanel({ game, edit, playerPreview }: { game: GameState; edit:
     <div className="flex flex-wrap items-start justify-between gap-4 mb-5"><div><p className="dossier-title">Pessoas da campanha</p><h2 className="section-title mt-1">PNJs e comunidade</h2>
       <p className="intro-line mt-2">Pessoas identificadas podem morar em uma base, acompanhar o grupo ou permanecer em outro lugar.</p></div>
       {!playerPreview && <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={() => { setGenerationHex(game.shelter.hex ?? game.partyHex); setGenerated([]); setGeneratorOpen(true); }}><Sparkles /> Gerar PNJ / encontro</Button><Button onClick={() => editNpc()}><Plus /> Novo PNJ</Button></div>}</div>
-    <div className="npc-filter-row" role="group" aria-label="Filtrar PNJs">{[...filters, ...(!playerPreview ? ["Ocultos" as const] : [])].map(value => <Button key={value} size="sm" variant={(playerPreview && filter === "Ocultos" ? "Todos" : filter) === value ? "default" : "outline"}
-      onClick={() => setFilter(value)} aria-pressed={(playerPreview && filter === "Ocultos" ? "Todos" : filter) === value}>{value === "Ocultos" && <EyeOff size={14} />}{value}</Button>)}</div>
+    <div className="npc-search-row">
+      <Field label="Buscar pessoa, função ou capacidade" value={query} onChange={setQuery} placeholder="Nome, medicina, vigia, local…" type="search" />
+      <span className="tag" role="status">{filtered.length} de {availableNpcs.length} pessoa(s)</span>
+      {(query || effectiveFilter !== "Todos") && <Button size="sm" variant="outline" onClick={() => { setQuery(""); setFilter("Todos"); }}>Limpar filtros</Button>}
+    </div>
+    <div className="npc-filter-row" role="group" aria-label="Filtrar PNJs">{[...filters, ...(!playerPreview ? ["Ocultos" as const] : [])].map(value => <Button key={value} size="sm" variant={effectiveFilter === value ? "default" : "outline"}
+      onClick={() => setFilter(value)} aria-pressed={effectiveFilter === value}>{value === "Ocultos" && <EyeOff size={14} />}{value} · {availableNpcs.filter(npc => matchesFilter(npc, value)).length}</Button>)}</div>
     {!playerPreview && <p className="npc-visibility-summary"><Eye size={14} /> {npcs.length - hiddenCount} visível(is) <span>·</span><EyeOff size={14} /> {hiddenCount} oculto(s) <small>Use o olhinho para revelar um encontro.</small></p>}
     <div className="npc-grid mt-5">{filtered.length ? filtered.map(npc => <article key={npc.id} className={`npc-card ${!npcVisibleToPlayers(npc) ? "npc-card-hidden" : ""}`}>
       <button type="button" className="npc-card-open" aria-label={`Abrir ficha de ${npc.name}`} onClick={() => editNpc(npc)}>
@@ -139,6 +154,8 @@ export function NpcPanel({ game, edit, playerPreview }: { game: GameState; edit:
         <span className="npc-card-copy"><strong>{npc.name}</strong><small>{npc.role || "Função não registrada"}</small>
           <span className="npc-card-meta"><MapPin size={13} /> {locationLabel(game, npc)}</span>
           <span className="npc-card-labels"><span className={`npc-status npc-status-${npc.status.toLowerCase()}`}>{npc.status}</span>
+            {npc.infection !== "Saudável" && <span className="tag">{npc.infection}</span>}
+            {!npc.active && <span className="tag">Inativo</span>}
             {!playerPreview && <span className="npc-visibility-label">{npcVisibleToPlayers(npc) ? <Eye size={12} /> : <EyeOff size={12} />}{npcVisibleToPlayers(npc) ? "Visível aos jogadores" : "Somente o mestre"}</span>}</span>
           <NpcCapabilityChips skills={npc.skills} />
         </span>
@@ -147,7 +164,7 @@ export function NpcPanel({ game, edit, playerPreview }: { game: GameState; edit:
         aria-pressed={npcVisibleToPlayers(npc)} title={npcVisibleToPlayers(npc) ? "Ocultar dos jogadores" : "Exibir aos jogadores"} onClick={() => toggleVisibility(npc)}>
         {npcVisibleToPlayers(npc) ? <Eye size={18} /> : <EyeOff size={18} />}
       </button>}
-    </article>) : <p className="character-empty-list">Nenhuma pessoa corresponde a este filtro.</p>}</div>
+    </article>) : <p className="character-empty-list">{availableNpcs.length ? "Nenhuma pessoa corresponde à busca e aos filtros." : playerPreview ? "O mestre ainda não revelou pessoas da comunidade." : "A comunidade está vazia. Registre um PNJ ou gere um encontro para começar."}</p>}</div>
     <Dialog open={open && (!playerPreview || Boolean(publicDraft))} onOpenChange={setOpen}><DialogContent className="npc-dialog z-[100]" overlayClassName="z-[90]"><DialogHeader><DialogTitle>{playerPreview ? publicDraft?.name : draft.id ? draft.name || "PNJ" : "Novo PNJ"}</DialogTitle>
       <DialogDescription>{playerPreview ? "Informações públicas da comunidade." : "Ficha leve: registra situação e vínculos sem criar outra ficha completa de sobrevivente."}</DialogDescription></DialogHeader>
       {playerPreview ? publicDraft && <PublicNpcDetails npc={publicDraft} game={game} /> : <NpcForm game={game} draft={draft} setDraft={setDraft} hexOptions={hexOptions} />}
@@ -200,23 +217,37 @@ function NpcForm({ game, draft, setDraft, hexOptions }: { game: GameState; draft
       <div><b>{visible ? "Visível aos jogadores" : "Somente o mestre"}</b><p>{visible ? "Este PNJ aparece na comunidade e no mapa dos jogadores." : "Prepare este PNJ em segredo e revele-o no momento do encontro."}</p></div>
       <Button type="button" size="sm" variant="outline" aria-pressed={visible} onClick={() => update("visibleToPlayers", !visible)}>{visible ? <EyeOff size={15} /> : <Eye size={15} />}{visible ? "Ocultar" : "Exibir"}</Button>
     </div>
+    <Tabs defaultValue="perfil" className="npc-form-tabs">
+      <TabsList aria-label="Seções da ficha do PNJ"><TabsTrigger value="perfil">Perfil e estado</TabsTrigger><TabsTrigger value="vinculos">Local e vínculos</TabsTrigger><TabsTrigger value="notas">Notas</TabsTrigger></TabsList>
+      <TabsContent value="perfil" className="npc-form-section">
     <div className="grid gap-3 sm:grid-cols-2"><Field label="Nome" value={draft.name} onChange={value => update("name", value)} placeholder="Ex.: Maria Alves" />
     <Field label="Função / papel" value={draft.role} onChange={value => update("role", value)} placeholder="Enfermeira, vigia..." /></div>
     <div className="grid gap-3 sm:grid-cols-3"><Pick contentClassName="z-[110]" label="Estado" value={draft.status} options={statuses} onChange={value => update("status", value as NpcStatus)} />
       <Pick contentClassName="z-[110]" label="Infecção" value={draft.infection} options={[...infections]} onChange={value => update("infection", value as NPC["infection"])} />
       <Pick contentClassName="z-[110]" label="Disposição" value={draft.disposition} options={dispositions} onChange={value => update("disposition", value as NpcDisposition)} /></div>
-    <ImagePicker label="Retrato do PNJ" mode="npc" value={draft.portrait} onChange={value => setDraft({ ...draft, portrait: value, portraitFrame: undefined })} fallback={draft.name.slice(0, 2).toUpperCase() || "PNJ"} />
+    <details className="npc-photo-section"><summary>Retrato e enquadramento{draft.portrait ? " · imagem definida" : " · opcional"}</summary>
+      <div>
+        <ImagePicker label="Retrato do PNJ" mode="npc" value={draft.portrait} onChange={value => setDraft({ ...draft, portrait: value, portraitFrame: undefined })} fallback={draft.name.slice(0, 2).toUpperCase() || "PNJ"} />
     {draft.portrait && <NpcPortraitEditor key={draft.portrait} src={draft.portrait} frame={draft.portraitFrame} onChange={value => update("portraitFrame", value)} />}
+      </div>
+    </details>
     <label className="field"><span className="field-label">Descrição</span><textarea value={draft.description} onChange={event => update("description", event.target.value)} placeholder="Aparência, vínculo e o que importa na ficção." /></label>
     <NpcCapabilities skills={draft.skills} onChange={value => update("skills", value)} />
+      </TabsContent>
+      <TabsContent value="vinculos" className="npc-form-section">
     <div className="grid gap-3 sm:grid-cols-2"><Pick contentClassName="z-[110]" label="Hex atual" value={draft.hex} options={hexOptions} onChange={value => update("hex", value)} />
       <Field label="Função no abrigo" value={draft.duty ?? ""} onChange={value => update("duty", value || undefined)} placeholder="Vigia, cozinha, reparos..." /></div>
     <div className="npc-toggle-row"><label><input type="checkbox" checked={draft.accompaniesParty ?? false} onChange={event => setDraft({ ...draft, accompaniesParty: event.target.checked, hex: event.target.checked ? game.partyHex : draft.hex })} /> <Users size={15} /> Acompanha o grupo principal</label>
       <label><input type="checkbox" checked={draft.active} onChange={event => update("active", event.target.checked)} /> Ativo na campanha</label>
-      {game.shelter.hex && <label><input type="checkbox" checked={draft.home === game.shelter.hex} onChange={event => update("home", event.target.checked ? game.shelter.hex : undefined)} /> Morador identificado deste abrigo</label>}</div>
+      {game.shelter.hex && <label><input type="checkbox" checked={draft.home === game.shelter.hex} onChange={event => update("home", event.target.checked ? (game.shelter.hex ?? undefined) : undefined)} /> Morador identificado deste abrigo</label>}</div>
     <div className="field"><span className="field-label">Acompanha este grupo de sobreviventes</span><div className="npc-companion-list">{game.survivors.filter(person => (person.hex ?? game.partyHex) === draft.hex).map(person => <label key={person.id}><input type="checkbox" checked={(draft.accompaniesSurvivorIds ?? []).includes(person.id)} onChange={event => update("accompaniesSurvivorIds", event.target.checked ? [...new Set([...(draft.accompaniesSurvivorIds ?? []), person.id])] : (draft.accompaniesSurvivorIds ?? []).filter(id => id !== person.id))} /> {person.name}</label>)}{!game.survivors.some(person => (person.hex ?? game.partyHex) === draft.hex) && <small className="subtle">Nenhum sobrevivente neste hex. Mova o PNJ ou use o grupo principal.</small>}</div></div>
     {isAtShelter && <p className="text-xs subtle">Este PNJ está na base ativa e entra no consumo individual das reservas ao encerrar o dia.</p>}
+      </TabsContent>
+      <TabsContent value="notas" className="npc-form-section">
+    <p className="subtle text-sm">Notas públicas aparecem na ficha dos jogadores. As notas privadas ficam disponíveis apenas para o mestre.</p>
     <label className="field"><span className="field-label">Notas públicas</span><textarea value={draft.publicNotes ?? ""} onChange={event => update("publicNotes", event.target.value)} placeholder="O que jogadores podem ler." /></label>
     <label className="field"><span className="field-label">Notas privadas do mestre</span><textarea value={draft.notes} onChange={event => update("notes", event.target.value)} placeholder="Segredos, ganchos e relações ocultas." /></label>
+      </TabsContent>
+    </Tabs>
   </div>;
 }

@@ -1,0 +1,80 @@
+.npc-search-row {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.npc-search-row > .field { flex: 1 1 280px; }
+.npc-search-row > .tag { margin-bottom: 8px; }
+.npc-form-tabs > [role="tablist"] {
+  width: 100%;
+  height: auto;
+  flex-wrap: wrap;
+}
+.npc-form-tabs > [role="tablist"] > button { flex: 1 1 auto; }
+.npc-form-section {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  padding-top: 12px;
+}
+.npc-form-section[hidden] { display: none; }
+.npc-photo-section {
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface-soft);
+}
+.npc-photo-section > summary,
+.scene-display-settings > summary {
+  cursor: pointer;
+  padding: 10px 12px;
+  color: var(--foreground);
+  font-size: .8rem;
+  font-weight: 650;
+}
+.npc-photo-section > div { display: grid; gap: 12px; padding: 12px; }
+.scene-session-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+}
+.scene-session-bar > p,
+.table-presentation-status {
+  color: var(--muted-foreground);
+  font-size: .8rem;
+  line-height: 1.5;
+}
+.scene-session-bar > p { flex: 1 1 300px; }
+.scene-workflow-switch { display: flex; flex-wrap: wrap; gap: 6px; }
+.scene-display-settings > .scene-board-actions {
+  padding: 0 12px 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+.scene-workflow-layout { grid-template-columns: minmax(0, 1fr); }
+.scene-workflow-layout.has-library { grid-template-columns: 220px minmax(0, 1fr); }
+.scene-workflow-layout.has-inspector { grid-template-columns: minmax(0, 1fr) 245px; }
+.scene-workflow-layout.has-inspector > .scene-inspector { grid-column: auto; }
+.scene-workflow-layout.has-library.has-inspector { grid-template-columns: 220px minmax(0, 1fr) 245px; }
+.npc-photo-section > summary:focus-visible,
+.scene-display-settings > summary:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+@media (max-width: 1200px) {
+  .scene-workflow-layout.has-library.has-inspector { grid-template-columns: 200px minmax(0, 1fr); }
+  .scene-workflow-layout.has-library.has-inspector > .scene-inspector {
+    grid-column: 1 / -1;
+    position: static;
+    max-height: none;
+  }
+}
+@media (max-width: 900px) {
+  .scene-workflow-layout.has-library,
+  .scene-workflow-layout.has-inspector,
+  .scene-workflow-layout.has-library.has-inspector { grid-template-columns: minmax(0, 1fr); }
+  .scene-workflow-layout > .scene-palette,
+  .scene-workflow-layout > .scene-inspector { position: static; }
+}
