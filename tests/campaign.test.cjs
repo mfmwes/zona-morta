@@ -1752,7 +1752,8 @@ test('encerrar o dia é independente de descanso longo', () => {
   ], () => 1);
   assert.equal(rest.ok, true);
   assert.equal(g.day, dayBeforeRest);
-  assert.equal(g.minutes, minutesBeforeRest);
+  assert.equal(g.minutes, minutesBeforeRest + 360);
+  assert.equal(rest.minutes, 360);
 
   const shortRestBeforeDayClose = g.shortRest;
   const longRestBeforeDayClose = g.longRest;
