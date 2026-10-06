@@ -33,6 +33,7 @@ export function ShelterPanel({ game, edit, playerPreview, playerSurvivorId }: { 
   const [convertOpen, setConvertOpen] = useState(false);
   const [convertName, setConvertName] = useState("");
   const [convertRole, setConvertRole] = useState("");
+  const [shelterSection, setShelterSection] = useState("overview");
   const s = game.shelter;
   const hasShelter = s.hex !== null;
   const sharedAccessible = atSharedStorage(game);
@@ -218,7 +219,7 @@ export function ShelterPanel({ game, edit, playerPreview, playerSurvivorId }: { 
       </div>
     </section>
 
-    <Tabs defaultValue="overview" className="shelter-section-tabs">
+    <Tabs value={shelterSection} onValueChange={setShelterSection} className="shelter-section-tabs">
       <TabsList className="shelter-main-tabs">
         <TabsTrigger value="overview"><House size={16} /> Visão geral</TabsTrigger>
         <TabsTrigger value="resources"><Package size={16} /> Recursos</TabsTrigger>
@@ -228,7 +229,7 @@ export function ShelterPanel({ game, edit, playerPreview, playerSurvivorId }: { 
       </TabsList>
 
       <TabsContent value="overview" className="shelter-tab-content">
-        <ShelterVisualDashboard game={game} />
+        <ShelterVisualDashboard game={game} onNavigate={setShelterSection} />
         {!playerPreview && <section className="panel panel-pad shelter-overview-admin">
           <div className="shelter-admin-heading"><div><p className="dossier-title">Administração</p><h3 className="section-title mt-1">Configuração rápida</h3></div><p className="text-xs subtle">Detalhes administrativos ficam fora da planta para manter a visão geral limpa.</p></div>
           <div className="shelter-admin-grid">

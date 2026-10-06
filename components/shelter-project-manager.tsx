@@ -167,12 +167,58 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
       && (!projectFor(shelter, definition.key) || !projectFor(shelter, definition.key)?.slotId))
     : [];
 
+  const damagedProjects = (shelter.projects ?? []).filter(project => ["Danificado", "Inoperante", "Destruído"].includes(project.state));
+  const idleProjects = (shelter.projects ?? []).filter(project => project.state === "Em construção"
+    && !project.workShift && !(project.volunteerShifts ?? []).length);
+  const waitingProjects = (shelter.projects ?? []).filter(project => ["Concluído", "Danificado"].includes(project.state)
+    && !projectOperational(game, shelter, project) && !(shelter.disabledProjectKeys ?? []).includes(project.key));
+
   const catalog = filter === "Recomendados"
     ? (() => {
         const keys = new Set(recommendations.map(item => item.key));
         return shelterProjectCatalog.filter(definition => keys.has(definition.key));
       })()
     : shelterProjectCatalog.filter(definition => definition.category === filter);
+
+  const constructionNext = damagedProjects[0]
+    ? { kind: "project" as const, tone: "danger", icon: Wrench, title: `Reparar ${damagedProjects[0].name}`, detail: `Integridade ${projectIntegrity(damagedProjects[0])}/3 · ${projectIntegrityLabel(damagedProjects[0])}.`, project: damagedProjects[0], action: "Abrir reparo" }
+    : power.balance < 0
+      ? { kind: "power" as const, tone: "warning", icon: Zap, title: "Equilibrar a rede de energia", detail: `Produção ${power.production} · consumo ${power.consumption}. Desligue consumidores ou aumente a geração.`, action: "Revisar energia" }
+      : unplacedFacilities[0]
+        ? { kind: "placement" as const, tone: "action", icon: Plus, title: `Posicionar ${unplacedFacilities[0].name}`, detail: "A instalação existe, mas ainda não ocupa um espaço da planta.", project: unplacedFacilities[0], action: "Definir local" }
+        : idleProjects[0]
+          ? { kind: "project" as const, tone: "action", icon: Clock3, title: `Alocar trabalho em ${idleProjects[0].name}`, detail: "A obra está iniciada, mas não há turno programado.", project: idleProjects[0], action: "Abrir obra" }
+          : waitingProjects[0]
+            ? { kind: "project" as const, tone: "action", icon: Users, title: `Ativar ${waitingProjects[0].name}`, detail: projectDefinition(waitingProjects[0].key)?.requiresPower ? "A estrutura precisa de energia para operar." : "A estrutura precisa da equipe indicada para operar.", project: waitingProjects[0], action: "Revisar operação" }
+            : recommendations[0]
+              ? { kind: "recommendation" as const, tone: "stable", icon: Lightbulb, title: `Melhoria sugerida: ${projectDefinition(recommendations[0].key)?.name ?? recommendations[0].key}`, detail: recommendations[0].reason, key: recommendations[0].key, action: "Ver recomendação" }
+              : { kind: "stable" as const, tone: "stable", icon: CheckCircle2, title: "Nenhuma ação estrutural urgente", detail: "Obras, integridade e energia estão estáveis. Inicie uma nova construção apenas quando a ficção pedir.", action: "Nova construção" };
+  const ConstructionNextIcon = constructionNext.icon;
+
+  function openConstructionNext() {
+    if (constructionNext.kind === "project") {
+      setSelectedKey(constructionNext.project.key);
+      setPlanningKey(null);
+      setPlanningSlotId(null);
+      document.getElementById("construction-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    if (constructionNext.kind === "placement") {
+      setSelectedKey(constructionNext.project.key);
+      setPlanningKey(constructionNext.project.key);
+      setPlanningSlotId(null);
+      document.getElementById("construction-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    if (constructionNext.kind === "power") {
+      document.getElementById("construction-power")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    setFilter("Recomendados");
+    setCatalogOpen(true);
+    if (constructionNext.kind === "recommendation") setSelectedKey(constructionNext.key);
+    document.getElementById("construction-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   function addProject(key: string, slotId?: string) {
     const definition = projectDefinition(key);
@@ -415,6 +461,11 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
       <div className={`construction-summary-stat ${power.balance < 0 ? "is-warning" : ""}`}><Zap size={18} /><span><small>Energia</small><b>{power.production} / {power.consumption}</b></span></div>
     </section>
 
+    {!playerPreview && <section className={`construction-next-action is-${constructionNext.tone}`}>
+      <div><ConstructionNextIcon size={18} /><span><small>PRÓXIMA AÇÃO</small><b>{constructionNext.title}</b><p>{constructionNext.detail}</p></span></div>
+      <Button size="sm" variant={constructionNext.tone === "danger" || constructionNext.tone === "warning" ? "default" : "outline"} onClick={openConstructionNext}>{constructionNext.action}<ChevronRight size={15} /></Button>
+    </section>}
+
     {!playerPreview && <section className="construction-incident-launch">
       <div><AlertTriangle size={17} /><span><b>Danos e incidentes</b><small>Registre invasões, acidentes e outros eventos que possam danificar estruturas.</small></span></div>
       <Button size="sm" variant="outline" onClick={() => setIncidentOpen(value => !value)}>{incidentOpen ? "Fechar" : "Registrar incidente"}</Button>
@@ -461,7 +512,7 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
 
     {power.balance < 0 && <div className="construction-alert"><AlertTriangle size={17} /><div><b>Energia insuficiente</b><span>Produção {power.production} · consumo {power.consumption}. Desligue consumidores menos prioritários até o saldo voltar a zero.</span></div></div>}
 
-    {(power.consumers.length > 0 || power.disabled.length > 0) && <section className="construction-power-manager">
+    {(power.consumers.length > 0 || power.disabled.length > 0) && <section id="construction-power" className="construction-power-manager">
       <div><Zap size={16} /><span><b>Prioridade de energia</b><small>Produção {power.production} · consumo {power.consumption} · saldo {power.balance >= 0 ? "+" : ""}{power.balance}</small></span></div>
       <div>{[...new Set([...power.consumers, ...power.disabled])].map(key => {
         const project = projectFor(shelter, key);
@@ -516,7 +567,7 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
         })}</div>}
     </section>
 
-    <div className="construction-workspace">
+    <div id="construction-workspace" className="construction-workspace">
       <section className="construction-blueprint-panel construction-blueprint-architectural">
         <div className="construction-section-heading architectural-plan-heading">
           <div>

@@ -2177,6 +2177,27 @@ test('etapa de UX do jogador prioriza estado atual, ações rápidas e ficha ant
   assert.match(survivor, /id="character-rest-panel"/);
 });
 
+test('etapa de UX do abrigo prioriza estado, pendências e próxima ação sem remover ferramentas', () => {
+  const views = fs.readFileSync(require.resolve('../components/campaign-views.tsx'), 'utf8');
+  const dashboard = fs.readFileSync(require.resolve('../components/shelter-dashboard.tsx'), 'utf8');
+  const manager = fs.readFileSync(require.resolve('../components/shelter-project-manager.tsx'), 'utf8');
+  assert.match(views, /shelterSection/);
+  assert.match(views, /onValueChange=\{setShelterSection\}/);
+  assert.match(views, /onNavigate=\{setShelterSection\}/);
+  for (const tab of ['overview','resources','community','construction','routine']) {
+    assert.match(views, new RegExp('value="' + tab + '"'));
+  }
+  assert.match(dashboard, /Abrigo agora/);
+  assert.match(dashboard, /Outras pendências/);
+  assert.match(dashboard, /Próximo passo/);
+  assert.match(dashboard, /Provisões abaixo da população presente/);
+  assert.match(manager, /PRÓXIMA AÇÃO/);
+  assert.match(manager, /constructionNext/);
+  assert.match(manager, /Alocar trabalho/);
+  assert.match(manager, /Revisar energia/);
+  assert.match(manager, /Registrar incidente/);
+});
+
 test('interfaces de tempo avisam correção para trás, eventos pendentes e tratamento de 30 min', () => {
   const page = fs.readFileSync(require.resolve('../app/page.tsx'), 'utf8');
   const close = fs.readFileSync(require.resolve('../components/day-close-dialog.tsx'), 'utf8');
