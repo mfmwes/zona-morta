@@ -121,6 +121,72 @@ test('busca comum confirma d12, relógio, estoque e ocorrência uma única vez',
   assert.equal(auto.completeSearch(f.game,'0,0','market','search-1'),null); assert.deepEqual(f.game,after);
   assert.equal(auto.searchSequence(f.game,'0,0'),1);
 });
+
+test('busca profunda só abre depois da busca normal e não usa outro d12 de saque', () => {
+  const f=campaign();
+  const candidates=auto.deepSearchCandidateKeys(f.area);
+  assert.ok(candidates.length>1);
+  const early={id:'deep-early',hexId:'0,0',pointId:'market',areaId:f.area.id,participants:[f.actor.id],
+    objective:'Item oculto',purpose:'Vasculhar a fundo',catalogKey:candidates[0]};
+  assert.match(auto.startDeepSearch(f.game,early),/Conclua a busca normal/);
+
+  assert.equal(auto.resolvePreparedSearch(f.game,input(f),die(1)),null);
+  const point=f.game.hexes['0,0'].points[0];
+  const area=point.preparation.areas.find(row=>row.id===f.area.id);
+  const known=new Set(point.preparation.stock.filter(row=>row.areaId===area.id).map(row=>row.item.catalogKey));
+  const key=auto.deepSearchCandidateKeys(area).find(value=>!known.has(value));
+  assert.ok(key);
+  const beforeMinutes=f.game.minutes;
+  const deep={id:'deep-1',hexId:'0,0',pointId:'market',areaId:area.id,participants:[f.actor.id],
+    objective:'Compartimento oculto',purpose:'Vasculhar a fundo',catalogKey:key};
+  assert.equal(auto.startDeepSearch(f.game,deep),null);
+  const attempt=point.preparation.attempts.find(row=>row.id==='deep-1');
+  assert.equal(attempt.kind,'deep');
+  assert.equal(attempt.mode,'specific');
+  assert.equal(attempt.status,'pending');
+  assert.equal(attempt.minutes,30);
+  assert.ok(attempt.noise>=1);
+  assert.equal(attempt.areaSnapshot.difficulty,13);
+  assert.equal(attempt.roll,undefined);
+
+  assert.equal(auto.rollSearchAccess(f.game,'0,0','market','deep-1',{actorId:f.actor.id,trait:'Instinto',edge:'none',experiences:[],other:0},die(8,7)),null);
+  assert.equal(attempt.status,'ready');
+  assert.equal(attempt.roll,undefined);
+  assert.equal(auto.finishPreparedSearch(f.game,'0,0','market','deep-1',die()),null);
+  assert.equal(f.game.minutes,beforeMinutes+30);
+  const persisted=f.game.hexes['0,0'].points[0];
+  const deepAttempt=persisted.preparation.attempts.find(row=>row.id==='deep-1');
+  assert.equal(deepAttempt.status,'completed');
+  assert.equal(deepAttempt.roll,undefined);
+  assert.equal(persisted.searches.find(row=>row.id==='deep-1').depth,'deep');
+  assert.equal(persisted.preparation.stock.filter(row=>row.attemptId==='deep-1').length,1);
+  assert.equal(auto.searchAreaState(persisted,persisted.preparation.areas.find(row=>row.id===area.id)),'exhausted');
+  assert.match(auto.startDeepSearch(f.game,{...deep,id:'deep-2'}),/já recebeu uma busca profunda/);
+});
+
+test('falha na busca profunda consome tempo e Barulho, mas não cria item', () => {
+  const f=campaign();
+  assert.equal(auto.resolvePreparedSearch(f.game,input(f),die(1)),null);
+  const point=f.game.hexes['0,0'].points[0];
+  const area=point.preparation.areas[0];
+  const known=new Set(point.preparation.stock.filter(row=>row.areaId===area.id).map(row=>row.item.catalogKey));
+  const key=auto.deepSearchCandidateKeys(area).find(value=>!known.has(value));
+  assert.ok(key);
+  const deep={id:'deep-fail',hexId:'0,0',pointId:'market',areaId:area.id,participants:[f.actor.id],
+    objective:'Fundo falso',purpose:'Vasculhar a fundo',catalogKey:key};
+  assert.equal(auto.startDeepSearch(f.game,deep),null);
+  const beforeMinutes=f.game.minutes;
+  const beforeNoise=f.game.noise;
+  assert.equal(auto.rollSearchAccess(f.game,'0,0','market','deep-fail',{actorId:f.actor.id,trait:'Instinto',edge:'none',experiences:[],other:0},die(1,2)),null);
+  assert.equal(auto.finishPreparedSearch(f.game,'0,0','market','deep-fail',die()),null);
+  const persisted=f.game.hexes['0,0'].points[0];
+  assert.equal(f.game.minutes,beforeMinutes+30);
+  assert.ok(f.game.noise>beforeNoise);
+  assert.equal(persisted.preparation.stock.filter(row=>row.attemptId==='deep-fail').length,0);
+  assert.equal(persisted.preparation.attempts.find(row=>row.id==='deep-fail').status,'failed');
+  assert.match(persisted.preparation.attempts.find(row=>row.id==='deep-fail').result,/não encontrou nada útil/);
+});
+
 test('acesso sob risco mantém rolagem e recursos ao reabrir e impede d12 após falha', () => {
   const f=campaign(); f.area.access='risk';
   assert.equal(auto.startSearch(f.game,input(f)),null);

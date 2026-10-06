@@ -26,7 +26,8 @@ export function validLocationPreparation(value: unknown): boolean {
   const areaIds = new Set(prep.areas.map(row => row.id));
   if (!prep.attempts.every(attempt => attempt && text(attempt.id) && areaIds.has(attempt.areaId)
     && Array.isArray(attempt.participants) && attempt.participants.length <= 30 && attempt.participants.every(id => text(id)) && unique(attempt.participants)
-    && ["open", "specific"].includes(attempt.mode) && typeof attempt.objective === "string" && attempt.objective.length <= 2400
+    && ["open", "specific"].includes(attempt.mode) && (attempt.kind === undefined || ["normal", "deep"].includes(attempt.kind))
+    && typeof attempt.objective === "string" && attempt.objective.length <= 2400
     && typeof attempt.purpose === "string" && attempt.purpose.length <= 2400 && number(attempt.quantity, 1, 99)
     && number(attempt.minutes, 1, 1439) && number(attempt.noise, 0, 5) && ["pending", "ready", "completed", "failed"].includes(attempt.status)
     && (attempt.catalogKey === undefined || keys.has(attempt.catalogKey))
@@ -43,7 +44,8 @@ export function validLocationPreparation(value: unknown): boolean {
       && ["none", "advantage", "disadvantage"].includes(attempt.outcome.edge)
       && (attempt.outcome.edgeDie === null || number(attempt.outcome.edgeDie, 1, 6)) && [12, 13, 15].includes(attempt.outcome.difficulty!)))
     && (attempt.stockIds === undefined || (Array.isArray(attempt.stockIds) && attempt.stockIds.length <= 12 && attempt.stockIds.every(id => text(id)))))
-    || !unique(prep.attempts.map(row => row.id)) || !unique(prep.attempts.map(row => row.areaId))) return false;
+    || !unique(prep.attempts.map(row => row.id))
+    || !unique(prep.attempts.map(row => `${row.areaId}:${row.kind ?? "normal"}`))) return false;
   const attempts = new Set(prep.attempts.map(row => row.id));
   if (!prep.stock.every(stock => stock && text(stock.id) && areaIds.has(stock.areaId) && (stock.attemptId === undefined || attempts.has(stock.attemptId))
     && stock.item && text(stock.item.id) && text(stock.item.name) && keys.has(stock.item.catalogKey!)

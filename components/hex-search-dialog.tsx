@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { CheckCircle2, Circle, Clock3, Eye } from "lucide-react";
+import { CheckCircle2, Circle, Clock3, Eye, Search, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -9,7 +9,7 @@ import { content, displayTime, survivorsAtHex, type GameState } from "@/lib/game
 import { createId } from "@/lib/id";
 import { catalogKey } from "@/lib/inventory";
 import { searchAvailabilityError } from "@/lib/exploration";
-import { collectLocationStock, finishPreparedSearch, declareSearchArea, depositExpeditionItems, locationScaleLabels, locationScaleOf, lootDefinitions, prepareLocation, registerVisibleStock, resizeLocationPreparation, resolvePreparedSearch, searchAreaState, searchResult, suggestCollection, warehouseWorkers, type CollectionLine } from "@/lib/hex-automation";
+import { collectLocationStock, finishPreparedSearch, declareSearchArea, depositExpeditionItems, locationScaleLabels, locationScaleOf, lootDefinitions, prepareLocation, registerVisibleStock, resizeLocationPreparation, resolvePreparedSearch, searchAreaState, searchResult, startDeepSearch, suggestCollection, warehouseWorkers, type CollectionLine } from "@/lib/hex-automation";
 import { RollForm } from "@/components/roll-dialog";
 import type { LocationScale, SearchArea } from "@/lib/hex-automation-types";
 export type HexSearchRequest = { hexId: string; pointId: string; participantIds?: string[] };
@@ -40,20 +40,28 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
   const [visibleId, setVisibleId] = useState(createId);
   const [visibleKey, setVisibleKey] = useState(catalogKey(content.catalog[0]));
   const [visibleQuantity, setVisibleQuantity] = useState(1);
+  const [deepItemKey, setDeepItemKey] = useState("");
+  const [deepOperationId, setDeepOperationId] = useState(createId);
+  const [deepActorId, setDeepActorId] = useState("");
   const area = prep?.areas.find(row => row.id === areaId) ?? prep?.areas.find(row => prep.attempts.some(attempt => attempt.areaId === row.id && ["pending", "ready"].includes(attempt.status))) ?? prep?.areas.find(row => prep.stock.some(stock => stock.areaId === row.id && stock.remaining > 0)) ?? prep?.areas.find(row => row.searchable !== false && !prep.attempts.some(attempt => attempt.areaId === row.id)) ?? prep?.areas[0];
-  const attempt = prep?.attempts.find(row => row.areaId === area?.id);
+  const attempt = prep?.attempts.find(row => row.areaId === area?.id && (row.kind ?? "normal") === "normal");
+  const deepAttempt = prep?.attempts.find(row => row.areaId === area?.id && row.kind === "deep");
   const available = searchAvailabilityError(game, request.hexId, request.pointId);
   const done = attempt && ["completed", "failed"].includes(attempt.status);
   const stock = prep?.stock.filter(row => row.remaining > 0) ?? [];
   const keys = [...new Set(lootDefinitions.find(row => row.table === area?.table)?.entries.flatMap(row => [...row.items.map(item => item.catalogKey), ...(row.fallback?.map(item => item.catalogKey) ?? []), ...(row.choices ?? [])]) ?? [])];
   const chosenKey = itemKey || keys[0] || "";
+  const deepKeys = keys.filter(key => !prep?.stock.some(row => row.areaId === area?.id && row.item.catalogKey === key && row.remaining > 0));
+  const deepChosenKey = deepItemKey || deepKeys[0] || "";
+  const deepChosenName = content.catalog.find(row => catalogKey(row) === deepChosenKey)?.name ?? deepChosenKey;
   const owners = [...people.map(row => ({ value: row.id, label: row.name })), ...(game.shelter.hex === request.hexId ? [{ value: "shared", label: "Estoque do abrigo" }] : [])];
   const scale = point ? locationScaleOf(point) : "medium";
   const searchableAreas = prep?.areas.filter(row => row.searchable !== false) ?? [];
   const searchedAreas = searchableAreas.filter(row => {
     const status = point ? searchAreaState(point, row) : "available";
-    return status === "searched";
+    return ["deep-available", "deep-ongoing", "exhausted", "searched"].includes(status);
   }).length;
+  const deepAvailableAreas = searchableAreas.filter(row => point && searchAreaState(point, row) === "deep-available").length;
   const availableAreas = searchableAreas.filter(row => point && searchAreaState(point, row) === "available").length;
   const canResize = Boolean(point && prep && !prep.attempts.length && !prep.stock.length && !prep.collections.length && !point.searches.length);
 
@@ -76,6 +84,9 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
     setOperationId(createId());
     setWorker("");
     setItemKey("");
+    setDeepItemKey("");
+    setDeepOperationId(createId());
+    setDeepActorId("");
   }
   function changeScale(value: LocationScale) {
     if (!point || !canResize) return;
@@ -100,7 +111,7 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
         <div>
           <span className="tag">Porte {locationScaleLabels[scale]}</span>
           <b>{prep.areas.length} áreas internas</b>
-          <small>{searchedAreas} vasculhada(s) · {availableAreas} disponível(is) · {prep.areas.length - searchableAreas.length} narrativa(s)</small>
+          <small>{searchedAreas} vasculhada(s) · {deepAvailableAreas} com busca profunda · {availableAreas} ainda não vasculhada(s) · {prep.areas.length - searchableAreas.length} narrativa(s)</small>
         </div>
         {canResize && <div className="hex-search-scale-controls">
           {prep.scale === undefined && <Button size="sm" variant="outline" onClick={() => changeScale(scale)}>Aplicar nova estrutura · {locationScaleLabels[scale]}</Button>}
@@ -117,8 +128,17 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
             {prep.areas.map(row => {
               const state = point ? searchAreaState(point, row) : "available";
               const remaining = prep.stock.filter(stockRow => stockRow.areaId === row.id && stockRow.remaining > 0).reduce((sum, stockRow) => sum + stockRow.remaining, 0);
-              const label = state === "ongoing" ? "Em andamento" : state === "searched" ? "Vasculhada" : state === "narrative" ? "Exploração" : "Disponível";
-              const Icon = state === "searched" ? CheckCircle2 : state === "ongoing" ? Clock3 : state === "narrative" ? Eye : Circle;
+              const label = state === "ongoing" ? "Busca em andamento"
+                : state === "deep-available" ? "Busca profunda disponível"
+                : state === "deep-ongoing" ? "Busca profunda em andamento"
+                : state === "exhausted" ? "Esgotada"
+                : state === "searched" ? "Vasculhada"
+                : state === "narrative" ? "Exploração"
+                : "Disponível";
+              const Icon = state === "exhausted" ? CheckCircle2
+                : state === "ongoing" || state === "deep-ongoing" ? Clock3
+                : state === "deep-available" ? Search
+                : state === "narrative" ? Eye : Circle;
               return <button type="button" key={row.id} className={`hex-search-area-card ${row.id === area.id ? "is-active" : ""} is-${state}`}
                 aria-pressed={row.id === area.id} onClick={() => selectArea(row.id)}>
                 <Icon size={16} aria-hidden="true" />
@@ -141,7 +161,12 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
           <section className="hex-search-step hex-search-area-intro">
             <div className="hex-search-area-title"><div><span className="tag">{area.searchable === false ? "Exploração narrativa" : area.table}</span><h3>{area.name}</h3></div>
               <span className={`hex-search-area-state is-${point ? searchAreaState(point, area) : "available"}`}>
-                {point && searchAreaState(point, area) === "searched" ? "Vasculhada" : point && searchAreaState(point, area) === "ongoing" ? "Em andamento" : area.searchable === false ? "Sem d12 próprio" : "Disponível"}
+                {point && searchAreaState(point, area) === "exhausted" ? "Esgotada"
+                  : point && searchAreaState(point, area) === "deep-available" ? "Profunda disponível"
+                  : point && searchAreaState(point, area) === "deep-ongoing" ? "Profunda em andamento"
+                  : point && searchAreaState(point, area) === "searched" ? "Vasculhada"
+                  : point && searchAreaState(point, area) === "ongoing" ? "Em andamento"
+                  : area.searchable === false ? "Sem d12 próprio" : "Disponível"}
               </span>
             </div>
             <p className="text-sm">{area.signal}</p>
@@ -201,7 +226,54 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
               <Button disabled={Boolean(available)} onClick={() => { setAreaId(area.id); act(draft => finishPreparedSearch(draft, request.hexId, request.pointId, attempt.id), "Busca concluída; estoque salvo"); }}>{attempt.mode === "open" && attempt.outcome?.success !== false && !attempt.roll ? `Concluir busca e sortear achado · +${attempt.minutes} min` : "Confirmar resultado e tempo"}</Button>
             </>}
           </section>}
-          {done && <section className="hex-search-step"><h3><CheckCircle2 size={18} /> Busca concluída nesta área</h3><p className="text-sm">{attempt.result}</p>{attempt.adjustmentReason && <p className="text-xs subtle">d12 original {attempt.roll} → resultado {attempt.effectiveRoll}: {attempt.adjustmentReason}</p>}<p className="text-xs subtle">O registro e o estoque continuam salvos ao sair desta tela.</p></section>}
+          {done && <section className="hex-search-step"><h3><CheckCircle2 size={18} /> Busca normal concluída nesta área</h3><p className="text-sm">{attempt.result}</p>{attempt.adjustmentReason && <p className="text-xs subtle">d12 original {attempt.roll} → resultado {attempt.effectiveRoll}: {attempt.adjustmentReason}</p>}<p className="text-xs subtle">O registro e o estoque continuam salvos ao sair desta tela.</p></section>}
+
+          {attempt?.status === "completed" && !deepAttempt && <section className="hex-search-step hex-deep-search">
+            <div className="hex-deep-search-heading"><div><h3><Search size={18} /> Vasculhar a fundo</h3><p className="text-sm subtle">Uma segunda e última camada nesta área. Não há novo d12 de saque.</p></div><span className="tag">Dificuldade 13</span></div>
+            <div className="hex-deep-search-costs">
+              <span>30 min</span><span>Barulho +{Math.min(5, Math.max(1, area.noise + 1))}</span><span>máx. 1 item</span>
+            </div>
+            <p className="text-sm">Escolha algo plausível que o grupo procura em armários presos, fundos de móveis, compartimentos ou outros pontos que a busca normal não cobriu. Um teste de ação decide se ainda havia algo útil ali.</p>
+            {deepKeys.length > 0 ? <>
+              <Pick label="Foco da busca profunda" value={deepChosenKey}
+                options={content.catalog.filter(row => deepKeys.includes(catalogKey(row))).map(row => ({ value: catalogKey(row), label: row.name }))}
+                onChange={setDeepItemKey} />
+              <fieldset><legend className="field-label">Participantes</legend><div className="flex flex-wrap gap-3">{people.map(person => <label key={person.id} className="text-sm"><input type="checkbox" checked={participants.includes(person.id)} onChange={event => setParticipants(current => event.target.checked ? [...current, person.id] : current.filter(id => id !== person.id))} /> {person.name}</label>)}</div></fieldset>
+              <Button disabled={Boolean(available) || !participants.length || !deepChosenKey} onClick={() => {
+                if (act(draft => startDeepSearch(draft, { id: deepOperationId, ...request, areaId: area.id, participants,
+                  objective: deepChosenName, purpose: "Vasculhar a fundo algo que passou despercebido", catalogKey: deepChosenKey }), "Busca profunda preparada")) {
+                  setDeepActorId("");
+                }
+              }}><Search size={16} /> Iniciar busca profunda</Button>
+            </> : <p className="text-sm subtle">Não há outro tipo de achado plausível nesta tabela que ainda não esteja conhecido na área.</p>}
+          </section>}
+
+          {deepAttempt && ["pending", "ready"].includes(deepAttempt.status) && <section className="hex-search-step hex-deep-search">
+            <div className="hex-deep-search-heading"><div><h3><ShieldAlert size={18} /> Busca profunda em andamento</h3><p className="text-sm subtle">{deepAttempt.objective} · 30 min · Barulho +{deepAttempt.noise}</p></div><span className="tag">Instinto · 13</span></div>
+            {deepAttempt.status === "pending" && <>
+              <Pick label="Quem conduz a busca profunda?" value={deepActorId || deepAttempt.participants[0]}
+                options={people.filter(row => deepAttempt.participants.includes(row.id)).map(row => ({ value: row.id, label: row.name }))}
+                onChange={setDeepActorId} />
+              <RollForm key={`deep:${deepAttempt.id}:${deepActorId}`} game={game} edit={edit}
+                request={{ survivorId: deepActorId || deepAttempt.participants[0], kind: "action", trait: "Instinto",
+                  search: { ...request, attemptId: deepAttempt.id, difficulty: 13 } }}
+                onCompleted={() => toast.success("Teste da busca profunda registrado")} />
+            </>}
+            {deepAttempt.outcome && <div role="status" className="list-card text-sm"><b>{deepAttempt.outcome.success ? "Sucesso" : "Falha"} · {deepAttempt.outcome.total} · {deepAttempt.outcome.with === "Hope" ? "Esperança" : "Medo"}</b>
+              <p className="mt-1">{deepAttempt.outcome.success ? `Achado possível: ${deepChosenName || deepAttempt.objective}.` : "Nenhum item extra será criado, mas tempo e Barulho ainda serão consumidos."}</p>
+              {deepAttempt.outcome.with === "Fear" && <p className="mt-1">O mestre recebe Medo normalmente e pode introduzir uma complicação coerente.</p>}
+            </div>}
+            {deepAttempt.status === "ready" && <>
+              <p className="text-sm subtle">Ao confirmar: {displayTime(game.minutes)} → {displayTime(game.minutes + deepAttempt.minutes)}. Esta área ficará esgotada para novas buscas.</p>
+              <Button disabled={Boolean(available)} onClick={() => act(draft => finishPreparedSearch(draft, request.hexId, request.pointId, deepAttempt.id), "Busca profunda concluída")}>Confirmar resultado · +30 min</Button>
+            </>}
+          </section>}
+
+          {deepAttempt && ["completed", "failed"].includes(deepAttempt.status) && <section className="hex-search-step hex-deep-search-complete">
+            <h3><CheckCircle2 size={18} /> Área esgotada</h3>
+            <p className="text-sm">{deepAttempt.result || (deepAttempt.status === "failed" ? "A busca profunda não encontrou nada útil." : "Busca profunda concluída.")}</p>
+            <p className="text-xs subtle">A área já recebeu a busca normal e a busca profunda. Itens que ficaram para trás continuam disponíveis no estoque do local.</p>
+          </section>}
         </div>
       </div>
     </>}

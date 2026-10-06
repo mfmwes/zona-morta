@@ -244,16 +244,19 @@ export function prepareLocation(point: Point) {
   if (point.preparation || point.clueTargetHex) return false;
   const scale = inferLocationScale(point);
   const areas = buildLocationAreas(point, scale);
-  const seenAreas = new Set<string>();
+  const seenAttempts = new Set<string>();
   const historical = point.searches.filter(row => {
     const area = areas.find(area => normalizedSector(area.name) === normalizedSector(searchAreaLabel(point, row.sector)));
-    if (!area || seenAreas.has(area.id)) return false;
-    seenAreas.add(area.id); return true;
+    const kind = row.depth === "deep" ? "deep" : "normal";
+    const key = area ? `${area.id}:${kind}` : "";
+    if (!area || seenAttempts.has(key)) return false;
+    seenAttempts.add(key); return true;
   });
   const attempts: SearchAttempt[] = historical.map(row => ({ id: row.id,
     areaId: areas.find(area => normalizedSector(area.name) === normalizedSector(searchAreaLabel(point, row.sector)))!.id,
-    participants: [], mode: row.mode ?? "specific", objective: row.what, purpose: row.why,
-    quantity: 1, minutes: row.minutes, noise: 0, status: "completed", result: row.result, stockIds: [] }));
+    participants: [], mode: row.mode ?? "specific", kind: row.depth === "deep" ? "deep" : "normal",
+    objective: row.what, purpose: row.why,
+    quantity: 1, minutes: row.minutes, noise: row.depth === "deep" ? 1 : 0, status: "completed", result: row.result, stockIds: [] }));
   point.preparation = { version: 1, scale, areas, attempts, stock: [], collections: [] };
   return true;
 }
@@ -302,11 +305,16 @@ export function declareSearchArea(point: Point, name: string, signal: string) {
 }
 
 export function searchAreaState(point: Point, area: SearchArea) {
-  const attempt = point.preparation?.attempts.find(row => row.areaId === area.id);
-  if (attempt?.status === "pending" || attempt?.status === "ready") return "ongoing" as const;
-  if (attempt?.status === "completed" || attempt?.status === "failed") return "searched" as const;
   if (area.searchable === false) return "narrative" as const;
-  return "available" as const;
+  const normal = point.preparation?.attempts.find(row => row.areaId === area.id && (row.kind ?? "normal") === "normal");
+  const deep = point.preparation?.attempts.find(row => row.areaId === area.id && row.kind === "deep");
+  if (normal?.status === "pending" || normal?.status === "ready") return "ongoing" as const;
+  if (!normal) return "available" as const;
+  if (normal.status === "failed") return "exhausted" as const;
+  if (deep?.status === "pending" || deep?.status === "ready") return "deep-ongoing" as const;
+  if (deep?.status === "completed" || deep?.status === "failed") return "exhausted" as const;
+  if (normal.status === "completed") return "deep-available" as const;
+  return "searched" as const;
 }
 
 export type StartSearch = { id: string; hexId: string; pointId: string; areaId: string; participants: string[];
@@ -326,7 +334,8 @@ export function startSearch(game: GameState, input: StartSearch): string | null 
   if (area.searchable === false) return "Esta área existe na exploração, mas não possui uma busca de recursos própria.";
   if (!input.id || input.id.length > 120 || input.objective.length > 2400 || input.purpose.length > 2400) return "Confira os dados da busca.";
   if (area.excludedRolls?.length && (!area.exclusionReason?.trim() || new Set(area.excludedRolls).size >= 12)) return "Registre por que os resultados contradizem a ficção e mantenha algum achado plausível.";
-  if (prep.attempts.some(row => row.areaId === area.id) || point!.searches.some(row => normalizedSector(searchAreaLabel(point!, row.sector)) === normalizedSector(area.name))) return "Esta área já tem uma busca registrada. Retome a operação existente.";
+  if (prep.attempts.some(row => row.areaId === area.id && (row.kind ?? "normal") === "normal")
+    || point!.searches.some(row => row.depth !== "deep" && normalizedSector(searchAreaLabel(point!, row.sector)) === normalizedSector(area.name))) return "Esta área já tem uma busca registrada. Retome a operação existente.";
   if (prep.attempts.length >= 80 || point!.searches.length >= 80) return "O local atingiu o limite de buscas.";
   const present = survivorsAtHex(game, input.hexId).map(person => person.id);
   if (!input.participants.length || new Set(input.participants).size !== input.participants.length
@@ -343,10 +352,63 @@ export function startSearch(game: GameState, input: StartSearch): string | null 
     || !warehouseWorkers(game, input.hexId).some(row => row.id === input.warehouseWorker))) return "A habilidade de depósito não está disponível para este participante.";
   const minutes = input.warehouseWorker && area.minutes === 60 ? 30 : area.minutes;
   if (game.minutes + minutes >= 1440) return "A busca precisa terminar antes da passagem de dia.";
-  prep.attempts.push({ id: input.id, areaId: area.id, participants: [...input.participants], mode: input.mode,
+  prep.attempts.push({ id: input.id, areaId: area.id, participants: [...input.participants], mode: input.mode, kind: "normal",
     objective: input.objective.trim(), purpose: input.purpose.trim(), catalogKey: input.catalogKey, quantity,
     minutes, noise: area.noise, warehouseWorker: input.warehouseWorker,
     areaSnapshot: structuredClone(area), status: area.access === "risk" ? "pending" : "ready" });
+  return null;
+}
+
+export type StartDeepSearch = {
+  id: string; hexId: string; pointId: string; areaId: string; participants: string[];
+  objective: string; purpose: string; catalogKey: string;
+};
+
+export function deepSearchCandidateKeys(area: SearchArea) {
+  const table = lootDefinitions.find(row => row.table === area.table);
+  if (!table) return [];
+  return [...new Set(table.entries.flatMap(row => [
+    ...row.items.map(item => item.catalogKey),
+    ...(row.fallback ?? []).map(item => item.catalogKey),
+    ...(row.choices ?? []),
+  ]))];
+}
+
+export function startDeepSearch(game: GameState, input: StartDeepSearch): string | null {
+  const point = pointAt(game, input.hexId, input.pointId);
+  const prep = point?.preparation;
+  if (prep?.attempts.some(row => row.id === input.id)) return null;
+  const available = searchAvailabilityError(game, input.hexId, input.pointId);
+  if (available) return available;
+  const area = prep?.areas.find(row => row.id === input.areaId);
+  if (!point || !prep || !area) return "Prepare o local e escolha uma área existente.";
+  if (area.searchable === false) return "Esta área não possui busca de recursos.";
+  const normal = prep.attempts.find(row => row.areaId === area.id && (row.kind ?? "normal") === "normal");
+  if (!normal || normal.status !== "completed") return "Conclua a busca normal desta área antes de vasculhar a fundo.";
+  if (prep.attempts.some(row => row.areaId === area.id && row.kind === "deep")
+    || point.searches.some(row => row.depth === "deep" && normalizedSector(searchAreaLabel(point, row.sector)) === normalizedSector(area.name))) {
+    return "Esta área já recebeu uma busca profunda.";
+  }
+  if (!input.id || input.id.length > 120 || !input.objective.trim() || input.objective.length > 2400
+    || !input.purpose.trim() || input.purpose.length > 2400) return "Defina o foco da busca profunda.";
+  const candidates = deepSearchCandidateKeys(area);
+  if (!candidates.includes(input.catalogKey)) return "Escolha um item plausível para esta área.";
+  if (prep.stock.some(row => row.areaId === area.id && row.item.catalogKey === input.catalogKey && row.remaining > 0)) {
+    return "Esse item já é conhecido nesta área. Recolha o estoque antes de procurar outra coisa.";
+  }
+  const present = survivorsAtHex(game, input.hexId).map(person => person.id);
+  if (!input.participants.length || new Set(input.participants).size !== input.participants.length
+    || input.participants.some(id => !present.includes(id))) return "Escolha os participantes presentes neste hex.";
+  if (game.minutes + 30 >= 1440) return "A busca profunda precisa terminar antes da passagem de dia.";
+  if (prep.attempts.length >= 80 || point.searches.length >= 80) return "O local atingiu o limite de buscas.";
+  const snapshot = structuredClone(area);
+  snapshot.difficulty = 13;
+  snapshot.access = "risk";
+  prep.attempts.push({
+    id: input.id, areaId: area.id, participants: [...input.participants], mode: "specific", kind: "deep",
+    objective: input.objective.trim(), purpose: input.purpose.trim(), catalogKey: input.catalogKey, quantity: 1,
+    minutes: 30, noise: Math.min(5, Math.max(1, area.noise + 1)), areaSnapshot: snapshot, status: "pending",
+  });
   return null;
 }
 
@@ -386,7 +448,7 @@ export function rollSearchAccess(game: GameState, hexId: string, pointId: string
     experienceCost: input.experiences.length, reaction: false, outcome });
   actor.hope = resources.hope!; actor.stress = resources.stress!; game.fear = resources.fear;
   attempt.outcome = outcome; attempt.actorId = actor.id; attempt.status = "ready";
-  addLog(game, "dados", `${actor.name}: acesso à busca — ${outcome.total}, ${outcome.success ? "sucesso" : "falha"} com ${outcome.with === "Hope" ? "Esperança" : "Medo"}.`, actor.id);
+  addLog(game, "dados", `${actor.name}: ${attempt.kind === "deep" ? "busca profunda" : "acesso à busca"} — ${outcome.total}, ${outcome.success ? "sucesso" : "falha"} com ${outcome.with === "Hope" ? "Esperança" : "Medo"}.`, actor.id);
   return null;
 }
 
@@ -412,7 +474,9 @@ export function searchLoot(area: SearchArea, roll: number): LootItem[] {
 }
 
 export function searchResult(point: Point, attempt: SearchAttempt) {
-  if (attempt.outcome?.success === false) return "Acesso falhou; nenhum achado foi sorteado.";
+  if (attempt.outcome?.success === false) return attempt.kind === "deep"
+    ? "A busca profunda não encontrou nada útil."
+    : "Acesso falhou; nenhum achado foi sorteado.";
   const area = attempt.areaSnapshot ?? point.preparation!.areas.find(row => row.id === attempt.areaId)!;
   const items = attempt.mode === "specific" ? [{ catalogKey: attempt.catalogKey!, qty: attempt.quantity }]
     : attempt.roll ? searchLoot(area, attempt.effectiveRoll ?? attempt.roll) : [];
@@ -453,11 +517,12 @@ export function completeSearch(game: GameState, hexId: string, pointId: string, 
   }
   const sequence = searchSequence(draft, hexId);
   point.searches.push({ id: attempt.id, what: attempt.objective || "Achado útil", why: attempt.purpose,
-    sector: area.name, minutes: attempt.minutes, result, mode: attempt.mode, table: area.table, roll: attempt.roll });
+    sector: area.name, minutes: attempt.minutes, result, mode: attempt.mode, table: area.table, roll: attempt.roll,
+    depth: attempt.kind === "deep" ? "deep" : "normal" });
   draft.hexes[hexId].searchSequence = sequence + 1;
   draft.noise = Math.min(5, draft.noise + attempt.noise);
   attempt.status = attempt.outcome?.success === false ? "failed" : "completed"; attempt.result = result;
-  addLog(draft, "busca", `${point.name} / ${area.name}: ${result} · ${attempt.minutes} min.${draft.noise >= 3 ? " Barulho elevado: o mestre decide a consequência na cena." : ""}`);
+  addLog(draft, "busca", `${point.name} / ${area.name}${attempt.kind === "deep" ? " · busca profunda" : ""}: ${result} · ${attempt.minutes} min.${draft.noise >= 3 ? " Barulho elevado: o mestre decide a consequência na cena." : ""}`);
   Object.assign(game, draft);
   return null;
 }

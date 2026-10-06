@@ -39,7 +39,7 @@ export type Point = {
   lootTable?: string;
   preparation?: LocationPreparation;
   searches: { id: string; what: string; why: string; sector: string; minutes: number; result: string;
-    mode?: "specific" | "open"; table?: string; roll?: number }[];
+    mode?: "specific" | "open"; table?: string; roll?: number; depth?: "normal" | "deep" }[];
 };
 
 export type HexEventTriggerType = "manual" | "enter" | "search" | "noise" | "night";
