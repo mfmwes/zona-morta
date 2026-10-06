@@ -476,7 +476,8 @@ export default function CampaignApp() {
       : tab;
   const title = { resumo: "Visão geral", mapa: "Exploração", cena: "Cena visual", sobreviventes: "Sobreviventes", comunidade: "PNJs e comunidade", abrigo: "Abrigo e reservas",
     conflito: "Cena de conflito", ameacas: "Gerenciador de ameaças", referencias: "Arquivo de campo", jogadores: "Jogadores e acessos" }[activeTab] || "Campanha";
-  const masterPrimary = role === "mestre" && !playerPreview
+  const masterExperience = role === "mestre" && !playerPreview;
+  const masterPrimary = masterExperience
     ? [
       { value: "resumo", label: "Visão geral", icon: LayoutDashboard },
       { value: "mapa", label: "Mapa e exploração", icon: Map },
@@ -486,12 +487,14 @@ export default function CampaignApp() {
         : [{ value: "abrigo", label: "Abrigo", icon: House }]),
     ]
     : [
-      { value: "mapa", label: "Mapa e hexes", icon: Map },
-      { value: "cena", label: "Cena visual", icon: Layers },
-      { value: "sobreviventes", label: "Sobreviventes", icon: Users },
-      { value: "comunidade", label: "PNJs e comunidade", icon: Users },
+      { value: "sobreviventes", label: role === "jogador" ? "Meu sobrevivente" : "Sobreviventes", icon: Users },
+      ...(publicConflictActive ? [{
+        value: "conflito", label: game.publicConflict?.pendingDamage.length ? `Resolver dano (${game.publicConflict.pendingDamage.length})` : "Conflito ativo", icon: Swords,
+      }] : []),
+      { value: "mapa", label: "Mapa", icon: Map },
+      { value: "abrigo", label: "Abrigo", icon: House },
     ];
-  const masterSecondary = role === "mestre" && !playerPreview ? [
+  const masterSecondary = masterExperience ? [
     ...(game.conflict?.active ? [{ value: "abrigo", label: "Abrigo e reservas", icon: House }] : [
       { value: "conflito", label: "Conflito", icon: Swords },
     ]),
@@ -501,10 +504,8 @@ export default function CampaignApp() {
     { value: "referencias", label: "Regras e itens", icon: BookOpen },
     { value: "jogadores", label: "Jogadores", icon: Users },
   ] : [
-    { value: "abrigo", label: "Abrigo e reservas", icon: House },
-    ...(publicConflictActive ? [
-      { value: "conflito", label: game.publicConflict?.pendingDamage.length ? `Resolver dano (${game.publicConflict.pendingDamage.length})` : "Conflito ativo", icon: Swords },
-    ] : []),
+    { value: "cena", label: "Cena visual", icon: Layers },
+    { value: "comunidade", label: "PNJs e comunidade", icon: Users },
     { value: "referencias", label: "Regras e itens", icon: BookOpen },
     ...(role === "mestre" ? [{ value: "jogadores", label: "Jogadores", icon: Users }] : []),
   ];
@@ -584,7 +585,7 @@ export default function CampaignApp() {
             <p className="intro-line mt-2">{activeTab === "resumo" ? "Veja primeiro o que está acontecendo agora. Aprofunde apenas a ferramenta necessária para a próxima decisão." :
               activeTab === "mapa" ? "Explore a partir do que o grupo avista. Registre apenas o que a ficção tornou real." :
               activeTab === "cena" ? (readOnlyPreview ? "Acompanhe a cena visual apresentada pelo mestre." : "Monte ambientes com paredes, portas, objetos e tokens sem transformar a cena em um mapa tático rígido.") :
-              activeTab === "sobreviventes" ? "Históricos, arquétipos e recursos prontos para jogar." :
+              activeTab === "sobreviventes" ? (readOnlyPreview ? "Veja primeiro o que importa agora: condição, recursos e ações. Detalhes continuam disponíveis quando você precisar." : "Históricos, arquétipos e recursos prontos para jogar.") :
               activeTab === "comunidade" ? "Acompanhe pessoas importantes, vínculos e a comunidade entre os hexes." :
               activeTab === "abrigo" ? "Organize reservas e descanso. Estabeleça um abrigo quando o grupo encontrar um lugar." :
               activeTab === "conflito" ? (readOnlyPreview ? "Acompanhe as informações públicas do conflito e quem está com o spotlight." : "Acompanhe participantes, ameaças e spotlight sem criar iniciativa ou ordem de turnos.") :

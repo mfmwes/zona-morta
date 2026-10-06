@@ -2161,6 +2161,22 @@ test('primeira etapa de UX adiciona visão geral do mestre sem remover ferrament
   }
 });
 
+test('etapa de UX do jogador prioriza estado atual, ações rápidas e ficha antes das ferramentas secundárias', () => {
+  const page = fs.readFileSync(require.resolve('../app/page.tsx'), 'utf8');
+  const survivor = fs.readFileSync(require.resolve('../components/survivor-panel.tsx'), 'utf8');
+  assert.match(page, /Meu sobrevivente/);
+  assert.match(page, /Veja primeiro o que importa agora/);
+  assert.match(survivor, /character-player-now/);
+  assert.match(survivor, /Livre para agir/);
+  assert.match(survivor, /Rolar teste/);
+  assert.match(survivor, /Precisa de atenção/);
+  assert.match(survivor, /playerTabs/);
+  assert.match(survivor, /label: "Testes"/);
+  assert.match(survivor, /label: "Estado"/);
+  assert.match(survivor, /character-layout\$\{playerFacing \? " is-player-facing"/);
+  assert.match(survivor, /id="character-rest-panel"/);
+});
+
 test('interfaces de tempo avisam correção para trás, eventos pendentes e tratamento de 30 min', () => {
   const page = fs.readFileSync(require.resolve('../app/page.tsx'), 'utf8');
   const close = fs.readFileSync(require.resolve('../components/day-close-dialog.tsx'), 'utf8');

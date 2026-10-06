@@ -3527,3 +3527,177 @@ html[data-theme="dark"] .master-overview-attention-item.is-warning { background:
 html[data-theme="dark"] .master-overview-hero-metrics .is-danger,
 html[data-theme="dark"] .master-overview-attention-item.is-danger { background:#2b201e; border-color:#624941; }
 html[data-theme="dark"] .master-overview-row:hover { border-color:#63877f; background:#243634; }
+
+
+/* Player UX — current state before deep detail */
+.character-player-now {
+  display:grid;
+  gap:12px;
+  padding:15px 17px;
+  border:1px solid #b8cbc3;
+  border-radius:10px;
+  background:linear-gradient(135deg,#f7faf5,#eef4ef);
+  box-shadow:0 5px 16px #1737390c;
+}
+.character-player-now-head {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+}
+.character-player-now-head > div:first-child {
+  display:grid;
+  gap:3px;
+  min-width:0;
+}
+.character-player-now-head h3 {
+  margin:0;
+  color:#21494b;
+  font-size:1.08rem;
+  letter-spacing:-.02em;
+}
+.character-player-now-head > div:first-child > span {
+  display:flex;
+  align-items:center;
+  gap:6px;
+  color:#617672;
+  font-size:.74rem;
+}
+.character-player-now-actions {
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  gap:6px;
+}
+.character-player-now-resources {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px;
+}
+.character-player-now-resources .character-resource {
+  min-width:0;
+  padding:10px;
+  border:1px solid #d4dfd9;
+  border-radius:8px;
+  background:#fffdfa;
+  box-shadow:none;
+}
+.character-player-now-resources .character-resource-top {
+  gap:6px;
+}
+.character-player-now-resources .character-resource-top > span {
+  font-size:.69rem;
+}
+.character-player-now-resources .character-resource-top strong {
+  font-size:1rem;
+}
+.character-player-now-resources .character-pips {
+  max-width:none;
+}
+.character-player-attention {
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  gap:8px;
+  align-items:start;
+  padding:10px 11px;
+  border:1px solid #d6bc89;
+  border-left:3px solid #b88a42;
+  border-radius:7px;
+  background:#fff8e9;
+}
+.character-player-attention > svg {
+  margin-top:1px;
+  color:#a36f2e;
+}
+.character-player-attention > span {
+  display:grid;
+  gap:2px;
+}
+.character-player-attention b {
+  color:#684c26;
+  font-size:.76rem;
+}
+.character-player-attention small {
+  color:#756447;
+  font-size:.68rem;
+  line-height:1.4;
+}
+.character-layout.is-player-facing {
+  grid-template-columns:minmax(0,1fr);
+}
+.character-layout.is-player-facing .character-main {
+  width:100%;
+}
+.character-layout.is-player-facing .character-tabs-scroll {
+  position:sticky;
+  top:0;
+  z-index:4;
+}
+.character-layout.is-player-facing .character-tabs {
+  justify-content:flex-start;
+}
+.character-layout.is-player-facing .character-tab {
+  min-width:105px;
+}
+@media (min-width:1100px) {
+  .character-layout.is-player-facing .character-tabs {
+    width:100%;
+  }
+  .character-layout.is-player-facing .character-tab {
+    flex:1;
+    min-width:0;
+  }
+}
+@media (max-width:820px) {
+  .character-player-now-head {
+    display:grid;
+  }
+  .character-player-now-actions {
+    justify-content:flex-start;
+  }
+  .character-player-now-resources {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+@media (max-width:480px) {
+  .character-player-now {
+    padding:12px;
+  }
+  .character-player-now-actions {
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .character-player-now-actions button {
+    width:100%;
+  }
+  .character-player-now-resources {
+    grid-template-columns:minmax(0,1fr);
+  }
+}
+
+html[data-theme="dark"] .character-player-now {
+  border-color:var(--border);
+  background:var(--card);
+  color:var(--foreground);
+  box-shadow:var(--shadow-panel);
+}
+html[data-theme="dark"] .character-player-now-head h3 {
+  color:#dce9e4;
+}
+html[data-theme="dark"] .character-player-now-head > div:first-child > span {
+  color:var(--muted-foreground);
+}
+html[data-theme="dark"] .character-player-now-resources .character-resource {
+  border-color:var(--border);
+  background:var(--surface-soft);
+}
+html[data-theme="dark"] .character-player-attention {
+  border-color:#66583d;
+  background:#2b281f;
+}
+html[data-theme="dark"] .character-player-attention b {
+  color:#ead7ae;
+}
+html[data-theme="dark"] .character-player-attention small {
+  color:#c4b995;
+}
