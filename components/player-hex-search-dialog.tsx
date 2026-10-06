@@ -106,6 +106,9 @@ export function PlayerHexSearchDialog({
   const recentResult = area
     ? completedSearches.find(op => op.areaId === area.areaId)
     : completedSearches[0];
+  const displayedResult = area?.lastResult ?? recentResult?.result;
+  const displayedDepth = area?.lastResultDepth ?? recentResult?.depth;
+  const displayedAttention = area?.lastAttention ?? recentResult?.attention;
   const count = Number(quantity);
   const validCount = Number.isInteger(count) && count > 0 && count <= 99;
 
@@ -308,10 +311,10 @@ export function PlayerHexSearchDialog({
               {operation.status === "access" && !owner && <p className="team-notice">Aguardando quem iniciou a busca resolver o acesso.</p>}
             </section>}
 
-            {!operation && recentResult?.result && <section className="hex-search-step">
+            {!operation && displayedResult && <section className="hex-search-step">
               <h3><CheckCircle2 size={18} /> Última busca nesta área</h3>
-              <p className="text-sm"><b>{recentResult.depth === "deep" ? "Busca profunda" : "Busca"}</b> · {recentResult.result}</p>
-              {recentResult.attention && <p className="team-notice mt-2">{recentResult.attention}</p>}
+              <p className="text-sm"><b>{displayedDepth === "deep" ? "Busca profunda" : "Busca"}</b> · {displayedResult}</p>
+              {displayedAttention && <p className="team-notice mt-2">{displayedAttention}</p>}
             </section>}
 
             {area && !operation && ["searched", "exhausted"].includes(area.state) && <section className="hex-search-step">
