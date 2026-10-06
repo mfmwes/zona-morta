@@ -6,7 +6,7 @@ const ts = require('typescript');
 require.extensions['.ts'] = (module, path) => module._compile(ts.transpileModule(fs.readFileSync(path, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText, path);
 const { defaultState, initialSurvivor, content } = require('../lib/game.ts');
 const { assignCustomSector } = require('../lib/sectors.ts');
-const { prepareLocation } = require('../lib/hex-automation.ts');
+const { prepareLocation, searchAreaSessionState, startSearch } = require('../lib/hex-automation.ts');
 const { applyPlayerAction, projectPlayerActions, setPlayerPolicy, playerActionState } = require('../lib/player-actions.ts');
 const { validPlayerActionState } = require('../lib/player-actions-types.ts');
 const { projectPlayerGame } = require('../lib/collaboration.ts');
@@ -138,6 +138,23 @@ test('projeção mostra somente autorização local e não vaza preparação, ta
  const text=JSON.stringify(own.publicPlayerActions); assert.equal(text.includes('difficulty'),false); assert.equal(text.includes('lootTable'),false); assert.equal(text.includes('SEGREDO'),false);
  f.game.hexes['0,0'].points[0].revealed=false; assert.equal(projectPlayerActions(f.game,f.ids[0]).areas.length,0);
 });
+test('proposta do jogador reserva o cômodo para mestre e demais jogadores até iniciar ou cancelar',()=>{
+ const f=fixture();const op=propose(f);
+ const point=f.game.hexes['0,0'].points[0],area=point.preparation.areas.find(row=>row.id===f.areaId);
+ let view=projectPlayerActions(f.game,f.ids[1]);
+ assert.equal(view.areas.find(row=>row.areaId===f.areaId).state,'proposed');
+ assert.equal(view.areas.find(row=>row.areaId===f.areaId).available,false);
+ assert.equal(view.locations[0].activeSearches,1);
+ assert.equal(searchAreaSessionState(f.game,'0,0','market',area),'proposed');
+ const before=structuredClone(f.game);
+ assert.match(startSearch(f.game,{id:'master-race',hexId:'0,0',pointId:'market',areaId:f.areaId,participants:[f.ids[1]],mode:'open',objective:'Vasculhar',purpose:'Busca concorrente'}),/Já existe uma busca proposta/);
+ assert.deepEqual(f.game,before);
+ ok(f,f.ids[0],{type:'leave',operationId:op});
+ view=projectPlayerActions(f.game,f.ids[1]);
+ assert.equal(view.areas.find(row=>row.areaId===f.areaId).state,'available');
+ assert.equal(startSearch(f.game,{id:'master-after-cancel',hexId:'0,0',pointId:'market',areaId:f.areaId,participants:[f.ids[1]],mode:'open',objective:'Vasculhar',purpose:'Busca após cancelamento'}),null);
+});
+
 test('busca usa somente participantes confirmados, impede propostas duplicadas e reenvio não duplica achados ou tempo',()=>{
  const f=fixture(); const op=propose(f); const before=structuredClone(f.game);
  denied(f,f.ids[1],{type:'search',hexId:'0,0',pointId:'market',areaId:f.areaId,objective:'open',purpose:'Outra'},/Já existe/);
