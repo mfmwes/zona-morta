@@ -14,6 +14,7 @@ import { provisionBreakdown, provisionItemInfo } from "./provision-items";
 import { expirePhysicalFood, expirePortionLots, provisionDeadline, withdrawPortions } from "./provisions";
 import { shelterColdStorageActive, shelterMetrics } from "./shelter-projects";
 import { settleScheduledWorkBeforeMorning } from "./time";
+import { expireLocationFood } from "./hex-automation";
 
 export type DailyResource = "food" | "water";
 export type DayProvisionSource = "already" | "shared" | "personal" | "other" | "none";
@@ -340,6 +341,8 @@ function advanceMorning(game: GameState) {
   game.noise = 0;
   game.scene = (game.scene ?? 1) + 1;
   const morning = absoluteMinutes(game);
+  const lostAtLocations = expireLocationFood(game);
+  if (lostAtLocations.length) addLog(game, "provisões", `Ao amanhecer, estragou nos locais: ${lostAtLocations.join(", ")}.`);
   const lostAtBase = [...expirePortionLots(game.shelter, game.day),
     ...expirePhysicalFood(game, game.shelter.inventory ?? [], shelterColdStorageActive(game, game.shelter))];
   if (lostAtBase.length) addLog(game, "provisões", `Ao amanhecer, estragou nas reservas: ${lostAtBase.join(", ")}.`);

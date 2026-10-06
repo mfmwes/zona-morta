@@ -134,11 +134,13 @@ export function HexGeneratorDialog({
     if (!result.trim()) return;
     const trigger = triggerText(eventTriggerType, eventTriggerValue);
     edit(draft => {
+      if (eventTriggerType === "search") draft.hexes[request.hexId].searchSequence ??= draft.hexes[request.hexId].points.reduce((sum, point) => sum + point.searches.length, 0);
       draft.hexes[request.hexId].events.push({
         id: createId(),
         text: result.trim(),
         trigger,
         triggerType: eventTriggerType,
+        ...(eventTriggerType === "search" ? { searchBaseline: draft.hexes[request.hexId].searchSequence ?? draft.hexes[request.hexId].points.reduce((sum, point) => sum + point.searches.length, 0) } : {}),
         ...(eventTriggerType === "noise" ? { triggerValue: eventTriggerValue } : {}),
         status: "pending",
         guidance: eventGuidance.trim(),

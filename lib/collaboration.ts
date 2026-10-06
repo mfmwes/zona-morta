@@ -33,6 +33,7 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
   ];
   const visible = structuredClone(game);
   delete visible.presentation;
+  delete visible.explorationPreferences;
   visible.log = visible.log.map(entry => {
     const actor = entry.actorId ? game.survivors.find(person => person.id === entry.actorId) : null;
     return actor ? { ...entry, actorName: entry.actorName ?? actor.name, actorPortrait: entry.actorPortrait ?? actor.portrait } : entry;
@@ -77,6 +78,7 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
   // de outra ficha não precisam ser enviados para que a mesa os narre.
   visible.log = visible.log.filter(entry => entry.kind === "chat" || entry.kind === "ameaça" || entry.actorId === survivorId);
   for (const hex of Object.values(visible.hexes)) {
+    delete hex.searchSequence;
     hex.notes = "";
     hex.infestation = null;
     if (hex.discovery === "desconhecido") {
@@ -95,6 +97,7 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
       delete visiblePoint.condition;
       delete visiblePoint.eventOrigin;
       delete visiblePoint.clueTargetHex;
+      delete visiblePoint.preparation;
       return visiblePoint;
     });
     hex.events = hex.events
@@ -107,6 +110,7 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
         delete visibleEvent.generatorRoll;
         delete visibleEvent.generatorCategory;
         delete visibleEvent.actionLinks;
+        delete visibleEvent.searchBaseline;
         return visibleEvent;
       });
   }

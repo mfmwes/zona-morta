@@ -12,6 +12,7 @@ import { revealSector } from "./sectors";
 import { adjacentHexes, parseHex } from "./world";
 import { advanceCampaignTime } from "./time";
 import { shelterTravelMinutes, survivorActiveShelterShift } from "./shelter-projects";
+import { prepareHex } from "./hex-automation";
 
 export type HexQuickAction =
   | { type: "observe" }
@@ -44,6 +45,7 @@ function revealAround(game: GameState, id: string) {
   if (!area) return;
   const destination = revealSector(game, id);
   game.hexes[id].discovery = "explorado";
+  if (game.explorationPreferences?.autoPrepare) prepareHex(game, id);
   for (const neighbor of adjacentHexes(id)) {
     const key = hexKey(neighbor.q, neighbor.r);
     if (game.hexes[key]?.discovery === "desconhecido") {

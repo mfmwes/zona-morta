@@ -12,9 +12,10 @@ import { equipmentModifiers, getPrimary, getSecondary, unarmedAttack } from "@/l
 import { applyAttackResources, attackResourceState } from "@/lib/combat-resources";
 import { publicConflictScene, resolveThreatAttack, type ThreatAttackResolution } from "@/lib/conflict";
 import { parseWeaponDamage, resolveActionRoll, resolveAttackHit, resolveRollResources, resolveWeaponDamage, rollDie, type ActionOutcome, type Edge, type RollKind } from "@/lib/rolls";
+import { rollSearchAccess, searchMentors } from "@/lib/hex-automation";
 
 type Edit = (fn: (draft: GameState) => void) => void;
-export type RollRequest = { survivorId?: string; kind?: RollKind; trait?: string; weapon?: "primary" | "secondary" | "unarmed"; experience?: "origin" | "free"; targetThreatId?: string };
+export type RollRequest = { survivorId?: string; kind?: RollKind; trait?: string; weapon?: "primary" | "secondary" | "unarmed"; experience?: "origin" | "free"; targetThreatId?: string; search?: { hexId: string; pointId: string; attemptId: string; difficulty: number } };
 type RollRecord = { outcome: ActionOutcome; kind: RollKind; trait: string; traitBonus: number; weaponName: string | null; actorId: string; experiences: string[]; symptom: number; other: number; equipment: number };
 type DamageRecord = ReturnType<typeof resolveWeaponDamage> & { weaponName: string; formula: string; critical: boolean; equipment: number };
 
@@ -24,16 +25,17 @@ function outcomeLabel(roll: RollRecord) {
   return `${roll.outcome.success ? "Sucesso" : "Falha"} com ${dualityLabel(roll.outcome.with)}`;
 }
 
-function RollForm({ game, edit, request, onCompleted, hideThreatSecrets = false }: { game: GameState; edit: Edit; request?: RollRequest; onCompleted: () => void; hideThreatSecrets?: boolean }) {
+export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets = false }: { game: GameState; edit: Edit; request?: RollRequest; onCompleted: () => void; hideThreatSecrets?: boolean }) {
   const requestedSurvivor = request?.survivorId ? game.survivors.find(s => s.id === request.survivorId) : null;
   const initialWeaponSlot: "primary" | "secondary" | "unarmed" = request?.weapon
     ?? (requestedSurvivor?.primary ? "primary" : requestedSurvivor?.secondary ? "secondary" : "unarmed");
   const [person, setPerson] = useState(request?.survivorId ?? "");
+  const [mentorId, setMentorId] = useState("");
   const [kind, setKind] = useState<RollKind>(request?.kind ?? "action");
   const [trait, setTrait] = useState(request?.trait ?? "Agilidade");
   const [weaponSlot, setWeaponSlot] = useState<"primary" | "secondary" | "unarmed">(initialWeaponSlot);
   const [unarmedTrait, setUnarmedTrait] = useState<"Força" | "Finesse">("Força");
-  const [difficulty, setDifficulty] = useState(request?.kind === "attack" || request?.survivorId ? "" : "12");
+  const [difficulty, setDifficulty] = useState(request?.search ? String(request.search.difficulty) : request?.kind === "attack" || request?.survivorId ? "" : "12");
   const [targetThreatId, setTargetThreatId] = useState(request?.targetThreatId ?? "");
   const [extra, setExtra] = useState("0");
   const [edge, setEdge] = useState<Edge>("none");
@@ -49,6 +51,7 @@ function RollForm({ game, edit, request, onCompleted, hideThreatSecrets = false 
   const [rollError, setRollError] = useState("");
   const rollingRef = useRef(false);
   const survivor = game.survivors.find(s => s.id === person);
+  const mentors = request?.search ? searchMentors(game, request.search.hexId, request.search.pointId, request.search.attemptId, person) : [];
   const origin = survivor ? content.origins.find(o => o.name === survivor.origin) : null;
   const experienceOptions = survivor ? [
     { id: "origin" as const, name: origin?.experience || survivor.origin },
@@ -156,6 +159,17 @@ function RollForm({ game, edit, request, onCompleted, hideThreatSecrets = false 
   }
 
   async function rollAction(keepOpen = false) {
+    if (request?.search) {
+      if (rollingRef.current) return;
+      rollingRef.current = true;
+      let error: string | null = null;
+      const search = request.search;
+      edit(draft => { error = rollSearchAccess(draft, search.hexId, search.pointId, search.attemptId,
+        { actorId: person, trait, edge, experiences, other: Math.trunc(Number(extra) || 0), mentorId: mentorId || undefined }); });
+      rollingRef.current = false;
+      if (error) setRollError(error); else onCompleted();
+      return;
+    }
     if (rollingRef.current) return;
     if (!canRoll) {
       if (rollIssue) setRollError(rollIssue);
@@ -261,12 +275,12 @@ function RollForm({ game, edit, request, onCompleted, hideThreatSecrets = false 
     event.preventDefault();
     rollAction(false);
   }}>
-    <DialogHeader><p className="dossier-title">Dados de dualidade</p><DialogTitle>Rolagem de {kind === "attack" ? "ataque" : kind === "reaction" ? "reação" : "ação"}</DialogTitle>
-      <DialogDescription>Defina a ação e seus riscos com o mestre. Declare Experiências e modificadores antes de rolar.</DialogDescription></DialogHeader>
-    <div className="roll-modes" role="group" aria-label="Tipo de rolagem">
+    {request?.search ? <><h4 className="font-bold">Resolver o acesso · dados de dualidade</h4><p className="text-sm subtle">Declare Experiências e modificadores antes de rolar.</p></> : <DialogHeader><p className="dossier-title">Dados de dualidade</p><DialogTitle>Rolagem de {kind === "attack" ? "ataque" : kind === "reaction" ? "reação" : "ação"}</DialogTitle>
+      <DialogDescription>Defina a ação e seus riscos com o mestre. Declare Experiências e modificadores antes de rolar.</DialogDescription></DialogHeader>}
+    {!request?.search && <div className="roll-modes" role="group" aria-label="Tipo de rolagem">
       {([ ["action", "Ação", Dice5], ["reaction", "Reação", Zap], ["attack", "Ataque", Swords] ] as const).map(([id, label, Icon]) =>
         <button type="button" key={id} aria-pressed={kind === id} onClick={() => { setKind(id); setDifficulty(id === "attack" ? "" : "12"); clearResult(); }}><Icon size={16} aria-hidden="true" />{label}</button>)}
-    </div>
+    </div>}
     <div className="grid gap-3 sm:grid-cols-2">
       {request?.survivorId ? <div className="roll-locked"><span>Sobrevivente</span><strong>{survivor?.name ?? "Não encontrado"}</strong></div> : <Pick label="Sobrevivente" value={person} options={game.survivors.map(s => ({ value: s.id, label: s.name }))} onChange={value => {
         const next = game.survivors.find(s => s.id === value);
@@ -282,7 +296,7 @@ function RollForm({ game, edit, request, onCompleted, hideThreatSecrets = false 
         options={[{ value: "Força", label: traitLabel("Força") }, { value: "Finesse", label: traitLabel("Finesse") }]}
         onChange={value => { setUnarmedTrait(value as "Força" | "Finesse"); clearResult(); }} disabled={!survivor} />}
       {kind === "attack" && targetOptions.length > 0 && <Pick label="Alvo da Cena de Conflito" value={targetThreatId} options={targetOptions} onChange={value => { setTargetThreatId(value); setDifficulty(""); clearResult(); }} placeholder="Sem alvo definido" />}
-      {(kind !== "attack" || !targetThreatId) && <Field label={kind === "attack" ? "Defesa manual (opcional)" : "Dificuldade (opcional)"} value={difficulty} onChange={value => { setDifficulty(value); if (kind === "attack") setConfirmedHit(false); else clearResult(); }} type="number" placeholder="Mestre decide" />}
+      {request?.search ? <p className="text-sm">Dificuldade combinada: {request.search.difficulty}</p> : (kind !== "attack" || !targetThreatId) && <Field label={kind === "attack" ? "Defesa manual (opcional)" : "Dificuldade (opcional)"} value={difficulty} onChange={value => { setDifficulty(value); if (kind === "attack") setConfirmedHit(false); else clearResult(); }} type="number" placeholder="Mestre decide" />}
       {kind === "attack" && targetThreatId && <div className="roll-target-locked">
         <span>Alvo selecionado</span>
         <strong>{selectedTargetName ?? "Alvo indisponível"}</strong>
@@ -311,6 +325,7 @@ function RollForm({ game, edit, request, onCompleted, hideThreatSecrets = false 
       </div>
     </details>
     <fieldset className="roll-experiences"><legend>Experiências <small>+2 cada · 1 Esperança por Experiência pertinente</small></legend>
+      {request?.search && mentors.length > 0 && <Pick label="Apoio opcional · Docente Perto sabe explicar a ação" value={mentorId || "none"} options={[{ value: "none", label: "Sem apoio" }, ...mentors.map(row => ({ value: row.id, label: `${row.name} · +1 e marca 1 Estresse` }))]} onChange={value => setMentorId(value === "none" ? "" : value)} />}
       {experienceOptions.length ? experienceOptions.map(option => <label key={option.id} className="roll-experience">
         <Checkbox checked={experiences.includes(option.id)} disabled={!experiences.includes(option.id) && experienceCost >= (survivor?.hope ?? 0)} onCheckedChange={checked => {
           setExperiences(current => checked ? [...current, option.id] : current.filter(id => id !== option.id)); clearResult();

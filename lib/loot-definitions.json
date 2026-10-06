@@ -1,0 +1,1616 @@
+[
+  {
+    "table": "Residências / condomínios",
+    "entries": [
+      {
+        "roll": 1,
+        "items": [
+          {
+            "catalogKey": "Bebidas::Garrafa de água lacrada",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 2,
+        "items": [
+          {
+            "catalogKey": "Trajes e acessórios::Roupa seca sobressalente",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 3,
+        "items": [
+          {
+            "catalogKey": "Armas secundárias::Canivete simples",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 4,
+        "items": [
+          {
+            "catalogKey": "Abrigo, transporte e mochilas::Cobertor",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 5,
+        "items": [
+          {
+            "catalogKey": "Abrigo, transporte e mochilas::Kit de higiene",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 6,
+        "items": [
+          {
+            "catalogKey": "Luz, comunicação e informação::Lanterna pequena",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 7,
+        "items": [
+          {
+            "catalogKey": "Luz, comunicação e informação::Kit de pilhas",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 8,
+        "items": [
+          {
+            "catalogKey": "Medicamentos e cuidado::Kit médico de campo",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 9,
+        "items": [
+          {
+            "catalogKey": "Armas primárias::Faca resistente",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 10,
+        "items": [
+          {
+            "catalogKey": "Proteções::Jaqueta grossa",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 11,
+        "items": [
+          {
+            "catalogKey": "Abrigo, transporte e mochilas::Bolsa tiracolo",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 12,
+        "items": [
+          {
+            "catalogKey": "Medicamentos e cuidado::Bolsa de tratamento lacrada",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "table": "Mercados / depósitos de alimentos",
+    "entries": [
+      {
+        "roll": 1,
+        "items": [
+          {
+            "catalogKey": "Alimentos::Barra de cereal",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 2,
+        "items": [
+          {
+            "catalogKey": "Alimentos::Pacote de bolachas",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 3,
+        "items": [
+          {
+            "catalogKey": "Bebidas::Suco em caixa fechado",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 4,
+        "items": [
+          {
+            "catalogKey": "Alimentos::Conserva em lata",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 5,
+        "items": [
+          {
+            "catalogKey": "Ferramentas, acesso e reparo::Fita resistente",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 6,
+        "items": [
+          {
+            "catalogKey": "Bebidas::Garrafa de água lacrada",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 7,
+        "items": [
+          {
+            "catalogKey": "Luz, comunicação e informação::Mapa de bairro",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 8,
+        "items": [
+          {
+            "catalogKey": "Abrigo, transporte e mochilas::Mochila urbana",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 9,
+        "items": [
+          {
+            "catalogKey": "Armas primárias::Facão",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 10,
+        "items": [
+          {
+            "catalogKey": "Alimentos::Ração de emergência",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 11,
+        "items": [
+          {
+            "catalogKey": "Abrigo, transporte e mochilas::Filtro portátil",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 12,
+        "items": [
+          {
+            "catalogKey": "Bebidas::Pacote de quatro águas",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "table": "Restaurantes / cozinhas",
+    "entries": [
+      {
+        "roll": 1,
+        "items": [
+          {
+            "catalogKey": "Bebidas::Garrafa de água lacrada",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 2,
+        "items": [
+          {
+            "catalogKey": "Alimentos::Pão embalado",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 3,
+        "items": [
+          {
+            "catalogKey": "Alimentos::Conserva em lata",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 4,
+        "items": [
+          {
+            "catalogKey": "Abrigo, transporte e mochilas::Panela leve",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 5,
+        "items": [
+          {
+            "catalogKey": "Armas secundárias::Faca pequena",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 6,
+        "items": [
+          {
+            "catalogKey": "Abrigo, transporte e mochilas::Filtro portátil",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 7,
+        "items": [
+          {
+            "catalogKey": "Abrigo, transporte e mochilas::Fogareiro",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 8,
+        "items": [
+          {
+            "catalogKey": "Alimentos::Arroz cru",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 9,
+        "items": [
+          {
+            "catalogKey": "Abrigo, transporte e mochilas::Kit de higiene",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 10,
+        "items": [
+          {
+            "catalogKey": "Abrigo, transporte e mochilas::Carrinho dobrável",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 11,
+        "items": [
+          {
+            "catalogKey": "Bebidas::Bebida isotônica lacrada",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 12,
+        "items": [
+          {
+            "catalogKey": "Alimentos::Ração de emergência",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "table": "Hortas / áreas rurais",
+    "entries": [
+      {
+        "roll": 1,
+        "items": [
+          {
+            "catalogKey": "Alimentos::Fruta firme",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 2,
+        "items": [
+          {
+            "catalogKey": "Alimentos::Verduras de horta",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 3,
+        "items": [
+          {
+            "catalogKey": "Alimentos::Raízes colhidas",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 4,
+        "items": [
+          {
+            "catalogKey": "Trajes e acessórios::Luvas de trabalho",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 5,
+        "items": [
+          {
+            "catalogKey": "Ferramentas, acesso e reparo::Corda curta",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 6,
+        "items": [
+          {
+            "catalogKey": "Trajes e acessórios::Botas impermeáveis",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 7,
+        "items": [
+          {
+            "catalogKey": "Armas primárias::Pá curta",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 8,
+        "items": [
+          {
+            "catalogKey": "Alimentos::Frutas variadas",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 9,
+        "items": [
+          {
+            "catalogKey": "Ferramentas, acesso e reparo::Galão vazio",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 10,
+        "items": [
+          {
+            "catalogKey": "Bebidas::Galão de água lacrado",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 11,
+        "items": [
+          {
+            "catalogKey": "Suprimentos abstratos::Peças (1 unidade)",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 12,
+        "items": [
+          {
+            "catalogKey": "Alimentos::Raízes colhidas",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "table": "Farmácias / consultórios",
+    "entries": [
+      {
+        "roll": 1,
+        "items": [
+          {
+            "catalogKey": "Medicamentos e cuidado::Gaze e ataduras",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 2,
+        "items": [
+          {
+            "catalogKey": "Medicamentos e cuidado::Termômetro",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 3,
+        "items": [
+          {
+            "catalogKey": "Medicamentos e cuidado::Solução de limpeza lacrada",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 4,
+        "items": [
+          {
+            "catalogKey": "Medicamentos e cuidado::Analgésico genérico",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 5,
+        "items": [
+          {
+            "catalogKey": "Medicamentos e cuidado::Medicamento para alergia",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 6,
+        "items": [
+          {
+            "catalogKey": "Medicamentos e cuidado::Sachês de reidratação",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 7,
+        "items": [
+          {
+            "catalogKey": "Trajes e acessórios::Uniforme de saúde",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 8,
+        "items": [
+          {
+            "catalogKey": "Medicamentos e cuidado::Kit médico de campo",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 9,
+        "items": [
+          {
+            "catalogKey": "Medicamentos e cuidado::Curativo compressivo",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 10,
+        "items": [
+          {
+            "catalogKey": "Trajes e acessórios::Óculos de proteção",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 11,
+        "items": [
+          {
+            "catalogKey": "Medicamentos e cuidado::Bolsa de tratamento lacrada",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 12,
+        "items": [
+          {
+            "catalogKey": "Medicamentos e cuidado::Estojo de antissepsia completo",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "table": "Hospitais / laboratórios",
+    "entries": [
+      {
+        "roll": 1,
+        "items": [
+          {
+            "catalogKey": "Medicamentos e cuidado::Luvas de procedimento",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 2,
+        "items": [
+          {
+            "catalogKey": "Medicamentos e cuidado::Tala e faixa",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 3,
+        "items": [
+          {
+            "catalogKey": "Medicamentos e cuidado::Soro fisiológico lacrado",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 4,
+        "items": [
+          {
+            "catalogKey": "Medicamentos e cuidado::Antitérmico genérico",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 5,
+        "items": [
+          {
+            "catalogKey": "Medicamentos e cuidado::Medicamento prescrito identificado",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 6,
+        "items": [
+          {
+            "catalogKey": "Medicamentos e cuidado::Kit médico de campo",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 7,
+        "items": [
+          {
+            "catalogKey": "Medicamentos e cuidado::Máscara e avental clínico",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 8,
+        "items": [
+          {
+            "catalogKey": "Armas secundárias::Tesoura de resgate",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 9,
+        "items": [
+          {
+            "catalogKey": "Medicamentos e cuidado::Termômetro",
+            "qty": 1
+          },
+          {
+            "catalogKey": "Luz, comunicação e informação::Caderno e lápis",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 10,
+        "items": [
+          {
+            "catalogKey": "Medicamentos e cuidado::Máscara respiratória com filtro",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 11,
+        "items": [
+          {
+            "catalogKey": "Medicamentos e cuidado::Bolsa de tratamento lacrada",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 12,
+        "items": [
+          {
+            "catalogKey": "Medicamentos e cuidado::Caixa clínica completa",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "table": "Escolas / escritórios",
+    "entries": [
+      {
+        "roll": 1,
+        "items": [
+          {
+            "catalogKey": "Luz, comunicação e informação::Caderno e lápis",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 2,
+        "items": [
+          {
+            "catalogKey": "Luz, comunicação e informação::Mapa de bairro",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 3,
+        "items": [
+          {
+            "catalogKey": "Alimentos::Barra de cereal",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 4,
+        "items": [
+          {
+            "catalogKey": "Trajes e acessórios::Uniforme de manutenção",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 5,
+        "items": [
+          {
+            "catalogKey": "Bebidas::Garrafa de água lacrada",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 6,
+        "items": [
+          {
+            "catalogKey": "Luz, comunicação e informação::Lanterna pequena",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 7,
+        "items": [
+          {
+            "catalogKey": "Luz, comunicação e informação::Rádio portátil",
+            "qty": 1,
+            "battery": "Descarregada"
+          }
+        ]
+      },
+      {
+        "roll": 8,
+        "items": [
+          {
+            "catalogKey": "Medicamentos e cuidado::Kit médico de campo",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 9,
+        "items": [
+          {
+            "catalogKey": "Abrigo, transporte e mochilas::Mochila urbana",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 10,
+        "items": [
+          {
+            "catalogKey": "Luz, comunicação e informação::Binóculos",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 11,
+        "items": [
+          {
+            "catalogKey": "Proteções::Casaco acolchoado",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 12,
+        "items": [
+          {
+            "catalogKey": "Luz, comunicação e informação::Rádio portátil",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "table": "Oficinas / postos de serviço",
+    "entries": [
+      {
+        "roll": 1,
+        "items": [
+          {
+            "catalogKey": "Ferramentas, acesso e reparo::Fita isolante",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 2,
+        "items": [
+          {
+            "catalogKey": "Ferramentas, acesso e reparo::Alicate",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 3,
+        "items": [
+          {
+            "catalogKey": "Armas primárias::Chave inglesa",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 4,
+        "items": [
+          {
+            "catalogKey": "Trajes e acessórios::Macacão de oficina",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 5,
+        "items": [
+          {
+            "catalogKey": "Ferramentas, acesso e reparo::Galão vazio",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 6,
+        "items": [
+          {
+            "catalogKey": "Luz, comunicação e informação::Kit de pilhas",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 7,
+        "items": [
+          {
+            "catalogKey": "Luz, comunicação e informação::Lanterna frontal",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 8,
+        "items": [
+          {
+            "catalogKey": "Suprimentos abstratos::Peças (1 unidade)",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 9,
+        "items": [
+          {
+            "catalogKey": "Armas primárias::Pá curta",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 10,
+        "items": [
+          {
+            "catalogKey": "Ferramentas, acesso e reparo::Kit de ferramentas de trabalho",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 11,
+        "items": [
+          {
+            "catalogKey": "Proteções::Jaqueta de motociclista",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 12,
+        "items": [
+          {
+            "catalogKey": "Suprimentos abstratos::Combustível (1 unidade)",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "table": "Delegacias / quartéis",
+    "entries": [
+      {
+        "roll": 1,
+        "items": [
+          {
+            "catalogKey": "Armas secundárias::Cassetete curto",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 2,
+        "items": [
+          {
+            "catalogKey": "Trajes e acessórios::Uniforme de segurança",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 3,
+        "items": [
+          {
+            "catalogKey": "Luz, comunicação e informação::Apito",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 4,
+        "items": [
+          {
+            "catalogKey": "Luz, comunicação e informação::Lanterna pequena",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 5,
+        "items": [
+          {
+            "catalogKey": "Trajes e acessórios::Luvas de trabalho",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 6,
+        "items": [
+          {
+            "catalogKey": "Armas secundárias::Escudo improvisado",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 7,
+        "items": [
+          {
+            "catalogKey": "Armas primárias::Revólver",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 8,
+        "items": [
+          {
+            "catalogKey": "Armas primárias::Pistola",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 9,
+        "items": [
+          {
+            "catalogKey": "Munição::Munição de Pistola",
+            "qty": 1
+          }
+        ],
+        "choices": [
+          "Munição::Munição de Pistola",
+          "Munição::Munição de Espingarda",
+          "Munição::Munição de Carabina"
+        ]
+      },
+      {
+        "roll": 10,
+        "items": [
+          {
+            "catalogKey": "Proteções::Colete de proteção",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 11,
+        "items": [
+          {
+            "catalogKey": "Armas primárias::Espingarda",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 12,
+        "items": [
+          {
+            "catalogKey": "Armas primárias::Carabina",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "table": "Ruas / veículos abandonados",
+    "entries": [
+      {
+        "roll": 1,
+        "items": [
+          {
+            "catalogKey": "Trajes e acessórios::Capa de chuva leve",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 2,
+        "items": [
+          {
+            "catalogKey": "Trajes e acessórios::Colete refletivo",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 3,
+        "items": [
+          {
+            "catalogKey": "Luz, comunicação e informação::Mapa de bairro",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 4,
+        "items": [
+          {
+            "catalogKey": "Luz, comunicação e informação::Kit de pilhas",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 5,
+        "items": [
+          {
+            "catalogKey": "Ferramentas, acesso e reparo::Alicate",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 6,
+        "items": [
+          {
+            "catalogKey": "Luz, comunicação e informação::Lanterna pequena",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 7,
+        "items": [
+          {
+            "catalogKey": "Ferramentas, acesso e reparo::Galão vazio",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 8,
+        "items": [
+          {
+            "catalogKey": "Abrigo, transporte e mochilas::Bolsa tiracolo",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 9,
+        "items": [
+          {
+            "catalogKey": "Medicamentos e cuidado::Kit médico de campo",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 10,
+        "items": [
+          {
+            "catalogKey": "Abrigo, transporte e mochilas::Carrinho dobrável",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 11,
+        "items": [
+          {
+            "catalogKey": "Suprimentos abstratos::Combustível (1 unidade)",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 12,
+        "items": [
+          {
+            "catalogKey": "Armas primárias::Pistola compacta",
+            "qty": 1
+          }
+        ],
+        "requirement": "compatibleOwner",
+        "fallback": [
+          {
+            "catalogKey": "Luz, comunicação e informação::Rádio portátil",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "table": "Lojas de roupa / lavanderias",
+    "entries": [
+      {
+        "roll": 1,
+        "items": [
+          {
+            "catalogKey": "Trajes e acessórios::Moletom escuro",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 2,
+        "items": [
+          {
+            "catalogKey": "Trajes e acessórios::Roupa térmica",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 3,
+        "items": [
+          {
+            "catalogKey": "Trajes e acessórios::Capa de chuva leve",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 4,
+        "items": [
+          {
+            "catalogKey": "Trajes e acessórios::Botas impermeáveis",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 5,
+        "items": [
+          {
+            "catalogKey": "Trajes e acessórios::Tênis leves",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 6,
+        "items": [
+          {
+            "catalogKey": "Trajes e acessórios::Luvas de trabalho",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 7,
+        "items": [
+          {
+            "catalogKey": "Trajes e acessórios::Óculos de proteção",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 8,
+        "items": [
+          {
+            "catalogKey": "Trajes e acessórios::Máscara de poeira",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 9,
+        "items": [
+          {
+            "catalogKey": "Trajes e acessórios::Macacão de oficina",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 10,
+        "items": [
+          {
+            "catalogKey": "Proteções::Jaqueta de motociclista",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 11,
+        "items": [
+          {
+            "catalogKey": "Trajes e acessórios::Capacete de obra com viseira",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 12,
+        "items": [
+          {
+            "catalogKey": "Proteções::Roupa reforçada",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "table": "Artigos esportivos / caça",
+    "entries": [
+      {
+        "roll": 1,
+        "items": [
+          {
+            "catalogKey": "Armas primárias::Estilingue",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 2,
+        "items": [
+          {
+            "catalogKey": "Munição::Munição de Flechas",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 3,
+        "items": [
+          {
+            "catalogKey": "Armas primárias::Canivete robusto",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 4,
+        "items": [
+          {
+            "catalogKey": "Trajes e acessórios::Luvas de trabalho",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 5,
+        "items": [
+          {
+            "catalogKey": "Armas primárias::Arco simples",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 6,
+        "items": [
+          {
+            "catalogKey": "Ferramentas, acesso e reparo::Corda curta",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 7,
+        "items": [
+          {
+            "catalogKey": "Abrigo, transporte e mochilas::Mochila de trilha",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 8,
+        "items": [
+          {
+            "catalogKey": "Armas primárias::Besta leve",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 9,
+        "items": [
+          {
+            "catalogKey": "Munição::Munição de Virotes",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 10,
+        "items": [
+          {
+            "catalogKey": "Armas primárias::Arma de pressão",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 11,
+        "items": [
+          {
+            "catalogKey": "Munição::Munição de Chumbinhos",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 12,
+        "items": [
+          {
+            "catalogKey": "Armas primárias::Rifle de caça",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "table": "Obras / instalações em reforma",
+    "entries": [
+      {
+        "roll": 1,
+        "items": [
+          {
+            "catalogKey": "Ferramentas, acesso e reparo::Chaves de boca",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 2,
+        "items": [
+          {
+            "catalogKey": "Trajes e acessórios::Capacete de obra com viseira",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 3,
+        "items": [
+          {
+            "catalogKey": "Armas primárias::Martelo de obra",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 4,
+        "items": [
+          {
+            "catalogKey": "Trajes e acessórios::Óculos de proteção",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 5,
+        "items": [
+          {
+            "catalogKey": "Armas primárias::Pá curta",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 6,
+        "items": [
+          {
+            "catalogKey": "Armas primárias::Chave inglesa",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 7,
+        "items": [
+          {
+            "catalogKey": "Ferramentas, acesso e reparo::Serra manual",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 8,
+        "items": [
+          {
+            "catalogKey": "Luz, comunicação e informação::Lanterna frontal",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 9,
+        "items": [
+          {
+            "catalogKey": "Ferramentas, acesso e reparo::Corrente com cadeado",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 10,
+        "items": [
+          {
+            "catalogKey": "Proteções::Macacão industrial",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 11,
+        "items": [
+          {
+            "catalogKey": "Suprimentos abstratos::Peças (1 unidade)",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 12,
+        "items": [
+          {
+            "catalogKey": "Proteções::Colete tático reforçado",
+            "qty": 1
+          }
+        ],
+        "requirement": "armedGuard",
+        "fallback": [
+          {
+            "catalogKey": "Proteções::Roupa reforçada",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "table": "Galpões / centros de distribuição",
+    "entries": [
+      {
+        "roll": 1,
+        "items": [
+          {
+            "catalogKey": "Abrigo, transporte e mochilas::Documento ou crachá",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 2,
+        "items": [
+          {
+            "catalogKey": "Luz, comunicação e informação::Rádio portátil",
+            "qty": 1,
+            "battery": "Descarregada"
+          }
+        ]
+      },
+      {
+        "roll": 3,
+        "items": [
+          {
+            "catalogKey": "Ferramentas, acesso e reparo::Fita resistente",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 4,
+        "items": [
+          {
+            "catalogKey": "Trajes e acessórios::Capa de chuva leve",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 5,
+        "items": [
+          {
+            "catalogKey": "Abrigo, transporte e mochilas::Mochila urbana",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 6,
+        "items": [
+          {
+            "catalogKey": "Abrigo, transporte e mochilas::Carrinho dobrável",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 7,
+        "items": [
+          {
+            "catalogKey": "Trajes e acessórios::Colete refletivo",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 8,
+        "items": [
+          {
+            "catalogKey": "Luz, comunicação e informação::Binóculos",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 9,
+        "items": [
+          {
+            "catalogKey": "Ferramentas, acesso e reparo::Galão vazio",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 10,
+        "items": [
+          {
+            "catalogKey": "Abrigo, transporte e mochilas::Mochila cargueira",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 11,
+        "items": [
+          {
+            "catalogKey": "Suprimentos abstratos::Combustível (1 unidade)",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "roll": 12,
+        "items": [
+          {
+            "catalogKey": "Armas primárias::Fuzil de patrulha",
+            "qty": 1
+          }
+        ],
+        "requirement": "armedGuard",
+        "fallback": [
+          {
+            "catalogKey": "Luz, comunicação e informação::Rádio de carro",
+            "qty": 1
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -208,7 +208,7 @@ export function splitGeneratorText(text: string) {
   return { publicText: publicParts.join(" ").trim() || text, gmGuidance: guidance.join(" ").trim() };
 }
 
-function suggestedLootTable(text: string, category: GeneratorCategory) {
+export function suggestedLootTable(text: string, category: GeneratorCategory) {
   const t = normalize(text);
   const table = (pattern: RegExp, name: string) => pattern.test(t) ? name : "";
   return table(/casa|apart|condominio|pensao|moradia|habitac|hotel|hospedaria/, "Residências / condomínios")
@@ -344,7 +344,11 @@ export function eventTriggerReady(game: GameState, hexId: string, event: HexEven
   const type = event.triggerType ?? "manual";
   if (type === "manual") return false;
   if (type === "enter") return game.survivors.some(person => (person.hex ?? game.partyHex) === hexId);
-  if (type === "search") return Boolean(game.hexes[hexId]?.points.some(point => point.searches.length > 0));
+  if (type === "search") {
+    const hex = game.hexes[hexId];
+    return event.searchBaseline === undefined ? Boolean(hex?.points.some(point => point.searches.length > 0))
+      : (hex?.searchSequence ?? hex?.points.reduce((sum, point) => sum + point.searches.length, 0) ?? 0) > event.searchBaseline;
+  }
   if (type === "noise") return game.noise >= Math.max(0, Math.min(5, event.triggerValue ?? 3));
   if (type === "night") return game.minutes >= 18 * 60 || game.minutes < 6 * 60;
   return false;
