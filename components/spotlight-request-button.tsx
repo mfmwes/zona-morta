@@ -1,4 +1,5 @@
 "use client";
+import { usePlayerSimulation } from "@/components/player-simulation";
 
 import { useState } from "react";
 import { Crosshair } from "lucide-react";
@@ -12,11 +13,16 @@ export function SpotlightRequestButton({ campaignId, requested, ownSpotlight, do
   down?: boolean;
   preview?: boolean;
 }) {
+  const simulation = usePlayerSimulation();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
   async function toggleRequest() {
     if (busy || ownSpotlight || down) return;
+    if (simulation) {
+      try { simulation.spotlight(requested ? "cancel" : "request"); } catch (cause) { setError(cause instanceof Error ? cause.message : "Ação indisponível."); }
+      return;
+    }
     if (preview) {
       toast.info("Prévia dos jogadores", { description: "O jogador poderá pedir ou cancelar o Spotlight aqui. A prévia não altera a campanha." });
       return;

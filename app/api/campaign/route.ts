@@ -1,10 +1,11 @@
+import { playerTeamPeers as restPeers } from "@/lib/player-preview";
 import { applyPlayerSheetEdit, type SheetEditPayload } from "@/lib/player-sheet-edit";
 import { validPlayerActionState } from "@/lib/player-actions-types";
 import { validPortraitFrame } from "@/lib/portrait-frame";
 import { campaignExists, campaignOwnerId, findPlayer, readCampaign, restoreAccountCharacterToCampaign, syncCampaignAccountCharacters, wasRevoked, writeCampaign } from "@/db/state";
 import { sameOrigin, siteUser } from "@/lib/auth";
 import { projectPlayerGame } from "@/lib/collaboration";
-import { ammunitionTypes, survivorStats, type AmmunitionType, type GameState } from "@/lib/game";
+import { ammunitionTypes, type AmmunitionType, type GameState } from "@/lib/game";
 import { preserveKnownSectors } from "@/lib/sectors";
 import { validWorld } from "@/lib/world";
 import { validExplorationPreferences } from "@/lib/hex-automation-validation";
@@ -18,24 +19,6 @@ function requestedCampaign(request: Request) {
   return new URL(request.url).searchParams.get("campanha")?.trim() ?? "";
 }
 
-function restPeers(state: GameState) {
-  return state.survivors.map(person => {
-    const stats = survivorStats(person);
-    return {
-      id: person.id,
-      name: person.name,
-      portrait: person.portrait,
-      archetype: person.archetype,
-      specialty: person.specialty,
-      hex: person.hex ?? state.partyHex,
-      infection: person.infection,
-      hp: Math.max(0, Math.min(stats.hp, person.hp)),
-      hpMax: stats.hp,
-      stress: person.stress,
-      hope: person.hope,
-    };
-  });
-}
 
 function validThreat(value: unknown) {
   if (!value || typeof value !== "object") return false;

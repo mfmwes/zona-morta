@@ -34,8 +34,8 @@ import { npcPlayerView } from "@/lib/npc-presentation";
 import { sectorProfiles } from "@/lib/sectors";
 import { adjustProvisionCount } from "@/lib/provisions";
 import { beginExpedition, beginScene } from "@/lib/abilities";
-import { projectPlayerActions } from "@/lib/player-actions";
-import { publicConflictScene } from "@/lib/conflict";
+import { PlayerPreviewSession } from "@/lib/player-preview";
+import { PlayerSimulationContext } from "@/components/player-simulation";
 import { PlayerSaveQueue } from "@/lib/player-save-queue";
 import { advanceCampaignTime, setCampaignTime } from "@/lib/time";
 
@@ -57,7 +57,7 @@ type ModelTool = {
 type ModelContext = { registerTool: (tool: ModelTool, options: { signal: AbortSignal }) => void | Promise<void> };
 
 export default function CampaignApp() {
-  const [game, setGame] = useState<GameState | null>(null);
+  const [liveGame, setGame] = useState<GameState | null>(null);
   const [presentation, setPresentation] = useState<TablePresentation | undefined>();
   const [loading, setLoading] = useState(true);
   const [campaigns, setCampaigns] = useState<CampaignSummary[]>([]);
@@ -95,6 +95,29 @@ export default function CampaignApp() {
   const teamActionRetry = useRef<Record<string, unknown> | null>(null);
   const [teamActionError, setTeamActionError] = useState("");
   const paused = useRef(false);
+  const previewSession = useRef<PlayerPreviewSession | null>(null);
+  const [previewGame, setPreviewGame] = useState<GameState | null>(null);
+  const [previewPeers, setPreviewPeers] = useState<RestPeer[]>([]);
+  const game = playerPreview && previewGame ? previewGame : liveGame;
+  const viewedSurvivorId = playerPreview ? previewGame?.survivors[0]?.id ?? null : survivorId;
+  const viewedPeers = playerPreview ? previewPeers : restPeers;
+  const refreshPreview = useCallback(() => {
+    const session = previewSession.current;
+    if (session) { setPreviewGame(session.view); setPreviewPeers(session.peers); }
+  }, []);
+  function startPreview(actorId: string) {
+    if (!current.current) return;
+    previewSession.current = new PlayerPreviewSession(current.current, actorId);
+    refreshPreview();
+    setPlayerPreview(true);
+    setTab("sobreviventes");
+  }
+  function stopPreview() {
+    previewSession.current = null;
+    setPreviewGame(null);
+    setPlayerPreview(false);
+  }
+
 
   useEffect(() => {
     const showRollInChat = () => setChatOpen(true);
@@ -290,6 +313,11 @@ export default function CampaignApp() {
   }, [apiPath]);
 
   const edit = useCallback((mutate: (draft: GameState) => void) => {
+    if (previewSession.current) {
+      try { previewSession.current.edit(mutate); refreshPreview(); }
+      catch (cause) { toast.error(cause instanceof Error ? cause.message : "Ação indisponível."); }
+      return;
+    }
     if (!current.current) return;
     if (teamActionInFlight.current) { toast.info("Aguarde a ação da equipe ser registrada."); return; }
     const before = current.current;
@@ -306,9 +334,14 @@ export default function CampaignApp() {
     pending.current = draft;
     setGame(draft);
     if (!paused.current) { setStatus("salvando"); void flush(); }
-  }, [flush]);
+  }, [flush, refreshPreview]);
 
   const executeTeamAction = useCallback(async (payload: Record<string, unknown>) => {
+    if (previewSession.current) {
+      previewSession.current.action(payload);
+      refreshPreview();
+      return;
+    }
     if (teamActionInFlight.current) throw new TeamActionError("Outra ação já está sendo registrada.", true);
     if (pending.current || sending.current) await flush();
     if (teamActionInFlight.current) throw new TeamActionError("Outra ação já está sendo registrada.", true);
@@ -335,7 +368,7 @@ export default function CampaignApp() {
       else { teamActionRetry.current=payload; setTeamActionError("A conexão não confirmou sua última ação. Reenvie a mesma solicitação para conferir o resultado com segurança."); }
       throw cause;
     } finally { teamActionInFlight.current = false; setStatus("salvo"); }
-  }, [apiPath, flush]);
+  }, [apiPath, flush, refreshPreview]);
 
   function retrySave() {
     if (!current.current) return;
@@ -382,7 +415,7 @@ export default function CampaignApp() {
 
   function downloadBackup() {
     if (!current.current) return;
-    const blob = new Blob([JSON.stringify(current.current, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(previewSession.current?.view ?? current.current, null, 2)], { type: "application/json" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = `zona-morta-dia-${current.current.day}.json`;
@@ -516,13 +549,13 @@ export default function CampaignApp() {
   </section></main>;
 
   const readOnlyPreview = playerPreview || role === "jogador";
-  const previewActionGame = playerPreview && game.survivors[0] ? { ...game, publicPlayerActions: projectPlayerActions(game,game.survivors[0].id), publicConflict: game.conflict ? publicConflictScene(game.conflict, game.survivors, game.survivors[0].id) : undefined } : game;
+  const previewActionGame = game;
   const communityView = readOnlyPreview ? npcPlayerView(previewActionGame) : game;
   const publicConflictActive = readOnlyPreview && Boolean(previewActionGame.publicConflict?.active);
   const activeTab = tab === "acoes" ? (role === "mestre" && !playerPreview ? "resumo" : "mapa") : readOnlyPreview && tab === "resumo"
-    ? (role === "jogador" ? "sobreviventes" : "mapa")
+    ? "sobreviventes"
     : tab === "conflito" && readOnlyPreview && !publicConflictActive
-      ? (role === "jogador" ? "sobreviventes" : "referencias")
+      ? "sobreviventes"
       : tab;
   const title = { resumo: "Visão geral", mapa: "Exploração", cena: "Cena visual", sobreviventes: "Sobreviventes", comunidade: "PNJs e comunidade", abrigo: "Abrigo e reservas",
     conflito: "Cena de conflito", ameacas: "Gerenciador de ameaças", referencias: "Arquivo de campo", jogadores: "Jogadores e acessos" }[activeTab] || "Campanha";
@@ -537,7 +570,7 @@ export default function CampaignApp() {
         : [{ value: "abrigo", label: "Abrigo", icon: House }]),
     ]
     : [
-      { value: "sobreviventes", label: role === "jogador" ? "Meu sobrevivente" : "Sobreviventes", icon: Users },
+      { value: "sobreviventes", label: "Meu sobrevivente", icon: Users },
       ...(publicConflictActive ? [{
         value: "conflito", label: previewActionGame.publicConflict?.pendingDamage.length ? `Resolver dano (${previewActionGame.publicConflict.pendingDamage.length})` : "Conflito ativo", icon: Swords,
       }] : []),
@@ -557,13 +590,18 @@ export default function CampaignApp() {
     { value: "cena", label: "Cena visual", icon: Layers },
     { value: "comunidade", label: "PNJs e comunidade", icon: Users },
     { value: "referencias", label: "Regras e itens", icon: BookOpen },
-    ...(role === "mestre" ? [{ value: "jogadores", label: "Jogadores", icon: Users }] : []),
+
   ];
   const nav = [...masterPrimary, ...masterSecondary];
   const masterActionControls = masterExperience ? {canAct:status === "salvo",send:executeTeamAction,pending:Boolean(teamActionError)} : undefined;
-  const playerActionControls = role === "jogador" && survivorId ? { actorId: survivorId, canAct: status !== "erro" && status !== "conflito", send: executeTeamAction, pending: Boolean(teamActionError) } : playerPreview && game.survivors[0] ? {actorId:game.survivors[0].id,canAct:false,send:executeTeamAction,preview:true} : undefined;
+  const playerActionControls = readOnlyPreview && viewedSurvivorId ? { actorId: viewedSurvivorId, canAct: playerPreview || (status !== "erro" && status !== "conflito"), send: executeTeamAction, pending: playerPreview ? false : Boolean(teamActionError) } : undefined;
+  const simulation = playerPreview && previewGame ? {
+    spotlight: (action: "request" | "cancel") => { previewSession.current!.spotlight(action); refreshPreview(); },
+    damage: (id: string, resolution: "hp" | "armor") => { const result = previewSession.current!.damage(id, resolution); refreshPreview(); return result; },
+    target: (id: string, total: number, critical: boolean, damage: number) => previewSession.current!.target(id, total, critical, damage),
+  } : null;
 
-  return <Tabs value={activeTab} onValueChange={setTab} className="w-full">
+  return <PlayerSimulationContext.Provider value={simulation}><Tabs value={activeTab} onValueChange={setTab} className="w-full">
     <TablePresentationViewer presentation={presentation} enabled={readOnlyPreview} />
     <SidebarProvider className={`app-shell ${chatOpen ? "chat-open" : "chat-closed"}`}>
     <Sidebar collapsible="none" className="rail">
@@ -607,19 +645,19 @@ export default function CampaignApp() {
         </div>
         <div className="topbar-actions">
           <span className={`save-status ${status === "salvo" ? "ok" : status === "salvando" ? "" : "error"}`} role="status">
-            {status === "salvo" ? "● Salvo" : status === "salvando" ? "◌ Salvando" : "● Não salvo"}
+            {playerPreview ? "◌ Simulação local" : status === "salvo" ? "● Salvo" : status === "salvando" ? "◌ Salvando" : "● Não salvo"}
           </span>
-          {status === "erro" && <Button size="sm" variant="outline" onClick={retrySave}>Tentar salvar</Button>}
-          {status === "conflito" && <Button size="sm" variant="outline" onClick={() => {
+          {!playerPreview && status === "erro" && <Button size="sm" variant="outline" onClick={retrySave}>Tentar salvar</Button>}
+          {!playerPreview && status === "conflito" && <Button size="sm" variant="outline" onClick={() => {
             if (window.confirm("Descarte as alterações desta tela e carregue a versão salva em outra janela?")) { setLoading(true); setLoadError(""); void loadCampaign(); }
           }}>Recarregar</Button>}
           {role === "mestre" && <Button size="sm" className="topbar-preview-button" variant={playerPreview ? "default" : "outline"}
             aria-label={playerPreview ? "Desativar prévia dos jogadores" : "Ativar prévia dos jogadores"}
             title={playerPreview ? "Desativar prévia dos jogadores" : "Ativar prévia dos jogadores"}
             onClick={() => {
-              const nextPreview = !playerPreview;
-              if (nextPreview && (tab === "ameacas" || (tab === "conflito" && !game.conflict?.active))) setTab("referencias");
-              setPlayerPreview(nextPreview);
+              if (playerPreview) stopPreview();
+              else if (liveGame?.survivors[0]) startPreview(liveGame.survivors[0].id);
+              else toast.info("Crie um sobrevivente para abrir a prévia.");
             }}>
             {playerPreview ? <Eye size={16} /> : <EyeOff size={16} />}<span>{playerPreview ? "Prévia ativa" : "Prévia dos jogadores"}</span>
           </Button>}
@@ -627,7 +665,7 @@ export default function CampaignApp() {
           <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" variant="outline" aria-label="Abrir opções da campanha"><MoreHorizontal size={17} /><span className="topbar-options-label">Opções</span></Button></DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-52">
               <DropdownMenuItem onSelect={downloadBackup}><Download size={16} />Baixar cópia</DropdownMenuItem>
-              {role === "mestre" && <DropdownMenuItem onSelect={() => importInput.current?.click()}><Upload size={16} />Importar cópia</DropdownMenuItem>}
+              {role === "mestre" && !playerPreview && <DropdownMenuItem onSelect={() => importInput.current?.click()}><Upload size={16} />Importar cópia</DropdownMenuItem>}
               <DropdownMenuItem onSelect={() => window.location.assign("/")}><BookOpen size={16} />Meus dossiês</DropdownMenuItem>
               <DropdownMenuItem onSelect={() => void fetch("/api/auth", { method: "DELETE" }).then(() => window.location.assign("/"))}><LogOut size={16} />Sair</DropdownMenuItem>
             </DropdownMenuContent>
@@ -637,12 +675,17 @@ export default function CampaignApp() {
           }} />}
         </div>
       </header>
+      {playerPreview && <div className="panel panel-pad mb-4">
+        <Pick label="Ver como este sobrevivente" value={viewedSurvivorId ?? ""} options={(liveGame?.survivors ?? []).map(person => ({value:person.id,label:person.name}))} onChange={startPreview} />
+        <p className="text-sm subtle mt-2">Simulação local: ações, rolagens e alterações não são salvas na campanha. Trocar de sobrevivente ou sair descarta a simulação.</p>
+        <Button size="sm" variant="outline" className="mt-2" onClick={() => viewedSurvivorId && startPreview(viewedSurvivorId)}>Reiniciar simulação</Button>
+      </div>}
       {readOnlyPreview && <div className="player-preview-banner" role="status">
         <span className="flex items-center gap-2"><Eye size={18} /><b>{role === "jogador" ? "Dossiê do jogador" : "Prévia dos jogadores"}</b> · Informações reservadas do mestre não aparecem nesta visão.</span>
-        {role === "mestre" && <Button size="sm" variant="outline" onClick={() => setPlayerPreview(false)}>Voltar ao mestre</Button>}
+        {role === "mestre" && <Button size="sm" variant="outline" onClick={stopPreview}>Voltar ao mestre</Button>}
       </div>}
       <main className="page">
-        {teamActionError && <div className="team-error mb-4" role="alert"><p>{teamActionError}</p><Button size="sm" variant="outline" disabled={status!=="salvo"} onClick={()=>{if(teamActionRetry.current) void executeTeamAction(teamActionRetry.current).catch(cause=>toast.error(cause instanceof Error?cause.message:"Falha ao reenviar."));}}>Reenviar ação pendente</Button></div>}
+        {!playerPreview && teamActionError && <div className="team-error mb-4" role="alert"><p>{teamActionError}</p><Button size="sm" variant="outline" disabled={status!=="salvo"} onClick={()=>{if(teamActionRetry.current) void executeTeamAction(teamActionRetry.current).catch(cause=>toast.error(cause instanceof Error?cause.message:"Falha ao reenviar."));}}>Reenviar ação pendente</Button></div>}
         <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
           <div><p className="eyebrow">Daggerheart / Zona Morta</p><h1 className="page-title mt-1">{title}</h1>
             <p className="intro-line mt-2">{activeTab === "resumo" ? "Veja primeiro o que está acontecendo agora. Aprofunde apenas a ferramenta necessária para a próxima decisão." :
@@ -693,7 +736,7 @@ export default function CampaignApp() {
               </AlertDialogContent>
             </AlertDialog>}
         </div>
-        {(status === "erro" || status === "conflito") && <div role="alert" className="mb-5 rounded-md border border-[#d5aaa1] bg-[#fff2ed] px-4 py-3 text-sm text-[#803b35]">
+        {!playerPreview && (status === "erro" || status === "conflito") && <div role="alert" className="mb-5 rounded-md border border-[#d5aaa1] bg-[#fff2ed] px-4 py-3 text-sm text-[#803b35]">
           <b>As alterações ainda estão nesta tela.</b> {saveError} Baixe uma cópia antes de recarregar, se precisar.
         </div>}
         {activeTab === "resumo" && role === "mestre" && !readOnlyPreview && <MasterOverview game={game} onNavigate={setTab} masterActions={masterActionControls} />}
@@ -763,7 +806,7 @@ export default function CampaignApp() {
               <p className="scene-supplies-note">Comida e Água em porções (4 = 1 unidade); Peças em unidades. Sem abrigo, registre apenas o que o grupo consegue transportar.</p>
             </section>
           </div>}
-          <HexExplorer key={game.campaignId} game={communityView} edit={edit} playerPreview={readOnlyPreview} teamPeers={restPeers} playerActions={playerActionControls} masterActions={masterActionControls} />
+          <HexExplorer key={game.campaignId} game={communityView} edit={edit} playerPreview={readOnlyPreview} teamPeers={viewedPeers} playerActions={playerActionControls} masterActions={masterActionControls} />
           {!readOnlyPreview && <div className="panel panel-pad mt-5 flex flex-wrap items-center gap-3">
             <div className="mr-auto"><b>Relógio da expedição</b><p className="text-xs subtle">Ao anoitecer, registre o descanso na ficha, mesmo sem abrigo.</p></div>
             {[30,60,120].map(amount=><Button key={amount} size="sm" variant="outline" disabled={game.minutes+amount>=1440}
@@ -792,11 +835,11 @@ export default function CampaignApp() {
           </div>}
         </>}
         {activeTab === "cena" && <SceneBoard game={previewActionGame} edit={edit} playerPreview={readOnlyPreview} playerActions={playerActionControls} masterActions={masterActionControls} />}
-        {activeTab === "sobreviventes" && <SurvivorPanel game={game} edit={edit} playerPreview={readOnlyPreview} playerMode={role === "jogador"} restPeers={restPeers} onOpenConflict={() => setTab("conflito")} playerActions={playerActionControls} masterActions={masterActionControls} />}
+        {activeTab === "sobreviventes" && <SurvivorPanel key={playerPreview ? `preview:${viewedSurvivorId}` : "live"} game={game} edit={edit} playerPreview={readOnlyPreview} playerMode={readOnlyPreview} restPeers={viewedPeers} onOpenConflict={() => setTab("conflito")} playerActions={playerActionControls} masterActions={masterActionControls} />}
         {activeTab === "comunidade" && <NpcPanel game={communityView} edit={edit} playerPreview={readOnlyPreview} />}
-        {activeTab === "abrigo" && <ShelterPanel game={communityView} edit={edit} playerPreview={readOnlyPreview} playerSurvivorId={role === "jogador" ? survivorId : null} playerActions={playerActionControls} masterActions={masterActionControls} />}
+        {activeTab === "abrigo" && <ShelterPanel game={communityView} edit={edit} playerPreview={readOnlyPreview} playerSurvivorId={readOnlyPreview ? viewedSurvivorId : null} playerActions={playerActionControls} masterActions={masterActionControls} />}
         {activeTab === "conflito" && role === "mestre" && !playerPreview && <ConflictSceneManager game={game} edit={edit} />}
-        {activeTab === "conflito" && readOnlyPreview && publicConflictActive && <PlayerConflictScene game={previewActionGame} selfId={role === "jogador" ? survivorId : game.survivors[0]?.id ?? null} preview={playerPreview} />}
+        {activeTab === "conflito" && readOnlyPreview && publicConflictActive && <PlayerConflictScene game={previewActionGame} selfId={viewedSurvivorId} preview={playerPreview} />}
         {activeTab === "ameacas" && role === "mestre" && !playerPreview && <section className="panel panel-pad"><ThreatManager game={game} edit={edit} /></section>}
         {activeTab === "referencias" && <ReferencePanel />}
         {activeTab === "jogadores" && role === "mestre" && <PlayersPanel game={game} ownerId={ownerId} />}
@@ -804,7 +847,7 @@ export default function CampaignApp() {
       </main>
     </div>
     {chatOpen && <button type="button" className="table-chat-backdrop" aria-label="Fechar chat" onClick={() => setChatOpen(false)} />}
-    <div id="table-chat"><TableChat game={game} edit={edit} role={role} survivorId={survivorId} readOnly={playerPreview} onClose={() => setChatOpen(false)} /></div>
+    <div id="table-chat"><TableChat key={playerPreview ? `preview:${viewedSurvivorId}` : "live"} game={game} edit={edit} role={readOnlyPreview ? "jogador" : role} survivorId={viewedSurvivorId} readOnly={false} onClose={() => setChatOpen(false)} /></div>
     </SidebarProvider>
-  </Tabs>;
+  </Tabs></PlayerSimulationContext.Provider>;
 }

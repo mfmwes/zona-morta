@@ -1,4 +1,5 @@
 "use client";
+import { usePlayerSimulation } from "@/components/player-simulation";
 
 import { useMemo, useState, type ReactNode } from "react";
 import { Activity, Crosshair, Crown, Dice5, Dumbbell, Eye, Gauge, HeartPulse, Plus, RotateCcw, Shield, ShieldAlert, Skull, Swords, Tag, Trash2, UserPlus, Users, X, Zap } from "lucide-react";
@@ -76,6 +77,7 @@ function publicParticipantLabel(conflict: PublicConflictScene, ref: ConflictPart
 }
 
 export function PlayerConflictScene({ game, selfId = null, preview = false }: { game: GameState; selfId?: string | null; preview?: boolean }) {
+  const simulation = usePlayerSimulation();
   const [resolvingDamage, setResolvingDamage] = useState<string | null>(null);
   const [damageError, setDamageError] = useState("");
   const conflict = game.publicConflict
@@ -90,6 +92,10 @@ export function PlayerConflictScene({ game, selfId = null, preview = false }: { 
 
   async function resolvePendingDamage(requestId: string, resolution: "hp" | "armor") {
     if (resolvingDamage) return;
+    if (simulation) {
+      try { simulation.damage(requestId, resolution); setDamageError(""); } catch (cause) { setDamageError(cause instanceof Error ? cause.message : "Dano indisponível."); }
+      return;
+    }
     if (preview) { toast.info("Prévia dos jogadores", { description: "O jogador poderá resolver seu dano aqui. A prévia não altera a campanha." }); return; }
     setResolvingDamage(requestId);
     setDamageError("");

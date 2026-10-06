@@ -1,4 +1,5 @@
 "use client";
+import { usePlayerSimulation } from "@/components/player-simulation";
 
 import { useRef, useState } from "react";
 import { Crosshair, Dice5, Sparkles, Swords, Zap } from "lucide-react";
@@ -26,6 +27,7 @@ function outcomeLabel(roll: RollRecord) {
 }
 
 export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets = false }: { game: GameState; edit: Edit; request?: RollRequest; onCompleted: () => void; hideThreatSecrets?: boolean }) {
+  const simulation = usePlayerSimulation();
   const requestedSurvivor = request?.survivorId ? game.survivors.find(s => s.id === request.survivorId) : null;
   const initialWeaponSlot: "primary" | "secondary" | "unarmed" = request?.weapon
     ?? (requestedSurvivor?.primary ? "primary" : requestedSurvivor?.secondary ? "secondary" : "unarmed");
@@ -142,6 +144,7 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
 
   async function resolveSceneTarget(attackTotal: number, critical: boolean, damageTotal: number): Promise<ThreatAttackResolution | null> {
     if (!targetThreatId) return null;
+    if (simulation) return simulation.target(targetThreatId, attackTotal, critical, damageTotal);
     if (selectedMasterThreat) return resolveThreatAttack(selectedMasterThreat, attackTotal, critical, damageTotal);
 
     const response = await fetch(`/api/campaign/target?campanha=${encodeURIComponent(game.campaignId)}`, {

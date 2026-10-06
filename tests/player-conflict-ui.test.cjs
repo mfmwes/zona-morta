@@ -48,3 +48,21 @@ test('sem conflito ativo, prévia e acesso real não renderizam a trilha', () =>
   assert.equal(render(game,person,true),'');
   assert.equal(render(projectPlayerGame(game,person.id),person,false),'');
 });
+
+test('chat da simulação mostra os mesmos controles e registros do jogador escolhido', () => {
+  const {PlayerPreviewSession} = require('../lib/player-preview.ts');
+  const {PlayerSimulationContext} = require('../components/player-simulation.tsx');
+  const {TableChat} = require('../components/table-chat.tsx');
+  const {addLog} = require('../lib/game.ts');
+  const game=setup(),person=game.survivors[1];
+  addLog(game,'dados','Participante: teste secreto de outro personagem',game.survivors[0].id);
+  const session=new PlayerPreviewSession(game,person.id);
+  const props={edit:()=>{},role:'jogador',survivorId:person.id,readOnly:false,onClose:()=>{}};
+  const preview=renderToStaticMarkup(React.createElement(PlayerSimulationContext.Provider,{value:session},React.createElement(TableChat,{...props,game:session.view})));
+  const live=renderToStaticMarkup(React.createElement(TableChat,{...props,game:projectPlayerGame(game,person.id)}));
+  for(const html of [preview,live]) {
+    assert.match(html,/Falando como/);assert.match(html,/Observador/);
+    assert.match(html,/Rolagens rápidas/);assert.match(html,/<textarea/);
+    assert.doesNotMatch(html,/teste secreto de outro personagem|Escolher personagem que fala|chat em modo de leitura/);
+  }
+});

@@ -1,4 +1,5 @@
 "use client";
+import { usePlayerSimulation } from "@/components/player-simulation";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronRight, Crosshair, Search, ShieldAlert, Swords, Target, X } from "lucide-react";
@@ -28,6 +29,7 @@ function normalize(value: string) {
 export function SurvivorConflictHud({
   game, survivor, playerMode, playerPreview = false, targetId, onTargetChange, onAttack, onOpenConflict,
 }: Props) {
+  const simulation = usePlayerSimulation();
   const conflict = game.publicConflict
     ?? (game.conflict?.active ? publicConflictScene(game.conflict, game.survivors, survivor.id) : undefined);
   const playerPerspective = playerMode || playerPreview;
@@ -130,6 +132,10 @@ export function SurvivorConflictHud({
 
   async function resolveDamage(resolution: "hp" | "armor") {
     if (!firstDamage || damageBusy) return;
+    if (simulation) {
+      try { simulation.damage(firstDamage.id, resolution); setError(""); } catch (cause) { setError(cause instanceof Error ? cause.message : "Dano indisponível."); }
+      return;
+    }
     setDamageBusy(true);
     setError("");
     try {
