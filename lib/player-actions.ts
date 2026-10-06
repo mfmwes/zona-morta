@@ -314,7 +314,8 @@ export function applyPlayerAction(game: GameState, actorId: string, input: unkno
     if (op?.status === "done") attentionAfter(draft, op, beforeEvents);
   }
   draft.playerActions!.receipts.push({ id: cmd.id, day: game.day, actorId, fingerprint });
-  addLog(draft, "equipe", `${draft.survivors.find(p => p.id === actorId)!.name}: ${cmd.type === "roll-access" ? "acesso à busca resolvido" : cmd.type === "execute" ? "operação concluída" : cmd.type === "join" ? "participação confirmada" : cmd.type === "leave" ? "participação cancelada" : "ação da equipe registrada"}.`, actorId);
+  if (cmd.type !== "prepare-search")
+    addLog(draft, "equipe", `${draft.survivors.find(p => p.id === actorId)!.name}: ${cmd.type === "roll-access" ? "acesso à busca resolvido" : cmd.type === "execute" ? "operação concluída" : cmd.type === "join" ? "participação confirmada" : cmd.type === "leave" ? "participação cancelada" : "ação da equipe registrada"}.`, actorId);
   return { ok: true, state: draft, replay: false };
 }
 export function setPlayerPolicy(game: GameState, input: unknown) {
