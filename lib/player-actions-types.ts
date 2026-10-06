@@ -59,9 +59,9 @@ export type PublicPlayerActions = {
   policy: Omit<PlayerActionPolicy, "areas" | "routes" | "supplies">;
   actorId: string; hexId: string; busy: string | null;
   peers: { id: string; name: string; hex: string }[];
-  locations: { hexId: string; pointId: string; pointName: string; prepared: boolean; areaCount: number; searchedAreas: number; availableAreas: number; narrativeAreas: number; stockUnits: number; activeSearches: number }[];
-  areas: { hexId: string; pointId: string; areaId: string; name: string; pointName: string; signal: string; minutes: number; noise: number; access: "open" | "risk" | "blocked"; objectives: string[]; available: boolean; searchable: boolean; state: PublicSearchAreaState }[];
-  stock: { hexId: string; pointId: string; areaId: string; stockId: string; name: string; remaining: number; accessible: boolean }[];
+  locations: { hexId: string; pointId: string; pointName: string; prepared: boolean; areaCount: number; searchedAreas: number; availableAreas: number; narrativeAreas: number; stockUnits: number; apparentStockUnits: number; activeSearches: number }[];
+  areas: { hexId: string; pointId: string; areaId: string; name: string; pointName: string; signal: string; minutes: number; noise: number; access: "open" | "risk" | "blocked"; objectives: string[]; available: boolean; searchable: boolean; state: PublicSearchAreaState; visibleOutcome: "none" | "item" | null }[];
+  stock: { hexId: string; pointId: string; areaId: string; stockId: string; name: string; remaining: number; accessible: boolean; source: "apparent" | "search"; condition?: string; requiresFuelContainer: boolean }[];
   routes: { destination: string; name: string; minutes: number }[];
   operations: Omit<TeamOperation, "itemSnapshot" | "plans">[];
   supplies: { key: string; itemId?: string; name: string; available: number; allowance: number }[];
