@@ -1,3 +1,4 @@
+import { playerTimedActionIssue, projectPlayerActions } from "./player-actions";
 import { addLog, ammunitionTypes, survivorIsDown, survivorStats, type AmmunitionType, type GameState, type InventoryItem, type NPC, type Survivor } from "./game";
 import { publicConflictScene } from "./conflict";
 import { shelterCommunity } from "./shelter-residents";
@@ -32,6 +33,8 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
     })),
   ];
   const visible = structuredClone(game);
+  visible.publicPlayerActions = projectPlayerActions(game, survivorId);
+  delete visible.playerActions;
   delete visible.presentation;
   delete visible.explorationPreferences;
   delete visible.parallelTime;
@@ -285,6 +288,7 @@ export function applyPlayerChange(game: GameState, survivorId: string, before: S
       issue = leaveShelterProjectAsSurvivor(next, project, survivorId);
       if (!issue) addLog(next, "abrigo", `${next.survivors[index].name} saiu da equipe de ${project.name}.`, survivorId);
     } else if (action.type === "schedule") {
+      if (playerTimedActionIssue(next, [survivorId])) return null;
       const result = scheduleSurvivorWorkShift(next, project, survivorId, 4);
       issue = result.ok ? null : result.message;
       if (!issue) addLog(next, "abrigo", `${next.survivors[index].name} iniciou um turno de 4h em ${project.name}.`, survivorId);

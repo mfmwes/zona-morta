@@ -1,3 +1,4 @@
+import { validPlayerActionState } from "@/lib/player-actions-types";
 import { validPortraitFrame } from "@/lib/portrait-frame";
 import { campaignExists, campaignOwnerId, findPlayer, readCampaign, restoreAccountCharacterToCampaign, syncCampaignAccountCharacters, wasRevoked, writeCampaign } from "@/db/state";
 import { sameOrigin, siteUser } from "@/lib/auth";
@@ -194,6 +195,8 @@ function validState(value: unknown): value is GameState {
       && state.threats.every(validThreat)))
     && validConflict(state.conflict)
     && validSceneBoardState(state.sceneBoard)
+    && validPlayerActionState(state.playerActions)
+    && state.publicPlayerActions === undefined
     && state.publicShelterCommunity === undefined
     && state.publicConflict === undefined
     && validPresentation(state.presentation)

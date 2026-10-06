@@ -260,7 +260,7 @@ function withAttachedFixtures(scene: SceneBoardScene, ids: string[]) {
   return [...expanded];
 }
 
-export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edit: Edit; playerPreview: boolean }) {
+export function SceneBoard({ game, edit, playerPreview, onOpenPlayerActions }: { game: GameState; edit: Edit; playerPreview: boolean; onOpenPlayerActions?: () => void }) {
   const readonly = playerPreview;
   const board = useMemo(
     () => readonly ? projectPlayerSceneBoard(safeBoard(game)) ?? { scenes: [] } : safeBoard(game),
@@ -707,6 +707,7 @@ export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edi
   const fogPreview = fogDraft ? fogAreaFromPoints(scene, fogDraft.start, fogDraft.end) : null;
 
   return <section className="scene-board-root">
+    {readonly && onOpenPlayerActions && game.publicPlayerActions?.policy.tokens && <Button size="sm" variant="outline" onClick={onOpenPlayerActions}>Mover meu token ou marcar posição</Button>}
     <header className="panel panel-pad scene-board-header">
       <div><p className="dossier-title">Cena visual</p><div className="scene-board-title"><h2 className="section-title">{scene.name}</h2>
         <span className={live ? "tag scene-live" : "tag"}>{live ? <Eye size={13} /> : <EyeOff size={13} />}{live ? "AO VIVO" : readonly ? "Não apresentada" : "Privada"}</span></div></div>
@@ -852,6 +853,7 @@ export function SceneBoard({ game, edit, playerPreview }: { game: GameState; edi
                 left: preview.x, top: preview.y, width: preview.width, height: preview.height,
                 transform: "rotate(" + preview.rotation + "deg)",
               }} />}
+              {(game.publicPlayerActions?.markers ?? game.playerActions?.markers ?? []).filter(m => m.day === game.day && m.sceneId === scene.id).map(m => <span key={m.actorId} className="scene-team-marker" style={{left:m.x, top:m.y}} role="img" aria-label={m.label}>{m.label}</span>)}
               <FogOverlay scene={scene} readonly={readonly} />
               {fogPreview && <div className={"scene-fog-draft is-" + fogDraft?.mode} style={{ left: fogPreview.x, top: fogPreview.y, width: fogPreview.width, height: fogPreview.height }} />}
             </div>

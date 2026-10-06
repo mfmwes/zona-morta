@@ -50,10 +50,11 @@ function travelDurationLabel(minutes: number) {
   return `${hours}h${String(rest).padStart(2, "0")}`;
 }
 
-export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
+export function HexExplorer({ game, edit, playerPreview, teamPeers = [], onOpenPlayerActions }: {
   game: GameState;
   edit: Edit;
   playerPreview: boolean;
+  onOpenPlayerActions?: () => void;
   teamPeers?: { id: string; name: string; hex?: string; portrait?: string }[];
 }) {
   const [selectedId, setSelected] = useState(game.partyHex);
@@ -398,6 +399,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
               <div className="hex-point-heading"><div><p className="dossier-title">{point.clueTargetHex ? "Pista" : point.kind === "comércio" ? "Comércio neste setor" : "Local neste setor"}</p><b>{point.name}</b></div>
                 {!playerPreview && <label className="flex items-center gap-2 text-xs whitespace-nowrap"><Switch size="sm" checked={point.revealed}
                   onCheckedChange={checked => edit(draft => { const found = draft.hexes[selected].points.find(p=>p.id===point.id); if(found) found.revealed=checked; })} /> Público</label>}</div>
+              {playerPreview && onOpenPlayerActions && game.publicPlayerActions?.areas.some(a => a.hexId === selected && a.pointId === point.id) && <Button size="sm" variant="outline" onClick={onOpenPlayerActions}><Search size={15} /> Buscar ou recolher aqui</Button>}
               {point.signal && <p className="mt-1">{point.signal}</p>}
               {!playerPreview && point.clueTargetHex && <Button size="sm" variant="outline" className="mt-2"
                 disabled={!game.hexes[point.clueTargetHex]} onClick={() => { setFocusHex(point.clueTargetHex!); selectHex(point.clueTargetHex!); }}>

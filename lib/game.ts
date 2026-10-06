@@ -1,3 +1,4 @@
+import type { PlayerActionState, PublicPlayerActions } from "./player-actions-types";
 import content from "./content.json";
 import { revealSector, sectorProfiles, type Sector } from "./sectors";
 import { equipmentModifiers, getProtection, weaponAmmoType } from "./equipment";
@@ -411,6 +412,8 @@ export type ParallelTimeState = { day: number; survivorMinutes: Record<string, n
 
 export type GameState = {
   campaignId: string;
+  playerActions?: PlayerActionState;
+  publicPlayerActions?: PublicPlayerActions;
   day: number;
   minutes: number;
   partyHex: string;
