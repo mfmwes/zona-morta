@@ -15,6 +15,7 @@ export function operationInContext(op: Omit<TeamOperation, "itemSnapshot" | "pla
 export function actionsInContext(view: PublicPlayerActions, context: PlayerActionContext): PublicPlayerActions {
   return { ...view,
     operations: view.operations.filter(op => operationInContext(op, context)),
+    locations: context.kind === "search" ? view.locations.filter(location => location.hexId === context.hexId && location.pointId === context.pointId) : [],
     areas: context.kind === "search" ? view.areas.filter(a => a.hexId === context.hexId && a.pointId === context.pointId) : [],
     stock: context.kind === "search" ? view.stock.filter(s => s.hexId === context.hexId && s.pointId === context.pointId) : [],
     routes: context.kind === "travel" ? view.routes.filter(r => !context.destination || r.destination === context.destination) : [],
