@@ -86,9 +86,10 @@ test('porte pode ser ajustado antes da primeira busca e fica estável depois que
   assert.equal(f.point.preparation.areas.length,6);
   f.area=f.point.preparation.areas[0];
   assert.equal(auto.resolvePreparedSearch(f.game,input(f),die(1)),null);
-  const before=structuredClone(f.point.preparation);
-  assert.equal(auto.resizeLocationPreparation(f.point,'small'),false);
-  assert.deepEqual(f.point.preparation,before);
+  const current=f.game.hexes['0,0'].points[0];
+  const before=structuredClone(current.preparation);
+  assert.equal(auto.resizeLocationPreparation(current,'small'),false);
+  assert.deepEqual(current.preparation,before);
 });
 
 test('área narrativa aceita elementos à vista, mas não uma busca d12 própria', () => {
