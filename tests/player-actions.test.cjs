@@ -6,7 +6,7 @@ const ts = require('typescript');
 require.extensions['.ts'] = (module, path) => module._compile(ts.transpileModule(fs.readFileSync(path, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText, path);
 const { defaultState, initialSurvivor, content } = require('../lib/game.ts');
 const { assignCustomSector } = require('../lib/sectors.ts');
-const { prepareLocation, registerVisibleStock, searchAreaSessionState, startSearch } = require('../lib/hex-automation.ts');
+const { prepareLocation, prepareLocationForExploration, registerVisibleStock, searchAreaSessionState, startSearch } = require('../lib/hex-automation.ts');
 const { applyPlayerAction, projectPlayerActions, setPlayerPolicy, playerActionState } = require('../lib/player-actions.ts');
 const { validPlayerActionState } = require('../lib/player-actions-types.ts');
 const { projectPlayerGame } = require('../lib/collaboration.ts');
@@ -157,6 +157,7 @@ test('jogador pode executar busca profunda plausível sem liberação manual do 
 });
 test('projeção mostra somente autorização local e não vaza preparação, tabela, dificuldade ou fichas dos colegas',()=>{
  const f=fixture(); f.game.hexes['0,0'].points[0].preparation.areas[0].difficulty=99;
+ assert.equal(prepareLocationForExploration(f.game,'0,0','market',()=>0.99),null);
  const own=projectPlayerGame(f.game,f.ids[0]);
  assert.equal(own.playerActions,undefined); assert.equal(own.survivors.length,1);
  assert.equal(own.publicPlayerActions.areas.length,f.game.hexes['0,0'].points[0].preparation.areas.length); assert.equal(own.hexes['0,0'].points[0].preparation,undefined);
