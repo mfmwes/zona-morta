@@ -39,8 +39,26 @@ test('hub avisa todas as conexões sem transmitir estado privado nem aceitar edi
   const first=[],second=[];
   const sockets=[{send:data=>first.push(JSON.parse(data))},{send:data=>second.push(JSON.parse(data))}];
   const hub=new CampaignLive({getWebSockets:()=>sockets});
-  assert.equal((await hub.fetch(new Request('https://internal/notify',{method:'POST'}))).status,204);
-  assert.deepEqual(first,[{type:'changed'}]);assert.deepEqual(second,first);
+  assert.equal((await hub.fetch(new Request('https://internal/notify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision:7})}))).status,204);
+  assert.deepEqual(first,[{type:'changed',revision:7}]);assert.deepEqual(second,first);
   hub.webSocketMessage(sockets[0],'{"state":{"fear":99}}');assert.equal(first.length,1);
-  hub.webSocketMessage(sockets[0],'ping');assert.equal(first.length,2);
+  hub.webSocketMessage(sockets[0],'ping');assert.deepEqual(first[1],{type:'pong'});
+});
+
+test('revisão alvo força releituras imediatas até o estado anunciado ficar visível',async()=>{
+  const originals={window:global.window,document:global.document,WebSocket:global.WebSocket,setInterval:global.setInterval,clearInterval:global.clearInterval,setTimeout:global.setTimeout,clearTimeout:global.clearTimeout};
+  const surface=()=>({visibilityState:'visible',addEventListener(){},removeEventListener(){}});
+  const sockets=[];
+  class Socket {static CLOSED=3;constructor(){this.readyState=1;sockets.push(this);}close(){this.readyState=3;}}
+  global.window=surface();global.document=surface();global.WebSocket=Socket;
+  global.setInterval=()=>1;global.clearInterval=()=>{};global.setTimeout=()=>1;global.clearTimeout=()=>{};
+  const observed=[1,2,3], calls=[];
+  try {
+    const stop=startCampaignSync('wss://example.test/live',async notice=>{calls.push(notice);return observed.shift() ?? 3;});
+    sockets[0].onmessage({data:'{"type":"changed","revision":3}'});
+    await Promise.resolve();await Promise.resolve();await Promise.resolve();await Promise.resolve();await Promise.resolve();
+    assert.equal(calls.length,3);
+    assert.ok(calls.every(call=>call.revision===3));
+    stop();
+  } finally {Object.assign(global,originals);}
 });
