@@ -93,7 +93,9 @@ export function projectPlayerActions(game: GameState, actorId: string): PublicPl
           const item = gameContent.catalog.find(entry => catalogKey(entry) === key);
           return item ? { key, name: item.name } : null;
         }).filter((item): item is { key: string; name: string } => Boolean(item));
-      const eligibleWorkers = warehouseWorkers(game, hexId).map(person => ({ id: person.id, name: person.name }));
+      const eligibleWorkers = (area.spacious || area.minutes === 60)
+        ? warehouseWorkers(game, hexId).map(person => ({ id: person.id, name: person.name }))
+        : [];
       const mentors = attempt ? searchMentors(game, hexId, point.id, attempt.id, actorId).map(person => ({ id: person.id, name: person.name })) : [];
       result.areas.push({
         hexId, pointId: point.id, areaId: area.id, name: area.name, pointName: point.name, signal: area.signal,
