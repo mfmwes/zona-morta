@@ -109,7 +109,8 @@ export function SurvivorConflictHud({
     return [...map.entries()].sort(([a], [b]) => a.localeCompare(b, "pt-BR"));
   }, [livingThreats, query]);
 
-  if (!conflict?.active || !conflict.survivors.some(person => person.id === survivor.id)) return null;
+  if (!conflict?.active) return null;
+  const participating = conflict.survivors.some(person => person.id === survivor.id);
 
   function chooseTarget(id: string) {
     onTargetChange(id);
@@ -184,7 +185,7 @@ export function SurvivorConflictHud({
 
         <Button size="sm" disabled={!selectedTarget || down} onClick={() => onAttack(selectedTarget?.id)}><Swords size={14} /> {down ? "Caído" : "Atacar"}</Button>
 
-        {playerPerspective && <SpotlightRequestButton campaignId={game.campaignId} requested={conflict.spotlightRequested}
+        {playerPerspective && participating && <SpotlightRequestButton campaignId={game.campaignId} requested={conflict.spotlightRequested}
           ownSpotlight={ownSpotlight} down={down} preview={playerPreview && !playerMode} />}
         {onOpenConflict && <button type="button" className="character-conflict-link" onClick={onOpenConflict}>Ver cena ↗</button>}
       </div>

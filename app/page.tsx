@@ -35,6 +35,7 @@ import { sectorProfiles } from "@/lib/sectors";
 import { adjustProvisionCount } from "@/lib/provisions";
 import { beginExpedition, beginScene } from "@/lib/abilities";
 import { projectPlayerActions } from "@/lib/player-actions";
+import { publicConflictScene } from "@/lib/conflict";
 import { PlayerSaveQueue } from "@/lib/player-save-queue";
 import { advanceCampaignTime, setCampaignTime } from "@/lib/time";
 
@@ -515,11 +516,9 @@ export default function CampaignApp() {
   </section></main>;
 
   const readOnlyPreview = playerPreview || role === "jogador";
-  const previewActionGame = playerPreview && game.survivors[0] ? { ...game, publicPlayerActions: projectPlayerActions(game,game.survivors[0].id) } : game;
+  const previewActionGame = playerPreview && game.survivors[0] ? { ...game, publicPlayerActions: projectPlayerActions(game,game.survivors[0].id), publicConflict: game.conflict ? publicConflictScene(game.conflict, game.survivors, game.survivors[0].id) : undefined } : game;
   const communityView = readOnlyPreview ? npcPlayerView(previewActionGame) : game;
-  const publicConflictActive = role === "jogador"
-    ? Boolean(game.publicConflict?.active)
-    : playerPreview ? Boolean(game.conflict?.active) : false;
+  const publicConflictActive = readOnlyPreview && Boolean(previewActionGame.publicConflict?.active);
   const activeTab = tab === "acoes" ? (role === "mestre" && !playerPreview ? "resumo" : "mapa") : readOnlyPreview && tab === "resumo"
     ? (role === "jogador" ? "sobreviventes" : "mapa")
     : tab === "conflito" && readOnlyPreview && !publicConflictActive
@@ -540,7 +539,7 @@ export default function CampaignApp() {
     : [
       { value: "sobreviventes", label: role === "jogador" ? "Meu sobrevivente" : "Sobreviventes", icon: Users },
       ...(publicConflictActive ? [{
-        value: "conflito", label: game.publicConflict?.pendingDamage.length ? `Resolver dano (${game.publicConflict.pendingDamage.length})` : "Conflito ativo", icon: Swords,
+        value: "conflito", label: previewActionGame.publicConflict?.pendingDamage.length ? `Resolver dano (${previewActionGame.publicConflict.pendingDamage.length})` : "Conflito ativo", icon: Swords,
       }] : []),
       { value: "mapa", label: "Mapa", icon: Map },
       { value: "abrigo", label: "Abrigo", icon: House },
@@ -797,7 +796,7 @@ export default function CampaignApp() {
         {activeTab === "comunidade" && <NpcPanel game={communityView} edit={edit} playerPreview={readOnlyPreview} />}
         {activeTab === "abrigo" && <ShelterPanel game={communityView} edit={edit} playerPreview={readOnlyPreview} playerSurvivorId={role === "jogador" ? survivorId : null} playerActions={playerActionControls} masterActions={masterActionControls} />}
         {activeTab === "conflito" && role === "mestre" && !playerPreview && <ConflictSceneManager game={game} edit={edit} />}
-        {activeTab === "conflito" && readOnlyPreview && publicConflictActive && <PlayerConflictScene game={game} selfId={role === "jogador" ? survivorId : null} />}
+        {activeTab === "conflito" && readOnlyPreview && publicConflictActive && <PlayerConflictScene game={previewActionGame} selfId={role === "jogador" ? survivorId : game.survivors[0]?.id ?? null} preview={playerPreview} />}
         {activeTab === "ameacas" && role === "mestre" && !playerPreview && <section className="panel panel-pad"><ThreatManager game={game} edit={edit} /></section>}
         {activeTab === "referencias" && <ReferencePanel />}
         {activeTab === "jogadores" && role === "mestre" && <PlayersPanel game={game} ownerId={ownerId} />}

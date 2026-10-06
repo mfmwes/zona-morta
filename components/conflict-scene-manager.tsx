@@ -75,7 +75,7 @@ function publicParticipantLabel(conflict: PublicConflictScene, ref: ConflictPart
   return conflict.threats.find(threat => threat.id === ref.id)?.name ?? null;
 }
 
-export function PlayerConflictScene({ game, selfId = null }: { game: GameState; selfId?: string | null }) {
+export function PlayerConflictScene({ game, selfId = null, preview = false }: { game: GameState; selfId?: string | null; preview?: boolean }) {
   const [resolvingDamage, setResolvingDamage] = useState<string | null>(null);
   const [damageError, setDamageError] = useState("");
   const conflict = game.publicConflict
@@ -90,6 +90,7 @@ export function PlayerConflictScene({ game, selfId = null }: { game: GameState; 
 
   async function resolvePendingDamage(requestId: string, resolution: "hp" | "armor") {
     if (resolvingDamage) return;
+    if (preview) { toast.info("Prévia dos jogadores", { description: "O jogador poderá resolver seu dano aqui. A prévia não altera a campanha." }); return; }
     setResolvingDamage(requestId);
     setDamageError("");
     try {
@@ -136,7 +137,7 @@ export function PlayerConflictScene({ game, selfId = null }: { game: GameState; 
         mode="player"
       />
       {self && conflict.survivors.some(person => person.id === self.id) && <div className="conflict-player-prompt">
-        <SpotlightRequestButton campaignId={game.campaignId} requested={conflict.spotlightRequested} ownSpotlight={ownSpotlight} down={survivorIsDown(self)} />
+        <SpotlightRequestButton campaignId={game.campaignId} requested={conflict.spotlightRequested} ownSpotlight={ownSpotlight} down={survivorIsDown(self)} preview={preview} />
         <span>{ownSpotlight ? "Você está em foco. Declare sua ação." : conflict.spotlightRequested ? "O mestre recebeu seu pedido." : "Sinalize ao mestre quando quiser agir."}</span>
       </div>}
     </section>

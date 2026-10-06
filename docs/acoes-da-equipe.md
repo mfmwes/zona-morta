@@ -22,3 +22,7 @@ As cotas são preservadas ao editar liberações. Dados do dia anterior são des
 As buscas exibem apenas os cômodos, achados e propostas do local aberto; não é necessário escolher novamente o local ou sair do mapa. Confirmações e rolagens aparecem junto da proposta correspondente. Uma solicitação sem confirmação da rede pode ser reenviada com o mesmo identificador mesmo após trocar de seção.
 
 As interações na ficha do jogador são salvas em sequência, cada uma com seu próprio identificador. Cliques e rolagens feitos enquanto uma solicitação é enviada permanecem na fila; um reenvio após perda de resposta não repete custos nem registros. Ações contextuais aguardam a conclusão dessa fila antes de executar. O salvamento valida apenas os campos alterados: dados legados inalterados não bloqueiam PV, Estresse ou Esperança. Edições simultâneas em campos diferentes são preservadas; alterações concorrentes no mesmo campo continuam exigindo revisão.
+
+### Prévia e conflito público
+
+A trilha aparece para qualquer jogador enquanto houver conflito ativo, inclusive para quem está acompanhando sem participar. Apenas participantes podem pedir Spotlight. Na prévia, a ficha usa a mesma projeção pública de conflito entregue pela API ao jogador; pedidos de Spotlight e resolução de dano apenas demonstram os controles, sem alterar a campanha. Proficiência, reservas compartilhadas e ferramentas de inventário respeitam as mesmas restrições de exibição na prévia e no acesso real.

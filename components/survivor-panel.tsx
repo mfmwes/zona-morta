@@ -22,6 +22,7 @@ import { SurvivorContextMenu } from "@/components/survivor-context-menu";
 import { EmptyItemArt, ItemArt } from "@/components/item-art";
 import { AbilityArt } from "@/components/ability-art";
 import { RollDialog, type RollRequest } from "@/components/roll-dialog";
+import { projectPlayerGame } from "@/lib/collaboration";
 import { SurvivorConflictHud } from "@/components/survivor-conflict-hud";
 import { Counter, Field, Pick } from "@/components/game-controls";
 import { traitLabel, localizeRollLog } from "@/lib/terminology";
@@ -373,7 +374,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
   })();
   const categoryOptions = ["Todas", ...new Set(selected?.inventory.map(item => catalogForItem(item)?.category ?? item.category ?? "Outros"))];
   const medicineSources = [
-    ...(!playerMode && selected && atSharedStorage(game, selected.id) && game.shelter.medications > 0 ? [{ value: "shared", label: "Reservas compartilhadas · " + game.shelter.medications }] : []),
+    ...(!playerMode && !playerPreview && selected && atSharedStorage(game, selected.id) && game.shelter.medications > 0 ? [{ value: "shared", label: "Reservas compartilhadas · " + game.shelter.medications }] : []),
     ...(selected?.inventory.filter(item => countsAsMedication(item)).map(item => ({ value: item.id, label: item.name + " · " + item.qty })) ?? []),
   ];
   const chosenMedicine = medicineSources.some(option => option.value === treatmentSource) ? treatmentSource : medicineSources[0]?.value ?? "";
@@ -564,7 +565,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
       </header>
       {portraitError && <p className="character-portrait-error" role="alert">{portraitError}</p>}
       <SurvivorConflictHud
-        game={game}
+        game={playerPreview && !playerMode ? projectPlayerGame(game, selected.id) : game}
         survivor={selected}
         playerMode={playerMode}
         playerPreview={playerPreview}
@@ -662,7 +663,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
               <div className="character-defense-card"><Shield size={21} aria-hidden="true" /><span>Armadura marcada<small>{Math.max(0, stats.armor - (selected.armorMarked ?? 0))} espaço(s) livre(s)</small></span><strong>{selected.armorMarked ?? 0}<small>/{stats.armor}</small></strong></div>
               <DamageThresholds major={stats.major} severe={stats.severe} />
             </div>
-              <div className="character-proficiency"><ShieldCheck size={18} aria-hidden="true" /><span>Proficiência registrada</span>{playerMode ? <b>{selected.proficiency ?? 1}</b> : <Counter compact label="Proficiência" value={selected.proficiency ?? 1} min={1} max={9} onChange={value => change(selected.id, s => { s.proficiency = value; })} />}</div>
+              <div className="character-proficiency"><ShieldCheck size={18} aria-hidden="true" /><span>Proficiência registrada</span>{playerMode || playerPreview ? <b>{selected.proficiency ?? 1}</b> : <Counter compact label="Proficiência" value={selected.proficiency ?? 1} min={1} max={9} onChange={value => change(selected.id, s => { s.proficiency = value; })} />}</div>
             </section>
             <section className="character-surface"><SectionHeading index="02" title="Armas e kit ativo" />
               <div className="character-equipment">{selected.primary ? <ItemArt name={selected.primary} category="Armas primárias" size="large" /> : <EmptyItemArt size="large" />}<div><span>PRIMÁRIA</span><h4>{selected.primary || "Sem arma principal"}</h4>{primary ? <><p><b>{primary.damage}</b> dano · {primary.range} · {traitLabel(primary.trait)} · {primary.hands === "Uma" ? "uma mão" : "duas mãos"}</p><div className="character-chips"><span>Ruído: {primary.noise}</span><span>Carga guardada: {primary.stored}</span></div><p>{primary.note}</p>
@@ -722,7 +723,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
                   if (consumeDailyProvision(draft, selected.id, "water")) toast.success("Água solta de hoje registrada.");
                 })}><Droplets size={15} /> {selected.waterConsumedDay === game.day ? "Água de hoje registrada" : "Beber 1 porção solta"}</Button></div>
               <p className="roll-hint">Para registrar alimentação/hidratação do dia, use <b>Comer/Beber</b> ou <b>Ações → Consumir</b> no item. Alterar o contador manualmente corrige o estoque, mas não registra que o personagem consumiu.</p>
-              <div className="character-provision-actions">{!playerMode && <ProvisionTransferDialog key={selected.id} game={game} edit={edit} survivorId={selected.id} />}</div>
+              <div className="character-provision-actions">{!playerMode && !playerPreview && <ProvisionTransferDialog key={selected.id} game={game} edit={edit} survivorId={selected.id} />}</div>
             </section>
             <section className="character-surface"><SectionHeading index="02" title="Kit ativo" />
               {([ ["primary","Arma principal","Armas primárias"], ["secondary","Arma secundária","Armas secundárias"], ["protection","Proteção","Proteções"], ["outfit","Traje vestido","Trajes e acessórios"], ["personal","Item pessoal","Abrigo, transporte e mochilas"], ["bag","Bolsa / mochila","Abrigo, transporte e mochilas"] ] as const)
@@ -741,11 +742,11 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
               {inventoryGroups.length === 0 && <p className="character-empty-list">{selected.inventory.length ? "Nenhum item com esse filtro." : "Nenhum item guardado. Registre um achado ou guarde algo do kit ativo."}{selected.inventory.length > 0 && <button type="button" className="character-text-link" onClick={() => { setInventoryQuery(""); setInventoryCategory("Todas"); }}>Limpar filtros</button>}</p>}
               {inventoryGroups.map(([category, items]) => <div className="character-inventory-group" key={category}><h4>{category}</h4>
                 <Accordion type="multiple">{items.map(item => { const catalog = catalogForItem(item); const provisionState = provisionItemInfo(item); return <AccordionItem value={item.id} key={item.id} className="character-item">
-                  <ItemContextMenu game={game} edit={edit} ownerId={selected.id} item={item} selfOnly={playerMode}>
+                  <ItemContextMenu game={game} edit={edit} ownerId={selected.id} item={item} selfOnly={playerMode || playerPreview}>
                     <div className="character-item-row inventory-context-target"><AccordionTrigger className="character-item-trigger"><ItemArt name={item.name} category={category} /><span className="character-item-name">{item.name}<small>{provisionState.resource ? provisionDisplay(item) : ammunitionItemType(item)
   ? `${Math.ceil(item.qty / 4)} espaço(s) por este stack${item.committedAmmo ? ` · ${item.committedAmmo} comprometida(s) nesta cena` : ""}`
   : `${item.condition || "Estado não registrado"} · ${item.load * item.qty} espaço(s)${batteryStateFor(item) ? ` · bateria ${batteryStateFor(item)?.toLowerCase()}` : ""}`}</small></span><span className="character-item-meta">×{item.qty}</span></AccordionTrigger>
-                      <ItemActionsDialog game={game} edit={edit} ownerId={selected.id} item={item} allowCorrection={!playerPreview} selfOnly={playerMode} /></div>
+                      <ItemActionsDialog game={game} edit={edit} ownerId={selected.id} item={item} allowCorrection={!playerPreview} selfOnly={playerMode || playerPreview} /></div>
                   </ItemContextMenu>
                   <AccordionContent className="character-item-detail"><div className="character-chips"><span>{category}</span><span>Estado: {item.condition || "Sem registro"}</span>{provisionState.resource ? <><span>{provisionState.remaining} porção(ões) restantes</span><span>{provisionState.status}</span>{item.opened && <span>Aberto</span>}{item.expiresDay && <span>Vence no dia {item.expiresDay}</span>}</>
   : ammunitionItemType(item) ? <><span>Tipo: {ammunitionItemType(item)}</span><span>Até 4 unidades = 1 espaço</span>{item.committedAmmo ? <span>{item.committedAmmo} unidade(s) bloqueada(s) até a próxima cena</span> : null}</>

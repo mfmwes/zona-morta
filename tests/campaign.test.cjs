@@ -2174,7 +2174,7 @@ test('ficha de mestre e jogador compartilha abas e consulta lateral sem abrir pe
   assert.match(survivor, /className="character-layout"/);
   assert.match(survivor, /Consulta rápida do sobrevivente/);
   for (const label of ['Resumo','Atributos','Combate','Habilidades','Inventário','Condições','História']) assert.ok(survivor.includes('label: "'+label+'"'));
-  assert.match(survivor, /selfOnly=\{playerMode\}/);
+  assert.match(survivor, /selfOnly=\{playerMode \|\| playerPreview\}/);
   assert.match(survivor, /id="character-rest-panel"/);
 });
 
