@@ -337,6 +337,24 @@ export function deepSearchesUsed(point: Point) {
   return point.preparation?.attempts.filter(row => row.kind === "deep").length ?? 0;
 }
 
+export function pendingPlayerSearchOperation(game: GameState, hexId: string, pointId: string, areaId: string) {
+  return game.playerActions?.operations.find(operation =>
+    operation.type === "search"
+    && operation.day === game.day
+    && operation.scene === (game.scene ?? 1)
+    && ["forming", "access"].includes(operation.status)
+    && operation.hexId === hexId
+    && operation.pointId === pointId
+    && operation.areaId === areaId
+  );
+}
+
+export function searchAreaSessionState(game: GameState, hexId: string, pointId: string, area: SearchArea) {
+  const proposed = pendingPlayerSearchOperation(game, hexId, pointId, area.id);
+  if (proposed?.status === "forming") return "proposed" as const;
+  return searchAreaState(game.hexes[hexId]?.points.find(point => point.id === pointId)!, area);
+}
+
 export function searchAreaState(point: Point, area: SearchArea) {
   if (area.searchable === false) return "narrative" as const;
   const normal = point.preparation?.attempts.find(row => row.areaId === area.id && (row.kind ?? "normal") === "normal");
@@ -364,6 +382,8 @@ export function startSearch(game: GameState, input: StartSearch): string | null 
   if (available) return available;
   const area = prep?.areas.find(row => row.id === input.areaId);
   if (!prep || !area) return "Prepare o local e escolha uma área existente.";
+  const proposed = pendingPlayerSearchOperation(game, input.hexId, input.pointId, input.areaId);
+  if (proposed && proposed.id !== input.id) return "Já existe uma busca proposta ou em andamento para esta área.";
   if (area.searchable === false) return "Esta área existe na exploração, mas não possui uma busca de recursos própria.";
   if (!input.id || input.id.length > 120 || input.objective.length > 2400 || input.purpose.length > 2400) return "Confira os dados da busca.";
   if (area.excludedRolls?.length && (!area.exclusionReason?.trim() || new Set(area.excludedRolls).size >= 12)) return "Registre por que os resultados contradizem a ficção e mantenha algum achado plausível.";
@@ -515,6 +535,8 @@ export function startDeepSearch(game: GameState, input: StartDeepSearch): string
   if (available) return available;
   const area = prep?.areas.find(row => row.id === input.areaId);
   if (!point || !prep || !area) return "Prepare o local e escolha uma área existente.";
+  const proposed = pendingPlayerSearchOperation(game, input.hexId, input.pointId, input.areaId);
+  if (proposed && proposed.id !== input.id) return "Já existe uma busca proposta ou em andamento para esta área.";
   if (area.searchable === false) return "Esta área não possui busca de recursos.";
   const normal = prep.attempts.find(row => row.areaId === area.id && (row.kind ?? "normal") === "normal");
   if (!normal || normal.status !== "completed") return "Conclua a busca normal desta área antes de vasculhar a fundo.";
