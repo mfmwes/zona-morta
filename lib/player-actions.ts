@@ -1,5 +1,5 @@
 import { addLog, survivorHex, survivorIsDown, survivorStats, type GameState } from "./game";
-import { collectLocationStock, finishPreparedSearch, prepareLocation, quickSearchOptions, rollSearchAccess, searchAreaState, startDeepSearch, startSearch } from "./hex-automation";
+import { collectLocationStock, finishPreparedSearch, pendingPlayerSearchOperation, prepareLocation, quickSearchOptions, rollSearchAccess, searchAreaSessionState, searchAreaState, startDeepSearch, startSearch } from "./hex-automation";
 import { moveSurvivors } from "./hex-actions";
 import { atSharedStorage, transferItem, transferProvisions } from "./inventory";
 import { survivorTimedCommitment } from "./activity";
@@ -61,7 +61,7 @@ export function projectPlayerActions(game: GameState, actorId: string): PublicPl
     if (!point.revealed || point.clueTargetHex) continue;
     const prep = point.preparation;
     const publicAreas = prep?.areas ?? [];
-    const areaStates = publicAreas.map(area => ({ area, state: searchAreaState(point, area) }));
+    const areaStates = publicAreas.map(area => ({ area, state: searchAreaSessionState(game, hexId, point.id, area) }));
     result.locations.push({
       hexId,
       pointId: point.id,
@@ -72,16 +72,20 @@ export function projectPlayerActions(game: GameState, actorId: string): PublicPl
       availableAreas: areaStates.filter(({ state }) => state === "available").length,
       narrativeAreas: areaStates.filter(({ state }) => state === "narrative").length,
       stockUnits: prep?.stock.filter(row => row.remaining > 0).reduce((sum, row) => sum + row.remaining, 0) ?? 0,
-      activeSearches: prep?.attempts.filter(attempt => ["pending", "ready"].includes(attempt.status)).length ?? 0,
+      activeSearches: new Set([
+        ...(prep?.attempts.filter(attempt => ["pending", "ready"].includes(attempt.status)).map(attempt => attempt.id) ?? []),
+        ...state.operations.filter(operation => operation.type === "search" && operation.day === game.day && operation.scene === (game.scene ?? 1)
+          && ["forming", "access"].includes(operation.status) && operation.hexId === hexId && operation.pointId === point.id).map(operation => operation.id),
+      ]).size,
     });
     for (const area of publicAreas) {
       const permission = areaPermission(game, hexId, point.id, area.id);
-      const state = searchAreaState(point, area);
+      const state = searchAreaSessionState(game, hexId, point.id, area);
       const objectives = permission?.objectives.filter(o => o === "open" || quickSearchOptions(area).some(option => option.id === o && option.available)) ?? [];
       result.areas.push({
         hexId, pointId: point.id, areaId: area.id, name: area.name, pointName: point.name, signal: area.signal,
         minutes: area.minutes, noise: area.noise, access: area.access, objectives,
-        available: Boolean(permission) && state === "available", searchable: area.searchable !== false, state,
+        available: Boolean(permission) && state === "available" && !pendingPlayerSearchOperation(game, hexId, point.id, area.id), searchable: area.searchable !== false, state,
       });
       for (const stock of prep?.stock.filter(s => s.areaId === area.id && s.remaining > 0) ?? []) {
         if (stock.attemptId && !prep?.attempts.some(a => a.id === stock.attemptId && a.status === "completed")) continue;
