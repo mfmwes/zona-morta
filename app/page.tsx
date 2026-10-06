@@ -503,7 +503,6 @@ export default function CampaignApp() {
     ? [
       { value: "resumo", label: "Visão geral", icon: LayoutDashboard },
       { value: "mapa", label: "Mapa e exploração", icon: Map },
-      { value: "acoes", label: "Ações da equipe", icon: Users },
       { value: "sobreviventes", label: "Sobreviventes", icon: Users },
       ...(game.conflict?.active
         ? [{ value: "conflito", label: "Conflito ativo", icon: Swords }]
@@ -519,6 +518,7 @@ export default function CampaignApp() {
       { value: "abrigo", label: "Abrigo", icon: House },
     ];
   const masterSecondary = masterExperience ? [
+    { value: "acoes", label: `Ações da equipe${game.playerActions?.operations.some(op => op.day === game.day && op.attention) ? " · pendências" : ""}`, icon: Users },
     ...(game.conflict?.active ? [{ value: "abrigo", label: "Abrigo e reservas", icon: House }] : [
       { value: "conflito", label: "Conflito", icon: Swords },
     ]),
@@ -607,6 +607,7 @@ export default function CampaignApp() {
         <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
           <div><p className="eyebrow">Daggerheart / Zona Morta</p><h1 className="page-title mt-1">{title}</h1>
             <p className="intro-line mt-2">{activeTab === "resumo" ? "Veja primeiro o que está acontecendo agora. Aprofunde apenas a ferramenta necessária para a próxima decisão." :
+              activeTab === "acoes" ? (masterExperience ? "Defina liberações e acompanhe as situações que precisam da sua intervenção." : "Confirme sua participação e execute as atividades liberadas para seu sobrevivente.") :
               activeTab === "mapa" ? "Explore a partir do que o grupo avista. Registre apenas o que a ficção tornou real." :
               activeTab === "cena" ? (readOnlyPreview ? "Acompanhe a cena visual apresentada pelo mestre." : "Monte ambientes com paredes, portas, objetos e tokens sem transformar a cena em um mapa tático rígido.") :
               activeTab === "sobreviventes" ? (readOnlyPreview ? "Veja primeiro o que importa agora: condição, recursos e ações. Detalhes continuam disponíveis quando você precisar." : "Históricos, arquétipos e recursos prontos para jogar.") :

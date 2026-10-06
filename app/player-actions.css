@@ -28,3 +28,9 @@
 .team-scene-preview { display:grid; gap:7px; min-width:0; }
 .team-scene-preview svg { display:block; width:100%; max-width:640px; height:auto; border:1px solid var(--border); border-radius:8px; cursor:crosshair; }
 .team-scene-preview svg:focus-visible { outline:2px solid var(--primary); outline-offset:3px; }
+
+/* A lista de abas cresce com as ações da equipe; o rodapé permanece fora da rolagem. */
+@media(min-width:1001px) {
+  .rail .rail-nav { height:auto !important; min-height:0; flex:1 1 auto; overflow-y:auto; overflow-x:hidden; align-content:start; grid-auto-rows:min-content; scrollbar-width:thin; }
+  .rail > :not(.rail-nav) { flex-shrink:0; }
+}
