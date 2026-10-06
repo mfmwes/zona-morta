@@ -20,6 +20,8 @@ import {
 } from "@/lib/survival";
 import { provisionBreakdown } from "@/lib/provision-items";
 import { survivorHex, type GameState, type NPC, type Survivor } from "@/lib/game";
+import { plannedRestSelections, resolvePlannedOvernightRest } from "@/lib/abilities";
+import { eventStatus, eventTriggerReady } from "@/lib/hex-generators";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 
@@ -52,6 +54,7 @@ export function DayCloseDialog({
 }) {
   const [open, setOpen] = useState(false);
   const [plan, setPlan] = useState<DayClosePlan | null>(null);
+  const [overnightRest, setOvernightRest] = useState(false);
 
   const storageHex = game.shelter.hex ?? game.partyHex;
   const currentPlan = plan ?? defaultDayClosePlan(game);
@@ -62,9 +65,19 @@ export function DayCloseDialog({
   const residents = Math.max(0, Math.trunc(game.shelter.residents));
   const fieldNpcList = fieldNpcs(game);
   const npcsAtReserve = (game.npcs ?? []).filter(npc => npc.active && npc.status !== "Morto" && npc.status !== "Desaparecido" && npc.hex === storageHex);
+  const overnightSelections = plannedRestSelections(game, "long");
+  const overnightRestReady = Boolean(overnightSelections);
+  const occupiedHex = (hexId: string) => game.survivors.length
+    ? game.survivors.some(person => survivorHex(game, person) === hexId)
+    : game.partyHex === hexId;
+  const timedEvents = Object.entries(game.hexes).flatMap(([hexId, hex]) => hex.events
+    .filter(event => occupiedHex(hexId) && eventStatus(event) === "pending" && (event.triggerType === "night"
+      || (event.triggerType === "noise" && eventTriggerReady(game, hexId, event))))
+    .map(event => ({ hexId, event, sector: hex.sector?.name ?? `Hex ${hexId}` })));
 
   function prepare() {
     setPlan(defaultDayClosePlan(game));
+    setOvernightRest(false);
   }
 
   function handleOpenChange(nextOpen: boolean) {
@@ -154,25 +167,36 @@ export function DayCloseDialog({
 
   function nextMorning() {
     let result: DayCloseResult | null = null;
+    let restApplied = false;
+    let failure = "";
     edit(draft => {
-      result = closeDayWithPlan(draft, currentPlan);
+      const staged = structuredClone(draft);
+      result = closeDayWithPlan(staged, currentPlan);
+      if (!result?.ok) return;
+      if (overnightRest) {
+        const rest = resolvePlannedOvernightRest(staged);
+        if (!rest.ok) { failure = rest.message; result = null; return; }
+        restApplied = true;
+      }
+      Object.assign(draft, staged);
     });
     if (!result?.ok) {
       toast.error("Não foi possível encerrar o dia.", {
-        description: "O estado da campanha mudou. Reabra o painel para recalcular o consumo.",
+        description: failure || "O estado da campanha mudou. Reabra o painel para recalcular o consumo.",
       });
       return;
     }
 
     const missingResidents = result.residentMissing.food + result.residentMissing.water;
     const missingSurvivors = result.deprivations.length;
+    const restText = restApplied ? " · descanso longo aplicado" : "";
     if (missingResidents || missingSurvivors) {
       toast.warning("Novo amanhecer registrado com privações", {
-        description: `${missingSurvivors} necessidade(s) de sobreviventes e ${missingResidents} de moradores ficaram sem recurso. Consulte o diário.`,
+        description: `${missingSurvivors} necessidade(s) de sobreviventes e ${missingResidents} de moradores ficaram sem recurso. Consulte o diário.${restText}`,
       });
     } else {
       toast.success("Novo amanhecer registrado", {
-        description: `Dia ${game.day + 1}, 08:00. Consumo, validade e progressão diária foram processados.`,
+        description: `Dia ${game.day + 1}, 08:00. Consumo, validade e progressão diária foram processados${restText}.`,
       });
     }
     setOpen(false);
@@ -188,7 +212,7 @@ export function DayCloseDialog({
       <DialogHeader>
         <DialogTitle>Encerrar o dia {game.day}</DialogTitle>
         <DialogDescription>
-          Revise quem já consumiu, de onde virá cada porção e quem ficará sem recurso. Confirmar avança a campanha para o próximo amanhecer às 08:00; nenhum descanso é realizado automaticamente.
+          Revise quem já consumiu, de onde virá cada porção e quem ficará sem recurso. Confirmar avança a campanha para o próximo amanhecer às 08:00. Um descanso longo só é aplicado se você ativá-lo abaixo e todos tiverem escolhas registradas.
         </DialogDescription>
       </DialogHeader>
 
@@ -293,10 +317,23 @@ export function DayCloseDialog({
         })}</div>
       </section>}
 
-      <p className="character-rule-note">
+      <section className="day-close-section">
+        <div className="day-close-section-heading"><div><small>DESCANSO DA NOITE</small><b>6h · opcional</b></div>
+          <span>Não é aplicado automaticamente ao encerrar o dia.</span></div>
+        <label className="inventory-ready">
+          <input type="checkbox" checked={overnightRest} disabled={!overnightRestReady}
+            onChange={event => setOvernightRest(event.target.checked)} />
+          <span><b>Aplicar descanso longo durante a noite</b><small>{overnightRestReady
+            ? "Todos os sobreviventes têm duas escolhas de descanso longo registradas. O amanhecer às 08:00 representa o tempo de descanso."
+            : "Ainda faltam escolhas de descanso longo. Registre-as nas fichas dos sobreviventes antes de encerrar o dia."}</small></span>
+        </label>
+      </section>
+
+            <p className="character-rule-note">
         O sistema consome primeiro as provisões com maior risco de perda: unidades abertas e recursos que vencem antes. Se alguém ficar sem comida ou água, a privação será registrada no diário, mas nenhuma consequência mecânica nova será aplicada automaticamente.
       </p>
 
+      {timedEvents.length > 0 && <div className="day-close-warning"><AlertTriangle size={15} /><span><b>Há {timedEvents.length} evento(s) temporal(is) pendente(s) antes do amanhecer.</b> {timedEvents.slice(0, 3).map(row => `${row.sector}: ${row.event.triggerType === "night" ? "evento noturno" : "evento de Barulho"}`).join(" · ")}{timedEvents.length > 3 ? ` · +${timedEvents.length - 3}` : ""}. Você ainda pode encerrar o dia; o aviso evita que esses gatilhos sejam esquecidos.</span></div>}
       {inspection.stale && <p className="day-close-warning"><AlertTriangle size={15} /> O dia mudou desde que este painel foi aberto. Feche e abra novamente para recalcular.</p>}
       {hasWarnings && !inspection.stale && <p className="day-close-warning">
         <AlertTriangle size={15} /> Há pendências ou privações previstas. Você ainda pode encerrar o dia; elas serão registradas nominalmente no diário.
@@ -305,7 +342,7 @@ export function DayCloseDialog({
       <DialogFooter>
         <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
         <Button disabled={inspection.stale} onClick={nextMorning}>
-          {hasWarnings ? "Confirmar com pendências" : `Confirmar e iniciar dia ${game.day + 1}`}
+          {hasWarnings || timedEvents.length ? "Confirmar com pendências" : `Confirmar e iniciar dia ${game.day + 1}`}
         </Button>
       </DialogFooter>
     </DialogContent>

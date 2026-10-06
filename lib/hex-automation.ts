@@ -10,6 +10,7 @@ import { generateHexContent, suggestedLootTable } from "./hex-generators";
 import { equipmentModifiers } from "./equipment";
 import { resolveActionRoll, resolveRollResources, rollDie, type Edge } from "./rolls";
 import type { LocationScale, SearchAttempt, SearchArea } from "./hex-automation-types";
+import { timedActionParticipantIssue } from "./activity";
 
 type LootItem = { catalogKey: string; qty: number; battery?: "Carregada" | "Descarregada" };
 type LootDefinition = { roll: number; items: LootItem[]; choices?: string[];
@@ -372,6 +373,8 @@ export function startSearch(game: GameState, input: StartSearch): string | null 
   const present = survivorsAtHex(game, input.hexId).map(person => person.id);
   if (!input.participants.length || new Set(input.participants).size !== input.participants.length
     || input.participants.some(id => !present.includes(id))) return "Escolha os participantes presentes neste hex.";
+  const commitmentIssue = timedActionParticipantIssue(game, input.participants, "uma busca");
+  if (commitmentIssue) return commitmentIssue;
   if (area.access === "blocked") return "Resolva o bloqueio na ficção antes de iniciar a busca.";
   if (!input.purpose.trim()) return "Declare a finalidade da busca.";
   if (input.mode === "specific" && (!input.objective.trim() || !input.purpose.trim()
@@ -532,6 +535,8 @@ export function startDeepSearch(game: GameState, input: StartDeepSearch): string
   const present = survivorsAtHex(game, input.hexId).map(person => person.id);
   if (!input.participants.length || new Set(input.participants).size !== input.participants.length
     || input.participants.some(id => !present.includes(id))) return "Escolha os participantes presentes neste hex.";
+  const commitmentIssue = timedActionParticipantIssue(game, input.participants, "uma busca profunda");
+  if (commitmentIssue) return commitmentIssue;
   if (game.minutes + 30 >= 1440) return "A busca profunda precisa terminar antes da passagem de dia.";
   if (prep.attempts.length >= 80 || point.searches.length >= 80) return "O local atingiu o limite de buscas.";
   const snapshot = structuredClone(area);
@@ -627,6 +632,8 @@ export function completeSearch(game: GameState, hexId: string, pointId: string, 
   const availability = searchAvailabilityError(draft, hexId, pointId);
   if (availability) return availability;
   if (attempt.participants.some(id => !survivorsAtHex(draft, hexId).some(row => row.id === id))) return "Os participantes mudaram de hex; retome com o grupo presente.";
+  const commitmentIssue = timedActionParticipantIssue(draft, attempt.participants, attempt.kind === "deep" ? "uma busca profunda" : "uma busca");
+  if (commitmentIssue) return commitmentIssue;
   const area = attempt.areaSnapshot ?? prep.areas.find(row => row.id === attempt.areaId)!;
   if (attempt.status !== "ready" || (attempt.mode === "open" && attempt.outcome?.success !== false && !attempt.roll)) return "Resolva o acesso e o achado antes de confirmar.";
   if (draft.minutes + attempt.minutes >= 1440) return "A busca precisa terminar antes da passagem de dia.";

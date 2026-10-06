@@ -30,9 +30,11 @@ import { equipmentModifiers, getPrimary, getProtection, getSecondary, unarmedAtt
 import { rollDie } from "@/lib/rolls";
 import { consumeDailyProvision } from "@/lib/survival";
 import { adjustProvisionCount } from "@/lib/provisions";
-import { abilityCosts, abilityPeriod, costLabels, periodLabels, recordAbilityUse, resolveGroupRest, restActionLabels, restActionsFor, type AbilityCost, type RestAction, type RestChoice, type RestKind } from "@/lib/abilities";
+import { abilityCosts, abilityPeriod, costLabels, periodLabels, recordAbilityUse, resolveGroupRest, restActionLabels, restActionsFor, restDurationMinutes, type AbilityCost, type RestAction, type RestChoice, type RestKind } from "@/lib/abilities";
 import { abilityUseOptions, abilityUseState } from "@/lib/ability-presentation";
 import { shelterTreatmentBonus } from "@/lib/shelter-projects";
+import { advanceCampaignTime } from "@/lib/time";
+import { survivorTimedCommitment } from "@/lib/activity";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 const infectionStates: Infection[] = ["Saudável", "Exposto", "Infectado", "Sintomático", "Terminal"];
@@ -122,6 +124,8 @@ function RestPlanner({ game, edit, selected, playerMode, playerPreview, restPeer
   const personalPlanning = playerMode || playerPreview;
   const canResolve = !personalPlanning;
   const actors = personalPlanning ? [selected] : game.survivors;
+  const busyActors = actors.map(person => ({ person, commitment: survivorTimedCommitment(game, person.id) })).filter(row => row.commitment);
+  const longCrossesDay = kind === "long" && game.minutes + restDurationMinutes.long >= 1440;
   const peers = playerMode
     ? (restPeers.some(person => person.id === selected.id)
       ? restPeers
@@ -166,27 +170,41 @@ function RestPlanner({ game, edit, selected, playerMode, playerPreview, restPeer
     setOpen(false);
   }
   function resolve() {
+    const selections = game.survivors.map(person => ({ survivorId: person.id, choices: choices[person.id] ?? defaultChoices(person, kind) }));
+    if (kind === "long" && longCrossesDay) {
+      edit(draft => {
+        for (const selection of selections) {
+          const person = draft.survivors.find(candidate => candidate.id === selection.survivorId);
+          if (person) person.restPlan = { kind: "long", choices: structuredClone(selection.choices) };
+        }
+      });
+      toast.success("Descanso longo preparado para a noite", { description: "As escolhas foram salvas. Use Encerrar dia para aplicar o descanso durante a noite e iniciar o próximo amanhecer." });
+      setOpen(false);
+      return;
+    }
     let completed = false;
     let failure = "Não foi possível aplicar este descanso.";
     let fear = 0;
+    let minutes = 0;
     edit(draft => {
-      const result = resolveGroupRest(draft, kind, draft.survivors.map(person => ({ survivorId: person.id, choices: choices[person.id] ?? defaultChoices(person, kind) })));
-      if (result.ok) { completed = true; fear = result.fear; }
+      const result = resolveGroupRest(draft, kind, selections);
+      if (result.ok) { completed = true; fear = result.fear; minutes = result.minutes; }
       else failure = result.message;
     });
     if (!completed) { toast.error(failure); return; }
-    toast.success(`Descanso ${kind === "short" ? "curto" : "longo"} concluído`, { description: `As duas escolhas de cada sobrevivente foram aplicadas. Medo +${fear}.` });
+    toast.success(`Descanso ${kind === "short" ? "curto" : "longo"} concluído`, { description: `As duas escolhas de cada sobrevivente foram aplicadas. +${minutes / 60}h no relógio · Medo +${fear}.` });
     setOpen(false);
   }
 
   return <section className="character-surface character-rest-panel"><SectionHeading index="05" title={personalPlanning ? "Seu descanso" : "Descanso da mesa"} aside={<span className="character-micro">2 AÇÕES POR PESSOA</span>} />
-    <p className="character-section-intro">Curto recupera recursos com d4+1; longo limpa o recurso escolhido. Cada ação pode beneficiar você ou outra pessoa no mesmo hex. Preparar concede Esperança automaticamente.</p>
-    <div className="character-rest-actions"><Button size="sm" variant="outline" disabled={!actors.length} onClick={() => begin("short")}><Moon size={16} /> Descanso curto</Button>
-      <Button size="sm" disabled={!actors.length} onClick={() => begin("long")}><Moon size={16} /> Descanso longo</Button></div>
+    <p className="character-section-intro">Curto leva <b>1h</b> e recupera recursos com d4+1; longo leva <b>6h</b> e limpa o recurso escolhido. Cada ação pode beneficiar você ou outra pessoa no mesmo hex. Preparar concede Esperança automaticamente.</p>
+    {busyActors.length > 0 && <p className="character-rule-note"><b>Ocupado:</b> {busyActors.map(row => `${row.person.name} · ${row.commitment!.label}`).join(" · ")}. Um personagem não pode usar as mesmas horas em trabalho e descanso.</p>}
+    <div className="character-rest-actions"><Button size="sm" variant="outline" disabled={!actors.length} onClick={() => begin("short")}><Moon size={16} /> Descanso curto · 1h</Button>
+      <Button size="sm" disabled={!actors.length} onClick={() => begin("long")}><Moon size={16} /> Descanso longo · 6h</Button></div>
     {personalPlanning && selected.restPlan && <p className="character-rest-status">Escolhas de descanso {selected.restPlan.kind === "short" ? "curto" : "longo"} registradas. Você pode alterá-las antes da conclusão.</p>}
     {playerPreview && !playerMode && <p className="character-rest-preview-note">Prévia interativa: as escolhas são registradas para o sobrevivente selecionado, como aconteceria no acesso do jogador.</p>}
     <Dialog open={open} onOpenChange={setOpen}><DialogContent className="rest-planner-dialog"><DialogHeader><DialogTitle>{personalPlanning ? "Escolher seu" : "Organizar"} descanso {kind === "short" ? "curto" : "longo"}</DialogTitle>
-      <DialogDescription>{personalPlanning ? "Defina as duas ações e quem receberá cada benefício. O mestre conclui o descanso para toda a mesa." : "As escolhas já registradas pelos jogadores aparecem aqui. Ajuste apenas se necessário e conclua uma vez para aplicar valores, Medo e renovação de habilidades."}</DialogDescription></DialogHeader>
+      <DialogDescription>{personalPlanning ? `Defina as duas ações e quem receberá cada benefício. ${kind === "short" ? "O descanso curto consome 1h." : "O descanso longo consome 6h; se atravessar o fim do dia, o mestre o conclui em Encerrar dia."}` : longCrossesDay ? "Este descanso longo atravessaria o fim do dia. Confirmar agora salva as escolhas para serem aplicadas durante Encerrar dia." : `As escolhas já registradas pelos jogadores aparecem aqui. Ao concluir, o relógio avança ${kind === "short" ? "1h" : "6h"}, além de aplicar valores, Medo e renovação de habilidades.`}</DialogDescription></DialogHeader>
       <div className="rest-planner-list">{actors.map(person => {
         const selectedChoices = choices[person.id] ?? defaultChoices(person, kind);
         const options = restActionsFor(kind).map(action => ({ value: action, label: restActionLabels[action] }));
@@ -199,7 +217,7 @@ function RestPlanner({ game, edit, selected, playerMode, playerPreview, restPeer
           </div>)}
         </div></div>;
       })}</div>
-      <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button><Button onClick={canResolve ? resolve : savePersonalPlan}>{canResolve ? "Aplicar descanso" : "Registrar escolhas"}</Button></DialogFooter>
+      <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button><Button onClick={canResolve ? resolve : savePersonalPlan}>{canResolve ? (longCrossesDay ? "Preparar para Encerrar dia" : `Aplicar descanso · +${restDurationMinutes[kind] / 60}h`) : "Registrar escolhas"}</Button></DialogFooter>
     </DialogContent></Dialog>
   </section>;
 }
@@ -420,23 +438,43 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
   function treatExposure() {
     if (!selected || selected.infection !== "Exposto" || selected.treatmentAttempted ||
         (selected.exposureDeadline ?? 0) < absoluteMinutes(game) || !chosenMedicine || !cleanWaterConfirmed) return;
+    const commitment = survivorTimedCommitment(game, selected.id);
+    if (commitment) { toast.error("Tratamento indisponível", { description: commitment.label + "." }); return; }
+    if (absoluteMinutes(game) + 30 > (selected.exposureDeadline ?? 0) || game.minutes + 30 >= 1440) {
+      toast.error("Não há tempo suficiente", { description: "O tratamento leva 30 min e precisa terminar dentro da janela de Exposição e antes da passagem de dia." });
+      return;
+    }
     const hope = rollDie(12), fear = rollDie(12);
     const support = shelterTreatmentBonus(game, selected.id);
     const total = hope + fear + (selected.attributes.Conhecimento ?? 0) + support.bonus;
     const success = hope === fear || total >= 13;
+    let applied = false;
+    let failure = "Não foi possível concluir o tratamento.";
     edit(draft => {
       const s = draft.survivors.find(x => x.id === selected.id);
-      if (!s || s.infection !== "Exposto" || s.treatmentAttempted ||
-          (s.exposureDeadline ?? 0) < absoluteMinutes(draft)) return;
+      if (!s || s.infection !== "Exposto" || s.treatmentAttempted) return;
+      const busy = survivorTimedCommitment(draft, s.id);
+      if (busy) { failure = busy.label; return; }
+      if (absoluteMinutes(draft) + 30 > (s.exposureDeadline ?? 0) || draft.minutes + 30 >= 1440) {
+        failure = "A janela de Exposição termina antes dos 30 min necessários para o tratamento."; return;
+      }
+      if (chosenMedicine === "shared") {
+        if (!atSharedStorage(draft, s.id) || draft.shelter.medications < 1) { failure = "A fonte de Medicamentos não está mais acessível."; return; }
+      } else {
+        const item = s.inventory.find(x => x.id === chosenMedicine);
+        if (!item || !countsAsMedication(item) || item.qty < 1) { failure = "O item de tratamento não está mais disponível."; return; }
+      }
+      if (!advanceCampaignTime(draft, 30, `Tratamento de Exposição de ${s.name}: +30 min.`).ok) {
+        failure = "Não foi possível avançar o relógio para o tratamento."; return;
+      }
       let sourceLabel = "";
       if (chosenMedicine === "shared") {
-        if (!atSharedStorage(draft, s.id) || draft.shelter.medications < 1) return;
         draft.shelter.medications -= 1;
         sourceLabel = "reservas compartilhadas";
       } else {
-        const item = s.inventory.find(x => x.id === chosenMedicine);
-        if (!item || !countsAsMedication(item) || !discardItem(draft, s.id, item.id, 1)) return;
+        const item = s.inventory.find(x => x.id === chosenMedicine)!;
         sourceLabel = item.name;
+        if (!discardItem(draft, s.id, item.id, 1)) { failure = "Não foi possível consumir o Medicamentos selecionado."; return; }
       }
       s.treatmentAttempted = true;
       if (success) { s.infection = "Saudável"; s.exposureDeadline = null; }
@@ -446,7 +484,10 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
       addLog(draft, "tratamento", s.name + ": limpeza de Exposição (" + hope + " Esperança / " + fear + " Medo + Conhecimento" +
         (support.bonus ? " + " + support.bonus + " infraestrutura [" + support.sources.join(" + ") + "]" : "") + " = " + total +
         ", Dificuldade 13). " + (success ? "Saudável" : "Permanece Exposto") + ". Gastou 1 Medicamentos de " + sourceLabel + ".", s.id);
+      applied = true;
     });
+    if (!applied) { toast.error("Tratamento não concluído", { description: failure }); return; }
+    toast.success("Tratamento concluído", { description: "30 min foram consumidos no relógio da campanha." });
     setTreatmentOpen(false); setCleanWaterConfirmed(false);
   }
 
@@ -716,11 +757,11 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
                 else s.exposureDeadline = null;
                 if (value === "Terminal") s.terminalScenes = 3;
               })} /></div>}
-              <p className="character-rule-note">Mordida anunciada contra alvo Restrito ou indefeso pode causar Exposição. Ataques comuns não causam. A limpeza exige 1 Medicamentos, água limpa e uma tentativa em até 2 horas.</p>
+              <p className="character-rule-note">Mordida anunciada contra alvo Restrito ou indefeso pode causar Exposição. Ataques comuns não causam. A limpeza exige 1 Medicamentos, água limpa, <b>30 min</b> e uma tentativa concluída em até 2 horas.</p>
               {selected.infection === "Exposto" && <div className="character-treatment"><b>Janela: até {deadlineLabel(selected.exposureDeadline)}</b><span>{selected.treatmentAttempted ? "Tentativa já usada" : "Uma tentativa possível"} · {medicineSources.length} fonte(s) de Medicamentos acessível(is)</span>
                 {!playerMode ? <>
                 <Dialog open={treatmentOpen} onOpenChange={value => { setTreatmentOpen(value); if (!value) setCleanWaterConfirmed(false); }}><DialogTrigger asChild><Button size="sm" disabled={selected.treatmentAttempted || (selected.exposureDeadline ?? 0) < absoluteMinutes(game) || !chosenMedicine}><Stethoscope size={16} /> Tentar limpar exposição</Button></DialogTrigger>
-                  <DialogContent><DialogHeader><DialogTitle>Tratamento imediato</DialogTitle><DialogDescription>Escolha 1 Medicamentos acessível, confirme água limpa e role Conhecimento contra 13. Uma tentativa por Exposição.{treatmentSupport.bonus ? ` Infraestrutura do abrigo: +${treatmentSupport.bonus} (${treatmentSupport.sources.join(" + ")}).` : ""}</DialogDescription></DialogHeader>
+                  <DialogContent><DialogHeader><DialogTitle>Tratamento imediato · 30 min</DialogTitle><DialogDescription>Escolha 1 Medicamentos acessível, confirme água limpa e role Conhecimento contra 13. O procedimento consome 30 min e precisa terminar dentro da janela de Exposição. Uma tentativa por Exposição.{treatmentSupport.bonus ? ` Infraestrutura do abrigo: +${treatmentSupport.bonus} (${treatmentSupport.sources.join(" + ")}).` : ""}</DialogDescription></DialogHeader>
                     <Pick label="Fonte do tratamento" value={chosenMedicine} options={medicineSources} onChange={setTreatmentSource} />
                     <label className="inventory-ready"><input type="checkbox" checked={cleanWaterConfirmed} onChange={event => setCleanWaterConfirmed(event.target.checked)} /><span>Há água limpa e condições de cuidar da ferida nesta cena.</span></label>
                     <DialogFooter><Button variant="outline" onClick={() => setTreatmentOpen(false)}>Cancelar</Button><Button disabled={!cleanWaterConfirmed || !chosenMedicine} onClick={treatExposure}>Confirmar e rolar</Button></DialogFooter></DialogContent>

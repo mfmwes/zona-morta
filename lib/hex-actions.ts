@@ -11,7 +11,8 @@ import {
 import { revealSector } from "./sectors";
 import { adjacentHexes, parseHex } from "./world";
 import { advanceCampaignTime } from "./time";
-import { shelterTravelMinutes, survivorActiveShelterShift } from "./shelter-projects";
+import { shelterTravelMinutes } from "./shelter-projects";
+import { survivorTimedCommitment } from "./activity";
 import { prepareHex } from "./hex-automation";
 
 export type HexQuickAction =
@@ -64,8 +65,8 @@ export function moveSurvivors(game: GameState, destination: string, survivorIds:
   const members = ids.map(id => game.survivors.find(person => person.id === id));
   if (members.some(member => !member)) return { ok: false, message: "" };
   const people = members.filter(Boolean) as NonNullable<(typeof members)[number]>[];
-  const busy = people.map(person => ({ person, work: survivorActiveShelterShift(game, person.id) })).find(entry => entry.work);
-  if (busy?.work) return { ok: false, message: `${busy.person.name} está trabalhando em ${busy.work.project.name} até ${String(Math.floor((busy.work.shift.startMinute + busy.work.shift.durationMinutes) / 60)).padStart(2, "0")}:${String((busy.work.shift.startMinute + busy.work.shift.durationMinutes) % 60).padStart(2, "0")}.` };
+  const busy = people.map(person => ({ person, commitment: survivorTimedCommitment(game, person.id) })).find(entry => entry.commitment);
+  if (busy?.commitment) return { ok: false, message: `${busy.person.name} está ocupado: ${busy.commitment.label.toLocaleLowerCase("pt-BR")}.` };
   const sourceHex = survivorHex(game, people[0]);
   if (!people.every(person => survivorHex(game, person) === sourceHex)) return { ok: false, message: "" };
 

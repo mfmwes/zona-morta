@@ -12,12 +12,14 @@ import { searchAvailabilityError } from "@/lib/exploration";
 import { collectLocationStock, deepSearchLimit, deepSearchesUsed, finishPreparedSearch, declareSearchArea, depositExpeditionItems, locationScaleLabels, locationScaleOf, lootDefinitions, prepareLocation, quickSearchOptions, registerVisibleStock, resolveNoVisibleStock, resizeLocationPreparation, resolvePreparedSearch, searchAreaState, searchResult, startDeepSearch, suggestCollection, suggestVisibleStock, warehouseWorkers, type CollectionLine, type VisibleStockSuggestion } from "@/lib/hex-automation";
 import { RollForm } from "@/components/roll-dialog";
 import type { LocationScale, SearchArea } from "@/lib/hex-automation-types";
+import { survivorTimedCommitment } from "@/lib/activity";
 export type HexSearchRequest = { hexId: string; pointId: string; participantIds?: string[] };
 export function HexSearchDialog({ game, edit, request, onClose }: { game: GameState; edit: (fn: (draft: GameState) => void) => void; request: HexSearchRequest; onClose: () => void }) {
   const hex = game.hexes[request.hexId];
   const point = hex?.points.find(row => row.id === request.pointId);
   const prep = point?.preparation;
   const people = survivorsAtHex(game, request.hexId);
+  const commitmentById = new Map(people.map(person => [person.id, survivorTimedCommitment(game, person.id)]));
   const [areaId, setAreaId] = useState("");
   const [mode, setMode] = useState<"open" | "specific">("open");
   const [objective, setObjective] = useState("");
@@ -25,7 +27,7 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
   const [itemKey, setItemKey] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [participants, setParticipants] = useState(() => {
-    const present = people.map(row => row.id);
+    const present = people.filter(row => !commitmentById.get(row.id)).map(row => row.id);
     const candidates = (request.participantIds?.length ? request.participantIds : present).filter(id => present.includes(id));
     const preferred = game.explorationPreferences?.participantIds.filter(id => candidates.includes(id));
     return preferred?.length ? preferred : candidates;
@@ -284,7 +286,7 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
             <Pick label="Objetivo do grupo" value={mode} options={[{ value: "open", label: "Vasculhar por achados · d12 do grupo" }, { value: "specific", label: "Procurar um item combinado" }]} onChange={value => setMode(value as "open" | "specific")} />
             {mode === "open" && <Field label="Finalidade geral da busca" value={purpose} onChange={setPurpose} />}
             {mode === "specific" && <><Field label="O que procuram?" value={objective} onChange={setObjective} /><Field label="Para quê?" value={purpose} onChange={setPurpose} /><Pick label="Item plausível combinado" value={chosenKey} options={content.catalog.filter(row => keys.includes(catalogKey(row)) || itemKey === catalogKey(row)).map(row => ({ value: catalogKey(row), label: row.name }))} onChange={setItemKey} /><details><summary className="cursor-pointer text-sm">Outro item justificado na ficção</summary><Pick label="Catálogo completo" value={chosenKey} options={content.catalog.map(row => ({ value: catalogKey(row), label: `${row.category} · ${row.name}` }))} onChange={setItemKey} /></details><p className="text-xs subtle">Busca específica encontra no máximo <b>1 unidade</b>. Se a ficção já estabelece uma quantidade maior, registre-a como item à vista.</p></>}
-            <fieldset><legend className="field-label">Participantes presentes</legend><div className="flex flex-wrap gap-3">{people.map(person => <label key={person.id} className="text-sm"><input type="checkbox" checked={participants.includes(person.id)} onChange={event => setParticipants(current => event.target.checked ? [...current, person.id] : current.filter(id => id !== person.id))} /> {person.name}</label>)}</div><Button variant="ghost" size="sm" onClick={() => edit(draft => { draft.explorationPreferences = { ...draft.explorationPreferences, autoPrepare: draft.explorationPreferences?.autoPrepare ?? false, participantIds: participants }; })}>Usar estes participantes como padrão</Button></fieldset>
+            <fieldset><legend className="field-label">Participantes presentes</legend><div className="flex flex-wrap gap-3">{people.map(person => { const commitment = commitmentById.get(person.id); return <label key={person.id} className="text-sm" title={commitment?.label}><input type="checkbox" disabled={Boolean(commitment)} checked={participants.includes(person.id)} onChange={event => setParticipants(current => event.target.checked ? [...current, person.id] : current.filter(id => id !== person.id))} /> {person.name}{commitment ? ` · ocupado até ${commitment.until}` : ""}</label>; })}</div><Button variant="ghost" size="sm" onClick={() => edit(draft => { draft.explorationPreferences = { ...draft.explorationPreferences, autoPrepare: draft.explorationPreferences?.autoPrepare ?? false, participantIds: participants }; })}>Usar estes participantes como padrão</Button></fieldset>
             {(area.spacious || area.minutes === 60) && warehouseWorkers(game, request.hexId).some(row => participants.includes(row.id)) && <Pick label="Habilidade de depósito · 1× por expedição" value={worker || "none"} options={[{ value: "none", label: "Guardar a habilidade para depois" }, ...warehouseWorkers(game, request.hexId).filter(row => participants.includes(row.id)).map(row => ({ value: row.id, label: `${row.name} · ${area.minutes === 60 ? "reduzir para 30 min" : "identificar melhor área; sem achado extra"}` }))]} onChange={value => setWorker(value === "none" ? "" : value)} />}
             {worker && area.minutes === 30 && <p className="text-sm">Melhores indícios conhecidos: {(prep.areas.find(row => row.searchable !== false && !prep.attempts.some(attempt => attempt.areaId === row.id) && row.access === "open") ?? area).name} · {(prep.areas.find(row => row.searchable !== false && !prep.attempts.some(attempt => attempt.areaId === row.id) && row.access === "open") ?? area).signal}. Confirme esses indícios com o mestre antes de começar.</p>}
             <p className="text-sm subtle">{worker && area.minutes === 60 ? 30 : area.minutes} min · Barulho +{area.noise} · {area.access === "open" ? "Acesso livre" : area.access === "risk" ? `Teste ${area.difficulty}` : "Acesso bloqueado"}.</p>
@@ -312,7 +314,7 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
               <Pick label="Foco da busca profunda" value={deepChosenKey}
                 options={content.catalog.filter(row => deepKeys.includes(catalogKey(row))).map(row => ({ value: catalogKey(row), label: row.name }))}
                 onChange={setDeepItemKey} />
-              <fieldset><legend className="field-label">Participantes</legend><div className="flex flex-wrap gap-3">{people.map(person => <label key={person.id} className="text-sm"><input type="checkbox" checked={participants.includes(person.id)} onChange={event => setParticipants(current => event.target.checked ? [...current, person.id] : current.filter(id => id !== person.id))} /> {person.name}</label>)}</div></fieldset>
+              <fieldset><legend className="field-label">Participantes</legend><div className="flex flex-wrap gap-3">{people.map(person => { const commitment = commitmentById.get(person.id); return <label key={person.id} className="text-sm" title={commitment?.label}><input type="checkbox" disabled={Boolean(commitment)} checked={participants.includes(person.id)} onChange={event => setParticipants(current => event.target.checked ? [...current, person.id] : current.filter(id => id !== person.id))} /> {person.name}{commitment ? ` · ocupado até ${commitment.until}` : ""}</label>; })}</div></fieldset>
               <Button disabled={Boolean(available) || !participants.length || !deepChosenKey} onClick={() => {
                 if (act(draft => startDeepSearch(draft, { id: deepOperationId, ...request, areaId: area.id, participants,
                   objective: deepChosenName, purpose: "Vasculhar a fundo algo que passou despercebido", catalogKey: deepChosenKey }), "Busca profunda preparada")) {

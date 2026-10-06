@@ -37,6 +37,14 @@ import { advanceCampaignTime, setCampaignTime } from "@/lib/time";
 
 type CampaignResponse = { revision?: number; state?: GameState; role: "mestre" | "jogador" | "convidado"; ownerId: string; survivorId?: string | null; restPeers?: RestPeer[] };
 type SaveStatus = "salvo" | "salvando" | "erro" | "conflito";
+
+function parsedTimeMinute(value: string) {
+  const matched = /^(\d{2}):(\d{2})$/.exec(value);
+  if (!matched) return null;
+  const hours = Number(matched[1]), minutes = Number(matched[2]);
+  return Number.isInteger(hours) && Number.isInteger(minutes) && hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59
+    ? hours * 60 + minutes : null;
+}
 type ModelTool = {
   name: string; title: string; description: string; inputSchema: object;
   annotations: { readOnlyHint: boolean; untrustedContentHint: boolean };
@@ -59,6 +67,7 @@ export default function CampaignApp() {
   const [chatOpen, setChatOpen] = useState(true);
   const [timeEditorOpen, setTimeEditorOpen] = useState(false);
   const [manualTime, setManualTime] = useState("");
+  const [manualTimeRollbackConfirmed, setManualTimeRollbackConfirmed] = useState(false);
   const [playerPreview, setPlayerPreview] = useState(false);
   const [role, setRole] = useState<"mestre" | "jogador" | "convidado">("mestre");
   const [ownerId, setOwnerId] = useState("");
@@ -287,26 +296,31 @@ export default function CampaignApp() {
   function openTimeEditor() {
     if (!current.current) return;
     setManualTime(displayTime(current.current.minutes));
+    setManualTimeRollbackConfirmed(false);
     setTimeEditorOpen(true);
   }
 
   function saveManualTime() {
-    const matched = /^(\d{2}):(\d{2})$/.exec(manualTime);
-    const hours = matched ? Number(matched[1]) : Number.NaN;
-    const minutes = matched ? Number(matched[2]) : Number.NaN;
-    if (!Number.isInteger(hours) || !Number.isInteger(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    const targetMinute = parsedTimeMinute(manualTime);
+    if (targetMinute === null) {
       toast.error("Informe um horário entre 00:00 e 23:59.");
       return;
     }
+    if (current.current && targetMinute < current.current.minutes && !manualTimeRollbackConfirmed) {
+      toast.error("Confirme a correção para trás", { description: "Voltar o relógio não desfaz buscas, obras, recursos, eventos ou outros acontecimentos já registrados." });
+      return;
+    }
+    const hours = Math.floor(targetMinute / 60), minutes = targetMinute % 60;
     let previous = "";
     let completedWork: { name: string; points: number; completed: boolean }[] = [];
     edit(draft => {
       previous = displayTime(draft.minutes);
-      const result = setCampaignTime(draft, hours * 60 + minutes);
+      const result = setCampaignTime(draft, targetMinute);
       completedWork = result.completedWork;
       addLog(draft, "tempo", `Horário ajustado pelo mestre: ${previous} → ${displayTime(draft.minutes)}.`);
     });
     setTimeEditorOpen(false);
+    setManualTimeRollbackConfirmed(false);
     toast.success("Horário ajustado", {
       description: completedWork.length
         ? `${previous} → ${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")} · ${completedWork.map(row => `${row.name} +${row.points}${row.completed ? " concluída" : ""}`).join(" · ")}`
@@ -325,6 +339,8 @@ export default function CampaignApp() {
   }
 
   const hasGame = Boolean(game);
+  const manualTargetMinute = parsedTimeMinute(manualTime);
+  const manualTimeRollsBack = Boolean(game && manualTargetMinute !== null && manualTargetMinute < game.minutes);
   useEffect(() => {
     if (!hasGame) return;
     const context = (document as Document & { modelContext?: ModelContext }).modelContext;
@@ -681,7 +697,8 @@ export default function CampaignApp() {
               <DialogTrigger asChild><Button size="sm" variant="outline" onClick={openTimeEditor}><Clock3 size={16} /> Ajustar horário</Button></DialogTrigger>
               <DialogContent><DialogHeader><DialogTitle>Ajustar horário do dia</DialogTitle>
                 <DialogDescription>Use esta correção quando a ficção pedir outro horário. A alteração fica registrada no diário da campanha.</DialogDescription></DialogHeader>
-                <Field label="Horário" type="time" value={manualTime} onChange={setManualTime} />
+                <Field label="Horário" type="time" value={manualTime} onChange={value => { setManualTime(value); setManualTimeRollbackConfirmed(false); }} />
+                {manualTimeRollsBack && <label className="inventory-ready"><input type="checkbox" checked={manualTimeRollbackConfirmed} onChange={event => setManualTimeRollbackConfirmed(event.target.checked)} /><span><b>Confirmar correção para trás</b><small>Isso altera apenas o relógio. Buscas, obras concluídas, recursos produzidos, usos de habilidade e demais acontecimentos não serão desfeitos.</small></span></label>}
                 <DialogFooter><Button variant="outline" onClick={() => setTimeEditorOpen(false)}>Cancelar</Button><Button onClick={saveManualTime}>Salvar horário</Button></DialogFooter>
               </DialogContent>
             </Dialog>

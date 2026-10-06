@@ -1,6 +1,7 @@
 import { absoluteMinutes, addLog, content, displayTime, normalizeShelterAmmo, shelterPopulationBreakdown, survivorHex, type GameState, type NPC, type ShelterManualAdjustments, type ShelterPost, type ShelterProject, type ShelterProjectCategory, type ShelterProjectCost, type ShelterProjectEffect, type ShelterState, type Survivor } from "./game";
 import { createId } from "./id";
 import { recordProvisionLot } from "./provisions";
+import { advanceCampaignTime } from "./time";
 
 export type ShelterProjectKind = "facility" | "upgrade";
 export type ShelterBlueprintZone = "interior" | "utility" | "exterior";
@@ -946,25 +947,26 @@ export function processScheduledShelterWork(game: GameState) {
 export function runShelterWorkShift(game: GameState, hours = 4) {
   if (!Number.isInteger(hours) || hours < 1 || hours > 8) return { ok: false, message: "Duração de turno inválida.", results: [] as { key: string; name: string; points: number; completed: boolean }[] };
   if (game.minutes + hours * 60 >= 1440) return { ok: false, message: "Não há tempo suficiente neste dia. Encerre o dia antes de iniciar outro turno.", results: [] as { key: string; name: string; points: number; completed: boolean }[] };
-  const active = (game.shelter.projects ?? []).filter(project => project.state === "Em construção");
-  const previews = active.map(project => ({ project, preview: projectWorkPreview(game, game.shelter, project) }))
-    .filter(row => !row.preview.issue && row.preview.points > 0);
-  if (!previews.length) return { ok: false, message: "Nenhum projeto em obra tem uma equipe válida para trabalhar.", results: [] as { key: string; name: string; points: number; completed: boolean }[] };
 
-  game.minutes += hours * 60;
-  const results: { key: string; name: string; points: number; completed: boolean }[] = [];
-  for (const { project, preview } of previews) {
-    const before = projectProgress(project);
-    advanceProject(project, preview.points);
-    const after = projectProgress(project);
-    const completed = project.state === "Concluído";
-    const applied = Math.max(0, Math.min(preview.points, before.required - before.value));
-    results.push({ key: project.key, name: project.name, points: applied, completed });
-    addLog(game, "abrigo", completed
-      ? `${project.name} foi ${before.repairing ? "reparado" : "concluído"} após um turno de ${hours}h com ${preview.workers.map(worker => worker.name).join(", ")}.`
-      : `${project.name}: +${applied} progresso em ${hours}h (${after.value}/${after.required}) com ${preview.workers.map(worker => worker.name).join(", ")}.`);
+  // Fluxo legado mantido para compatibilidade: transforma a ação imediata em
+  // turnos reais e deixa o relógio central processar todas as conclusões.
+  const draft = structuredClone(game);
+  const active = (draft.shelter.projects ?? []).filter(project => project.state === "Em construção");
+  const scheduledKeys: string[] = [];
+  for (const project of active) {
+    const preview = projectWorkPreview(draft, draft.shelter, project);
+    if (preview.issue || preview.points < 1) continue;
+    const scheduled = scheduleShelterWorkShift(draft, project, hours);
+    if (scheduled.ok) scheduledKeys.push(project.key);
   }
-  return { ok: true, message: `${hours}h de trabalho registradas em ${results.length} projeto(s).`, results };
+  if (!scheduledKeys.length) return { ok: false, message: "Nenhum projeto em obra tem uma equipe válida para trabalhar.", results: [] as { key: string; name: string; points: number; completed: boolean }[] };
+
+  const time = advanceCampaignTime(draft, hours * 60);
+  if (!time.ok) return { ok: false, message: "Não foi possível avançar o relógio central.", results: [] as { key: string; name: string; points: number; completed: boolean }[] };
+  const results = time.completedWork.filter(row => scheduledKeys.includes(row.key))
+    .map(row => ({ key: row.key, name: row.name, points: row.points, completed: row.completed }));
+  Object.assign(game, draft);
+  return { ok: true, message: `${hours}h de trabalho registradas em ${results.length} projeto(s) pelo relógio central.`, results };
 }
 
 export function projectContributions(shelter: ShelterState, game?: GameState) {

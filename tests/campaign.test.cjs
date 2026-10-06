@@ -22,6 +22,7 @@ const { revealSector, preserveKnownSectors, assignCustomSector, redrawSector, se
 const { parseWeaponDamage, resolveActionRoll, resolveRollResources, resolveWeaponDamage } = require('../lib/rolls.ts');
 const shelterProjects = require('../lib/shelter-projects.ts');
 const campaignTime = require('../lib/time.ts');
+const activity = require('../lib/activity.ts');
 const npcGenerator = require('../lib/npc-generator.ts');
 const combatResources = require('../lib/combat-resources.ts');
 const { rollInfo } = require('../lib/roll-log.ts');
@@ -812,11 +813,14 @@ test('descanso da mesa aplica duas escolhas por sobrevivente e registra Fear aut
   const g = campaign(); const [ana, bia] = g.survivors;
   ana.hp = 4; ana.stress = 4; ana.armorMarked = 2; ana.hope = 0;
   bia.hp = 4; bia.hope = 0;
+  const shortStart = g.minutes;
   const short = abilities.resolveGroupRest(g, 'short', [
     { survivorId: ana.id, choices: [{ action: 'hp', targetId: ana.id }, { action: 'stress', targetId: ana.id }] },
     { survivorId: bia.id, choices: [{ action: 'prepare', targetId: bia.id }, { action: 'prepare', targetId: bia.id }] },
   ], () => 3);
   assert.equal(short.ok, true);
+  assert.equal(g.minutes, shortStart + 60);
+  assert.equal(short.minutes, 60);
   assert.equal(ana.hp, 0);
   assert.equal(ana.stress, 0);
   assert.equal(bia.hope, 2);
@@ -825,11 +829,14 @@ test('descanso da mesa aplica duas escolhas por sobrevivente e registra Fear aut
   assert.equal(g.log.filter(entry => entry.kind === 'descanso').length, 4);
 
   ana.hp = 3; ana.armorMarked = 2; bia.stress = 5; bia.hope = 0;
+  const longStart = g.minutes;
   const long = abilities.resolveGroupRest(g, 'long', [
     { survivorId: ana.id, choices: [{ action: 'hp-full', targetId: ana.id }, { action: 'prepare', targetId: ana.id }] },
     { survivorId: bia.id, choices: [{ action: 'stress-full', targetId: bia.id }, { action: 'prepare', targetId: bia.id }] },
   ], () => 2);
   assert.equal(long.ok, true);
+  assert.equal(g.minutes, longStart + 360);
+  assert.equal(long.minutes, 360);
   assert.equal(ana.hp, 0);
   assert.equal(bia.stress, 0);
   assert.equal(ana.hope, 2);
@@ -838,11 +845,13 @@ test('descanso da mesa aplica duas escolhas por sobrevivente e registra Fear aut
   assert.equal(g.longRest, 2);
 
   ana.hp = 0; bia.hp = 5;
+  const helpStart = g.minutes;
   const help = abilities.resolveGroupRest(g, 'short', [
     { survivorId: ana.id, choices: [{ action: 'hp', targetId: bia.id }, { action: 'fiction', targetId: ana.id }] },
     { survivorId: bia.id, choices: [{ action: 'fiction', targetId: bia.id }, { action: 'fiction', targetId: bia.id }] },
   ], () => 4);
   assert.equal(help.ok, true);
+  assert.equal(g.minutes, helpStart + 60);
   assert.equal(bia.hp, 0);
 });
 
@@ -2090,6 +2099,55 @@ test('jogador pode se voluntariar, trabalhar quatro horas e concluir obra pelo r
   assert.equal(workshop.state, 'Concluído');
   assert.equal(workshop.volunteerShifts.length, 0);
   assert.equal(g.minutes, before + 240);
+});
+
+test('compromisso temporal do sobrevivente bloqueia descanso nas mesmas horas', () => {
+  const g = campaign(); const ana = g.survivors[0];
+  assert.equal(require('../lib/game.ts').establishShelter(g, '0,0'), true);
+  g.shelter.parts = 5; ana.hex = '0,0';
+  const barricades = shelterProjects.createShelterProject('barricades');
+  g.shelter.projects.push(barricades);
+  assert.equal(shelterProjects.joinShelterProjectAsSurvivor(g, barricades, ana.id), null);
+  assert.equal(shelterProjects.startProject(g.shelter, barricades), null);
+  assert.equal(shelterProjects.scheduleSurvivorWorkShift(g, barricades, ana.id, 4).ok, true);
+  assert.match(activity.survivorTimedCommitment(g, ana.id).label, /Barricadas/);
+  const before = structuredClone(g);
+  const rest = abilities.resolveGroupRest(g, 'short', g.survivors.map(person => ({
+    survivorId: person.id,
+    choices: [{ action:'prepare', targetId:person.id }, { action:'fiction', targetId:person.id }],
+  })), () => 2);
+  assert.equal(rest.ok, false);
+  assert.match(rest.message, /ocupado/i);
+  assert.deepEqual(g, before);
+});
+
+test('descanso longo pode ser preparado e aplicado durante o fechamento da noite sem somar outras 6h após o amanhecer', () => {
+  const g = campaign();
+  g.minutes = 22 * 60;
+  for (const person of g.survivors) person.restPlan = { kind:'long', choices:[
+    { action:'prepare', targetId:person.id }, { action:'fiction', targetId:person.id },
+  ]};
+  const direct = abilities.resolveGroupRest(g, 'long', abilities.plannedRestSelections(g, 'long'), () => 2);
+  assert.equal(direct.ok, false);
+  assert.match(direct.message, /Encerrar dia/);
+  assert.equal(survival.closeDay(g, 0, 0), true);
+  assert.equal(g.minutes, 480);
+  const overnight = abilities.resolvePlannedOvernightRest(g, () => 2);
+  assert.equal(overnight.ok, true);
+  assert.equal(overnight.minutes, 0);
+  assert.equal(g.minutes, 480);
+});
+
+test('interfaces de tempo avisam correção para trás, eventos pendentes e tratamento de 30 min', () => {
+  const page = fs.readFileSync(require.resolve('../app/page.tsx'), 'utf8');
+  const close = fs.readFileSync(require.resolve('../components/day-close-dialog.tsx'), 'utf8');
+  const survivor = fs.readFileSync(require.resolve('../components/survivor-panel.tsx'), 'utf8');
+  assert.match(page, /Confirmar correção para trás/);
+  assert.match(page, /não desfaz buscas, obras, recursos, eventos/i);
+  assert.match(close, /evento\(s\) temporal\(is\) pendente/);
+  assert.match(close, /Aplicar descanso longo durante a noite/);
+  assert.match(survivor, /Tratamento imediato · 30 min/);
+  assert.match(survivor, /advanceCampaignTime\(draft, 30/);
 });
 
 test('sobrevivente em turno no abrigo não pode viajar até o trabalho terminar', () => {

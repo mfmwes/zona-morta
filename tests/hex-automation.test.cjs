@@ -15,6 +15,7 @@ const { moveSurvivors } = require('../lib/hex-actions.ts');
 const { abilityAvailable } = require('../lib/abilities.ts');
 const { catalogKey, itemFromCatalog } = require('../lib/inventory.ts');
 const auto = require('../lib/hex-automation.ts');
+const shelterProjects = require('../lib/shelter-projects.ts');
 const { validExplorationPreferences } = require('../lib/hex-automation-validation.ts');
 function campaign(origin = content.origins[1].name) {
   const game = defaultState();
@@ -376,6 +377,28 @@ test('central desconta Experiência e aplica crítico conforme as regras existen
   auto.rollSearchAccess(f.game,'0,0','market','search-1',{actorId:f.actor.id,trait:'Instinto',edge:'advantage',experiences:['origin'],other:0},die(3,3,2));
   assert.equal(f.actor.hope,3); assert.equal(f.actor.stress,1); assert.equal(f.game.fear,0);
 });
+test('participante em turno do abrigo não pode iniciar nem concluir busca nas mesmas horas', () => {
+  const f=campaign();
+  assert.equal(require('../lib/game.ts').establishShelter(f.game,'0,0'),true);
+  f.game.shelter.parts=5;
+  const project=shelterProjects.createShelterProject('barricades');
+  f.game.shelter.projects.push(project);
+  assert.equal(shelterProjects.joinShelterProjectAsSurvivor(f.game,project,f.actor.id),null);
+  assert.equal(shelterProjects.startProject(f.game.shelter,project),null);
+  assert.equal(shelterProjects.scheduleSurvivorWorkShift(f.game,project,f.actor.id,4).ok,true);
+  const before=structuredClone(f.game);
+  assert.match(auto.startSearch(f.game,input(f)),/ocupado/i);
+  assert.deepEqual(f.game,before);
+
+  project.volunteerShifts=[];
+  assert.equal(auto.startSearch(f.game,input(f)),null);
+  auto.rollSearchLoot(f.game,'0,0','market','search-1',die(1));
+  assert.equal(shelterProjects.scheduleSurvivorWorkShift(f.game,project,f.actor.id,4).ok,true);
+  const pending=structuredClone(f.game);
+  assert.match(auto.completeSearch(f.game,'0,0','market','search-1'),/ocupado/i);
+  assert.deepEqual(f.game,pending);
+});
+
 test('falha de validação e passagem de dia não cobram tempo ou habilidade', () => {
   const f=campaign('Trabalhador(a) de depósito'); f.area.minutes=60;
   auto.startSearch(f.game,input(f,{warehouseWorker:f.actor.id}));

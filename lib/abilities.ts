@@ -4,6 +4,8 @@ import { consumeShelterComfortRest } from "./shelter-projects";
 import { settleSceneAmmunition } from "./combat-resources";
 import { localizeRulesText } from "./terminology";
 import { endConflictScene } from "./conflict";
+import { advanceCampaignTime } from "./time";
+import { timedActionParticipantIssue } from "./activity";
 
 export type AbilityCost = "free" | "hope1" | "hope3" | "stress1" | "armor1";
 export type AbilityPeriod = "scene" | "day" | "expedition" | "shortRest" | "longRest" | "rest" | "place" | "patient" | null;
@@ -11,6 +13,9 @@ export type RestKind = "short" | "long";
 export type RestAction = "hp" | "stress" | "armor" | "prepare" | "fiction" | "hp-full" | "stress-full" | "armor-full";
 export type RestChoice = { action: RestAction; targetId: string };
 export type RestSelection = { survivorId: string; choices: RestChoice[] };
+export type RestResolutionOptions = { advanceTime?: boolean; ignoreCommitments?: boolean };
+
+export const restDurationMinutes: Record<RestKind, number> = { short: 60, long: 360 };
 
 export const restActionLabels: Record<RestAction, string> = {
   hp: "Recuperar PV", stress: "Aliviar Estresse", armor: "Reparar Armadura", prepare: "Preparar", fiction: "Ação de ficção",
@@ -125,7 +130,18 @@ export function registerRest(game: GameState, kind: RestKind) {
   addLog(game, "descanso", `Descanso ${kind === "short" ? "curto" : "longo"} concluído: benefícios escolhidos e limites de habilidade foram atualizados.`);
 }
 
-export function resolveGroupRest(game: GameState, kind: RestKind, selections: RestSelection[], roll = rollDie) {
+export function plannedRestSelections(game: GameState, kind: RestKind): RestSelection[] | null {
+  const selections = game.survivors.map(person => {
+    const plan = person.restPlan;
+    return plan?.kind === kind && plan.choices.length === 2
+      ? { survivorId: person.id, choices: structuredClone(plan.choices) }
+      : null;
+  });
+  return selections.every(Boolean) ? selections as RestSelection[] : null;
+}
+
+export function resolveGroupRest(game: GameState, kind: RestKind, selections: RestSelection[], roll = rollDie,
+  options: RestResolutionOptions = {}) {
   if (!game.survivors.length || selections.length !== game.survivors.length) return { ok: false as const, message: "Defina duas ações para cada sobrevivente." };
 
   const validActions = new Set(restActionsFor(kind));
@@ -137,6 +153,22 @@ export function resolveGroupRest(game: GameState, kind: RestKind, selections: Re
       return !validActions.has(choice.action) || !target || survivorHex(game, target) !== survivorHex(game, person);
     });
   })) return { ok: false as const, message: "Cada sobrevivente precisa de duas ações válidas com alvos presentes no mesmo hex." };
+
+  if (!options.ignoreCommitments) {
+    const commitmentIssue = timedActionParticipantIssue(game, game.survivors.map(person => person.id),
+      kind === "short" ? "um descanso curto" : "um descanso longo");
+    if (commitmentIssue) return { ok: false as const, message: commitmentIssue };
+  }
+  if (options.advanceTime !== false) {
+    const duration = restDurationMinutes[kind];
+    if (game.minutes + duration >= 1440) return { ok: false as const,
+      message: kind === "long"
+        ? "O descanso longo atravessaria o fim do dia. Registre as escolhas e conclua o descanso durante Encerrar dia."
+        : "O descanso curto precisa terminar antes da passagem de dia." };
+    const time = advanceCampaignTime(game, duration,
+      `Descanso ${kind === "short" ? "curto" : "longo"}: +${duration / 60}h no relógio da campanha.`);
+    if (!time.ok) return { ok: false as const, message: "Não foi possível avançar o relógio para concluir o descanso." };
+  }
 
   const preparedByHex = new Map<string, number>();
   for (const person of game.survivors) {
@@ -191,5 +223,11 @@ export function resolveGroupRest(game: GameState, kind: RestKind, selections: Re
   game.fear += actualFear;
   addLog(game, "descanso", `Descanso ${kind === "short" ? "curto" : "longo"}: Medo +${actualFear}${kind === "long" ? ` (d4 ${fearDie} + ${game.survivors.length} PJ${game.survivors.length === 1 ? "" : "s"}` : ` (d4 ${fearDie}`}${comfortReduction ? ` − ${comfortReduction} Conforto do abrigo` : ""}).`);
   registerRest(game, kind);
-  return { ok: true as const, fear: actualFear, summaries };
+  return { ok: true as const, fear: actualFear, summaries, minutes: options.advanceTime === false ? 0 : restDurationMinutes[kind] };
+}
+
+export function resolvePlannedOvernightRest(game: GameState, roll = rollDie) {
+  const selections = plannedRestSelections(game, "long");
+  if (!selections) return { ok: false as const, message: "Todos os sobreviventes precisam registrar duas escolhas de descanso longo antes do amanhecer." };
+  return resolveGroupRest(game, "long", selections, roll, { advanceTime: false, ignoreCommitments: true });
 }
