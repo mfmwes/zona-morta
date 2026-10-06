@@ -129,7 +129,7 @@ try {
   connections.forEach(c=>{c.messages.length=0;});
   assert.equal((await mf.dispatchFetch(origin+imagePath,{method:'DELETE',headers:headers('master')})).status,200);
   await until(()=>connections.every(c=>c.messages.length),'Presentation close notification missing');
-  assert.ok(connections.every(c=>c.messages.every(message=>JSON.stringify(message)==='{"type":"changed"}')));
+  assert.ok(connections.every(c=>c.messages.every(message=>message.type==='changed'&&message.presentation===true&&message.revision===undefined)));
   await db.prepare('UPDATE campaign_players SET revoked_at=? WHERE owner_id=?').bind(now,state.campaignId).run();
   assert.equal((await mf.dispatchFetch(origin+path+'&since=3',{headers:headers('player')})).status,403);
   assert.equal(isolatedMessages.length,0);
