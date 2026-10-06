@@ -11,7 +11,8 @@ export type SurvivorTimedCommitment = {
 
 /** Compromissos temporais impedem que o mesmo sobrevivente use as mesmas horas
  * em viagem, busca ou descanso. Hoje o único compromisso persistente é trabalho
- * no abrigo; a função fica centralizada para novas atividades futuras. */
+ * no abrigo; a função fica centralizada para novas atividades futuras. O relógio
+ * paralelo de subgrupos continua fora desta etapa. */
 export function survivorTimedCommitment(game: GameState, survivorId: string): SurvivorTimedCommitment | null {
   const now = absoluteMinutes(game);
   for (const project of game.shelter.projects ?? []) {
