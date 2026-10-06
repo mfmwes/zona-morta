@@ -215,6 +215,8 @@ test('fluxo de exploração prioriza ação atual e recolhe configurações avan
   assert.match(dialog,/PRÓXIMA AÇÃO/);
   assert.match(dialog,/Preparação do local/);
   assert.match(dialog,/Recolher achados/);
+  assert.match(dialog,/Busca proposta pelos jogadores/);
+  assert.match(dialog,/A área fica reservada até o grupo iniciar ou cancelar a proposta/);
   assert.match(dialog,/Distribuir automaticamente/);
   assert.match(dialog,/Ajustar distribuição manualmente/);
   assert.match(explorer,/Preparação do setor/);

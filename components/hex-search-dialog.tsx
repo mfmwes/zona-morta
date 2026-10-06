@@ -9,7 +9,7 @@ import { content, survivorsAtHex, type GameState } from "@/lib/game";
 import { createId } from "@/lib/id";
 import { catalogKey } from "@/lib/inventory";
 import { searchAvailabilityError } from "@/lib/exploration";
-import { collectLocationStock, deepSearchLimit, deepSearchesUsed, finishPreparedSearch, declareSearchArea, depositExpeditionItems, locationScaleLabels, locationScaleOf, lootDefinitions, prepareLocation, quickSearchOptions, registerVisibleStock, resolveNoVisibleStock, resizeLocationPreparation, resolvePreparedSearch, searchAreaState, searchResult, startDeepSearch, suggestCollection, suggestVisibleStock, warehouseWorkers, type CollectionLine, type VisibleStockSuggestion } from "@/lib/hex-automation";
+import { collectLocationStock, deepSearchLimit, deepSearchesUsed, finishPreparedSearch, declareSearchArea, depositExpeditionItems, locationScaleLabels, locationScaleOf, lootDefinitions, pendingPlayerSearchOperation, prepareLocation, quickSearchOptions, registerVisibleStock, resolveNoVisibleStock, resizeLocationPreparation, resolvePreparedSearch, searchAreaSessionState, searchAreaState, searchResult, startDeepSearch, suggestCollection, suggestVisibleStock, warehouseWorkers, type CollectionLine, type VisibleStockSuggestion } from "@/lib/hex-automation";
 import { RollForm } from "@/components/roll-dialog";
 import type { LocationScale, SearchArea } from "@/lib/hex-automation-types";
 import { parallelTimeLabel, participantTimePreview, survivorTimedCommitment } from "@/lib/activity";
@@ -47,9 +47,15 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
   const [deepOperationId, setDeepOperationId] = useState(createId);
   const [deepActorId, setDeepActorId] = useState("");
   const [quickNotice, setQuickNotice] = useState("");
-  const area = prep?.areas.find(row => row.id === areaId) ?? prep?.areas.find(row => prep.attempts.some(attempt => attempt.areaId === row.id && ["pending", "ready"].includes(attempt.status))) ?? prep?.areas.find(row => prep.stock.some(stock => stock.areaId === row.id && stock.remaining > 0)) ?? prep?.areas.find(row => row.searchable !== false && !prep.attempts.some(attempt => attempt.areaId === row.id)) ?? prep?.areas[0];
+  const area = prep?.areas.find(row => row.id === areaId)
+    ?? prep?.areas.find(row => Boolean(pendingPlayerSearchOperation(game, request.hexId, request.pointId, row.id)))
+    ?? prep?.areas.find(row => prep.attempts.some(attempt => attempt.areaId === row.id && ["pending", "ready"].includes(attempt.status)))
+    ?? prep?.areas.find(row => prep.stock.some(stock => stock.areaId === row.id && stock.remaining > 0))
+    ?? prep?.areas.find(row => row.searchable !== false && !prep.attempts.some(attempt => attempt.areaId === row.id))
+    ?? prep?.areas[0];
   const attempt = prep?.attempts.find(row => row.areaId === area?.id && (row.kind ?? "normal") === "normal");
   const deepAttempt = prep?.attempts.find(row => row.areaId === area?.id && row.kind === "deep");
+  const playerProposal = area ? pendingPlayerSearchOperation(game, request.hexId, request.pointId, area.id) : undefined;
   const available = searchAvailabilityError(game, request.hexId, request.pointId);
   const done = attempt && ["completed", "failed"].includes(attempt.status);
   const stock = prep?.stock.filter(row => row.remaining > 0) ?? [];
@@ -77,9 +83,10 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
   const attemptTimePreview = attempt ? participantTimePreview(game, attempt.participants, attempt.minutes) : null;
   const deepTimePreview = participantTimePreview(game, participants, 30);
   const deepAttemptTimePreview = deepAttempt ? participantTimePreview(game, deepAttempt.participants, deepAttempt.minutes) : null;
-  const selectedAreaState = point && area ? searchAreaState(point, area) : "available";
+  const selectedAreaState = point && area ? searchAreaSessionState(game, request.hexId, request.pointId, area) : "available";
   const stockUnits = stock.reduce((sum, row) => sum + row.remaining, 0);
-  const activeSearch = Boolean((attempt && ["pending", "ready"].includes(attempt.status))
+  const activeSearch = Boolean(playerProposal
+    || (attempt && ["pending", "ready"].includes(attempt.status))
     || (deepAttempt && ["pending", "ready"].includes(deepAttempt.status)));
 
   function act(fn: (draft: GameState) => string | null, message?: string) {
@@ -201,9 +208,10 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
           <div className="hex-search-area-panel-head"><b>Áreas do local</b><small>Escolha onde agir</small></div>
           <div className="hex-search-area-list">
             {prep.areas.map(row => {
-              const state = point ? searchAreaState(point, row) : "available";
+              const state = point ? searchAreaSessionState(game, request.hexId, request.pointId, row) : "available";
               const remaining = prep.stock.filter(stockRow => stockRow.areaId === row.id && stockRow.remaining > 0).reduce((sum, stockRow) => sum + stockRow.remaining, 0);
-              const label = state === "ongoing" ? "Busca em andamento"
+              const label = state === "proposed" ? "Busca proposta"
+                : state === "ongoing" ? "Busca em andamento"
                 : state === "deep-available" ? "Busca profunda disponível"
                 : state === "deep-ongoing" ? "Busca profunda em andamento"
                 : state === "exhausted" ? "Esgotada"
@@ -211,7 +219,7 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
                 : state === "narrative" ? "Exploração"
                 : "Disponível";
               const Icon = state === "exhausted" ? CheckCircle2
-                : state === "ongoing" || state === "deep-ongoing" ? Clock3
+                : state === "proposed" || state === "ongoing" || state === "deep-ongoing" ? Clock3
                 : state === "deep-available" ? Search
                 : state === "narrative" ? Eye : Circle;
               return <button type="button" key={row.id} className={`hex-search-area-card ${row.id === area.id ? "is-active" : ""} is-${state}`}
@@ -235,12 +243,13 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
         <div className="hex-search-area-detail">
           <section className="hex-search-step hex-search-area-intro">
             <div className="hex-search-area-title"><div><span className="tag">{area.searchable === false ? "Exploração narrativa" : area.table}</span><h3>{area.name}</h3></div>
-              <span className={`hex-search-area-state is-${point ? searchAreaState(point, area) : "available"}`}>
-                {point && searchAreaState(point, area) === "exhausted" ? "Esgotada"
-                  : point && searchAreaState(point, area) === "deep-available" ? "Profunda disponível"
-                  : point && searchAreaState(point, area) === "deep-ongoing" ? "Profunda em andamento"
-                  : point && searchAreaState(point, area) === "searched" ? "Vasculhada"
-                  : point && searchAreaState(point, area) === "ongoing" ? "Em andamento"
+              <span className={`hex-search-area-state is-${selectedAreaState}`}>
+                {selectedAreaState === "proposed" ? "Busca proposta"
+                  : selectedAreaState === "exhausted" ? "Esgotada"
+                  : selectedAreaState === "deep-available" ? "Profunda disponível"
+                  : selectedAreaState === "deep-ongoing" ? "Profunda em andamento"
+                  : selectedAreaState === "searched" ? "Vasculhada"
+                  : selectedAreaState === "ongoing" ? "Em andamento"
                   : area.searchable === false ? "Sem d12 próprio" : "Disponível"}
               </span>
             </div>
@@ -249,7 +258,7 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
               ? "Esta área existe na exploração e pode conter elementos à vista, pistas ou obstáculos, mas não concede uma busca de recursos própria."
               : "Esta área pode receber uma busca normal. Depois disso, o resultado e o estoque permanecem registrados."}</p>
 
-            {!attempt && <details><summary className="cursor-pointer text-sm font-bold">Revisar preparação do mestre</summary><div className="grid gap-3 mt-3">
+            {!attempt && !playerProposal && <details><summary className="cursor-pointer text-sm font-bold">Revisar preparação do mestre</summary><div className="grid gap-3 mt-3">
               <label className="text-sm"><input type="checkbox" checked={area.searchable !== false} onChange={event => configure({ searchable: event.target.checked })} /> Esta área permite busca de recursos</label>
               <Field label="Nome do espaço" value={area.name} onChange={name => configure({ name })} />
               <Field label="Sinal desta área · confirme na ficção" value={area.signal} onChange={signal => configure({ signal })} />
@@ -266,6 +275,13 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
               <details><summary>Resultados que contradizem fatos já estabelecidos</summary><p className="text-xs subtle">Marque antes de rolar. O sistema usa o próximo resultado plausível e conserva o dado original.</p><div className="flex flex-wrap gap-2">{content.lootTables.find(row => row.name === area.table)?.entries.map(row => <label key={row.roll} title={row.text}><input type="checkbox" checked={area.excludedRolls?.includes(row.roll) ?? false} onChange={event => configure({ excludedRolls: event.target.checked ? [...(area.excludedRolls ?? []), row.roll] : (area.excludedRolls ?? []).filter(value => value !== row.roll) })} /> {row.roll}</label>)}</div><Field label="Fato que justifica a exclusão" value={area.exclusionReason ?? ""} onChange={exclusionReason => configure({ exclusionReason })} /></details></>}
             </div></details>}
           </section>
+
+          {playerProposal?.status === "forming" && <section className="hex-search-step hex-search-player-proposal">
+            <h3><Clock3 size={18} /> Busca proposta pelos jogadores</h3>
+            <p className="text-sm"><b>{game.survivors.find(person => person.id === playerProposal.initiatorId)?.name ?? "Sobrevivente"}</b> propôs {playerProposal.depth === "deep" ? "uma busca profunda" : "uma busca"} neste cômodo.</p>
+            <p className="text-sm subtle">{playerProposal.purpose || "Sem finalidade registrada"} · objetivo: {playerProposal.objective === "open" ? "vasculhar por achados" : playerProposal.objective || "não informado"}.</p>
+            <p className="text-xs subtle">Participantes confirmados: {playerProposal.participantIds.map(id => game.survivors.find(person => person.id === id)?.name ?? "Sobrevivente").join(", ") || "nenhum"}. A área fica reservada até o grupo iniciar ou cancelar a proposta.</p>
+          </section>}
 
           <details className="hex-search-step"><summary className="cursor-pointer text-sm font-bold">Itens à vista · sem busca</summary>
             <p className="text-xs subtle">Esta camada é independente da busca. Ela serve para estabelecer objetos evidentes na cena sem gastar tempo ou Barulho.</p>
@@ -312,7 +328,7 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
           <span id="hex-search-action" className="hex-scroll-anchor" aria-hidden="true" />
           {area.searchable === false && <div className="hex-search-narrative-note"><Eye size={17} /><span><b>Área de exploração</b><small>Use-a para pistas, obstáculos, cenas e itens à vista. Ela não aumenta a quantidade de rolagens de saque do local.</small></span></div>}
 
-          {area.searchable !== false && !attempt && <section className="hex-search-step"><h3><span>2</span> Iniciar busca</h3>
+          {area.searchable !== false && !attempt && !playerProposal && <section className="hex-search-step"><h3><span>2</span> Iniciar busca</h3>
             <div className="hex-quick-search">
               <div className="hex-quick-search-head"><div><b>Busca rápida nesta área</b><small>Os atalhos refletem categorias reais entre os achados previstos por <strong>{area.table}</strong>.</small></div><span className="tag">Toque nos apagados para entender</span></div>
               <div className="hex-quick-search-options">{quickOptions.map(option => <button type="button" key={option.id}

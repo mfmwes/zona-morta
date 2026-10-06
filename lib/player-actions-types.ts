@@ -54,7 +54,7 @@ export const playerCommandSchema = z.discriminatedUnion("type", [
   z.object({ ...base, type: z.literal("clear-marker") }).strict(),
 ]);
 export type PlayerCommand = z.infer<typeof playerCommandSchema>;
-export type PublicSearchAreaState = "available" | "ongoing" | "deep-available" | "deep-ongoing" | "exhausted" | "searched" | "narrative";
+export type PublicSearchAreaState = "available" | "proposed" | "ongoing" | "deep-available" | "deep-ongoing" | "exhausted" | "searched" | "narrative";
 export type PublicPlayerActions = {
   policy: Omit<PlayerActionPolicy, "areas" | "routes" | "supplies">;
   actorId: string; hexId: string; busy: string | null;
