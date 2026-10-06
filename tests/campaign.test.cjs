@@ -1052,7 +1052,7 @@ test('apresentação visual usa canal separado e não infla o JSON principal da 
   assert.doesNotMatch(page, /<TablePresentationControl campaignId=\{game\.campaignId\}/);
   assert.match(page, /<TablePresentationViewer presentation=\{presentation\} enabled=\{readOnlyPreview\}/);
   assert.match(page, /refreshPresentation/);
-  assert.match(page, /2500/);
+  assert.match(page, /startCampaignSync/);
   assert.match(route, /campaignPresentationVersion/);
   assert.match(route, /writeCampaignPresentation/);
   assert.match(route, /clearCampaignPresentation/);
@@ -2737,6 +2737,22 @@ test('arma que exige munição não pode disparar sem unidade física livre', ()
   assert.equal(combatResources.attackResourceState(g, a, 'Pistola', 1).ammoReady, false);
 });
 
+
+test('sincronização encerra conflito e atualiza recursos sem perder ficha pendente', () => {
+  const {PlayerSaveQueue}=require('../lib/player-save-queue.ts');
+  const g=campaign(), actor=g.survivors[0].id;
+  g.conflict=conflictScene.createConflictScene({name:'Conflito',sceneNumber:1,day:g.day,time:'08:00',survivorIds:[actor]});
+  const before=collaboration.projectPlayerGame(g,actor), after=structuredClone(before);
+  after.survivors[0].hp=1;
+  const queue=new PlayerSaveQueue();assert.equal(queue.enqueue(before,after),true);
+  const job=structuredClone(queue.first);
+  conflictScene.endConflictScene(g.conflict,g.day,'08:10');g.fear=5;g.noise=3;g.survivors[0].notes='Nota nova do mestre';
+  const remote=collaboration.projectPlayerGame(g,actor), view=queue.overlay(remote);
+  assert.equal(view.publicConflict,undefined);assert.equal(view.fear,5);assert.equal(view.noise,3);
+  assert.equal(view.survivors[0].hp,1);assert.equal(view.survivors[0].notes,'Nota nova do mestre');
+  assert.deepEqual(queue.first,job);assert.notEqual(remote.survivors[0].hp,1);
+  queue.complete(job.id);assert.deepEqual(queue.overlay(remote),remote);
+});
 
 test('salvamentos rápidos preservam cada clique, rolagem e custo em ordem', async () => {
   const {PlayerSaveQueue}=require('../lib/player-save-queue.ts');

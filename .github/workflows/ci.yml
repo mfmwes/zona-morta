@@ -52,6 +52,9 @@ jobs:
       - name: Validar build
         run: pnpm build
 
+      - name: Validar sincronização em tempo real
+        run: node scripts/check-campaign-live.mjs
+
       - name: Smoke test do Worker
         shell: bash
         run: |

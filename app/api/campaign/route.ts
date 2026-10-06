@@ -2,7 +2,7 @@ import { playerTeamPeers as restPeers } from "@/lib/player-preview";
 import { applyPlayerSheetEdit, type SheetEditPayload } from "@/lib/player-sheet-edit";
 import { validPlayerActionState } from "@/lib/player-actions-types";
 import { validPortraitFrame } from "@/lib/portrait-frame";
-import { campaignExists, campaignOwnerId, findPlayer, readCampaign, restoreAccountCharacterToCampaign, syncCampaignAccountCharacters, wasRevoked, writeCampaign } from "@/db/state";
+import { campaignExists, campaignOwnerId, campaignRevision, findPlayer, readCampaign, restoreAccountCharacterToCampaign, syncCampaignAccountCharacters, wasRevoked, writeCampaign } from "@/db/state";
 import { sameOrigin, siteUser } from "@/lib/auth";
 import { projectPlayerGame } from "@/lib/collaboration";
 import { ammunitionTypes, type AmmunitionType, type GameState } from "@/lib/game";
@@ -219,6 +219,9 @@ export async function GET(request: Request) {
     const ownerId = await campaignOwnerId(campaignId);
     if (!ownerId) return Response.json({ error: "Campanha não encontrada." }, { status: 404 });
     if (ownerId === user.id) {
+      const since = new URL(request.url).searchParams.get("since");
+      if (since !== null && Number(since) === await campaignRevision(campaignId))
+        return Response.json({ revision: Number(since), role: "mestre", ownerId: campaignId }, { headers: noStore });
       const data = await readCampaign(campaignId);
       const state = preserveKnownSectors(data.state);
       await syncCampaignAccountCharacters(campaignId, state);
@@ -232,6 +235,10 @@ export async function GET(request: Request) {
         return Response.json({ role: "convidado", ownerId: campaignId }, { headers: noStore });
       return Response.json({ error: "Campanha não encontrada." }, { status: 404 });
     }
+    const since = new URL(request.url).searchParams.get("since");
+    if (since !== null && (new URL(request.url).searchParams.get("survivor") ?? "") === (member.survivor_id ?? "")
+      && Number(since) === await campaignRevision(campaignId))
+      return Response.json({ revision: Number(since), role: "jogador", ownerId: campaignId, survivorId: member.survivor_id }, { headers: noStore });
     const data = await readCampaign(campaignId);
     let state = preserveKnownSectors(data.state);
     let currentRevision = data.revision;

@@ -3,6 +3,7 @@ import { addLog, defaultState, normalizeSurvivorAmmunition, type GameState, type
 import { preserveKnownSectors } from "@/lib/sectors";
 import { normalizeShelter } from "@/lib/shelter-projects";
 import { randomToken, tokenHash } from "@/lib/auth";
+import { notifyCampaignChanged } from "./campaign-live";
 
 type Row = { revision: number; body: string };
 type PresentationRow = { id: string; image: string; title: string | null; caption: string | null; active: number; updated_at: string };
@@ -123,6 +124,12 @@ function campaignDisplay(row: CampaignListRow): CampaignSummary {
   };
 }
 
+export async function campaignRevision(campaignId: string) {
+  const row = await database().prepare("SELECT revision FROM campaign_states WHERE owner_id = ?")
+    .bind(campaignId).first<{ revision: number }>();
+  return row?.revision ?? null;
+}
+
 export async function readCampaign(campaignId: string) {
   await ensureCampaignSchema();
   const db = database();
@@ -188,6 +195,7 @@ export async function writeCampaign(campaignId: string, state: GameState, expect
       ).bind(body, now, campaignId, expectedRevision).run();
   if (!result.meta.changes) return null;
   await db.prepare("UPDATE campaigns SET updated_at = ? WHERE id = ?").bind(now, campaignId).run();
+  await notifyCampaignChanged(campaignId);
   try {
     await syncCampaignAccountCharacters(campaignId, persisted);
   } catch (error) {
@@ -394,12 +402,14 @@ export async function writeCampaignPresentation(campaignId: string, presentation
       updated_at = excluded.updated_at`)
     .bind(campaignId, presentation.id, presentation.image, presentation.title ?? null, presentation.caption ?? null,
       presentation.active ? 1 : 0, now).run();
+  await notifyCampaignChanged(campaignId);
   return `${presentation.id}:${presentation.active ? 1 : 0}:${now}`;
 }
 
 export async function clearCampaignPresentation(campaignId: string) {
   await ensureCampaignSchema();
   await database().prepare("DELETE FROM campaign_presentations WHERE owner_id = ?").bind(campaignId).run();
+  await notifyCampaignChanged(campaignId);
   return "none";
 }
 
@@ -490,6 +500,7 @@ export async function invitePlayer(campaignId: string, email: string, survivorId
       "INSERT INTO campaign_players (owner_id, email, survivor_id, created_at) VALUES (?, ?, ?, ?)"
     ).bind(campaignId, email, survivorId, new Date().toISOString()).run();
   }
+  await notifyCampaignChanged(campaignId);
 }
 
 export async function rotateCampaignInvite(campaignId: string) {
@@ -514,6 +525,7 @@ export async function joinCampaign(campaignId: string, userId: string, email: st
   await db.prepare(
     "INSERT OR IGNORE INTO campaign_players (owner_id, email, user_id, survivor_id, created_at) VALUES (?, ?, ?, NULL, ?)"
   ).bind(campaignId, email, userId, new Date().toISOString()).run();
+  await notifyCampaignChanged(campaignId);
   return findPlayer(campaignId, userId, email);
 }
 
@@ -529,6 +541,7 @@ export async function assignPlayerCharacter(campaignId: string, userId: string, 
     const result = await database().prepare(
       "UPDATE campaign_players SET survivor_id = ? WHERE owner_id = ? AND user_id = ? AND survivor_id IS NULL AND revoked_at IS NULL"
     ).bind(survivorId, campaignId, userId).run();
+    if (result.meta.changes) await notifyCampaignChanged(campaignId);
     return Boolean(result.meta.changes);
   } catch { return false; }
 }
@@ -536,4 +549,5 @@ export async function assignPlayerCharacter(campaignId: string, userId: string, 
 export async function removePlayer(campaignId: string, email: string) {
   await database().prepare("UPDATE campaign_players SET revoked_at = ? WHERE owner_id = ? AND email = ?")
     .bind(new Date().toISOString(), campaignId, email).run();
+  await notifyCampaignChanged(campaignId);
 }

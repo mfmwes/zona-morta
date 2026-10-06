@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { startCampaignSync } from "@/lib/campaign-sync";
 import { toast } from "sonner";
 import { BookOpen, Brain, Clock3, Download, Droplets, Ear, Eye, EyeOff, House, LayoutDashboard, LogOut, Layers, Map, MessageSquare, MoreHorizontal, Package, RotateCcw, Settings, ShieldAlert, Swords, Upload, Users, Utensils, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -83,8 +84,13 @@ export default function CampaignApp() {
   const [startSectorId, setStartSectorId] = useState("random");
   const importInput = useRef<HTMLInputElement>(null);
   const current = useRef<GameState | null>(null);
+  const serverState = useRef<GameState | null>(null);
+  const serverActor = useRef<string | null>(null);
   const revision = useRef(0);
   const presentationVersion = useRef("");
+  const presentationFlight = useRef(false);
+  const presentationAgain = useRef(false);
+  const presentationForced = useRef(false);
   const pending = useRef<GameState | null>(null);
   const pendingBefore = useRef<GameState | null>(null);
   const roleRef = useRef<"mestre" | "jogador" | "convidado">("mestre");
@@ -139,21 +145,29 @@ export default function CampaignApp() {
   }, []);
 
   const refreshPresentation = useCallback(async (force = false) => {
+    presentationForced.current ||= force;
+    if (presentationFlight.current) { presentationAgain.current = true; return; }
     const campaignId = new URLSearchParams(window.location.search).get("campanha")?.trim() ?? "";
     if (!campaignId) {
       presentationVersion.current = "";
       setPresentation(undefined);
       return;
     }
+    presentationFlight.current = true;
     try {
-      const response = await fetch(presentationPath(force ? "" : presentationVersion.current), { cache: "no-store" });
-      if (!response.ok) return;
-      const data = await response.json() as { changed?: boolean; version?: string; presentation?: TablePresentation };
-      if (data.version) presentationVersion.current = data.version;
-      if (data.changed !== false) setPresentation(data.presentation);
+      do {
+        presentationAgain.current = false;
+        const since = presentationForced.current ? "" : presentationVersion.current;
+        presentationForced.current = false;
+        const response = await fetch(presentationPath(since), { cache: "no-store", signal: AbortSignal.timeout(15000) });
+        if (!response.ok) return;
+        const data = await response.json() as { changed?: boolean; version?: string; presentation?: TablePresentation };
+        if (data.version) presentationVersion.current = data.version;
+        if (data.changed !== false) setPresentation(data.presentation);
+      } while (presentationAgain.current);
     } catch {
       // A apresentação é auxiliar; falhas temporárias não derrubam o dossiê.
-    }
+    } finally { presentationFlight.current = false; }
   }, [presentationPath]);
 
   const loadCampaign = useCallback(async () => {
@@ -189,9 +203,11 @@ export default function CampaignApp() {
       setRole(data.role);
       setOwnerId(data.ownerId);
       setSurvivorId(data.survivorId ?? null);
+      serverActor.current = data.survivorId ?? null;
       setRestPeers(data.restPeers ?? []);
       if (!current.current) setTab(data.role === "jogador" ? "sobreviventes" : "resumo");
       current.current = data.state ?? null;
+      serverState.current = data.state ?? null;
       pending.current = null;
       pendingBefore.current = null;
       playerSaves.current.clear();
@@ -207,23 +223,6 @@ export default function CampaignApp() {
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void loadCampaign(); }, [loadCampaign]);
 
-  // A apresentação da mesa usa um canal pequeno e independente do estado
-  // principal. O endpoint devolve a imagem apenas quando a versão muda.
-  useEffect(() => {
-    const campaignId = new URLSearchParams(window.location.search).get("campanha")?.trim() ?? "";
-    if (!campaignId) return;
-    const timer = window.setInterval(() => {
-      if (current.current) void refreshPresentation(false);
-    }, 2500);
-    return () => window.clearInterval(timer);
-  }, [refreshPresentation]);
-
-  useEffect(() => {
-    const refresh = () => { if (!pending.current && !sending.current && !teamActionInFlight.current) void loadCampaign(); };
-    window.addEventListener("zona-morta:campaign-refresh", refresh);
-    return () => window.removeEventListener("zona-morta:campaign-refresh", refresh);
-  }, [loadCampaign]);
-
   useEffect(() => {
     const warnUnsaved = (event: BeforeUnloadEvent) => {
       if (!pending.current && !sending.current && !teamActionInFlight.current && !paused.current) return;
@@ -235,28 +234,48 @@ export default function CampaignApp() {
   }, []);
 
   useEffect(() => {
-    const timer = window.setInterval(async () => {
-      if (!current.current || pending.current || sending.current || paused.current || teamActionInFlight.current) return;
+    const campaignId = new URLSearchParams(window.location.search).get("campanha")?.trim();
+    if (!campaignId) return;
+    let disposed = false;
+    const refresh = async () => {
+      if (!current.current) return;
+      void refreshPresentation(false);
       try {
-        const response = await fetch(apiPath(), { cache: "no-store" });
-        if (response.status === 403) {
-          setLoadError("O acesso à campanha foi encerrado."); setGame(null); current.current = null; return;
+        const response = await fetch(apiPath() + "&since=" + revision.current + "&survivor=" + encodeURIComponent(serverActor.current ?? ""), { cache: "no-store", signal: AbortSignal.timeout(15000) });
+        if (disposed) return;
+        if ([401, 403, 404].includes(response.status)) {
+          setLoadError(response.status === 401 ? "Sua sessão expirou. Entre novamente." : "O acesso à campanha foi encerrado.");
+          setGame(null); setPresentation(undefined); current.current = null; stop(); return;
         }
         if (!response.ok) return;
         const data = await response.json() as CampaignResponse;
+        if (disposed) return;
         if ((data.revision ?? 0) < revision.current) return;
-        if (teamActionInFlight.current || pending.current || sending.current) return;
-        if (data.role === "jogador" && data.survivorId !== survivorId) setSurvivorId(data.survivorId ?? null);
+        if (data.role === "jogador") setSurvivorId(data.survivorId ?? null);
+        serverActor.current = data.survivorId ?? null;
+        roleRef.current = data.role; setRole(data.role);
         if (data.restPeers) setRestPeers(data.restPeers);
-        if (data.revision !== revision.current && data.state && !pending.current && !sending.current && !teamActionInFlight.current) {
+        window.dispatchEvent(new CustomEvent("zona-morta:campaign-synced"));
+        if (teamActionInFlight.current) return;
+        if (data.state) {
+          // The master's full-state PUT must retain its revision until saved.
+          // Player PATCHes carry their own baseline, so shared state can update
+          // immediately while personal changes remain in the local overlay.
+          if (data.role !== "jogador" && (pending.current || sending.current || paused.current)) return;
           revision.current = data.revision ?? 0;
-          current.current = data.state;
-          setGame(data.state);
+          serverState.current = data.state;
+          current.current = data.role === "jogador" ? playerSaves.current.overlay(data.state) : data.state;
+          if (pending.current && data.role === "jogador") pending.current = current.current;
+          setGame(current.current);
         }
       } catch { /* A próxima atualização tenta novamente. */ }
-    }, 8000);
-    return () => window.clearInterval(timer);
-  }, [apiPath, survivorId]);
+    };
+    const url = new URL("/api/campaign/live", window.location.href);
+    url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+    url.searchParams.set("campanha", campaignId);
+    const stop = startCampaignSync(url.toString(), refresh);
+    return () => { disposed = true; stop(); };
+  }, [apiPath, refreshPresentation]);
 
   const flush = useCallback((): Promise<void> => {
     if (sending.current || paused.current) return saveCompletion.current ?? Promise.resolve();
@@ -287,16 +306,20 @@ export default function CampaignApp() {
               break;
             }
             if (player && (!result.state || !Number.isInteger(result.revision))) throw new Error("Resposta incompleta do salvamento.");
-            revision.current = result.revision!;
+            if (result.revision! >= revision.current) {
+              revision.current = result.revision!;
+              if (result.state) serverState.current = result.state;
+            }
             if (playerJob) {
               playerSaves.current.complete(playerJob.id);
               if (playerSaves.current.length) pending.current = current.current;
             }
-            if (player && result.state && !pending.current) {
-              current.current = result.state;
-              setGame(result.state);
+            if (player && serverState.current) {
+              current.current = playerSaves.current.overlay(serverState.current);
+              if (pending.current) pending.current = current.current;
+              setGame(current.current);
             }
-            if (player && result.restPeers) setRestPeers(result.restPeers);
+            if (player && result.restPeers && result.revision === revision.current) setRestPeers(result.restPeers);
             if (!pending.current) { setStatus("salvo"); setSaveError(""); }
           } catch {
             pending.current = current.current;
@@ -306,7 +329,10 @@ export default function CampaignApp() {
             setSaveError("Conexão interrompida. Os dados continuam nesta tela; tente salvar novamente.");
           }
         }
-      } finally { sending.current = false; saveCompletion.current = null; }
+      } finally {
+        sending.current = false; saveCompletion.current = null;
+        window.dispatchEvent(new CustomEvent("zona-morta:campaign-refresh"));
+      }
     })();
     saveCompletion.current = work;
     return work;
@@ -362,12 +388,16 @@ export default function CampaignApp() {
       if (!response.ok) throw new TeamActionError(result.error || "Não foi possível registrar a ação.", response.status < 500);
       if (!result.state || result.revision === undefined) throw new TeamActionError("Resposta incompleta. Tente novamente a mesma ação.");
       revision.current = result.revision; current.current = result.state;
+      serverState.current = result.state;
       setGame(result.state); setSaveError(""); teamActionRetry.current=null; setTeamActionError("");
     } catch (cause) {
       if (cause instanceof TeamActionError && cause.rejected) { teamActionRetry.current=null; setTeamActionError(""); }
       else { teamActionRetry.current=payload; setTeamActionError("A conexão não confirmou sua última ação. Reenvie a mesma solicitação para conferir o resultado com segurança."); }
       throw cause;
-    } finally { teamActionInFlight.current = false; setStatus("salvo"); }
+    } finally {
+      teamActionInFlight.current = false; setStatus("salvo");
+      window.dispatchEvent(new CustomEvent("zona-morta:campaign-refresh"));
+    }
   }, [apiPath, flush, refreshPreview]);
 
   function retrySave() {

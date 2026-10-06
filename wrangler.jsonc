@@ -1,9 +1,13 @@
 {
   "name": "zona-morta",
-  "main": "vinext/server/fetch-handler",
+  "main": "worker/index.ts",
   "compatibility_date": "2026-05-22",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
+  "durable_objects": {
+    "bindings": [{ "name": "CAMPAIGN_LIVE", "class_name": "CampaignLive" }]
+  },
+  "migrations": [{ "tag": "campaign-live-v1", "new_sqlite_classes": ["CampaignLive"] }],
   "d1_databases": [
     {
       "binding": "DB",

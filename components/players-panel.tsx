@@ -18,11 +18,19 @@ export function PlayersPanel({ game, ownerId }: { game: GameState; ownerId: stri
   const link = typeof window === "undefined" || !code ? "" : window.location.origin + "/?campanha=" + encodeURIComponent(ownerId) + "#convite=" + code;
 
   useEffect(() => {
-    void fetch(api, { cache: "no-store" }).then(async response => {
+    let disposed = false, loading = false;
+    const refresh = () => {
+      if (loading) return;
+      loading = true;
+      void fetch(api, { cache: "no-store", signal: AbortSignal.timeout(15000) }).then(async response => {
       const result = await response.json() as { players?: Player[]; error?: string };
       if (!response.ok) throw new Error(result.error || "Não foi possível carregar os jogadores.");
-      setPlayers(result.players ?? []);
-    }).catch(reason => setError(String(reason)));
+      if (!disposed) setPlayers(result.players ?? []);
+      }).catch(reason => { if (!disposed) setError(String(reason)); }).finally(() => { loading = false; });
+    };
+    refresh();
+    window.addEventListener("zona-morta:campaign-synced", refresh);
+    return () => { disposed = true; window.removeEventListener("zona-morta:campaign-synced", refresh); };
   }, [api]);
 
   async function createInvite() {
