@@ -207,6 +207,24 @@ test('aceitar item aparente ou nada à vista resolve a camada do cômodo sem con
   assert.equal(point.preparation.attempts.length,beforeAttempts);
 });
 
+test('fluxo de exploração prioriza ação atual e recolhe configurações avançadas', () => {
+  const dialog=fs.readFileSync(require.resolve('../components/hex-search-dialog.tsx'),'utf8');
+  const explorer=fs.readFileSync(require.resolve('../components/hex-explorer.tsx'),'utf8');
+  assert.match(dialog,/Explorar \{point\?\.name/);
+  assert.match(dialog,/Fluxo de exploração do local/);
+  assert.match(dialog,/PRÓXIMA AÇÃO/);
+  assert.match(dialog,/Preparação do local/);
+  assert.match(dialog,/Recolher achados/);
+  assert.match(dialog,/Distribuir automaticamente/);
+  assert.match(dialog,/Ajustar distribuição manualmente/);
+  assert.match(explorer,/Preparação do setor/);
+  assert.match(explorer,/Detalhes do mestre/);
+  assert.match(explorer,/Retomar busca/);
+  assert.match(explorer,/Recolher achados/);
+  assert.match(explorer,/Escolher cômodo e buscar/);
+  assert.match(explorer,/Histórico de buscas/);
+});
+
 test('interface de item aparente oferece aceitar, rerrolar, nada à vista e registro manual', () => {
   const source=fs.readFileSync(require.resolve('../components/hex-search-dialog.tsx'),'utf8');
   assert.match(source,/Sugestão procedural leve/);

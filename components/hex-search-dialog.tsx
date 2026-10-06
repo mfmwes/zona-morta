@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Counter, Field, Pick } from "@/components/game-controls";
-import { content, displayTime, survivorsAtHex, type GameState } from "@/lib/game";
+import { content, survivorsAtHex, type GameState } from "@/lib/game";
 import { createId } from "@/lib/id";
 import { catalogKey } from "@/lib/inventory";
 import { searchAvailabilityError } from "@/lib/exploration";
@@ -68,7 +68,6 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
     const status = point ? searchAreaState(point, row) : "available";
     return ["deep-available", "deep-ongoing", "exhausted", "searched"].includes(status);
   }).length;
-  const deepAvailableAreas = searchableAreas.filter(row => point && searchAreaState(point, row) === "deep-available").length;
   const deepUsed = point ? deepSearchesUsed(point) : 0;
   const deepLimit = point ? deepSearchLimit(point) : 0;
   const availableAreas = searchableAreas.filter(row => point && searchAreaState(point, row) === "available").length;
@@ -78,6 +77,10 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
   const attemptTimePreview = attempt ? participantTimePreview(game, attempt.participants, attempt.minutes) : null;
   const deepTimePreview = participantTimePreview(game, participants, 30);
   const deepAttemptTimePreview = deepAttempt ? participantTimePreview(game, deepAttempt.participants, deepAttempt.minutes) : null;
+  const selectedAreaState = point && area ? searchAreaState(point, area) : "available";
+  const stockUnits = stock.reduce((sum, row) => sum + row.remaining, 0);
+  const activeSearch = Boolean((attempt && ["pending", "ready"].includes(attempt.status))
+    || (deepAttempt && ["pending", "ready"].includes(deepAttempt.status)));
 
   function act(fn: (draft: GameState) => string | null, message?: string) {
     let error: string | null = null;
@@ -136,8 +139,11 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
       setVisibleSuggestion(null);
     }
   }
+  function scrollToSection(id: string) {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
   return <Dialog open onOpenChange={open => { if (!open) onClose(); }}><DialogContent className="inventory-dialog hex-search-dialog sm:max-w-4xl">
-    <DialogHeader><DialogTitle>Buscar em {point?.name ?? "local removido"}</DialogTitle><DialogDescription>Prepare uma vez. Retome buscas e recolha os achados que ainda estão no local.</DialogDescription></DialogHeader>
+    <DialogHeader><DialogTitle>Explorar {point?.name ?? "local removido"}</DialogTitle><DialogDescription>Escolha um cômodo, resolva a busca e recolha os achados. Preparação e ajustes avançados ficam disponíveis sem ocupar o fluxo principal.</DialogDescription></DialogHeader>
     <div className="hex-location-path"><span><small>Setor do mapa · Hex {request.hexId}</small><b>{hex?.sector?.name ?? "Não revelado"}</b></span><span><small>Local neste setor</small><b>{point?.name ?? "Removido"}</b></span></div>
     {available && <p role="alert" className="text-sm text-red-700">{available}</p>}
     {!prep && point && <section className="hex-search-step"><h3>Preparar este local</h3><p className="text-sm subtle">Organiza áreas internas e preserva buscas antigas. Revise acesso e sinais antes de iniciar.</p><Button onClick={() => edit(draft => { const target = draft.hexes[request.hexId].points.find(row => row.id === request.pointId); if (target) prepareLocation(target); })}>Preparar áreas e buscas</Button></section>}
@@ -146,18 +152,52 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
         <div>
           <span className="tag">Porte {locationScaleLabels[scale]}</span>
           <b>{prep.areas.length} áreas internas</b>
-          <small>{searchedAreas} vasculhada(s) · {availableAreas} ainda não vasculhada(s) · {prep.areas.length - searchableAreas.length} narrativa(s) · profundas {deepUsed}/{deepLimit}{deepAvailableAreas ? ` · ${deepAvailableAreas} área(s) elegível(is)` : ""}</small>
+          <small>{searchedAreas} vasculhada(s) · {availableAreas} disponível(is) · {prep.areas.length - searchableAreas.length} narrativa(s) · profundas {deepUsed}/{deepLimit}{stockUnits ? ` · ${stockUnits} item(ns) aguardando coleta` : ""}</small>
         </div>
-        {canResize && <div className="hex-search-scale-controls">
-          <Button size="sm" variant="outline" onClick={() => changeScale(scale)}>{prep.scale === undefined ? "Aplicar nova estrutura" : "Atualizar áreas contextuais"}</Button>
-          <Pick label="Ajustar porte antes da primeira busca" value={scale}
-            options={(Object.entries(locationScaleLabels) as [LocationScale, string][]).map(([value,label]) => ({ value, label }))}
-            onChange={value => changeScale(value as LocationScale)} />
-        </div>}
       </div>
 
+      <nav className="hex-search-flow" aria-label="Fluxo de exploração do local">
+        <button type="button" className="is-done" onClick={() => scrollToSection("hex-search-areas")}><span>1</span><b>Cômodo</b><small>{area.name}</small></button>
+        <button type="button" className={activeSearch ? "is-active" : attempt ? "is-done" : ""} onClick={() => scrollToSection("hex-search-action")}><span>2</span><b>Buscar</b><small>{activeSearch ? "em andamento" : attempt ? "resolvida" : area.searchable === false ? "não se aplica" : "pronta para iniciar"}</small></button>
+        <button type="button" className={stockUnits ? "is-active" : ""} onClick={() => stockUnits && scrollToSection("hex-search-stock")}><span>3</span><b>Recolher</b><small>{stockUnits ? `${stockUnits} item(ns) no local` : "quando houver achados"}</small></button>
+      </nav>
+
+      <section className="hex-search-recommended">
+        <div><small>PRÓXIMA AÇÃO</small>
+          <b>{activeSearch ? "Retome a busca já iniciada"
+            : stockUnits ? "Há achados esperando coleta"
+            : selectedAreaState === "available" ? `Decida como vasculhar ${area.name}`
+            : selectedAreaState === "deep-available" ? "Escolha entre vasculhar a fundo ou outro cômodo"
+            : selectedAreaState === "narrative" ? "Este cômodo é voltado à exploração narrativa"
+            : "Escolha outro cômodo para continuar"}</b>
+          <p>{activeSearch ? "A operação ficou salva e pode ser concluída sem recomeçar."
+            : stockUnits ? "Recolher não exige uma nova busca. Distribua o que couber e deixe o excesso no local."
+            : selectedAreaState === "available" ? "Use uma busca aberta ou procure algo específico. Os ajustes técnicos da área ficam recolhidos abaixo."
+            : selectedAreaState === "deep-available" ? "A busca normal terminou. A busca profunda custa mais tempo e risco, mas não gera um segundo d12."
+            : selectedAreaState === "narrative" ? "Use itens à vista, pistas e obstáculos sem criar uma rolagem extra de saque."
+            : "O histórico e os achados continuam salvos."}</p>
+        </div>
+        {activeSearch ? <Button size="sm" onClick={() => scrollToSection("hex-search-action")}>Retomar busca</Button>
+          : stockUnits ? <Button size="sm" onClick={() => scrollToSection("hex-search-stock")}>Ir para achados</Button>
+          : selectedAreaState === "available" ? <Button size="sm" onClick={() => scrollToSection("hex-search-action")}>Iniciar busca</Button>
+          : null}
+      </section>
+
+      <details className="hex-location-preparation">
+        <summary>Preparação do local <span>Porte {locationScaleLabels[scale]} · {prep.areas.length} áreas</span></summary>
+        <div>
+          <p className="text-xs subtle">Essas opções estruturam o local, mas não precisam ser revisadas durante toda busca.</p>
+          {canResize ? <div className="hex-search-scale-controls">
+            <Pick label="Porte antes da primeira busca" value={scale}
+              options={(Object.entries(locationScaleLabels) as [LocationScale, string][]).map(([value,label]) => ({ value, label }))}
+              onChange={value => changeScale(value as LocationScale)} />
+            <Button size="sm" variant="outline" onClick={() => changeScale(scale)}>{prep.scale === undefined ? "Aplicar estrutura contextual" : "Atualizar áreas contextuais"}</Button>
+          </div> : <p className="text-xs subtle">A estrutura foi fixada porque já existem buscas, achados ou histórico neste local.</p>}
+        </div>
+      </details>
+
       <div className="hex-search-workspace">
-        <aside className="hex-search-area-panel" aria-label="Áreas internas do local">
+        <aside id="hex-search-areas" className="hex-search-area-panel" aria-label="Áreas internas do local">
           <div className="hex-search-area-panel-head"><b>Áreas do local</b><small>Escolha onde agir</small></div>
           <div className="hex-search-area-list">
             {prep.areas.map(row => {
@@ -269,6 +309,7 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
             </details>
           </details>
 
+          <span id="hex-search-action" className="hex-scroll-anchor" aria-hidden="true" />
           {area.searchable === false && <div className="hex-search-narrative-note"><Eye size={17} /><span><b>Área de exploração</b><small>Use-a para pistas, obstáculos, cenas e itens à vista. Ela não aumenta a quantidade de rolagens de saque do local.</small></span></div>}
 
           {area.searchable !== false && !attempt && <section className="hex-search-step"><h3><span>2</span> Iniciar busca</h3>
@@ -359,13 +400,37 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
         </div>
       </div>
     </>}
-    {stock.length > 0 && <Pick label="Transporte preferido da campanha" value={game.explorationPreferences?.transport ?? "personal-first"} options={[{ value: "personal-first", label: "Usar inventários, depois carrinhos abertos" }, { value: "cart-first", label: "Usar carrinhos abertos, depois inventários" }]} onChange={value => edit(draft => { draft.explorationPreferences = { autoPrepare: draft.explorationPreferences?.autoPrepare ?? false, participantIds: draft.explorationPreferences?.participantIds ?? [], transport: value as "personal-first" | "cart-first" }; setCollection(null); })} />}
-    {stock.length > 0 && <section className="hex-search-step"><h3>Achados disponíveis no local</h3><p className="text-sm subtle">Recolher itens acessíveis não exige outra busca. O excesso permanece aqui.</p>
-      {stock.map(row => <div key={row.id} className="flex justify-between gap-3 text-sm"><span>{row.item.name}{row.requiresFuelContainer ? " · exige galão vazio" : ""}{row.item.condition === "Estragado" ? " · estragado" : ""}</span><b>{row.remaining} {row.accessible === false ? "com posse ou acesso pendente" : "disponível(is)"}</b>{row.accessible === false && <Button size="sm" variant="outline" onClick={() => edit(draft => { const found = draft.hexes[request.hexId].points.find(point => point.id === request.pointId)?.preparation?.stock.find(stock => stock.id === row.id); if (found) found.accessible = true; })}>Liberar após resolver na ficção</Button>}</div>)}
-      {!collection ? <Button variant="outline" disabled={Boolean(available)} onClick={() => { setCollection(suggestCollection(game, request.hexId, request.pointId, participants)); setCollectionId(createId()); }}>Sugerir distribuição pela capacidade</Button> : <>
-        {collection.map((line, index) => <div key={`${line.stockId}:${index}`} className="grid gap-2 border rounded p-2"><b className="text-sm">{stock.find(row => row.id === line.stockId)?.item.name}{line.cartId ? " · no carrinho" : ""}</b><Pick label="Quem carrega?" value={line.ownerId} options={owners} onChange={ownerId => setCollection(current => current!.map((row, i) => i === index ? { ...row, ownerId, cartId: undefined } : row))} /><Pick label="Como transportar?" value={line.cartId || "personal"} options={[{ value: "personal", label: "Inventário pessoal" }, ...people.find(person => person.id === line.ownerId)?.inventory.filter(item => item.name === "Carrinho dobrável" && item.cartDeployed).map(item => ({ value: item.id, label: "Carrinho aberto · até 4 espaços" })) ?? []]} onChange={value => setCollection(current => current!.map((row, i) => i === index ? { ...row, cartId: value === "personal" ? undefined : value } : row))} /><Counter label="Quantidade a recolher" value={line.quantity} max={stock.find(row => row.id === line.stockId)?.remaining ?? 0} onChange={quantity => setCollection(current => current!.map((row, i) => i === index ? { ...row, quantity } : row))} /></div>)}
-        {stock.map(row => <Button key={row.id} size="sm" variant="ghost" onClick={() => setCollection(current => [...current!, { stockId: row.id, ownerId: owners[0]?.value ?? "", quantity: 1 }])}>Adicionar {row.item.name} à coleta</Button>)}
-        <Button disabled={Boolean(available) || !collection.some(row => row.quantity > 0)} onClick={() => { if (act(draft => collectLocationStock(draft, request.hexId, request.pointId, collectionId, collection.filter(row => row.quantity > 0)), "Itens entregues aos inventários")) { setCollection(null); setCollectionId(createId()); } }}>Confirmar coleta</Button><Button variant="ghost" onClick={() => setCollection(null)}>Refazer distribuição</Button>
+    {stock.length > 0 && <section id="hex-search-stock" className="hex-search-step hex-search-collection">
+      <div className="hex-search-collection-heading"><div><p className="dossier-title">ETAPA 3</p><h3>Recolher achados</h3><p className="text-sm subtle">Recolher itens acessíveis não exige outra busca. O que não couber permanece salvo neste local.</p></div><span className="tag">{stockUnits} item(ns)</span></div>
+      <div className="hex-search-stock-list">
+        {stock.map(row => <div key={row.id} className={`hex-search-stock-row ${row.accessible === false ? "is-locked" : ""}`}>
+          <span><b>{row.item.name}</b><small>{prep?.areas.find(candidate => candidate.id === row.areaId)?.name ?? "Área"}{row.requiresFuelContainer ? " · exige galão vazio" : ""}{row.item.condition === "Estragado" ? " · estragado" : ""}</small></span>
+          <strong>{row.remaining}</strong>
+          {row.accessible === false && <Button size="sm" variant="outline" onClick={() => edit(draft => { const found = draft.hexes[request.hexId].points.find(point => point.id === request.pointId)?.preparation?.stock.find(stock => stock.id === row.id); if (found) found.accessible = true; })}>Liberar acesso</Button>}
+        </div>)}
+      </div>
+
+      <details className="hex-collection-options"><summary>Opções de transporte</summary>
+        <div><Pick label="Preferência da campanha" value={game.explorationPreferences?.transport ?? "personal-first"} options={[{ value: "personal-first", label: "Usar inventários, depois carrinhos abertos" }, { value: "cart-first", label: "Usar carrinhos abertos, depois inventários" }]} onChange={value => edit(draft => { draft.explorationPreferences = { autoPrepare: draft.explorationPreferences?.autoPrepare ?? false, participantIds: draft.explorationPreferences?.participantIds ?? [], transport: value as "personal-first" | "cart-first" }; setCollection(null); })} />
+          <p className="text-xs subtle">A sugestão respeita capacidade pessoal, carrinhos abertos e restrições do item. Você ainda pode ajustar tudo antes de confirmar.</p></div>
+      </details>
+
+      {!collection ? <div className="hex-collection-start"><Button disabled={Boolean(available) || !owners.length} onClick={() => { setCollection(suggestCollection(game, request.hexId, request.pointId, participants)); setCollectionId(createId()); }}>Distribuir automaticamente</Button><small>O sistema propõe uma coleta válida; nada é movido até você confirmar.</small></div> : <>
+        <div className="hex-collection-plan" aria-label="Plano sugerido de coleta">
+          <p className="dossier-title">Distribuição sugerida</p>
+          {collection.filter(line => line.quantity > 0).length ? collection.filter(line => line.quantity > 0).map((line, index) => {
+            const item = stock.find(row => row.id === line.stockId);
+            const owner = owners.find(row => row.value === line.ownerId)?.label ?? "Destino";
+            return <div key={`plan:${line.stockId}:${index}`}><span><b>{line.quantity} × {item?.item.name ?? "Item"}</b><small>{owner}{line.cartId ? " · carrinho aberto" : " · inventário"}</small></span><CheckCircle2 size={16} /></div>;
+          }) : <p className="text-sm subtle">Nenhum item cabe com os participantes e recipientes selecionados. Ajuste a distribuição ou deixe os achados no local.</p>}
+        </div>
+
+        <details className="hex-collection-adjust"><summary>Ajustar distribuição manualmente</summary><div className="grid gap-2 mt-3">
+          {collection.map((line, index) => <div key={`${line.stockId}:${index}`} className="grid gap-2 border rounded p-2"><b className="text-sm">{stock.find(row => row.id === line.stockId)?.item.name}{line.cartId ? " · no carrinho" : ""}</b><Pick label="Quem carrega?" value={line.ownerId} options={owners} onChange={ownerId => setCollection(current => current!.map((row, i) => i === index ? { ...row, ownerId, cartId: undefined } : row))} /><Pick label="Como transportar?" value={line.cartId || "personal"} options={[{ value: "personal", label: "Inventário pessoal" }, ...people.find(person => person.id === line.ownerId)?.inventory.filter(item => item.name === "Carrinho dobrável" && item.cartDeployed).map(item => ({ value: item.id, label: "Carrinho aberto · até 4 espaços" })) ?? []]} onChange={value => setCollection(current => current!.map((row, i) => i === index ? { ...row, cartId: value === "personal" ? undefined : value } : row))} /><Counter label="Quantidade a recolher" value={line.quantity} max={stock.find(row => row.id === line.stockId)?.remaining ?? 0} onChange={quantity => setCollection(current => current!.map((row, i) => i === index ? { ...row, quantity } : row))} /></div>)}
+          {stock.map(row => <Button key={row.id} size="sm" variant="ghost" onClick={() => setCollection(current => [...current!, { stockId: row.id, ownerId: owners[0]?.value ?? "", quantity: 1 }])}>Adicionar {row.item.name} à coleta</Button>)}
+        </div></details>
+
+        <div className="hex-collection-actions"><Button disabled={Boolean(available) || !collection.some(row => row.quantity > 0)} onClick={() => { if (act(draft => collectLocationStock(draft, request.hexId, request.pointId, collectionId, collection.filter(row => row.quantity > 0)), "Itens entregues aos inventários")) { setCollection(null); setCollectionId(createId()); } }}>Confirmar coleta</Button><Button variant="ghost" onClick={() => setCollection(null)}>Refazer distribuição</Button></div>
       </>}
     </section>}
     {game.shelter.hex === request.hexId && people.length > 0 && <details><summary className="cursor-pointer text-sm font-bold">Guardar itens carregados no abrigo</summary><p className="text-sm subtle">Guarda os inventários dos participantes. Descarrega os carrinhos. Equipamentos vestidos e munição comprometida permanecem nas fichas.</p><ul className="text-sm list-disc pl-5">{people.filter(row => participants.includes(row.id)).map(row => <li key={row.id}>{row.name}: {row.inventory.filter(item => !item.cartDeployed && item.qty > (item.committedAmmo ?? 0)).map(item => `${item.qty - (item.committedAmmo ?? 0)} × ${item.name}`).join(", ") || "nenhum item solto"}{row.inventory.some(item => item.cartDeployed && item.cartItems?.length) ? " · inclui a carga do carrinho" : ""}</li>)}</ul><Button variant="outline" onClick={() => act(draft => depositExpeditionItems(draft, participants), "Itens guardados no abrigo")}>Guardar inventários dos participantes</Button></details>}

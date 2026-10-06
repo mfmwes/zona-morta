@@ -27,7 +27,7 @@ import { eventStatus, eventTriggerLabel, eventTriggerReady, generateHexContent }
 import { HexEventActionDialog, type HexEventActionRequest } from "@/components/hex-event-action-dialog";
 import { eventActionLinkLabels, eventActionUsed, hexEventActionLabels, suggestedEventActionKind } from "@/lib/hex-event-actions";
 import type { HexEventActionKind } from "@/lib/game";
-import { prepareHex, prepareLocation } from "@/lib/hex-automation";
+import { prepareHex, prepareLocation, searchAreaState } from "@/lib/hex-automation";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 
@@ -353,51 +353,92 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
           </Collapsible>
         </>}
         <div className="divider" />
-        {!playerPreview && record.discovery !== "desconhecido" && <div className="hex-content-tools">
-          <p className="text-sm subtle">Este setor contém locais e eventos. Dentro de cada local, o grupo pode vasculhar áreas como salas ou depósitos.</p>
-          <label className="flex items-center gap-2 text-sm mt-2"><Switch size="sm" checked={game.explorationPreferences?.autoPrepare ?? false} onCheckedChange={autoPrepare => edit(draft => { draft.explorationPreferences = { ...draft.explorationPreferences, autoPrepare, participantIds: draft.explorationPreferences?.participantIds ?? [] }; })} /> Preparar conteúdo reservado ao entrar em novos hexes</label>
-          <div className="flex flex-wrap gap-2 mt-3" role="group" aria-label="Adicionar conteúdo ao setor">
-            <Button size="sm" onClick={() => { edit(draft => { prepareHex(draft, selected); }); toast.success("Hex preparado; conteúdo reservado para revisão"); }}><Package size={15} /> Preparar hex</Button>
-            <Button size="sm" variant="outline" onClick={() => openGenerator(selected, "locais")}><Dice5 size={15} /> Gerar local</Button>
-            <Button size="sm" variant="outline" onClick={() => openGenerator(selected, "comercios")}><Dice5 size={15} /> Gerar comércio</Button>
-            <Button size="sm" variant="outline" onClick={() => openGenerator(selected, "eventos")}><Dice5 size={15} /> Gerar evento</Button>
-            <Button size="sm" variant="ghost" onClick={() => openManualPoint(selected)}><Plus size={15} /> Adicionar local</Button>
-          </div>
-        </div>}
+        {!playerPreview && record.discovery !== "desconhecido" && <Collapsible className="hex-sector-preparation">
+          <CollapsibleTrigger asChild><Button variant="ghost" className="hex-sector-preparation-trigger">
+            <span><Compass size={16} /><span><b>Preparação do setor</b><small>Gerar locais, eventos e conteúdo reservado</small></span></span>
+            <ChevronDown size={16} />
+          </Button></CollapsibleTrigger>
+          <CollapsibleContent className="hex-content-tools">
+            <p className="text-sm subtle">Ferramentas de preparação ficam fora do fluxo principal da sessão. Use quando precisar criar ou revisar conteúdo do setor.</p>
+            <label className="flex items-center gap-2 text-sm mt-2"><Switch size="sm" checked={game.explorationPreferences?.autoPrepare ?? false} onCheckedChange={autoPrepare => edit(draft => { draft.explorationPreferences = { ...draft.explorationPreferences, autoPrepare, participantIds: draft.explorationPreferences?.participantIds ?? [] }; })} /> Preparar conteúdo reservado ao entrar em novos hexes</label>
+            <div className="flex flex-wrap gap-2 mt-3" role="group" aria-label="Adicionar conteúdo ao setor">
+              <Button size="sm" onClick={() => { edit(draft => { prepareHex(draft, selected); }); toast.success("Hex preparado; conteúdo reservado para revisão"); }}><Package size={15} /> Preparar hex</Button>
+              <Button size="sm" variant="outline" onClick={() => openGenerator(selected, "locais")}><Dice5 size={15} /> Gerar local</Button>
+              <Button size="sm" variant="outline" onClick={() => openGenerator(selected, "comercios")}><Dice5 size={15} /> Gerar comércio</Button>
+              <Button size="sm" variant="outline" onClick={() => openGenerator(selected, "eventos")}><Dice5 size={15} /> Gerar evento</Button>
+              <Button size="sm" variant="ghost" onClick={() => openManualPoint(selected)}><Plus size={15} /> Adicionar local</Button>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>}
         <div className="hex-points-heading"><MapPin size={18} aria-hidden="true" /><h3 className="section-title">Locais e pistas neste setor</h3><span className="tag">{exposedPoints.length}</span></div>
         {exposedPoints.length === 0 && <p className="intro-line mt-3">Nenhum local ou pista registrado neste setor.</p>}
         {exposedPoints.length > 0 && <div key={selected} className="hex-points-list" role="region" aria-label={`Locais e pistas do setor ${selected}`} tabIndex={0}>
-          {exposedPoints.map(point => <article key={point.id} className="hex-point-card list-card text-sm">
-            <div className="hex-point-heading"><div><p className="dossier-title">{point.clueTargetHex ? "Pista" : point.kind === "comércio" ? "Comércio neste setor" : "Local neste setor"}</p><b>{point.name}</b></div>
-              {!playerPreview && <label className="flex items-center gap-2 text-xs whitespace-nowrap"><Switch size="sm" checked={point.revealed}
-                onCheckedChange={checked => edit(draft => { const found = draft.hexes[selected].points.find(p=>p.id===point.id); if(found) found.revealed=checked; })} /> Público</label>}</div>
-            {point.signal && <p className="mt-1">{point.signal}</p>}
-            {!playerPreview && point.clueTargetHex && <Button size="sm" variant="outline" className="mt-2"
-              disabled={!game.hexes[point.clueTargetHex]} onClick={() => { setFocusHex(point.clueTargetHex!); selectHex(point.clueTargetHex!); }}>
-              <Route size={14} /> Destino da pista: {point.clueTargetHex} · {game.hexes[point.clueTargetHex]?.sector?.name ?? "setor ainda não revelado"}
-            </Button>}
-            {!playerPreview && point.access && <p className="mt-2"><b>Acesso:</b> {point.access}</p>}
-            {!playerPreview && (point.generatorCategory || point.condition || point.risk || point.lootTable) && <div className="flex flex-wrap gap-2 mt-2">
-              {point.generatorCategory && <span className="tag">{point.generatorCategory}</span>}
-              {point.condition && <span className="tag">Condição: {point.condition}</span>}
-              {point.risk && <span className="tag">Risco: {point.risk}</span>}
-              {point.lootTable && <span className="tag">Tabela de achados: {point.lootTable}</span>}
-            </div>}
-            {!playerPreview && point.notes && <p className="mt-2 subtle"><b>Reservado:</b> {point.notes}</p>}
-            {!playerPreview && point.searches.length > 0 && <Collapsible className="mt-3 border-t pt-2">
-              <CollapsibleTrigger asChild><Button size="sm" variant="ghost"><ChevronDown size={14} /> Áreas vasculhadas ({point.searches.length})</Button></CollapsibleTrigger>
-              <CollapsibleContent className="grid gap-2 pt-2">{point.searches.map(search => <div key={search.id} className="hex-search-history text-sm">
-                <b>{searchAreaLabel(point, search.sector)}</b><p>{search.result}</p>
-                <p className="text-xs subtle mt-1">{search.mode === "open" ? `Achado por d12 ${search.roll} · ${search.table}` : `${search.what}${search.why ? ` para ${search.why}` : ""}`} · {search.minutes} min</p>
-              </div>)}</CollapsibleContent>
-            </Collapsible>}
-            {!playerPreview && !point.clueTargetHex && <>
-              <Button size="sm" variant="outline" className="mt-3" disabled={Boolean(searchAvailabilityError(game, selected, point.id))}
-                onClick={() => { edit(draft => { const target = draft.hexes[selected].points.find(row => row.id === point.id); if (target) prepareLocation(target); }); setSheetOpen(false); setSearchRequest({ hexId: selected, pointId: point.id, participantIds: activeGroup?.hex === selected ? activeGroup.members.map(row => row.id) : [] }); }}><Search size={15} /> Buscas e achados</Button>
-              {point.preparation?.stock.some(row => row.remaining > 0) && <p className="text-xs mt-2">Achados no local: {point.preparation.stock.filter(row => row.remaining > 0).map(row => `${row.remaining} × ${row.item.name}`).join(" · ")}</p>}
-              {searchAvailabilityError(game, selected, point.id) && <p className="text-xs subtle mt-1">{searchAvailabilityError(game, selected, point.id)}</p>}
-            </>}
-          </article>)}
+          {exposedPoints.map(point => {
+            const prep = point.preparation;
+            const searchable = prep?.areas.filter(area => area.searchable !== false) ?? [];
+            const activeAttempts = prep?.attempts.filter(attempt => ["pending", "ready"].includes(attempt.status)) ?? [];
+            const stockRemaining = prep?.stock.filter(row => row.remaining > 0).reduce((sum, row) => sum + row.remaining, 0) ?? 0;
+            const searched = prep && point
+              ? searchable.filter(area => ["deep-available", "deep-ongoing", "searched", "exhausted"].includes(searchAreaState(point, area))).length
+              : point.searches.length;
+            const deepAvailable = prep && point ? searchable.filter(area => searchAreaState(point, area) === "deep-available").length : 0;
+            const availableSearch = prep && point ? searchable.filter(area => searchAreaState(point, area) === "available").length : 0;
+            const searchIssue = searchAvailabilityError(game, selected, point.id);
+            const actionLabel = activeAttempts.length ? "Retomar busca"
+              : stockRemaining ? "Recolher achados"
+              : !prep ? "Preparar e buscar"
+              : availableSearch ? "Escolher cômodo e buscar"
+              : deepAvailable ? "Continuar exploração"
+              : "Revisar local";
+            const statusLabel = activeAttempts.length ? `${activeAttempts.length} busca(s) em andamento`
+              : stockRemaining ? `${stockRemaining} item(ns) aguardando coleta`
+              : searchable.length ? `${searched}/${searchable.length} áreas vasculhadas`
+              : prep ? "Exploração narrativa" : "Ainda não preparado";
+            return <article key={point.id} className="hex-point-card list-card text-sm">
+              <div className="hex-point-heading"><div><p className="dossier-title">{point.clueTargetHex ? "Pista" : point.kind === "comércio" ? "Comércio neste setor" : "Local neste setor"}</p><b>{point.name}</b></div>
+                {!playerPreview && <label className="flex items-center gap-2 text-xs whitespace-nowrap"><Switch size="sm" checked={point.revealed}
+                  onCheckedChange={checked => edit(draft => { const found = draft.hexes[selected].points.find(p=>p.id===point.id); if(found) found.revealed=checked; })} /> Público</label>}</div>
+              {point.signal && <p className="mt-1">{point.signal}</p>}
+              {!playerPreview && point.clueTargetHex && <Button size="sm" variant="outline" className="mt-2"
+                disabled={!game.hexes[point.clueTargetHex]} onClick={() => { setFocusHex(point.clueTargetHex!); selectHex(point.clueTargetHex!); }}>
+                <Route size={14} /> Destino da pista: {point.clueTargetHex} · {game.hexes[point.clueTargetHex]?.sector?.name ?? "setor ainda não revelado"}
+              </Button>}
+
+              {!playerPreview && !point.clueTargetHex && <div className="hex-point-session-flow">
+                <div className="hex-point-session-state">
+                  <span className={activeAttempts.length ? "is-active" : stockRemaining ? "has-stock" : ""}><Search size={14} /> {statusLabel}</span>
+                  {deepAvailable > 0 && !activeAttempts.length && !stockRemaining && <small>{deepAvailable} cômodo(s) com busca profunda disponível</small>}
+                </div>
+                <Button size="sm" variant={activeAttempts.length || stockRemaining ? "default" : "outline"} disabled={Boolean(searchIssue)}
+                  onClick={() => { edit(draft => { const target = draft.hexes[selected].points.find(row => row.id === point.id); if (target) prepareLocation(target); }); setSheetOpen(false); setSearchRequest({ hexId: selected, pointId: point.id, participantIds: activeGroup?.hex === selected ? activeGroup.members.map(row => row.id) : [] }); }}>
+                  <Search size={15} /> {actionLabel}
+                </Button>
+                {searchIssue && <p className="hex-point-session-issue">{searchIssue}</p>}
+              </div>}
+
+              {!playerPreview && (point.access || point.generatorCategory || point.condition || point.risk || point.lootTable || point.notes) && <details className="hex-point-master-details">
+                <summary>Detalhes do mestre</summary>
+                <div>
+                  {point.access && <p><b>Acesso:</b> {point.access}</p>}
+                  {(point.generatorCategory || point.condition || point.risk || point.lootTable) && <div className="flex flex-wrap gap-2">
+                    {point.generatorCategory && <span className="tag">{point.generatorCategory}</span>}
+                    {point.condition && <span className="tag">Condição: {point.condition}</span>}
+                    {point.risk && <span className="tag">Risco: {point.risk}</span>}
+                    {point.lootTable && <span className="tag">Tabela de achados: {point.lootTable}</span>}
+                  </div>}
+                  {point.notes && <p className="subtle"><b>Reservado:</b> {point.notes}</p>}
+                </div>
+              </details>}
+
+              {!playerPreview && point.searches.length > 0 && <Collapsible className="mt-3 border-t pt-2">
+                <CollapsibleTrigger asChild><Button size="sm" variant="ghost"><ChevronDown size={14} /> Histórico de buscas ({point.searches.length})</Button></CollapsibleTrigger>
+                <CollapsibleContent className="grid gap-2 pt-2">{point.searches.map(search => <div key={search.id} className="hex-search-history text-sm">
+                  <b>{searchAreaLabel(point, search.sector)}</b><p>{search.result}</p>
+                  <p className="text-xs subtle mt-1">{search.mode === "open" ? `Achado por d12 ${search.roll} · ${search.table}` : `${search.what}${search.why ? ` para ${search.why}` : ""}`} · {search.minutes} min</p>
+                </div>)}</CollapsibleContent>
+              </Collapsible>}
+            </article>;
+          })}
         </div>}
         {(exposedEvents.length > 0 || archivedEvents.length > 0) && <div className="mt-5">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
