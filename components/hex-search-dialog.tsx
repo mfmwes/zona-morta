@@ -9,7 +9,7 @@ import { content, displayTime, survivorsAtHex, type GameState } from "@/lib/game
 import { createId } from "@/lib/id";
 import { catalogKey } from "@/lib/inventory";
 import { searchAvailabilityError } from "@/lib/exploration";
-import { collectLocationStock, finishPreparedSearch, declareSearchArea, depositExpeditionItems, locationScaleLabels, locationScaleOf, lootDefinitions, prepareLocation, registerVisibleStock, resizeLocationPreparation, resolvePreparedSearch, searchAreaState, searchResult, startDeepSearch, suggestCollection, warehouseWorkers, type CollectionLine } from "@/lib/hex-automation";
+import { collectLocationStock, finishPreparedSearch, declareSearchArea, depositExpeditionItems, locationScaleLabels, locationScaleOf, lootDefinitions, prepareLocation, quickSearchOptions, registerVisibleStock, resizeLocationPreparation, resolvePreparedSearch, searchAreaState, searchResult, startDeepSearch, suggestCollection, warehouseWorkers, type CollectionLine } from "@/lib/hex-automation";
 import { RollForm } from "@/components/roll-dialog";
 import type { LocationScale, SearchArea } from "@/lib/hex-automation-types";
 export type HexSearchRequest = { hexId: string; pointId: string; participantIds?: string[] };
@@ -43,6 +43,7 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
   const [deepItemKey, setDeepItemKey] = useState("");
   const [deepOperationId, setDeepOperationId] = useState(createId);
   const [deepActorId, setDeepActorId] = useState("");
+  const [quickNotice, setQuickNotice] = useState("");
   const area = prep?.areas.find(row => row.id === areaId) ?? prep?.areas.find(row => prep.attempts.some(attempt => attempt.areaId === row.id && ["pending", "ready"].includes(attempt.status))) ?? prep?.areas.find(row => prep.stock.some(stock => stock.areaId === row.id && stock.remaining > 0)) ?? prep?.areas.find(row => row.searchable !== false && !prep.attempts.some(attempt => attempt.areaId === row.id)) ?? prep?.areas[0];
   const attempt = prep?.attempts.find(row => row.areaId === area?.id && (row.kind ?? "normal") === "normal");
   const deepAttempt = prep?.attempts.find(row => row.areaId === area?.id && row.kind === "deep");
@@ -51,6 +52,7 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
   const stock = prep?.stock.filter(row => row.remaining > 0) ?? [];
   const keys = [...new Set(lootDefinitions.find(row => row.table === area?.table)?.entries.flatMap(row => [...row.items.map(item => item.catalogKey), ...(row.fallback?.map(item => item.catalogKey) ?? []), ...(row.choices ?? [])]) ?? [])];
   const chosenKey = itemKey || keys[0] || "";
+  const quickOptions = area ? quickSearchOptions(area) : [];
   const deepKeys = keys.filter(key => !prep?.stock.some(row => row.areaId === area?.id && row.item.catalogKey === key && row.remaining > 0));
   const deepChosenKey = deepItemKey || deepKeys[0] || "";
   const deepChosenName = content.catalog.find(row => catalogKey(row) === deepChosenKey)?.name ?? deepChosenKey;
@@ -87,6 +89,7 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
     setDeepItemKey("");
     setDeepOperationId(createId());
     setDeepActorId("");
+    setQuickNotice("");
   }
   function changeScale(value: LocationScale) {
     if (!point || !canResize) return;
@@ -114,7 +117,7 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
           <small>{searchedAreas} vasculhada(s) · {deepAvailableAreas} com busca profunda · {availableAreas} ainda não vasculhada(s) · {prep.areas.length - searchableAreas.length} narrativa(s)</small>
         </div>
         {canResize && <div className="hex-search-scale-controls">
-          {prep.scale === undefined && <Button size="sm" variant="outline" onClick={() => changeScale(scale)}>Aplicar nova estrutura · {locationScaleLabels[scale]}</Button>}
+          <Button size="sm" variant="outline" onClick={() => changeScale(scale)}>{prep.scale === undefined ? "Aplicar nova estrutura" : "Atualizar áreas contextuais"}</Button>
           <Pick label="Ajustar porte antes da primeira busca" value={scale}
             options={(Object.entries(locationScaleLabels) as [LocationScale, string][]).map(([value,label]) => ({ value, label }))}
             onChange={value => changeScale(value as LocationScale)} />
@@ -203,10 +206,22 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
           {area.searchable === false && <div className="hex-search-narrative-note"><Eye size={17} /><span><b>Área de exploração</b><small>Use-a para pistas, obstáculos, cenas e itens à vista. Ela não aumenta a quantidade de rolagens de saque do local.</small></span></div>}
 
           {area.searchable !== false && !attempt && <section className="hex-search-step"><h3><span>2</span> Iniciar busca</h3>
-            <div className="flex flex-wrap gap-2">{[{ label: "Água", pattern: /água|suco|isotônica/i, purpose: "Beber durante a viagem" }, { label: "Comida", pattern: /ração|conserva|bolacha|cereal|fruta|raíz|arroz/i, purpose: "Alimentar o grupo" }, { label: "Medicamentos", pattern: /tratamento|clínica|antissepsia/i, purpose: "Tratar ferimentos" }, { label: "Peças", pattern: /Peças/i, purpose: "Reparar equipamentos" }, { label: "Combustível", pattern: /Combustível/i, purpose: "Abastecer equipamentos" }].map(option => {
-              const key = keys.find(key => option.pattern.test(key));
-              return <Button key={option.label} size="sm" variant="outline" disabled={!key} onClick={() => { setMode("specific"); setObjective(option.label); setPurpose(option.purpose); setItemKey(key!); setQuantity(1); }}>{option.label}</Button>;
-            })}</div>
+            <div className="hex-quick-search">
+              <div className="hex-quick-search-head"><div><b>Busca rápida nesta área</b><small>Os atalhos refletem categorias reais entre os achados previstos por <strong>{area.table}</strong>.</small></div><span className="tag">Toque nos apagados para entender</span></div>
+              <div className="hex-quick-search-options">{quickOptions.map(option => <button type="button" key={option.id}
+                className={"hex-quick-search-button" + (option.available ? " is-available" : " is-unavailable")}
+                aria-disabled={!option.available} title={option.reason}
+                onClick={() => {
+                  setQuickNotice(option.reason);
+                  if (!option.available || !option.key) return;
+                  setMode("specific"); setObjective(option.label); setPurpose(option.purpose); setItemKey(option.key); setQuantity(1);
+                }}>
+                <span>{option.label}</span><small>{option.available ? option.itemName : "Não previsto aqui"}</small>
+              </button>)}</div>
+              <p className={"hex-quick-search-notice" + (quickNotice ? " is-visible" : "")}>
+                {quickNotice || "Itens apagados não estão na tabela desta área. Ainda podem ser procurados por “Outro item justificado na ficção” se o grupo e o mestre estabelecerem uma razão plausível."}
+              </p>
+            </div>
             <Pick label="Objetivo do grupo" value={mode} options={[{ value: "open", label: "Vasculhar por achados · d12 do grupo" }, { value: "specific", label: "Procurar um item combinado" }]} onChange={value => setMode(value as "open" | "specific")} />
             {mode === "open" && <Field label="Finalidade geral da busca" value={purpose} onChange={setPurpose} />}
             {mode === "specific" && <><Field label="O que procuram?" value={objective} onChange={setObjective} /><Field label="Para quê?" value={purpose} onChange={setPurpose} /><Pick label="Item plausível combinado" value={chosenKey} options={content.catalog.filter(row => keys.includes(catalogKey(row)) || itemKey === catalogKey(row)).map(row => ({ value: catalogKey(row), label: row.name }))} onChange={setItemKey} /><details><summary className="cursor-pointer text-sm">Outro item justificado na ficção</summary><Pick label="Catálogo completo" value={chosenKey} options={content.catalog.map(row => ({ value: catalogKey(row), label: `${row.category} · ${row.name}` }))} onChange={setItemKey} /></details><Counter label="Quantidade prometida" value={quantity} min={1} max={99} onChange={setQuantity} /></>}

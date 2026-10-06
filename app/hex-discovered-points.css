@@ -421,3 +421,99 @@ html[data-theme="dark"] .hex-event-active {
     justify-self: start;
   }
 }
+
+
+/* Context-aware quick search */
+.hex-quick-search {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--card) 84%, var(--background));
+}
+.hex-quick-search-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.hex-quick-search-head > div {
+  display: grid;
+  gap: 2px;
+}
+.hex-quick-search-head b {
+  font-size: .78rem;
+}
+.hex-quick-search-head small {
+  color: var(--muted-foreground);
+  font-size: .66rem;
+  line-height: 1.35;
+}
+.hex-quick-search-options {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+.hex-quick-search-button {
+  appearance: none;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 7px;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) - 2px);
+  background: var(--background);
+  color: var(--foreground);
+  text-align: left;
+  cursor: pointer;
+}
+.hex-quick-search-button:hover {
+  border-color: color-mix(in srgb, var(--primary) 58%, var(--border));
+}
+.hex-quick-search-button > span {
+  font-size: .72rem;
+  font-weight: 800;
+}
+.hex-quick-search-button > small {
+  overflow: hidden;
+  color: var(--muted-foreground);
+  font-size: .59rem;
+  line-height: 1.22;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hex-quick-search-button.is-available {
+  border-color: color-mix(in srgb, var(--primary) 48%, var(--border));
+  background: color-mix(in srgb, var(--accent) 45%, var(--background));
+}
+.hex-quick-search-button.is-unavailable {
+  opacity: .48;
+  border-style: dashed;
+}
+.hex-quick-search-button.is-unavailable:hover {
+  opacity: .72;
+}
+.hex-quick-search-notice {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: .66rem;
+  line-height: 1.4;
+}
+.hex-quick-search-notice.is-visible {
+  color: var(--foreground);
+}
+@media (max-width: 760px) {
+  .hex-quick-search-head {
+    display: grid;
+  }
+  .hex-quick-search-head > .tag {
+    justify-self: start;
+  }
+  .hex-quick-search-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .hex-quick-search-button:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}

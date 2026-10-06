@@ -66,7 +66,8 @@ test('porte do local controla profundidade sem transformar toda área em nova ro
   assert.equal(condo.preparation.scale,'large');
   assert.equal(condo.preparation.areas.length,6);
   assert.ok(condo.preparation.areas.filter(area=>area.searchable!==false).length < condo.preparation.areas.length);
-  assert.ok(condo.preparation.areas.some(area=>area.name==='Garagem' && area.table==='Ruas / veículos abandonados'));
+  assert.ok(condo.preparation.areas.some(area=>area.name==='Cozinha' && area.table==='Restaurantes / cozinhas'));
+  assert.ok(condo.preparation.areas.some(area=>area.name==='Garagem' && area.table==='Oficinas / postos de serviço'));
   assert.ok(condo.preparation.areas.some(area=>area.searchable===false));
 
   const hospital = { id:'hospital', name:'Hospital central', kind:'local', signal:'Recepção vazia', access:'', notes:'', revealed:true,
@@ -76,6 +77,55 @@ test('porte do local controla profundidade sem transformar toda área em nova ro
   assert.equal(hospital.preparation.areas.length,8);
   assert.ok(hospital.preparation.areas.some(area=>area.name==='Farmácia interna' && area.table==='Farmácias / consultórios'));
   assert.ok(hospital.preparation.areas.some(area=>area.name==='Manutenção' && area.table==='Oficinas / postos de serviço'));
+});
+
+
+test('atalhos de busca usam categorias do catálogo e respeitam a tabela de cada área', () => {
+  assert.equal(auto.quickSearchResourceForKey('Bebidas::Suco em caixa fechado'),'water');
+  assert.equal(auto.quickSearchResourceForKey('Alimentos::Barra de cereal'),'food');
+  assert.equal(auto.quickSearchResourceForKey('Medicamentos e cuidado::Kit médico de campo'),'medicine');
+  assert.equal(auto.quickSearchResourceForKey('Suprimentos abstratos::Peças (1 unidade)'),'parts');
+  assert.equal(auto.quickSearchResourceForKey('Suprimentos abstratos::Combustível (1 unidade)'),'fuel');
+  assert.equal(auto.quickSearchResourceForKey('Ferramentas, acesso e reparo::Alicate'),undefined);
+
+  const condo = { id:'condo-fast', name:'Condomínio de casas', kind:'local', signal:'Portaria', access:'', notes:'', revealed:true,
+    lootTable:'Residências / condomínios', searches:[] };
+  auto.prepareLocation(condo);
+  const main=auto.quickSearchOptions(condo.preparation.areas.find(area=>area.name==='Área principal'));
+  assert.equal(main.find(option=>option.id==='water').available,true);
+  assert.equal(main.find(option=>option.id==='medicine').available,true);
+  assert.equal(main.find(option=>option.id==='food').available,false);
+  assert.match(main.find(option=>option.id==='food').reason,/não aparece entre os achados previstos/);
+
+  const kitchen=auto.quickSearchOptions(condo.preparation.areas.find(area=>area.name==='Cozinha'));
+  assert.equal(kitchen.find(option=>option.id==='water').available,true);
+  assert.equal(kitchen.find(option=>option.id==='food').available,true);
+
+  const garage=auto.quickSearchOptions(condo.preparation.areas.find(area=>area.name==='Garagem'));
+  assert.equal(garage.find(option=>option.id==='parts').available,true);
+  assert.equal(garage.find(option=>option.id==='fuel').available,true);
+});
+
+test('interface explica atalhos indisponíveis em vez de depender de regex no nome do item', () => {
+  const source=fs.readFileSync(require.resolve('../components/hex-search-dialog.tsx'),'utf8');
+  assert.match(source,/Busca rápida nesta área/);
+  assert.match(source,/quickSearchOptions/);
+  assert.match(source,/Toque nos apagados para entender/);
+  assert.match(source,/Atualizar áreas contextuais/);
+  assert.doesNotMatch(source,/pattern:\s*\/água|pattern:\s*\/ração|pattern:\s*\/tratamento/);
+});
+
+
+test('local já preparado sem histórico pode atualizar as áreas contextuais com o mesmo porte', () => {
+  const condo = { id:'condo-old', name:'Condomínio de casas', kind:'local', signal:'Portaria', access:'', notes:'', revealed:true,
+    lootTable:'Residências / condomínios', searches:[] };
+  auto.prepareLocation(condo);
+  const kitchen=condo.preparation.areas.find(area=>area.name==='Cozinha');
+  kitchen.table='Residências / condomínios';
+  const scale=condo.preparation.scale;
+  assert.equal(auto.resizeLocationPreparation(condo,scale),true);
+  assert.equal(condo.preparation.areas.find(area=>area.name==='Cozinha').table,'Restaurantes / cozinhas');
+  assert.equal(condo.preparation.areas.find(area=>area.name==='Garagem').table,'Oficinas / postos de serviço');
 });
 
 test('porte pode ser ajustado antes da primeira busca e fica estável depois que o local ganha histórico', () => {

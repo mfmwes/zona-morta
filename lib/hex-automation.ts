@@ -44,10 +44,10 @@ export const locationScaleAreaCounts: Record<LocationScale, number> = {
 
 const areaModels: Record<string, AreaBlueprint[]> = {
   "Residências / condomínios": [
-    { name: "Cozinha", signal: "Bancada, armários e eletrodomésticos formam um espaço separado.", searchable: true },
+    { name: "Cozinha", signal: "Bancada, armários e eletrodomésticos formam um espaço separado.", table: "Restaurantes / cozinhas", searchable: true },
     { name: "Sala / circulação", signal: "Móveis e passagens conectam os demais cômodos.", searchable: false },
     { name: "Quarto", signal: "Porta interna leva a um cômodo de uso pessoal.", searchable: true },
-    { name: "Garagem", signal: "Acesso lateral ou portão leva à área de veículos e ferramentas.", table: "Ruas / veículos abandonados", searchable: true },
+    { name: "Garagem", signal: "Acesso lateral ou portão leva à área de veículos e ferramentas.", table: "Oficinas / postos de serviço", searchable: true },
     { name: "Área comum", signal: "Espaço compartilhado conecta diferentes unidades do local.", searchable: false },
     { name: "Depósito", signal: "Um cômodo menor concentra caixas e objetos guardados.", table: "Galpões / centros de distribuição", searchable: true },
     { name: "Administração / portaria", signal: "Mesa, chaves e registros ficam próximos ao acesso principal.", table: "Escolas / escritórios", searchable: false },
@@ -77,7 +77,7 @@ const areaModels: Record<string, AreaBlueprint[]> = {
     { name: "Depósito", signal: "Sacos, caixas e recipientes ficam protegidos do tempo.", table: "Galpões / centros de distribuição", searchable: true },
     { name: "Poço / reservatório", signal: "Estruturas de captação ou armazenamento de água ficam próximas.", searchable: false },
     { name: "Curral / pátio", signal: "Cercas e marcas no solo delimitam uma área de manejo.", searchable: false },
-    { name: "Garagem rural", signal: "Máquinas e veículos de trabalho ocupam um abrigo lateral.", table: "Ruas / veículos abandonados", searchable: true },
+    { name: "Garagem rural", signal: "Máquinas e veículos de trabalho ocupam um abrigo lateral.", table: "Oficinas / postos de serviço", searchable: true },
   ],
   "Farmácias / consultórios": [
     { name: "Balcão / dispensação", signal: "Prateleiras e gavetas ficam atrás do balcão principal.", searchable: true },
@@ -110,7 +110,7 @@ const areaModels: Record<string, AreaBlueprint[]> = {
     { name: "Oficina principal", signal: "Bancadas e elevadores ocupam o espaço de trabalho.", searchable: true },
     { name: "Atendimento", signal: "Balcão e papéis ficam separados da área de reparo.", table: "Escolas / escritórios", searchable: false },
     { name: "Estoque de ferramentas", signal: "Compartimento de ferramentas separado das vagas de trabalho.", searchable: true },
-    { name: "Estoque de peças", signal: "Prateleiras identificadas concentram peças e consumíveis.", table: "Galpões / centros de distribuição", searchable: true },
+    { name: "Estoque de peças", signal: "Prateleiras identificadas concentram peças e consumíveis.", table: "Oficinas / postos de serviço", searchable: true },
     { name: "Pátio / veículos", signal: "Veículos aguardam reparo numa área aberta ou coberta.", table: "Ruas / veículos abandonados", searchable: true },
     { name: "Escritório", signal: "Ordens de serviço e chaves ficam em uma sala administrativa.", table: "Escolas / escritórios", searchable: false },
     { name: "Área técnica", signal: "Instalações elétricas, hidráulicas ou de combustível ficam isoladas.", table: "Obras / instalações em reforma", searchable: true },
@@ -120,7 +120,7 @@ const areaModels: Record<string, AreaBlueprint[]> = {
     { name: "Almoxarifado", signal: "Porta interna distingue o estoque da recepção.", searchable: true },
     { name: "Sala de equipamentos", signal: "Armários reforçados concentram proteção e ferramentas.", searchable: true },
     { name: "Arquivo / investigação", signal: "Pastas e computadores ocupam uma sala administrativa.", table: "Escolas / escritórios", searchable: true },
-    { name: "Garagem", signal: "Viaturas e manutenção ocupam um acesso lateral.", table: "Ruas / veículos abandonados", searchable: true },
+    { name: "Garagem", signal: "Viaturas e manutenção ocupam um acesso lateral.", table: "Oficinas / postos de serviço", searchable: true },
     { name: "Alojamento", signal: "Beliches e armários pessoais ficam em uma área reservada.", table: "Residências / condomínios", searchable: true },
     { name: "Cozinha / refeitório", signal: "Mesas e equipamentos de preparo formam uma área de apoio.", table: "Restaurantes / cozinhas", searchable: true },
   ],
@@ -364,6 +364,69 @@ export type StartDeepSearch = {
   objective: string; purpose: string; catalogKey: string;
 };
 
+export type QuickSearchResource = "water" | "food" | "medicine" | "parts" | "fuel";
+export type QuickSearchOption = {
+  id: QuickSearchResource;
+  label: string;
+  purpose: string;
+  available: boolean;
+  key?: string;
+  itemName?: string;
+  matches: string[];
+  reason: string;
+};
+
+const quickSearchDefinitions: { id: QuickSearchResource; label: string; purpose: string }[] = [
+  { id: "water", label: "Água", purpose: "Hidratar o grupo durante a viagem" },
+  { id: "food", label: "Comida", purpose: "Alimentar o grupo" },
+  { id: "medicine", label: "Medicamentos", purpose: "Tratar ferimentos e condições" },
+  { id: "parts", label: "Peças", purpose: "Reparar equipamentos e instalações" },
+  { id: "fuel", label: "Combustível", purpose: "Abastecer veículos e equipamentos" },
+];
+
+function catalogEntryForKey(key: string) {
+  return content.catalog.find(item => catalogKey(item) === key);
+}
+
+export function quickSearchResourceForKey(key: string): QuickSearchResource | undefined {
+  const item = catalogEntryForKey(key);
+  if (!item) return undefined;
+  if (item.category === "Bebidas") return "water";
+  if (item.category === "Alimentos") return "food";
+  if (item.category === "Medicamentos e cuidado") return "medicine";
+  if (item.category === "Suprimentos abstratos" && item.name === "Peças (1 unidade)") return "parts";
+  if (item.category === "Suprimentos abstratos" && item.name === "Combustível (1 unidade)") return "fuel";
+  return undefined;
+}
+
+function quickSearchPriority(resource: QuickSearchResource, key: string) {
+  const item = catalogEntryForKey(key);
+  const name = item?.name ?? key;
+  if (resource === "water" && /\bágua\b/i.test(name)) return 0;
+  if (resource === "medicine" && /kit médico|bolsa de tratamento|caixa clínica/i.test(name)) return 0;
+  return 1;
+}
+
+export function quickSearchOptions(area: SearchArea): QuickSearchOption[] {
+  const keys = deepSearchCandidateKeys(area);
+  return quickSearchDefinitions.map(definition => {
+    const matchingKeys = keys
+      .filter(key => quickSearchResourceForKey(key) === definition.id)
+      .sort((a, b) => quickSearchPriority(definition.id, a) - quickSearchPriority(definition.id, b));
+    const key = matchingKeys[0];
+    const item = key ? catalogEntryForKey(key) : undefined;
+    const matches = matchingKeys.map(match => catalogEntryForKey(match)?.name ?? match);
+    return {
+      ...definition,
+      available: Boolean(key),
+      ...(key ? { key, itemName: item?.name ?? key } : {}),
+      matches,
+      reason: key
+        ? definition.label + " é plausível nesta área porque a tabela “" + area.table + "” contém " + (matches.length === 1 ? matches[0] : matches.length + " achados compatíveis") + "."
+        : definition.label + " não aparece entre os achados previstos para “" + area.name + "” (" + area.table + "). Tente outra área ou use “Outro item justificado na ficção”.",
+    };
+  });
+}
 export function deepSearchCandidateKeys(area: SearchArea) {
   const table = lootDefinitions.find(row => row.table === area.table);
   if (!table) return [];
