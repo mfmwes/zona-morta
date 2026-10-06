@@ -121,12 +121,9 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
   return visible;
 }
 
-const immutable = ["id", "name", "level", "proficiency", "origin", "past", "archetype", "specialty", "hex", "home",
-  "attributes", "freeExperience", "techniques", "infection", "exposureDeadline", "treatmentAttempted", "terminalScenes"] as const;
 const editable = ["portrait", "primary", "secondary", "protection", "outfit", "personal", "bag", "transport", "pocket1", "pocket2", "equippedItems", "kitCondition",
   "hp", "armorMarked", "stress", "hope", "food", "water", "foodConsumedDay", "waterConsumedDay", "provisionLots",
   "ammo", "ammoType", "ammoSpentScene", "ammoSpentType", "ammoSpentTypes", "inventory", "notes", "abilityUses", "restPlan"] as const;
-const allowedKeys = new Set<string>([...immutable, ...editable]);
 const allowedItemKeys = new Set(["id", "name", "load", "qty", "condition", "catalogKey", "category", "armorMarked", "foundDay",
   "provisionResource", "portionsPerUnit", "portionsRemaining", "prepared", "verified", "opened", "expiresDay", "battery", "storedResource", "storedAmount", "cartDeployed", "cartItems", "ammunitionType", "committedAmmo"]);
 function validInventoryItem(item: InventoryItem, nested = false): boolean {
@@ -245,31 +242,42 @@ export function playerEditPayload(before: GameState, after: GameState) {
 export function applyPlayerChange(game: GameState, survivorId: string, before: Survivor, after: Survivor,
   fearDelta: number, logs: PlayerLog[], noiseDelta = 0, shelterWorkActions: ShelterWorkAction[] = []): GameState | null {
   const person = game.survivors.find(s => s.id === survivorId);
-  if (!person || before?.id !== survivorId || after?.id !== survivorId || JSON.stringify(person) !== JSON.stringify(before)
-    || !Number.isInteger(fearDelta) || fearDelta < 0 || fearDelta > 1
+  // Compare only the fields this interaction changes and preserve concurrent edits elsewhere.
+  // Existing legacy values must not block an unrelated resource control.
+  if (!person || before?.id !== survivorId || after?.id !== survivorId) return null;
+  const keys = new Set([...Object.keys(before), ...Object.keys(after)] as (keyof Survivor)[]);
+  const edited = [...keys].filter(key => JSON.stringify(before[key]) !== JSON.stringify(after[key]));
+  if (edited.some(key => !editable.includes(key as typeof editable[number])
+    || JSON.stringify(person[key]) !== JSON.stringify(before[key]))) return null;
+  const changed = (key: keyof Survivor) => edited.includes(key);
+  const merged = structuredClone(person);
+  for (const key of edited) {
+    if (Object.hasOwn(after, key)) Object.assign(merged, { [key]: structuredClone(after[key]) });
+    else delete merged[key];
+  }
+  after = merged;
+  if (!Number.isInteger(fearDelta) || fearDelta < 0 || fearDelta > 1
     || !Number.isInteger(noiseDelta) || noiseDelta < 0 || noiseDelta > 5 || game.noise + noiseDelta > 5
     || !Array.isArray(logs) || logs.length > 3
     || !Array.isArray(shelterWorkActions) || shelterWorkActions.length > 4
     || shelterWorkActions.some(action => !action || !["join", "leave", "schedule", "cancel"].includes(action.type) || typeof action.projectId !== "string")
     || (fearDelta === 1 && !logs.some(log => log?.kind === "dados"))
-    || !Object.keys(after).every(key => allowedKeys.has(key))
-    || immutable.some(key => JSON.stringify(before[key]) !== JSON.stringify(after[key]))
-    || !Number.isInteger(after.hp) || after.hp < 0 || after.hp > survivorStats(after).hp
-    || !Number.isInteger(after.armorMarked) || after.armorMarked < 0 || after.armorMarked > survivorStats(after).armor
-    || !Number.isInteger(after.stress) || after.stress < 0 || after.stress > 6
-    || !Number.isInteger(after.hope) || after.hope < 0 || after.hope > 6
-    || ![after.food, after.water, after.ammo].every(value => Number.isInteger(value) && value >= 0 && value <= 99)
-    || (after.outfit !== undefined && typeof after.outfit !== "string")
-    || (after.transport !== undefined && typeof after.transport !== "string")
-    || (after.ammoSpentScene !== undefined && (!Number.isInteger(after.ammoSpentScene) || after.ammoSpentScene < 1))
-    || (after.ammoSpentType !== undefined && typeof after.ammoSpentType !== "string")
-    || (after.ammoSpentTypes !== undefined && (!Array.isArray(after.ammoSpentTypes)
+    || (changed("hp") && (!Number.isInteger(after.hp) || after.hp < 0 || after.hp > survivorStats(after).hp))
+    || (changed("armorMarked") && (!Number.isInteger(after.armorMarked) || after.armorMarked < 0 || after.armorMarked > survivorStats(after).armor))
+    || (changed("stress") && (!Number.isInteger(after.stress) || after.stress < 0 || after.stress > 6))
+    || (changed("hope") && (!Number.isInteger(after.hope) || after.hope < 0 || after.hope > 6))
+    || (["food", "water", "ammo"] as const).some(key => changed(key) && (!Number.isInteger(after[key]) || after[key] < 0 || after[key] > 99))
+    || (changed("outfit") && ((after.outfit !== undefined && typeof after.outfit !== "string")))
+    || (changed("transport") && ((after.transport !== undefined && typeof after.transport !== "string")))
+    || (changed("ammoSpentScene") && ((after.ammoSpentScene !== undefined && (!Number.isInteger(after.ammoSpentScene) || after.ammoSpentScene < 1))))
+    || (changed("ammoSpentType") && ((after.ammoSpentType !== undefined && typeof after.ammoSpentType !== "string")))
+    || (changed("ammoSpentTypes") && ((after.ammoSpentTypes !== undefined && (!Array.isArray(after.ammoSpentTypes)
       || after.ammoSpentTypes.length > ammunitionTypes.length
-      || after.ammoSpentTypes.some(type => !ammunitionTypes.includes(type as AmmunitionType))))
-    || !Array.isArray(after.inventory) || after.inventory.length > 120
-    || after.inventory.some(item => !validInventoryItem(item))
-    || typeof after.notes !== "string" || after.notes.length > 4000
-    || !validRestPlan(after.restPlan, game.survivors, after, game.partyHex)
+      || after.ammoSpentTypes.some(type => !ammunitionTypes.includes(type as AmmunitionType))))))
+    || (changed("notes") && (typeof after.notes !== "string" || after.notes.length > 4000))
+    || (changed("restPlan") && !validRestPlan(after.restPlan, game.survivors, after, game.partyHex))
+    || (changed("inventory") && (!Array.isArray(after.inventory) || after.inventory.length > 120
+      || after.inventory.some(item => !validInventoryItem(item))))
     || logs.some(log => !log || !["chat", "dados", "dano", "inventário", "habilidade", "provisões", "tratamento"].includes(log.kind)
       || typeof log.text !== "string" || log.text.length > 600)) return null;
   const next = structuredClone(game);

@@ -63,3 +63,19 @@ test('PATCH da ficha preserva CAS e reenvia o mesmo salvamento sem repetir custo
  assert.equal((await patch({...body,after:{...after,stress:2}})).status,409);
  authenticated=null;assert.equal((await patch(body)).status,401);
 });
+
+test('PATCH de PV aceita ficha legada e preserva notas concorrentes sem bloquear cliques seguintes',async()=>{
+ reset();
+ state.survivors[0].inventory=[{id:'antigo',name:'Item legado',qty:0,load:1,condition:'Íntegro'}];
+ state.survivors[0].campoAntigo='preservar';
+ let before=structuredClone(state.survivors[0]);
+ state.survivors[0].notes='Nota nova do mestre';
+ const patch=(id,after)=>PATCH(new Request('https://example.test/api/campaign?campanha=campaign',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,day:state.day,before,after,logs:[]})}));
+ let after={...before,hp:1};
+ assert.equal((await patch('hp-1',after)).status,200);
+ before=after;after={...before,hp:2};
+ const second=await patch('hp-2',after);assert.equal(second.status,200);
+ const saved=(await second.json()).state.survivors[0];
+ assert.equal(saved.hp,2);assert.equal(saved.notes,'Nota nova do mestre');assert.equal(saved.campoAntigo,'preservar');
+ assert.equal(writes,2);
+});

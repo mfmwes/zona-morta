@@ -2764,3 +2764,23 @@ test('reenvio após perda de resposta não duplica Medo, barulho ou registros e 
   const changed=structuredClone(g);changed.survivors[0].stress=2;
   const otherJob={...job,id:'other'};assert.equal((await applyPlayerSheetEdit(changed,actor,otherJob)).ok,false);
 });
+
+test('PV salva com dados legados inalterados e preserva edições paralelas em outros campos', async () => {
+  const {applyPlayerSheetEdit}=require('../lib/player-sheet-edit.ts');
+  let game=campaign(); const actor=game.survivors[0].id;
+  game.survivors[0].inventory=[{id:'legacy',name:'Comida antiga',load:1,qty:0,condition:'Íntegro'}];
+  game.survivors[0].legacyTag='antigo';
+  game.survivors[0].restPlan={kind:'short',choices:[{action:'hp',targetId:'ausente'},{action:'stress',targetId:actor}]};
+  const before=structuredClone(game.survivors[0]); const after={...before,hp:1};
+  game.survivors[0].notes='Anotação do mestre durante o clique';
+  const result=await applyPlayerSheetEdit(game,actor,{id:'mark-hp',day:game.day,before,after,logs:[]});
+  assert.equal(result.ok,true);game=result.state;
+  assert.equal(game.survivors[0].hp,1);assert.equal(game.survivors[0].notes,'Anotação do mestre durante o clique');
+  assert.deepEqual(game.survivors[0].inventory,before.inventory);assert.equal(game.survivors[0].legacyTag,'antigo');
+  for (const patch of [{hp:999},{name:'Outro nome'},{legacyTag:'alterado'},{inventory:[{...before.inventory[0],qty:-1}]}]) {
+    const current=structuredClone(game.survivors[0]);
+    assert.equal(collaboration.applyPlayerChange(game,actor,current,{...current,...patch},0,[]),null);
+  }
+  const stale=structuredClone(game.survivors[0]);game.survivors[0].hp=2;
+  assert.equal(collaboration.applyPlayerChange(game,actor,stale,{...stale,hp:3},0,[]),null);
+});
