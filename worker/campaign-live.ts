@@ -5,7 +5,18 @@ export class CampaignLive {
 
   async fetch(request: Request) {
     if (request.method === "POST") {
-      const message = JSON.stringify({ type: "changed" });
+      let revision: number | undefined;
+      let presentation = false;
+      try {
+        const notice = await request.json() as { revision?: unknown; presentation?: unknown };
+        if (Number.isInteger(notice.revision) && Number(notice.revision) >= 0) revision = Number(notice.revision);
+        presentation = notice.presentation === true;
+      } catch { /* Avisos internos antigos continuam compatíveis. */ }
+      const message = JSON.stringify({
+        type: "changed",
+        ...(revision !== undefined ? { revision } : {}),
+        ...(presentation ? { presentation: true } : {}),
+      });
       for (const socket of this.ctx.getWebSockets()) {
         try { socket.send(message); } catch { socket.close(1011, "Reconectar"); }
       }
@@ -19,7 +30,7 @@ export class CampaignLive {
   }
 
   webSocketMessage(socket: WebSocket, message: string | ArrayBuffer) {
-    if (message === "ping") socket.send(JSON.stringify({ type: "changed" }));
+    if (message === "ping") socket.send(JSON.stringify({ type: "pong" }));
   }
 
   webSocketClose(socket: WebSocket, code: number, reason: string) { socket.close(code, reason); }
