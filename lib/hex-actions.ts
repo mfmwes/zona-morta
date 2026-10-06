@@ -10,9 +10,9 @@ import {
 } from "./game";
 import { revealSector } from "./sectors";
 import { adjacentHexes, parseHex } from "./world";
-import { advanceCampaignTime } from "./time";
+import { advanceCampaignTime, advanceParticipantTime } from "./time";
 import { shelterTravelMinutes } from "./shelter-projects";
-import { survivorTimedCommitment } from "./activity";
+import { parallelTimeLabel, participantTimePreview, survivorTimedCommitment } from "./activity";
 import { prepareHex } from "./hex-automation";
 
 export type HexQuickAction =
@@ -75,10 +75,12 @@ export function moveSurvivors(game: GameState, destination: string, survivorIds:
   if (!source || !target || hexDistance(target.q - source.q, target.r - source.r) !== 1) return { ok: false, message: "" };
 
   const travelMinutes = shelterTravelMinutes(game, sourceHex, destination, record.routeHours * 60);
-  if (game.minutes + travelMinutes >= 1440) return { ok: false, message: "" };
+  const timePreview = participantTimePreview(game, ids, travelMinutes);
+  if (!timePreview.ok) return { ok: false, message: "O trajeto não cabe no tempo restante deste dia para este grupo." };
 
   const wholeSourceGroup = people.length === survivorsAtHex(game, sourceHex).length;
-  if (!advanceCampaignTime(game, travelMinutes).ok) return { ok: false, message: "" };
+  const timeResult = advanceParticipantTime(game, ids, travelMinutes);
+  if (!timeResult.ok) return { ok: false, message: "" };
   for (const person of people) person.hex = destination;
   for (const npc of game.npcs ?? []) {
     if (!npc.active || npc.status === "Morto" || npc.status === "Desaparecido" || npc.hex !== sourceHex) continue;
@@ -97,7 +99,8 @@ export function moveSurvivors(game: GameState, destination: string, survivorIds:
   const sector = revealAround(game, destination);
   const names = people.map(person => person.name);
   const subject = names.length === 1 ? names[0] : names.join(", ");
-  const message = `${subject} ${names.length === 1 ? "entrou" : "entraram"} em ${sector?.name ?? `hex ${destination}`} após ${travelDurationLabel(travelMinutes)} de trajeto.`;
+  const timing = timeResult.overlapMinutes ? ` · ${parallelTimeLabel(timeResult)}` : "";
+  const message = `${subject} ${names.length === 1 ? "entrou" : "entraram"} em ${sector?.name ?? `hex ${destination}`} após ${travelDurationLabel(travelMinutes)} de trajeto${timing}.`;
   addLog(game, "travessia", message);
   return { ok: true, message, sourceHex, destination, survivorIds: ids };
 }
@@ -111,13 +114,17 @@ export function hexActionOptions(game: GameState, id: string) {
   const nearby = hexDistance(area.q - partyQ, area.r - partyR) === 1;
   const sources = movementSources(game, id);
   const travelMinutes = shelterTravelMinutes(game, game.partyHex, id, record.routeHours * 60);
-  const sourceTravelMinutes = sources.map(group => shelterTravelMinutes(game, group.hex, id, record.routeHours * 60));
-  const shortestMovementMinutes = sourceTravelMinutes.length ? Math.min(...sourceTravelMinutes) : travelMinutes;
   const atParty = id === game.partyHex;
   const peopleHere = survivorsAtHex(game, id);
+  const mainGroup = survivorsAtHex(game, game.partyHex);
   const canObserve = (sources.length > 0 || (game.survivors.length === 0 && nearby)) && record.discovery === "desconhecido";
-  const canTravel = nearby && record.discovery !== "desconhecido" && game.minutes + travelMinutes < 1440;
-  const canMoveSurvivors = sources.length > 0 && record.discovery !== "desconhecido" && game.minutes + shortestMovementMinutes < 1440;
+  const canTravel = nearby && record.discovery !== "desconhecido"
+    && (mainGroup.length === 0 ? game.minutes + travelMinutes < 1440
+      : participantTimePreview(game, mainGroup.map(person => person.id), travelMinutes).ok);
+  const canMoveSurvivors = sources.some(group =>
+    participantTimePreview(game, group.members.map(person => person.id),
+      shelterTravelMinutes(game, group.hex, id, record.routeHours * 60)).ok)
+    && record.discovery !== "desconhecido";
   const canEstablish = (peopleHere.length > 0 || (game.survivors.length === 0 && atParty))
     && record.discovery === "explorado" && !game.shelter.hex;
   const canRelocate = (peopleHere.length > 0 || (game.survivors.length === 0 && atParty))

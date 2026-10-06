@@ -16,6 +16,7 @@ const { abilityAvailable } = require('../lib/abilities.ts');
 const { catalogKey, itemFromCatalog } = require('../lib/inventory.ts');
 const auto = require('../lib/hex-automation.ts');
 const shelterProjects = require('../lib/shelter-projects.ts');
+const campaignTime = require('../lib/time.ts');
 const { validExplorationPreferences } = require('../lib/hex-automation-validation.ts');
 function campaign(origin = content.origins[1].name) {
   const game = defaultState();
@@ -397,6 +398,29 @@ test('participante em turno do abrigo não pode iniciar nem concluir busca nas m
   const pending=structuredClone(f.game);
   assert.match(auto.completeSearch(f.game,'0,0','market','search-1'),/ocupado/i);
   assert.deepEqual(f.game,pending);
+});
+
+test('busca de subgrupo atrasado preenche janela paralela sem avançar novamente o relógio geral', () => {
+  const f=campaign();
+  const archetype=content.archetypes[0];
+  const other=initialSurvivor({ name:'Bia', origin:content.origins[0].name, past:'', archetype:archetype.name,
+    specialty:archetype.specialties[0].name, freeExperience:'Vigilância', techniques:[],
+    attributes:{ Agilidade:1, Força:1, Finesse:1, Instinto:1, Presença:0, Conhecimento:0 },
+    primary:'', secondary:'', protection:'', personal:'' });
+  other.hex='0,0'; other.inventory=[];
+  f.game.survivors.push(other);
+
+  const start=f.game.minutes;
+  const outside=campaignTime.advanceParticipantTime(f.game,[other.id],60);
+  assert.equal(outside.ok,true);
+  assert.equal(f.game.minutes,start+60);
+  assert.equal(f.game.parallelTime.survivorMinutes[f.actor.id],start);
+
+  const beforeSearch=f.game.minutes;
+  assert.equal(auto.resolvePreparedSearch(f.game,input(f),die(1)),null);
+  assert.equal(f.game.minutes,beforeSearch);
+  assert.equal(f.game.parallelTime.survivorMinutes[f.actor.id],start+f.area.minutes);
+  assert.ok(f.game.log.some(row=>row.kind==='busca' && /em paralelo/.test(row.text)));
 });
 
 test('falha de validação e passagem de dia não cobram tempo ou habilidade', () => {

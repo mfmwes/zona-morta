@@ -407,6 +407,8 @@ export type TablePresentation = {
   active: boolean;
 };
 
+export type ParallelTimeState = { day: number; survivorMinutes: Record<string, number> };
+
 export type GameState = {
   campaignId: string;
   day: number;
@@ -418,6 +420,8 @@ export type GameState = {
   expedition?: number;
   shortRest?: number;
   longRest?: number;
+  /** Curso temporal individual dos sobreviventes dentro do dia. Permite que subgrupos independentes preencham o mesmo intervalo sem cobrar o relógio global duas vezes. */
+  parallelTime?: ParallelTimeState;
   explorationPreferences?: { autoPrepare: boolean; participantIds: string[]; transport?: "personal-first" | "cart-first" };
   hexes: Record<string, HexState>;
   survivors: Survivor[];

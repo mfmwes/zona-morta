@@ -1,10 +1,13 @@
 import { absoluteMinutes, addLog, type GameState } from "./game";
 import { processScheduledShelterWork } from "./shelter-projects";
+import { ensureParallelTime, participantTimePreview, resetParallelTime, syncAllParticipantsToCurrentTime, type ParticipantTimePreview } from "./activity";
 
 export type AdvanceTimeResult = {
   ok: boolean;
   completedWork: ReturnType<typeof processScheduledShelterWork>;
 };
+
+export type AdvanceParticipantTimeResult = AdvanceTimeResult & ParticipantTimePreview;
 
 function dueWorkBefore(game: GameState, targetAbsolute: number) {
   return (game.shelter.projects ?? [])
@@ -16,13 +19,11 @@ function dueWorkBefore(game: GameState, targetAbsolute: number) {
     .sort((a, b) => a - b)[0];
 }
 
-/** Avança o relógio da campanha e resolve automaticamente turnos de obra cujo
- * horário de término for alcançado. Mantém o limite diário usado pelo sistema. */
-export function advanceCampaignTime(game: GameState, minutes: number, logText?: string): AdvanceTimeResult {
-  if (!Number.isInteger(minutes) || minutes < 0 || game.minutes + minutes >= 1440)
+function advanceWorldToMinute(game: GameState, targetMinute: number, logText?: string): AdvanceTimeResult {
+  if (!Number.isInteger(targetMinute) || targetMinute < game.minutes || targetMinute >= 1440)
     return { ok: false, completedWork: [] };
 
-  const targetAbsolute = absoluteMinutes(game) + minutes;
+  const targetAbsolute = (game.day - 1) * 1440 + targetMinute;
   const completedWork: ReturnType<typeof processScheduledShelterWork> = [];
 
   // Resolve turnos exatamente no horário em que terminam, mesmo quando uma
@@ -41,10 +42,39 @@ export function advanceCampaignTime(game: GameState, minutes: number, logText?: 
     completedWork.push(...resolved);
   }
 
-  const dayStart = (game.day - 1) * 1440;
-  game.minutes = targetAbsolute - dayStart;
+  game.minutes = targetMinute;
   if (logText) addLog(game, "tempo", logText);
   return { ok: true, completedWork };
+}
+
+/** Avança o relógio global. Como todos esperaram esse intervalo, elimina
+ * qualquer folga paralela ainda não usada pelos subgrupos. */
+export function advanceCampaignTime(game: GameState, minutes: number, logText?: string): AdvanceTimeResult {
+  if (!Number.isInteger(minutes) || minutes < 0 || game.minutes + minutes >= 1440)
+    return { ok: false, completedWork: [] };
+  if (minutes === 0) return { ok: true, completedWork: [] };
+  const result = advanceWorldToMinute(game, game.minutes + minutes, logText);
+  if (result.ok) syncAllParticipantsToCurrentTime(game);
+  return result;
+}
+
+/** Consome tempo apenas dos participantes informados. O relógio global avança
+ * somente até o maior horário alcançado entre os subgrupos. */
+export function advanceParticipantTime(game: GameState, survivorIds: string[], minutes: number, logText?: string): AdvanceParticipantTimeResult {
+  const preview = participantTimePreview(game, survivorIds, minutes);
+  if (!preview.ok) return { ...preview, completedWork: [] };
+
+  const timeline = ensureParallelTime(game);
+  for (const id of new Set(survivorIds)) timeline.survivorMinutes[id] = preview.endMinute;
+
+  let completedWork: ReturnType<typeof processScheduledShelterWork> = [];
+  if (preview.worldAfter > game.minutes) {
+    const result = advanceWorldToMinute(game, preview.worldAfter);
+    if (!result.ok) return { ...preview, ok: false, completedWork: [] };
+    completedWork = result.completedWork;
+  }
+  if (logText) addLog(game, "tempo", logText);
+  return { ...preview, ok: true, completedWork };
 }
 
 /** Ajuste manual no mesmo dia. Ao mover o relógio para frente, turnos
@@ -54,6 +84,7 @@ export function setCampaignTime(game: GameState, targetMinute: number) {
     return { ok: false, completedWork: [] as ReturnType<typeof processScheduledShelterWork> };
   if (targetMinute >= game.minutes) return advanceCampaignTime(game, targetMinute - game.minutes);
   game.minutes = targetMinute;
+  resetParallelTime(game);
   return { ok: true, completedWork: [] as ReturnType<typeof processScheduledShelterWork> };
 }
 

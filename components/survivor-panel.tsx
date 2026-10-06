@@ -33,8 +33,8 @@ import { adjustProvisionCount } from "@/lib/provisions";
 import { abilityCosts, abilityPeriod, costLabels, periodLabels, recordAbilityUse, resolveGroupRest, restActionLabels, restActionsFor, restDurationMinutes, type AbilityCost, type RestAction, type RestChoice, type RestKind } from "@/lib/abilities";
 import { abilityUseOptions, abilityUseState } from "@/lib/ability-presentation";
 import { shelterTreatmentBonus } from "@/lib/shelter-projects";
-import { advanceCampaignTime } from "@/lib/time";
-import { survivorTimedCommitment } from "@/lib/activity";
+import { advanceParticipantTime } from "@/lib/time";
+import { participantTimePreview, survivorTimedCommitment } from "@/lib/activity";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 const infectionStates: Infection[] = ["Saudável", "Exposto", "Infectado", "Sintomático", "Terminal"];
@@ -125,7 +125,8 @@ function RestPlanner({ game, edit, selected, playerMode, playerPreview, restPeer
   const canResolve = !personalPlanning;
   const actors = personalPlanning ? [selected] : game.survivors;
   const busyActors = actors.map(person => ({ person, commitment: survivorTimedCommitment(game, person.id) })).filter(row => row.commitment);
-  const longCrossesDay = kind === "long" && game.minutes + restDurationMinutes.long >= 1440;
+  const longRestPreview = participantTimePreview(game, canResolve ? game.survivors.map(person => person.id) : actors.map(person => person.id), restDurationMinutes.long);
+  const longCrossesDay = kind === "long" && !longRestPreview.ok;
   const peers = playerMode
     ? (restPeers.some(person => person.id === selected.id)
       ? restPeers
@@ -440,7 +441,8 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
         (selected.exposureDeadline ?? 0) < absoluteMinutes(game) || !chosenMedicine || !cleanWaterConfirmed) return;
     const commitment = survivorTimedCommitment(game, selected.id);
     if (commitment) { toast.error("Tratamento indisponível", { description: commitment.label + "." }); return; }
-    if (absoluteMinutes(game) + 30 > (selected.exposureDeadline ?? 0) || game.minutes + 30 >= 1440) {
+    const treatmentPreview = participantTimePreview(game, [selected.id], 30);
+    if (!treatmentPreview.ok || (game.day - 1) * 1440 + treatmentPreview.endMinute > (selected.exposureDeadline ?? 0)) {
       toast.error("Não há tempo suficiente", { description: "O tratamento leva 30 min e precisa terminar dentro da janela de Exposição e antes da passagem de dia." });
       return;
     }
@@ -455,7 +457,8 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
       if (!s || s.infection !== "Exposto" || s.treatmentAttempted) return;
       const busy = survivorTimedCommitment(draft, s.id);
       if (busy) { failure = busy.label; return; }
-      if (absoluteMinutes(draft) + 30 > (s.exposureDeadline ?? 0) || draft.minutes + 30 >= 1440) {
+      const treatmentPreview = participantTimePreview(draft, [s.id], 30);
+      if (!treatmentPreview.ok || (draft.day - 1) * 1440 + treatmentPreview.endMinute > (s.exposureDeadline ?? 0)) {
         failure = "A janela de Exposição termina antes dos 30 min necessários para o tratamento."; return;
       }
       if (chosenMedicine === "shared") {
@@ -464,7 +467,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
         const item = s.inventory.find(x => x.id === chosenMedicine);
         if (!item || !countsAsMedication(item) || item.qty < 1) { failure = "O item de tratamento não está mais disponível."; return; }
       }
-      if (!advanceCampaignTime(draft, 30, `Tratamento de Exposição de ${s.name}: +30 min.`).ok) {
+      if (!advanceParticipantTime(draft, [s.id], 30, `Tratamento de Exposição de ${s.name}: 30 min reservados.`).ok) {
         failure = "Não foi possível avançar o relógio para o tratamento."; return;
       }
       let sourceLabel = "";

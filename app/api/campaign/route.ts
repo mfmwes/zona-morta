@@ -158,12 +158,25 @@ function validPresentation(value: GameState["presentation"] | undefined) {
     && typeof value.active === "boolean");
 }
 
+function validParallelTime(value: GameState["parallelTime"] | undefined, state: Partial<GameState>) {
+  if (value === undefined) return true;
+  if (!value || value.day !== state.day || !value.survivorMinutes || typeof value.survivorMinutes !== "object"
+    || Array.isArray(value.survivorMinutes)) return false;
+  const survivors = Array.isArray(state.survivors) ? state.survivors.filter(person => person && typeof person.id === "string") : [];
+  const ids = new Set(survivors.map(person => person.id));
+  const entries = Object.entries(value.survivorMinutes);
+  return entries.length <= survivors.length
+    && entries.every(([id, minute]) => ids.has(id) && Number.isInteger(minute)
+      && Number(minute) >= 0 && Number(minute) <= Number(state.minutes));
+}
+
 function validState(value: unknown): value is GameState {
   if (!value || typeof value !== "object") return false;
   const state = value as Partial<GameState>;
   const shelter = state.shelter as Partial<GameState["shelter"]> | undefined;
   return Number.isInteger(state.day) && state.day! > 0 && state.day! < 100000
     && Number.isInteger(state.minutes) && state.minutes! >= 0 && state.minutes! < 1440
+    && validParallelTime(state.parallelTime, state)
     && Number.isInteger(state.fear) && state.fear! >= 0 && state.fear! <= 12
     && Number.isInteger(state.noise) && state.noise! >= 0 && state.noise! <= 5
     && typeof state.partyHex === "string" && /^-?\d+,-?\d+$/.test(state.partyHex)

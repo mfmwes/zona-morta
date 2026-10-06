@@ -34,6 +34,7 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
   const visible = structuredClone(game);
   delete visible.presentation;
   delete visible.explorationPreferences;
+  delete visible.parallelTime;
   visible.log = visible.log.map(entry => {
     const actor = entry.actorId ? game.survivors.find(person => person.id === entry.actorId) : null;
     return actor ? { ...entry, actorName: entry.actorName ?? actor.name, actorPortrait: entry.actorPortrait ?? actor.portrait } : entry;
@@ -288,7 +289,7 @@ export function applyPlayerChange(game: GameState, survivorId: string, before: S
       issue = result.ok ? null : result.message;
       if (!issue) addLog(next, "abrigo", `${next.survivors[index].name} iniciou um turno de 4h em ${project.name}.`, survivorId);
     } else if (action.type === "cancel") {
-      if (!cancelSurvivorWorkShift(project, survivorId)) issue = "Nenhum turno seu estava programado nesta obra.";
+      if (!cancelSurvivorWorkShift(project, survivorId, next)) issue = "Nenhum turno seu estava programado nesta obra.";
       if (!issue) addLog(next, "abrigo", `${next.survivors[index].name} cancelou seu turno em ${project.name}.`, survivorId);
     }
     if (issue) return null;

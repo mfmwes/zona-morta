@@ -12,7 +12,7 @@ import { searchAvailabilityError } from "@/lib/exploration";
 import { collectLocationStock, deepSearchLimit, deepSearchesUsed, finishPreparedSearch, declareSearchArea, depositExpeditionItems, locationScaleLabels, locationScaleOf, lootDefinitions, prepareLocation, quickSearchOptions, registerVisibleStock, resolveNoVisibleStock, resizeLocationPreparation, resolvePreparedSearch, searchAreaState, searchResult, startDeepSearch, suggestCollection, suggestVisibleStock, warehouseWorkers, type CollectionLine, type VisibleStockSuggestion } from "@/lib/hex-automation";
 import { RollForm } from "@/components/roll-dialog";
 import type { LocationScale, SearchArea } from "@/lib/hex-automation-types";
-import { survivorTimedCommitment } from "@/lib/activity";
+import { parallelTimeLabel, participantTimePreview, survivorTimedCommitment } from "@/lib/activity";
 export type HexSearchRequest = { hexId: string; pointId: string; participantIds?: string[] };
 export function HexSearchDialog({ game, edit, request, onClose }: { game: GameState; edit: (fn: (draft: GameState) => void) => void; request: HexSearchRequest; onClose: () => void }) {
   const hex = game.hexes[request.hexId];
@@ -73,6 +73,11 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
   const deepLimit = point ? deepSearchLimit(point) : 0;
   const availableAreas = searchableAreas.filter(row => point && searchAreaState(point, row) === "available").length;
   const canResize = Boolean(point && prep && !prep.attempts.length && !prep.stock.length && !prep.collections.length && !point.searches.length);
+  const normalMinutes = area ? (worker && area.minutes === 60 ? 30 : area.minutes) : 30;
+  const normalTimePreview = participantTimePreview(game, participants, normalMinutes);
+  const attemptTimePreview = attempt ? participantTimePreview(game, attempt.participants, attempt.minutes) : null;
+  const deepTimePreview = participantTimePreview(game, participants, 30);
+  const deepAttemptTimePreview = deepAttempt ? participantTimePreview(game, deepAttempt.participants, deepAttempt.minutes) : null;
 
   function act(fn: (draft: GameState) => string | null, message?: string) {
     let error: string | null = null;
@@ -289,7 +294,7 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
             <fieldset><legend className="field-label">Participantes presentes</legend><div className="flex flex-wrap gap-3">{people.map(person => { const commitment = commitmentById.get(person.id); return <label key={person.id} className="text-sm" title={commitment?.label}><input type="checkbox" disabled={Boolean(commitment)} checked={participants.includes(person.id)} onChange={event => setParticipants(current => event.target.checked ? [...current, person.id] : current.filter(id => id !== person.id))} /> {person.name}{commitment ? ` · ocupado até ${commitment.until}` : ""}</label>; })}</div><Button variant="ghost" size="sm" onClick={() => edit(draft => { draft.explorationPreferences = { ...draft.explorationPreferences, autoPrepare: draft.explorationPreferences?.autoPrepare ?? false, participantIds: participants }; })}>Usar estes participantes como padrão</Button></fieldset>
             {(area.spacious || area.minutes === 60) && warehouseWorkers(game, request.hexId).some(row => participants.includes(row.id)) && <Pick label="Habilidade de depósito · 1× por expedição" value={worker || "none"} options={[{ value: "none", label: "Guardar a habilidade para depois" }, ...warehouseWorkers(game, request.hexId).filter(row => participants.includes(row.id)).map(row => ({ value: row.id, label: `${row.name} · ${area.minutes === 60 ? "reduzir para 30 min" : "identificar melhor área; sem achado extra"}` }))]} onChange={value => setWorker(value === "none" ? "" : value)} />}
             {worker && area.minutes === 30 && <p className="text-sm">Melhores indícios conhecidos: {(prep.areas.find(row => row.searchable !== false && !prep.attempts.some(attempt => attempt.areaId === row.id) && row.access === "open") ?? area).name} · {(prep.areas.find(row => row.searchable !== false && !prep.attempts.some(attempt => attempt.areaId === row.id) && row.access === "open") ?? area).signal}. Confirme esses indícios com o mestre antes de começar.</p>}
-            <p className="text-sm subtle">{worker && area.minutes === 60 ? 30 : area.minutes} min · Barulho +{area.noise} · {area.access === "open" ? "Acesso livre" : area.access === "risk" ? `Teste ${area.difficulty}` : "Acesso bloqueado"}.</p>
+            <p className="text-sm subtle">{normalMinutes} min · Barulho +{area.noise} · {area.access === "open" ? "Acesso livre" : area.access === "risk" ? `Teste ${area.difficulty}` : "Acesso bloqueado"}.{normalTimePreview.ok && normalTimePreview.overlapMinutes > 0 ? ` ${parallelTimeLabel(normalTimePreview)}.` : ""}</p>
             <Button disabled={Boolean(available) || !participants.length || area.access === "blocked"} onClick={() => { setAreaId(area.id); act(draft => resolvePreparedSearch(draft, { id: operationId, ...request, areaId: area.id, participants, mode, objective, purpose, catalogKey: chosenKey, quantity, warehouseWorker: worker || undefined })); }}>{area.access === "risk" ? "Iniciar busca e resolver acesso" : `Resolver busca · +${worker && area.minutes === 60 ? 30 : area.minutes} min`}</Button>
           </section>}
 
@@ -298,7 +303,7 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
             {attempt.outcome && <div role="status" className="list-card text-sm"><b>{attempt.outcome.success ? "Sucesso" : "Falha"} · {attempt.outcome.total} · {attempt.outcome.with === "Hope" ? "Esperança" : "Medo"}</b>{attempt.outcome.with === "Fear" && <p>O mestre escolhe a complicação. Um sucesso mantém os achados prometidos.</p>}</div>}
             {attempt.status === "ready" && <>
               {(attempt.roll || attempt.mode === "specific" || attempt.outcome?.success === false) && <div className="list-card"><p className="text-sm">{attempt.roll ? `d12 ${attempt.roll} · ${area.table}` : "Resultado combinado"}</p><b>{searchResult(point!, attempt)}</b></div>}
-              <p className="text-sm subtle">Ao confirmar: {displayTime(game.minutes)} → {displayTime(game.minutes + attempt.minutes)}. O estoque fica no local até a coleta.</p>
+              <p className="text-sm subtle">{attemptTimePreview?.ok ? `Ao confirmar: ${parallelTimeLabel(attemptTimePreview)}.` : "Esta busca não cabe mais no dia deste grupo."} O estoque fica no local até a coleta.</p>
               <Button disabled={Boolean(available)} onClick={() => { setAreaId(area.id); act(draft => finishPreparedSearch(draft, request.hexId, request.pointId, attempt.id), "Busca concluída; estoque salvo"); }}>{attempt.mode === "open" && attempt.outcome?.success !== false && !attempt.roll ? `Concluir busca e sortear achado · +${attempt.minutes} min` : "Confirmar resultado e tempo"}</Button>
             </>}
           </section>}
@@ -309,6 +314,7 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
             <div className="hex-deep-search-costs">
               <span>30 min</span><span>Barulho +{Math.min(5, Math.max(1, area.noise + 1))}</span><span>Dificuldade 13</span><span>máx. 1 item</span>
             </div>
+            {deepTimePreview.ok && deepTimePreview.overlapMinutes > 0 && <p className="text-sm subtle">{parallelTimeLabel(deepTimePreview)}.</p>}
             <p className="text-sm">Escolha algo plausível que o grupo procura em armários presos, fundos de móveis, compartimentos ou outros pontos que a busca normal não cobriu. Um teste de ação decide se ainda havia algo útil ali.</p>
             {deepKeys.length > 0 ? <>
               <Pick label="Foco da busca profunda" value={deepChosenKey}
@@ -325,7 +331,7 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
           </section>}
 
           {deepAttempt && ["pending", "ready"].includes(deepAttempt.status) && <section className="hex-search-step hex-deep-search">
-            <div className="hex-deep-search-heading"><div><h3><ShieldAlert size={18} /> Busca profunda em andamento</h3><p className="text-sm subtle">{deepAttempt.objective} · 30 min · Barulho +{deepAttempt.noise}</p></div><span className="tag">Instinto · 13</span></div>
+            <div className="hex-deep-search-heading"><div><h3><ShieldAlert size={18} /> Busca profunda em andamento</h3><p className="text-sm subtle">{deepAttempt.objective} · 30 min · Barulho +{deepAttempt.noise}{deepAttemptTimePreview?.ok && deepAttemptTimePreview.overlapMinutes > 0 ? ` · ${parallelTimeLabel(deepAttemptTimePreview)}` : ""}</p></div><span className="tag">Instinto · 13</span></div>
             {deepAttempt.status === "pending" && <>
               <Pick label="Quem conduz a busca profunda?" value={deepActorId || deepAttempt.participants[0]}
                 options={people.filter(row => deepAttempt.participants.includes(row.id)).map(row => ({ value: row.id, label: row.name }))}
@@ -340,7 +346,7 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
               {deepAttempt.outcome.with === "Fear" && <p className="mt-1">O mestre recebe Medo normalmente e pode introduzir uma complicação coerente.</p>}
             </div>}
             {deepAttempt.status === "ready" && <>
-              <p className="text-sm subtle">Ao confirmar: {displayTime(game.minutes)} → {displayTime(game.minutes + deepAttempt.minutes)}. Esta área ficará esgotada para novas buscas.</p>
+              <p className="text-sm subtle">{deepAttemptTimePreview?.ok ? `Ao confirmar: ${parallelTimeLabel(deepAttemptTimePreview)}.` : "Esta busca profunda não cabe mais no dia deste grupo."} Esta área ficará esgotada para novas buscas.</p>
               <Button disabled={Boolean(available)} onClick={() => act(draft => finishPreparedSearch(draft, request.hexId, request.pointId, deepAttempt.id), "Busca profunda concluída")}>Confirmar resultado · +30 min</Button>
             </>}
           </section>}

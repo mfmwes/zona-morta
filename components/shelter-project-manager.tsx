@@ -328,7 +328,7 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
     if (!playerSurvivorId) return;
     edit(draft => {
       const target = projectFor(draft.shelter, project.key);
-      if (target) cancelSurvivorWorkShift(target, playerSurvivorId);
+      if (target) cancelSurvivorWorkShift(target, playerSurvivorId, draft);
     });
     toast("Seu turno foi cancelado.");
   }

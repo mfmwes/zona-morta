@@ -2,6 +2,7 @@ import { absoluteMinutes, addLog, content, displayTime, normalizeShelterAmmo, sh
 import { createId } from "./id";
 import { recordProvisionLot } from "./provisions";
 import { advanceCampaignTime } from "./time";
+import { markParticipantTime, syncParticipantsToCurrentTime } from "./activity";
 
 export type ShelterProjectKind = "facility" | "upgrade";
 export type ShelterBlueprintZone = "interior" | "utility" | "exterior";
@@ -403,6 +404,7 @@ export function scheduleSurvivorWorkShift(game: GameState, project: ShelterProje
   const preview = survivorWorkPreview(game, project, survivorId);
   if (preview.issue || preview.points < 1) return { ok: false, message: preview.issue ?? "Não foi possível programar seu turno." };
   const durationMinutes = hours * 60;
+  if (game.parallelTime?.day === game.day) syncParticipantsToCurrentTime(game, [survivorId]);
   project.volunteerShifts ??= [];
   project.volunteerShifts.push({
     survivorId,
@@ -417,10 +419,12 @@ export function scheduleSurvivorWorkShift(game: GameState, project: ShelterProje
   return { ok: true, message: `Seu turno foi programado até ${displayTime(game.minutes + durationMinutes)}.`, preview };
 }
 
-export function cancelSurvivorWorkShift(project: ShelterProject, survivorId: string) {
+export function cancelSurvivorWorkShift(project: ShelterProject, survivorId: string, game?: GameState) {
   const before = project.volunteerShifts?.length ?? 0;
   project.volunteerShifts = (project.volunteerShifts ?? []).filter(shift => shift.survivorId !== survivorId);
-  return (project.volunteerShifts?.length ?? 0) < before;
+  const cancelled = (project.volunteerShifts?.length ?? 0) < before;
+  if (cancelled && game?.parallelTime?.day === game.day) syncParticipantsToCurrentTime(game, [survivorId]);
+  return cancelled;
 }
 
 export function canVolunteer(npc: NPC, responsibility = false) {
@@ -914,6 +918,7 @@ export function processScheduledShelterWork(game: GameState) {
     if (!(project.volunteerShifts ?? []).includes(shift)) continue;
     const survivor = game.survivors.find(person => person.id === shift.survivorId);
     project.volunteerShifts = (project.volunteerShifts ?? []).filter(entry => entry !== shift);
+    if (game.parallelTime?.day === game.day) markParticipantTime(game, [shift.survivorId], game.minutes);
 
     if (shift.purpose === "operation") {
       const operation = projectDefinition(project.key)?.operationWork;

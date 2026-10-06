@@ -15,6 +15,7 @@ import { expirePhysicalFood, expirePortionLots, provisionDeadline, withdrawPorti
 import { shelterColdStorageActive, shelterMetrics } from "./shelter-projects";
 import { settleScheduledWorkBeforeMorning } from "./time";
 import { expireLocationFood } from "./hex-automation";
+import { resetParallelTime } from "./activity";
 
 export type DailyResource = "food" | "water";
 export type DayProvisionSource = "already" | "shared" | "personal" | "other" | "none";
@@ -338,6 +339,7 @@ function advanceMorning(game: GameState) {
   settleScheduledWorkBeforeMorning(game);
   game.day += 1;
   game.minutes = 480;
+  resetParallelTime(game);
   game.noise = 0;
   game.scene = (game.scene ?? 1) + 1;
   const morning = absoluteMinutes(game);

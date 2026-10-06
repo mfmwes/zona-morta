@@ -4,13 +4,13 @@ import { createId } from "./id";
 import { addStack, catalogKey, fillReusableContainer, itemFromCatalog, removeFromCart, sharedStorageHex, transferItem } from "./inventory";
 import { expirePhysicalFood } from "./provisions";
 import { normalizedSector, searchAreaLabel, searchAvailabilityError } from "./exploration";
-import { advanceCampaignTime } from "./time";
+import { advanceParticipantTime } from "./time";
 import { abilityAvailable, recordAbilityUse } from "./abilities";
 import { generateHexContent, suggestedLootTable } from "./hex-generators";
 import { equipmentModifiers } from "./equipment";
 import { resolveActionRoll, resolveRollResources, rollDie, type Edge } from "./rolls";
 import type { LocationScale, SearchAttempt, SearchArea } from "./hex-automation-types";
-import { timedActionParticipantIssue } from "./activity";
+import { parallelTimeLabel, participantTimePreview, timedActionParticipantIssue } from "./activity";
 
 type LootItem = { catalogKey: string; qty: number; battery?: "Carregada" | "Descarregada" };
 type LootDefinition = { roll: number; items: LootItem[]; choices?: string[];
@@ -386,7 +386,7 @@ export function startSearch(game: GameState, input: StartSearch): string | null 
     || (!area.spacious && area.minutes !== 60)
     || !warehouseWorkers(game, input.hexId).some(row => row.id === input.warehouseWorker))) return "A habilidade de depósito não está disponível para este participante.";
   const minutes = input.warehouseWorker && area.minutes === 60 ? 30 : area.minutes;
-  if (game.minutes + minutes >= 1440) return "A busca precisa terminar antes da passagem de dia.";
+  if (!participantTimePreview(game, input.participants, minutes).ok) return "A busca precisa terminar antes da passagem de dia para este grupo.";
   prep.attempts.push({ id: input.id, areaId: area.id, participants: [...input.participants], mode: input.mode, kind: "normal",
     objective: input.objective.trim(), purpose: input.purpose.trim(), catalogKey: input.catalogKey, quantity,
     minutes, noise: area.noise, warehouseWorker: input.warehouseWorker,
@@ -537,7 +537,7 @@ export function startDeepSearch(game: GameState, input: StartDeepSearch): string
     || input.participants.some(id => !present.includes(id))) return "Escolha os participantes presentes neste hex.";
   const commitmentIssue = timedActionParticipantIssue(game, input.participants, "uma busca profunda");
   if (commitmentIssue) return commitmentIssue;
-  if (game.minutes + 30 >= 1440) return "A busca profunda precisa terminar antes da passagem de dia.";
+  if (!participantTimePreview(game, input.participants, 30).ok) return "A busca profunda precisa terminar antes da passagem de dia para este grupo.";
   if (prep.attempts.length >= 80 || point.searches.length >= 80) return "O local atingiu o limite de buscas.";
   const snapshot = structuredClone(area);
   snapshot.difficulty = 13;
@@ -636,14 +636,16 @@ export function completeSearch(game: GameState, hexId: string, pointId: string, 
   if (commitmentIssue) return commitmentIssue;
   const area = attempt.areaSnapshot ?? prep.areas.find(row => row.id === attempt.areaId)!;
   if (attempt.status !== "ready" || (attempt.mode === "open" && attempt.outcome?.success !== false && !attempt.roll)) return "Resolva o acesso e o achado antes de confirmar.";
-  if (draft.minutes + attempt.minutes >= 1440) return "A busca precisa terminar antes da passagem de dia.";
+  const timePreview = participantTimePreview(draft, attempt.participants, attempt.minutes);
+  if (!timePreview.ok) return "A busca precisa terminar antes da passagem de dia para este grupo.";
   if (prep.stock.length >= 240 || point.searches.length >= 80) return "O local atingiu o limite de registros.";
   if (attempt.warehouseWorker && !recordAbilityUse(draft, attempt.warehouseWorker, `origin:${warehouseOrigin}`,
     warehouseOrigin, warehouseEffect(), "free")) return "A habilidade de depósito foi usada em outra operação.";
   const result = searchResult(point, attempt);
   const items = attempt.outcome?.success === false ? [] : attempt.mode === "specific"
     ? [{ catalogKey: attempt.catalogKey!, qty: attempt.quantity }] : searchLoot(area, attempt.effectiveRoll ?? attempt.roll!);
-  if (!advanceCampaignTime(draft, attempt.minutes).ok) return "Não foi possível avançar o relógio.";
+  const timeResult = advanceParticipantTime(draft, attempt.participants, attempt.minutes);
+  if (!timeResult.ok) return "Não foi possível avançar o relógio.";
   attempt.stockIds = [];
   for (const found of items) {
     const entry = content.catalog.find(row => catalogKey(row) === found.catalogKey);
@@ -662,7 +664,8 @@ export function completeSearch(game: GameState, hexId: string, pointId: string, 
   draft.hexes[hexId].searchSequence = sequence + 1;
   draft.noise = Math.min(5, draft.noise + attempt.noise);
   attempt.status = attempt.outcome?.success === false ? "failed" : "completed"; attempt.result = result;
-  addLog(draft, "busca", `${point.name} / ${area.name}${attempt.kind === "deep" ? " · busca profunda" : ""}: ${result} · ${attempt.minutes} min.${draft.noise >= 3 ? " Barulho elevado: o mestre decide a consequência na cena." : ""}`);
+  const timing = timeResult.overlapMinutes ? ` · ${parallelTimeLabel(timeResult)}` : "";
+  addLog(draft, "busca", `${point.name} / ${area.name}${attempt.kind === "deep" ? " · busca profunda" : ""}: ${result} · ${attempt.minutes} min${timing}.${draft.noise >= 3 ? " Barulho elevado: o mestre decide a consequência na cena." : ""}`);
   Object.assign(game, draft);
   return null;
 }

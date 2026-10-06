@@ -1623,11 +1623,14 @@ test('movimento individual divide e reúne grupos sem perder a posição princip
   assert.equal(g.partyHex, '0,0');
   assert.equal(g.minutes, before + g.hexes[destination].routeHours * 60);
 
+  const afterAna = g.minutes;
   result = hexActions.moveSurvivors(g, destination, [bia.id]);
   assert.equal(result.ok, true);
   assert.equal(require('../lib/game.ts').survivorHex(g, bia), destination);
   assert.equal(g.partyHex, destination);
   assert.equal(require('../lib/game.ts').survivorsAtHex(g, destination).length, 2);
+  assert.equal(g.minutes, afterAna);
+  assert.match(result.message, /em paralelo/);
 });
 
 test('um subgrupo pode seguir viagem enquanto outro permanece no hex anterior', () => {
@@ -2148,7 +2151,74 @@ test('interfaces de tempo avisam correção para trás, eventos pendentes e trat
   assert.match(close, /evento\(s\) temporal\(is\) pendente/);
   assert.match(close, /Aplicar descanso longo durante a noite/);
   assert.match(survivor, /Tratamento imediato · 30 min/);
-  assert.match(survivor, /advanceCampaignTime\(draft, 30/);
+  assert.match(survivor, /advanceParticipantTime\(draft, \[s\.id\], 30/);
+});
+
+test('relógio paralelo permite intercalar durações diferentes sem cobrar as mesmas horas duas vezes', () => {
+  const g = campaign(); const [ana,bia] = g.survivors;
+  const start = g.minutes;
+
+  let result = campaignTime.advanceParticipantTime(g, [ana.id], 120);
+  assert.equal(result.ok, true);
+  assert.equal(result.startMinute, start);
+  assert.equal(result.endMinute, start + 120);
+  assert.equal(g.minutes, start + 120);
+
+  result = campaignTime.advanceParticipantTime(g, [bia.id], 60);
+  assert.equal(result.ok, true);
+  assert.equal(result.fullyParallel, true);
+  assert.equal(result.startMinute, start);
+  assert.equal(result.endMinute, start + 60);
+  assert.equal(g.minutes, start + 120);
+
+  result = campaignTime.advanceParticipantTime(g, [bia.id], 60);
+  assert.equal(result.ok, true);
+  assert.equal(result.fullyParallel, true);
+  assert.equal(result.startMinute, start + 60);
+  assert.equal(result.endMinute, start + 120);
+  assert.equal(g.minutes, start + 120);
+
+  result = campaignTime.advanceParticipantTime(g, [ana.id], 60);
+  assert.equal(result.ok, true);
+  assert.equal(result.worldAdvance, 60);
+  assert.equal(g.minutes, start + 180);
+  assert.equal(g.parallelTime.survivorMinutes[ana.id], start + 180);
+  assert.equal(g.parallelTime.survivorMinutes[bia.id], start + 120);
+});
+
+test('avanço global sincroniza subgrupos e encerra folgas paralelas anteriores', () => {
+  const g = campaign(); const [ana,bia] = g.survivors;
+  const start = g.minutes;
+  assert.equal(campaignTime.advanceParticipantTime(g,[ana.id],60).ok,true);
+  assert.equal(g.parallelTime.survivorMinutes[bia.id],start);
+  assert.equal(campaignTime.advanceCampaignTime(g,30).ok,true);
+  assert.equal(g.minutes,start+90);
+  assert.equal(g.parallelTime.survivorMinutes[ana.id],start+90);
+  assert.equal(g.parallelTime.survivorMinutes[bia.id],start+90);
+
+  const next = campaignTime.advanceParticipantTime(g,[bia.id],60);
+  assert.equal(next.worldAdvance,60);
+  assert.equal(next.overlapMinutes,0);
+});
+
+test('passagem de dia reinicia as linhas de tempo individuais no novo amanhecer', () => {
+  const g = campaign(); const [ana,bia] = g.survivors;
+  assert.equal(campaignTime.advanceParticipantTime(g,[ana.id],60).ok,true);
+  assert.ok(g.parallelTime);
+  assert.ok(g.parallelTime.survivorMinutes[bia.id] < g.minutes);
+  assert.equal(survival.closeDay(g,0,0),true);
+  assert.equal(g.day,2);
+  assert.equal(g.minutes,480);
+  assert.equal(g.parallelTime.day,2);
+  assert.equal(g.parallelTime.survivorMinutes[ana.id],480);
+  assert.equal(g.parallelTime.survivorMinutes[bia.id],480);
+});
+
+test('projeção do jogador não expõe relógios paralelos internos da mesa', () => {
+  const g = campaign(); const ana = g.survivors[0];
+  assert.equal(campaignTime.advanceParticipantTime(g,[ana.id],60).ok,true);
+  const view = collaboration.projectPlayerGame(g,ana.id);
+  assert.equal(view.parallelTime,undefined);
 });
 
 test('sobrevivente em turno no abrigo não pode viajar até o trabalho terminar', () => {

@@ -4,8 +4,8 @@ import { consumeShelterComfortRest } from "./shelter-projects";
 import { settleSceneAmmunition } from "./combat-resources";
 import { localizeRulesText } from "./terminology";
 import { endConflictScene } from "./conflict";
-import { advanceCampaignTime } from "./time";
-import { timedActionParticipantIssue } from "./activity";
+import { advanceParticipantTime } from "./time";
+import { participantTimePreview, timedActionParticipantIssue } from "./activity";
 
 export type AbilityCost = "free" | "hope1" | "hope3" | "stress1" | "armor1";
 export type AbilityPeriod = "scene" | "day" | "expedition" | "shortRest" | "longRest" | "rest" | "place" | "patient" | null;
@@ -161,12 +161,14 @@ export function resolveGroupRest(game: GameState, kind: RestKind, selections: Re
   }
   if (options.advanceTime !== false) {
     const duration = restDurationMinutes[kind];
-    if (game.minutes + duration >= 1440) return { ok: false as const,
+    const participantIds = game.survivors.map(person => person.id);
+    const preview = participantTimePreview(game, participantIds, duration);
+    if (!preview.ok) return { ok: false as const,
       message: kind === "long"
         ? "O descanso longo atravessaria o fim do dia. Registre as escolhas e conclua o descanso durante Encerrar dia."
         : "O descanso curto precisa terminar antes da passagem de dia." };
-    const time = advanceCampaignTime(game, duration,
-      `Descanso ${kind === "short" ? "curto" : "longo"}: +${duration / 60}h no relógio da campanha.`);
+    const time = advanceParticipantTime(game, participantIds, duration,
+      `Descanso ${kind === "short" ? "curto" : "longo"}: ${duration / 60}h reservadas para toda a mesa.`);
     if (!time.ok) return { ok: false as const, message: "Não foi possível avançar o relógio para concluir o descanso." };
   }
 
