@@ -25,6 +25,7 @@ const objectiveLabels: Record<string, string> = {
 
 const stateLabels: Record<PublicSearchAreaState, string> = {
   available: "Disponível",
+  proposed: "Busca proposta",
   ongoing: "Busca em andamento",
   "deep-available": "Busca profunda disponível",
   "deep-ongoing": "Busca profunda em andamento",
@@ -34,7 +35,7 @@ const stateLabels: Record<PublicSearchAreaState, string> = {
 };
 
 function stateIcon(state: PublicSearchAreaState) {
-  if (state === "ongoing" || state === "deep-ongoing") return Clock3;
+  if (state === "proposed" || state === "ongoing" || state === "deep-ongoing") return Clock3;
   if (state === "available" || state === "deep-available") return Search;
   if (state === "narrative") return Circle;
   return CheckCircle2;
@@ -129,7 +130,9 @@ export function PlayerHexSearchDialog({
       ? operation.status === "access" ? "Resolver o acesso da busca" : "Confirmar participantes e iniciar"
       : stockUnits > 0
         ? "Há achados esperando coleta"
-        : area?.state === "available"
+        : area?.state === "proposed"
+          ? `Há uma busca proposta em ${area.name}`
+          : area?.state === "available"
           ? `Decida como vasculhar ${area.name}`
           : area?.state === "deep-available"
             ? `Vasculhe ${area.name} a fundo`
