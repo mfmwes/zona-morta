@@ -15,11 +15,24 @@ export async function campaignLiveConnection(request: Request) {
   return env.CAMPAIGN_LIVE.get(env.CAMPAIGN_LIVE.idFromName(campaignId)).fetch(request);
 }
 
-export async function notifyCampaignChanged(campaignId: string) {
+export type CampaignLiveNotice = {
+  type: "changed";
+  revision?: number;
+  presentation?: boolean;
+};
+
+export async function notifyCampaignChanged(
+  campaignId: string,
+  notice: Omit<CampaignLiveNotice, "type"> = {},
+) {
   try {
     if (!env.CAMPAIGN_LIVE) return;
     const hub = env.CAMPAIGN_LIVE.get(env.CAMPAIGN_LIVE.idFromName(campaignId));
-    await hub.fetch("https://campaign-live/notify", { method: "POST" });
+    await hub.fetch("https://campaign-live/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "changed", ...notice } satisfies CampaignLiveNotice),
+    });
   } catch (error) {
     // Persistence already succeeded. The periodic reconciliation recovers a
     // missed notification without reporting a successful save as a failure.
