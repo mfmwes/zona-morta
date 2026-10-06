@@ -21,6 +21,7 @@ export function validLocationPreparation(value: unknown): boolean {
     && (area.spacious === undefined || typeof area.spacious === "boolean")
     && (area.searchable === undefined || typeof area.searchable === "boolean")
     && (area.source === undefined || ["generated", "manual", "historical"].includes(area.source))
+    && (area.visibleOutcome === undefined || ["none", "item"].includes(area.visibleOutcome))
     && (area.excludedRolls === undefined || (Array.isArray(area.excludedRolls) && area.excludedRolls.length < 12 && area.excludedRolls.every(roll => number(roll, 1, 12))))
     && (area.exclusionReason === undefined || (typeof area.exclusionReason === "string" && area.exclusionReason.length <= 2000))) || !unique(prep.areas.map(row => row.id))) return false;
   const areaIds = new Set(prep.areas.map(row => row.id));

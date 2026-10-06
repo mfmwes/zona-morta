@@ -459,6 +459,41 @@ export function quickSearchOptions(area: SearchArea): QuickSearchOption[] {
     };
   });
 }
+export type VisibleStockSuggestion =
+  | { kind: "item"; catalogKey: string; itemName: string; quantity: number; table: string; reason: string }
+  | { kind: "none"; table: string; reason: string };
+
+const visibleSuggestionCategories = new Set([
+  "Bebidas", "Alimentos", "Medicamentos e cuidado", "Ferramentas, acesso e reparo",
+  "Luz, comunicação e informação", "Abrigo, transporte e mochilas", "Trajes e acessórios",
+  "Suprimentos abstratos",
+]);
+
+function visibleSuggestionCandidates(area: SearchArea) {
+  const table = lootDefinitions.find(row => row.table === area.table);
+  if (!table) return [];
+  return table.entries.flatMap(entry => searchLoot(area, entry.roll)).filter(item => {
+    const catalog = catalogEntryForKey(item.catalogKey);
+    return Boolean(catalog && visibleSuggestionCategories.has(catalog.category));
+  });
+}
+
+/** Sugestão leve: 35% em áreas buscáveis e 60% em áreas narrativas. Não altera estado. */
+export function suggestVisibleStock(area: SearchArea, random = Math.random): VisibleStockSuggestion {
+  const chance = area.searchable === false ? 0.60 : 0.35;
+  const candidates = visibleSuggestionCandidates(area);
+  if (!candidates.length || random() >= chance) return {
+    kind: "none", table: area.table,
+    reason: "Nada evidente chama atenção em “" + area.name + "”. O restante depende de busca ou decisão do mestre.",
+  };
+  const picked = candidates[Math.min(candidates.length - 1, Math.floor(random() * candidates.length))];
+  const catalog = catalogEntryForKey(picked.catalogKey)!;
+  const quantity = Math.max(1, Math.min(2, picked.qty));
+  return {
+    kind: "item", catalogKey: picked.catalogKey, itemName: catalog.name, quantity, table: area.table,
+    reason: catalog.name + " é plausível como algo já visível em “" + area.name + "” pela tabela “" + area.table + "”. Esta sugestão não consome busca, tempo ou Barulho.",
+  };
+}
 export function deepSearchCandidateKeys(area: SearchArea) {
   const table = lootDefinitions.find(row => row.table === area.table);
   if (!table) return [];
@@ -768,11 +803,27 @@ export function registerVisibleStock(game: GameState, hexId: string, pointId: st
   id: string, key: string, quantity: number): string | null {
   const point = pointAt(game, hexId, pointId);
   const prep = point?.preparation;
-  if (!prep || !prep.areas.some(row => row.id === areaId)) return "Escolha uma área existente.";
+  const area = prep?.areas.find(row => row.id === areaId);
+  if (!prep || !area) return "Escolha uma área existente.";
   if (prep.stock.some(row => row.id === id)) return null;
   const entry = content.catalog.find(row => catalogKey(row) === key);
   if (!entry || !id || id.length > 120 || !Number.isInteger(quantity) || quantity < 1 || quantity > 99 || prep.stock.length >= 240) return "Confira o item conhecido e a quantidade.";
   prep.stock.push({ id, areaId, item: itemFromCatalog(entry, quantity, "Íntegro", game.day), remaining: quantity, accessible: true });
-  addLog(game, "busca", `${point!.name}: ${quantity} × ${entry.name} estabelecido à vista, sem busca ou tempo adicional.`);
+  area.visibleOutcome = "item";
+  addLog(game, "busca", `${point!.name} / ${area.name}: ${quantity} × ${entry.name} estabelecido à vista, sem busca ou tempo adicional.`);
+  return null;
+}
+
+export function resolveNoVisibleStock(game: GameState, hexId: string, pointId: string, areaId: string): string | null {
+  const point = pointAt(game, hexId, pointId);
+  const prep = point?.preparation;
+  const area = prep?.areas.find(row => row.id === areaId);
+  if (!point || !prep || !area) return "Escolha uma área existente.";
+  if (area.visibleOutcome === "item" || prep.stock.some(row => row.areaId === areaId && row.attemptId === undefined)) {
+    return "Já existe um item aparente estabelecido nesta área.";
+  }
+  if (area.visibleOutcome === "none") return null;
+  area.visibleOutcome = "none";
+  addLog(game, "busca", `${point.name} / ${area.name}: nada relevante estabelecido à vista.`);
   return null;
 }

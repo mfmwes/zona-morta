@@ -164,6 +164,57 @@ test('porte pode ser ajustado antes da primeira busca e fica estável depois que
   assert.deepEqual(current.preparation,before);
 });
 
+test('sugestão de item aparente é leve, contextual e não oferece equipamento de combate gratuito', () => {
+  const f=campaign();
+  const area=f.point.preparation.areas[0];
+  const item=auto.suggestVisibleStock(area,(()=>{ const values=[0,0]; return ()=>values.shift() ?? 0; })());
+  assert.equal(item.kind,'item');
+  assert.equal(item.table,area.table);
+  assert.ok(item.catalogKey);
+  const category=item.catalogKey.split('::')[0];
+  assert.ok(!['Armas primárias','Armas secundárias','Munição','Proteções'].includes(category));
+  assert.ok(item.quantity>=1 && item.quantity<=2);
+
+  const none=auto.suggestVisibleStock(area,()=>0.99);
+  assert.equal(none.kind,'none');
+
+  const narrative={...area,searchable:false};
+  const narrativeSuggestion=auto.suggestVisibleStock(narrative,(()=>{ const values=[0.5,0]; return ()=>values.shift() ?? 0; })());
+  assert.equal(narrativeSuggestion.kind,'item');
+});
+
+test('aceitar item aparente ou nada à vista resolve a camada do cômodo sem consumir busca', () => {
+  const f=campaign();
+  const beforeMinutes=f.game.minutes;
+  const beforeAttempts=f.point.preparation.attempts.length;
+  assert.equal(auto.registerVisibleStock(f.game,'0,0','market',f.area.id,'visible-procedural','Bebidas::Garrafa de água lacrada',1),null);
+  let point=f.game.hexes['0,0'].points[0];
+  let area=point.preparation.areas.find(row=>row.id===f.area.id);
+  assert.equal(area.visibleOutcome,'item');
+  assert.equal(f.game.minutes,beforeMinutes);
+  assert.equal(point.preparation.attempts.length,beforeAttempts);
+  assert.match(auto.resolveNoVisibleStock(f.game,'0,0','market',f.area.id),/Já existe um item aparente/);
+
+  const other=point.preparation.areas.find(row=>row.id!==f.area.id);
+  assert.ok(other);
+  assert.equal(auto.resolveNoVisibleStock(f.game,'0,0','market',other.id),null);
+  point=f.game.hexes['0,0'].points[0];
+  area=point.preparation.areas.find(row=>row.id===other.id);
+  assert.equal(area.visibleOutcome,'none');
+  assert.equal(f.game.minutes,beforeMinutes);
+  assert.equal(point.preparation.attempts.length,beforeAttempts);
+});
+
+test('interface de item aparente oferece aceitar, rerrolar, nada à vista e registro manual', () => {
+  const source=fs.readFileSync(require.resolve('../components/hex-search-dialog.tsx'),'utf8');
+  assert.match(source,/Sugestão procedural leve/);
+  assert.match(source,/Sugerir item aparente/);
+  assert.match(source,/Rerrolar/);
+  assert.match(source,/Nada à vista/);
+  assert.match(source,/Registrar manualmente/);
+  assert.match(source,/35% de chance/);
+  assert.match(source,/60%/);
+});
 test('área narrativa aceita elementos à vista, mas não uma busca d12 própria', () => {
   const f=campaign();
   const narrative=f.point.preparation.areas.find(area=>area.searchable===false);

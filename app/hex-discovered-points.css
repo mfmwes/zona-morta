@@ -517,3 +517,90 @@ html[data-theme="dark"] .hex-event-active {
     grid-column: 1 / -1;
   }
 }
+
+
+/* Visible stock suggestions */
+.hex-visible-generator {
+  display: grid;
+  gap: 9px;
+  margin-top: 8px;
+}
+.hex-visible-generator-start,
+.hex-visible-suggestion,
+.hex-visible-resolved {
+  display: grid;
+  gap: 10px;
+  padding: 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--card) 82%, var(--background));
+}
+.hex-visible-generator-start > div,
+.hex-visible-suggestion-main,
+.hex-visible-resolved {
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: start;
+}
+.hex-visible-generator-start > div,
+.hex-visible-suggestion-main,
+.hex-visible-resolved {
+  display: grid;
+  gap: 8px;
+}
+.hex-visible-generator-start > div > svg,
+.hex-visible-suggestion-main > svg,
+.hex-visible-resolved > svg {
+  margin-top: 2px;
+  color: var(--primary);
+}
+.hex-visible-generator-start span,
+.hex-visible-suggestion-main span,
+.hex-visible-resolved span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.hex-visible-generator-start b,
+.hex-visible-suggestion-main b,
+.hex-visible-resolved b {
+  font-size: .76rem;
+}
+.hex-visible-generator-start small,
+.hex-visible-suggestion-main small,
+.hex-visible-resolved small {
+  color: var(--muted-foreground);
+  font-size: .67rem;
+  line-height: 1.4;
+}
+.hex-visible-suggestion.has-item {
+  border-color: color-mix(in srgb, var(--primary) 42%, var(--border));
+  background: color-mix(in srgb, var(--accent) 38%, var(--card));
+}
+.hex-visible-suggestion.is-empty,
+.hex-visible-resolved {
+  border-style: dashed;
+}
+.hex-visible-suggestion.is-empty .hex-visible-suggestion-main > svg,
+.hex-visible-resolved > svg {
+  color: var(--muted-foreground);
+}
+.hex-visible-manual {
+  margin-top: 10px;
+  border-top: 1px solid var(--border);
+  padding-top: 9px;
+}
+.hex-visible-manual > summary {
+  cursor: pointer;
+  font-size: .7rem;
+  font-weight: 750;
+  color: var(--muted-foreground);
+}
+.hex-visible-manual[open] {
+  display: grid;
+  gap: 8px;
+}
+@media (max-width: 520px) {
+  .hex-visible-generator-start {
+    align-items: stretch;
+  }
+}

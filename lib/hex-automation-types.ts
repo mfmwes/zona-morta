@@ -11,6 +11,8 @@ export type SearchArea = {
   searchable?: boolean;
   /** Ajuda o mestre a distinguir o que veio da preparação do que foi declarado depois. */
   source?: "generated" | "manual" | "historical";
+  /** Resultado da camada procedural de itens evidentes. Ausente = ainda não estabelecido. */
+  visibleOutcome?: "none" | "item";
   excludedRolls?: number[]; exclusionReason?: string; collectible?: boolean; spacious?: boolean;
 };
 export type SearchAttempt = {

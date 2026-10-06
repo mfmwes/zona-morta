@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { CheckCircle2, Circle, Clock3, Eye, Search, ShieldAlert } from "lucide-react";
+import { CheckCircle2, Circle, Clock3, Eye, EyeOff, RefreshCw, Search, ShieldAlert, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -9,7 +9,7 @@ import { content, displayTime, survivorsAtHex, type GameState } from "@/lib/game
 import { createId } from "@/lib/id";
 import { catalogKey } from "@/lib/inventory";
 import { searchAvailabilityError } from "@/lib/exploration";
-import { collectLocationStock, deepSearchLimit, deepSearchesUsed, finishPreparedSearch, declareSearchArea, depositExpeditionItems, locationScaleLabels, locationScaleOf, lootDefinitions, prepareLocation, quickSearchOptions, registerVisibleStock, resizeLocationPreparation, resolvePreparedSearch, searchAreaState, searchResult, startDeepSearch, suggestCollection, warehouseWorkers, type CollectionLine } from "@/lib/hex-automation";
+import { collectLocationStock, deepSearchLimit, deepSearchesUsed, finishPreparedSearch, declareSearchArea, depositExpeditionItems, locationScaleLabels, locationScaleOf, lootDefinitions, prepareLocation, quickSearchOptions, registerVisibleStock, resolveNoVisibleStock, resizeLocationPreparation, resolvePreparedSearch, searchAreaState, searchResult, startDeepSearch, suggestCollection, suggestVisibleStock, warehouseWorkers, type CollectionLine, type VisibleStockSuggestion } from "@/lib/hex-automation";
 import { RollForm } from "@/components/roll-dialog";
 import type { LocationScale, SearchArea } from "@/lib/hex-automation-types";
 export type HexSearchRequest = { hexId: string; pointId: string; participantIds?: string[] };
@@ -40,6 +40,7 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
   const [visibleId, setVisibleId] = useState(createId);
   const [visibleKey, setVisibleKey] = useState(catalogKey(content.catalog[0]));
   const [visibleQuantity, setVisibleQuantity] = useState(1);
+  const [visibleSuggestion, setVisibleSuggestion] = useState<VisibleStockSuggestion | null>(null);
   const [deepItemKey, setDeepItemKey] = useState("");
   const [deepOperationId, setDeepOperationId] = useState(createId);
   const [deepActorId, setDeepActorId] = useState("");
@@ -53,6 +54,8 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
   const keys = [...new Set(lootDefinitions.find(row => row.table === area?.table)?.entries.flatMap(row => [...row.items.map(item => item.catalogKey), ...(row.fallback?.map(item => item.catalogKey) ?? []), ...(row.choices ?? [])]) ?? [])];
   const chosenKey = itemKey || keys[0] || "";
   const quickOptions = area ? quickSearchOptions(area) : [];
+  const apparentStock = prep?.stock.filter(row => row.areaId === area?.id && row.attemptId === undefined) ?? [];
+  const visibleResolved = Boolean(area?.visibleOutcome || apparentStock.length);
   const deepKeys = keys.filter(key => !prep?.stock.some(row => row.areaId === area?.id && row.item.catalogKey === key && row.remaining > 0));
   const deepChosenKey = deepItemKey || deepKeys[0] || "";
   const deepChosenName = content.catalog.find(row => catalogKey(row) === deepChosenKey)?.name ?? deepChosenKey;
@@ -92,6 +95,7 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
     setDeepOperationId(createId());
     setDeepActorId("");
     setQuickNotice("");
+    setVisibleSuggestion(null);
   }
   function changeScale(value: LocationScale) {
     if (!point || !canResize) return;
@@ -105,6 +109,25 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
       setOperationId(createId());
       toast.success(`Porte alterado para ${locationScaleLabels[value]}`, { description: "As áreas foram reorganizadas antes da primeira busca." });
     } else toast.error("O porte só pode ser alterado antes da primeira busca ou estoque registrado.");
+  }
+  function rerollVisibleSuggestion() {
+    if (!area || visibleResolved) return;
+    setVisibleSuggestion(suggestVisibleStock(area));
+  }
+  function acceptVisibleSuggestion() {
+    if (!area || visibleSuggestion?.kind !== "item") return;
+    const id = visibleId;
+    if (act(draft => registerVisibleStock(draft, request.hexId, request.pointId, area.id, id,
+      visibleSuggestion.catalogKey, visibleSuggestion.quantity), "Item aparente estabelecido")) {
+      setVisibleId(createId());
+      setVisibleSuggestion(null);
+    }
+  }
+  function acceptNoVisibleStock() {
+    if (!area) return;
+    if (act(draft => resolveNoVisibleStock(draft, request.hexId, request.pointId, area.id), "Nada à vista estabelecido")) {
+      setVisibleSuggestion(null);
+    }
   }
   return <Dialog open onOpenChange={open => { if (!open) onClose(); }}><DialogContent className="inventory-dialog hex-search-dialog sm:max-w-4xl">
     <DialogHeader><DialogTitle>Buscar em {point?.name ?? "local removido"}</DialogTitle><DialogDescription>Prepare uma vez. Retome buscas e recolha os achados que ainda estão no local.</DialogDescription></DialogHeader>
@@ -197,12 +220,46 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
             </div></details>}
           </section>
 
-          <details className="hex-search-step"><summary className="cursor-pointer text-sm font-bold">Registrar algo à vista · sem busca</summary>
-            <p className="text-xs subtle">Itens evidentes podem existir mesmo em áreas sem busca própria e não consomem tempo.</p>
-            <Pick label="Item conhecido" value={visibleKey} options={content.catalog.map(row => ({ value: catalogKey(row), label: row.name }))} onChange={setVisibleKey} />
-            <Counter label="Quantidade à vista" value={visibleQuantity} min={1} max={99} onChange={setVisibleQuantity} />
-            <Button variant="outline" onClick={() => act(draft => registerVisibleStock(draft, request.hexId, request.pointId, area.id, visibleId, visibleKey, visibleQuantity), "Item conhecido registrado")}>Registrar estoque à vista</Button>
-            <Button size="sm" variant="ghost" onClick={() => setVisibleId(createId())}>Registrar outro achado distinto</Button>
+          <details className="hex-search-step"><summary className="cursor-pointer text-sm font-bold">Itens à vista · sem busca</summary>
+            <p className="text-xs subtle">Esta camada é independente da busca. Ela serve para estabelecer objetos evidentes na cena sem gastar tempo ou Barulho.</p>
+
+            <div className="hex-visible-generator">
+              {visibleResolved ? <div className="hex-visible-resolved">
+                {area.visibleOutcome === "none" && !apparentStock.length ? <><EyeOff size={18} /><span><b>Nada à vista</b><small>O mestre já estabeleceu que este cômodo não tem um achado evidente.</small></span></>
+                  : <><Eye size={18} /><span><b>Item aparente já estabelecido</b><small>{apparentStock.length
+                    ? apparentStock.map(row => `${row.remaining} × ${row.item.name}`).join(" · ")
+                    : "Existe um achado aparente registrado nesta área."}</small></span></>}
+              </div> : visibleSuggestion ? <div className={"hex-visible-suggestion " + (visibleSuggestion.kind === "item" ? "has-item" : "is-empty")}>
+                <div className="hex-visible-suggestion-main">
+                  {visibleSuggestion.kind === "item" ? <Sparkles size={19} /> : <EyeOff size={19} />}
+                  <span>
+                    <b>{visibleSuggestion.kind === "item" ? `${visibleSuggestion.quantity} × ${visibleSuggestion.itemName}` : "Nada evidente"}</b>
+                    <small>{visibleSuggestion.reason}</small>
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {visibleSuggestion.kind === "item"
+                    ? <Button size="sm" onClick={acceptVisibleSuggestion}>Aceitar</Button>
+                    : <Button size="sm" onClick={acceptNoVisibleStock}>Aceitar nada à vista</Button>}
+                  <Button size="sm" variant="outline" onClick={rerollVisibleSuggestion}><RefreshCw size={14} /> Rerrolar</Button>
+                  {visibleSuggestion.kind === "item" && <Button size="sm" variant="ghost" onClick={acceptNoVisibleStock}><EyeOff size={14} /> Nada à vista</Button>}
+                </div>
+              </div> : <div className="hex-visible-generator-start">
+                <div><Sparkles size={18} /><span><b>Sugestão procedural leve</b><small>Áreas buscáveis têm 35% de chance; áreas narrativas, 60%. Armas, munição e proteção não são sugeridas gratuitamente.</small></span></div>
+                <Button size="sm" variant="outline" onClick={rerollVisibleSuggestion}><Sparkles size={14} /> Sugerir item aparente</Button>
+              </div>}
+            </div>
+
+            <details className="hex-visible-manual"><summary>Registrar manualmente</summary>
+              <p className="text-xs subtle">Use quando a ficção já estabelece um objeto específico ou uma quantidade conhecida. O registro manual também define que há item aparente nesta área.</p>
+              <Pick label="Item conhecido" value={visibleKey} options={content.catalog.map(row => ({ value: catalogKey(row), label: row.name }))} onChange={setVisibleKey} />
+              <Counter label="Quantidade à vista" value={visibleQuantity} min={1} max={99} onChange={setVisibleQuantity} />
+              <Button variant="outline" onClick={() => {
+                if (act(draft => registerVisibleStock(draft, request.hexId, request.pointId, area.id, visibleId, visibleKey, visibleQuantity), "Item conhecido registrado")) {
+                  setVisibleId(createId()); setVisibleSuggestion(null);
+                }
+              }}>Registrar estoque à vista</Button>
+            </details>
           </details>
 
           {area.searchable === false && <div className="hex-search-narrative-note"><Eye size={17} /><span><b>Área de exploração</b><small>Use-a para pistas, obstáculos, cenas e itens à vista. Ela não aumenta a quantidade de rolagens de saque do local.</small></span></div>}
