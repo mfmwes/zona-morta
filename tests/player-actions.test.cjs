@@ -102,6 +102,17 @@ test('buscas não exigem liberação e parâmetros forjados ou dias antigos não
  denied(f,f.ids[0],{type:'withdraw',resource:'food',quantity:-1},/inválidos/);
 });
 
+test('local legado já preparado recebe camada aparente quando o jogador abre',()=>{
+ const f=fixture();const point=f.game.hexes['0,0'].points[0];
+ assert.ok(point.preparation.areas.every(area=>area.visibleOutcome===undefined));
+ let view=projectPlayerActions(f.game,f.ids[0]);
+ assert.equal(view.locations[0].prepared,false);
+ ok(f,f.ids[0],{type:'prepare-search',hexId:'0,0',pointId:'market'});
+ view=projectPlayerActions(f.game,f.ids[0]);
+ assert.equal(view.locations[0].prepared,true);
+ assert.ok(point.preparation.areas.every(area=>area.visibleOutcome==='item'||area.visibleOutcome==='none'));
+});
+
 test('jogador prepara automaticamente local revelado sem depender de ação do mestre',()=>{
  const f=fixture(); const point=f.game.hexes['0,0'].points[0]; delete point.preparation;
  let view=projectPlayerActions(f.game,f.ids[0]);
