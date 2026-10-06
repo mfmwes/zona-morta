@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, Circle, Clock3, Package, Search, ShieldAlert, Users } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { CheckCircle2, Circle, Clock3, Search, ShieldAlert, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field, Pick } from "@/components/game-controls";
@@ -79,15 +79,11 @@ export function PlayerHexSearchDialog({
   const operation = view?.operations.find(op => ["forming", "access"].includes(op.status) && (!area || op.areaId === area.areaId));
   const stock = view?.stock ?? [];
   const stockUnits = stock.reduce((sum, row) => sum + row.remaining, 0);
-  const peers = view?.peers.filter(person => person.hex === view.hexId) ?? [];
   const member = Boolean(operation?.participantIds.includes(controls.actorId));
   const owner = operation?.initiatorId === controls.actorId;
   const deep = area?.state === "deep-available";
-  const objectives = useMemo(() => {
-    if (!area) return [];
-    const values = deep ? area.objectives.filter(value => value !== "open") : area.objectives;
-    return values.map(value => ({ value, label: objectiveLabels[value] ?? value }));
-  }, [area, deep]);
+  const objectiveValues = !area ? [] : deep ? area.objectives.filter(value => value !== "open") : area.objectives;
+  const objectives = objectiveValues.map(value => ({ value, label: objectiveLabels[value] ?? value }));
   const goal = objectives.some(option => option.value === objective)
     ? objective
     : objectives[0]?.value ?? (deep ? "" : "open");
