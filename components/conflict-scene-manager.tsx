@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Counter, Field, Pick } from "@/components/game-controls";
+import { SpotlightRequestButton } from "@/components/spotlight-request-button";
 import { ConflictTrail } from "@/components/conflict-trail";
-import { addLog, displayTime, survivorStats, survivorsAtHex, type GameState } from "@/lib/game";
+import { addLog, displayTime, survivorIsDown, survivorStats, survivorsAtHex, type GameState } from "@/lib/game";
 import {
   addThreatCondition,
   addThreatInstances,
@@ -134,7 +135,10 @@ export function PlayerConflictScene({ game, selfId = null }: { game: GameState; 
         selfId={selfId}
         mode="player"
       />
-      <p className="conflict-rule-note">Esta visão mostra apenas informações públicas da cena. Dados mecânicos das ameaças e controles do mestre permanecem ocultos.</p>
+      {self && conflict.survivors.some(person => person.id === self.id) && <div className="conflict-player-prompt">
+        <SpotlightRequestButton campaignId={game.campaignId} requested={conflict.spotlightRequested} ownSpotlight={ownSpotlight} down={survivorIsDown(self)} />
+        <span>{ownSpotlight ? "Você está em foco. Declare sua ação." : conflict.spotlightRequested ? "O mestre recebeu seu pedido." : "Sinalize ao mestre quando quiser agir."}</span>
+      </div>}
     </section>
 
     {conflict.pendingDamage.length > 0 && <section className="panel panel-pad conflict-damage-inbox" aria-live="polite">
@@ -146,7 +150,7 @@ export function PlayerConflictScene({ game, selfId = null }: { game: GameState; 
       <div className="conflict-damage-request-list">
         {conflict.pendingDamage.map(request => {
           const armorHp = Math.max(0, request.tier.hpMarks - 1);
-          const busy = resolvingDamage === request.id;
+          const busy = resolvingDamage !== null;
           return <article key={request.id} className="conflict-damage-request">
             <div className="conflict-damage-source"><span className="conflict-threat-icon"><Swords size={17} /></span>
               <div><small>{request.sourceName}</small><strong>{request.attackName}</strong></div>
@@ -228,6 +232,8 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
     d20: number; total: number; evasion: number; hit: boolean; damage: number;
     tier: ReturnType<typeof resolveSurvivorDamageTier>; targetName: string; attackName: string;
   } | null>(null);
+  const [threatQuery, setThreatQuery] = useState("");
+  const [threatFilter, setThreatFilter] = useState<"active" | "all" | "defeated">("active");
   const [notesDraft, setNotesDraft] = useState(conflict?.notes ?? "");
 
   useEffect(() => {
@@ -251,7 +257,12 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
 
   const threatGroups = useMemo(() => {
     const groups = new Map<string, NonNullable<GameState["conflict"]>["threats"]>();
+    const needle = threatQuery.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
     for (const threat of conflict?.threats ?? []) {
+      if (threatFilter === "active" && threat.defeated || threatFilter === "defeated" && !threat.defeated) continue;
+      const text = `${threat.name} ${threat.templateSnapshot.name} ${threat.templateSnapshot.role} ${threat.conditions.join(" ")}`
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
+      if (needle && !text.includes(needle)) continue;
       const key = threat.templateSnapshot.id || threat.templateSnapshot.name;
       groups.set(key, [...(groups.get(key) ?? []), threat]);
     }
@@ -264,7 +275,7 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
       active: rows.filter(row => !row.defeated).length,
       defeated: rows.filter(row => row.defeated).length,
     })).sort((a, b) => a.tier - b.tier || a.name.localeCompare(b.name, "pt-BR"));
-  }, [conflict?.threats]);
+  }, [conflict?.threats, threatQuery, threatFilter]);
 
   useEffect(() => {
     if (!availableSurvivors.some(option => option.value === survivorToAdd)) setSurvivorToAdd(availableSurvivors[0]?.value ?? "");
@@ -391,7 +402,8 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
     const threat = conflict?.threats.find(row => row.id === threatId);
     if (!threat?.templateSnapshot.attack) return;
     setActingThreatId(threatId);
-    setThreatTargetId(threatTargets[0]?.value ?? "");
+    const focusedId = conflict?.spotlight?.kind === "survivor" ? conflict.spotlight.id : "";
+    setThreatTargetId(threatTargets.some(target => target.value === focusedId) ? focusedId : threatTargets[0]?.value ?? "");
     setThreatActionResult(null);
   }
 
@@ -490,6 +502,7 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
   const activeThreats = conflict.threats.filter(threat => !threat.defeated).length;
   const defeatedThreats = conflict.threats.length - activeThreats;
   const participantsCount = conflict.survivorIds.length + conflict.threats.length;
+  const pendingDamage = (conflict.damageRequests ?? []).filter(request => request.status === "pending");
 
   return <div className="conflict-manager">
     <section className="panel conflict-hero">
@@ -500,7 +513,7 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
           <AlertDialogTrigger asChild><Button size="sm" variant="outline">Encerrar conflito</Button></AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader><AlertDialogTitle>Encerrar {conflict.name}?</AlertDialogTitle>
-              <AlertDialogDescription>O conflito deixa de ficar ativo, mas participantes, ameaças e histórico de spotlight permanecem registrados. Isso não inicia uma nova cena narrativa.</AlertDialogDescription></AlertDialogHeader>
+              <AlertDialogDescription>O conflito deixa de ficar ativo, mas participantes, ameaças e histórico de spotlight permanecem registrados. Isso não inicia uma nova cena narrativa.{pendingDamage.length > 0 && ` Há ${pendingDamage.length} impacto(s) pendente(s). Resolva-os antes de encerrar para que os jogadores possam decidir sobre PV e Armadura.`}</AlertDialogDescription></AlertDialogHeader>
             <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={closeConflict}>Encerrar conflito</AlertDialogAction></AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -551,16 +564,27 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
       <p className="conflict-rule-note">Spotlight é apenas um marcador de foco narrativo. Pedidos indicam interesse em agir, mas não criam fila, iniciativa ou prioridade automática.</p>
     </section>
 
+    {pendingDamage.length > 0 && <section className="panel panel-pad conflict-pending-summary" aria-label="Danos aguardando decisão">
+      <div><Activity size={18} /><strong>{pendingDamage.length} impacto(s) aguardando decisão</strong><span>Os alvos escolhem entre PV e Armadura na própria ficha ou na visão do conflito.</span></div>
+      <ul>{pendingDamage.map(request => <li key={request.id}>
+        <b>{game.survivors.find(person => person.id === request.targetSurvivorId)?.name ?? "Sobrevivente indisponível"}</b>
+        <span>{request.sourceName} · {request.attackName} · {request.damage} de dano → {request.tier.hpMarks} PV</span>
+      </li>)}</ul>
+    </section>}
+
     <div className="conflict-workspace">
       <section className="panel panel-pad conflict-participants conflict-team-panel">
         <div className="conflict-section-heading">
           <div className="conflict-heading-with-icon"><span className="conflict-heading-icon"><Users size={17} /></span><div><p className="dossier-title">Equipe</p><h3>Sobreviventes</h3></div></div>
           <span className="tag">{conflict.survivorIds.length}</span>
         </div>
+        <details className="conflict-preparation" open={!conflict.survivorIds.length}>
+          <summary><UserPlus size={14} /> Adicionar sobrevivente</summary>
         <div className="conflict-add-row">
           <Pick label="Adicionar sobrevivente" value={survivorToAdd} options={availableSurvivors} onChange={setSurvivorToAdd} placeholder="Todos já estão na cena" disabled={!availableSurvivors.length} />
           <Button size="sm" variant="outline" disabled={!survivorToAdd || !availableSurvivors.length} onClick={addSurvivor}><UserPlus size={15} /> Adicionar</Button>
         </div>
+        </details>
         <div className="conflict-survivor-list">
           {conflict.survivorIds.map(id => {
             const person = game.survivors.find(row => row.id === id);
@@ -580,7 +604,7 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
                 </div>
               </div>
               <div className="conflict-person-actions">
-                <Button size="sm" variant={isFocused ? "default" : "outline"} aria-label={isFocused ? `${person.name} está em Spotlight` : `Dar Spotlight a ${person.name}`} onClick={() => focus({ kind: "survivor", id: person.id }, person.name)}><Crosshair size={14} /><span>{isFocused ? "Em foco" : "Spotlight"}</span></Button>
+                <Button size="sm" variant={isFocused ? "default" : "outline"} aria-label={isFocused ? `${person.name} está em Spotlight` : `Dar Spotlight a ${person.name}`} onClick={() => conflict.spotlightRequests?.includes(person.id) ? grantRequestedSpotlight(person.id) : focus({ kind: "survivor", id: person.id }, person.name)}><Crosshair size={14} /><span>{isFocused ? "Em foco" : "Spotlight"}</span></Button>
                 <Button size="sm" variant="ghost" aria-label={`Remover ${person.name} do conflito`} onClick={() => remove({ kind: "survivor", id: person.id }, person.name)}><Trash2 size={14} /></Button>
               </div>
             </article>;
@@ -594,12 +618,23 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
           <div className="conflict-heading-with-icon"><span className="conflict-heading-icon is-pressure"><ShieldAlert size={17} /></span><div><p className="dossier-title">Pressão</p><h3>Ameaças em cena</h3></div></div>
           <div className="conflict-heading-counters"><span className="tag">{activeThreats} ativas</span>{defeatedThreats > 0 && <span className="tag is-muted">{defeatedThreats} derrotadas</span>}</div>
         </div>
+        <details className="conflict-preparation" open={!conflict.threats.length}>
+          <summary><Plus size={14} /> Adicionar ameaças do catálogo</summary>
         <div className="conflict-threat-add">
           <Pick label="Ameaça do catálogo" value={threatToAdd} options={threatOptions} onChange={setThreatToAdd} placeholder="Catálogo vazio" disabled={!threatOptions.length} />
           <Counter compact label="Qtd." value={threatQuantity} min={1} max={12} onChange={setThreatQuantity} />
           <Button size="sm" variant="outline" disabled={!threatToAdd || !threatOptions.length} onClick={addThreats}><Plus size={15} /> Adicionar</Button>
         </div>
 
+        </details>
+        <div className="conflict-threat-toolbar">
+          <Field label="Buscar ameaças em cena" value={threatQuery} onChange={setThreatQuery} placeholder="Nome, função ou condição…" />
+          <div className="conflict-filter-buttons" role="group" aria-label="Filtrar ameaças">
+            {([{ value: "active", label: "Ativas", count: activeThreats }, { value: "all", label: "Todas", count: conflict.threats.length }, { value: "defeated", label: "Derrotadas", count: defeatedThreats }] as const).map(filter =>
+              <Button key={filter.value} size="sm" variant={threatFilter === filter.value ? "default" : "outline"}
+                aria-pressed={threatFilter === filter.value} onClick={() => setThreatFilter(filter.value)}>{filter.label} · {filter.count}</Button>)}
+          </div>
+        </div>
         <div className="conflict-threat-groups">
           {threatGroups.map(group => <section key={group.key} className="conflict-threat-group">
             <header className="conflict-threat-group-heading">
@@ -660,9 +695,17 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
                     </div>
                   </details>
 
+                  <details className="conflict-threat-details conflict-ability-reference">
+                    <summary><span><Swords size={12} /> Ataque e habilidades</span><b>{template.features.length}</b></summary>
+                    <div className="conflict-threat-detail-body">
+                      {template.attack && <div><strong>{template.attack.name}</strong><p>ATQ {template.attack.bonus >= 0 ? "+" : ""}{template.attack.bonus} · {template.attack.range} · {template.attack.damage} {template.attack.damageType}</p></div>}
+                      {template.features.map(feature => <div key={feature.id}><strong>{feature.name}</strong><small>{feature.kind}</small><p>{feature.effect}</p></div>)}
+                      {!template.attack && !template.features.length && <p>Nenhum ataque ou habilidade registrado.</p>}
+                    </div>
+                  </details>
                   <div className="conflict-threat-actions">
                     {template.attack && <Button className="conflict-threat-primary-action" size="sm" onClick={() => openThreatAction(instance.id)} disabled={instance.defeated}><Swords size={14} /> Atacar</Button>}
-                    <Button size="sm" variant={isFocused ? "default" : "outline"} title={isFocused ? "Esta ameaça está no Spotlight" : "Dar Spotlight"} aria-label={isFocused ? `${instance.name} está no Spotlight` : `Dar Spotlight a ${instance.name}`} onClick={() => focus({ kind: "threat", id: instance.id }, instance.name)}><Crosshair size={14} /><span>{isFocused ? "Em foco" : "Spotlight"}</span></Button>
+                    <Button size="sm" variant={isFocused ? "default" : "outline"} title={isFocused ? "Esta ameaça está no Spotlight" : "Dar Spotlight"} aria-label={isFocused ? `${instance.name} está no Spotlight` : `Dar Spotlight a ${instance.name}`} disabled={instance.defeated} onClick={() => focus({ kind: "threat", id: instance.id }, instance.name)}><Crosshair size={14} /><span>{isFocused ? "Em foco" : "Spotlight"}</span></Button>
                     <Button size="sm" variant="outline" title={instance.defeated ? "Reativar ameaça" : "Marcar como derrotada"} onClick={() => edit(draft => {
                       const row = draft.conflict?.threats.find(threat => threat.id === instance.id);
                       if (row) row.defeated = !row.defeated;
@@ -673,13 +716,17 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
               })}
             </div>
           </section>)}
-          {!conflict.threats.length && <p className="conflict-inline-empty">Nenhuma ameaça adicionada.</p>}
+          {!threatGroups.length && <div className="conflict-inline-empty">
+            <p>{!conflict.threats.length ? "Nenhuma ameaça adicionada. Abra o catálogo acima para preparar a cena." : "Nenhuma ameaça corresponde aos filtros."}</p>
+            {conflict.threats.length > 0 && <Button size="sm" variant="outline" onClick={() => { setThreatQuery(""); setThreatFilter("all"); }}>Mostrar todas</Button>}
+          </div>}
         </div>
       </section>
     </div>
 
     <div className="conflict-bottom-grid">
-      <section className="panel panel-pad">
+      <details className="panel panel-pad conflict-secondary-panel">
+        <summary>Histórico de spotlight · {conflict.spotlightHistory.length}</summary>
         <div className="conflict-section-heading"><div className="conflict-heading-with-icon"><span className="conflict-heading-icon"><Activity size={17} /></span><div><p className="dossier-title">Ritmo narrativo</p><h3>Histórico de spotlight</h3></div></div><span className="tag">{conflict.spotlightHistory.length}</span></div>
         <div className="conflict-spotlight-history">
           {[...conflict.spotlightHistory].reverse().slice(0,18).map((event, index) => <div key={event.eventId} className="conflict-history-row">
@@ -688,9 +735,10 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
           </div>)}
           {!conflict.spotlightHistory.length && <p className="conflict-inline-empty">O histórico começa quando o mestre atribuir o primeiro spotlight.</p>}
         </div>
-      </section>
+      </details>
 
-      <section className="panel panel-pad">
+      <details className="panel panel-pad conflict-secondary-panel">
+        <summary>Notas do mestre{notesDraft.trim() ? " · com anotações" : ""}</summary>
         <div className="conflict-section-heading"><div className="conflict-heading-with-icon"><span className="conflict-heading-icon"><Tag size={17} /></span><div><p className="dossier-title">Anotações</p><h3>Estado da cena</h3></div></div></div>
         <Field label="Notas do mestre" multiline value={notesDraft} onChange={setNotesDraft} placeholder="Cobertura, perigos, objetivos, mudanças no ambiente…" />
         <div className="conflict-notes-actions"><Button size="sm" variant="outline" disabled={notesDraft === conflict.notes} onClick={() => {
@@ -699,7 +747,7 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
           setNotesDraft(notes);
           toast.success("Notas do conflito salvas");
         }}>Salvar notas</Button></div>
-      </section>
+      </details>
     </div>
 
     <Dialog open={Boolean(actingThreat)} onOpenChange={open => { if (!open) { setActingThreatId(null); setThreatActionResult(null); } }}>

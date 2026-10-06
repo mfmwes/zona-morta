@@ -1,0 +1,110 @@
+/* Controles de sessão; preparação e consulta ficam recolhidas. */
+.conflict-preparation {
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface-soft);
+}
+.conflict-preparation > summary,
+.conflict-secondary-panel > summary {
+  cursor: pointer;
+  padding: 10px;
+  color: var(--foreground);
+  font-size: .8rem;
+  font-weight: 650;
+}
+.conflict-preparation > summary svg {
+  display: inline-block;
+  margin: 0 5px;
+  vertical-align: middle;
+}
+.conflict-preparation > .conflict-add-row,
+.conflict-preparation > .conflict-threat-add {
+  margin: 0;
+  padding: 10px;
+  border: 0;
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 7px 7px;
+  background: transparent;
+}
+.conflict-threat-toolbar {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.conflict-filter-buttons,
+.conflict-player-prompt {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.conflict-player-prompt {
+  margin-top: 12px;
+  color: var(--muted-foreground);
+  font-size: .8rem;
+}
+.conflict-request-control { min-width: 0; }
+.conflict-request-control > [role="alert"] { max-width: 320px; }
+.conflict-pending-summary {
+  border-left: 3px solid var(--primary);
+}
+.conflict-pending-summary > div {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--foreground);
+  font-size: .85rem;
+}
+.conflict-pending-summary > div > span {
+  flex-basis: 100%;
+  color: var(--muted-foreground);
+  font-size: .8rem;
+}
+.conflict-pending-summary ul {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  list-style: none;
+}
+.conflict-pending-summary li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface-soft);
+  color: var(--foreground);
+  font-size: .8rem;
+}
+.conflict-pending-summary li > span { color: var(--muted-foreground); }
+.conflict-ability-reference .conflict-threat-detail-body {
+  display: grid;
+  gap: 12px;
+  color: var(--foreground);
+  font-size: .8rem;
+  line-height: 1.5;
+}
+.conflict-ability-reference small {
+  margin-left: 8px;
+  color: var(--muted-foreground);
+}
+.conflict-ability-reference p {
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+}
+.conflict-secondary-panel { align-self: start; }
+.conflict-secondary-panel > summary { padding: 0; }
+.conflict-secondary-panel[open] > summary { margin-bottom: 16px; }
+.conflict-preparation > summary:focus-visible,
+.conflict-secondary-panel > summary:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+@media (max-width: 600px) {
+  .conflict-filter-buttons > button { flex: 1 1 auto; }
+  .conflict-pending-summary li { display: grid; }
+}

@@ -487,13 +487,16 @@ test('rota de spotlight permite pedir e cancelar sem criar iniciativa ou escreve
 test('prévia dos jogadores mostra Spotlight e oculta Dificuldade e Limiares das ameaças', () => {
   const panel = fs.readFileSync(require.resolve('../components/survivor-panel.tsx'), 'utf8');
   const hud = fs.readFileSync(require.resolve('../components/survivor-conflict-hud.tsx'), 'utf8');
+  const spotlightControl = fs.readFileSync(require.resolve('../components/spotlight-request-button.tsx'), 'utf8');
   const rolls = fs.readFileSync(require.resolve('../components/roll-dialog.tsx'), 'utf8');
 
   assert.match(panel, /playerPreview=\{playerPreview\}/);
   assert.match(panel, /hideThreatSecrets=\{playerMode \|\| playerPreview\}/);
   assert.match(hud, /const playerPerspective = playerMode \|\| playerPreview/);
-  assert.match(hud, /Prévia dos jogadores/);
-  assert.match(hud, /Pedir Spotlight/);
+  assert.match(spotlightControl, /Prévia dos jogadores/);
+  assert.match(hud, /preview=\{playerPreview && !playerMode\}/);
+  assert.match(spotlightControl, /Pedir Spotlight/);
+  assert.match(hud, /SpotlightRequestButton/);
   assert.match(rolls, /hideThreatSecrets/);
   assert.match(rolls, /!hideThreatSecrets && game\.conflict\?\.active/);
   assert.match(rolls, /publicConflictScene\(game\.conflict, game\.survivors, survivor\.id\)/);
@@ -528,14 +531,16 @@ test('Resumo da ficha oferece testes rápidos para todos os atributos', () => {
 
 test('Trilha de Conflito acompanha a rolagem da página sem invadir o modal de dados', () => {
   const hud = fs.readFileSync(require.resolve('../components/survivor-conflict-hud.tsx'), 'utf8');
+  const spotlightControl = fs.readFileSync(require.resolve('../components/spotlight-request-button.tsx'), 'utf8');
   const trail = fs.readFileSync(require.resolve('../components/conflict-trail.tsx'), 'utf8');
   const rolls = fs.readFileSync(require.resolve('../components/roll-dialog.tsx'), 'utf8');
   const visual = fs.readFileSync(require.resolve('../app/visual-system.css'), 'utf8');
   assert.match(hud, /TRILHA DE CONFLITO/);
   assert.match(hud, /ALVOS DA CENA/);
   assert.match(hud, /Localizar/);
-  assert.match(hud, /Pedir Spotlight/);
-  assert.match(hud, /character-spotlight-request/);
+  assert.match(spotlightControl, /Pedir Spotlight/);
+  assert.match(hud, /SpotlightRequestButton/);
+  assert.match(spotlightControl, /character-spotlight-request/);
   assert.match(hud, /character-conflict-sticky-sentinel/);
   assert.match(hud, /isStuck/);
   assert.match(hud, /DANO PENDENTE/);

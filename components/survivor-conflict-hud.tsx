@@ -5,6 +5,7 @@ import { ChevronRight, Crosshair, Search, ShieldAlert, Swords, Target, X } from 
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { SpotlightRequestButton } from "@/components/spotlight-request-button";
 import { ConflictTrail } from "@/components/conflict-trail";
 import { publicConflictScene } from "@/lib/conflict";
 import { survivorIsDown, survivorStats, type GameState, type Survivor } from "@/lib/game";
@@ -34,7 +35,6 @@ export function SurvivorConflictHud({
   const [targetOpen, setTargetOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [recentIds, setRecentIds] = useState<string[]>([]);
-  const [spotlightBusy, setSpotlightBusy] = useState(false);
   const [damageBusy, setDamageBusy] = useState(false);
   const [isStuck, setIsStuck] = useState(false);
   const [error, setError] = useState("");
@@ -125,32 +125,6 @@ export function SurvivorConflictHud({
     } catch {}
   }
 
-  async function toggleSpotlightRequest() {
-    if (!playerPerspective || spotlightBusy || down) return;
-    if (playerPreview && !playerMode) {
-      toast.info("Prévia dos jogadores", { description: "O jogador poderá pedir ou cancelar o Spotlight aqui. A prévia não altera a campanha." });
-      return;
-    }
-    setSpotlightBusy(true);
-    setError("");
-    try {
-      const action = conflict.spotlightRequested ? "cancel" : "request";
-      const response = await fetch(`/api/campaign/spotlight?campanha=${encodeURIComponent(game.campaignId)}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
-      });
-      const payload = await response.json() as { error?: string };
-      if (!response.ok) throw new Error(payload.error || "Não foi possível atualizar o pedido.");
-      toast.success(action === "request" ? "Spotlight solicitado" : "Pedido de spotlight cancelado");
-      window.dispatchEvent(new CustomEvent("zona-morta:campaign-refresh"));
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Não foi possível atualizar o pedido.");
-    } finally {
-      setSpotlightBusy(false);
-    }
-  }
-
   async function resolveDamage(resolution: "hp" | "armor") {
     if (!firstDamage || damageBusy) return;
     setDamageBusy(true);
@@ -208,9 +182,8 @@ export function SurvivorConflictHud({
 
         <Button size="sm" disabled={!selectedTarget || down} onClick={() => onAttack(selectedTarget?.id)}><Swords size={14} /> {down ? "Caído" : "Atacar"}</Button>
 
-        {playerPerspective && <Button className="character-spotlight-request" size="sm" variant={conflict.spotlightRequested ? "secondary" : "outline"} disabled={spotlightBusy || ownSpotlight || down} onClick={() => void toggleSpotlightRequest()} title={playerPreview && !playerMode ? "Prévia: mostra o controle do jogador sem enviar a solicitação" : undefined}>
-          <Crosshair size={14} /> {ownSpotlight ? "Seu Spotlight" : conflict.spotlightRequested ? "Spotlight solicitado" : "Pedir Spotlight"}
-        </Button>}
+        {playerPerspective && <SpotlightRequestButton campaignId={game.campaignId} requested={conflict.spotlightRequested}
+          ownSpotlight={ownSpotlight} down={down} preview={playerPreview && !playerMode} />}
         {onOpenConflict && <button type="button" className="character-conflict-link" onClick={onOpenConflict}>Ver cena ↗</button>}
       </div>
     </div>
