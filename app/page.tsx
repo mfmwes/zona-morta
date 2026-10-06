@@ -576,7 +576,7 @@ export default function CampaignApp() {
         <div className="topbar-context text-sm">
           <span className="tag">DIA {String(game.day).padStart(2,"0")}</span>
           <span className="font-mono font-extrabold flex items-center gap-1"><Clock3 size={16} /> {displayTime(game.minutes)}</span>
-          {role === "mestre" && <DayCloseDialog game={game} edit={edit} variant="outline" size="sm" className="topbar-day-close" />}
+          {masterExperience && <DayCloseDialog game={game} edit={edit} variant="outline" size="sm" className="topbar-day-close" />}
           {readOnlyPreview && <div className="player-scene-pressure" role="status" aria-live="polite" aria-atomic="true" aria-label="Pressão da cena">
             <div className={`player-pressure-value player-pressure-noise${game.noise >= 3 ? " is-high" : ""}`} title="Barulho da cena · atualizado pelo mestre">
               <span><Ear size={15} aria-hidden="true" /><b>Barulho</b><strong>{game.noise}<small>/5</small></strong></span>
