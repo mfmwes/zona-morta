@@ -1,5 +1,5 @@
 import { addLog, survivorHex, survivorIsDown, survivorStats, type GameState } from "./game";
-import { collectLocationStock, finishPreparedSearch, quickSearchOptions, rollSearchAccess, searchAreaState, startSearch } from "./hex-automation";
+import { collectLocationStock, finishPreparedSearch, prepareLocation, quickSearchOptions, rollSearchAccess, searchAreaState, startSearch } from "./hex-automation";
 import { moveSurvivors } from "./hex-actions";
 import { atSharedStorage, transferItem, transferProvisions } from "./inventory";
 import { survivorTimedCommitment } from "./activity";
@@ -56,16 +56,37 @@ export function projectPlayerActions(game: GameState, actorId: string): PublicPl
   const hexId = survivorHex(game, actorId);
   const { paused, transfers, deposits, rest, tokens } = state.policy;
   const policy = { paused, transfers, deposits, rest, tokens };
-  const result: PublicPlayerActions = { policy, actorId, hexId, busy: playerTimedActionIssue(game, [actorId]), peers: game.survivors.map(p => ({ id: p.id, name: p.name, hex: survivorHex(game, p) })), areas: [], stock: [], routes: [], operations: [], supplies: [], markers: state.markers.filter(m => { const scene = game.sceneBoard?.scenes.find(s => s.id === m.sceneId && s.id === game.sceneBoard?.activeSceneId && s.visibleToPlayers); return m.day === game.day && scene && knownPosition(scene, m.x, m.y); }) };
+  const result: PublicPlayerActions = { policy, actorId, hexId, busy: playerTimedActionIssue(game, [actorId]), peers: game.survivors.map(p => ({ id: p.id, name: p.name, hex: survivorHex(game, p) })), locations: [], areas: [], stock: [], routes: [], operations: [], supplies: [], markers: state.markers.filter(m => { const scene = game.sceneBoard?.scenes.find(s => s.id === m.sceneId && s.id === game.sceneBoard?.activeSceneId && s.visibleToPlayers); return m.day === game.day && scene && knownPosition(scene, m.x, m.y); }) };
   for (const point of game.hexes[hexId]?.points ?? []) {
-    for (const area of point.preparation?.areas ?? []) {
-    const permission = areaPermission(game, hexId, point.id, area.id);
-    if (!permission) continue;
-    result.areas.push({ hexId, pointId: point.id, areaId: area.id, name: area.name, pointName: point.name, signal: area.signal, minutes: area.minutes, noise: area.noise, access: area.access, objectives: permission.objectives.filter(o => o === "open" || quickSearchOptions(area).some(option => option.id === o && option.available)), available: area.searchable !== false && searchAreaState(point, area) === "available" });
-    for (const stock of point.preparation?.stock.filter(s => s.areaId === area.id && s.remaining > 0) ?? []) {
-      if (stock.attemptId && !point.preparation?.attempts.some(a => a.id === stock.attemptId && a.status === "completed")) continue;
-      result.stock.push({ hexId, pointId: point.id, stockId: stock.id, name: stock.item.name, remaining: stock.remaining, accessible: area.access !== "blocked" && stock.accessible !== false });
-    }
+    if (!point.revealed || point.clueTargetHex) continue;
+    const prep = point.preparation;
+    const publicAreas = prep?.areas ?? [];
+    const areaStates = publicAreas.map(area => ({ area, state: searchAreaState(point, area) }));
+    result.locations.push({
+      hexId,
+      pointId: point.id,
+      pointName: point.name,
+      prepared: Boolean(prep),
+      areaCount: publicAreas.length,
+      searchedAreas: areaStates.filter(({ state }) => ["deep-available", "deep-ongoing", "exhausted", "searched"].includes(state)).length,
+      availableAreas: areaStates.filter(({ state }) => state === "available").length,
+      narrativeAreas: areaStates.filter(({ state }) => state === "narrative").length,
+      stockUnits: prep?.stock.filter(row => row.remaining > 0).reduce((sum, row) => sum + row.remaining, 0) ?? 0,
+      activeSearches: prep?.attempts.filter(attempt => ["pending", "ready"].includes(attempt.status)).length ?? 0,
+    });
+    for (const area of publicAreas) {
+      const permission = areaPermission(game, hexId, point.id, area.id);
+      const state = searchAreaState(point, area);
+      const objectives = permission?.objectives.filter(o => o === "open" || quickSearchOptions(area).some(option => option.id === o && option.available)) ?? [];
+      result.areas.push({
+        hexId, pointId: point.id, areaId: area.id, name: area.name, pointName: point.name, signal: area.signal,
+        minutes: area.minutes, noise: area.noise, access: area.access, objectives,
+        available: Boolean(permission) && state === "available", searchable: area.searchable !== false, state,
+      });
+      for (const stock of prep?.stock.filter(s => s.areaId === area.id && s.remaining > 0) ?? []) {
+        if (stock.attemptId && !prep?.attempts.some(a => a.id === stock.attemptId && a.status === "completed")) continue;
+        result.stock.push({ hexId, pointId: point.id, areaId: area.id, stockId: stock.id, name: stock.item.name, remaining: stock.remaining, accessible: area.access !== "blocked" && stock.accessible !== false });
+      }
     }
   }
   result.routes = state.policy.routes.filter(r => r.from === hexId && game.hexes[r.to]?.discovery !== "desconhecido" && game.hexes[r.to]).map(r => ({ destination: r.to, name: game.hexes[r.to].sector?.name ?? `Hex ${r.to}`, minutes: shelterTravelMinutes(game, r.from, r.to, game.hexes[r.to].routeHours * 60) }));
@@ -114,6 +135,12 @@ function executeCommand(game: GameState, actorId: string, cmd: PlayerCommand, di
   if (cmd.type === "request") {
     if (state.operations.filter(o => active(game, o) && o.type === "exception" && o.initiatorId === actorId).length >= 3) return "Você já tem três pedidos aguardando o mestre.";
     state.operations.push({ id: cmd.id, type: "exception", initiatorId: actorId, day: game.day, scene: game.scene ?? 1, hexId, status: "forming", participantIds: [actorId], invitedIds: [], purpose: cmd.text, attention: "Pedido de avaliação narrativa" });
+    return null;
+  }
+  if (cmd.type === "prepare-search") {
+    const point = game.hexes[cmd.hexId]?.points.find(p => p.id === cmd.pointId);
+    if (cmd.hexId !== hexId || game.hexes[hexId]?.discovery !== "explorado" || !point?.revealed || point.clueTargetHex) return "Este local ainda não está disponível para exploração.";
+    prepareLocation(point);
     return null;
   }
   if (["search", "travel", "rest"].includes(cmd.type)) {
