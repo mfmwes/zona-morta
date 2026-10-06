@@ -102,9 +102,12 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
           <b>{prep.areas.length} áreas internas</b>
           <small>{searchedAreas} vasculhada(s) · {availableAreas} disponível(is) · {prep.areas.length - searchableAreas.length} narrativa(s)</small>
         </div>
-        {canResize && <Pick label="Ajustar porte antes da primeira busca" value={scale}
-          options={(Object.entries(locationScaleLabels) as [LocationScale, string][]).map(([value,label]) => ({ value, label }))}
-          onChange={value => changeScale(value as LocationScale)} />}
+        {canResize && <div className="hex-search-scale-controls">
+          {prep.scale === undefined && <Button size="sm" variant="outline" onClick={() => changeScale(scale)}>Aplicar nova estrutura · {locationScaleLabels[scale]}</Button>}
+          <Pick label="Ajustar porte antes da primeira busca" value={scale}
+            options={(Object.entries(locationScaleLabels) as [LocationScale, string][]).map(([value,label]) => ({ value, label }))}
+            onChange={value => changeScale(value as LocationScale)} />
+        </div>}
       </div>
 
       <div className="hex-search-workspace">
