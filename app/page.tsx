@@ -34,6 +34,7 @@ import { npcPlayerView } from "@/lib/npc-presentation";
 import { sectorProfiles } from "@/lib/sectors";
 import { adjustProvisionCount } from "@/lib/provisions";
 import { beginExpedition, beginScene } from "@/lib/abilities";
+import { projectPlayerActions } from "@/lib/player-actions";
 import { playerEditPayload } from "@/lib/collaboration";
 import { advanceCampaignTime, setCampaignTime } from "@/lib/time";
 
@@ -88,6 +89,8 @@ export default function CampaignApp() {
   const roleRef = useRef<"mestre" | "jogador" | "convidado">("mestre");
   const sending = useRef(false);
   const teamActionInFlight = useRef(false);
+  const teamActionRetry = useRef<Record<string, unknown> | null>(null);
+  const [teamActionError, setTeamActionError] = useState("");
   const paused = useRef(false);
 
   useEffect(() => {
@@ -294,6 +297,11 @@ export default function CampaignApp() {
   const executeTeamAction = useCallback(async (payload: Record<string, unknown>) => {
     if (pending.current || sending.current || paused.current || teamActionInFlight.current)
       throw new TeamActionError("Aguarde o salvamento da campanha antes de agir.", true);
+    if (teamActionRetry.current) {
+      const signature = (value: Record<string, unknown>) => { const copy={...value}; delete copy.id; delete copy.day; return JSON.stringify(copy); };
+      if (signature(payload) !== signature(teamActionRetry.current)) throw new TeamActionError("Há uma ação sem confirmação. Reenvie a solicitação pendente antes de iniciar outra.", true);
+      payload = teamActionRetry.current;
+    }
     teamActionInFlight.current = true;
     setStatus("salvando");
     try {
@@ -304,7 +312,11 @@ export default function CampaignApp() {
       if (!response.ok) throw new TeamActionError(result.error || "Não foi possível registrar a ação.", response.status < 500);
       if (!result.state || result.revision === undefined) throw new TeamActionError("Resposta incompleta. Tente novamente a mesma ação.");
       revision.current = result.revision; current.current = result.state;
-      setGame(result.state); setSaveError("");
+      setGame(result.state); setSaveError(""); teamActionRetry.current=null; setTeamActionError("");
+    } catch (cause) {
+      if (cause instanceof TeamActionError && cause.rejected) { teamActionRetry.current=null; setTeamActionError(""); }
+      else { teamActionRetry.current=payload; setTeamActionError("A conexão não confirmou sua última ação. Reenvie a mesma solicitação para conferir o resultado com segurança."); }
+      throw cause;
     } finally { teamActionInFlight.current = false; setStatus("salvo"); }
   }, [apiPath]);
 
@@ -487,11 +499,12 @@ export default function CampaignApp() {
   </section></main>;
 
   const readOnlyPreview = playerPreview || role === "jogador";
-  const communityView = readOnlyPreview ? npcPlayerView(game) : game;
+  const previewActionGame = playerPreview && game.survivors[0] ? { ...game, publicPlayerActions: projectPlayerActions(game,game.survivors[0].id) } : game;
+  const communityView = readOnlyPreview ? npcPlayerView(previewActionGame) : game;
   const publicConflictActive = role === "jogador"
     ? Boolean(game.publicConflict?.active)
     : playerPreview ? Boolean(game.conflict?.active) : false;
-  const activeTab = playerPreview && tab === "acoes" ? "mapa" : readOnlyPreview && tab === "resumo"
+  const activeTab = (playerPreview || role === "jogador") && tab === "acoes" ? "mapa" : readOnlyPreview && tab === "resumo"
     ? (role === "jogador" ? "sobreviventes" : "mapa")
     : tab === "conflito" && readOnlyPreview && !publicConflictActive
       ? (role === "jogador" ? "sobreviventes" : "referencias")
@@ -513,7 +526,6 @@ export default function CampaignApp() {
       ...(publicConflictActive ? [{
         value: "conflito", label: game.publicConflict?.pendingDamage.length ? `Resolver dano (${game.publicConflict.pendingDamage.length})` : "Conflito ativo", icon: Swords,
       }] : []),
-      ...(role === "jogador" ? [{ value: "acoes", label: "Ações da equipe", icon: Users }] : []),
       { value: "mapa", label: "Mapa", icon: Map },
       { value: "abrigo", label: "Abrigo", icon: House },
     ];
@@ -534,6 +546,7 @@ export default function CampaignApp() {
     ...(role === "mestre" ? [{ value: "jogadores", label: "Jogadores", icon: Users }] : []),
   ];
   const nav = [...masterPrimary, ...masterSecondary];
+  const playerActionControls = role === "jogador" && survivorId ? { actorId: survivorId, canAct: status === "salvo", send: executeTeamAction, pending: Boolean(teamActionError) } : playerPreview && game.survivors[0] ? {actorId:game.survivors[0].id,canAct:false,send:executeTeamAction,preview:true} : undefined;
 
   return <Tabs value={activeTab} onValueChange={setTab} className="w-full">
     <TablePresentationViewer presentation={presentation} enabled={readOnlyPreview} />
@@ -604,6 +617,7 @@ export default function CampaignApp() {
         {role === "mestre" && <Button size="sm" variant="outline" onClick={() => setPlayerPreview(false)}>Voltar ao mestre</Button>}
       </div>}
       <main className="page">
+        {teamActionError && <div className="team-error mb-4" role="alert"><p>{teamActionError}</p><Button size="sm" variant="outline" disabled={status!=="salvo"} onClick={()=>{if(teamActionRetry.current) void executeTeamAction(teamActionRetry.current).catch(cause=>toast.error(cause instanceof Error?cause.message:"Falha ao reenviar."));}}>Reenviar ação pendente</Button></div>}
         <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
           <div><p className="eyebrow">Daggerheart / Zona Morta</p><h1 className="page-title mt-1">{title}</h1>
             <p className="intro-line mt-2">{activeTab === "resumo" ? "Veja primeiro o que está acontecendo agora. Aprofunde apenas a ferramenta necessária para a próxima decisão." :
@@ -658,7 +672,7 @@ export default function CampaignApp() {
         {(status === "erro" || status === "conflito") && <div role="alert" className="mb-5 rounded-md border border-[#d5aaa1] bg-[#fff2ed] px-4 py-3 text-sm text-[#803b35]">
           <b>As alterações ainda estão nesta tela.</b> {saveError} Baixe uma cópia antes de recarregar, se precisar.
         </div>}
-        {activeTab === "acoes" && <PlayerActionsPanel game={game} master={masterExperience} survivorId={role === "jogador" ? survivorId : null} canAct={status === "salvo" && !playerPreview} send={executeTeamAction} />}
+        {activeTab === "acoes" && masterExperience && <PlayerActionsPanel game={game} master={masterExperience} survivorId={null} canAct={status === "salvo"} send={executeTeamAction} hasPending={Boolean(teamActionError)} />}
         {activeTab === "resumo" && role === "mestre" && !readOnlyPreview && <MasterOverview game={game} onNavigate={setTab} />}
         {activeTab === "mapa" && <>
           {!readOnlyPreview && <div className="panel scene-control-panel mb-5">
@@ -726,7 +740,7 @@ export default function CampaignApp() {
               <p className="scene-supplies-note">Comida e Água em porções (4 = 1 unidade); Peças em unidades. Sem abrigo, registre apenas o que o grupo consegue transportar.</p>
             </section>
           </div>}
-          <HexExplorer key={game.campaignId} game={communityView} edit={edit} playerPreview={readOnlyPreview} teamPeers={restPeers} onOpenPlayerActions={() => setTab("acoes")} />
+          <HexExplorer key={game.campaignId} game={communityView} edit={edit} playerPreview={readOnlyPreview} teamPeers={restPeers} playerActions={playerActionControls} />
           {!readOnlyPreview && <div className="panel panel-pad mt-5 flex flex-wrap items-center gap-3">
             <div className="mr-auto"><b>Relógio da expedição</b><p className="text-xs subtle">Ao anoitecer, registre o descanso na ficha, mesmo sem abrigo.</p></div>
             {[30,60,120].map(amount=><Button key={amount} size="sm" variant="outline" disabled={game.minutes+amount>=1440}
@@ -754,10 +768,10 @@ export default function CampaignApp() {
             </Dialog>
           </div>}
         </>}
-        {activeTab === "cena" && <SceneBoard game={game} edit={edit} playerPreview={readOnlyPreview} onOpenPlayerActions={role === "jogador" ? () => setTab("acoes") : undefined} />}
-        {activeTab === "sobreviventes" && <SurvivorPanel game={game} edit={edit} playerPreview={readOnlyPreview} playerMode={role === "jogador"} restPeers={restPeers} onOpenConflict={() => setTab("conflito")} />}
+        {activeTab === "cena" && <SceneBoard game={previewActionGame} edit={edit} playerPreview={readOnlyPreview} playerActions={playerActionControls} />}
+        {activeTab === "sobreviventes" && <SurvivorPanel game={game} edit={edit} playerPreview={readOnlyPreview} playerMode={role === "jogador"} restPeers={restPeers} onOpenConflict={() => setTab("conflito")} playerActions={playerActionControls} />}
         {activeTab === "comunidade" && <NpcPanel game={communityView} edit={edit} playerPreview={readOnlyPreview} />}
-        {activeTab === "abrigo" && <ShelterPanel game={communityView} edit={edit} playerPreview={readOnlyPreview} playerSurvivorId={role === "jogador" ? survivorId : null} />}
+        {activeTab === "abrigo" && <ShelterPanel game={communityView} edit={edit} playerPreview={readOnlyPreview} playerSurvivorId={role === "jogador" ? survivorId : null} playerActions={playerActionControls} />}
         {activeTab === "conflito" && role === "mestre" && !playerPreview && <ConflictSceneManager game={game} edit={edit} />}
         {activeTab === "conflito" && readOnlyPreview && publicConflictActive && <PlayerConflictScene game={game} selfId={role === "jogador" ? survivorId : null} />}
         {activeTab === "ameacas" && role === "mestre" && !playerPreview && <section className="panel panel-pad"><ThreatManager game={game} edit={edit} /></section>}

@@ -1,4 +1,6 @@
 "use client";
+
+import { PlayerContextActions, type PlayerActionControls } from "@/components/player-actions-panel";
 /* eslint-disable @next/next/no-img-element -- local portraits are reduced to small data URLs before storage. */
 
 import { useState, type ChangeEvent, type ReactNode } from "react";
@@ -177,7 +179,7 @@ function RestPlanner({ game, edit, selected, playerMode, playerPreview, restPeer
       const person = draft.survivors.find(candidate => candidate.id === selected.id);
       if (person) person.restPlan = { kind, choices: personalChoices };
     });
-    toast.success("Escolhas de descanso registradas", { description: "O mestre verá as suas duas ações ao concluir o descanso da mesa." });
+    toast.success("Escolhas de descanso registradas", { description: "Suas escolhas estão prontas para confirmar o descanso com a mesa, aqui ou na rotina do Abrigo." });
     setOpen(false);
   }
   function resolve() {
@@ -311,7 +313,7 @@ function deadlineLabel(deadline: number | null | undefined) {
   return `dia ${Math.floor(deadline / 1440) + 1}, ${String(Math.floor((deadline % 1440) / 60)).padStart(2, "0")}:${String(deadline % 60).padStart(2, "0")}`;
 }
 
-export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, restPeers = [], onOpenConflict }: { game: GameState; edit: Edit; playerPreview: boolean; playerMode?: boolean; restPeers?: RestPeer[]; onOpenConflict?: () => void }) {
+export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, restPeers = [], onOpenConflict, playerActions }: { game: GameState; edit: Edit; playerPreview: boolean; playerMode?: boolean; restPeers?: RestPeer[]; onOpenConflict?: () => void; playerActions?: PlayerActionControls }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("resumo");
   const [notesDraft, setNotesDraft] = useState<{ id: string; source: string; value: string } | null>(null);
@@ -687,6 +689,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
                 </div>
               </section>
               <RestPlanner game={game} edit={edit} selected={selected} playerMode={playerMode} playerPreview={playerPreview} restPeers={restPeers} />
+              {playerActions && <PlayerContextActions game={game} controls={playerActions.preview ? {...playerActions,actorId:selected.id} : playerActions} context={{kind:"rest"}} />}
             </div>
           </TabsContent>
           <TabsContent value="atributos" className="character-tab-content">
@@ -749,6 +752,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
             </section>
           </TabsContent>
           <TabsContent value="inventario" className="character-tab-content">
+            {playerActions && <details className="character-surface"><summary>Entregas entre sobreviventes</summary><PlayerContextActions game={game} controls={playerActions.preview ? {...playerActions,actorId:selected.id} : playerActions} context={{kind:"inventory"}} /></details>}
             <div className="character-inventory-dashboard">
             <section className="character-surface"><SectionHeading index="01" title="Carga e provisões" aside={<b className="character-load-badge">{stats.carried} / {stats.capacity} espaços</b>} />
               <div className="character-load-meter"><Progress value={Math.min(100, stats.carried / Math.max(1, stats.capacity) * 100)} />{stats.carried > stats.capacity && <p className="character-alert">Acima da capacidade. Redistribua a carga antes de uma travessia.</p>}</div>

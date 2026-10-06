@@ -34,3 +34,7 @@
   .rail .rail-nav { height:auto !important; min-height:0; flex:1 1 auto; overflow-y:auto; overflow-x:hidden; align-content:start; grid-auto-rows:min-content; scrollbar-width:thin; }
   .rail > :not(.rail-nav) { flex-shrink:0; }
 }
+.hex-player-search,.hex-player-travel { border-top:1px solid var(--border); padding-top:10px; }
+.hex-player-search > summary,.hex-player-travel > summary { cursor:pointer; font-weight:600; margin-bottom:10px; }
+.hex-player-search > summary svg,.hex-player-travel > summary svg { display:inline; vertical-align:middle; margin-right:6px; }
+.scene-player-position { position:absolute; width:20px; height:20px; border:3px solid #172d30; border-radius:50%; background:#f4c542; transform:translate(-50%,-50%); pointer-events:none; z-index:22; }

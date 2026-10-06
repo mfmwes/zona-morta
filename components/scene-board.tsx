@@ -1,5 +1,7 @@
 "use client";
 
+import { PlayerContextActions, type PlayerActionControls } from "@/components/player-actions-panel";
+
 import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
 import {
   Copy, Eye, EyeOff, Hand, Layers, Lock, Minus, MousePointer2, Plus, RotateCcw, RotateCw,
@@ -260,8 +262,9 @@ function withAttachedFixtures(scene: SceneBoardScene, ids: string[]) {
   return [...expanded];
 }
 
-export function SceneBoard({ game, edit, playerPreview, onOpenPlayerActions }: { game: GameState; edit: Edit; playerPreview: boolean; onOpenPlayerActions?: () => void }) {
+export function SceneBoard({ game, edit, playerPreview, playerActions }: { game: GameState; edit: Edit; playerPreview: boolean; playerActions?: PlayerActionControls }) {
   const readonly = playerPreview;
+  const [playerPosition, setPlayerPosition] = useState<{sceneId:string;x:number;y:number}|null>(null);
   const board = useMemo(
     () => readonly ? projectPlayerSceneBoard(safeBoard(game)) ?? { scenes: [] } : safeBoard(game),
     [game, readonly],
@@ -707,7 +710,7 @@ export function SceneBoard({ game, edit, playerPreview, onOpenPlayerActions }: {
   const fogPreview = fogDraft ? fogAreaFromPoints(scene, fogDraft.start, fogDraft.end) : null;
 
   return <section className="scene-board-root">
-    {readonly && onOpenPlayerActions && game.publicPlayerActions?.policy.tokens && <Button size="sm" variant="outline" onClick={onOpenPlayerActions}>Mover meu token ou marcar posição</Button>}
+
     <header className="panel panel-pad scene-board-header">
       <div><p className="dossier-title">Cena visual</p><div className="scene-board-title"><h2 className="section-title">{scene.name}</h2>
         <span className={live ? "tag scene-live" : "tag"}>{live ? <Eye size={13} /> : <EyeOff size={13} />}{live ? "AO VIVO" : readonly ? "Não apresentada" : "Privada"}</span></div></div>
@@ -824,6 +827,11 @@ export function SceneBoard({ game, edit, playerPreview, onOpenPlayerActions }: {
             <div ref={stageRef}
               className={"scene-stage" + (scene.showGrid ? " has-grid" : "")}
               style={{ width: scene.width, height: scene.height, transform: "scale(" + zoom + ")" }}
+              onClick={event => {
+                if (!playerActions) return;
+                const bounds=event.currentTarget.getBoundingClientRect();
+                setPlayerPosition({sceneId:scene.id,x:Math.round((event.clientX-bounds.left)/zoom),y:Math.round((event.clientY-bounds.top)/zoom)});
+              }}
               onPointerDown={event => {
                 if (tool === "wall") beginWall(event);
                 else if (tool === "reveal" || tool === "conceal") beginFog(event);
@@ -854,11 +862,13 @@ export function SceneBoard({ game, edit, playerPreview, onOpenPlayerActions }: {
                 transform: "rotate(" + preview.rotation + "deg)",
               }} />}
               {(game.publicPlayerActions?.markers ?? game.playerActions?.markers ?? []).filter(m => m.day === game.day && m.sceneId === scene.id).map(m => <span key={m.actorId} className="scene-team-marker" style={{left:m.x, top:m.y}} role="img" aria-label={m.label}>{m.label}</span>)}
+              {playerActions && playerPosition?.sceneId===scene.id && <span className="scene-player-position" style={{left:playerPosition.x,top:playerPosition.y}} aria-label="Posição selecionada" />}
               <FogOverlay scene={scene} readonly={readonly} />
               {fogPreview && <div className={"scene-fog-draft is-" + fogDraft?.mode} style={{ left: fogPreview.x, top: fogPreview.y, width: fogPreview.width, height: fogPreview.height }} />}
             </div>
           </div>
         </div>
+        {playerActions && <PlayerContextActions game={game} controls={playerActions} context={{kind:"scene",position:playerPosition?.sceneId===scene.id?playerPosition:undefined}} />}
         <footer className="scene-hint">
           {tool === "wall" ? "Arraste para desenhar. Pontas próximas se encaixam automaticamente e linhas quase retas são alinhadas."
             : tool === "reveal" ? "Arraste um retângulo sobre a planta para revelar essa área aos jogadores. Objetos totalmente fora das áreas reveladas não são enviados."

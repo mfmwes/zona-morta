@@ -1,5 +1,7 @@
 "use client";
 
+import { PlayerContextActions, type PlayerActionControls } from "@/components/player-actions-panel";
+
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Archive, CheckCircle2, ChevronDown, Compass, Dice5, Eye, Footprints, House, MapPin, Package, Play, Route, Search, Trash2, Undo2, Users, Plus } from "lucide-react";
@@ -50,11 +52,11 @@ function travelDurationLabel(minutes: number) {
   return `${hours}h${String(rest).padStart(2, "0")}`;
 }
 
-export function HexExplorer({ game, edit, playerPreview, teamPeers = [], onOpenPlayerActions }: {
+export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerActions }: {
   game: GameState;
   edit: Edit;
   playerPreview: boolean;
-  onOpenPlayerActions?: () => void;
+  playerActions?: PlayerActionControls;
   teamPeers?: { id: string; name: string; hex?: string; portrait?: string }[];
 }) {
   const [selectedId, setSelected] = useState(game.partyHex);
@@ -263,6 +265,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], onOpenP
           <b>{selected === "0,0" ? "Desde o início" : "Sinal da borda"}</b><p className="mt-1">{record.sector.border}</p>
         </div>}
         {record.signs && <p className="mt-3 text-sm"><b>Outros sinais:</b> {record.signs}</p>}
+        {playerActions && <details className="hex-player-travel mt-3"><summary><Footprints size={15} /> {selected === game.publicPlayerActions?.hexId ? "Viagens a partir deste hex" : "Viajar para este hex"}</summary><PlayerContextActions key={selected+"travel"} game={game} controls={playerActions} context={{kind:"travel",destination:selected === game.publicPlayerActions?.hexId?undefined:selected}} /></details>}
         {!playerPreview && <>
           <div className="next-step-card mt-4 rounded-md border p-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -399,7 +402,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], onOpenP
               <div className="hex-point-heading"><div><p className="dossier-title">{point.clueTargetHex ? "Pista" : point.kind === "comércio" ? "Comércio neste setor" : "Local neste setor"}</p><b>{point.name}</b></div>
                 {!playerPreview && <label className="flex items-center gap-2 text-xs whitespace-nowrap"><Switch size="sm" checked={point.revealed}
                   onCheckedChange={checked => edit(draft => { const found = draft.hexes[selected].points.find(p=>p.id===point.id); if(found) found.revealed=checked; })} /> Público</label>}</div>
-              {playerPreview && onOpenPlayerActions && game.publicPlayerActions?.areas.some(a => a.hexId === selected && a.pointId === point.id) && <Button size="sm" variant="outline" onClick={onOpenPlayerActions}><Search size={15} /> Buscar ou recolher aqui</Button>}
+              {playerPreview && playerActions && game.publicPlayerActions?.hexId === selected && <details className="hex-player-search mt-3"><summary><Search size={15} /> Buscar e recolher neste local</summary><PlayerContextActions key={selected+point.id} game={game} controls={playerActions} context={{kind:"search",hexId:selected,pointId:point.id}} /></details>}
               {point.signal && <p className="mt-1">{point.signal}</p>}
               {!playerPreview && point.clueTargetHex && <Button size="sm" variant="outline" className="mt-2"
                 disabled={!game.hexes[point.clueTargetHex]} onClick={() => { setFocusHex(point.clueTargetHex!); selectHex(point.clueTargetHex!); }}>
