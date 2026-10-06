@@ -101,11 +101,40 @@ test('buscas não exigem liberação e parâmetros forjados ou dias antigos não
  denied(f,'intruso',{type:'request',text:'Ajuda'},/ficha/);
  denied(f,f.ids[0],{type:'withdraw',resource:'food',quantity:-1},/inválidos/);
 });
+
+test('jogador prepara automaticamente local revelado sem depender de ação do mestre',()=>{
+ const f=fixture(); const point=f.game.hexes['0,0'].points[0]; delete point.preparation;
+ let view=projectPlayerActions(f.game,f.ids[0]);
+ assert.equal(view.locations[0].prepared,false);assert.equal(view.areas.length,0);
+ ok(f,f.ids[0],{type:'prepare-search',hexId:'0,0',pointId:'market'});
+ assert.ok(f.game.hexes['0,0'].points[0].preparation);
+ view=projectPlayerActions(f.game,f.ids[0]);
+ assert.equal(view.locations[0].prepared,true);assert.ok(view.areas.length>0);
+ assert.equal(f.game.log.some(entry=>entry.kind==='equipe'&&entry.text.includes('ação da equipe')),false);
+ const other=fixture();delete other.game.hexes['0,0'].points[0].preparation;other.game.survivors[0].hex='1,0';
+ denied(other,other.ids[0],{type:'prepare-search',hexId:'0,0',pointId:'market'},/disponível/);
+});
+
+test('jogador pode executar busca profunda plausível sem liberação manual do mestre',()=>{
+ const f=fixture();const normal=propose(f);ok(f,f.ids[0],{type:'execute',operationId:normal});
+ let view=projectPlayerActions(f.game,f.ids[0]);const area=view.areas.find(row=>row.areaId===f.areaId);
+ assert.equal(area.state,'deep-available');
+ const focus=area.objectives.find(value=>value!=='open');assert.ok(focus,'A área de teste precisa oferecer um foco plausível');
+ const deep=ok(f,f.ids[0],{type:'deep-search',hexId:'0,0',pointId:'market',areaId:f.areaId,objective:focus,purpose:'Vasculhar melhor'}).input.id;
+ assert.equal(f.game.playerActions.operations.find(op=>op.id===deep).depth,'deep');
+ ok(f,f.ids[0],{type:'execute',operationId:deep});
+ const attempt=f.game.hexes['0,0'].points[0].preparation.attempts.find(row=>row.id===deep);
+ assert.equal(attempt.kind,'deep');assert.equal(attempt.status,'pending');
+ const dice=[12,1];ok(f,f.ids[0],{type:'roll-access',operationId:deep,trait:'Instinto',experiences:[]},()=>dice.shift());
+ assert.equal(f.game.hexes['0,0'].points[0].preparation.attempts.find(row=>row.id===deep).status,'completed');
+ view=projectPlayerActions(f.game,f.ids[0]);assert.ok(['exhausted','searched'].includes(view.areas.find(row=>row.areaId===f.areaId).state));
+});
 test('projeção mostra somente autorização local e não vaza preparação, tabela, dificuldade ou fichas dos colegas',()=>{
  const f=fixture(); f.game.hexes['0,0'].points[0].preparation.areas[0].difficulty=99;
  const own=projectPlayerGame(f.game,f.ids[0]);
  assert.equal(own.playerActions,undefined); assert.equal(own.survivors.length,1);
- assert.equal(own.publicPlayerActions.areas.length,f.game.hexes['0,0'].points[0].preparation.areas.filter(a=>a.searchable!==false).length); assert.equal(own.hexes['0,0'].points[0].preparation,undefined);
+ assert.equal(own.publicPlayerActions.areas.length,f.game.hexes['0,0'].points[0].preparation.areas.length); assert.equal(own.hexes['0,0'].points[0].preparation,undefined);
+ assert.equal(own.publicPlayerActions.locations[0].prepared,true); assert.equal(own.publicPlayerActions.locations[0].areaCount,f.game.hexes['0,0'].points[0].preparation.areas.length);
  const text=JSON.stringify(own.publicPlayerActions); assert.equal(text.includes('difficulty'),false); assert.equal(text.includes('lootTable'),false); assert.equal(text.includes('SEGREDO'),false);
  f.game.hexes['0,0'].points[0].revealed=false; assert.equal(projectPlayerActions(f.game,f.ids[0]).areas.length,0);
 });
