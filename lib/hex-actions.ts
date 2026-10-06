@@ -66,7 +66,7 @@ export function moveSurvivors(game: GameState, destination: string, survivorIds:
   if (members.some(member => !member)) return { ok: false, message: "" };
   const people = members.filter(Boolean) as NonNullable<(typeof members)[number]>[];
   const busy = people.map(person => ({ person, commitment: survivorTimedCommitment(game, person.id) })).find(entry => entry.commitment);
-  if (busy?.commitment) return { ok: false, message: `${busy.person.name} está ocupado: ${busy.commitment.label.toLocaleLowerCase("pt-BR")}.` };
+  if (busy?.commitment) return { ok: false, message: `${busy.person.name} está ocupado: trabalhando em ${busy.commitment.projectName} até ${busy.commitment.until}.` };
   const sourceHex = survivorHex(game, people[0]);
   if (!people.every(person => survivorHex(game, person) === sourceHex)) return { ok: false, message: "" };
 

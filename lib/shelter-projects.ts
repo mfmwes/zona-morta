@@ -950,22 +950,23 @@ export function runShelterWorkShift(game: GameState, hours = 4) {
 
   // Fluxo legado mantido para compatibilidade: transforma a ação imediata em
   // turnos reais e deixa o relógio central processar todas as conclusões.
-  const draft = structuredClone(game);
-  const active = (draft.shelter.projects ?? []).filter(project => project.state === "Em construção");
+  const active = (game.shelter.projects ?? []).filter(project => project.state === "Em construção");
   const scheduledKeys: string[] = [];
   for (const project of active) {
-    const preview = projectWorkPreview(draft, draft.shelter, project);
+    const preview = projectWorkPreview(game, game.shelter, project);
     if (preview.issue || preview.points < 1) continue;
-    const scheduled = scheduleShelterWorkShift(draft, project, hours);
+    const scheduled = scheduleShelterWorkShift(game, project, hours);
     if (scheduled.ok) scheduledKeys.push(project.key);
   }
   if (!scheduledKeys.length) return { ok: false, message: "Nenhum projeto em obra tem uma equipe válida para trabalhar.", results: [] as { key: string; name: string; points: number; completed: boolean }[] };
 
-  const time = advanceCampaignTime(draft, hours * 60);
-  if (!time.ok) return { ok: false, message: "Não foi possível avançar o relógio central.", results: [] as { key: string; name: string; points: number; completed: boolean }[] };
+  const time = advanceCampaignTime(game, hours * 60);
+  if (!time.ok) {
+    for (const project of game.shelter.projects ?? []) if (scheduledKeys.includes(project.key)) delete project.workShift;
+    return { ok: false, message: "Não foi possível avançar o relógio central.", results: [] as { key: string; name: string; points: number; completed: boolean }[] };
+  }
   const results = time.completedWork.filter(row => scheduledKeys.includes(row.key))
     .map(row => ({ key: row.key, name: row.name, points: row.points, completed: row.completed }));
-  Object.assign(game, draft);
   return { ok: true, message: `${hours}h de trabalho registradas em ${results.length} projeto(s) pelo relógio central.`, results };
 }
 

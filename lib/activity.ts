@@ -37,7 +37,7 @@ export function timedActionParticipantIssue(game: GameState, survivorIds: string
   for (const id of survivorIds) {
     const person = game.survivors.find(candidate => candidate.id === id);
     const commitment = survivorTimedCommitment(game, id);
-    if (person && commitment) return `${person.name} está ocupado: ${commitment.label.toLocaleLowerCase("pt-BR")}. Não pode participar de ${actionLabel} nas mesmas horas.`;
+    if (person && commitment) return `${person.name} está ocupado: trabalhando em ${commitment.projectName} até ${commitment.until}. Não pode participar de ${actionLabel} nas mesmas horas.`;
   }
   return null;
 }
