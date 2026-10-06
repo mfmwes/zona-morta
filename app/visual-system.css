@@ -4954,3 +4954,25 @@ html[data-theme="dark"] .campaign-library-error { border-color:#95665b; backgrou
 html[data-theme="dark"] .character-provision-grid small,
 html[data-theme="dark"] .master-overview-hero-metrics small { color:var(--muted-foreground); }
 html[data-theme="dark"] .master-overview-clear span { color:#a7d6cb; }
+
+/* Public scene pressure stays beside the clock, without editing controls. */
+.player-scene-pressure { display:flex; align-items:center; gap:12px; padding:4px 10px; border:1px solid var(--border); border-radius:7px; background:var(--card); }
+.player-pressure-value { min-width:91px; color:#315a57; }
+.player-pressure-value > span:first-child { display:flex; align-items:center; gap:5px; font-size:.76rem; line-height:1.2; }
+.player-pressure-value b { font-weight:600; }
+.player-pressure-value strong { margin-left:auto; padding-left:4px; font:700 .83rem var(--font-mono); white-space:nowrap; }
+.player-pressure-value small { font-size:.65rem; font-weight:500; opacity:.8; }
+.player-pressure-fear { color:#77518f; }
+.player-noise-scale { display:flex; gap:3px; margin-top:5px; }
+.player-noise-scale i { flex:1; height:3px; border-radius:2px; background:#d8e4df; }
+.player-noise-scale .is-filled { background:currentColor; }
+.player-pressure-noise.is-high { color:#956120; }
+.player-fear-scale { display:block; height:3px; border-radius:2px; margin-top:5px; background:#e6dced; overflow:hidden; }
+.player-fear-scale i { display:block; height:100%; background:currentColor; }
+html[data-theme="dark"] .player-pressure-noise { color:#a5d6ca; }
+html[data-theme="dark"] .player-pressure-noise.is-high { color:#edc77d; }
+html[data-theme="dark"] .player-pressure-fear { color:#cfaae8; }
+html[data-theme="dark"] .player-noise-scale i { background:#3b5350; }
+html[data-theme="dark"] .player-noise-scale .is-filled { background:currentColor; }
+html[data-theme="dark"] .player-fear-scale { background:#42384e; }
+@media (max-width:620px) { .player-scene-pressure { padding:4px 7px; gap:9px; } .player-pressure-value { min-width:84px; } }

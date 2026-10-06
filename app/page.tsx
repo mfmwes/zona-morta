@@ -577,6 +577,16 @@ export default function CampaignApp() {
           <span className="tag">DIA {String(game.day).padStart(2,"0")}</span>
           <span className="font-mono font-extrabold flex items-center gap-1"><Clock3 size={16} /> {displayTime(game.minutes)}</span>
           {role === "mestre" && <DayCloseDialog game={game} edit={edit} variant="outline" size="sm" className="topbar-day-close" />}
+          {readOnlyPreview && <div className="player-scene-pressure" role="status" aria-live="polite" aria-atomic="true" aria-label="Pressão da cena">
+            <div className={`player-pressure-value player-pressure-noise${game.noise >= 3 ? " is-high" : ""}`} title="Barulho da cena · atualizado pelo mestre">
+              <span><Ear size={15} aria-hidden="true" /><b>Barulho</b><strong>{game.noise}<small>/5</small></strong></span>
+              <span className="player-noise-scale" aria-hidden="true">{Array.from({length:5},(_,index)=><i key={index} className={index < game.noise ? "is-filled" : ""} />)}</span>
+            </div>
+            <div className="player-pressure-value player-pressure-fear" title="Reserva de Medo do mestre">
+              <span><Brain size={15} aria-hidden="true" /><b>Medo</b><strong>{game.fear}<small>/12</small></strong></span>
+              <span className="player-fear-scale" aria-hidden="true"><i style={{width:`${game.fear / 12 * 100}%`}} /></span>
+            </div>
+          </div>}
           <span className="hidden sm:inline text-[#c4cfcb]">/</span>
           <span className="subtle hidden sm:inline">{game.shelter.hex ? game.shelter.name : "Sem abrigo"}</span>
         </div>
