@@ -195,7 +195,10 @@ function executeCommand(game: GameState, actorId: string, cmd: PlayerCommand, di
       Object.assign(proposal, {
         pointId: cmd.pointId, areaId: cmd.areaId, objective: cmd.objective, purpose: cmd.purpose,
         depth: cmd.type === "deep-search" ? "deep" : "normal",
-        ...(cmd.objective === "item" ? { catalogKey: cmd.catalogKey, objectiveLabel: cmd.objectiveLabel || gameContent.catalog.find(entry => catalogKey(entry) === cmd.catalogKey)?.name } : {}),
+        ...(cmd.objective === "item" ? {
+          catalogKey: cmd.catalogKey,
+          objectiveLabel: gameContent.catalog.find(entry => catalogKey(entry) === cmd.catalogKey)?.name,
+        } : {}),
       });
     } else if (cmd.type === "travel") {
       if (!policy.routes.some(r => r.from === hexId && r.to === cmd.destination) || !game.hexes[cmd.destination] || game.hexes[cmd.destination].discovery === "desconhecido") return "Esta rota não foi liberada pelo mestre.";
