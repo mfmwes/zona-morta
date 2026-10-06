@@ -21,6 +21,7 @@ const objectiveLabels: Record<string, string> = {
   medicine: "Medicamentos",
   parts: "Peças",
   fuel: "Combustível",
+  item: "Item específico",
 };
 
 const stateLabels: Record<PublicSearchAreaState, string> = {
@@ -60,8 +61,13 @@ export function PlayerHexSearchDialog({
   const [selectedArea, setSelectedArea] = useState("");
   const [objective, setObjective] = useState("open");
   const [purpose, setPurpose] = useState("Encontrar suprimentos úteis para o grupo");
+  const [specificKey, setSpecificKey] = useState("");
+  const [warehouseWorkerId, setWarehouseWorkerId] = useState("");
   const [trait, setTrait] = useState("Instinto");
   const [experiences, setExperiences] = useState<string[]>([]);
+  const [edge, setEdge] = useState<"none" | "advantage" | "disadvantage">("none");
+  const [mentorId, setMentorId] = useState("");
+  const [cartId, setCartId] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -90,6 +96,16 @@ export function PlayerHexSearchDialog({
   const goal = objectives.some(option => option.value === objective)
     ? objective
     : objectives[0]?.value ?? (deep ? "" : "open");
+  const chosenSpecificKey = area?.specificItems.some(item => item.key === specificKey)
+    ? specificKey
+    : area?.specificItems[0]?.key ?? "";
+  const operationWorkers = area?.warehouseWorkers.filter(worker => operation?.participantIds.includes(worker.id)) ?? [];
+  const deployedCarts = actor?.inventory.filter(item => item.name === "Carrinho dobrável" && item.cartDeployed) ?? [];
+  const completedSearches = [...(view?.operations ?? [])].reverse().filter(op =>
+    op.type === "search" && op.pointId === request.pointId && op.status === "done");
+  const recentResult = area
+    ? completedSearches.find(op => op.areaId === area.areaId)
+    : completedSearches[0];
   const count = Number(quantity);
   const validCount = Number.isInteger(count) && count > 0 && count <= 99;
 
@@ -122,6 +138,9 @@ export function PlayerHexSearchDialog({
   function selectArea(id: string) {
     setSelectedArea(id);
     setObjective("open");
+    setSpecificKey("");
+    setWarehouseWorkerId("");
+    setMentorId("");
     setError("");
     setNotice("");
   }
@@ -229,16 +248,22 @@ export function PlayerHexSearchDialog({
             {area && !operation && (area.state === "available" || area.state === "deep-available") && <section className={`hex-search-step ${deep ? "hex-deep-search" : ""}`}>
               <h3>{deep ? <><ShieldAlert size={18} /> Vasculhar a fundo</> : <><Search size={18} /> Iniciar busca</>}</h3>
               {objectives.length ? <>
-                <Pick label={deep ? "Foco plausível" : "Objetivo da busca"} value={goal} options={objectives} onChange={setObjective} />
+                <Pick label={deep ? "Foco da busca profunda" : "Objetivo da busca"} value={goal} options={objectives} onChange={value => { setObjective(value); if (value !== "item") setSpecificKey(""); }} />
+                {goal === "item" && <Pick label="Item plausível nesta área" value={chosenSpecificKey}
+                  options={area.specificItems.map(item => ({ value: item.key, label: item.name }))} onChange={setSpecificKey} />}
                 <Field label="Finalidade da busca" value={purpose} onChange={setPurpose} />
                 <p className="text-sm subtle">{deep ? "30 min · Barulho adicional · teste necessário · máximo 1 item." : `${area.minutes} min · Barulho +${area.noise} · ${area.access === "risk" ? "teste de acesso necessário" : "acesso livre"}.`}</p>
-                <Button disabled={busy || Boolean(view?.busy) || view?.policy.paused || area.access === "blocked" || !purpose.trim() || !goal}
+                <Button disabled={busy || Boolean(view?.busy) || view?.policy.paused || area.access === "blocked" || !purpose.trim() || !goal || (goal === "item" && !chosenSpecificKey)}
                   onClick={() => void perform({
                     type: deep ? "deep-search" : "search",
                     hexId: area.hexId,
                     pointId: area.pointId,
                     areaId: area.areaId,
                     objective: goal,
+                    ...(goal === "item" ? {
+                      catalogKey: chosenSpecificKey,
+                      objectiveLabel: area.specificItems.find(item => item.key === chosenSpecificKey)?.name,
+                    } : {}),
                     purpose,
                   }, deep ? "Busca profunda proposta ao grupo." : "Busca proposta ao grupo.")}>
                   {deep ? "Propor busca profunda" : "Propor busca"}
@@ -251,22 +276,42 @@ export function PlayerHexSearchDialog({
               <h3><Users size={18} /> {operation.depth === "deep" ? "Busca profunda proposta" : "Busca em grupo"}</h3>
               <p className="text-sm">{operation.purpose}</p>
               <p className="text-xs subtle">Confirmados: {operation.participantIds.map(id => view?.peers.find(peer => peer.id === id)?.name ?? "Sobrevivente").join(", ")}</p>
-              {operation.status === "forming" && <div className="team-inline-actions">
-                {!member && <Button size="sm" onClick={() => void perform({ type: "join", operationId: operation.id }, "Participação confirmada.")}>Participar</Button>}
-                {member && <Button size="sm" variant="outline" onClick={() => void perform({ type: "leave", operationId: operation.id }, owner ? "Busca cancelada." : "Você saiu da busca.")}>{owner ? "Cancelar proposta" : "Sair da busca"}</Button>}
-                {owner && <Button size="sm" disabled={Boolean(view?.busy) || view?.policy.paused} onClick={() => void perform({ type: "execute", operationId: operation.id }, operation.depth === "deep" ? "Busca profunda iniciada." : "Busca iniciada.")}>Iniciar busca</Button>}
-              </div>}
+              {operation.status === "forming" && <>
+                {owner && operation.depth !== "deep" && operationWorkers.length > 0 && <Pick label="Apoio de Trabalhador(a) de depósito · opcional"
+                  value={warehouseWorkerId || "none"}
+                  options={[{ value: "none", label: "Não usar habilidade" }, ...operationWorkers.map(worker => ({ value: worker.id, label: worker.name }))]}
+                  onChange={value => setWarehouseWorkerId(value === "none" ? "" : value)} />}
+                <div className="team-inline-actions">
+                  {!member && <Button size="sm" onClick={() => void perform({ type: "join", operationId: operation.id }, "Participação confirmada.")}>Participar</Button>}
+                  {member && <Button size="sm" variant="outline" onClick={() => void perform({ type: "leave", operationId: operation.id }, owner ? "Busca cancelada." : "Você saiu da busca.")}>{owner ? "Cancelar proposta" : "Sair da busca"}</Button>}
+                  {owner && <Button size="sm" disabled={Boolean(view?.busy) || view?.policy.paused}
+                    onClick={() => void perform({ type: "execute", operationId: operation.id, ...(warehouseWorkerId ? { warehouseWorkerId } : {}) }, operation.depth === "deep" ? "Busca profunda iniciada." : "Busca iniciada.")}>Iniciar busca</Button>}
+                </div>
+              </>}
               {operation.status === "access" && owner && actor && <div className="team-access-roll">
                 <Pick label="Atributo do teste" value={trait} options={Object.keys(actor.attributes).map(value => ({ value, label: traitLabel(value) }))} onChange={setTrait} />
+                <Pick label="Condição da rolagem" value={edge}
+                  options={[{ value: "none", label: "Normal" }, { value: "advantage", label: "Vantagem +d6" }, { value: "disadvantage", label: "Desvantagem −d6" }]}
+                  onChange={value => setEdge(value as "none" | "advantage" | "disadvantage")} />
+                {area.mentors.length > 0 && <Pick label="Apoio de Docente · opcional" value={mentorId || "none"}
+                  options={[{ value: "none", label: "Sem apoio" }, ...area.mentors.map(mentor => ({ value: mentor.id, label: mentor.name }))]}
+                  onChange={value => setMentorId(value === "none" ? "" : value)} />}
                 <div className="team-objectives">
                   {([["origin", "Experiência de origem"], ["free", "Experiência livre"]] as const).map(([key,label]) => <label key={key}>
                     <input type="checkbox" checked={experiences.includes(key)} onChange={event => setExperiences(current => event.target.checked ? [...current,key] : current.filter(value => value !== key))} />
                     {label} · +2 por 1 Esperança
                   </label>)}
                 </div>
-                <Button disabled={experiences.length > actor.hope || view?.policy.paused} onClick={() => void perform({ type: "roll-access", operationId: operation.id, trait, experiences }, "Teste resolvido e busca concluída.")}>Rolar acesso e concluir busca</Button>
+                <Button disabled={experiences.length > actor.hope || view?.policy.paused}
+                  onClick={() => void perform({ type: "roll-access", operationId: operation.id, trait, experiences, edge, ...(mentorId ? { mentorId } : {}) }, "Teste resolvido e busca concluída.")}>Rolar acesso e concluir busca</Button>
               </div>}
               {operation.status === "access" && !owner && <p className="team-notice">Aguardando quem iniciou a busca resolver o acesso.</p>}
+            </section>}
+
+            {!operation && recentResult?.result && <section className="hex-search-step">
+              <h3><CheckCircle2 size={18} /> Última busca nesta área</h3>
+              <p className="text-sm"><b>{recentResult.depth === "deep" ? "Busca profunda" : "Busca"}</b> · {recentResult.result}</p>
+              {recentResult.attention && <p className="team-notice mt-2">{recentResult.attention}</p>}
             </section>}
 
             {area && !operation && ["searched", "exhausted"].includes(area.state) && <section className="hex-search-step">
@@ -287,12 +332,18 @@ export function PlayerHexSearchDialog({
           </div>
           {stock.length ? <>
             <Field label="Quantidade a recolher" type="number" value={quantity} onChange={setQuantity} />
+            {deployedCarts.length > 0 && <Pick label="Destino da coleta" value={cartId || "personal"}
+              options={[{ value: "personal", label: "Meu inventário" }, ...deployedCarts.map(cart => ({ value: cart.id, label: "Meu carrinho aberto" }))]}
+              onChange={value => setCartId(value === "personal" ? "" : value)} />}
             <div className="hex-search-stock-list">
               {stock.map(row => <div key={row.stockId} className={`hex-search-stock-row ${row.accessible ? "" : "is-locked"}`}>
                 <span><b>{row.name}</b><small>{row.source === "apparent" ? "À vista" : "Encontrado na busca"} · {areas.find(candidate => candidate.areaId === row.areaId)?.name ?? "Área"}{row.condition && row.condition !== "Íntegro" ? ` · ${row.condition}` : ""}{row.requiresFuelContainer ? " · exige galão vazio" : ""}</small></span>
                 <strong>{row.remaining}</strong>
                 <Button size="sm" disabled={busy || !row.accessible || !validCount || count > row.remaining || view?.policy.paused}
-                  onClick={() => void perform({ type: "collect", hexId: row.hexId, pointId: row.pointId, stockId: row.stockId, quantity: count }, "Item recolhido para sua mochila.")}>Recolher</Button>
+                  onClick={() => void perform({
+                    type: "collect", hexId: row.hexId, pointId: row.pointId, stockId: row.stockId, quantity: count,
+                    ...(!row.requiresFuelContainer && cartId ? { cartId } : {}),
+                  }, !row.requiresFuelContainer && cartId ? "Item recolhido para seu carrinho." : "Item recolhido para seu inventário.")}>Recolher</Button>
               </div>)}
             </div>
           </> : <p className="team-empty">Nenhum achado aguardando coleta neste local.</p>}
