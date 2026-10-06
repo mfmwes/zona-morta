@@ -26,13 +26,13 @@ export function TablePresentationControl({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (!open) return;
+  function openEditor() {
     setImage(active?.image ?? "");
     setTitle(active?.title ?? "");
     setCaption(active?.caption ?? "");
     setError("");
-  }, [open, active?.id, active?.image, active?.title, active?.caption]);
+    setOpen(true);
+  }
 
   const endpoint = "/api/campaign/presentation?campanha=" + encodeURIComponent(campaignId);
 
@@ -83,7 +83,7 @@ export function TablePresentationControl({
 
   return <>
     <button type="button" className={`table-presentation-trigger${active ? " is-active" : ""}`}
-      onClick={() => setOpen(true)} aria-label="Exibir imagem aos jogadores" title="Exibir imagem aos jogadores">
+      onClick={openEditor} aria-label="Exibir imagem aos jogadores" title="Exibir imagem aos jogadores">
       <ImageIcon size={17} aria-hidden="true" />
       <span>{active ? "Imagem em exibição" : "Exibir imagem"}</span>
       {active && <i aria-hidden="true" />}
@@ -123,7 +123,8 @@ export function TablePresentationViewer({ presentation, enabled }: {
   enabled: boolean;
 }) {
   const [dismissedId, setDismissedId] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const expanded = Boolean(presentation && expandedId === presentation.id);
   const visible = Boolean(enabled && presentation?.active && presentation.id !== dismissedId);
 
   useEffect(() => {
@@ -135,7 +136,6 @@ export function TablePresentationViewer({ presentation, enabled }: {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [visible, presentation]);
 
-  useEffect(() => { setExpanded(false); }, [presentation?.id]);
 
   if (!enabled || !presentation?.active) return null;
   if (!visible) return <button type="button" className="table-presentation-trigger table-presentation-reopen"
@@ -152,7 +152,7 @@ export function TablePresentationViewer({ presentation, enabled }: {
           {presentation.title && <h2>{presentation.title}</h2>}
         </div>
         <div className="table-presentation-view-actions">
-          <Button type="button" size="sm" variant="outline" onClick={() => setExpanded(value => !value)}
+          <Button type="button" size="sm" variant="outline" onClick={() => setExpandedId(expanded ? null : presentation.id)}
             aria-label={expanded ? "Reduzir imagem" : "Ampliar imagem"} title={expanded ? "Reduzir" : "Ampliar"}>
             {expanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
           </Button>

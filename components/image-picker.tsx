@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ChangeEvent, type ReactNode } from "react";
+import { useState, type ChangeEvent, type ReactNode } from "react";
 import { Image as ImageIcon, Link2, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { encodeNpcPortrait, encodePresentationImage, encodeSquareImage, normalizeImageReference } from "@/lib/client-image";
@@ -22,10 +22,12 @@ export function ImagePicker({
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
+  const [draftSource, setDraftSource] = useState(value);
+  if (draftSource !== value) {
+    setDraftSource(value);
     setUrlDraft(value && !value.startsWith("data:image/") ? value : "");
     setError("");
-  }, [value]);
+  }
 
   async function upload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];

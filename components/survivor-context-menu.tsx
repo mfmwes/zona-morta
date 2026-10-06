@@ -58,13 +58,13 @@ export function SurvivorContextMenu({
   const stats = survivorStats(survivor);
 
   function transfer(itemId: string, targetId: string, quantity: number) {
-    let result: ReturnType<typeof performItemAction> | null = null;
-    edit(draft => { result = performItemAction(draft, survivor.id, itemId, { type: "transfer", targetId, quantity }); });
-    if (!result?.ok) {
+    const outcome: { value: ReturnType<typeof performItemAction> | null } = { value: null };
+    edit(draft => { outcome.value = performItemAction(draft, survivor.id, itemId, { type: "transfer", targetId, quantity }); });
+    if (!outcome.value?.ok) {
       toast.error("A transferência não foi concluída.");
       return;
     }
-    toast.success(result.message);
+    toast.success(outcome.value.message);
   }
 
   return <ContextMenu>

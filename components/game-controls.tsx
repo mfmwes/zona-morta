@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export function Pick({ label, value, options, onChange, placeholder = "Escolha", disabled = false, contentClassName }: {
   label: string;
   value: string;
-  options: (string | { value: string; label: string })[];
+  options: readonly (string | { value: string; label: string })[];
   onChange: (value: string) => void;
   placeholder?: string;
   disabled?: boolean;
@@ -15,7 +15,7 @@ export function Pick({ label, value, options, onChange, placeholder = "Escolha",
   return <div className="field">
     <span className="field-label">{label}</span>
     <Select value={value || undefined} onValueChange={onChange} disabled={disabled}>
-      <SelectTrigger aria-label={label} className="w-full bg-white"><SelectValue placeholder={placeholder} /></SelectTrigger>
+      <SelectTrigger aria-label={label} className="w-full bg-background"><SelectValue placeholder={placeholder} /></SelectTrigger>
       <SelectContent className={contentClassName}>{options.map(option => {
         const value = typeof option === "string" ? option : option.value;
         const title = typeof option === "string" ? option : option.label;

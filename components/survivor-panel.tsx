@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- local portraits are reduced to small data URLs before storage. */
 
-import { useMemo, useState, type ChangeEvent, type ReactNode } from "react";
+import { useState, type ChangeEvent, type ReactNode } from "react";
 import {
   Activity, AlertTriangle, Backpack, BookOpen, Check, Clock3, Crosshair, Dice5, Droplets, Footprints, Heart, Search,
   HeartPulse, History, Minus, Plus, Shield, ShieldCheck, Sparkles,
@@ -383,7 +383,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
     ...(commitment ? [commitment.label + "."] : []),
   ] : [];
 
-  const inventoryGroups = useMemo(() => {
+  const inventoryGroups = (() => {
     if (!selected) return [];
     const grouped = new Map<string, typeof selected.inventory>();
     for (const item of selected.inventory) {
@@ -394,7 +394,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
       grouped.set(category, [...(grouped.get(category) ?? []), item]);
     }
     return [...grouped.entries()];
-  }, [selected, inventoryQuery, inventoryCategory]);
+  })();
   const categoryOptions = ["Todas", ...new Set(selected?.inventory.map(item => catalogForItem(item)?.category ?? item.category ?? "Outros"))];
   const medicineSources = [
     ...(!playerMode && selected && atSharedStorage(game, selected.id) && game.shelter.medications > 0 ? [{ value: "shared", label: "Reservas compartilhadas · " + game.shelter.medications }] : []),

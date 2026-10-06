@@ -138,10 +138,10 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
   }
 
   function runHexAction(id: string, action: HexQuickAction) {
-    let result: ReturnType<typeof performHexAction> | null = null;
-    edit(draft => { result = performHexAction(draft, id, action); });
-    if (!result?.ok) return false;
-    toast.success(result.message);
+    const outcome: { value: ReturnType<typeof performHexAction> | null } = { value: null };
+    edit(draft => { outcome.value = performHexAction(draft, id, action); });
+    if (!outcome.value?.ok) return false;
+    toast.success(outcome.value.message);
     return true;
   }
 

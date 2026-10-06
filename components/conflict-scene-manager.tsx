@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Activity, Crosshair, Crown, Dice5, Dumbbell, Eye, Gauge, HeartPulse, Plus, RotateCcw, Shield, ShieldAlert, Skull, Swords, Tag, Trash2, UserPlus, Users, X, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -222,23 +222,25 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
   const library = threatLibrary(game.threats);
   const sectorName = game.hexes[game.partyHex]?.sector?.name ?? `Hex ${game.partyHex}`;
   const [sceneName, setSceneName] = useState(`Conflito — ${sectorName}`);
-  const [survivorToAdd, setSurvivorToAdd] = useState("");
-  const [threatToAdd, setThreatToAdd] = useState("");
+  const [survivorChoice, setSurvivorToAdd] = useState("");
+  const [threatChoice, setThreatToAdd] = useState("");
   const [threatQuantity, setThreatQuantity] = useState(1);
   const [conditionDrafts, setConditionDrafts] = useState<Record<string, string>>({});
   const [actingThreatId, setActingThreatId] = useState<string | null>(null);
-  const [threatTargetId, setThreatTargetId] = useState("");
+  const [targetChoice, setThreatTargetId] = useState("");
   const [threatActionResult, setThreatActionResult] = useState<{
     d20: number; total: number; evasion: number; hit: boolean; damage: number;
     tier: ReturnType<typeof resolveSurvivorDamageTier>; targetName: string; attackName: string;
   } | null>(null);
   const [threatQuery, setThreatQuery] = useState("");
   const [threatFilter, setThreatFilter] = useState<"active" | "all" | "defeated">("active");
-  const [notesDraft, setNotesDraft] = useState(conflict?.notes ?? "");
+  const [notesEdit, setNotesEdit] = useState<{ id: string; source: string; value: string } | null>(null);
+  const notesDraft = notesEdit?.id === conflict?.id && notesEdit?.source === conflict?.notes
+    ? notesEdit?.value ?? "" : conflict?.notes ?? "";
+  function setNotesDraft(value: string) {
+    if (conflict) setNotesEdit({ id: conflict.id, source: conflict.notes, value });
+  }
 
-  useEffect(() => {
-    setNotesDraft(conflict?.notes ?? "");
-  }, [conflict?.id, conflict?.notes]);
 
   const availableSurvivors = useMemo(() => game.survivors
     .filter(person => !conflict?.survivorIds.includes(person.id))
@@ -277,18 +279,12 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
     })).sort((a, b) => a.tier - b.tier || a.name.localeCompare(b.name, "pt-BR"));
   }, [conflict?.threats, threatQuery, threatFilter]);
 
-  useEffect(() => {
-    if (!availableSurvivors.some(option => option.value === survivorToAdd)) setSurvivorToAdd(availableSurvivors[0]?.value ?? "");
-  }, [availableSurvivors, survivorToAdd]);
+  const survivorToAdd = availableSurvivors.some(option => option.value === survivorChoice) ? survivorChoice : availableSurvivors[0]?.value ?? "";
 
-  useEffect(() => {
-    if (!threatOptions.some(option => option.value === threatToAdd)) setThreatToAdd(threatOptions[0]?.value ?? "");
-  }, [threatOptions, threatToAdd]);
+  const threatToAdd = threatOptions.some(option => option.value === threatChoice) ? threatChoice : threatOptions[0]?.value ?? "";
 
 
-  useEffect(() => {
-    if (!threatTargets.some(option => option.value === threatTargetId)) setThreatTargetId(threatTargets[0]?.value ?? "");
-  }, [threatTargets, threatTargetId]);
+  const threatTargetId = threatTargets.some(option => option.value === targetChoice) ? targetChoice : threatTargets[0]?.value ?? "";
 
   function startConflict() {
     const present = survivorsAtHex(game, game.partyHex).map(person => person.id);

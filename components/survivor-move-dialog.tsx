@@ -56,15 +56,15 @@ export function SurvivorMoveDialog({
 
   function confirm() {
     if (!selected.length || !source) return;
-    let result: ReturnType<typeof moveSurvivors> | null = null;
-    edit(draft => { result = moveSurvivors(draft, destination, selected); });
-    if (!result?.ok) {
+    const outcome: { value: ReturnType<typeof moveSurvivors> | null } = { value: null };
+    edit(draft => { outcome.value = moveSurvivors(draft, destination, selected); });
+    if (!outcome.value?.ok) {
       toast.error("Não foi possível mover os sobreviventes.", {
         description: "Confira a origem, o horário e se o destino continua adjacente e revelado.",
       });
       return;
     }
-    toast.success("Deslocamento registrado", { description: result.message });
+    toast.success("Deslocamento registrado", { description: outcome.value.message });
     onMoved?.(destination);
     onOpenChange(false);
   }

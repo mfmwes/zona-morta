@@ -1,9 +1,15 @@
 @import "tailwindcss";
+
 @import "tw-animate-css";
 @import "../vendor/shadcn-tailwind-4.13.0.css";
 @import "./world-map.css";
 @import "./npc-enhancements.css";
 @import "./shelter-residents.css";
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root { color-scheme: light; }
+html[data-theme="dark"] { color-scheme: dark; }
+
 
 :root {
   --background: #e6e9e5; --foreground: #172d30; --card: #fcfcf8; --card-foreground: #172d30;
@@ -1189,22 +1195,21 @@ button { cursor: pointer; } button:disabled { cursor: not-allowed; }
 .former-shelter-projects { display:grid; gap:4px; margin-top:13px; padding:10px; border-left:3px solid #90aaa2; background:color-mix(in srgb,var(--muted) 24%,transparent); font-size:.75rem; }
 .former-shelter-projects span { color:var(--muted-foreground); }
 
-@media (prefers-color-scheme: dark) {
-  .npc-card { border-color:#416562; background:#173336; }
-  .npc-card:hover { background:#214347; }
-  .npc-status { background:#254c4b; color:#bfe3d6; }
-  .npc-status-ferido,.npc-status-grave { background:#5a3730; color:#f0c1ae; }
-  .npc-status-morto,.npc-status-desaparecido { background:#3e3c3a; color:#d3cbc5; }
-  .shelter-community-counts span { border-color:#3f615d; background:#183638; color:#9db8b2; }
-  .shelter-community-counts b { color:#e6efea; }
-  .shelter-project-card,.shelter-post-card { border-color:#416460; background:#173437; }
-  .shelter-project-state,.shelter-post-state { background:#263f3e; color:#c0d3cd; }
-  .shelter-project-state.is-em-construção { background:#53452e; color:#f0d8a3; }
-  .shelter-project-state.is-concluído,.shelter-post-state.is-operational { background:#244a40; color:#bce2d1; }
-  .shelter-project-state.is-danificado { background:#563a35; color:#f1beb1; }
-  .project-helpers { border-color:#365653; }
-  .former-shelter-projects { border-color:#79a89b; background:#183537; }
-}
+html[data-theme="dark"] .npc-card { border-color:#416562; background:#173336; }
+html[data-theme="dark"] .npc-card:hover { background:#214347; }
+html[data-theme="dark"] .npc-status{ background:#254c4b; color:#bfe3d6; }
+html[data-theme="dark"] .npc-status-ferido, html[data-theme="dark"] .npc-status-grave{ background:#5a3730; color:#f0c1ae; }
+html[data-theme="dark"] .npc-status-morto, html[data-theme="dark"] .npc-status-desaparecido{ background:#3e3c3a; color:#d3cbc5; }
+html[data-theme="dark"] .shelter-community-counts span{ border-color:#3f615d; background:#183638; color:#9db8b2; }
+html[data-theme="dark"] .shelter-community-counts b{ color:#e6efea; }
+html[data-theme="dark"] .shelter-project-card, html[data-theme="dark"] .shelter-post-card { border-color:#416460; background:#173437; }
+html[data-theme="dark"] .shelter-project-state, html[data-theme="dark"] .shelter-post-state{ background:#263f3e; color:#c0d3cd; }
+html[data-theme="dark"] .shelter-project-state.is-em-construção{ background:#53452e; color:#f0d8a3; }
+html[data-theme="dark"] .shelter-project-state.is-concluído, html[data-theme="dark"] .shelter-post-state.is-operational{ background:#244a40; color:#bce2d1; }
+html[data-theme="dark"] .shelter-project-state.is-danificado{ background:#563a35; color:#f1beb1; }
+html[data-theme="dark"] .project-helpers{ border-color:#365653; }
+html[data-theme="dark"] .former-shelter-projects{ border-color:#79a89b; background:#183537; }
+
 
 @media (max-width:560px) {
   .shelter-community-counts { grid-template-columns:1fr; }
@@ -1702,12 +1707,11 @@ button { cursor: pointer; } button:disabled { cursor: not-allowed; }
   .shelter-admin-heading > p { text-align:left; }
 }
 
-@media (prefers-color-scheme: dark) {
-  .shelter-main-tabs { border-color:#365654; background:#122c2f; }
-  .shelter-main-tabs [data-slot=tabs-trigger] { color:#9eb8b2; }
-  .shelter-main-tabs [data-slot=tabs-trigger][data-state=active] { background:#1d3a3c; color:#edf3ed; }
-  .shelter-overview-admin { background:#142f32; }
-}
+html[data-theme="dark"] .shelter-main-tabs{ border-color:#365654; background:#122c2f; }
+html[data-theme="dark"] .shelter-main-tabs [data-slot=tabs-trigger]{ color:#9eb8b2; }
+html[data-theme="dark"] .shelter-main-tabs [data-slot=tabs-trigger][data-state=active]{ background:#1d3a3c; color:#edf3ed; }
+html[data-theme="dark"] .shelter-overview-admin{ background:#142f32; }
+
 
 
 /* Construção do abrigo — painel compacto, planta e automação de turnos. */
@@ -3804,3 +3808,8 @@ html[data-theme="dark"] .shelter-detail-next { background:#173331; }
   .shelter-now > button,.construction-next-action > button { align-self:flex-start; }
   .shelter-attention-list > div { grid-template-columns:1fr; }
 }
+
+/* O controle anuncia o tema que será ativado. */
+.theme-label-light { display:none; }
+html[data-theme="dark"] .theme-label-light { display:inline; }
+html[data-theme="dark"] .theme-label-dark { display:none; }

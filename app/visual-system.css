@@ -4947,3 +4947,10 @@ html[data-theme="dark"] .character-ability--used {
   border-color: var(--used-border) !important;
   background: var(--used-surface);
 }
+
+/* Etapa 7 — contraste dos rótulos pequenos e avisos nos dois temas. */
+.campaign-library-error { border-color:#d5aaa1; background:#fff2ed; color:#803b35; }
+html[data-theme="dark"] .campaign-library-error { border-color:#95665b; background:#392723; color:#f1beb1; }
+html[data-theme="dark"] .character-provision-grid small,
+html[data-theme="dark"] .master-overview-hero-metrics small { color:var(--muted-foreground); }
+html[data-theme="dark"] .master-overview-clear span { color:#a7d6cb; }

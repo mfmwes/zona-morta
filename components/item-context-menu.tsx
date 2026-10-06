@@ -72,13 +72,13 @@ export function ItemContextMenu({
     && provisionConsumedToday(game, owner, options.provision.resource as DailyResource));
 
   function run(action: ItemAction) {
-    let result: ReturnType<typeof performItemAction> | null = null;
-    edit(draft => { result = performItemAction(draft, ownerId, item.id, action); });
-    if (!result?.ok) {
+    const outcome: { value: ReturnType<typeof performItemAction> | null } = { value: null };
+    edit(draft => { outcome.value = performItemAction(draft, ownerId, item.id, action); });
+    if (!outcome.value?.ok) {
       toast.error("A ação não foi concluída.", { description: "Confira o item, a quantidade e o acesso ao destino." });
       return;
     }
-    toast.success(result.message);
+    toast.success(outcome.value.message);
   }
 
   function quantitySubmenu(label: string, icon: ReactNode, action: (quantity: number) => ItemAction) {

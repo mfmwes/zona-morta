@@ -68,15 +68,15 @@ export function HexContextMenu({
     : record.sector?.name ?? `Hex ${hexId}`;
 
   function run(action: HexQuickAction) {
-    let result: ReturnType<typeof performHexAction> | null = null;
-    edit(draft => { result = performHexAction(draft, hexId, action); });
-    if (!result?.ok) {
+    const outcome: { value: ReturnType<typeof performHexAction> | null } = { value: null };
+    edit(draft => { outcome.value = performHexAction(draft, hexId, action); });
+    if (!outcome.value?.ok) {
       toast.error("A ação não pôde ser concluída.", {
         description: "Confira a posição dos sobreviventes, o horário e o estado do setor.",
       });
       return;
     }
-    toast.success(result.message);
+    toast.success(outcome.value.message);
   }
 
   return <ContextMenu>

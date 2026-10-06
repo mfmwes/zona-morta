@@ -48,6 +48,8 @@ export function SurvivorConflictHud({
     try {
       const stored = window.localStorage.getItem(storageKey) ?? "";
       const recent = JSON.parse(window.localStorage.getItem(recentKey) ?? "[]") as unknown;
+      // Sincroniza a lista recente com o armazenamento externo ao abrir outra cena.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (Array.isArray(recent)) setRecentIds(recent.filter(value => typeof value === "string").slice(0, 5));
       if (stored && conflict.threats.some(threat => threat.id === stored && !threat.defeated)) onTargetChange(stored);
     } catch {}

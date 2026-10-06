@@ -294,13 +294,13 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
   }
 
   function scheduleShift(project: ShelterProject) {
-    let result: ReturnType<typeof scheduleShelterWorkShift> | null = null;
+    const outcome: { value: ReturnType<typeof scheduleShelterWorkShift> | null } = { value: null };
     edit(draft => {
       const target = projectFor(draft.shelter, project.key);
-      if (target) result = scheduleShelterWorkShift(draft, target, 4);
+      if (target) outcome.value = scheduleShelterWorkShift(draft, target, 4);
     });
-    if (!result?.ok) toast.error("Turno não programado", { description: result?.message ?? "Verifique a equipe e o horário." });
-    else toast.success("Turno programado", { description: result.message });
+    if (!outcome.value?.ok) toast.error("Turno não programado", { description: outcome.value?.message ?? "Verifique a equipe e o horário." });
+    else toast.success("Turno programado", { description: outcome.value.message });
   }
 
   function cancelShift(project: ShelterProject) {
@@ -316,22 +316,22 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
   }
 
   function registerIncident() {
-    let result: ReturnType<typeof applyShelterIncident> | null = null;
+    const outcome: { value: ReturnType<typeof applyShelterIncident> | null } = { value: null };
     edit(draft => {
-      result = applyShelterIncident(draft, {
+      outcome.value = applyShelterIncident(draft, {
         kind: incidentKind,
         impact: incidentImpact,
         targetProjectIds: incidentTargets,
         catastrophic: incidentCatastrophic,
       });
     });
-    if (!result?.ok) {
-      toast.error("Incidente não aplicado", { description: result?.message ?? "Revise o Impacto e os alvos." });
+    if (!outcome.value?.ok) {
+      toast.error("Incidente não aplicado", { description: outcome.value?.message ?? "Revise o Impacto e os alvos." });
       return;
     }
-    const damaged = result.damaged.map(row => `${row.name} ${row.integrity}/3`).join(" · ");
+    const damaged = outcome.value.damaged.map(row => `${row.name} ${row.integrity}/3`).join(" · ");
     toast.warning(`${incidentKind} registrado`, {
-      description: `Impacto ${result.impact} · mitigado ${result.mitigation.amount}${damaged ? ` · ${damaged}` : " · sem dano estrutural"}${result.unassignedImpact ? ` · ${result.unassignedImpact} sem alvo` : ""}`,
+      description: `Impacto ${outcome.value.impact} · mitigado ${outcome.value.mitigation.amount}${damaged ? ` · ${damaged}` : " · sem dano estrutural"}${outcome.value.unassignedImpact ? ` · ${outcome.value.unassignedImpact} sem alvo` : ""}`,
     });
     setIncidentOpen(false);
     setIncidentTargets([]);
@@ -361,13 +361,13 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
 
   function schedulePlayerShift(project: ShelterProject) {
     if (!playerSurvivorId) return;
-    let result: ReturnType<typeof scheduleSurvivorWorkShift> | null = null;
+    const outcome: { value: ReturnType<typeof scheduleSurvivorWorkShift> | null } = { value: null };
     edit(draft => {
       const target = projectFor(draft.shelter, project.key);
-      if (target) result = scheduleSurvivorWorkShift(draft, target, playerSurvivorId, 4);
+      if (target) outcome.value = scheduleSurvivorWorkShift(draft, target, playerSurvivorId, 4);
     });
-    if (!result?.ok) toast.error("Turno não programado", { description: result?.message ?? "Verifique sua posição e o horário." });
-    else toast.success("Seu turno foi programado", { description: result.message });
+    if (!outcome.value?.ok) toast.error("Turno não programado", { description: outcome.value?.message ?? "Verifique sua posição e o horário." });
+    else toast.success("Seu turno foi programado", { description: outcome.value.message });
   }
 
   function cancelPlayerShift(project: ShelterProject) {

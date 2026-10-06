@@ -279,9 +279,9 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
         {item.cartDeployed && (item.cartItems?.length ?? 0) > 0 && <div className="grid gap-2">
           {item.cartItems!.map(nested => <div className="shared-inventory-row" key={nested.id}><div><b>{nested.qty}× {nested.name}</b><span>{nested.load} espaço(s) por unidade</span></div>
             <Button size="sm" variant="outline" onClick={() => {
-              let result: ReturnType<typeof performItemAction> | null = null;
-              edit(draft => { result = performItemAction(draft, ownerId, item.id, { type: "cart-remove", nestedItemId: nested.id, quantity: nested.qty }); });
-              if (result?.ok) toast.success(result.message); else toast.error("Não foi possível retirar o item do carrinho.");
+              const outcome: { value: ReturnType<typeof performItemAction> | null } = { value: null };
+              edit(draft => { outcome.value = performItemAction(draft, ownerId, item.id, { type: "cart-remove", nestedItemId: nested.id, quantity: nested.qty }); });
+              if (outcome.value?.ok) toast.success(outcome.value.message); else toast.error("Não foi possível retirar o item do carrinho.");
             }}>Retirar</Button></div>)}
         </div>}
       </div>}

@@ -7,7 +7,7 @@ import {
   OctagonXIcon,
   TriangleAlertIcon,
 } from "lucide-react"
-import { useTheme } from "next-themes"
+import { useCampaignTheme } from "@/hooks/use-campaign-theme"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 
 const icon = (node: React.ReactNode, tone: string) => (
@@ -15,11 +15,11 @@ const icon = (node: React.ReactNode, tone: string) => (
 )
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme()
+  const theme = useCampaignTheme()
 
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme={theme}
       className="toaster group"
       icons={{
         success: icon(<CircleCheckIcon className="size-[18px]" />, "success"),

@@ -423,7 +423,7 @@ export function cancelSurvivorWorkShift(project: ShelterProject, survivorId: str
   const before = project.volunteerShifts?.length ?? 0;
   project.volunteerShifts = (project.volunteerShifts ?? []).filter(shift => shift.survivorId !== survivorId);
   const cancelled = (project.volunteerShifts?.length ?? 0) < before;
-  if (cancelled && game?.parallelTime?.day === game.day) syncParticipantsToCurrentTime(game, [survivorId]);
+  if (cancelled && game && game.parallelTime?.day === game.day) syncParticipantsToCurrentTime(game, [survivorId]);
   return cancelled;
 }
 
@@ -695,7 +695,7 @@ function halfCosts(costs: ShelterProjectCost) {
 
 export function repairPlan(gameOrShelter: GameState | ShelterState, project: ShelterProject) {
   const game = "shelter" in gameOrShelter ? gameOrShelter : undefined;
-  const shelter = game ? game.shelter : gameOrShelter;
+  const shelter: ShelterState = "shelter" in gameOrShelter ? gameOrShelter.shelter : gameOrShelter;
   const integrity = projectIntegrity(project);
   const definition = projectDefinition(project.key);
   let costs: ShelterProjectCost = {};
@@ -744,7 +744,7 @@ export function repairWorkBonus(game: GameState, project: ShelterProject) {
 
 export function startRepair(gameOrShelter: GameState | ShelterState, project: ShelterProject) {
   const game = "shelter" in gameOrShelter ? gameOrShelter : undefined;
-  const shelter = game ? game.shelter : gameOrShelter;
+  const shelter: ShelterState = "shelter" in gameOrShelter ? gameOrShelter.shelter : gameOrShelter;
   if (!["Danificado", "Inoperante", "Destruído"].includes(project.state))
     return "A estrutura não precisa de reparo.";
   const plan = repairPlan(gameOrShelter, project);

@@ -40,11 +40,14 @@ jobs:
       - name: Instalar dependências
         run: pnpm install --frozen-lockfile
 
+      - name: Validar tipos
+        run: pnpm typecheck
+
       - name: Executar testes
         run: pnpm test
 
-      - name: Validar eventos e interface de exploração
-        run: pnpm lint:hex-events
+      - name: Validar interface e código
+        run: pnpm lint
 
       - name: Validar build
         run: pnpm build

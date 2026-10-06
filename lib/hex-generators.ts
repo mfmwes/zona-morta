@@ -89,7 +89,7 @@ function terrainWeight(kind: HexGeneratorKind, category: GeneratorCategory, terr
     };
     return weights[terrain][category] ?? .1;
   }
-  const environmentBonus = terrain === "urban" ? 1 : category === "ambiente" ? 1.8 : 1;
+  const environmentBonus = category === "ambiente" ? 1.8 : 1;
   return environmentBonus;
 }
 

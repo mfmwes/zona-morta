@@ -1,4 +1,4 @@
-import { ammunitionCount, ammunitionItemType, ammunitionLoad, ammunitionTypeFromName, ammunitionTypes, content, createAmmunitionItem, setShelterAmmoCount, shelterAmmoCount, survivorHex, survivorsAtHex, type AmmunitionType, type EquipmentSlot, type GameState, type InventoryItem, type Survivor } from "./game";
+import { ammunitionCount, ammunitionItemType, ammunitionLoad, ammunitionTypeFromName, ammunitionTypes, content, createAmmunitionItem, setShelterAmmoCount, shelterAmmoCount, survivorHex, survivorsAtHex, type AmmunitionType, type StockHolder, type EquipmentSlot, type GameState, type InventoryItem, type Survivor } from "./game";
 import { getPrimary, getProtection, getSecondary, weaponAmmoType } from "./equipment";
 import { createId } from "./id";
 import { transferPortionLots, withdrawPortions } from "./provisions";
@@ -189,10 +189,10 @@ function removeNamedUnits(game: GameState, ownerId: string, name: string, quanti
   }
   return remaining === 0;
 }
-function consumeHolderWater(holder: { water: number; provisionLots?: any[]; inventory?: InventoryItem[] }, quantity: number, excludeItemId?: string) {
+function consumeHolderWater(holder: StockHolder & { inventory?: InventoryItem[] }, quantity: number, excludeItemId?: string) {
   let remaining = quantity;
   const loose = Math.min(remaining, Math.max(0, holder.water ?? 0));
-  if (loose > 0) { withdrawPortions(holder as any, "water", loose); remaining -= loose; }
+  if (loose > 0) { withdrawPortions(holder, "water", loose); remaining -= loose; }
   while (remaining > 0) {
     const candidate = (holder.inventory ?? []).find(item => item.id !== excludeItemId && provisionItemInfo(item).resource === "water"
       && provisionItemInfo(item).ready && provisionItemInfo(item).remaining > 0);

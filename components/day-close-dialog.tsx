@@ -166,29 +166,29 @@ export function DayCloseDialog({
   }
 
   function nextMorning() {
-    let result: DayCloseResult | null = null;
+    const outcome: { value: DayCloseResult | null } = { value: null };
     let restApplied = false;
     let failure = "";
     edit(draft => {
       const staged = structuredClone(draft);
-      result = closeDayWithPlan(staged, currentPlan);
-      if (!result?.ok) return;
+      outcome.value = closeDayWithPlan(staged, currentPlan);
+      if (!outcome.value?.ok) return;
       if (overnightRest) {
         const rest = resolvePlannedOvernightRest(staged);
-        if (!rest.ok) { failure = rest.message; result = null; return; }
+        if (!rest.ok) { failure = rest.message; outcome.value = null; return; }
         restApplied = true;
       }
       Object.assign(draft, staged);
     });
-    if (!result?.ok) {
+    if (!outcome.value?.ok) {
       toast.error("Não foi possível encerrar o dia.", {
         description: failure || "O estado da campanha mudou. Reabra o painel para recalcular o consumo.",
       });
       return;
     }
 
-    const missingResidents = result.residentMissing.food + result.residentMissing.water;
-    const missingSurvivors = result.deprivations.length;
+    const missingResidents = outcome.value.residentMissing.food + outcome.value.residentMissing.water;
+    const missingSurvivors = outcome.value.deprivations.length;
     const restText = restApplied ? " · descanso longo aplicado" : "";
     if (missingResidents || missingSurvivors) {
       toast.warning("Novo amanhecer registrado com privações", {

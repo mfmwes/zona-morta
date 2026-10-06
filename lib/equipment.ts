@@ -1,3 +1,4 @@
+import type { AmmunitionType } from "./game";
 import content from "./content.json";
 import { localizeRulesText, traitStorageKey } from "./terminology";
 
@@ -41,8 +42,8 @@ export const getPrimary = (name: string) => primaryWeapons.find(item => item.nam
 export const getSecondary = (name: string) => secondaryWeapons.find(item => item.name === name);
 export const getProtection = (name: string) => protections.find(item => item.name === name);
 
-export function weaponAmmoType(name: string): string | null {
-  const types: Record<string, string> = {
+export function weaponAmmoType(name: string): AmmunitionType | null {
+  const types: Record<string, AmmunitionType> = {
     "Pistola": "Pistola", "Revólver": "Pistola", "Pistola compacta": "Pistola",
     "Espingarda": "Espingarda", "Carabina": "Carabina", "Rifle de caça": "Carabina", "Fuzil de patrulha": "Carabina",
     "Arco simples": "Flechas", "Besta leve": "Virotes", "Arma de pressão": "Chumbinhos",

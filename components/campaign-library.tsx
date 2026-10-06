@@ -112,7 +112,7 @@ export function CampaignLibrary({ campaigns, characters, onRefresh, onSignOut }:
         <Button variant="outline" onClick={() => void onSignOut()}><LogOut size={16} /> Sair</Button>
       </header>
 
-      {error && <div role="alert" className="mb-5 rounded-md border border-[#d5aaa1] bg-[#fff2ed] px-4 py-3 text-sm text-[#803b35]">{error}</div>}
+      {error && <div role="alert" className="campaign-library-error mb-5 rounded-md border px-4 py-3 text-sm">{error}</div>}
 
       <section className="panel panel-pad library-create mb-6">
         <div className="flex flex-wrap items-start justify-between gap-4">

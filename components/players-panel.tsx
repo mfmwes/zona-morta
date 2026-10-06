@@ -89,7 +89,7 @@ export function PlayersPanel({ game, ownerId }: { game: GameState; ownerId: stri
             <small><ShieldCheck size={13} aria-hidden="true" /> {player.user_id ? player.survivor_id ? "Ficha pessoal ativa" : "Entrou · ficha pendente" : "Aguardando primeiro acesso"}</small>
             {player.user_id && !player.survivor_id && game.survivors.some(s => !players.some(p => p.survivor_id === s.id)) &&
               <div className="flex flex-wrap gap-2 mt-2">
-                <select aria-label={"Vincular ficha a " + player.email} className="rounded border bg-white px-2 py-1 text-sm"
+                <select aria-label={"Vincular ficha a " + player.email} className="rounded border bg-background px-2 py-1 text-sm"
                   value={assignments[player.user_id] ?? ""} onChange={event => setAssignments(prev => ({ ...prev, [player.user_id!]: event.target.value }))}>
                   <option value="">Ficha existente...</option>
                   {game.survivors.filter(s => !players.some(p => p.survivor_id === s.id)).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}

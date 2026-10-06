@@ -269,7 +269,7 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
   }
 
   return <div className="roll-form" onKeyDown={event => {
-    if (event.key !== "Enter" || event.shiftKey || event.isComposing) return;
+    if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return;
     const targetElement = event.target as HTMLElement;
     if (["TEXTAREA", "BUTTON", "SELECT"].includes(targetElement.tagName) || targetElement.isContentEditable) return;
     event.preventDefault();
@@ -345,9 +345,9 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
       <small className="roll-shortcut-hint">Enter rola · Shift + clique mantém aberto</small></div>
     {displayedLast && <div className="roll-result" role="status" aria-live="polite">
       <div className="roll-result-heading"><b>{outcomeLabel(displayedLast)}</b><span>{lastTargetResolution ? `contra ${lastTargetResolution.targetName}` : displayedLast.outcome.difficulty === null ? kind === "attack" ? "Defesa não informada" : "Dificuldade não informada" : `contra ${displayedLast.outcome.difficulty}`}</span></div>
-      <div className="roll-dice"><div className="hope"><Sparkles size={15} aria-hidden="true" /><span>Esperança</span><strong>{last.outcome.hopeDie}</strong></div><div className="fear"><Zap size={15} aria-hidden="true" /><span>Medo</span><strong>{last.outcome.fearDie}</strong></div><div className="total"><span>Total</span><strong>{last.outcome.total}</strong></div></div>
-      <p className="roll-breakdown">{traitLabel(last.trait)}: {last.traitBonus >= 0 ? "+" : ""}{last.traitBonus} · Experiências: +{last.experiences.length * 2}{last.experiences.length ? ` (−${last.experiences.length} Esperança)` : ""} · outros: {last.other >= 0 ? "+" : ""}{last.other}{last.equipment ? ` · equipamento: ${last.equipment}` : ""}{last.symptom ? " · sintomas: −1" : ""}{last.outcome.edgeDie ? ` · ${last.outcome.edge === "advantage" ? "vantagem" : "desvantagem"}: ${last.outcome.edge === "advantage" ? "+" : "−"}${last.outcome.edgeDie}` : ""}.</p>
-      <p className="roll-hint">{last.kind === "reaction" ? "Reação: nenhum recurso gerado." : last.outcome.critical ? "Crítico: +1 Esperança e limpa 1 Estresse (respeitando os limites)." : last.outcome.with === "Hope" ? "+1 Esperança (até o limite de 6)." : "+1 Medo para o mestre (até o limite de 12)."} O mestre descreve a consequência na ficção.</p>
+      <div className="roll-dice"><div className="hope"><Sparkles size={15} aria-hidden="true" /><span>Esperança</span><strong>{displayedLast.outcome.hopeDie}</strong></div><div className="fear"><Zap size={15} aria-hidden="true" /><span>Medo</span><strong>{displayedLast.outcome.fearDie}</strong></div><div className="total"><span>Total</span><strong>{displayedLast.outcome.total}</strong></div></div>
+      <p className="roll-breakdown">{traitLabel(displayedLast.trait)}: {displayedLast.traitBonus >= 0 ? "+" : ""}{displayedLast.traitBonus} · Experiências: +{displayedLast.experiences.length * 2}{displayedLast.experiences.length ? ` (−${displayedLast.experiences.length} Esperança)` : ""} · outros: {displayedLast.other >= 0 ? "+" : ""}{displayedLast.other}{displayedLast.equipment ? ` · equipamento: ${displayedLast.equipment}` : ""}{displayedLast.symptom ? " · sintomas: −1" : ""}{displayedLast.outcome.edgeDie ? ` · ${displayedLast.outcome.edge === "advantage" ? "vantagem" : "desvantagem"}: ${displayedLast.outcome.edge === "advantage" ? "+" : "−"}${displayedLast.outcome.edgeDie}` : ""}.</p>
+      <p className="roll-hint">{displayedLast.kind === "reaction" ? "Reação: nenhum recurso gerado." : displayedLast.outcome.critical ? "Crítico: +1 Esperança e limpa 1 Estresse (respeitando os limites)." : displayedLast.outcome.with === "Hope" ? "+1 Esperança (até o limite de 6)." : "+1 Medo para o mestre (até o limite de 12)."} O mestre descreve a consequência na ficção.</p>
     </div>}
     {kind === "attack" && weapon && <div className="roll-damage-panel"><div className="roll-damage-heading"><b>Dano da arma</b><span>Proficiência {survivor?.proficiency ?? 1} · {weapon.damage} físico</span></div>
       {attackResult && lastDamage && <>

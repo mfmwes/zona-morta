@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ComponentType } from "react";
+import { createElement, useMemo, useState, type ComponentType } from "react";
 import {
   AlertTriangle,
   Boxes,
@@ -67,7 +67,6 @@ function projectState(game: GameState, project?: ShelterProject) {
     return { label: `Trabalhando até ${displayTime(Math.min(...ends))}`, tone: "building" };
   }
   if (project.state === "Em construção") return { label: project.repairProgress !== undefined ? "Em reparo" : "Em construção", tone: "building" };
-  if (project.state === "Danificado") return { label: "Danificado", tone: "damaged" };
   return { label: "Planejado", tone: "planned" };
 }
 
@@ -80,7 +79,6 @@ export function ShelterVisualDashboard({ game, onNavigate }: { game: GameState; 
   const selectedProject = (shelter.projects ?? []).find(project => project.key === selectedKey) ?? first;
   const definition = selectedProject ? projectDefinition(selectedProject.key) : undefined;
   const selectedState = projectState(game, selectedProject);
-  const SelectedIcon = projectIcon(selectedProject);
   const responsible = selectedProject?.responsibleId ? game.npcs.find(npc => npc.id === selectedProject.responsibleId) : undefined;
   const selectedProgress = selectedProject ? projectProgress(selectedProject) : null;
   const metrics = shelterMetrics(shelter, game);
@@ -249,7 +247,7 @@ export function ShelterVisualDashboard({ game, onNavigate }: { game: GameState; 
       <aside className="shelter-room-detail" aria-live="polite">
         {selectedProject ? <>
           <header>
-            <span className="shelter-detail-icon"><SelectedIcon size={24} aria-hidden /></span>
+            <span className="shelter-detail-icon">{createElement(projectIcon(selectedProject), { size: 24, "aria-hidden": true })}</span>
             <div><p className="dossier-title">{definition?.category ?? "Estrutura"}</p><h3>{selectedProject.name}</h3></div>
             <span className={`shelter-detail-state is-${selectedState.tone}`}>{selectedState.label}</span>
           </header>

@@ -15,7 +15,7 @@ function dueWorkBefore(game: GameState, targetAbsolute: number) {
       project.workShift?.endAbsoluteMinute,
       ...(project.volunteerShifts ?? []).map(shift => shift.endAbsoluteMinute),
     ])
-    .filter((value): value is number => Number.isFinite(value) && value <= targetAbsolute)
+    .filter((value): value is number => typeof value === "number" && Number.isFinite(value) && value <= targetAbsolute)
     .sort((a, b) => a - b)[0];
 }
 
