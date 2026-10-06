@@ -1,5 +1,6 @@
 import type { GameState, HexState } from "./game";
 import { validEventActionLinks, validHexEventOrigin } from "./hex-event-links";
+import { validLocationPreparation } from "./hex-automation-validation";
 
 export const terrains = { urban: "Urbano", rural: "Rural", forest: "Floresta", mountain: "Montanha", swamp: "Pântano" } as const;
 export type Terrain = keyof typeof terrains;
@@ -84,6 +85,7 @@ export function validWorld(value: unknown): value is Record<string, HexState> {
     && typeof point.access === "string" && point.access.length <= 1200
     && typeof point.notes === "string" && point.notes.length <= 2400
     && typeof point.revealed === "boolean"
+    && validLocationPreparation(point.preparation)
     && validHexEventOrigin(point.eventOrigin)
     && (point.clueTargetHex === undefined || (typeof point.clueTargetHex === "string" && Boolean(parseHex(point.clueTargetHex))))
     && Array.isArray(point.searches) && point.searches.length <= 80
@@ -99,6 +101,7 @@ export function validWorld(value: unknown): value is Record<string, HexState> {
     && typeof event.trigger === "string" && event.trigger.length <= 240
     && typeof event.revealed === "boolean"
     && validEventActionLinks(event.actionLinks)
+    && (event.searchBaseline === undefined || (Number.isSafeInteger(event.searchBaseline) && event.searchBaseline >= 0))
     && (event.triggerType === undefined || ["manual", "enter", "search", "noise", "night"].includes(event.triggerType))
     && (event.triggerValue === undefined || (Number.isInteger(event.triggerValue) && event.triggerValue >= 0 && event.triggerValue <= 1440))
     && (event.status === undefined || ["pending", "active", "resolved", "archived"].includes(event.status))
@@ -110,6 +113,7 @@ export function validWorld(value: unknown): value is Record<string, HexState> {
     parseHex(id) && hex && typeof hex === "object"
     && ["desconhecido", "avistado", "explorado"].includes(hex.discovery)
     && [1, 2].includes(hex.routeHours) && Array.isArray(hex.points) && hex.points.length <= 120 && hex.points.every(validPoint)
+    && (hex.searchSequence === undefined || (Number.isSafeInteger(hex.searchSequence) && hex.searchSequence >= 0))
     && Array.isArray(hex.events) && hex.events.length <= 160 && hex.events.every(validEvent)
     && (hex.terrain === undefined || Object.hasOwn(terrains, hex.terrain))
     && (hex.passage === undefined || Object.hasOwn(passages, hex.passage)));

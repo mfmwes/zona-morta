@@ -25,8 +25,9 @@ import { movementSources, performHexAction, type HexQuickAction } from "@/lib/he
 import { shelterTravelMinutes } from "@/lib/shelter-projects";
 import { eventStatus, eventTriggerLabel, eventTriggerReady, generateHexContent } from "@/lib/hex-generators";
 import { HexEventActionDialog, type HexEventActionRequest } from "@/components/hex-event-action-dialog";
-import { eventActionLinkLabels, eventActionUsed, hexEventActionLabels } from "@/lib/hex-event-actions";
+import { eventActionLinkLabels, eventActionUsed, hexEventActionLabels, suggestedEventActionKind } from "@/lib/hex-event-actions";
 import type { HexEventActionKind } from "@/lib/game";
+import { prepareHex, prepareLocation } from "@/lib/hex-automation";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 
@@ -354,7 +355,9 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
         <div className="divider" />
         {!playerPreview && record.discovery !== "desconhecido" && <div className="hex-content-tools">
           <p className="text-sm subtle">Este setor contém locais e eventos. Dentro de cada local, o grupo pode vasculhar áreas como salas ou depósitos.</p>
+          <label className="flex items-center gap-2 text-sm mt-2"><Switch size="sm" checked={game.explorationPreferences?.autoPrepare ?? false} onCheckedChange={autoPrepare => edit(draft => { draft.explorationPreferences = { ...draft.explorationPreferences, autoPrepare, participantIds: draft.explorationPreferences?.participantIds ?? [] }; })} /> Preparar conteúdo reservado ao entrar em novos hexes</label>
           <div className="flex flex-wrap gap-2 mt-3" role="group" aria-label="Adicionar conteúdo ao setor">
+            <Button size="sm" onClick={() => { edit(draft => { prepareHex(draft, selected); }); toast.success("Hex preparado; conteúdo reservado para revisão"); }}><Package size={15} /> Preparar hex</Button>
             <Button size="sm" variant="outline" onClick={() => openGenerator(selected, "locais")}><Dice5 size={15} /> Gerar local</Button>
             <Button size="sm" variant="outline" onClick={() => openGenerator(selected, "comercios")}><Dice5 size={15} /> Gerar comércio</Button>
             <Button size="sm" variant="outline" onClick={() => openGenerator(selected, "eventos")}><Dice5 size={15} /> Gerar evento</Button>
@@ -390,7 +393,8 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
             </Collapsible>}
             {!playerPreview && !point.clueTargetHex && <>
               <Button size="sm" variant="outline" className="mt-3" disabled={Boolean(searchAvailabilityError(game, selected, point.id))}
-                onClick={() => { setSheetOpen(false); setSearchRequest({ hexId: selected, pointId: point.id }); }}><Search size={15} /> Buscar neste local</Button>
+                onClick={() => { edit(draft => { const target = draft.hexes[selected].points.find(row => row.id === point.id); if (target) prepareLocation(target); }); setSheetOpen(false); setSearchRequest({ hexId: selected, pointId: point.id, participantIds: activeGroup?.hex === selected ? activeGroup.members.map(row => row.id) : [] }); }}><Search size={15} /> Buscas e achados</Button>
+              {point.preparation?.stock.some(row => row.remaining > 0) && <p className="text-xs mt-2">Achados no local: {point.preparation.stock.filter(row => row.remaining > 0).map(row => `${row.remaining} × ${row.item.name}`).join(" · ")}</p>}
               {searchAvailabilityError(game, selected, point.id) && <p className="text-xs subtle mt-1">{searchAvailabilityError(game, selected, point.id)}</p>}
             </>}
           </article>)}
@@ -419,6 +423,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [] }: {
                     onCheckedChange={checked => edit(draft => { const found = draft.hexes[selected].events.find(row=>row.id===event.id); if(found) found.revealed=checked; })} /> Público</label>}
                 </div>
                 {!playerPreview && <div className="flex flex-wrap gap-2 mt-3">
+                  {["pending", "active"].includes(status) && event.generatorCategory && <Button size="sm" variant="outline" disabled={eventActionUsed(game, selected, event, suggestedEventActionKind(event))} onClick={() => { setSheetOpen(false); setEventActionRequest({ hexId: selected, eventId: event.id, type: suggestedEventActionKind(event), suggested: true }); }}>Preparar consequência sugerida</Button>}
                   {status === "pending" && <Button size="sm" variant={ready ? "default" : "outline"} onClick={() => updateEventStatus(event.id, "active")}><Play size={14} /> Ativar</Button>}
                   {status === "active" && <Button size="sm" variant="outline" onClick={() => updateEventStatus(event.id, "resolved")}><CheckCircle2 size={14} /> Resolver</Button>}
                   {status === "resolved" && <Button size="sm" variant="outline" onClick={() => updateEventStatus(event.id, "active")}><Undo2 size={14} /> Reabrir</Button>}

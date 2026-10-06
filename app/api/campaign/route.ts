@@ -5,6 +5,7 @@ import { applyPlayerChange, projectPlayerGame, type PlayerLog, type ShelterWorkA
 import { ammunitionTypes, survivorStats, type AmmunitionType, type GameState, type Survivor } from "@/lib/game";
 import { preserveKnownSectors } from "@/lib/sectors";
 import { validWorld } from "@/lib/world";
+import { validExplorationPreferences } from "@/lib/hex-automation-validation";
 import { validSceneBoardState } from "@/lib/scene-board";
 import { validHexEventOrigin } from "@/lib/hex-event-links";
 
@@ -167,6 +168,7 @@ function validState(value: unknown): value is GameState {
     && Number.isInteger(state.noise) && state.noise! >= 0 && state.noise! <= 5
     && typeof state.partyHex === "string" && /^-?\d+,-?\d+$/.test(state.partyHex)
     && validWorld(state.hexes) && Boolean(state.hexes[state.partyHex!])
+    && validExplorationPreferences(state.explorationPreferences)
     && Array.isArray(state.survivors) && state.survivors.length <= 30
     && (state.npcs === undefined || (Array.isArray(state.npcs) && state.npcs.length <= 300
       && state.npcs.every(npc => npc && typeof npc.id === "string" && typeof npc.name === "string"

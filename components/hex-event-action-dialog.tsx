@@ -10,8 +10,9 @@ import { NpcCapabilities } from "@/components/npc-capabilities";
 import { content, survivorsAtHex, type GameState, type HexEventActionKind, type NPC } from "@/lib/game";
 import { applyEventAction, eventActionError, hexEventActionLabels, prepareEventAction, type EventActionResult, type HexEventAction } from "@/lib/hex-event-actions";
 import { threatLibrary } from "@/lib/threats";
+import { prepareSuggestedEventAction } from "@/lib/hex-event-actions";
 
-export type HexEventActionRequest = { hexId: string; eventId: string; type: HexEventActionKind };
+export type HexEventActionRequest = { hexId: string; eventId: string; type: HexEventActionKind; suggested?: boolean };
 
 export function HexEventActionDialog({ game, edit, request, onClose }: {
   game: GameState;
@@ -21,7 +22,7 @@ export function HexEventActionDialog({ game, edit, request, onClose }: {
 }) {
   const event = game.hexes[request.hexId]?.events.find(row => row.id === request.eventId);
   const [action, setAction] = useState<HexEventAction | null>(() => event
-    ? prepareEventAction(game, request.hexId, event, request.type) : null);
+    ? (request.suggested ? prepareSuggestedEventAction : prepareEventAction)(game, request.hexId, event, request.type) : null);
   const submitting = useRef(false);
   if (!action) return null;
   function patch<T extends HexEventAction>(current: T, values: Partial<T>) { setAction({ ...current, ...values }); }

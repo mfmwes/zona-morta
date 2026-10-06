@@ -4,6 +4,9 @@ import { eventStatus, splitGeneratorText } from "./hex-generators";
 import { createId } from "./id";
 import { normalizeNpcCapabilities } from "./npc-presentation";
 import { threatLibrary } from "./threats";
+import { generateNpcDrafts } from "./npc-generator";
+import { adjacentHexes } from "./world";
+import { suggestedLootTable } from "./hex-generators";
 
 export type HexEventAction =
   | { type: "point"; existingId?: string; name: string; kind: Point["kind"]; signal: string; access: string; notes: string; revealed: boolean; lootTable: string; condition: string; risk: string }
@@ -47,6 +50,37 @@ export function prepareEventAction(game: GameState, hexId: string, event: HexEve
 
 function normalizedName(name: string) {
   return name.trim().replace(/\s+/g, " ").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
+}
+
+export function suggestedEventActionKind(event: HexEvent): HexEventActionKind {
+  const category = event.generatorCategory ?? "";
+  if (/pessoa/i.test(category)) return "npc";
+  if (/ameaça/i.test(category)) return "threat";
+  if (/pista/i.test(category)) return "clue";
+  return "point";
+}
+
+/** Stable draft suggestions; no person, threat or destination is revealed or created here. */
+export function prepareSuggestedEventAction(game: GameState, hexId: string, event: HexEvent, type: HexEventActionKind) {
+  const action = prepareEventAction(game, hexId, event, type);
+  if (action.type === "point") action.lootTable = suggestedLootTable(event.text, "especial") ?? "";
+  if (action.type === "clue") action.targetHex = adjacentHexes(hexId).find(row => Boolean(game.hexes[row.id]))?.id ?? "";
+  if (action.type === "npc") {
+    let seed = [...event.id].reduce((sum, char) => (sum * 31 + char.charCodeAt(0)) >>> 0, 17);
+    const random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
+    const sector = game.hexes[hexId]?.sector?.name ?? "";
+    const context = /hospital|saúde/i.test(sector) ? "Hospitalar" : /rural|horta|mata/i.test(sector) ? "Rural" : /industrial/i.test(sector) ? "Industrial" : "Outro";
+    const person = generateNpcDrafts({ quantity: 1, context, tone: "Neutro", hex: hexId }, random)[0];
+    action.name = person.name; action.role = person.role; action.skills = person.skills;
+    action.notes = [action.notes, person.notes].filter(Boolean).join("\n");
+  }
+  if (action.type === "threat") {
+    const words = normalizedName(event.text).split(/\W+/).filter(word => word.length > 4);
+    const matches = threatLibrary(game.threats).map(row => ({ row, score: words.filter(word => normalizedName(row.name).includes(word)).length }))
+      .filter(row => row.score > 0).sort((a, b) => b.score - a.score);
+    action.templateId = matches[0]?.row.id ?? "";
+  }
+  return action;
 }
 
 export function eventActionError(game: GameState, hexId: string, eventId: string, action: HexEventAction): string | null {

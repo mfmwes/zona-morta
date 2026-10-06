@@ -24,6 +24,8 @@ export function searchAvailabilityError(game: GameState, hexId: string, pointId:
 
 export function searchAreaError(point: Point, area: string): string | null {
   if (!area.trim()) return "Informe a área interna que será vasculhada.";
+  const declared = point.preparation?.areas.find(row => normalizedSector(row.name) === normalizedSector(searchAreaLabel(point, area)));
+  if (declared && point.preparation?.attempts.some(row => row.areaId === declared.id)) return "Esta área interna já tem uma busca registrada.";
   if (point.searches.some(search => normalizedSector(search.sector) === normalizedSector(area))) return "Esta área interna já foi vasculhada. Escolha outra área que exista neste local.";
   return null;
 }
@@ -46,9 +48,11 @@ export function recordSearch(game: GameState, input: SearchInput) {
   const hex = game.hexes[input.hex];
   const point = hex.points.find(p => p.id === input.pointId)!;
   if (!advanceCampaignTime(game, input.minutes).ok) return false;
+  const sequence = hex.searchSequence ?? hex.points.reduce((total, row) => total + row.searches.length, 0);
   point.searches.push({ id: createId(), what: input.mode === "open" ? "Achado útil" : input.what.trim(), why: "",
     sector: input.sector.trim(), minutes: input.minutes, result: input.result.trim(), mode: input.mode,
     ...(input.mode === "open" ? { table: input.table, roll: input.roll } : {}) });
   addLog(game, "busca", `${hex.sector?.name ?? `Hex ${input.hex}`} / ${point.name}: ${input.mode === "open" ? `busca aberta (${input.table}, d12 ${input.roll})` : input.what.trim()} — ${input.result.trim()}`);
+  hex.searchSequence = sequence + 1;
   return true;
 }

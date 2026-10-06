@@ -8,6 +8,7 @@ import { defaultThreatTemplates, type ThreatTemplate } from "./threats";
 import type { ConflictScene, PublicConflictScene } from "./conflict";
 import type { Terrain, Passage } from "./world";
 import type { SceneBoardState } from "./scene-board";
+import type { LocationPreparation } from "./hex-automation-types";
 
 export { content };
 
@@ -36,6 +37,7 @@ export type Point = {
   condition?: string;
   risk?: string;
   lootTable?: string;
+  preparation?: LocationPreparation;
   searches: { id: string; what: string; why: string; sector: string; minutes: number; result: string;
     mode?: "specific" | "open"; table?: string; roll?: number }[];
 };
@@ -49,6 +51,7 @@ export type HexEvent = {
   revealed: boolean;
   triggerType?: HexEventTriggerType;
   triggerValue?: number;
+  searchBaseline?: number;
   status?: HexEventStatus;
   guidance?: string;
   generatorKind?: "eventos";
@@ -74,6 +77,7 @@ export type HexState = {
   routeHours: 1 | 2;
   points: Point[];
   events: HexEvent[];
+  searchSequence?: number;
 };
 
 export type EquipmentSlot = "primary" | "secondary" | "protection" | "outfit" | "personal" | "bag" | "pocket1" | "pocket2";
@@ -414,6 +418,7 @@ export type GameState = {
   expedition?: number;
   shortRest?: number;
   longRest?: number;
+  explorationPreferences?: { autoPrepare: boolean; participantIds: string[]; transport?: "personal-first" | "cart-first" };
   hexes: Record<string, HexState>;
   survivors: Survivor[];
   npcs: NPC[];
