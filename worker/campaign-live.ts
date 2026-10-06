@@ -9,7 +9,8 @@ export class CampaignLive {
       let presentation = false;
       try {
         const notice = await request.json() as { revision?: unknown; presentation?: unknown };
-        if (Number.isInteger(notice.revision) && Number(notice.revision) >= 0) revision = Number(notice.revision);
+        const candidate = typeof notice.revision === "number" ? notice.revision : NaN;
+        if (Number.isInteger(candidate) && candidate >= 0) revision = candidate;
         presentation = notice.presentation === true;
       } catch { /* Avisos internos antigos continuam compatíveis. */ }
       const message = JSON.stringify({
