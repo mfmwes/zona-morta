@@ -96,10 +96,12 @@ export function PlayerHexSearchDialog({
   const goal = objectives.some(option => option.value === objective)
     ? objective
     : objectives[0]?.value ?? (deep ? "" : "open");
-  const chosenSpecificKey = area?.specificItems.some(item => item.key === specificKey)
+  const specificItems = area?.specificItems ?? [];
+  const areaMentors = area?.mentors ?? [];
+  const chosenSpecificKey = specificItems.some(item => item.key === specificKey)
     ? specificKey
-    : area?.specificItems[0]?.key ?? "";
-  const operationWorkers = area?.warehouseWorkers.filter(worker => operation?.participantIds.includes(worker.id)) ?? [];
+    : specificItems[0]?.key ?? "";
+  const operationWorkers = (area?.warehouseWorkers ?? []).filter(worker => operation?.participantIds.includes(worker.id));
   const deployedCarts = actor?.inventory.filter(item => item.name === "Carrinho dobrável" && item.cartDeployed) ?? [];
   const completedSearches = [...(view?.operations ?? [])].reverse().filter(op =>
     op.type === "search" && op.pointId === request.pointId && op.status === "done");
@@ -253,7 +255,7 @@ export function PlayerHexSearchDialog({
               {objectives.length ? <>
                 <Pick label={deep ? "Foco da busca profunda" : "Objetivo da busca"} value={goal} options={objectives} onChange={value => { setObjective(value); if (value !== "item") setSpecificKey(""); }} />
                 {goal === "item" && <Pick label="Item plausível nesta área" value={chosenSpecificKey}
-                  options={area.specificItems.map(item => ({ value: item.key, label: item.name }))} onChange={setSpecificKey} />}
+                  options={specificItems.map(item => ({ value: item.key, label: item.name }))} onChange={setSpecificKey} />}
                 <Field label="Finalidade da busca" value={purpose} onChange={setPurpose} />
                 <p className="text-sm subtle">{deep ? "30 min · Barulho adicional · teste necessário · máximo 1 item." : `${area.minutes} min · Barulho +${area.noise} · ${area.access === "risk" ? "teste de acesso necessário" : "acesso livre"}.`}</p>
                 <Button disabled={busy || Boolean(view?.busy) || view?.policy.paused || area.access === "blocked" || !purpose.trim() || !goal || (goal === "item" && !chosenSpecificKey)}
@@ -265,7 +267,7 @@ export function PlayerHexSearchDialog({
                     objective: goal,
                     ...(goal === "item" ? {
                       catalogKey: chosenSpecificKey,
-                      objectiveLabel: area.specificItems.find(item => item.key === chosenSpecificKey)?.name,
+                      objectiveLabel: specificItems.find(item => item.key === chosenSpecificKey)?.name,
                     } : {}),
                     purpose,
                   }, deep ? "Busca profunda proposta ao grupo." : "Busca proposta ao grupo.")}>
@@ -296,8 +298,8 @@ export function PlayerHexSearchDialog({
                 <Pick label="Condição da rolagem" value={edge}
                   options={[{ value: "none", label: "Normal" }, { value: "advantage", label: "Vantagem +d6" }, { value: "disadvantage", label: "Desvantagem −d6" }]}
                   onChange={value => setEdge(value as "none" | "advantage" | "disadvantage")} />
-                {area.mentors.length > 0 && <Pick label="Apoio de Docente · opcional" value={mentorId || "none"}
-                  options={[{ value: "none", label: "Sem apoio" }, ...area.mentors.map(mentor => ({ value: mentor.id, label: mentor.name }))]}
+                {areaMentors.length > 0 && <Pick label="Apoio de Docente · opcional" value={mentorId || "none"}
+                  options={[{ value: "none", label: "Sem apoio" }, ...areaMentors.map(mentor => ({ value: mentor.id, label: mentor.name }))]}
                   onChange={value => setMentorId(value === "none" ? "" : value)} />}
                 <div className="team-objectives">
                   {([["origin", "Experiência de origem"], ["free", "Experiência livre"]] as const).map(([key,label]) => <label key={key}>
