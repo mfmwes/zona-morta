@@ -194,8 +194,9 @@ export async function writeCampaign(campaignId: string, state: GameState, expect
         "UPDATE campaign_states SET revision = revision + 1, body = ?, updated_at = ? WHERE owner_id = ? AND revision = ?"
       ).bind(body, now, campaignId, expectedRevision).run();
   if (!result.meta.changes) return null;
+  const nextRevision = expectedRevision + 1;
   await db.prepare("UPDATE campaigns SET updated_at = ? WHERE id = ?").bind(now, campaignId).run();
-  await notifyCampaignChanged(campaignId);
+  await notifyCampaignChanged(campaignId, { revision: nextRevision });
   try {
     await syncCampaignAccountCharacters(campaignId, persisted);
   } catch (error) {
@@ -203,7 +204,7 @@ export async function writeCampaign(campaignId: string, state: GameState, expect
     // tentada novamente no próximo salvamento, sem transformar sucesso em conflito.
     console.error("Falha ao sincronizar sobreviventes da conta", error);
   }
-  return expectedRevision + 1;
+  return nextRevision;
 }
 
 export async function syncCampaignAccountCharacters(campaignId: string, state: GameState) {
@@ -402,14 +403,14 @@ export async function writeCampaignPresentation(campaignId: string, presentation
       updated_at = excluded.updated_at`)
     .bind(campaignId, presentation.id, presentation.image, presentation.title ?? null, presentation.caption ?? null,
       presentation.active ? 1 : 0, now).run();
-  await notifyCampaignChanged(campaignId);
+  await notifyCampaignChanged(campaignId, { presentation: true });
   return `${presentation.id}:${presentation.active ? 1 : 0}:${now}`;
 }
 
 export async function clearCampaignPresentation(campaignId: string) {
   await ensureCampaignSchema();
   await database().prepare("DELETE FROM campaign_presentations WHERE owner_id = ?").bind(campaignId).run();
-  await notifyCampaignChanged(campaignId);
+  await notifyCampaignChanged(campaignId, { presentation: true });
   return "none";
 }
 

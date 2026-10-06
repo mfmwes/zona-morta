@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { startCampaignSync } from "@/lib/campaign-sync";
+import { startCampaignSync, type CampaignSyncNotice } from "@/lib/campaign-sync";
 import { currentTableRest } from "@/lib/table-rest";
 import { toast } from "sonner";
 import { BookOpen, Brain, Clock3, Download, Droplets, Ear, Eye, EyeOff, House, LayoutDashboard, LogOut, Layers, Map, MessageSquare, MoreHorizontal, Package, RotateCcw, Settings, ShieldAlert, Swords, Upload, Users, Utensils, Volume2 } from "lucide-react";
@@ -238,38 +238,45 @@ export default function CampaignApp() {
     const campaignId = new URLSearchParams(window.location.search).get("campanha")?.trim();
     if (!campaignId) return;
     let disposed = false;
-    const refresh = async () => {
-      if (!current.current) return;
-      void refreshPresentation(false);
+    const refresh = async (notice: CampaignSyncNotice) => {
+      if (!current.current) return revision.current;
+      const presentationOnly = notice.presentation === true && notice.revision === undefined;
+      if (notice.presentation === true || notice.revision === undefined) void refreshPresentation(false);
+      if (presentationOnly) return revision.current;
       try {
         const response = await fetch(apiPath() + "&since=" + revision.current + "&survivor=" + encodeURIComponent(serverActor.current ?? ""), { cache: "no-store", signal: AbortSignal.timeout(15000) });
-        if (disposed) return;
+        if (disposed) return revision.current;
         if ([401, 403, 404].includes(response.status)) {
           setLoadError(response.status === 401 ? "Sua sessão expirou. Entre novamente." : "O acesso à campanha foi encerrado.");
-          setGame(null); setPresentation(undefined); current.current = null; stop(); return;
+          setGame(null); setPresentation(undefined); current.current = null; stop(); return revision.current;
         }
-        if (!response.ok) return;
+        if (!response.ok) return revision.current;
         const data = await response.json() as CampaignResponse;
-        if (disposed) return;
-        if ((data.revision ?? 0) < revision.current) return;
+        if (disposed) return revision.current;
+        if ((data.revision ?? 0) < revision.current) return revision.current;
+        const observedRevision = data.revision ?? revision.current;
         if (data.role === "jogador") setSurvivorId(data.survivorId ?? null);
         serverActor.current = data.survivorId ?? null;
         roleRef.current = data.role; setRole(data.role);
         if (data.restPeers) setRestPeers(data.restPeers);
         window.dispatchEvent(new CustomEvent("zona-morta:campaign-synced"));
-        if (teamActionInFlight.current) return;
+        if (teamActionInFlight.current) return observedRevision;
         if (data.state) {
           // The master's full-state PUT must retain its revision until saved.
           // Player PATCHes carry their own baseline, so shared state can update
           // immediately while personal changes remain in the local overlay.
-          if (data.role !== "jogador" && (pending.current || sending.current || paused.current)) return;
-          revision.current = data.revision ?? 0;
+          if (data.role !== "jogador" && (pending.current || sending.current || paused.current)) return observedRevision;
+          revision.current = observedRevision;
           serverState.current = data.state;
           current.current = data.role === "jogador" ? playerSaves.current.overlay(data.state) : data.state;
           if (pending.current && data.role === "jogador") pending.current = current.current;
           setGame(current.current);
         }
-      } catch { /* A próxima atualização tenta novamente. */ }
+        return observedRevision;
+      } catch {
+        // A próxima invalidação ou reconciliação tenta novamente.
+        return revision.current;
+      }
     };
     const url = new URL("/api/campaign/live", window.location.href);
     url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
