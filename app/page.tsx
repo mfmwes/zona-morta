@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { BookOpen, Brain, Clock3, Download, Droplets, Ear, Eye, EyeOff, House, LogOut, Layers, Map, MessageSquare, MoreHorizontal, Package, RotateCcw, Settings, ShieldAlert, Swords, Upload, Users, Utensils, Volume2 } from "lucide-react";
+import { BookOpen, Brain, Clock3, Download, Droplets, Ear, Eye, EyeOff, House, LayoutDashboard, LogOut, Layers, Map, MessageSquare, MoreHorizontal, Package, RotateCcw, Settings, ShieldAlert, Swords, Upload, Users, Utensils, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -26,6 +26,7 @@ import { RecentEvents } from "@/components/recent-events";
 import { DayCloseDialog } from "@/components/day-close-dialog";
 import { TablePresentationControl, TablePresentationViewer } from "@/components/table-presentation";
 import { SceneBoard } from "@/components/scene-board";
+import { MasterOverview } from "@/components/master-overview";
 import { addLog, displayTime, resetCityPreservingSurvivors, survivorHex, type GameState, type Point, type Survivor, type TablePresentation } from "@/lib/game";
 import { createId } from "@/lib/id";
 import { npcPlayerView } from "@/lib/npc-presentation";
@@ -63,7 +64,7 @@ export default function CampaignApp() {
   const [needsAuth, setNeedsAuth] = useState(false);
   const [status, setStatus] = useState<SaveStatus>("salvo");
   const [saveError, setSaveError] = useState("");
-  const [tab, setTab] = useState("mapa");
+  const [tab, setTab] = useState("resumo");
   const [chatOpen, setChatOpen] = useState(true);
   const [timeEditorOpen, setTimeEditorOpen] = useState(false);
   const [manualTime, setManualTime] = useState("");
@@ -158,7 +159,7 @@ export default function CampaignApp() {
       setOwnerId(data.ownerId);
       setSurvivorId(data.survivorId ?? null);
       setRestPeers(data.restPeers ?? []);
-      if (data.role === "jogador" && !current.current) setTab("sobreviventes");
+      if (!current.current) setTab(data.role === "jogador" ? "sobreviventes" : "resumo");
       current.current = data.state ?? null;
       pending.current = null;
       pendingBefore.current = null;
@@ -468,26 +469,46 @@ export default function CampaignApp() {
   const publicConflictActive = role === "jogador"
     ? Boolean(game.publicConflict?.active)
     : playerPreview ? Boolean(game.conflict?.active) : false;
-  const activeTab = tab === "conflito" && readOnlyPreview && !publicConflictActive
-    ? (role === "jogador" ? "sobreviventes" : "referencias")
-    : tab;
-  const title = { mapa: "Exploração", cena: "Cena visual", sobreviventes: "Sobreviventes", comunidade: "PNJs e comunidade", abrigo: "Abrigo e reservas",
+  const activeTab = readOnlyPreview && tab === "resumo"
+    ? (role === "jogador" ? "sobreviventes" : "mapa")
+    : tab === "conflito" && readOnlyPreview && !publicConflictActive
+      ? (role === "jogador" ? "sobreviventes" : "referencias")
+      : tab;
+  const title = { resumo: "Visão geral", mapa: "Exploração", cena: "Cena visual", sobreviventes: "Sobreviventes", comunidade: "PNJs e comunidade", abrigo: "Abrigo e reservas",
     conflito: "Cena de conflito", ameacas: "Gerenciador de ameaças", referencias: "Arquivo de campo", jogadores: "Jogadores e acessos" }[activeTab] || "Campanha";
-  const nav = [
-    { value: "mapa", label: "Mapa e hexes", icon: Map },
+  const masterPrimary = role === "mestre" && !playerPreview
+    ? [
+      { value: "resumo", label: "Visão geral", icon: LayoutDashboard },
+      { value: "mapa", label: "Mapa e exploração", icon: Map },
+      { value: "sobreviventes", label: "Sobreviventes", icon: Users },
+      ...(game.conflict?.active
+        ? [{ value: "conflito", label: "Conflito ativo", icon: Swords }]
+        : [{ value: "abrigo", label: "Abrigo", icon: House }]),
+    ]
+    : [
+      { value: "mapa", label: "Mapa e hexes", icon: Map },
+      { value: "cena", label: "Cena visual", icon: Layers },
+      { value: "sobreviventes", label: "Sobreviventes", icon: Users },
+      { value: "comunidade", label: "PNJs e comunidade", icon: Users },
+    ];
+  const masterSecondary = role === "mestre" && !playerPreview ? [
+    ...(game.conflict?.active ? [{ value: "abrigo", label: "Abrigo e reservas", icon: House }] : [
+      { value: "conflito", label: "Conflito", icon: Swords },
+    ]),
     { value: "cena", label: "Cena visual", icon: Layers },
-    { value: "sobreviventes", label: "Sobreviventes", icon: Users },
     { value: "comunidade", label: "PNJs e comunidade", icon: Users },
+    { value: "ameacas", label: "Ameaças", icon: ShieldAlert },
+    { value: "referencias", label: "Regras e itens", icon: BookOpen },
+    { value: "jogadores", label: "Jogadores", icon: Users },
+  ] : [
     { value: "abrigo", label: "Abrigo e reservas", icon: House },
-    ...(role === "mestre" && !playerPreview ? [
-      { value: "conflito", label: game.conflict?.active ? "Conflito ativo" : "Conflito", icon: Swords },
-      { value: "ameacas", label: "Ameaças", icon: ShieldAlert },
-    ] : publicConflictActive ? [
+    ...(publicConflictActive ? [
       { value: "conflito", label: game.publicConflict?.pendingDamage.length ? `Resolver dano (${game.publicConflict.pendingDamage.length})` : "Conflito ativo", icon: Swords },
     ] : []),
     { value: "referencias", label: "Regras e itens", icon: BookOpen },
     ...(role === "mestre" ? [{ value: "jogadores", label: "Jogadores", icon: Users }] : []),
   ];
+  const nav = [...masterPrimary, ...masterSecondary];
 
   return <Tabs value={activeTab} onValueChange={setTab} className="w-full">
     <TablePresentationViewer presentation={presentation} enabled={readOnlyPreview} />
@@ -560,7 +581,8 @@ export default function CampaignApp() {
       <main className="page">
         <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
           <div><p className="eyebrow">Daggerheart / Zona Morta</p><h1 className="page-title mt-1">{title}</h1>
-            <p className="intro-line mt-2">{activeTab === "mapa" ? "Explore a partir do que o grupo avista. Registre apenas o que a ficção tornou real." :
+            <p className="intro-line mt-2">{activeTab === "resumo" ? "Veja primeiro o que está acontecendo agora. Aprofunde apenas a ferramenta necessária para a próxima decisão." :
+              activeTab === "mapa" ? "Explore a partir do que o grupo avista. Registre apenas o que a ficção tornou real." :
               activeTab === "cena" ? (readOnlyPreview ? "Acompanhe a cena visual apresentada pelo mestre." : "Monte ambientes com paredes, portas, objetos e tokens sem transformar a cena em um mapa tático rígido.") :
               activeTab === "sobreviventes" ? "Históricos, arquétipos e recursos prontos para jogar." :
               activeTab === "comunidade" ? "Acompanhe pessoas importantes, vínculos e a comunidade entre os hexes." :
@@ -610,7 +632,8 @@ export default function CampaignApp() {
         {(status === "erro" || status === "conflito") && <div role="alert" className="mb-5 rounded-md border border-[#d5aaa1] bg-[#fff2ed] px-4 py-3 text-sm text-[#803b35]">
           <b>As alterações ainda estão nesta tela.</b> {saveError} Baixe uma cópia antes de recarregar, se precisar.
         </div>}
-        {tab === "mapa" && <>
+        {activeTab === "resumo" && role === "mestre" && !readOnlyPreview && <MasterOverview game={game} onNavigate={setTab} />}
+        {activeTab === "mapa" && <>
           {!readOnlyPreview && <div className="panel scene-control-panel mb-5">
             <section className="scene-control-section scene-pressure-section">
               <div className="scene-control-heading">

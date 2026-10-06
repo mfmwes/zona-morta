@@ -3389,3 +3389,141 @@ button { cursor: pointer; } button:disabled { cursor: not-allowed; }
 .character-conflict-fallen b{font:800 .72rem var(--font-mono);letter-spacing:.05em}
 .character-resource-health.is-maxed .character-resource-top strong,
 .character-resource-health.is-maxed .character-resource-top>span{color:#ffc2b7}
+
+
+/* Mestre: visão geral orientada ao estado atual */
+.master-overview { display:grid; gap:16px; }
+.master-overview-hero {
+  display:grid; grid-template-columns:minmax(0,1fr) auto; gap:18px; align-items:center;
+  padding:20px 22px; border:1px solid #b8c9c2; border-radius:12px;
+  background:linear-gradient(135deg,#f8faf5,#edf3ee);
+  box-shadow:0 8px 22px #1837390d;
+}
+.master-overview-hero h2 { margin:2px 0 4px; color:#173d40; font-size:1.5rem; letter-spacing:-.035em; }
+.master-overview-hero p:last-child { margin:0; color:#5e716e; font-size:.86rem; }
+.master-overview-hero-metrics { display:grid; grid-template-columns:repeat(4,minmax(82px,1fr)); gap:8px; }
+.master-overview-hero-metrics > span {
+  display:grid; justify-items:center; gap:1px; min-width:82px; padding:10px 9px;
+  border:1px solid #d4dfd9; border-radius:8px; background:#fffdfa;
+}
+.master-overview-hero-metrics b { color:#205a5c; font:800 1.15rem var(--font-mono); }
+.master-overview-hero-metrics small { color:#687c78; font-size:.62rem; font-weight:750; text-align:center; }
+.master-overview-hero-metrics .is-warning { border-color:#d8bf8c; background:#fff8e9; }
+.master-overview-hero-metrics .is-danger { border-color:#d7a59a; background:#fff1ec; }
+.master-overview-hero-metrics .is-danger b { color:#9a4439; }
+
+.master-overview-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.master-overview-actions button { min-height:38px; }
+
+.master-overview-grid { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(320px,.85fr); gap:14px; align-items:start; }
+.master-overview-card {
+  min-width:0; padding:16px; border:1px solid #c5d2cc; border-radius:10px;
+  background:#fcfcf8; box-shadow:0 4px 14px #1737390a;
+}
+.master-overview-card > header {
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding-bottom:10px; margin-bottom:10px; border-bottom:1px solid #e0e7e2;
+}
+.master-overview-card > header > div { display:flex; align-items:flex-start; gap:8px; min-width:0; }
+.master-overview-card > header svg { flex:none; margin-top:1px; color:#4e7470; }
+.master-overview-card > header span { display:grid; gap:1px; min-width:0; }
+.master-overview-card > header b { color:#1e4547; font-size:.88rem; }
+.master-overview-card > header small { color:#70817e; font-size:.66rem; line-height:1.35; }
+.master-overview-list { display:grid; gap:8px; }
+
+.master-overview-group {
+  display:grid; grid-template-columns:minmax(180px,.8fr) minmax(0,1.2fr); gap:12px;
+  padding:11px; border:1px solid #d8e1dc; border-radius:8px; background:#f6f8f4;
+}
+.master-overview-group > div { display:flex; align-items:flex-start; gap:8px; min-width:0; }
+.master-overview-group > div svg { flex:none; margin-top:2px; color:#5b8079; }
+.master-overview-group > div span { display:grid; gap:1px; min-width:0; }
+.master-overview-group b { color:#234d4f; font-size:.8rem; }
+.master-overview-group small { color:#71827f; font-size:.64rem; }
+.master-overview-group ul { display:grid; gap:4px; margin:0; padding:0; list-style:none; }
+.master-overview-group li {
+  display:flex; align-items:center; justify-content:space-between; gap:8px; min-width:0;
+  padding:5px 7px; border-radius:5px; background:#fffdfa; font-size:.75rem;
+}
+.master-overview-group li > span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.master-overview-group li small { display:flex; align-items:center; gap:4px; flex:none; }
+.master-overview-group li small.is-busy { color:#8a6135; font-weight:700; }
+
+.master-overview-attention-item {
+  display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:center;
+  padding:10px; border:1px solid #d9e0dc; border-left:3px solid #9fb6ad; border-radius:7px; background:#fafbf7;
+}
+.master-overview-attention-item.is-warning { border-left-color:#c4974f; background:#fffaf0; }
+.master-overview-attention-item.is-danger { border-left-color:#b85d50; background:#fff3ef; }
+.master-overview-attention-item > span { display:grid; gap:2px; min-width:0; }
+.master-overview-attention-item b { color:#304c4d; font-size:.77rem; }
+.master-overview-attention-item small { color:#6f7f7c; font-size:.66rem; line-height:1.38; }
+
+.master-overview-row {
+  appearance:none; width:100%; display:grid; grid-template-columns:auto minmax(0,1fr); gap:8px; align-items:start;
+  padding:9px 10px; border:1px solid #dde5e0; border-radius:7px; background:#fafbf8; color:inherit; text-align:left; cursor:pointer;
+}
+.master-overview-row:hover { border-color:#8fb1a8; background:#eef5f1; }
+.master-overview-row > svg { margin-top:2px; color:#5f837c; }
+.master-overview-row > span { display:grid; gap:2px; min-width:0; }
+.master-overview-row b { color:#294f50; font-size:.77rem; }
+.master-overview-row small { color:#71817e; font-size:.64rem; line-height:1.35; }
+
+.master-overview-resource-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+.master-overview-resource-grid > span { display:grid; gap:2px; padding:10px; border:1px solid #dce4df; border-radius:7px; background:#f6f8f4; }
+.master-overview-resource-grid small { color:#71817e; font-size:.62rem; font-weight:750; }
+.master-overview-resource-grid b { color:#245456; font:800 1rem var(--font-mono); }
+.master-overview-note { display:flex; align-items:center; gap:6px; margin:10px 0 0; color:#766340; font-size:.68rem; }
+.master-overview-clear,.master-overview-empty { margin:0; padding:10px; color:#6d7e7a; font-size:.72rem; }
+.master-overview-clear { display:grid; gap:2px; border:1px dashed #ccd8d2; border-radius:7px; background:#f8faf6; }
+.master-overview-clear span { color:#3f6661; font-weight:750; }
+
+@media (max-width:1100px) {
+  .master-overview-hero { grid-template-columns:1fr; }
+  .master-overview-hero-metrics { grid-template-columns:repeat(4,minmax(0,1fr)); }
+  .master-overview-grid { grid-template-columns:1fr; }
+}
+@media (max-width:700px) {
+  .master-overview-hero { padding:16px; }
+  .master-overview-hero-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .master-overview-group { grid-template-columns:1fr; }
+  .master-overview-resource-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+
+
+html[data-theme="dark"] .master-overview-hero,
+html[data-theme="dark"] .master-overview-card {
+  border-color:var(--border);
+  background:var(--card);
+  color:var(--foreground);
+  box-shadow:var(--shadow-panel);
+}
+html[data-theme="dark"] .master-overview-hero h2,
+html[data-theme="dark"] .master-overview-card > header b,
+html[data-theme="dark"] .master-overview-group b,
+html[data-theme="dark"] .master-overview-attention-item b,
+html[data-theme="dark"] .master-overview-row b,
+html[data-theme="dark"] .master-overview-resource-grid b { color:#dce9e4; }
+html[data-theme="dark"] .master-overview-hero p:last-child,
+html[data-theme="dark"] .master-overview-card > header small,
+html[data-theme="dark"] .master-overview-group small,
+html[data-theme="dark"] .master-overview-attention-item small,
+html[data-theme="dark"] .master-overview-row small,
+html[data-theme="dark"] .master-overview-resource-grid small,
+html[data-theme="dark"] .master-overview-empty { color:var(--muted-foreground); }
+html[data-theme="dark"] .master-overview-hero-metrics > span,
+html[data-theme="dark"] .master-overview-group,
+html[data-theme="dark"] .master-overview-group li,
+html[data-theme="dark"] .master-overview-attention-item,
+html[data-theme="dark"] .master-overview-row,
+html[data-theme="dark"] .master-overview-resource-grid > span,
+html[data-theme="dark"] .master-overview-clear {
+  border-color:var(--border);
+  background:var(--surface-soft);
+}
+html[data-theme="dark"] .master-overview-hero-metrics b { color:#a7d6cb; }
+html[data-theme="dark"] .master-overview-hero-metrics .is-warning,
+html[data-theme="dark"] .master-overview-attention-item.is-warning { background:#2b281f; border-color:#61583f; }
+html[data-theme="dark"] .master-overview-hero-metrics .is-danger,
+html[data-theme="dark"] .master-overview-attention-item.is-danger { background:#2b201e; border-color:#624941; }
+html[data-theme="dark"] .master-overview-row:hover { border-color:#63877f; background:#243634; }

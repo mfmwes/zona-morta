@@ -2142,6 +2142,25 @@ test('descanso longo pode ser preparado e aplicado durante o fechamento da noite
   assert.equal(g.minutes, 480);
 });
 
+test('primeira etapa de UX adiciona visão geral do mestre sem remover ferramentas existentes', () => {
+  const page = fs.readFileSync(require.resolve('../app/page.tsx'), 'utf8');
+  const overview = fs.readFileSync(require.resolve('../components/master-overview.tsx'), 'utf8');
+  const reference = fs.readFileSync(require.resolve('../components/campaign-views.tsx'), 'utf8');
+  assert.match(page, /Visão geral/);
+  assert.match(page, /MasterOverview/);
+  assert.match(page, /Mapa e exploração/);
+  assert.match(overview, /Situação atual/);
+  assert.match(overview, /Precisa de atenção/);
+  assert.match(overview, /Equipe agora/);
+  assert.match(overview, /Em andamento/);
+  assert.match(overview, /Reservas principais/);
+  assert.match(reference, /Subgrupos separados podem ocupar o mesmo intervalo de tempo/);
+  assert.match(reference, /O descanso longo consome 6 horas/);
+  for (const tab of ['mapa','cena','sobreviventes','comunidade','abrigo','conflito','ameacas','referencias','jogadores']) {
+    assert.match(page, new RegExp('value: "' + tab + '"'));
+  }
+});
+
 test('interfaces de tempo avisam correção para trás, eventos pendentes e tratamento de 30 min', () => {
   const page = fs.readFileSync(require.resolve('../app/page.tsx'), 'utf8');
   const close = fs.readFileSync(require.resolve('../components/day-close-dialog.tsx'), 'utf8');
