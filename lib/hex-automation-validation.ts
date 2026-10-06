@@ -9,7 +9,7 @@ export function validLocationPreparation(value: unknown): boolean {
   if (value === undefined) return true;
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const prep = value as LocationPreparation;
-  if (prep.version !== 1 || !Array.isArray(prep.areas) || !prep.areas.length || prep.areas.length > 80
+  if (prep.version !== 1 || (prep.scale !== undefined && !["small", "medium", "large", "complex"].includes(prep.scale)) || !Array.isArray(prep.areas) || !prep.areas.length || prep.areas.length > 80
     || !Array.isArray(prep.attempts) || prep.attempts.length > 80 || !Array.isArray(prep.stock) || prep.stock.length > 240
     || !Array.isArray(prep.collections) || prep.collections.length > 200) return false;
   if (!prep.areas.every(area => area && text(area.id) && text(area.name) && typeof area.signal === "string" && area.signal.length <= 2000
@@ -19,6 +19,8 @@ export function validLocationPreparation(value: unknown): boolean {
     && ["Pistola", "Espingarda", "Carabina"].includes(area.ammunition)
     && (area.collectible === undefined || typeof area.collectible === "boolean")
     && (area.spacious === undefined || typeof area.spacious === "boolean")
+    && (area.searchable === undefined || typeof area.searchable === "boolean")
+    && (area.source === undefined || ["generated", "manual", "historical"].includes(area.source))
     && (area.excludedRolls === undefined || (Array.isArray(area.excludedRolls) && area.excludedRolls.length < 12 && area.excludedRolls.every(roll => number(roll, 1, 12))))
     && (area.exclusionReason === undefined || (typeof area.exclusionReason === "string" && area.exclusionReason.length <= 2000))) || !unique(prep.areas.map(row => row.id))) return false;
   const areaIds = new Set(prep.areas.map(row => row.id));

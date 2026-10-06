@@ -9,7 +9,7 @@ import { abilityAvailable, recordAbilityUse } from "./abilities";
 import { generateHexContent, suggestedLootTable } from "./hex-generators";
 import { equipmentModifiers } from "./equipment";
 import { resolveActionRoll, resolveRollResources, rollDie, type Edge } from "./rolls";
-import type { SearchAttempt, SearchArea } from "./hex-automation-types";
+import type { LocationScale, SearchAttempt, SearchArea } from "./hex-automation-types";
 
 type LootItem = { catalogKey: string; qty: number; battery?: "Carregada" | "Descarregada" };
 type LootDefinition = { roll: number; items: LootItem[]; choices?: string[];
@@ -20,32 +20,230 @@ export const searchSequence = (game: GameState, hexId: string) => game.hexes[hex
 const pointAt = (game: GameState, hexId: string, pointId: string) => game.hexes[hexId]?.points.find(p => p.id === pointId);
 const warehouseOrigin = "Trabalhador(a) de depósito";
 const warehouseEffect = () => content.origins.find(row => row.name === warehouseOrigin)?.effect ?? "";
-const areaModels: Record<string, { name: string; signal: string; minutes: 30 | 60 }[]> = {
-  "Residências / condomínios": [{ name: "Cozinha", signal: "Bancada e armários em um cômodo separado da entrada.", minutes: 30 }],
-  "Mercados / depósitos de alimentos": [{ name: "Depósito dos fundos", signal: "Porta de serviço separa o estoque das prateleiras do salão.", minutes: 30 }],
-  "Restaurantes / cozinhas": [{ name: "Despensa", signal: "Armário de estoque separado das bancadas de preparo.", minutes: 30 }],
-  "Farmácias / consultórios": [{ name: "Sala de atendimento", signal: "Porta interna leva a um espaço de atendimento separado do balcão.", minutes: 30 }],
-  "Hospitais / laboratórios": [{ name: "Ala de atendimento", signal: "Corredor separado da recepção leva às salas de atendimento.", minutes: 60 }, { name: "Manutenção", signal: "Acesso técnico independente leva a ferramentas e instalações.", minutes: 30 }],
-  "Escolas / escritórios": [{ name: "Arquivo", signal: "Sala de arquivos separada dos espaços de circulação.", minutes: 30 }],
-  "Oficinas / postos de serviço": [{ name: "Estoque de ferramentas", signal: "Compartimento de ferramentas separado das vagas de trabalho.", minutes: 30 }],
-  "Delegacias / quartéis": [{ name: "Almoxarifado", signal: "Porta interna distingue o estoque da recepção.", minutes: 30 }],
-  "Lojas de roupa / lavanderias": [{ name: "Depósito", signal: "Espaço de estoque separado da área de exposição.", minutes: 30 }],
-  "Artigos esportivos / caça": [{ name: "Depósito", signal: "Área interna de estoque separada do balcão.", minutes: 30 }],
-  "Galpões / centros de distribuição": [{ name: "Estoque", signal: "Prateleiras de carga ficam em uma ala separada da triagem.", minutes: 60 }, { name: "Manutenção", signal: "Oficina técnica separada das prateleiras de carga.", minutes: 30 }],
+type AreaBlueprint = {
+  name: string;
+  signal: string;
+  table?: string;
+  minutes?: 30 | 60;
+  searchable?: boolean;
 };
+
+export const locationScaleLabels: Record<LocationScale, string> = {
+  small: "Pequeno",
+  medium: "Médio",
+  large: "Grande",
+  complex: "Complexo",
+};
+
+export const locationScaleAreaCounts: Record<LocationScale, number> = {
+  small: 3,
+  medium: 4,
+  large: 6,
+  complex: 8,
+};
+
+const areaModels: Record<string, AreaBlueprint[]> = {
+  "Residências / condomínios": [
+    { name: "Cozinha", signal: "Bancada, armários e eletrodomésticos formam um espaço separado.", searchable: true },
+    { name: "Sala / circulação", signal: "Móveis e passagens conectam os demais cômodos.", searchable: false },
+    { name: "Quarto", signal: "Porta interna leva a um cômodo de uso pessoal.", searchable: true },
+    { name: "Garagem", signal: "Acesso lateral ou portão leva à área de veículos e ferramentas.", table: "Ruas / veículos abandonados", searchable: true },
+    { name: "Área comum", signal: "Espaço compartilhado conecta diferentes unidades do local.", searchable: false },
+    { name: "Depósito", signal: "Um cômodo menor concentra caixas e objetos guardados.", table: "Galpões / centros de distribuição", searchable: true },
+    { name: "Administração / portaria", signal: "Mesa, chaves e registros ficam próximos ao acesso principal.", table: "Escolas / escritórios", searchable: false },
+  ],
+  "Mercados / depósitos de alimentos": [
+    { name: "Prateleiras do salão", signal: "Corredores de exposição ainda conservam produtos espalhados.", searchable: true },
+    { name: "Caixas / atendimento", signal: "Balcões e gavetas ficam próximos da entrada.", table: "Escolas / escritórios", searchable: false },
+    { name: "Depósito dos fundos", signal: "Porta de serviço separa o estoque das prateleiras do salão.", searchable: true },
+    { name: "Câmara fria", signal: "Porta térmica isola uma área de armazenamento refrigerado.", table: "Restaurantes / cozinhas", searchable: true },
+    { name: "Doca de carga", signal: "Acesso de serviço liga o prédio à área de recebimento.", table: "Galpões / centros de distribuição", searchable: true },
+    { name: "Escritório", signal: "Documentos e chaves ficam em uma sala administrativa.", table: "Escolas / escritórios", searchable: false },
+    { name: "Estacionamento", signal: "Carrinhos e veículos abandonados ocupam a área externa imediata.", table: "Ruas / veículos abandonados", searchable: true },
+  ],
+  "Restaurantes / cozinhas": [
+    { name: "Cozinha", signal: "Bancadas, fogões e armários concentram utensílios e mantimentos.", searchable: true },
+    { name: "Salão", signal: "Mesas e circulação ocupam a maior parte da área pública.", searchable: false },
+    { name: "Despensa", signal: "Armário de estoque separado das bancadas de preparo.", searchable: true },
+    { name: "Câmara fria", signal: "Uma porta térmica leva à conservação de alimentos.", searchable: true },
+    { name: "Escritório / caixa", signal: "Registros e objetos pessoais ficam atrás do atendimento.", table: "Escolas / escritórios", searchable: false },
+    { name: "Área de serviço", signal: "Produtos de limpeza e manutenção ficam próximos da saída dos fundos.", table: "Obras / instalações em reforma", searchable: true },
+    { name: "Estacionamento / entrega", signal: "Acesso externo concentra caixas, carrinhos e veículos.", table: "Ruas / veículos abandonados", searchable: true },
+  ],
+  "Hortas / áreas rurais": [
+    { name: "Área de cultivo", signal: "Canteiros ou fileiras de plantio ainda definem o espaço.", searchable: true },
+    { name: "Abrigo de ferramentas", signal: "Uma cobertura simples guarda instrumentos de trabalho.", table: "Obras / instalações em reforma", searchable: true },
+    { name: "Casa / apoio", signal: "Uma construção de apoio oferece abrigo e armazenamento.", table: "Residências / condomínios", searchable: true },
+    { name: "Depósito", signal: "Sacos, caixas e recipientes ficam protegidos do tempo.", table: "Galpões / centros de distribuição", searchable: true },
+    { name: "Poço / reservatório", signal: "Estruturas de captação ou armazenamento de água ficam próximas.", searchable: false },
+    { name: "Curral / pátio", signal: "Cercas e marcas no solo delimitam uma área de manejo.", searchable: false },
+    { name: "Garagem rural", signal: "Máquinas e veículos de trabalho ocupam um abrigo lateral.", table: "Ruas / veículos abandonados", searchable: true },
+  ],
+  "Farmácias / consultórios": [
+    { name: "Balcão / dispensação", signal: "Prateleiras e gavetas ficam atrás do balcão principal.", searchable: true },
+    { name: "Sala de atendimento", signal: "Porta interna leva a um espaço de atendimento separado do balcão.", searchable: true },
+    { name: "Recepção", signal: "Cadeiras e fichários ocupam a área de espera.", table: "Escolas / escritórios", searchable: false },
+    { name: "Estoque restrito", signal: "Armários fechados e caixas ficam em um cômodo interno.", searchable: true },
+    { name: "Arquivo", signal: "Documentos e registros ficam em armários administrativos.", table: "Escolas / escritórios", searchable: false },
+    { name: "Sala de procedimentos", signal: "Bancada clínica e descarte identificam um espaço técnico.", table: "Hospitais / laboratórios", searchable: true },
+    { name: "Área de serviço", signal: "Materiais de limpeza e manutenção ficam próximos ao acesso dos fundos.", table: "Obras / instalações em reforma", searchable: true },
+  ],
+  "Hospitais / laboratórios": [
+    { name: "Recepção", signal: "Balcões e fichários marcam a entrada do atendimento.", table: "Escolas / escritórios", searchable: false },
+    { name: "Ala de atendimento", signal: "Corredor separado da recepção leva às salas de atendimento.", minutes: 60, searchable: true },
+    { name: "Enfermaria", signal: "Leitos e armários clínicos ocupam uma ala própria.", searchable: true },
+    { name: "Farmácia interna", signal: "Armários controlados concentram medicamentos e insumos.", table: "Farmácias / consultórios", searchable: true },
+    { name: "Almoxarifado", signal: "Caixas identificadas e carrinhos ficam em área de suprimentos.", table: "Galpões / centros de distribuição", searchable: true },
+    { name: "Administração", signal: "Salas com computadores e arquivos ficam afastadas dos leitos.", table: "Escolas / escritórios", searchable: false },
+    { name: "Manutenção", signal: "Acesso técnico independente leva a ferramentas e instalações.", table: "Oficinas / postos de serviço", searchable: true },
+  ],
+  "Escolas / escritórios": [
+    { name: "Sala de trabalho / aula", signal: "Mesas, cadeiras e armários definem o espaço principal.", searchable: true },
+    { name: "Corredor / recepção", signal: "Circulação e avisos conectam os demais ambientes.", searchable: false },
+    { name: "Arquivo", signal: "Sala de arquivos separada dos espaços de circulação.", searchable: true },
+    { name: "Administração", signal: "Computadores, chaves e documentos ficam numa área reservada.", searchable: true },
+    { name: "Copa", signal: "Uma pequena cozinha de apoio atende funcionários ou estudantes.", table: "Restaurantes / cozinhas", searchable: true },
+    { name: "Almoxarifado", signal: "Materiais de uso cotidiano ficam guardados em caixas e armários.", table: "Galpões / centros de distribuição", searchable: true },
+    { name: "Estacionamento", signal: "Veículos e acessos externos ficam próximos ao prédio.", table: "Ruas / veículos abandonados", searchable: false },
+  ],
+  "Oficinas / postos de serviço": [
+    { name: "Oficina principal", signal: "Bancadas e elevadores ocupam o espaço de trabalho.", searchable: true },
+    { name: "Atendimento", signal: "Balcão e papéis ficam separados da área de reparo.", table: "Escolas / escritórios", searchable: false },
+    { name: "Estoque de ferramentas", signal: "Compartimento de ferramentas separado das vagas de trabalho.", searchable: true },
+    { name: "Estoque de peças", signal: "Prateleiras identificadas concentram peças e consumíveis.", table: "Galpões / centros de distribuição", searchable: true },
+    { name: "Pátio / veículos", signal: "Veículos aguardam reparo numa área aberta ou coberta.", table: "Ruas / veículos abandonados", searchable: true },
+    { name: "Escritório", signal: "Ordens de serviço e chaves ficam em uma sala administrativa.", table: "Escolas / escritórios", searchable: false },
+    { name: "Área técnica", signal: "Instalações elétricas, hidráulicas ou de combustível ficam isoladas.", table: "Obras / instalações em reforma", searchable: true },
+  ],
+  "Delegacias / quartéis": [
+    { name: "Recepção / plantão", signal: "Balcão e registros ficam próximos da entrada.", table: "Escolas / escritórios", searchable: false },
+    { name: "Almoxarifado", signal: "Porta interna distingue o estoque da recepção.", searchable: true },
+    { name: "Sala de equipamentos", signal: "Armários reforçados concentram proteção e ferramentas.", searchable: true },
+    { name: "Arquivo / investigação", signal: "Pastas e computadores ocupam uma sala administrativa.", table: "Escolas / escritórios", searchable: true },
+    { name: "Garagem", signal: "Viaturas e manutenção ocupam um acesso lateral.", table: "Ruas / veículos abandonados", searchable: true },
+    { name: "Alojamento", signal: "Beliches e armários pessoais ficam em uma área reservada.", table: "Residências / condomínios", searchable: true },
+    { name: "Cozinha / refeitório", signal: "Mesas e equipamentos de preparo formam uma área de apoio.", table: "Restaurantes / cozinhas", searchable: true },
+  ],
+  "Ruas / veículos abandonados": [
+    { name: "Veículo acessível", signal: "Um veículo chama atenção entre os obstáculos do trajeto.", searchable: true },
+    { name: "Trecho de passagem", signal: "A via concentra destroços e rotas possíveis.", searchable: false },
+    { name: "Veículo secundário", signal: "Outro veículo parece ter sido abandonado em circunstâncias diferentes.", searchable: true },
+    { name: "Ponto de serviço", signal: "Uma guarita, cobertura ou estrutura pequena acompanha a via.", table: "Escolas / escritórios", searchable: true },
+    { name: "Carga caída", signal: "Caixas ou volumes se espalharam perto de um veículo de transporte.", table: "Galpões / centros de distribuição", searchable: true },
+    { name: "Área de manutenção", signal: "Ferramentas e sinais de reparo aparecem junto à pista.", table: "Oficinas / postos de serviço", searchable: true },
+    { name: "Margem / acostamento", signal: "A lateral da via guarda objetos fora do fluxo principal.", searchable: false },
+  ],
+  "Lojas de roupa / lavanderias": [
+    { name: "Salão de exposição", signal: "Araras, balcões e prateleiras ocupam a área pública.", searchable: true },
+    { name: "Provadores / circulação", signal: "Pequenos espaços e corredores ficam atrás das araras.", searchable: false },
+    { name: "Depósito", signal: "Espaço de estoque separado da área de exposição.", searchable: true },
+    { name: "Lavanderia / serviço", signal: "Máquinas e produtos ficam numa área técnica.", table: "Obras / instalações em reforma", searchable: true },
+    { name: "Escritório / caixa", signal: "Documentos e objetos pessoais ficam perto do atendimento.", table: "Escolas / escritórios", searchable: false },
+    { name: "Doca / fundos", signal: "Caixas e carrinhos ocupam o acesso de serviço.", table: "Galpões / centros de distribuição", searchable: true },
+    { name: "Estacionamento", signal: "Veículos e objetos abandonados cercam a entrada.", table: "Ruas / veículos abandonados", searchable: true },
+  ],
+  "Artigos esportivos / caça": [
+    { name: "Salão de vendas", signal: "Expositores e vitrines concentram equipamentos variados.", searchable: true },
+    { name: "Balcão", signal: "Área de atendimento separa produtos controlados do público.", searchable: false },
+    { name: "Depósito", signal: "Área interna de estoque separada do balcão.", searchable: true },
+    { name: "Oficina / manutenção", signal: "Ferramentas de ajuste e reparo ficam numa bancada técnica.", table: "Oficinas / postos de serviço", searchable: true },
+    { name: "Escritório", signal: "Registros de vendas e chaves ficam em uma sala pequena.", table: "Escolas / escritórios", searchable: false },
+    { name: "Carga / fundos", signal: "Caixas e equipamentos maiores ficam perto do acesso de entrega.", table: "Galpões / centros de distribuição", searchable: true },
+    { name: "Estacionamento", signal: "Veículos e equipamentos de transporte aparecem do lado de fora.", table: "Ruas / veículos abandonados", searchable: true },
+  ],
+  "Obras / instalações em reforma": [
+    { name: "Frente de obra", signal: "Materiais e ferramentas ficam próximos da área de intervenção.", searchable: true },
+    { name: "Circulação insegura", signal: "Andaimes, entulho ou aberturas tornam a passagem mais importante que os achados.", searchable: false },
+    { name: "Depósito de materiais", signal: "Sacos, caixas e peças ficam protegidos em uma área separada.", table: "Galpões / centros de distribuição", searchable: true },
+    { name: "Ferramentaria", signal: "Ferramentas de trabalho se concentram numa bancada ou contêiner.", table: "Oficinas / postos de serviço", searchable: true },
+    { name: "Escritório da obra", signal: "Plantas, chaves e registros ficam em uma sala improvisada.", table: "Escolas / escritórios", searchable: false },
+    { name: "Pátio", signal: "Máquinas e veículos ocupam a área externa da obra.", table: "Ruas / veículos abandonados", searchable: true },
+    { name: "Instalações", signal: "Quadros, tubulações e componentes ficam numa área técnica.", searchable: true },
+  ],
+  "Galpões / centros de distribuição": [
+    { name: "Estoque", signal: "Prateleiras de carga ficam em uma ala separada da triagem.", minutes: 60, searchable: true },
+    { name: "Triagem / circulação", signal: "Corredores largos conectam pilhas de carga e docas.", searchable: false },
+    { name: "Doca de carga", signal: "Paletes e veículos de movimentação ficam junto aos portões.", searchable: true },
+    { name: "Manutenção", signal: "Oficina técnica separada das prateleiras de carga.", table: "Oficinas / postos de serviço", searchable: true },
+    { name: "Escritório", signal: "Computadores, chaves e documentos ficam numa sala elevada ou lateral.", table: "Escolas / escritórios", searchable: false },
+    { name: "Pátio de veículos", signal: "Caminhões e utilitários ocupam a área externa.", table: "Ruas / veículos abandonados", searchable: true },
+    { name: "Estoque secundário", signal: "Uma ala menor guarda materiais de outra categoria.", searchable: true },
+  ],
+};
+
+export function inferLocationScale(point: Point): LocationScale {
+  const name = point.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
+  if (/hospital|universidade|shopping|complexo|fabrica|centro de distribuicao|terminal|quartel|centro comercial/.test(name)) return "complex";
+  if (/condominio|supermercado|galpao|armazem|escola|delegacia|hotel|mercado municipal|deposito|posto grande/.test(name)) return "large";
+  if (/banca|quiosque|trailer|guarita|consultorio pequeno|loja pequena|casa pequena/.test(name)) return "small";
+  return "medium";
+}
+
+export function locationScaleOf(point: Point): LocationScale {
+  return point.preparation?.scale ?? inferLocationScale(point);
+}
+
+function baseSearchArea(point: Point, table: string, scale: LocationScale): SearchArea {
+  const roomy = scale === "large" || scale === "complex";
+  return {
+    id: createId(),
+    name: "Área principal",
+    signal: point.signal,
+    table,
+    minutes: roomy ? 60 : 30,
+    access: point.risk?.startsWith("alto") || point.risk?.startsWith("médio") ? "risk" : "open",
+    difficulty: 12,
+    noise: 0,
+    armedGuard: false,
+    compatibleOwner: false,
+    ammunition: "Pistola",
+    spacious: roomy,
+    searchable: true,
+    source: "generated",
+  };
+}
+
+function blueprintArea(point: Point, baseTable: string, scale: LocationScale, blueprint: AreaBlueprint): SearchArea {
+  const roomy = scale === "large" || scale === "complex";
+  return {
+    ...baseSearchArea(point, blueprint.table ?? baseTable, scale),
+    id: createId(),
+    name: blueprint.name,
+    signal: blueprint.signal,
+    minutes: blueprint.minutes ?? (roomy && blueprint.searchable !== false ? 60 : 30),
+    searchable: blueprint.searchable !== false,
+    spacious: roomy && blueprint.searchable !== false,
+    source: "generated",
+  };
+}
+
+function buildLocationAreas(point: Point, scale: LocationScale) {
+  const table = content.lootTables.find(row => row.name === point.lootTable)?.name ?? suggestedLootTable(point.name, "especial")!;
+  const models = areaModels[table] ?? [];
+  const count = locationScaleAreaCounts[scale];
+  const areas: SearchArea[] = [baseSearchArea(point, table, scale), ...models.slice(0, Math.max(0, count - 1)).map(model => blueprintArea(point, table, scale, model))];
+
+  for (const search of point.searches) {
+    const name = searchAreaLabel(point, search.sector);
+    if (areas.some(area => normalizedSector(area.name) === normalizedSector(name))) continue;
+    areas.push({
+      ...baseSearchArea(point, search.table && content.lootTables.some(row => row.name === search.table) ? search.table : table, scale),
+      id: createId(),
+      name,
+      signal: "Área preservada a partir do histórico desta campanha.",
+      minutes: search.minutes >= 60 ? 60 : 30,
+      searchable: true,
+      source: "historical",
+    });
+  }
+  return areas.slice(0, 80);
+}
 
 /** Preparation is private and idempotent. Historical searches never grant stock. */
 export function prepareLocation(point: Point) {
   if (point.preparation || point.clueTargetHex) return false;
-  const table = content.lootTables.find(row => row.name === point.lootTable)?.name ?? suggestedLootTable(point.name, "especial")!;
-  const large = /galp|armaz|complex|hospital|supermerc|depósito|univers|fábrica/i.test(point.name);
-  const models = areaModels[table] ?? [];
-  const names = [...new Set(["Área principal", ...models.map(row => row.name),
-    ...point.searches.map(row => searchAreaLabel(point, row.sector))])];
-  const areas: SearchArea[] = names.slice(0, 80).map(name => ({ id: createId(), name, table,
-    signal: name === "Área principal" ? point.signal : models.find(row => row.name === name)?.signal ?? "Área registrada em uma busca anterior.",
-    minutes: models.find(row => row.name === name)?.minutes ?? (large ? 60 : 30), access: point.risk?.startsWith("alto") || point.risk?.startsWith("médio") ? "risk" : "open", difficulty: 12, noise: 0,
-    armedGuard: false, compatibleOwner: false, ammunition: "Pistola", spacious: large }));
+  const scale = inferLocationScale(point);
+  const areas = buildLocationAreas(point, scale);
   const seenAreas = new Set<string>();
   const historical = point.searches.filter(row => {
     const area = areas.find(area => normalizedSector(area.name) === normalizedSector(searchAreaLabel(point, row.sector)));
@@ -56,7 +254,17 @@ export function prepareLocation(point: Point) {
     areaId: areas.find(area => normalizedSector(area.name) === normalizedSector(searchAreaLabel(point, row.sector)))!.id,
     participants: [], mode: row.mode ?? "specific", objective: row.what, purpose: row.why,
     quantity: 1, minutes: row.minutes, noise: 0, status: "completed", result: row.result, stockIds: [] }));
-  point.preparation = { version: 1, areas, attempts, stock: [], collections: [] };
+  point.preparation = { version: 1, scale, areas, attempts, stock: [], collections: [] };
+  return true;
+}
+
+export function resizeLocationPreparation(point: Point, scale: LocationScale) {
+  prepareLocation(point);
+  const prep = point.preparation;
+  if (!prep || !Object.hasOwn(locationScaleLabels, scale)) return false;
+  if (prep.attempts.length || prep.stock.length || prep.collections.length || point.searches.length) return false;
+  prep.scale = scale;
+  prep.areas = buildLocationAreas(point, scale);
   return true;
 }
 
@@ -89,8 +297,16 @@ export function declareSearchArea(point: Point, name: string, signal: string) {
   if (!prep || !name.trim() || !signal.trim() || name.length > 120 || signal.length > 2000 || prep.areas.length >= 80
     || prep.attempts.some(row => row.status === "pending" || row.status === "ready")
     || prep.areas.some(row => normalizedSector(row.name) === normalizedSector(searchAreaLabel(point, name)))) return false;
-  prep.areas.push({ ...prep.areas[0], id: createId(), name: name.trim(), signal: signal.trim() });
+  prep.areas.push({ ...prep.areas[0], id: createId(), name: name.trim(), signal: signal.trim(), searchable: true, source: "manual" });
   return true;
+}
+
+export function searchAreaState(point: Point, area: SearchArea) {
+  const attempt = point.preparation?.attempts.find(row => row.areaId === area.id);
+  if (attempt?.status === "pending" || attempt?.status === "ready") return "ongoing" as const;
+  if (attempt?.status === "completed" || attempt?.status === "failed") return "searched" as const;
+  if (area.searchable === false) return "narrative" as const;
+  return "available" as const;
 }
 
 export type StartSearch = { id: string; hexId: string; pointId: string; areaId: string; participants: string[];
@@ -106,7 +322,7 @@ export function startSearch(game: GameState, input: StartSearch): string | null 
   const available = searchAvailabilityError(game, input.hexId, input.pointId);
   if (available) return available;
   const area = prep?.areas.find(row => row.id === input.areaId);
-  if (!prep || !area) return "Prepare o local e escolha uma área existente.";
+  if (!prep || !area) return "Prepare o local e escolha uma área existente.";\n  if (area.searchable === false) return "Esta área existe na exploração, mas não possui uma busca de recursos própria.";
   if (!input.id || input.id.length > 120 || input.objective.length > 2400 || input.purpose.length > 2400) return "Confira os dados da busca.";
   if (area.excludedRolls?.length && (!area.exclusionReason?.trim() || new Set(area.excludedRolls).size >= 12)) return "Registre por que os resultados contradizem a ficção e mantenha algum achado plausível.";
   if (prep.attempts.some(row => row.areaId === area.id) || point!.searches.some(row => normalizedSector(searchAreaLabel(point!, row.sector)) === normalizedSector(area.name))) return "Esta área já tem uma busca registrada. Retome a operação existente.";

@@ -57,6 +57,51 @@ test('preparação idempotente conserva fatos, cria áreas privadas e não movim
   assert.equal(visible.hexes['0,0'].points[0].preparation,undefined);
   assert.equal(visible.hexes['0,0'].events.length,0);
 });
+
+test('porte do local controla profundidade sem transformar toda área em nova rolagem de saque', () => {
+  const game = defaultState();
+  const condo = { id:'condo', name:'Condomínio de casas', kind:'local', signal:'Portaria aberta', access:'', notes:'', revealed:true,
+    lootTable:'Residências / condomínios', searches:[] };
+  auto.prepareLocation(condo);
+  assert.equal(condo.preparation.scale,'large');
+  assert.equal(condo.preparation.areas.length,6);
+  assert.ok(condo.preparation.areas.filter(area=>area.searchable!==false).length < condo.preparation.areas.length);
+  assert.ok(condo.preparation.areas.some(area=>area.name==='Garagem' && area.table==='Ruas / veículos abandonados'));
+  assert.ok(condo.preparation.areas.some(area=>area.searchable===false));
+
+  const hospital = { id:'hospital', name:'Hospital central', kind:'local', signal:'Recepção vazia', access:'', notes:'', revealed:true,
+    lootTable:'Hospitais / laboratórios', searches:[] };
+  auto.prepareLocation(hospital);
+  assert.equal(hospital.preparation.scale,'complex');
+  assert.equal(hospital.preparation.areas.length,8);
+  assert.ok(hospital.preparation.areas.some(area=>area.name==='Farmácia interna' && area.table==='Farmácias / consultórios'));
+  assert.ok(hospital.preparation.areas.some(area=>area.name==='Manutenção' && area.table==='Oficinas / postos de serviço'));
+});
+
+test('porte pode ser ajustado antes da primeira busca e fica estável depois que o local ganha histórico', () => {
+  const f=campaign();
+  assert.equal(f.point.preparation.scale,'medium');
+  assert.equal(f.point.preparation.areas.length,4);
+  assert.equal(auto.resizeLocationPreparation(f.point,'large'),true);
+  assert.equal(f.point.preparation.areas.length,6);
+  f.area=f.point.preparation.areas[0];
+  assert.equal(auto.resolvePreparedSearch(f.game,input(f),die(1)),null);
+  const before=structuredClone(f.point.preparation);
+  assert.equal(auto.resizeLocationPreparation(f.point,'small'),false);
+  assert.deepEqual(f.point.preparation,before);
+});
+
+test('área narrativa aceita elementos à vista, mas não uma busca d12 própria', () => {
+  const f=campaign();
+  const narrative=f.point.preparation.areas.find(area=>area.searchable===false);
+  assert.ok(narrative);
+  const before=structuredClone(f.game);
+  assert.match(auto.startSearch(f.game,input(f,{areaId:narrative.id})),/não possui uma busca de recursos/);
+  assert.deepEqual(f.game,before);
+  assert.equal(auto.registerVisibleStock(f.game,'0,0','market',narrative.id,'visible-narrative','Bebidas::Garrafa de água lacrada',1),null);
+  assert.equal(f.point.preparation.stock.find(row=>row.id==='visible-narrative').areaId,narrative.id);
+});
+
 test('histórico antigo bloqueia a área e nunca cria inventário ou estoque retroativo', () => {
   const {game,point,actor} = campaign(); delete point.preparation;
   point.searches.push({ id:'old', what:'Comida', why:'Viagem', sector:' MERCADO ', minutes:30, result:'Duas latas' });
