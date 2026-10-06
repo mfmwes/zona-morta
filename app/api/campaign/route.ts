@@ -2,7 +2,7 @@ import { playerTeamPeers as restPeers } from "@/lib/player-preview";
 import { applyPlayerSheetEdit, type SheetEditPayload } from "@/lib/player-sheet-edit";
 import { validPlayerActionState } from "@/lib/player-actions-types";
 import { validPortraitFrame } from "@/lib/portrait-frame";
-import { campaignExists, campaignOwnerId, campaignRevision, findPlayer, readCampaign, restoreAccountCharacterToCampaign, syncCampaignAccountCharacters, wasRevoked, writeCampaign } from "@/db/state";
+import { campaignExists, campaignOwnerId, campaignRevision, findPlayer, readCampaign, restoreAccountCharacterToCampaign, wasRevoked, writeCampaign } from "@/db/state";
 import { sameOrigin, siteUser } from "@/lib/auth";
 import { projectPlayerGame } from "@/lib/collaboration";
 import { ammunitionTypes, type AmmunitionType, type GameState } from "@/lib/game";
@@ -224,7 +224,6 @@ export async function GET(request: Request) {
         return Response.json({ revision: Number(since), role: "mestre", ownerId: campaignId }, { headers: noStore });
       const data = await readCampaign(campaignId);
       const state = preserveKnownSectors(data.state);
-      await syncCampaignAccountCharacters(campaignId, state);
       return Response.json({ ...data, state, role: "mestre", ownerId: campaignId }, { headers: noStore });
     }
     const member = await findPlayer(campaignId, user.id, user.email);
@@ -242,7 +241,6 @@ export async function GET(request: Request) {
     const data = await readCampaign(campaignId);
     let state = preserveKnownSectors(data.state);
     let currentRevision = data.revision;
-    await syncCampaignAccountCharacters(campaignId, state);
     if (member.survivor_id && !state.survivors.some(s => s.id === member.survivor_id)) {
       const recovered = structuredClone(state);
       if (await restoreAccountCharacterToCampaign(campaignId, user.id, member.survivor_id, recovered)) {
