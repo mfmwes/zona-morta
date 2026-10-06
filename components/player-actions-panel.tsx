@@ -25,7 +25,7 @@ export function PlayerActionsPanel({ game, master, survivorId, canAct, send }: {
   const retry = useRef<{ signature: string; payload: Record<string, unknown> } | null>(null);
   async function perform(input: Record<string, unknown>) {
     if (busy || !canAct) return false;
-    const signature = JSON.stringify({ input, day: game.day });
+    const signature = JSON.stringify({ input });
     if (retry.current && retry.current.signature !== signature) { setError("Tente novamente a ação pendente antes de iniciar outra."); return false; }
     const payload = retry.current?.payload ?? (master ? input : { ...input, id: createId(), day: game.day });
     setBusy(true); setError(""); setNotice("");
