@@ -8,6 +8,7 @@ import { eventTriggerReady } from "./hex-generators";
 import { projectPlayerSceneBoard, type SceneBoardScene } from "./scene-board";
 import { shelterTravelMinutes } from "./shelter-projects";
 import { rollDie } from "./rolls";
+import { confirmTableRest, requestTableRest } from "./table-rest";
 import { defaultPlayerPolicy, playerCommandSchema, playerPolicySchema, type PlayerActionState, type PlayerCommand, type PublicPlayerActions, type TeamOperation } from "./player-actions-types";
 
 export function playerActionState(game: GameState): PlayerActionState {
@@ -22,7 +23,11 @@ function active(game: GameState, op: TeamOperation) {
   return true;
 }
 function areaPermission(game: GameState, hexId: string, pointId: string, areaId: string) {
-  return playerActionState(game).policy.areas.find(a => a.hexId === hexId && a.pointId === pointId && a.areaId === areaId);
+  const hex = game.hexes[hexId];
+  const point = hex?.points.find(p => p.id === pointId && p.revealed && !p.clueTargetHex);
+  const area = point?.preparation?.areas.find(a => a.id === areaId);
+  if (hex?.discovery !== "explorado" || !area || area.searchable === false) return undefined;
+  return { objectives: ["open", ...quickSearchOptions(area).filter(option => option.available).map(option => option.id)] };
 }
 export function playerTimedActionIssue(game: GameState, ids: string[], except?: string) {
   if (game.conflict?.active) return "Resolva o conflito antes de iniciar exploração, viagem ou descanso.";
@@ -52,15 +57,15 @@ export function projectPlayerActions(game: GameState, actorId: string): PublicPl
   const { paused, transfers, deposits, rest, tokens } = state.policy;
   const policy = { paused, transfers, deposits, rest, tokens };
   const result: PublicPlayerActions = { policy, actorId, hexId, busy: playerTimedActionIssue(game, [actorId]), peers: game.survivors.map(p => ({ id: p.id, name: p.name, hex: survivorHex(game, p) })), areas: [], stock: [], routes: [], operations: [], supplies: [], markers: state.markers.filter(m => { const scene = game.sceneBoard?.scenes.find(s => s.id === m.sceneId && s.id === game.sceneBoard?.activeSceneId && s.visibleToPlayers); return m.day === game.day && scene && knownPosition(scene, m.x, m.y); }) };
-  for (const permission of state.policy.areas) {
-    if (permission.hexId !== hexId || game.hexes[hexId]?.discovery !== "explorado") continue;
-    const point = game.hexes[hexId]?.points.find(p => p.id === permission.pointId && p.revealed);
-    const area = point?.preparation?.areas.find(a => a.id === permission.areaId);
-    if (!point || !area) continue;
+  for (const point of game.hexes[hexId]?.points ?? []) {
+    for (const area of point.preparation?.areas ?? []) {
+    const permission = areaPermission(game, hexId, point.id, area.id);
+    if (!permission) continue;
     result.areas.push({ hexId, pointId: point.id, areaId: area.id, name: area.name, pointName: point.name, signal: area.signal, minutes: area.minutes, noise: area.noise, access: area.access, objectives: permission.objectives.filter(o => o === "open" || quickSearchOptions(area).some(option => option.id === o && option.available)), available: area.searchable !== false && searchAreaState(point, area) === "available" });
     for (const stock of point.preparation?.stock.filter(s => s.areaId === area.id && s.remaining > 0) ?? []) {
       if (stock.attemptId && !point.preparation?.attempts.some(a => a.id === stock.attemptId && a.status === "completed")) continue;
       result.stock.push({ hexId, pointId: point.id, stockId: stock.id, name: stock.item.name, remaining: stock.remaining, accessible: area.access !== "blocked" && stock.accessible !== false });
+    }
     }
   }
   result.routes = state.policy.routes.filter(r => r.from === hexId && game.hexes[r.to]?.discovery !== "desconhecido" && game.hexes[r.to]).map(r => ({ destination: r.to, name: game.hexes[r.to].sector?.name ?? `Hex ${r.to}`, minutes: shelterTravelMinutes(game, r.from, r.to, game.hexes[r.to].routeHours * 60) }));
@@ -103,6 +108,9 @@ function executeCommand(game: GameState, actorId: string, cmd: PlayerCommand, di
   if (policy.paused && !["leave", "request", "clear-marker"].includes(cmd.type)) return "As ações da equipe estão pausadas pelo mestre.";
   const op = "operationId" in cmd ? state.operations.find(o => o.id === cmd.operationId) : undefined;
   if ("operationId" in cmd && (!op || !active(game, op))) return "Esta operação terminou, expirou ou mudou de cena.";
+  if (cmd.type === "confirm-rest") return confirmTableRest(game, actorId, cmd.operationId, cmd.choices, die);
+  if (cmd.type === "request-rest") return requestTableRest(game, cmd.kind, actorId);
+  if (op?.individualChoices && cmd.type !== "request") return "Use as escolhas de descanso na sua própria ficha.";
   if (cmd.type === "request") {
     if (state.operations.filter(o => active(game, o) && o.type === "exception" && o.initiatorId === actorId).length >= 3) return "Você já tem três pedidos aguardando o mestre.";
     state.operations.push({ id: cmd.id, type: "exception", initiatorId: actorId, day: game.day, scene: game.scene ?? 1, hexId, status: "forming", participantIds: [actorId], invitedIds: [], purpose: cmd.text, attention: "Pedido de avaliação narrativa" });
@@ -175,7 +183,7 @@ function executeCommand(game: GameState, actorId: string, cmd: PlayerCommand, di
       const point = game.hexes[op.hexId]?.points.find(p => p.id === op.pointId);
       const area = point?.preparation?.areas.find(a => a.id === op.areaId);
       const permission = areaPermission(game, op.hexId, op.pointId!, op.areaId!);
-      if (!point?.revealed || !area || area.access === "blocked" || !permission?.objectives.includes(op.objective ?? "open")) return "A autorização ou o acesso desta área mudou.";
+      if (!point?.revealed || !area || area.access === "blocked" || !permission?.objectives.includes(op.objective ?? "open")) return "O acesso ou os objetivos deste cômodo mudaram.";
       if (cmd.type === "execute") {
         if (op.status !== "forming") return "Esta busca já começou; resolva o acesso.";
         const specific = op.objective !== "open";
@@ -258,12 +266,12 @@ export function applyPlayerAction(game: GameState, actorId: string, input: unkno
   draft.playerActions.operations = draft.playerActions.operations.filter(o => o.day === game.day && o.scene === (game.scene ?? 1));
   draft.playerActions.receipts = draft.playerActions.receipts.filter(r => r.day === game.day);
   draft.playerActions.withdrawals = draft.playerActions.withdrawals.filter(r => r.day === game.day);
-  if ((["search", "travel", "rest", "offer", "request"].includes(cmd.type) && draft.playerActions.operations.length >= 150) || draft.playerActions.receipts.length >= 2000) return { ok: false, error: "Limite de ações deste dia atingido. O mestre pode continuar pelas ferramentas da campanha." };
+  if ((["search", "travel", "rest", "request-rest", "offer", "request"].includes(cmd.type) && draft.playerActions.operations.length >= 150) || draft.playerActions.receipts.length >= 2000) return { ok: false, error: "Limite de ações deste dia atingido. O mestre pode continuar pelas ferramentas da campanha." };
   if (["search", "travel", "rest", "offer", "request"].includes(cmd.type) && draft.playerActions.operations.some(o => o.id === cmd.id)) return { ok: false, error: "Este identificador já pertence a uma operação." };
   const beforeEvents = new Set(Object.entries(game.hexes).flatMap(([hexId, hex]) => hex.events.filter(e => eventTriggerReady(game, hexId, e)).map(e => e.id)));
   const error = executeCommand(draft, actorId, cmd, die);
   if (error) return { ok: false, error };
-  if (["execute", "roll-access"].includes(cmd.type) && "operationId" in cmd) {
+  if (["execute", "roll-access", "confirm-rest"].includes(cmd.type) && "operationId" in cmd) {
     const op = draft.playerActions!.operations.find(o => o.id === cmd.operationId);
     if (op?.status === "done") attentionAfter(draft, op, beforeEvents);
   }

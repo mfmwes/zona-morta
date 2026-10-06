@@ -52,7 +52,7 @@ function renderMaster(context, setup=()=>{}) {
  const {game}=fixture();setup(game);
  return renderToStaticMarkup(React.createElement(MasterContextActions,{game,context,controls:{canAct:true,send:async()=>{}}}));
 }
-test('liberações do mestre mostram apenas as áreas do local e as rotas do hex de partida',()=>{
+test('buscas dispensam liberação por área e viagens mantêm rotas por hex de partida',()=>{
  const setup=game=>{
   game.hexes['0,0'].discovery='explorado';
   const point=(id,name)=>({id,name,revealed:true,preparation:{areas:[{id:id+'-area',name:name+' área',minutes:30,access:'open'}]}});
@@ -60,16 +60,16 @@ test('liberações do mestre mostram apenas as áreas do local e as rotas do hex
   game.playerActions={policy:{paused:false,transfers:true,deposits:true,rest:true,tokens:true,areas:[],routes:[{from:'0,0',to:'1,0'},{from:'1,0',to:'0,0'}],supplies:{food:2,water:2,items:{}}},operations:[],receipts:[],withdrawals:[],markers:[]};
  };
  const search=renderMaster({kind:'search',hexId:'0,0',pointId:'market'},setup);
- assert.ok(search.includes('Mercado autorizado'));assert.equal(search.includes('Hospital distante'),false);
+ assert.equal(search,'');assert.equal(search.includes('Hospital distante'),false);
  assert.equal(search.includes('Retiradas do depósito'),false);assert.equal(search.includes('Rotas liberadas'),false);
  const travel=renderMaster({kind:'travel',destination:'0,0'},setup);
  assert.equal((travel.match(/Remover liberação/g)||[]).length,1);assert.equal(travel.includes('Áreas de busca liberadas'),false);
 });
-test('mestre administra depósitos, entregas, descanso e tokens no contexto; visão geral contém pausa e pendências',()=>{
+test('mestre administra depósitos, entregas e tokens; descanso não exige liberação adicional',()=>{
  const supplies=renderMaster({kind:'supplies'}),inventory=renderMaster({kind:'inventory'}),rest=renderMaster({kind:'rest'}),scene=renderMaster({kind:'scene'});
  assert.ok(supplies.includes('Retiradas do depósito'));assert.ok(supplies.includes('Depósito de itens próprios'));assert.equal(supplies.includes('Entregas entre sobreviventes'),false);
  assert.ok(inventory.includes('Entregas entre sobreviventes'));assert.equal(inventory.includes('Retiradas do depósito'),false);
- assert.ok(rest.includes('Conclusão de descanso'));assert.ok(scene.includes('Mover o próprio token'));assert.equal(scene.includes('Pausar ações'),false);
+ assert.equal(rest,'');assert.ok(scene.includes('Mover o próprio token'));assert.equal(scene.includes('Pausar ações'),false);
  const overview=renderMaster({kind:'overview'},game=>{ const state=require('../lib/player-actions.ts').playerActionState(game);game.playerActions={...state,operations:[{id:'request',type:'exception',day:game.day,initiatorId:game.survivors[0].id,attention:'Porta bloqueada',purpose:'Abrir a porta'}]}; });
  assert.ok(overview.includes('Pausar ações dos jogadores'));assert.ok(overview.includes('Pedidos e consequências'));assert.equal(overview.includes('Áreas de busca liberadas'),false);assert.equal(overview.includes('Retiradas do depósito'),false);
 });

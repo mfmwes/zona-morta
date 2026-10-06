@@ -21,6 +21,7 @@ import {
 import { provisionBreakdown } from "@/lib/provision-items";
 import { survivorHex, type GameState, type NPC, type Survivor } from "@/lib/game";
 import { plannedRestSelections, resolvePlannedOvernightRest } from "@/lib/abilities";
+import { currentTableRest, tableRestReadyForNight } from "@/lib/table-rest";
 import { eventStatus, eventTriggerReady } from "@/lib/hex-generators";
 
 type Edit = (fn: (draft: GameState) => void) => void;
@@ -59,6 +60,8 @@ export function DayCloseDialog({
   const storageHex = game.shelter.hex ?? game.partyHex;
   const currentPlan = plan ?? defaultDayClosePlan(game);
   const inspection = inspectDayClosePlan(game, currentPlan);
+  const pendingRest = currentTableRest(game);
+  const awaitingChoices = Boolean(pendingRest && !tableRestReadyForNight(game));
   const hasWarnings = inspection.deprivations.length > 0
     || inspection.residentMissing.food > 0
     || inspection.residentMissing.water > 0;
@@ -166,14 +169,16 @@ export function DayCloseDialog({
   }
 
   function nextMorning() {
+    if (awaitingChoices) { toast.error("Aguarde as escolhas do descanso ou cancele a solicitação antes de encerrar o dia."); return; }
     const outcome: { value: DayCloseResult | null } = { value: null };
     let restApplied = false;
     let failure = "";
     edit(draft => {
+      if (currentTableRest(draft) && !tableRestReadyForNight(draft)) { failure = "As escolhas do descanso mudaram. Confira as confirmações."; return; }
       const staged = structuredClone(draft);
       outcome.value = closeDayWithPlan(staged, currentPlan);
       if (!outcome.value?.ok) return;
-      if (overnightRest) {
+      if (overnightRest || tableRestReadyForNight(draft)) {
         const rest = resolvePlannedOvernightRest(staged);
         if (!rest.ok) { failure = rest.message; outcome.value = null; return; }
         restApplied = true;
@@ -319,9 +324,9 @@ export function DayCloseDialog({
 
       <section className="day-close-section">
         <div className="day-close-section-heading"><div><small>DESCANSO DA NOITE</small><b>6h · opcional</b></div>
-          <span>Não é aplicado automaticamente ao encerrar o dia.</span></div>
+          <span>{tableRestReadyForNight(game) ? "Descanso solicitado e confirmado por todos." : "Escolha se haverá descanso durante a noite."}</span></div>
         <label className="inventory-ready">
-          <input type="checkbox" checked={overnightRest} disabled={!overnightRestReady}
+          <input type="checkbox" checked={overnightRest || tableRestReadyForNight(game)} disabled={!overnightRestReady || tableRestReadyForNight(game)}
             onChange={event => setOvernightRest(event.target.checked)} />
           <span><b>Aplicar descanso longo durante a noite</b><small>{overnightRestReady
             ? "Todos os sobreviventes têm duas escolhas de descanso longo registradas. O amanhecer às 08:00 representa o tempo de descanso."
@@ -341,7 +346,8 @@ export function DayCloseDialog({
 
       <DialogFooter>
         <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-        <Button disabled={inspection.stale} onClick={nextMorning}>
+        {awaitingChoices && <p role="status">Há um descanso aguardando as escolhas dos sobreviventes.</p>}
+        <Button disabled={inspection.stale || awaitingChoices} onClick={nextMorning}>
           {hasWarnings || timedEvents.length ? "Confirmar com pendências" : `Confirmar e iniciar dia ${game.day + 1}`}
         </Button>
       </DialogFooter>

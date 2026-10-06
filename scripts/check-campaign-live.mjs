@@ -13,6 +13,8 @@ require.extensions['.ts'] = (module, filename) => module._compile(ts.transpileMo
 }).outputText, filename);
 const { defaultState, initialSurvivor, content } = require('../lib/game.ts');
 const { createConflictScene, endConflictScene } = require('../lib/conflict.ts');
+const { prepareLocation } = require('../lib/hex-automation.ts');
+const { assignCustomSector } = require('../lib/sectors.ts');
 const mf = new Miniflare({
   modulesRoot: resolve('dist/server'),
   modules: ['index.js', ...readdirSync('dist/server', { recursive: true }).filter(name => name.endsWith('.js') && name !== 'index.js')]
@@ -49,6 +51,12 @@ try {
   const archetype = content.archetypes[0];
   const actor = initialSurvivor({ name: 'Jogador', origin: content.origins[1].name, past: '', archetype: archetype.name, specialty: archetype.specialties[0].name, freeExperience: 'Resgates', techniques: [], attributes: { Agilidade: 2, Força: 1, Finesse: 1, Instinto: 0, Presença: 0, Conhecimento: -1 }, primary: '', secondary: '', protection: '', personal: '' });
   state.survivors = [actor];
+  actor.hex = '0,0';
+  assignCustomSector(state,'0,0','Bairro residencial','explorado');
+  state.hexes['0,0'].events=[];
+  const location={id:'market',name:'Mercado',kind:'comércio',signal:'Porta aberta',access:'',notes:'',revealed:true,lootTable:content.lootTables[1].name,searches:[]};
+  prepareLocation(location);location.preparation.areas[0].access='open';location.preparation.areas[0].noise=0;
+  state.hexes['0,0'].points=[location];
   state.conflict = createConflictScene({ name: 'Teste', sceneNumber: 1, day: state.day, time: '08:00', survivorIds: [actor.id] });
   await db.prepare('INSERT INTO campaigns (id,owner_id,name,created_at,updated_at) VALUES (?,?,?,?,?)').bind(state.campaignId,'master','Teste',now,now).run();
   await db.prepare('INSERT INTO campaign_states (owner_id,revision,body,updated_at) VALUES (?,1,?,?)').bind(state.campaignId,JSON.stringify(state),now).run();
@@ -95,6 +103,24 @@ try {
   await until(()=>connections.every(c=>c.messages.length),'Player edits must notify the master too');
   const masterView=await (await mf.dispatchFetch(origin+path,{headers:headers('master')})).json();
   assert.equal(masterView.state.survivors[0].stress,1);assert.equal(masterView.revision,3);
+  const actionPath='/api/campaign/actions?campanha=test-campaign';
+  const act=async body=>{
+    const response=await mf.dispatchFetch(origin+actionPath,{method:'POST',headers:{...headers('player'),'Content-Type':'application/json'},body:JSON.stringify({day:state.day,...body})});
+    const result=await response.json();assert.equal(response.status,200,JSON.stringify(result));return result;
+  };
+  const search=await act({id:'search-without-permission',type:'search',hexId:'0,0',pointId:'market',areaId:location.preparation.areas[0].id,objective:'open',purpose:'Suprimentos'});
+  assert.equal(search.state.publicPlayerActions.operations.find(op=>op.id==='search-without-permission').status,'forming');
+  await act({id:'execute-search',type:'execute',operationId:'search-without-permission'});
+  const requested=await act({id:'rest-request',type:'request-rest',kind:'short'});
+  const rest=requested.state.publicPlayerActions.operations.find(op=>op.individualChoices&&op.status==='forming');
+  assert.ok(rest);assert.deepEqual(rest.participantIds,[]);assert.equal(rest.plans,undefined);
+  const beforeRest=requested.state.minutes;
+  const confirm={id:'rest-confirm',type:'confirm-rest',operationId:rest.id,choices:[{action:'stress',targetId:actor.id},{action:'prepare',targetId:actor.id}]};
+  const rested=await act(confirm);
+  assert.equal(rested.state.minutes,beforeRest+60);assert.equal(rested.state.shortRest,2);assert.equal(rested.state.survivors[0].stress,0);
+  const repeated=await act(confirm);assert.equal(repeated.revision,rested.revision);assert.equal(repeated.state.minutes,rested.state.minutes);
+  const afterRest=await (await mf.dispatchFetch(origin+path,{headers:headers('master')})).json();
+  assert.equal(afterRest.state.shortRest,2);assert.equal(afterRest.state.survivors[0].stress,0);
   connections.forEach(c=>{c.messages.length=0;});
   const imagePath='/api/campaign/presentation?campanha=test-campaign';
   const presented=await mf.dispatchFetch(origin+imagePath,{method:'PUT',headers:{...headers('master'),'Content-Type':'application/json'},body:JSON.stringify({id:'image',image:'https://example.test/image.png',active:true})});
@@ -107,7 +133,7 @@ try {
   await db.prepare('UPDATE campaign_players SET revoked_at=? WHERE owner_id=?').bind(now,state.campaignId).run();
   assert.equal((await mf.dispatchFetch(origin+path+'&since=3',{headers:headers('player')})).status,403);
   assert.equal(isolatedMessages.length,0);
-  console.log('Realtime runtime passed: bidirectional master/player updates, conflict closure, shared resources, image show/close, campaign isolation, private projection and revoked access.');
+  console.log('Runtime passed: live updates, conflict closure, automatic searches, individual rest confirmation/replay, image show/close, campaign isolation, private projection and revoked access.');
 } finally {
   connections.forEach(c=>c.socket.close());
   isolatedConnections.forEach(socket=>socket.close());

@@ -12,6 +12,7 @@ const { validPlayerActionState } = require('../lib/player-actions-types.ts');
 const { projectPlayerGame } = require('../lib/collaboration.ts');
 const { itemFromCatalog } = require('../lib/inventory.ts');
 const { createSceneBoardScene, createSceneBoardObject } = require('../lib/scene-board.ts');
+const { requestTableRest, currentTableRest, tableRestReadyForNight } = require('../lib/table-rest.ts');
 let serial = 0;
 function fixture() {
   const game = defaultState();
@@ -42,9 +43,59 @@ function denied(f,actor,body,pattern) { const before=structuredClone(f.game); co
 function propose(f) { return ok(f,f.ids[0],{type:'search',hexId:'0,0',pointId:'market',areaId:f.areaId,objective:'open',purpose:'Suprimentos'}).input.id; }
 function catalogItem(qty=3) { return itemFromCatalog(content.catalog.find(e=>e.name==='Faca resistente')??content.catalog[0],qty); }
 
-test('liberação é exigida e parâmetros forjados ou dias antigos não modificam a campanha',()=>{
- const f=fixture(); f.game.playerActions.policy.areas=[];
+test('descanso solicitado pelo mestre recebe escolhas individuais e conclui uma única vez',()=>{
+ const f=fixture(); f.game.playerActions.policy.rest=false;
+ assert.equal(requestTableRest(f.game,'short'),null);
+ const op=currentTableRest(f.game), before=f.game.minutes;
+ assert.deepEqual(op.participantIds,[]);assert.deepEqual(op.plans,{});
+ const publicView=projectPlayerGame(f.game,f.ids[0]);assert.equal(publicView.publicPlayerActions.operations[0].plans,undefined);
+ for(const id of f.ids.slice(0,2)) {
+  ok(f,id,{type:'confirm-rest',operationId:op.id,choices:[{action:'prepare',targetId:id},{action:'fiction',targetId:id}]});
+  assert.equal(f.game.minutes,before);assert.equal(f.game.shortRest,1);
+ }
+ const final=ok(f,f.ids[2],{type:'confirm-rest',operationId:op.id,choices:[{action:'prepare',targetId:f.ids[2]},{action:'fiction',targetId:f.ids[2]}]});
+ assert.equal(f.game.minutes,before+60);assert.equal(f.game.shortRest,2);
+ assert.ok(f.game.survivors.every(p=>!p.restPlan));assert.equal(currentTableRest(f.game),undefined);
+ const saved=structuredClone(f.game);assert.equal(applyPlayerAction(f.game,f.ids[2],final.input).replay,true);assert.deepEqual(f.game,saved);
+ denied(f,f.ids[2],{type:'confirm-rest',operationId:op.id,choices:final.input.choices},/terminou/);
+});
+
+test('jogador solicita descanso sem escolhas antecipadas; confirma somente a própria ficha',()=>{
+ const f=fixture();f.game.playerActions.policy.rest=false;
+ ok(f,f.ids[0],{type:'request-rest',kind:'short'});const op=currentTableRest(f.game);
+ assert.deepEqual(op.participantIds,[]);assert.equal(op.initiatorId,f.ids[0]);
+ denied(f,f.ids[1],{type:'confirm-rest',operationId:op.id,actorId:f.ids[0],choices:[{action:'prepare',targetId:f.ids[1]},{action:'fiction',targetId:f.ids[1]}]},/inválidos/);
+ denied(f,f.ids[1],{type:'confirm-rest',operationId:op.id,choices:[{action:'hp-full',targetId:f.ids[1]},{action:'fiction',targetId:f.ids[1]}]},/válidas/);
+ f.game.survivors[2].hex='1,0';
+ denied(f,f.ids[1],{type:'confirm-rest',operationId:op.id,choices:[{action:'hp',targetId:f.ids[2]},{action:'fiction',targetId:f.ids[1]}]},/mesmo hex/);
+ assert.equal(f.game.survivors[0].restPlan,undefined);
+ ok(f,f.ids[1],{type:'confirm-rest',operationId:op.id,choices:[{action:'hp',targetId:f.ids[0]},{action:'fiction',targetId:f.ids[1]}]});
+ assert.deepEqual(currentTableRest(f.game).participantIds,[f.ids[1]]);
+});
+
+test('descanso noturno preserva confirmações e espera Encerrar dia sem antecipar benefícios',()=>{
+ const f=fixture();f.game.minutes=22*60;
+ assert.equal(requestTableRest(f.game,'long'),null);const op=currentTableRest(f.game);
+ for(const id of f.ids) ok(f,id,{type:'confirm-rest',operationId:op.id,choices:[{action:'hp-full',targetId:id},{action:'stress-full',targetId:id}]});
+ assert.equal(f.game.minutes,22*60);assert.equal(f.game.longRest,1);
+ assert.equal(currentTableRest(f.game).awaitingNight,true);assert.equal(tableRestReadyForNight(f.game),true);
+ f.game.survivors[0].restPlan.choices[0].action='prepare';assert.equal(tableRestReadyForNight(f.game),false);
+});
+
+test('busca automática mantém presença, bloqueio, objetivos plausíveis e uma tentativa por área',()=>{
+ const f=fixture();f.game.playerActions.policy.areas=[];
+ f.game.survivors[1].hex='1,0';
+ denied(f,f.ids[1],{type:'search',hexId:'0,0',pointId:'market',areaId:f.areaId,objective:'open',purpose:'Suprimentos'},/disponível/);
+ const area=f.game.hexes['0,0'].points[0].preparation.areas[0];area.searchable=false;
  denied(f,f.ids[0],{type:'search',hexId:'0,0',pointId:'market',areaId:f.areaId,objective:'open',purpose:'Suprimentos'},/disponível/);
+ area.searchable=true;const op=propose(f);ok(f,f.ids[0],{type:'execute',operationId:op});
+ denied(f,f.ids[0],{type:'search',hexId:'0,0',pointId:'market',areaId:f.areaId,objective:'open',purpose:'Outra busca'},/disponível/);
+});
+
+test('buscas não exigem liberação e parâmetros forjados ou dias antigos não modificam a campanha',()=>{
+ const f=fixture(); f.game.playerActions.policy.areas=[];
+ assert.ok(projectPlayerActions(f.game,f.ids[0]).areas.some(a=>a.areaId===f.areaId));
+ ok(f,f.ids[0],{type:'search',hexId:'0,0',pointId:'market',areaId:f.areaId,objective:'open',purpose:'Suprimentos'});
  denied(f,f.ids[0],{type:'request',text:'Ajuda',actorId:f.ids[1]},/inválidos/);
  denied(f,f.ids[0],{type:'request',text:'Ajuda',day:f.game.day+1},/dia/);
  denied(f,'intruso',{type:'request',text:'Ajuda'},/ficha/);
@@ -54,7 +105,7 @@ test('projeção mostra somente autorização local e não vaza preparação, ta
  const f=fixture(); f.game.hexes['0,0'].points[0].preparation.areas[0].difficulty=99;
  const own=projectPlayerGame(f.game,f.ids[0]);
  assert.equal(own.playerActions,undefined); assert.equal(own.survivors.length,1);
- assert.equal(own.publicPlayerActions.areas.length,1); assert.equal(own.hexes['0,0'].points[0].preparation,undefined);
+ assert.equal(own.publicPlayerActions.areas.length,f.game.hexes['0,0'].points[0].preparation.areas.filter(a=>a.searchable!==false).length); assert.equal(own.hexes['0,0'].points[0].preparation,undefined);
  const text=JSON.stringify(own.publicPlayerActions); assert.equal(text.includes('difficulty'),false); assert.equal(text.includes('lootTable'),false); assert.equal(text.includes('SEGREDO'),false);
  f.game.hexes['0,0'].points[0].revealed=false; assert.equal(projectPlayerActions(f.game,f.ids[0]).areas.length,0);
 });
@@ -152,7 +203,7 @@ test('token limita movimento ao próprio objeto desbloqueado e à área revelada
 });
 test('conflito e revogação bloqueiam operações propostas; falha preserva toda a campanha',()=>{
  const f=fixture(); const op=propose(f); f.game.conflict={active:true}; denied(f,f.ids[0],{type:'execute',operationId:op},/conflito/);
- delete f.game.conflict; f.game.playerActions.policy.areas=[]; denied(f,f.ids[0],{type:'execute',operationId:op},/autorização/);
+ delete f.game.conflict; f.game.hexes['0,0'].points[0].preparation.areas[0].access='blocked'; denied(f,f.ids[0],{type:'execute',operationId:op},/acesso/);
 });
 
 test('sobrecarga rejeita entrega e retirada sem perder itens do remetente ou do depósito',()=>{

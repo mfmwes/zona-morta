@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { startCampaignSync } from "@/lib/campaign-sync";
+import { currentTableRest } from "@/lib/table-rest";
 import { toast } from "sonner";
 import { BookOpen, Brain, Clock3, Download, Droplets, Ear, Eye, EyeOff, House, LayoutDashboard, LogOut, Layers, Map, MessageSquare, MoreHorizontal, Package, RotateCcw, Settings, ShieldAlert, Swords, Upload, Users, Utensils, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -579,6 +580,7 @@ export default function CampaignApp() {
   </section></main>;
 
   const readOnlyPreview = playerPreview || role === "jogador";
+  const requestedRest = currentTableRest(game);
   const previewActionGame = game;
   const communityView = readOnlyPreview ? npcPlayerView(previewActionGame) : game;
   const publicConflictActive = readOnlyPreview && Boolean(previewActionGame.publicConflict?.active);
@@ -715,6 +717,7 @@ export default function CampaignApp() {
         <Button size="sm" variant="outline" onClick={stopPreview}>Voltar ao mestre</Button>
       </div>}
       <main className="page">
+        {readOnlyPreview && requestedRest && <div className="team-notice mb-4" role="status"><p>Descanso {requestedRest.kind === "short" ? "curto" : "longo"} solicitado · {requestedRest.participantIds.length}/{requestedRest.invitedIds.length} confirmados.{requestedRest.awaitingNight ? " Escolhas prontas para Encerrar dia." : requestedRest.participantIds.includes(viewedSurvivorId ?? "") ? " Suas escolhas estão confirmadas." : " Escolha suas duas ações na ficha."}</p>{!requestedRest.awaitingNight && <Button size="sm" variant="outline" onClick={() => { setTab("sobreviventes"); window.setTimeout(() => window.dispatchEvent(new CustomEvent("zona-morta:rest-focus")), 0); }}>Ver meu descanso</Button>}</div>}
         {!playerPreview && teamActionError && <div className="team-error mb-4" role="alert"><p>{teamActionError}</p><Button size="sm" variant="outline" disabled={status!=="salvo"} onClick={()=>{if(teamActionRetry.current) void executeTeamAction(teamActionRetry.current).catch(cause=>toast.error(cause instanceof Error?cause.message:"Falha ao reenviar."));}}>Reenviar ação pendente</Button></div>}
         <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
           <div><p className="eyebrow">Daggerheart / Zona Morta</p><h1 className="page-title mt-1">{title}</h1>

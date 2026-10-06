@@ -3,6 +3,7 @@ import type { RestChoice, RestKind } from "./abilities";
 
 const id = z.string().min(1).max(120);
 const objective = z.enum(["open", "food", "water", "medicine", "parts", "fuel"]);
+const restChoices = z.array(z.object({ action: z.enum(["hp", "stress", "armor", "hp-full", "stress-full", "armor-full", "prepare", "fiction"]), targetId: id }).strict()).length(2);
 export const playerPolicySchema = z.object({
   paused: z.boolean(), transfers: z.boolean(), deposits: z.boolean(), rest: z.boolean(), tokens: z.boolean(),
   areas: z.array(z.object({ hexId: id, pointId: id, areaId: id, objectives: z.array(objective).min(1).max(6) }).strict()).max(200),
@@ -20,6 +21,7 @@ export type TeamOperation = {
   participantIds: string[]; invitedIds: string[]; pointId?: string; areaId?: string; destination?: string;
   objective?: z.infer<typeof objective>; purpose?: string; itemId?: string; itemSnapshot?: string; quantity?: number;
   kind?: RestKind; plans?: Record<string, RestChoice[]>; result?: string; attention?: string;
+  individualChoices?: boolean; awaitingNight?: boolean;
 };
 export type PlayerActionState = {
   policy: PlayerActionPolicy; operations: TeamOperation[];
@@ -33,6 +35,8 @@ export const playerCommandSchema = z.discriminatedUnion("type", [
   z.object({ ...base, type: z.literal("search"), hexId: id, pointId: id, areaId: id, objective, purpose: z.string().trim().min(1).max(240) }).strict(),
   z.object({ ...base, type: z.literal("travel"), destination: id }).strict(),
   z.object({ ...base, type: z.literal("rest"), kind: z.enum(["short", "long"]) }).strict(),
+  z.object({ ...base, type: z.literal("request-rest"), kind: z.enum(["short", "long"]) }).strict(),
+  z.object({ ...base, type: z.literal("confirm-rest"), operationId: id, choices: restChoices }).strict(),
   z.object({ ...base, type: z.literal("offer"), targetId: id, itemId: id, quantity }).strict(),
   z.object({ ...base, type: z.literal("deposit"), itemId: id, quantity }).strict(),
   z.object({ ...base, type: z.literal("withdraw"), resource: z.enum(["food", "water", "item"]), itemId: id.optional(), quantity }).strict(),
@@ -66,6 +70,7 @@ const operationSchema = z.object({
   pointId: id.optional(), areaId: id.optional(), destination: id.optional(), objective: objective.optional(),
   purpose: z.string().max(500).optional(), itemId: id.optional(), itemSnapshot: z.string().max(20000).optional(),
   quantity: quantity.optional(), kind: z.enum(["short", "long"]).optional(), result: z.string().max(6000).optional(), attention: z.string().max(500).optional(),
+  individualChoices: z.boolean().optional(), awaitingNight: z.boolean().optional(),
   plans: z.record(id, z.array(z.object({ action: z.enum(["hp", "stress", "armor", "hp-full", "stress-full", "armor-full", "prepare", "fiction"]), targetId: id }).strict()).length(2)).optional(),
 }).strict();
 const stateSchema = z.object({

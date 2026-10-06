@@ -403,7 +403,6 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
               <div className="hex-point-heading"><div><p className="dossier-title">{point.clueTargetHex ? "Pista" : point.kind === "comércio" ? "Comércio neste setor" : "Local neste setor"}</p><b>{point.name}</b></div>
                 {!playerPreview && <label className="flex items-center gap-2 text-xs whitespace-nowrap"><Switch size="sm" checked={point.revealed}
                   onCheckedChange={checked => edit(draft => { const found = draft.hexes[selected].points.find(p=>p.id===point.id); if(found) found.revealed=checked; })} /> Público</label>}</div>
-              {masterActions && !playerPreview && !point.clueTargetHex && <details className="hex-player-search mt-3"><summary><Search size={15} /> Liberar buscas neste local</summary><MasterContextActions key={selected+point.id+"permissions"} game={game} controls={masterActions} context={{kind:"search",hexId:selected,pointId:point.id}} /></details>}
               {playerPreview && playerActions && game.publicPlayerActions?.hexId === selected && <details className="hex-player-search mt-3"><summary><Search size={15} /> Buscar e recolher neste local</summary><PlayerContextActions key={selected+point.id} game={game} controls={playerActions} context={{kind:"search",hexId:selected,pointId:point.id}} /></details>}
               {point.signal && <p className="mt-1">{point.signal}</p>}
               {!playerPreview && point.clueTargetHex && <Button size="sm" variant="outline" className="mt-2"

@@ -177,7 +177,6 @@ export function ShelterPanel({ game, edit, playerPreview, playerSurvivorId, play
 
   const routineContent = <div className="shelter-routine-grid">
     {playerActions && <PlayerContextActions game={game} controls={playerActions} context={{kind:"rest"}} />}
-    {masterActions && !playerPreview && <MasterContextActions game={game} controls={masterActions} context={{kind:"rest"}} />}
     <section className="panel panel-pad">
       <p className="dossier-title">Rotina / sobrevivência</p><h3 className="section-title mt-1">Anoitecer e provisões</h3>
       <p className="intro-line mt-3">Cada pessoa precisa de uma porção de Comida e uma de Água por dia. O consumo pessoal registrado na ficha é excluído da sugestão. Ao fechar o dia, o sistema usa porções soltas e, se necessário, itens físicos prontos das reservas compartilhadas.</p>
