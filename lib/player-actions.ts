@@ -1,5 +1,5 @@
 import { addLog, survivorHex, survivorIsDown, survivorStats, type GameState } from "./game";
-import { collectLocationStock, finishPreparedSearch, prepareLocation, quickSearchOptions, rollSearchAccess, searchAreaState, startSearch } from "./hex-automation";
+import { collectLocationStock, finishPreparedSearch, prepareLocation, quickSearchOptions, rollSearchAccess, searchAreaState, startDeepSearch, startSearch } from "./hex-automation";
 import { moveSurvivors } from "./hex-actions";
 import { atSharedStorage, transferItem, transferProvisions } from "./inventory";
 import { survivorTimedCommitment } from "./activity";
@@ -143,17 +143,20 @@ function executeCommand(game: GameState, actorId: string, cmd: PlayerCommand, di
     prepareLocation(point);
     return null;
   }
-  if (["search", "travel", "rest"].includes(cmd.type)) {
+  if (["search", "deep-search", "travel", "rest"].includes(cmd.type)) {
     const issue = playerTimedActionIssue(game, [actorId]); if (issue) return issue;
     if (state.operations.some(o => active(game, o) && o.initiatorId === actorId && ["search", "travel", "rest"].includes(o.type))) return "Conclua ou cancele sua proposta anterior.";
-    const proposal: TeamOperation = { id: cmd.id, type: cmd.type as "search" | "travel" | "rest", initiatorId: actorId, day: game.day, scene: game.scene ?? 1, hexId, status: "forming", participantIds: [actorId], invitedIds: [] };
-    if (cmd.type === "search") {
+    const operationType = cmd.type === "deep-search" ? "search" : cmd.type;
+    const proposal: TeamOperation = { id: cmd.id, type: operationType as "search" | "travel" | "rest", initiatorId: actorId, day: game.day, scene: game.scene ?? 1, hexId, status: "forming", participantIds: [actorId], invitedIds: [] };
+    if (cmd.type === "search" || cmd.type === "deep-search") {
       const permission = areaPermission(game, cmd.hexId, cmd.pointId, cmd.areaId);
       const point = game.hexes[cmd.hexId]?.points.find(p => p.id === cmd.pointId);
       const area = point?.preparation?.areas.find(a => a.id === cmd.areaId);
-      if (cmd.hexId !== hexId || !permission?.objectives.includes(cmd.objective) || !point?.revealed || game.hexes[hexId].discovery !== "explorado" || !area || area.access === "blocked" || searchAreaState(point, area) !== "available" || area.searchable === false) return "Esta área ou objetivo não está disponível para sua busca.";
+      const areaState = point && area ? searchAreaState(point, area) : undefined;
+      const expectedState = cmd.type === "deep-search" ? "deep-available" : "available";
+      if (cmd.hexId !== hexId || !permission?.objectives.includes(cmd.objective) || !point?.revealed || game.hexes[hexId].discovery !== "explorado" || !area || area.access === "blocked" || areaState !== expectedState || area.searchable === false) return "Esta área ou objetivo não está disponível para sua busca.";
       if (state.operations.some(o => active(game, o) && o.type === "search" && o.hexId === hexId && o.pointId === point.id && o.areaId === area.id)) return "Já existe uma busca proposta para esta área. Entre nela.";
-      Object.assign(proposal, { pointId: cmd.pointId, areaId: cmd.areaId, objective: cmd.objective, purpose: cmd.purpose });
+      Object.assign(proposal, { pointId: cmd.pointId, areaId: cmd.areaId, objective: cmd.objective, purpose: cmd.purpose, depth: cmd.type === "deep-search" ? "deep" : "normal" });
     } else if (cmd.type === "travel") {
       if (!policy.routes.some(r => r.from === hexId && r.to === cmd.destination) || !game.hexes[cmd.destination] || game.hexes[cmd.destination].discovery === "desconhecido") return "Esta rota não foi liberada pelo mestre.";
       proposal.destination = cmd.destination;
@@ -213,9 +216,17 @@ function executeCommand(game: GameState, actorId: string, cmd: PlayerCommand, di
       if (!point?.revealed || !area || area.access === "blocked" || !permission?.objectives.includes(op.objective ?? "open")) return "O acesso ou os objetivos deste cômodo mudaram.";
       if (cmd.type === "execute") {
         if (op.status !== "forming") return "Esta busca já começou; resolva o acesso.";
-        const specific = op.objective !== "open";
         const selected = quickSearchOptions(area).find(o => o.id === op.objective && o.available);
-        if (specific && !selected?.key) return "O objetivo não é previsto para esta área. Peça avaliação ao mestre.";
+        if (op.depth === "deep") {
+          if (!selected?.key || op.objective === "open") return "Escolha um foco plausível para a busca profunda.";
+          const error = startDeepSearch(game, { id: op.id, hexId: op.hexId, pointId: op.pointId!, areaId: op.areaId!, participants: op.participantIds,
+            objective: selected.label, purpose: op.purpose!, catalogKey: selected.key });
+          if (error) return error;
+          op.status = "access";
+          return null;
+        }
+        const specific = op.objective !== "open";
+        if (specific && !selected?.key) return "O objetivo não é previsto para esta área. Escolha outra categoria ou faça uma busca aberta.";
         const error = startSearch(game, { id: op.id, hexId: op.hexId, pointId: op.pointId!, areaId: op.areaId!, participants: op.participantIds, mode: specific ? "specific" : "open", objective: specific ? selected!.label : "Vasculhar", purpose: op.purpose!, catalogKey: specific ? selected!.key : undefined, quantity: 1 });
         if (error) return error;
         op.status = "access";
@@ -293,8 +304,8 @@ export function applyPlayerAction(game: GameState, actorId: string, input: unkno
   draft.playerActions.operations = draft.playerActions.operations.filter(o => o.day === game.day && o.scene === (game.scene ?? 1));
   draft.playerActions.receipts = draft.playerActions.receipts.filter(r => r.day === game.day);
   draft.playerActions.withdrawals = draft.playerActions.withdrawals.filter(r => r.day === game.day);
-  if ((["search", "travel", "rest", "request-rest", "offer", "request"].includes(cmd.type) && draft.playerActions.operations.length >= 150) || draft.playerActions.receipts.length >= 2000) return { ok: false, error: "Limite de ações deste dia atingido. O mestre pode continuar pelas ferramentas da campanha." };
-  if (["search", "travel", "rest", "offer", "request"].includes(cmd.type) && draft.playerActions.operations.some(o => o.id === cmd.id)) return { ok: false, error: "Este identificador já pertence a uma operação." };
+  if ((["search", "deep-search", "travel", "rest", "request-rest", "offer", "request"].includes(cmd.type) && draft.playerActions.operations.length >= 150) || draft.playerActions.receipts.length >= 2000) return { ok: false, error: "Limite de ações deste dia atingido. O mestre pode continuar pelas ferramentas da campanha." };
+  if (["search", "deep-search", "travel", "rest", "offer", "request"].includes(cmd.type) && draft.playerActions.operations.some(o => o.id === cmd.id)) return { ok: false, error: "Este identificador já pertence a uma operação." };
   const beforeEvents = new Set(Object.entries(game.hexes).flatMap(([hexId, hex]) => hex.events.filter(e => eventTriggerReady(game, hexId, e)).map(e => e.id)));
   const error = executeCommand(draft, actorId, cmd, die);
   if (error) return { ok: false, error };
