@@ -414,6 +414,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
                   : "Revisar local";
                 const playerStatus = !location?.prepared ? "O sistema organiza as áreas ao abrir"
                   : location.activeSearches ? `${location.activeSearches} busca(s) em andamento`
+                  : location.apparentStockUnits ? `${location.apparentStockUnits} item(ns) aparente(s) à vista`
                   : location.stockUnits ? `${location.stockUnits} item(ns) aguardando coleta`
                   : `${location.searchedAreas}/${location.areaCount} áreas vasculhadas`;
                 return <div className="hex-point-session-flow">
