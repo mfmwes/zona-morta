@@ -42,6 +42,22 @@ export const locationScaleAreaCounts: Record<LocationScale, number> = {
   complex: 8,
 };
 
+/** Limita rolagens sem reduzir a riqueza espacial do local. */
+export const locationScaleSearchCaps: Record<LocationScale, number> = {
+  small: 2,
+  medium: 3,
+  large: 4,
+  complex: 5,
+};
+
+/** Busca profunda é uma decisão estratégica do local, não uma segunda busca em todo cômodo. */
+export const locationScaleDeepSearchLimits: Record<LocationScale, number> = {
+  small: 1,
+  medium: 1,
+  large: 2,
+  complex: 3,
+};
+
 const areaModels: Record<string, AreaBlueprint[]> = {
   "Residências / condomínios": [
     { name: "Cozinha", signal: "Bancada, armários e eletrodomésticos formam um espaço separado.", table: "Restaurantes / cozinhas", searchable: true },
@@ -210,9 +226,9 @@ function blueprintArea(point: Point, baseTable: string, scale: LocationScale, bl
     id: createId(),
     name: blueprint.name,
     signal: blueprint.signal,
-    minutes: blueprint.minutes ?? (roomy && blueprint.searchable !== false ? 60 : 30),
+    minutes: blueprint.minutes ?? 30,
     searchable: blueprint.searchable !== false,
-    spacious: roomy && blueprint.searchable !== false,
+    spacious: blueprint.minutes === 60,
     source: "generated",
   };
 }
@@ -222,6 +238,13 @@ function buildLocationAreas(point: Point, scale: LocationScale) {
   const models = areaModels[table] ?? [];
   const count = locationScaleAreaCounts[scale];
   const areas: SearchArea[] = [baseSearchArea(point, table, scale), ...models.slice(0, Math.max(0, count - 1)).map(model => blueprintArea(point, table, scale, model))];
+  const searchCap = locationScaleSearchCaps[scale];
+  let searchableSeen = 0;
+  for (const area of areas) {
+    if (area.searchable === false) continue;
+    searchableSeen += 1;
+    if (searchableSeen > searchCap) area.searchable = false;
+  }
 
   for (const search of point.searches) {
     const name = searchAreaLabel(point, search.sector);
@@ -300,8 +323,17 @@ export function declareSearchArea(point: Point, name: string, signal: string) {
   if (!prep || !name.trim() || !signal.trim() || name.length > 120 || signal.length > 2000 || prep.areas.length >= 80
     || prep.attempts.some(row => row.status === "pending" || row.status === "ready")
     || prep.areas.some(row => normalizedSector(row.name) === normalizedSector(searchAreaLabel(point, name)))) return false;
-  prep.areas.push({ ...prep.areas[0], id: createId(), name: name.trim(), signal: signal.trim(), searchable: true, source: "manual" });
+  prep.areas.push({ ...prep.areas[0], id: createId(), name: name.trim(), signal: signal.trim(), searchable: false,
+    minutes: 30, spacious: false, source: "manual" });
   return true;
+}
+
+export function deepSearchLimit(point: Point) {
+  return locationScaleDeepSearchLimits[locationScaleOf(point)];
+}
+
+export function deepSearchesUsed(point: Point) {
+  return point.preparation?.attempts.filter(row => row.kind === "deep").length ?? 0;
 }
 
 export function searchAreaState(point: Point, area: SearchArea) {
@@ -313,7 +345,7 @@ export function searchAreaState(point: Point, area: SearchArea) {
   if (normal.status === "failed") return "exhausted" as const;
   if (deep?.status === "pending" || deep?.status === "ready") return "deep-ongoing" as const;
   if (deep?.status === "completed" || deep?.status === "failed") return "exhausted" as const;
-  if (normal.status === "completed") return "deep-available" as const;
+  if (normal.status === "completed") return deepSearchesUsed(point) < deepSearchLimit(point) ? "deep-available" as const : "searched" as const;
   return "searched" as const;
 }
 
@@ -346,7 +378,7 @@ export function startSearch(game: GameState, input: StartSearch): string | null 
     || !content.catalog.some(row => catalogKey(row) === input.catalogKey))) return "Combine o objetivo, a finalidade e o item plausível antes da busca.";
   if (input.mode === "specific" && prep.stock.some(row => row.areaId === area.id && row.item.catalogKey === input.catalogKey)) return "Esse estoque já é conhecido. Resolva o acesso e recolha diretamente, sem outra busca.";
   const quantity = input.quantity ?? 1;
-  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99) return "Escolha uma quantidade de 1 a 99.";
+  if (!Number.isInteger(quantity) || quantity !== 1) return "Uma busca específica encontra no máximo 1 unidade. Quantidades maiores devem ser estabelecidas como estoque à vista.";
   if (input.warehouseWorker && (!input.participants.includes(input.warehouseWorker)
     || (!area.spacious && area.minutes !== 60)
     || !warehouseWorkers(game, input.hexId).some(row => row.id === input.warehouseWorker))) return "A habilidade de depósito não está disponível para este participante.";
@@ -451,6 +483,9 @@ export function startDeepSearch(game: GameState, input: StartDeepSearch): string
   if (prep.attempts.some(row => row.areaId === area.id && row.kind === "deep")
     || point.searches.some(row => row.depth === "deep" && normalizedSector(searchAreaLabel(point, row.sector)) === normalizedSector(area.name))) {
     return "Esta área já recebeu uma busca profunda.";
+  }
+  if (deepSearchesUsed(point) >= deepSearchLimit(point)) {
+    return `Este local já usou ${deepSearchLimit(point)} busca(s) profunda(s). Escolha com cuidado onde vasculhar a fundo.`;
   }
   if (!input.id || input.id.length > 120 || !input.objective.trim() || input.objective.length > 2400
     || !input.purpose.trim() || input.purpose.length > 2400) return "Defina o foco da busca profunda.";

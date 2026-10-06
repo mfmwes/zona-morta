@@ -15,7 +15,7 @@ export type SearchArea = {
 };
 export type SearchAttempt = {
   id: string; areaId: string; participants: string[]; mode: "open" | "specific";
-  /** Ausente em campanhas antigas = busca normal. Busca profunda existe no máximo uma vez por área. */
+  /** Ausente em campanhas antigas = busca normal. Busca profunda existe no máximo uma vez por área e respeita o limite do porte do local. */
   kind?: "normal" | "deep";
   objective: string; purpose: string; catalogKey?: string; quantity: number;
   minutes: number; noise: number; warehouseWorker?: string;

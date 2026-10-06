@@ -65,7 +65,9 @@ test('porte do local controla profundidade sem transformar toda área em nova ro
   auto.prepareLocation(condo);
   assert.equal(condo.preparation.scale,'large');
   assert.equal(condo.preparation.areas.length,6);
-  assert.ok(condo.preparation.areas.filter(area=>area.searchable!==false).length < condo.preparation.areas.length);
+  assert.equal(condo.preparation.areas.filter(area=>area.searchable!==false).length,auto.locationScaleSearchCaps.large);
+  assert.equal(condo.preparation.areas.find(area=>area.name==='Área principal').minutes,60);
+  assert.equal(condo.preparation.areas.find(area=>area.name==='Cozinha').minutes,30);
   assert.ok(condo.preparation.areas.some(area=>area.name==='Cozinha' && area.table==='Restaurantes / cozinhas'));
   assert.ok(condo.preparation.areas.some(area=>area.name==='Garagem' && area.table==='Oficinas / postos de serviço'));
   assert.ok(condo.preparation.areas.some(area=>area.searchable===false));
@@ -75,11 +77,28 @@ test('porte do local controla profundidade sem transformar toda área em nova ro
   auto.prepareLocation(hospital);
   assert.equal(hospital.preparation.scale,'complex');
   assert.equal(hospital.preparation.areas.length,8);
+  assert.equal(hospital.preparation.areas.filter(area=>area.searchable!==false).length,auto.locationScaleSearchCaps.complex);
   assert.ok(hospital.preparation.areas.some(area=>area.name==='Farmácia interna' && area.table==='Farmácias / consultórios'));
   assert.ok(hospital.preparation.areas.some(area=>area.name==='Manutenção' && area.table==='Oficinas / postos de serviço'));
 });
 
 
+test('todas as tabelas respeitam orçamento de áreas, buscas e tempo por porte', () => {
+  const maxNormalMinutes = { small:90, medium:120, large:180, complex:210 };
+  for (const table of content.lootTables) {
+    const point={ id:'audit', name:'Local genérico', kind:'local', signal:'Sinal', access:'', notes:'', revealed:true,
+      lootTable:table.name, searches:[] };
+    auto.prepareLocation(point);
+    for (const scale of ['small','medium','large','complex']) {
+      assert.equal(auto.resizeLocationPreparation(point,scale),true, table.name + ' · ' + scale);
+      assert.equal(point.preparation.areas.length,auto.locationScaleAreaCounts[scale], table.name + ' · ' + scale + ' · áreas');
+      const searchable=point.preparation.areas.filter(area=>area.searchable!==false);
+      assert.ok(searchable.length<=auto.locationScaleSearchCaps[scale], table.name + ' · ' + scale + ' · buscas');
+      assert.ok(searchable.reduce((sum,area)=>sum+area.minutes,0)<=maxNormalMinutes[scale], table.name + ' · ' + scale + ' · tempo');
+      assert.equal(auto.deepSearchLimit(point),auto.locationScaleDeepSearchLimits[scale]);
+    }
+  }
+});
 test('atalhos de busca usam categorias do catálogo e respeitam a tabela de cada área', () => {
   assert.equal(auto.quickSearchResourceForKey('Bebidas::Suco em caixa fechado'),'water');
   assert.equal(auto.quickSearchResourceForKey('Alimentos::Barra de cereal'),'food');
@@ -113,6 +132,9 @@ test('interface explica atalhos indisponíveis em vez de depender de regex no no
   assert.match(source,/Toque nos apagados para entender/);
   assert.match(source,/Atualizar áreas contextuais/);
   assert.doesNotMatch(source,/pattern:\s*\/água|pattern:\s*\/ração|pattern:\s*\/tratamento/);
+  assert.match(source,/Busca específica encontra no máximo/);
+  assert.doesNotMatch(source,/Quantidade prometida/);
+  assert.match(source,/profundas \{deepUsed\}\/\{deepLimit\}/);
 });
 
 
@@ -151,6 +173,17 @@ test('área narrativa aceita elementos à vista, mas não uma busca d12 própria
   assert.deepEqual(f.game,before);
   assert.equal(auto.registerVisibleStock(f.game,'0,0','market',narrative.id,'visible-narrative','Bebidas::Garrafa de água lacrada',1),null);
   assert.equal(f.point.preparation.stock.find(row=>row.id==='visible-narrative').areaId,narrative.id);
+});
+
+
+test('áreas declaradas pelo mestre começam narrativas e não aumentam loot sem confirmação explícita', () => {
+  const f=campaign();
+  assert.equal(auto.declareSearchArea(f.point,'Mezanino','Escada estreita leva ao piso superior'),true);
+  const area=f.point.preparation.areas.find(row=>row.name==='Mezanino');
+  assert.ok(area);
+  assert.equal(area.searchable,false);
+  assert.equal(area.minutes,30);
+  assert.match(auto.startSearch(f.game,input(f,{areaId:area.id,id:'manual-search'})),/não possui uma busca de recursos/);
 });
 
 test('histórico antigo bloqueia a área e nunca cria inventário ou estoque retroativo', () => {
@@ -214,6 +247,34 @@ test('busca profunda só abre depois da busca normal e não usa outro d12 de saq
   assert.match(auto.startDeepSearch(f.game,{...deep,id:'deep-2'}),/já recebeu uma busca profunda/);
 });
 
+
+test('porte limita buscas profundas no local e força escolha entre áreas', () => {
+  const f=campaign();
+  assert.equal(auto.deepSearchLimit(f.point),1);
+  const first=f.point.preparation.areas.find(area=>area.searchable!==false);
+  const second=f.point.preparation.areas.find(area=>area.searchable!==false && area.id!==first.id);
+  assert.ok(first && second);
+
+  assert.equal(auto.resolvePreparedSearch(f.game,input(f,{id:'normal-a',areaId:first.id}),die(1)),null);
+  assert.equal(auto.resolvePreparedSearch(f.game,input(f,{id:'normal-b',areaId:second.id}),die(2)),null);
+  const point=f.game.hexes['0,0'].points[0];
+  const freshFirst=point.preparation.areas.find(area=>area.id===first.id);
+  const freshSecond=point.preparation.areas.find(area=>area.id===second.id);
+  const known=new Set(point.preparation.stock.filter(row=>row.areaId===first.id).map(row=>row.item.catalogKey));
+  const key=auto.deepSearchCandidateKeys(freshFirst).find(value=>!known.has(value));
+  assert.ok(key);
+  assert.equal(auto.startDeepSearch(f.game,{id:'deep-quota',hexId:'0,0',pointId:'market',areaId:first.id,participants:[f.actor.id],
+    objective:'Reserva oculta',purpose:'Escolher onde investir tempo',catalogKey:key}),null);
+  assert.equal(auto.deepSearchesUsed(f.game.hexes['0,0'].points[0]),1);
+  assert.equal(auto.searchAreaState(f.game.hexes['0,0'].points[0],freshSecond),'searched');
+
+  const secondKnown=new Set(point.preparation.stock.filter(row=>row.areaId===second.id).map(row=>row.item.catalogKey));
+  const secondKey=auto.deepSearchCandidateKeys(freshSecond).find(value=>!secondKnown.has(value));
+  assert.ok(secondKey);
+  assert.match(auto.startDeepSearch(f.game,{id:'deep-quota-2',hexId:'0,0',pointId:'market',areaId:second.id,participants:[f.actor.id],
+    objective:'Outra reserva',purpose:'Exceder limite',catalogKey:secondKey}),/já usou 1 busca/);
+});
+
 test('falha na busca profunda consome tempo e Barulho, mas não cria item', () => {
   const f=campaign();
   assert.equal(auto.resolvePreparedSearch(f.game,input(f),die(1)),null);
@@ -248,13 +309,15 @@ test('acesso sob risco mantém rolagem e recursos ao reabrir e impede d12 após 
   assert.equal(f.game.hexes['0,0'].points[0].preparation.stock.length,0);
   assert.equal(f.game.hexes['0,0'].points[0].preparation.attempts[0].status,'failed');
 });
-test('sucesso com Medo entrega quantidade anunciada, sem d12 extra ou dano automático', () => {
+test('busca específica limita a uma unidade e sucesso com Medo não cria d12 ou dano automático', () => {
   const f=campaign(); f.area.access='risk';
   const key='Suprimentos abstratos::Peças (1 unidade)';
-  assert.equal(auto.startSearch(f.game,input(f,{mode:'specific',objective:'Peças',purpose:'Reparar o portão',catalogKey:key,quantity:2})),null);
+  assert.match(auto.startSearch(f.game,input(f,{mode:'specific',objective:'Peças',purpose:'Reparar o portão',catalogKey:key,quantity:2})),/no máximo 1 unidade/);
+  assert.equal(f.game.hexes['0,0'].points[0].preparation.attempts.length,0);
+  assert.equal(auto.startSearch(f.game,input(f,{mode:'specific',objective:'Peças',purpose:'Reparar o portão',catalogKey:key,quantity:1})),null);
   assert.equal(auto.rollSearchAccess(f.game,'0,0','market','search-1',{actorId:f.actor.id,trait:'Instinto',edge:'none',experiences:[],other:0},die(6,8)),null);
   assert.equal(auto.completeSearch(f.game,'0,0','market','search-1'),null);
-  assert.equal(f.game.hexes['0,0'].points[0].preparation.stock[0].remaining,2);
+  assert.equal(f.game.hexes['0,0'].points[0].preparation.stock[0].remaining,1);
   assert.equal(f.game.survivors[0].hp,0); assert.equal(f.game.conflict,undefined);
 });
 test('central desconta Experiência e aplica crítico conforme as regras existentes', () => {
