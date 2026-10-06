@@ -352,7 +352,8 @@ export function pendingPlayerSearchOperation(game: GameState, hexId: string, poi
 export function searchAreaSessionState(game: GameState, hexId: string, pointId: string, area: SearchArea) {
   const proposed = pendingPlayerSearchOperation(game, hexId, pointId, area.id);
   if (proposed?.status === "forming") return "proposed" as const;
-  return searchAreaState(game.hexes[hexId]?.points.find(point => point.id === pointId)!, area);
+  const point = game.hexes[hexId]?.points.find(candidate => candidate.id === pointId);
+  return point ? searchAreaState(point, area) : "available" as const;
 }
 
 export function searchAreaState(point: Point, area: SearchArea) {
