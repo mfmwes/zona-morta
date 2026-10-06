@@ -1,9 +1,10 @@
+import { applyPlayerSheetEdit, type SheetEditPayload } from "@/lib/player-sheet-edit";
 import { validPlayerActionState } from "@/lib/player-actions-types";
 import { validPortraitFrame } from "@/lib/portrait-frame";
 import { campaignExists, campaignOwnerId, findPlayer, readCampaign, restoreAccountCharacterToCampaign, syncCampaignAccountCharacters, wasRevoked, writeCampaign } from "@/db/state";
 import { sameOrigin, siteUser } from "@/lib/auth";
-import { applyPlayerChange, projectPlayerGame, type PlayerLog, type ShelterWorkAction } from "@/lib/collaboration";
-import { ammunitionTypes, survivorStats, type AmmunitionType, type GameState, type Survivor } from "@/lib/game";
+import { projectPlayerGame } from "@/lib/collaboration";
+import { ammunitionTypes, survivorStats, type AmmunitionType, type GameState } from "@/lib/game";
 import { preserveKnownSectors } from "@/lib/sectors";
 import { validWorld } from "@/lib/world";
 import { validExplorationPreferences } from "@/lib/hex-automation-validation";
@@ -307,14 +308,15 @@ export async function PATCH(request: Request) {
     if (!member.survivor_id) return Response.json({ error: "Crie seu sobrevivente antes de editar a ficha." }, { status: 409 });
     const raw = await request.text();
     if (raw.length > 150_000) return Response.json({ error: "Alteração grande demais." }, { status: 413 });
-    const payload = JSON.parse(raw) as { before?: Survivor; after?: Survivor; fearDelta?: number; noiseDelta?: number; logs?: PlayerLog[]; shelterWorkActions?: ShelterWorkAction[] };
+    const payload = JSON.parse(raw) as SheetEditPayload;
     if (!payload.before || !payload.after || !Array.isArray(payload.logs))
       return Response.json({ error: "Alteração incompleta." }, { status: 400 });
     for (let attempt = 0; attempt < 4; attempt++) {
       const data = await readCampaign(campaignId);
-      const next = applyPlayerChange(data.state, member.survivor_id, payload.before, payload.after,
-        payload.fearDelta ?? 0, payload.logs, payload.noiseDelta ?? 0, payload.shelterWorkActions ?? []);
-      if (!next) return Response.json({ error: "Sua ficha mudou em outra janela ou esta ação precisa ser registrada pelo mestre. Recarregue antes de tentar novamente." }, { status: 409 });
+      const editResult = await applyPlayerSheetEdit(data.state, member.survivor_id, payload);
+      if (!editResult.ok) return Response.json({ error: editResult.error }, { status: 409 });
+      const next = editResult.state;
+      if (editResult.replay) return Response.json({ revision: data.revision, state: projectPlayerGame(next, member.survivor_id), restPeers: restPeers(next) }, { headers: noStore });
       const revision = await writeCampaign(campaignId, next, data.revision);
       if (revision !== null) return Response.json({ revision, state: projectPlayerGame(next, member.survivor_id), restPeers: restPeers(next) }, { headers: noStore });
     }

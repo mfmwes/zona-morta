@@ -2166,19 +2166,15 @@ test('primeira etapa de UX adiciona visão geral do mestre sem remover ferrament
   }
 });
 
-test('etapa de UX do jogador prioriza estado atual, ações rápidas e ficha antes das ferramentas secundárias', () => {
+test('ficha de mestre e jogador compartilha abas e consulta lateral sem abrir permissões do mestre', () => {
   const page = fs.readFileSync(require.resolve('../app/page.tsx'), 'utf8');
   const survivor = fs.readFileSync(require.resolve('../components/survivor-panel.tsx'), 'utf8');
   assert.match(page, /Meu sobrevivente/);
-  assert.match(page, /Veja primeiro o que importa agora/);
-  assert.match(survivor, /character-player-now/);
-  assert.match(survivor, /Livre para agir/);
-  assert.match(survivor, /Rolar teste/);
-  assert.match(survivor, /Precisa de atenção/);
-  assert.match(survivor, /playerTabs/);
-  assert.match(survivor, /label: "Testes"/);
-  assert.match(survivor, /label: "Estado"/);
-  assert.match(survivor, /character-layout\$\{playerFacing \? " is-player-facing"/);
+  assert.doesNotMatch(survivor, /playerTabs|is-player-facing|character-player-now/);
+  assert.match(survivor, /className="character-layout"/);
+  assert.match(survivor, /Consulta rápida do sobrevivente/);
+  for (const label of ['Resumo','Atributos','Combate','Habilidades','Inventário','Condições','História']) assert.ok(survivor.includes('label: "'+label+'"'));
+  assert.match(survivor, /selfOnly=\{playerMode\}/);
   assert.match(survivor, /id="character-rest-panel"/);
 });
 
@@ -2739,4 +2735,32 @@ test('arma que exige munição não pode disparar sem unidade física livre', ()
   assert.equal(combatResources.attackResourceState(g, a, 'Pistola', 1).ammoReady, true);
   abilities.beginScene(g);
   assert.equal(combatResources.attackResourceState(g, a, 'Pistola', 1).ammoReady, false);
+});
+
+
+test('salvamentos rápidos preservam cada clique, rolagem e custo em ordem', async () => {
+  const {PlayerSaveQueue}=require('../lib/player-save-queue.ts');
+  const {applyPlayerSheetEdit}=require('../lib/player-sheet-edit.ts');
+  let g=campaign();let view=collaboration.projectPlayerGame(g,g.survivors[0].id);const queue=new PlayerSaveQueue();
+  for(let i=0;i<3;i++) {
+    const next=structuredClone(view);next.survivors[0].stress=i+1;next.fear++;
+    next.log.unshift({id:'rapid-'+i,day:g.day,time:'08:00',kind:'dados',text:'Rolagem rápida '+i});
+    assert.equal(queue.enqueue(view,next),true);view=next;
+  }
+  assert.equal(queue.length,3);
+  while(queue.length) {const job=queue.first;const result=await applyPlayerSheetEdit(g,g.survivors[0].id,job);assert.equal(result.ok,true);g=result.state;queue.complete(job.id);}
+  assert.equal(g.survivors[0].stress,3);assert.equal(g.fear,3);
+  assert.equal(g.log.filter(row=>row.text.startsWith('Rolagem rápida')).length,3);
+});
+test('reenvio após perda de resposta não duplica Medo, barulho ou registros e não aceita outro conteúdo', async () => {
+  const {PlayerSaveQueue}=require('../lib/player-save-queue.ts');const {applyPlayerSheetEdit}=require('../lib/player-sheet-edit.ts');
+  let g=campaign();const actor=g.survivors[0].id;const before=collaboration.projectPlayerGame(g,actor),after=structuredClone(before);
+  after.survivors[0].hope=3;after.fear++;after.noise++;after.log.unshift({id:'lost',day:g.day,time:'08:00',kind:'dados',text:'Resposta perdida'});
+  const queue=new PlayerSaveQueue();queue.enqueue(before,after);const job=queue.first;
+  const first=await applyPlayerSheetEdit(g,actor,job);assert.equal(first.ok,true);g=first.state;
+  const replay=await applyPlayerSheetEdit(g,actor,job);assert.equal(replay.ok,true);assert.equal(replay.replay,true);
+  assert.equal(replay.state.fear,1);assert.equal(replay.state.noise,1);assert.equal(replay.state.log.filter(row=>row.text==='Resposta perdida').length,1);
+  const altered={...job,after:{...job.after,hope:4}};assert.equal((await applyPlayerSheetEdit(g,actor,altered)).ok,false);
+  const changed=structuredClone(g);changed.survivors[0].stress=2;
+  const otherJob={...job,id:'other'};assert.equal((await applyPlayerSheetEdit(changed,actor,otherJob)).ok,false);
 });

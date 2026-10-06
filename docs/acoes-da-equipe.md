@@ -20,3 +20,5 @@ A dificuldade, as tabelas, a preparação completa e os achados ainda não sorte
 As cotas são preservadas ao editar liberações. Dados do dia anterior são descartados dos recibos e das cotas quando uma nova ação é registrada; o histórico da campanha conserva os acontecimentos. As propostas expiram com a mudança de dia ou de cena. Nenhuma migração de banco é necessária.
 
 As buscas exibem apenas os cômodos, achados e propostas do local aberto; não é necessário escolher novamente o local ou sair do mapa. Confirmações e rolagens aparecem junto da proposta correspondente. Uma solicitação sem confirmação da rede pode ser reenviada com o mesmo identificador mesmo após trocar de seção.
+
+As interações na ficha do jogador são salvas em sequência, cada uma com seu próprio identificador. Cliques e rolagens feitos enquanto uma solicitação é enviada permanecem na fila; um reenvio após perda de resposta não repete custos nem registros. Ações contextuais aguardam a conclusão dessa fila antes de executar. Conflitos reais na mesma ficha continuam exigindo revisão, para preservar alterações do mestre ou de outra janela.

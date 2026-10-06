@@ -35,7 +35,7 @@ import { sectorProfiles } from "@/lib/sectors";
 import { adjustProvisionCount } from "@/lib/provisions";
 import { beginExpedition, beginScene } from "@/lib/abilities";
 import { projectPlayerActions } from "@/lib/player-actions";
-import { playerEditPayload } from "@/lib/collaboration";
+import { PlayerSaveQueue } from "@/lib/player-save-queue";
 import { advanceCampaignTime, setCampaignTime } from "@/lib/time";
 
 type CampaignResponse = { revision?: number; state?: GameState; role: "mestre" | "jogador" | "convidado"; ownerId: string; survivorId?: string | null; restPeers?: RestPeer[] };
@@ -88,6 +88,8 @@ export default function CampaignApp() {
   const pendingBefore = useRef<GameState | null>(null);
   const roleRef = useRef<"mestre" | "jogador" | "convidado">("mestre");
   const sending = useRef(false);
+  const saveCompletion = useRef<Promise<void> | null>(null);
+  const playerSaves = useRef(new PlayerSaveQueue());
   const teamActionInFlight = useRef(false);
   const teamActionRetry = useRef<Record<string, unknown> | null>(null);
   const [teamActionError, setTeamActionError] = useState("");
@@ -168,6 +170,7 @@ export default function CampaignApp() {
       current.current = data.state ?? null;
       pending.current = null;
       pendingBefore.current = null;
+      playerSaves.current.clear();
       paused.current = false;
       setGame(data.state ?? null); setStatus("salvo"); setSaveError(""); setLoadError("");
       void refreshPresentation(true);
@@ -231,48 +234,58 @@ export default function CampaignApp() {
     return () => window.clearInterval(timer);
   }, [apiPath, survivorId]);
 
-  const flush = useCallback(async () => {
-    if (sending.current || paused.current) return;
+  const flush = useCallback((): Promise<void> => {
+    if (sending.current || paused.current) return saveCompletion.current ?? Promise.resolve();
     sending.current = true;
-    try {
-      while (pending.current && !paused.current) {
-        const snapshot = pending.current;
-        const before = pendingBefore.current;
-        pending.current = null;
-        pendingBefore.current = null;
-        try {
+    const work = (async () => {
+      try {
+        while (pending.current && !paused.current) {
           const player = roleRef.current === "jogador";
-          const response = await fetch(apiPath(), {
-            method: player ? "PATCH" : "PUT", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(player && before ? playerEditPayload(before, snapshot)
-              : { revision: revision.current, state: snapshot }),
-          });
-          const result = await response.json() as { error?: string; revision?: number; state?: GameState; restPeers?: RestPeer[] };
-          if (!response.ok) {
+          const playerJob = player ? playerSaves.current.first : undefined;
+          if (player && !playerJob) { pending.current = null; break; }
+          const snapshot = pending.current;
+          const before = pendingBefore.current;
+          pending.current = null;
+          pendingBefore.current = null;
+          try {
+            const response = await fetch(apiPath(), {
+              method: player ? "PATCH" : "PUT", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(player ? playerJob : { revision: revision.current, state: snapshot }),
+              ...(player ? { signal: AbortSignal.timeout(20000) } : {}),
+            });
+            const result = await response.json() as { error?: string; revision?: number; state?: GameState; restPeers?: RestPeer[] };
+            if (!response.ok) {
+              pending.current = current.current;
+              pendingBefore.current = before;
+              paused.current = true;
+              setStatus(response.status === 409 ? "conflito" : "erro");
+              setSaveError(result.error || "Não foi possível salvar. Tente novamente.");
+              break;
+            }
+            if (player && (!result.state || !Number.isInteger(result.revision))) throw new Error("Resposta incompleta do salvamento.");
+            revision.current = result.revision!;
+            if (playerJob) {
+              playerSaves.current.complete(playerJob.id);
+              if (playerSaves.current.length) pending.current = current.current;
+            }
+            if (player && result.state && !pending.current) {
+              current.current = result.state;
+              setGame(result.state);
+            }
+            if (player && result.restPeers) setRestPeers(result.restPeers);
+            if (!pending.current) { setStatus("salvo"); setSaveError(""); }
+          } catch {
             pending.current = current.current;
             pendingBefore.current = before;
             paused.current = true;
-            setStatus(response.status === 409 ? "conflito" : "erro");
-            setSaveError(result.error || "Não foi possível salvar. Tente novamente.");
-            break;
+            setStatus("erro");
+            setSaveError("Conexão interrompida. Os dados continuam nesta tela; tente salvar novamente.");
           }
-          revision.current = result.revision!;
-          if (player && pending.current) pendingBefore.current = snapshot;
-          if (player && result.state && !pending.current) {
-            current.current = result.state;
-            setGame(result.state);
-          }
-          if (player && result.restPeers) setRestPeers(result.restPeers);
-          if (!pending.current) { setStatus("salvo"); setSaveError(""); }
-        } catch {
-          pending.current = current.current;
-          pendingBefore.current = before;
-          paused.current = true;
-          setStatus("erro");
-          setSaveError("Conexão interrompida. Os dados continuam nesta tela; tente salvar novamente.");
         }
-      }
-    } finally { sending.current = false; }
+      } finally { sending.current = false; saveCompletion.current = null; }
+    })();
+    saveCompletion.current = work;
+    return work;
   }, [apiPath]);
 
   const edit = useCallback((mutate: (draft: GameState) => void) => {
@@ -282,7 +295,7 @@ export default function CampaignApp() {
     const draft = structuredClone(before);
     mutate(draft);
     if (roleRef.current === "jogador") {
-      if (!playerEditPayload(before, draft)) {
+      if (!playerSaves.current.enqueue(before, draft)) {
         toast.error("Esta ação altera dados compartilhados. Peça ao mestre para registrá-la.");
         return;
       }
@@ -295,8 +308,11 @@ export default function CampaignApp() {
   }, [flush]);
 
   const executeTeamAction = useCallback(async (payload: Record<string, unknown>) => {
-    if (pending.current || sending.current || paused.current || teamActionInFlight.current)
-      throw new TeamActionError("Aguarde o salvamento da campanha antes de agir.", true);
+    if (teamActionInFlight.current) throw new TeamActionError("Outra ação já está sendo registrada.", true);
+    if (pending.current || sending.current) await flush();
+    if (teamActionInFlight.current) throw new TeamActionError("Outra ação já está sendo registrada.", true);
+    if (pending.current || sending.current || paused.current)
+      throw new TeamActionError("Não foi possível concluir o salvamento da ficha. Tente salvar novamente antes desta ação.", true);
     if (teamActionRetry.current) {
       const signature = (value: Record<string, unknown>) => { const copy={...value}; delete copy.id; delete copy.day; return JSON.stringify(copy); };
       if (signature(payload) !== signature(teamActionRetry.current)) throw new TeamActionError("Há uma ação sem confirmação. Reenvie a solicitação pendente antes de iniciar outra.", true);
@@ -318,7 +334,7 @@ export default function CampaignApp() {
       else { teamActionRetry.current=payload; setTeamActionError("A conexão não confirmou sua última ação. Reenvie a mesma solicitação para conferir o resultado com segurança."); }
       throw cause;
     } finally { teamActionInFlight.current = false; setStatus("salvo"); }
-  }, [apiPath]);
+  }, [apiPath, flush]);
 
   function retrySave() {
     if (!current.current) return;
@@ -546,7 +562,7 @@ export default function CampaignApp() {
   ];
   const nav = [...masterPrimary, ...masterSecondary];
   const masterActionControls = masterExperience ? {canAct:status === "salvo",send:executeTeamAction,pending:Boolean(teamActionError)} : undefined;
-  const playerActionControls = role === "jogador" && survivorId ? { actorId: survivorId, canAct: status === "salvo", send: executeTeamAction, pending: Boolean(teamActionError) } : playerPreview && game.survivors[0] ? {actorId:game.survivors[0].id,canAct:false,send:executeTeamAction,preview:true} : undefined;
+  const playerActionControls = role === "jogador" && survivorId ? { actorId: survivorId, canAct: status !== "erro" && status !== "conflito", send: executeTeamAction, pending: Boolean(teamActionError) } : playerPreview && game.survivors[0] ? {actorId:game.survivors[0].id,canAct:false,send:executeTeamAction,preview:true} : undefined;
 
   return <Tabs value={activeTab} onValueChange={setTab} className="w-full">
     <TablePresentationViewer presentation={presentation} enabled={readOnlyPreview} />

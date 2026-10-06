@@ -22,6 +22,7 @@ Module._load=function(name,parent,main){
  return originalLoad.call(this,name,parent,main);
 };
 const {POST}=require('../app/api/campaign/actions/route.ts');
+const {PATCH}=require('../app/api/campaign/route.ts');
 Module._load=originalLoad;
 function reset(){
  state=defaultState(); const a=content.archetypes[0];
@@ -50,4 +51,15 @@ test('mestre não sobrescreve rascunho de permissões desatualizado',async()=>{
  const policy=playerActionState(state).policy;
  assert.equal((await send({type:'policy',policy:{...policy,transfers:true},expectedPolicy:'stale'})).status,409);assert.equal(writes,0);
  assert.equal((await send({type:'policy',policy:{...policy,transfers:true},expectedPolicy:JSON.stringify(policy)})).status,200);assert.equal(state.playerActions.policy.transfers,true);
+});
+
+test('PATCH da ficha preserva CAS e reenvia o mesmo salvamento sem repetir custo ou log',async()=>{
+ reset();race=true;
+ const before=structuredClone(state.survivors[0]),after={...before,stress:1};
+ const body={id:'sheet-save',day:state.day,before,after,fearDelta:1,noiseDelta:1,logs:[{kind:'dados',text:'Teste do jogador'}]};
+ const patch=input=>PATCH(new Request('https://example.test/api/campaign?campanha=campaign',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)}));
+ const result=await patch(body);assert.equal(result.status,200);assert.equal(state.fear,5);assert.equal(state.noise,1);assert.equal(writes,2);
+ const replay=await patch(body);assert.equal(replay.status,200);assert.equal(writes,2);assert.equal(state.log.filter(row=>row.text==='Teste do jogador').length,1);
+ assert.equal((await patch({...body,after:{...after,stress:2}})).status,409);
+ authenticated=null;assert.equal((await patch(body)).status,401);
 });
