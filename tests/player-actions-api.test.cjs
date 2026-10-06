@@ -23,6 +23,7 @@ Module._load=function(name,parent,main){
 };
 const {POST}=require('../app/api/campaign/actions/route.ts');
 const {PATCH}=require('../app/api/campaign/route.ts');
+const {POST:spotlightPOST}=require('../app/api/campaign/spotlight/route.ts');
 Module._load=originalLoad;
 function reset(){
  state=defaultState(); const a=content.archetypes[0];
@@ -30,6 +31,20 @@ function reset(){
  actor=state.survivors[0].id;revision=1;authenticated={id:'player',email:'player@example.test'};origin=true;race=false;writes=0;
 }
 function send(body){return POST(new Request('https://example.test/api/campaign/actions?campanha=campaign',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}));}
+test('jogador adicionado a conflito existente pode pedir e cancelar Spotlight',async()=>{
+ reset();
+ const {createConflictScene}=require('../lib/conflict.ts');
+ state.conflict=createConflictScene({name:'Conflito existente',sceneNumber:1,day:state.day,time:'08:00',survivorIds:[]});
+ const spotlight=action=>spotlightPOST(new Request('https://example.test/api/campaign/spotlight?campanha=campaign',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action})}));
+ assert.equal((await spotlight('request')).status,403);assert.equal(writes,0);
+ state.conflict.survivorIds.push(actor);
+ const response=await spotlight('request');assert.equal(response.status,200);
+ assert.equal((await response.json()).state.publicConflict.spotlightRequested,true);
+ assert.deepEqual(state.conflict.spotlightRequests,[actor]);
+ assert.equal((await spotlight('cancel')).status,200);
+ assert.deepEqual(state.conflict.spotlightRequests,[]);
+ authenticated=null;assert.equal((await spotlight('request')).status,401);
+});
 test('endpoint exige sessão, mesma origem e associação; jogador não altera permissões nem finge outro ator',async()=>{
  reset();authenticated=null;assert.equal((await send({})).status,401);
  reset();origin=false;assert.equal((await send({})).status,403);

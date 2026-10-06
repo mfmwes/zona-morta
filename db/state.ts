@@ -144,6 +144,9 @@ export async function readCampaign(campaignId: string) {
   }
   if (!row) throw new Error("Falha ao iniciar campanha.");
   const state = preserveKnownSectors(JSON.parse(row.body) as GameState);
+  // O JSON pode trazer um ID legado ou de outra campanha após uma importação.
+  // As ações do jogador devem sempre usar a identidade do registro aberto.
+  state.campaignId = campaignId;
   // Apresentações antigas ficavam dentro do JSON principal e podiam tornar
   // toda leitura/projeção da campanha pesada. Migre uma vez para a tabela leve.
   const legacyPresentation = state.presentation;
@@ -170,7 +173,7 @@ export async function writeCampaign(campaignId: string, state: GameState, expect
   const now = new Date().toISOString();
   // A imagem apresentada à mesa é persistida separadamente. Nunca volte a
   // incorporar esse payload ao corpo principal da campanha.
-  const persisted = { ...state };
+  const persisted = { ...state, campaignId };
   delete persisted.presentation;
   delete persisted.publicConflict;
   delete persisted.publicShelterCommunity;
