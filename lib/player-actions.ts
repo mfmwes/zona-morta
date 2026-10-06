@@ -1,5 +1,5 @@
 import { addLog, survivorHex, survivorIsDown, survivorStats, type GameState } from "./game";
-import { collectLocationStock, finishPreparedSearch, pendingPlayerSearchOperation, prepareLocation, quickSearchOptions, rollSearchAccess, searchAreaSessionState, searchAreaState, startDeepSearch, startSearch } from "./hex-automation";
+import { collectLocationStock, finishPreparedSearch, pendingPlayerSearchOperation, prepareLocationForExploration, quickSearchOptions, rollSearchAccess, searchAreaSessionState, searchAreaState, startDeepSearch, startSearch } from "./hex-automation";
 import { moveSurvivors } from "./hex-actions";
 import { atSharedStorage, transferItem, transferProvisions } from "./inventory";
 import { survivorTimedCommitment } from "./activity";
@@ -72,6 +72,7 @@ export function projectPlayerActions(game: GameState, actorId: string): PublicPl
       availableAreas: areaStates.filter(({ state }) => state === "available").length,
       narrativeAreas: areaStates.filter(({ state }) => state === "narrative").length,
       stockUnits: prep?.stock.filter(row => row.remaining > 0).reduce((sum, row) => sum + row.remaining, 0) ?? 0,
+      apparentStockUnits: prep?.stock.filter(row => row.attemptId === undefined && row.remaining > 0).reduce((sum, row) => sum + row.remaining, 0) ?? 0,
       activeSearches: new Set([
         ...(prep?.attempts.filter(attempt => ["pending", "ready"].includes(attempt.status)).map(attempt => attempt.id) ?? []),
         ...state.operations.filter(operation => operation.type === "search" && operation.day === game.day && operation.scene === (game.scene ?? 1)
@@ -86,10 +87,17 @@ export function projectPlayerActions(game: GameState, actorId: string): PublicPl
         hexId, pointId: point.id, areaId: area.id, name: area.name, pointName: point.name, signal: area.signal,
         minutes: area.minutes, noise: area.noise, access: area.access, objectives,
         available: Boolean(permission) && state === "available" && !pendingPlayerSearchOperation(game, hexId, point.id, area.id), searchable: area.searchable !== false, state,
+        visibleOutcome: area.visibleOutcome ?? null,
       });
       for (const stock of prep?.stock.filter(s => s.areaId === area.id && s.remaining > 0) ?? []) {
         if (stock.attemptId && !prep?.attempts.some(a => a.id === stock.attemptId && a.status === "completed")) continue;
-        result.stock.push({ hexId, pointId: point.id, areaId: area.id, stockId: stock.id, name: stock.item.name, remaining: stock.remaining, accessible: area.access !== "blocked" && stock.accessible !== false });
+        result.stock.push({
+          hexId, pointId: point.id, areaId: area.id, stockId: stock.id, name: stock.item.name, remaining: stock.remaining,
+          accessible: area.access !== "blocked" && stock.accessible !== false,
+          source: stock.attemptId ? "search" : "apparent",
+          condition: stock.item.condition,
+          requiresFuelContainer: Boolean(stock.requiresFuelContainer),
+        });
       }
     }
   }
@@ -144,8 +152,7 @@ function executeCommand(game: GameState, actorId: string, cmd: PlayerCommand, di
   if (cmd.type === "prepare-search") {
     const point = game.hexes[cmd.hexId]?.points.find(p => p.id === cmd.pointId);
     if (cmd.hexId !== hexId || game.hexes[hexId]?.discovery !== "explorado" || !point?.revealed || point.clueTargetHex) return "Este local ainda não está disponível para exploração.";
-    prepareLocation(point);
-    return null;
+    return prepareLocationForExploration(game, cmd.hexId, cmd.pointId);
   }
   if (["search", "deep-search", "travel", "rest"].includes(cmd.type)) {
     const issue = playerTimedActionIssue(game, [actorId]); if (issue) return issue;
@@ -254,7 +261,8 @@ function executeCommand(game: GameState, actorId: string, cmd: PlayerCommand, di
     const point = game.hexes[cmd.hexId]?.points.find(p => p.id === cmd.pointId && p.revealed);
     const stock = point?.preparation?.stock.find(s => s.id === cmd.stockId);
     const area = point?.preparation?.areas.find(a => a.id === stock?.areaId);
-    if (cmd.hexId !== hexId || !stock || !area || area.access === "blocked" || !areaPermission(game, cmd.hexId, cmd.pointId, stock.areaId) || (stock.attemptId && !point?.preparation?.attempts.some(a => a.id === stock.attemptId && a.status === "completed"))) return "Este achado não está liberado para você.";
+    if (cmd.hexId !== hexId || !stock || !area || area.access === "blocked" || stock.accessible === false
+      || (stock.attemptId && !point?.preparation?.attempts.some(a => a.id === stock.attemptId && a.status === "completed"))) return "Este achado não está liberado para você.";
     if (point?.preparation?.collections.some(c => c.id === cmd.id)) return "Este identificador já foi usado em outra coleta.";
     return collectLocationStock(game, cmd.hexId, cmd.pointId, cmd.id, [{ stockId: cmd.stockId, ownerId: actorId, quantity: cmd.quantity }]);
   }
