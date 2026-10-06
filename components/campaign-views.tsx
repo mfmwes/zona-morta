@@ -1,6 +1,6 @@
 "use client";
 
-import { PlayerContextActions, type PlayerActionControls } from "@/components/player-actions-panel";
+import { MasterContextActions, PlayerContextActions, type MasterActionControls, type PlayerActionControls } from "@/components/player-actions-panel";
 
 import { useEffect, useMemo, useState } from "react";
 import { BookOpen, ChevronLeft, ChevronRight, Hammer, House, LayoutGrid, List, Moon, Package, Users } from "lucide-react";
@@ -28,7 +28,7 @@ import { createId } from "@/lib/id";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 
-export function ShelterPanel({ game, edit, playerPreview, playerSurvivorId, playerActions }: { game: GameState; edit: Edit; playerPreview: boolean; playerSurvivorId?: string | null; playerActions?: PlayerActionControls }) {
+export function ShelterPanel({ game, edit, playerPreview, playerSurvivorId, playerActions, masterActions }: { game: GameState; edit: Edit; playerPreview: boolean; playerSurvivorId?: string | null; playerActions?: PlayerActionControls; masterActions?: MasterActionControls }) {
   const [shelterNotes, setShelterNotes] = useState(game.shelter.notes);
   const [shelterName, setShelterName] = useState(game.shelter.name);
   const [cacheRecipient, setCacheRecipient] = useState("");
@@ -66,6 +66,7 @@ export function ShelterPanel({ game, edit, playerPreview, playerSurvivorId, play
 
   const resourcesContent = <>
     {playerActions && <PlayerContextActions game={game} controls={playerActions} context={{kind:"supplies"}} />}
+    {masterActions && !playerPreview && <details className="team-card"><summary>Depósitos e limites de retirada dos jogadores</summary><MasterContextActions game={game} controls={masterActions} context={{kind:"supplies"}} /></details>}
     <div className="flex items-center gap-2 mb-3"><Package size={18} /><h3 className="section-title">{hasShelter ? "Estoque do abrigo" : "Reservas do grupo"}</h3></div>
     <p className="intro-line mb-4">Comida e Água são contadas em porções: quatro porções formam uma unidade. Não desconte duas vezes o que saiu na mochila. {hasShelter ? "As reservas ficam na base." : "Registre aqui só o que o grupo transporta; confira a carga na ficção."}</p>
     <div className="shelter-resource-grid">
@@ -176,6 +177,7 @@ export function ShelterPanel({ game, edit, playerPreview, playerSurvivorId, play
 
   const routineContent = <div className="shelter-routine-grid">
     {playerActions && <PlayerContextActions game={game} controls={playerActions} context={{kind:"rest"}} />}
+    {masterActions && !playerPreview && <MasterContextActions game={game} controls={masterActions} context={{kind:"rest"}} />}
     <section className="panel panel-pad">
       <p className="dossier-title">Rotina / sobrevivência</p><h3 className="section-title mt-1">Anoitecer e provisões</h3>
       <p className="intro-line mt-3">Cada pessoa precisa de uma porção de Comida e uma de Água por dia. O consumo pessoal registrado na ficha é excluído da sugestão. Ao fechar o dia, o sistema usa porções soltas e, se necessário, itens físicos prontos das reservas compartilhadas.</p>

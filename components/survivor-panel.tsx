@@ -1,6 +1,6 @@
 "use client";
 
-import { PlayerContextActions, type PlayerActionControls } from "@/components/player-actions-panel";
+import { MasterContextActions, PlayerContextActions, type MasterActionControls, type PlayerActionControls } from "@/components/player-actions-panel";
 /* eslint-disable @next/next/no-img-element -- local portraits are reduced to small data URLs before storage. */
 
 import { useState, type ChangeEvent, type ReactNode } from "react";
@@ -313,7 +313,7 @@ function deadlineLabel(deadline: number | null | undefined) {
   return `dia ${Math.floor(deadline / 1440) + 1}, ${String(Math.floor((deadline % 1440) / 60)).padStart(2, "0")}:${String(deadline % 60).padStart(2, "0")}`;
 }
 
-export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, restPeers = [], onOpenConflict, playerActions }: { game: GameState; edit: Edit; playerPreview: boolean; playerMode?: boolean; restPeers?: RestPeer[]; onOpenConflict?: () => void; playerActions?: PlayerActionControls }) {
+export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, restPeers = [], onOpenConflict, playerActions, masterActions }: { game: GameState; edit: Edit; playerPreview: boolean; playerMode?: boolean; restPeers?: RestPeer[]; onOpenConflict?: () => void; playerActions?: PlayerActionControls; masterActions?: MasterActionControls }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("resumo");
   const [notesDraft, setNotesDraft] = useState<{ id: string; source: string; value: string } | null>(null);
@@ -689,6 +689,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
                 </div>
               </section>
               <RestPlanner game={game} edit={edit} selected={selected} playerMode={playerMode} playerPreview={playerPreview} restPeers={restPeers} />
+              {masterActions && !playerPreview && <MasterContextActions game={game} controls={masterActions} context={{kind:"rest"}} />}
               {playerActions && <PlayerContextActions game={game} controls={playerActions.preview ? {...playerActions,actorId:selected.id} : playerActions} context={{kind:"rest"}} />}
             </div>
           </TabsContent>
@@ -752,6 +753,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
             </section>
           </TabsContent>
           <TabsContent value="inventario" className="character-tab-content">
+            {masterActions && !playerPreview && <details className="character-surface"><summary>Liberar entregas entre sobreviventes</summary><MasterContextActions game={game} controls={masterActions} context={{kind:"inventory"}} /></details>}
             {playerActions && <details className="character-surface"><summary>Entregas entre sobreviventes</summary><PlayerContextActions game={game} controls={playerActions.preview ? {...playerActions,actorId:selected.id} : playerActions} context={{kind:"inventory"}} /></details>}
             <div className="character-inventory-dashboard">
             <section className="character-surface"><SectionHeading index="01" title="Carga e provisões" aside={<b className="character-load-badge">{stats.carried} / {stats.capacity} espaços</b>} />

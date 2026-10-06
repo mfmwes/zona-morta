@@ -10,7 +10,7 @@ require.extensions['.ts']=loader;require.extensions['.tsx']=loader;
 const originalLoad=Module._load;
 Module._load=function(name,parent,main){if(name.startsWith('@/')){const base=path.join(__dirname,'..',name.slice(2));const actual=['','.ts','.tsx','.json'].map(ext=>base+ext).find(p=>fs.existsSync(p)&&fs.statSync(p).isFile());if(actual)return originalLoad.call(this,actual,parent,main);}return originalLoad.call(this,name,parent,main);};
 const {actionsInContext}=require('../lib/player-action-context.ts');
-const {PlayerContextActions}=require('../components/player-actions-panel.tsx');
+const {MasterContextActions,PlayerContextActions}=require('../components/player-actions-panel.tsx');
 Module._load=originalLoad;
 const React=require('react');
 const {renderToStaticMarkup}=require('react-dom/server');
@@ -46,4 +46,30 @@ test('inventário contém entregas; abrigo contém depósitos e cotas; cena não
  assert.ok(inventory.includes('Oferecer item ao sobrevivente'));assert.equal(inventory.includes('Depositar no abrigo'),false);assert.equal(inventory.includes('Retirar suprimentos liberados'),false);
  assert.ok(supplies.includes('Depositar no abrigo'));assert.ok(supplies.includes('Retirar suprimentos liberados'));assert.equal(supplies.includes('Oferecer item ao sobrevivente'),false);
  assert.ok(scene.includes('Selecione uma posição na cena acima'));assert.equal(scene.includes('Prévia da cena'),false);
+});
+
+function renderMaster(context, setup=()=>{}) {
+ const {game}=fixture();setup(game);
+ return renderToStaticMarkup(React.createElement(MasterContextActions,{game,context,controls:{canAct:true,send:async()=>{}}}));
+}
+test('liberações do mestre mostram apenas as áreas do local e as rotas do hex de partida',()=>{
+ const setup=game=>{
+  game.hexes['0,0'].discovery='explorado';
+  const point=(id,name)=>({id,name,revealed:true,preparation:{areas:[{id:id+'-area',name:name+' área',minutes:30,access:'open'}]}});
+  game.hexes['0,0'].points=[point('market','Mercado autorizado'),point('hospital','Hospital distante')];
+  game.playerActions={policy:{paused:false,transfers:true,deposits:true,rest:true,tokens:true,areas:[],routes:[{from:'0,0',to:'1,0'},{from:'1,0',to:'0,0'}],supplies:{food:2,water:2,items:{}}},operations:[],receipts:[],withdrawals:[],markers:[]};
+ };
+ const search=renderMaster({kind:'search',hexId:'0,0',pointId:'market'},setup);
+ assert.ok(search.includes('Mercado autorizado'));assert.equal(search.includes('Hospital distante'),false);
+ assert.equal(search.includes('Retiradas do depósito'),false);assert.equal(search.includes('Rotas liberadas'),false);
+ const travel=renderMaster({kind:'travel',destination:'0,0'},setup);
+ assert.equal((travel.match(/Remover liberação/g)||[]).length,1);assert.equal(travel.includes('Áreas de busca liberadas'),false);
+});
+test('mestre administra depósitos, entregas, descanso e tokens no contexto; visão geral contém pausa e pendências',()=>{
+ const supplies=renderMaster({kind:'supplies'}),inventory=renderMaster({kind:'inventory'}),rest=renderMaster({kind:'rest'}),scene=renderMaster({kind:'scene'});
+ assert.ok(supplies.includes('Retiradas do depósito'));assert.ok(supplies.includes('Depósito de itens próprios'));assert.equal(supplies.includes('Entregas entre sobreviventes'),false);
+ assert.ok(inventory.includes('Entregas entre sobreviventes'));assert.equal(inventory.includes('Retiradas do depósito'),false);
+ assert.ok(rest.includes('Conclusão de descanso'));assert.ok(scene.includes('Mover o próprio token'));assert.equal(scene.includes('Pausar ações'),false);
+ const overview=renderMaster({kind:'overview'});
+ assert.ok(overview.includes('Pausar ações dos jogadores'));assert.ok(overview.includes('Pedidos e consequências'));assert.equal(overview.includes('Áreas de busca liberadas'),false);assert.equal(overview.includes('Retiradas do depósito'),false);
 });

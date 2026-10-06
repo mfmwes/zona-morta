@@ -26,7 +26,7 @@ import { RecentEvents } from "@/components/recent-events";
 import { DayCloseDialog } from "@/components/day-close-dialog";
 import { TablePresentationControl, TablePresentationViewer } from "@/components/table-presentation";
 import { SceneBoard } from "@/components/scene-board";
-import { PlayerActionsPanel, TeamActionError } from "@/components/player-actions-panel";
+import { TeamActionError } from "@/components/player-actions-panel";
 import { MasterOverview } from "@/components/master-overview";
 import { addLog, displayTime, resetCityPreservingSurvivors, survivorHex, type GameState, type Point, type Survivor, type TablePresentation } from "@/lib/game";
 import { createId } from "@/lib/id";
@@ -504,13 +504,13 @@ export default function CampaignApp() {
   const publicConflictActive = role === "jogador"
     ? Boolean(game.publicConflict?.active)
     : playerPreview ? Boolean(game.conflict?.active) : false;
-  const activeTab = (playerPreview || role === "jogador") && tab === "acoes" ? "mapa" : readOnlyPreview && tab === "resumo"
+  const activeTab = tab === "acoes" ? (role === "mestre" && !playerPreview ? "resumo" : "mapa") : readOnlyPreview && tab === "resumo"
     ? (role === "jogador" ? "sobreviventes" : "mapa")
     : tab === "conflito" && readOnlyPreview && !publicConflictActive
       ? (role === "jogador" ? "sobreviventes" : "referencias")
       : tab;
   const title = { resumo: "Visão geral", mapa: "Exploração", cena: "Cena visual", sobreviventes: "Sobreviventes", comunidade: "PNJs e comunidade", abrigo: "Abrigo e reservas",
-    conflito: "Cena de conflito", ameacas: "Gerenciador de ameaças", referencias: "Arquivo de campo", acoes: "Ações da equipe", jogadores: "Jogadores e acessos" }[activeTab] || "Campanha";
+    conflito: "Cena de conflito", ameacas: "Gerenciador de ameaças", referencias: "Arquivo de campo", jogadores: "Jogadores e acessos" }[activeTab] || "Campanha";
   const masterExperience = role === "mestre" && !playerPreview;
   const masterPrimary = masterExperience
     ? [
@@ -530,7 +530,6 @@ export default function CampaignApp() {
       { value: "abrigo", label: "Abrigo", icon: House },
     ];
   const masterSecondary = masterExperience ? [
-    { value: "acoes", label: `Ações da equipe${game.playerActions?.operations.some(op => op.day === game.day && op.attention) ? " · pendências" : ""}`, icon: Users },
     ...(game.conflict?.active ? [{ value: "abrigo", label: "Abrigo e reservas", icon: House }] : [
       { value: "conflito", label: "Conflito", icon: Swords },
     ]),
@@ -546,6 +545,7 @@ export default function CampaignApp() {
     ...(role === "mestre" ? [{ value: "jogadores", label: "Jogadores", icon: Users }] : []),
   ];
   const nav = [...masterPrimary, ...masterSecondary];
+  const masterActionControls = masterExperience ? {canAct:status === "salvo",send:executeTeamAction,pending:Boolean(teamActionError)} : undefined;
   const playerActionControls = role === "jogador" && survivorId ? { actorId: survivorId, canAct: status === "salvo", send: executeTeamAction, pending: Boolean(teamActionError) } : playerPreview && game.survivors[0] ? {actorId:game.survivors[0].id,canAct:false,send:executeTeamAction,preview:true} : undefined;
 
   return <Tabs value={activeTab} onValueChange={setTab} className="w-full">
@@ -621,7 +621,6 @@ export default function CampaignApp() {
         <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
           <div><p className="eyebrow">Daggerheart / Zona Morta</p><h1 className="page-title mt-1">{title}</h1>
             <p className="intro-line mt-2">{activeTab === "resumo" ? "Veja primeiro o que está acontecendo agora. Aprofunde apenas a ferramenta necessária para a próxima decisão." :
-              activeTab === "acoes" ? (masterExperience ? "Defina liberações e acompanhe as situações que precisam da sua intervenção." : "Confirme sua participação e execute as atividades liberadas para seu sobrevivente.") :
               activeTab === "mapa" ? "Explore a partir do que o grupo avista. Registre apenas o que a ficção tornou real." :
               activeTab === "cena" ? (readOnlyPreview ? "Acompanhe a cena visual apresentada pelo mestre." : "Monte ambientes com paredes, portas, objetos e tokens sem transformar a cena em um mapa tático rígido.") :
               activeTab === "sobreviventes" ? (readOnlyPreview ? "Veja primeiro o que importa agora: condição, recursos e ações. Detalhes continuam disponíveis quando você precisar." : "Históricos, arquétipos e recursos prontos para jogar.") :
@@ -672,8 +671,7 @@ export default function CampaignApp() {
         {(status === "erro" || status === "conflito") && <div role="alert" className="mb-5 rounded-md border border-[#d5aaa1] bg-[#fff2ed] px-4 py-3 text-sm text-[#803b35]">
           <b>As alterações ainda estão nesta tela.</b> {saveError} Baixe uma cópia antes de recarregar, se precisar.
         </div>}
-        {activeTab === "acoes" && masterExperience && <PlayerActionsPanel game={game} master={masterExperience} survivorId={null} canAct={status === "salvo"} send={executeTeamAction} hasPending={Boolean(teamActionError)} />}
-        {activeTab === "resumo" && role === "mestre" && !readOnlyPreview && <MasterOverview game={game} onNavigate={setTab} />}
+        {activeTab === "resumo" && role === "mestre" && !readOnlyPreview && <MasterOverview game={game} onNavigate={setTab} masterActions={masterActionControls} />}
         {activeTab === "mapa" && <>
           {!readOnlyPreview && <div className="panel scene-control-panel mb-5">
             <section className="scene-control-section scene-pressure-section">
@@ -740,7 +738,7 @@ export default function CampaignApp() {
               <p className="scene-supplies-note">Comida e Água em porções (4 = 1 unidade); Peças em unidades. Sem abrigo, registre apenas o que o grupo consegue transportar.</p>
             </section>
           </div>}
-          <HexExplorer key={game.campaignId} game={communityView} edit={edit} playerPreview={readOnlyPreview} teamPeers={restPeers} playerActions={playerActionControls} />
+          <HexExplorer key={game.campaignId} game={communityView} edit={edit} playerPreview={readOnlyPreview} teamPeers={restPeers} playerActions={playerActionControls} masterActions={masterActionControls} />
           {!readOnlyPreview && <div className="panel panel-pad mt-5 flex flex-wrap items-center gap-3">
             <div className="mr-auto"><b>Relógio da expedição</b><p className="text-xs subtle">Ao anoitecer, registre o descanso na ficha, mesmo sem abrigo.</p></div>
             {[30,60,120].map(amount=><Button key={amount} size="sm" variant="outline" disabled={game.minutes+amount>=1440}
@@ -768,10 +766,10 @@ export default function CampaignApp() {
             </Dialog>
           </div>}
         </>}
-        {activeTab === "cena" && <SceneBoard game={previewActionGame} edit={edit} playerPreview={readOnlyPreview} playerActions={playerActionControls} />}
-        {activeTab === "sobreviventes" && <SurvivorPanel game={game} edit={edit} playerPreview={readOnlyPreview} playerMode={role === "jogador"} restPeers={restPeers} onOpenConflict={() => setTab("conflito")} playerActions={playerActionControls} />}
+        {activeTab === "cena" && <SceneBoard game={previewActionGame} edit={edit} playerPreview={readOnlyPreview} playerActions={playerActionControls} masterActions={masterActionControls} />}
+        {activeTab === "sobreviventes" && <SurvivorPanel game={game} edit={edit} playerPreview={readOnlyPreview} playerMode={role === "jogador"} restPeers={restPeers} onOpenConflict={() => setTab("conflito")} playerActions={playerActionControls} masterActions={masterActionControls} />}
         {activeTab === "comunidade" && <NpcPanel game={communityView} edit={edit} playerPreview={readOnlyPreview} />}
-        {activeTab === "abrigo" && <ShelterPanel game={communityView} edit={edit} playerPreview={readOnlyPreview} playerSurvivorId={role === "jogador" ? survivorId : null} playerActions={playerActionControls} />}
+        {activeTab === "abrigo" && <ShelterPanel game={communityView} edit={edit} playerPreview={readOnlyPreview} playerSurvivorId={role === "jogador" ? survivorId : null} playerActions={playerActionControls} masterActions={masterActionControls} />}
         {activeTab === "conflito" && role === "mestre" && !playerPreview && <ConflictSceneManager game={game} edit={edit} />}
         {activeTab === "conflito" && readOnlyPreview && publicConflictActive && <PlayerConflictScene game={game} selfId={role === "jogador" ? survivorId : null} />}
         {activeTab === "ameacas" && role === "mestre" && !playerPreview && <section className="panel panel-pad"><ThreatManager game={game} edit={edit} /></section>}

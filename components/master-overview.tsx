@@ -1,6 +1,8 @@
 "use client";
 
 import { AlertTriangle, Clock3, House, Map, Package, Search, ShieldAlert, Swords, Users, Wrench } from "lucide-react";
+import { MasterContextActions, type MasterActionControls } from "@/components/player-actions-panel";
+import { playerActionState } from "@/lib/player-actions";
 import { Button } from "@/components/ui/button";
 import { absoluteMinutes, displayTime, survivorPositionGroups, type GameState } from "@/lib/game";
 import { survivorTimedCommitment } from "@/lib/activity";
@@ -9,6 +11,7 @@ import { projectProgress } from "@/lib/shelter-projects";
 
 type Props = {
   game: GameState;
+  masterActions?: MasterActionControls;
   onNavigate: (tab: string) => void;
 };
 
@@ -24,7 +27,7 @@ function minutesLabel(minutes: number) {
   return rest ? `${hours}h ${rest}min` : `${hours}h`;
 }
 
-export function MasterOverview({ game, onNavigate }: Props) {
+export function MasterOverview({ game, onNavigate, masterActions }: Props) {
   const groups = survivorPositionGroups(game);
   const occupied = game.survivors
     .map(person => ({ person, commitment: survivorTimedCommitment(game, person.id) }))
@@ -54,6 +57,7 @@ export function MasterOverview({ game, onNavigate }: Props) {
   const exposed = game.survivors.filter(person => person.infection === "Exposto");
   const nowAbsolute = absoluteMinutes(game);
 
+  const hasActionAttention = playerActionState(game).operations.some(op => op.day === game.day && op.attention);
   const attention = [
     ...(game.conflict?.active ? [{
       id: "conflict",
@@ -128,9 +132,11 @@ export function MasterOverview({ game, onNavigate }: Props) {
           {attention.length ? attention.map(item => <article key={item.id} className={`master-overview-attention-item is-${item.tone}`}>
             <span><b>{item.title}</b><small>{item.detail}</small></span>
             <Button size="sm" variant="outline" onClick={() => onNavigate(item.action)}>{item.actionLabel}</Button>
-          </article>) : <div className="master-overview-clear"><span>Sem pendências urgentes.</span><small>A mesa pode seguir a exploração normalmente.</small></div>}
+          </article>) : !hasActionAttention && <div className="master-overview-clear"><span>Sem pendências urgentes.</span><small>A mesa pode seguir a exploração normalmente.</small></div>}
         </div>
       </section>
+
+      {masterActions && <MasterContextActions game={game} controls={masterActions} context={{kind:"overview"}} />}
 
       <section className="master-overview-card">
         <header><div><Search size={18} /><span><b>Em andamento</b><small>Buscas e trabalhos que já foram iniciados.</small></span></div></header>

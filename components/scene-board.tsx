@@ -1,6 +1,6 @@
 "use client";
 
-import { PlayerContextActions, type PlayerActionControls } from "@/components/player-actions-panel";
+import { MasterContextActions, PlayerContextActions, type MasterActionControls, type PlayerActionControls } from "@/components/player-actions-panel";
 
 import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
 import {
@@ -262,7 +262,7 @@ function withAttachedFixtures(scene: SceneBoardScene, ids: string[]) {
   return [...expanded];
 }
 
-export function SceneBoard({ game, edit, playerPreview, playerActions }: { game: GameState; edit: Edit; playerPreview: boolean; playerActions?: PlayerActionControls }) {
+export function SceneBoard({ game, edit, playerPreview, playerActions, masterActions }: { game: GameState; edit: Edit; playerPreview: boolean; playerActions?: PlayerActionControls; masterActions?: MasterActionControls }) {
   const readonly = playerPreview;
   const [playerPosition, setPlayerPosition] = useState<{sceneId:string;x:number;y:number}|null>(null);
   const board = useMemo(
@@ -702,7 +702,7 @@ export function SceneBoard({ game, edit, playerPreview, playerActions }: { game:
     <div><p className="dossier-title">Cena visual</p><h2 className="section-title mt-1">{readonly ? "Nenhuma cena está sendo apresentada" : "Comece com uma tela em branco"}</h2>
       <p className="intro-line mt-2">{readonly ? "Quando o mestre apresentar uma cena ela aparecerá aqui." : "Monte corredores, portas, objetos e posições sem transformar o jogo em um mapa tático rígido."}</p></div>
     {!readonly && <Button onClick={openCreateScene}><Plus size={16} /> Criar primeira cena</Button>}
-  </section>{creationDialog}</>;
+  </section>{masterActions && !readonly && <details className="team-card"><summary>Liberar tokens e marcações dos jogadores</summary><MasterContextActions game={game} controls={masterActions} context={{kind:"scene"}} /></details>}{creationDialog}</>;
 
   const live = board.activeSceneId === scene.id && scene.visibleToPlayers;
   const walls = scene.objects.filter(object => object.kind === "wall");
@@ -868,6 +868,7 @@ export function SceneBoard({ game, edit, playerPreview, playerActions }: { game:
             </div>
           </div>
         </div>
+        {masterActions && !readonly && <details className="team-card"><summary>Liberar tokens e marcações dos jogadores</summary><MasterContextActions game={game} controls={masterActions} context={{kind:"scene"}} /></details>}
         {playerActions && <PlayerContextActions game={game} controls={playerActions} context={{kind:"scene",position:playerPosition?.sceneId===scene.id?playerPosition:undefined}} />}
         <footer className="scene-hint">
           {tool === "wall" ? "Arraste para desenhar. Pontas próximas se encaixam automaticamente e linhas quase retas são alinhadas."

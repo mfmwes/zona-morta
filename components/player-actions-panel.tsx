@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Check, Footprints, Handshake, MapPin, Package, Search, ShieldCheck, Users } from "lucide-react";
+import { Check, Footprints, Handshake, MapPin, Package, Search, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, Pick } from "@/components/game-controls";
 import { type PlayerActionPolicy } from "@/lib/player-actions-types";
@@ -16,6 +16,13 @@ const labels: Record<string, string> = { open: "Vasculhar", food: "Comida", wate
 const operationLabels = { search: "Busca", travel: "Viagem", transfer: "Entrega", rest: "Descanso", exception: "Pedido ao mestre" };
 export type Send = (payload: Record<string, unknown>) => Promise<void>;
 
+export type MasterActionControls = { canAct: boolean; send: Send; pending?: boolean };
+export type MasterActionContext = PlayerActionContext | { kind: "overview" };
+
+export function MasterContextActions({game, controls, context}: {game:GameState; controls:MasterActionControls; context:MasterActionContext}) {
+  return <PlayerActionsPanel game={game} master survivorId={null} canAct={controls.canAct} send={controls.send} context={context} hasPending={controls.pending} />;
+}
+
 export type PlayerActionControls = { actorId: string; canAct: boolean; send: Send; pending?: boolean; preview?: boolean };
 
 export function PlayerContextActions({game, controls, context}: {game:GameState; controls:PlayerActionControls; context:PlayerActionContext}) {
@@ -23,7 +30,7 @@ export function PlayerContextActions({game, controls, context}: {game:GameState;
 }
 
 export function PlayerActionsPanel({ game, master, survivorId, canAct, send, context, hasPending = false, preview = false }: {
-  game: GameState; master: boolean; survivorId: string | null; canAct: boolean; send: Send; context?: PlayerActionContext; hasPending?: boolean; preview?: boolean;
+  game: GameState; master: boolean; survivorId: string | null; canAct: boolean; send: Send; context: MasterActionContext; hasPending?: boolean; preview?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -46,12 +53,12 @@ export function PlayerActionsPanel({ game, master, survivorId, canAct, send, con
     } finally { setBusy(false); }
   }
   return <section className="team-actions-panel">
-    {!context && <header className="team-actions-intro"><ShieldCheck size={26} /><div><h2>Ações da equipe</h2><p>{master ? "Libere atividades uma vez. A equipe executa dentro desses limites; exceções e consequências continuam com você." : "Aja com as liberações do mestre. Você confirma apenas a participação e os recursos do seu sobrevivente."}</p></div></header>}
+
     {!canAct && <p className="team-notice">{preview?"Prévia do jogador: as ações aparecem no contexto, mas sua execução está desativada nesta visualização.":"Aguarde o salvamento das alterações da campanha antes de agir."}</p>}
     {error && <div className="team-error" role="alert"><p>{error}</p>{canRetry && hasPending && <Button size="sm" variant="outline" disabled={busy || !canAct} onClick={() => perform(JSON.parse(retry.current!.signature).input)}>Tentar novamente a mesma ação</Button>}</div>}
     {notice && <p className="team-notice" role="status">{notice}</p>}
     <fieldset disabled={busy || !canAct} className="team-actions-fieldset" aria-busy={busy}>
-      {master ? <MasterPermissions game={game} perform={perform} /> : survivorId && context && <PlayerActivities game={game} actorId={survivorId} perform={perform} context={context} />}
+      {master ? <MasterPermissions game={game} perform={perform} context={context} /> : survivorId && context.kind !== "overview" && <PlayerActivities game={game} actorId={survivorId} perform={perform} context={context} />}
     </fieldset>
   </section>;
 }
@@ -59,7 +66,7 @@ export class TeamActionError extends Error {
   constructor(message: string, public rejected = false) { super(message); }
 }
 
-function MasterPermissions({ game, perform }: { game: GameState; perform: (payload: Record<string, unknown>) => Promise<boolean> }) {
+function MasterPermissions({ game, perform, context }: { game: GameState; perform: (payload: Record<string, unknown>) => Promise<boolean>; context:MasterActionContext }) {
   const state = playerActionState(game);
   const policy = state.policy;
   const [draft, setDraft] = useState<{ source: string; value: PlayerActionPolicy } | null>(null);
@@ -67,9 +74,9 @@ function MasterPermissions({ game, perform }: { game: GameState; perform: (paylo
   function change(fn: (value: PlayerActionPolicy) => void) {
     const value = structuredClone(config); fn(value); setDraft({ source: draft?.source ?? JSON.stringify(policy), value });
   }
-  const prepared = Object.entries(game.hexes).flatMap(([hexId, hex]) => hex.discovery === "explorado" ? hex.points.filter(p => p.revealed && p.preparation).flatMap(point => point.preparation!.areas.map(area => ({ hexId, point, area }))) : []);
+  const prepared = Object.entries(game.hexes).flatMap(([hexId, hex]) => context.kind === "search" && hexId === context.hexId && hex.discovery === "explorado" ? hex.points.filter(p => p.id === context.pointId && p.revealed && p.preparation).flatMap(point => point.preparation!.areas.map(area => ({ hexId, point, area }))) : []);
   const visibleHexes = Object.entries(game.hexes).filter(([, hex]) => hex.discovery !== "desconhecido");
-  const [from, setFrom] = useState(game.partyHex);
+  const [from] = useState(context.kind === "travel" ? context.destination ?? game.partyHex : game.partyHex);
   const [to, setTo] = useState("");
   const routeOptions = visibleHexes.filter(([id]) => {
     const [q, r] = from.split(",").map(Number), [tq, tr] = id.split(",").map(Number);
@@ -77,30 +84,35 @@ function MasterPermissions({ game, perform }: { game: GameState; perform: (paylo
   }).map(([value, h]) => ({ value, label: h.sector?.name ?? `Hex ${value}` }));
   const destination = routeOptions.some(o => o.value === to) ? to : routeOptions[0]?.value ?? "";
   const alerts = state.operations.filter(op => op.attention && op.day === game.day);
+  const switches = context.kind === "overview" ? [["paused", "Pausar ações dos jogadores"]] as const
+    : context.kind === "inventory" ? [["transfers", "Entregas entre sobreviventes, com confirmação"]] as const
+    : context.kind === "supplies" ? [["deposits", "Depósito de itens próprios no abrigo"]] as const
+    : context.kind === "rest" ? [["rest", "Conclusão de descanso com confirmação de todos"]] as const
+    : context.kind === "scene" ? [["tokens", "Mover o próprio token e marcar posições reveladas"]] as const : [];
   return <>
-    <section className="team-card"><h3><Users size={18} /> Liberações da campanha</h3>
-      <div className="team-policy-options">{([['paused','Pausar ações da equipe'],['transfers','Entregas entre sobreviventes, com confirmação'],['deposits','Depósito de itens próprios no abrigo'],['rest','Conclusão de descanso com confirmação de todos'],['tokens','Mover o próprio token e marcar posições reveladas']] as const).map(([key, label]) => <label key={key}><input type="checkbox" checked={config[key]} onChange={e => change(p => { p[key] = e.target.checked; })} />{label}</label>)}</div>
-      <p className="subtle">Conflitos suspendem buscas, viagens e descansos. Falhas de acesso, Medo, barulho elevado e novos acontecimentos pausam as operações concluídas para você resolver a consequência.</p>
-    </section>
-    <section className="team-card"><h3><Search size={18} /> Áreas de busca liberadas</h3><p>As áreas precisam estar preparadas e reveladas. A tabela, a dificuldade e os achados não sorteados continuam reservados.</p>
+    {switches.length > 0 && <section className="team-card"><h3><Users size={18} /> {context.kind === "overview" ? "Controle da mesa" : "Liberação para jogadores"}</h3>
+      <div className="team-policy-options">{switches.map(([key, label]) => <label key={key}><input type="checkbox" checked={config[key]} onChange={e => change(p => { p[key] = e.target.checked; })} />{label}</label>)}</div>
+      {context.kind === "overview" && <p className="subtle">Conflitos suspendem buscas, viagens e descansos. Falhas de acesso, Medo, barulho elevado e novos acontecimentos pausam as ações para você resolver a consequência.</p>}
+    </section>}
+    {context.kind === "search" && <section className="team-card"><h3><Search size={18} /> Áreas de busca liberadas</h3><p>As áreas precisam estar preparadas e reveladas. A tabela, a dificuldade e os achados não sorteados continuam reservados.</p>
       {prepared.length ? prepared.map(({ hexId, point, area }) => {
         const selected = config.areas.find(a => a.hexId === hexId && a.pointId === point.id && a.areaId === area.id);
         return <div className="team-area-policy" key={hexId + point.id + area.id}>
           <label><input type="checkbox" checked={Boolean(selected)} onChange={e => change(p => { p.areas = p.areas.filter(a => !(a.hexId === hexId && a.pointId === point.id && a.areaId === area.id)); if (e.target.checked) p.areas.push({ hexId, pointId: point.id, areaId: area.id, objectives: ['open'] }); })} /><span><b>{point.name} / {area.name}</b><small>Hex {hexId} · {area.minutes} min · {area.access === 'blocked' ? 'Bloqueado na ficção' : area.access === 'risk' ? 'Exige teste de acesso' : 'Acesso livre'}</small></span></label>
           {selected && <div className="team-objectives">{Object.entries(labels).map(([key, label]) => <label key={key}><input type="checkbox" checked={selected.objectives.includes(key as typeof selected.objectives[number])} onChange={e => change(p => { const target = p.areas.find(a => a.hexId === hexId && a.pointId === point.id && a.areaId === area.id)!; const next = e.target.checked ? [...target.objectives, key as typeof target.objectives[number]] : target.objectives.filter(o => o !== key); target.objectives = next.length ? next : ['open']; })} />{label}</label>)}</div>}
         </div>;
-      }) : <p className="team-empty">Prepare e revele um local no mapa para liberar suas áreas aqui.</p>}
-    </section>
-    <section className="team-card"><h3><Footprints size={18} /> Rotas liberadas</h3><p>Autorize cada sentido do trajeto. Os jogadores confirmam participação antes da partida.</p>
-      <div className="team-form-row"><Pick label="Partida" value={from} options={visibleHexes.map(([value,h]) => ({value,label:h.sector?.name ?? `Hex ${value}`}))} onChange={setFrom} /><Pick label="Destino adjacente" value={destination} options={routeOptions} onChange={setTo} /><Button variant="outline" disabled={!destination} onClick={() => change(p => { if (!p.routes.some(r => r.from === from && r.to === destination)) p.routes.push({from,to:destination}); })}>Liberar trajeto</Button></div>
-      {config.routes.map(r => <div className="team-route" key={r.from+'>'+r.to}><span>{game.hexes[r.from]?.sector?.name ?? r.from} → {game.hexes[r.to]?.sector?.name ?? r.to}</span><Button size="sm" variant="ghost" onClick={() => change(p => {p.routes=p.routes.filter(x=>x.from!==r.from || x.to!==r.to);})}>Remover liberação</Button></div>)}
-    </section>
-    <section className="team-card"><h3><Package size={18} /> Retiradas do depósito</h3><p>Limite por sobrevivente, por dia. Retirar e devolver não renova a cota. Zero mantém a retirada reservada ao mestre.</p>
+      }) : <p className="team-empty">Prepare e revele este local para liberar suas áreas aqui.</p>}
+    </section>}
+    {context.kind === "travel" && <section className="team-card"><h3><Footprints size={18} /> Rotas liberadas</h3><p>Autorize cada sentido do trajeto. Os jogadores confirmam participação antes da partida.</p>
+      <div className="team-form-row"><p>Partida: <b>{game.hexes[from]?.sector?.name ?? `Hex ${from}`}</b></p><Pick label="Destino adjacente" value={destination} options={routeOptions} onChange={setTo} /><Button variant="outline" disabled={!destination} onClick={() => change(p => { if (!p.routes.some(r => r.from === from && r.to === destination)) p.routes.push({from,to:destination}); })}>Liberar trajeto</Button></div>
+      {config.routes.filter(r => r.from === from).map(r => <div className="team-route" key={r.from+'>'+r.to}><span>{game.hexes[r.from]?.sector?.name ?? r.from} → {game.hexes[r.to]?.sector?.name ?? r.to}</span><Button size="sm" variant="ghost" onClick={() => change(p => {p.routes=p.routes.filter(x=>x.from!==r.from || x.to!==r.to);})}>Remover liberação</Button></div>)}
+    </section>}
+    {context.kind === "supplies" && <section className="team-card"><h3><Package size={18} /> Retiradas do depósito</h3><p>Limite por sobrevivente, por dia. Retirar e devolver não renova a cota. Zero mantém a retirada reservada ao mestre.</p>
       <div className="team-form-row">{(['food','water'] as const).map(resource=><Field key={resource} label={resource==='food'?'Porções de Comida':'Porções de Água'} type="number" value={String(config.supplies[resource])} onChange={value=>change(p=>{p.supplies[resource]=Math.max(0,Math.min(20,Number(value)||0));})}/>)}</div>
       {(game.shelter.inventory??[]).map(item=><Field key={item.id} label={`${item.name} · ${item.qty} no depósito · limite diário`} type="number" value={String(config.supplies.items[item.id]??0)} onChange={value=>change(p=>{p.supplies.items[item.id]=Math.max(0,Math.min(20,Number(value)||0));})}/>)}
-    </section>
-    <div className="team-policy-save"><Button disabled={!draft} onClick={async()=>{if(await perform({type:'policy',policy:config,expectedPolicy:draft?.source??JSON.stringify(policy)})) setDraft(null);}}>Salvar liberações</Button><Button variant="outline" disabled={!draft} onClick={()=>setDraft(null)}>Descartar rascunho</Button><small>As liberações passam a valer após o salvamento.</small></div>
-    <section className="team-card"><h3>Atenção do mestre · {alerts.length}</h3>{alerts.length?alerts.map(op=><div className="team-operation" key={op.id}><b>{operationLabels[op.type]} · {game.survivors.find(p=>p.id===op.initiatorId)?.name}</b><p>{op.attention}</p><p>{op.purpose}</p>{op.result&&<p>{op.result}</p>}<Button size="sm" variant="outline" onClick={()=>perform({type:'review',operationId:op.id})}>Marcar como resolvido</Button></div>):<p className="team-empty">Nenhum pedido ou consequência aguardando avaliação.</p>}<p className="subtle">Após resolver a consequência, desmarque a pausa e salve as liberações. Bloqueios e exceções são tratados pelas ferramentas habituais.</p></section>
+    </section>}
+    {context.kind !== "overview" || draft ? <div className="team-policy-save"><Button disabled={!draft} onClick={async()=>{if(await perform({type:'policy',policy:config,expectedPolicy:draft?.source??JSON.stringify(policy)})) setDraft(null);}}>Salvar liberações</Button><Button variant="outline" disabled={!draft} onClick={()=>setDraft(null)}>Descartar rascunho</Button><small>As liberações passam a valer após o salvamento.</small></div> : null}
+    {context.kind === "overview" && <section className="team-card"><h3>Pedidos e consequências · {alerts.length}</h3>{alerts.length?alerts.map(op=><div className="team-operation" key={op.id}><b>{operationLabels[op.type]} · {game.survivors.find(p=>p.id===op.initiatorId)?.name}</b><p>{op.attention}</p><p>{op.purpose}</p>{op.result&&<p>{op.result}</p>}<Button size="sm" variant="outline" onClick={()=>perform({type:'review',operationId:op.id})}>Marcar como resolvido</Button></div>):<p className="team-empty">Nenhum pedido ou consequência aguardando avaliação.</p>}<p className="subtle">Após resolver a consequência, desmarque a pausa acima e salve as liberações. Bloqueios e exceções são tratados pelas ferramentas habituais.</p></section>}
   </>;
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { PlayerContextActions, type PlayerActionControls } from "@/components/player-actions-panel";
+import { MasterContextActions, PlayerContextActions, type MasterActionControls, type PlayerActionControls } from "@/components/player-actions-panel";
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -52,11 +52,11 @@ function travelDurationLabel(minutes: number) {
   return `${hours}h${String(rest).padStart(2, "0")}`;
 }
 
-export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerActions }: {
+export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerActions, masterActions }: {
   game: GameState;
   edit: Edit;
   playerPreview: boolean;
-  playerActions?: PlayerActionControls;
+  playerActions?: PlayerActionControls; masterActions?: MasterActionControls;
   teamPeers?: { id: string; name: string; hex?: string; portrait?: string }[];
 }) {
   const [selectedId, setSelected] = useState(game.partyHex);
@@ -265,6 +265,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
           <b>{selected === "0,0" ? "Desde o início" : "Sinal da borda"}</b><p className="mt-1">{record.sector.border}</p>
         </div>}
         {record.signs && <p className="mt-3 text-sm"><b>Outros sinais:</b> {record.signs}</p>}
+        {masterActions && !playerPreview && <details className="hex-player-travel mt-3"><summary><Footprints size={15} /> Liberar rotas a partir deste hex</summary><MasterContextActions key={selected+"routes"} game={game} controls={masterActions} context={{kind:"travel",destination:selected}} /></details>}
         {playerActions && <details className="hex-player-travel mt-3"><summary><Footprints size={15} /> {selected === game.publicPlayerActions?.hexId ? "Viagens a partir deste hex" : "Viajar para este hex"}</summary><PlayerContextActions key={selected+"travel"} game={game} controls={playerActions} context={{kind:"travel",destination:selected === game.publicPlayerActions?.hexId?undefined:selected}} /></details>}
         {!playerPreview && <>
           <div className="next-step-card mt-4 rounded-md border p-3">
@@ -402,6 +403,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
               <div className="hex-point-heading"><div><p className="dossier-title">{point.clueTargetHex ? "Pista" : point.kind === "comércio" ? "Comércio neste setor" : "Local neste setor"}</p><b>{point.name}</b></div>
                 {!playerPreview && <label className="flex items-center gap-2 text-xs whitespace-nowrap"><Switch size="sm" checked={point.revealed}
                   onCheckedChange={checked => edit(draft => { const found = draft.hexes[selected].points.find(p=>p.id===point.id); if(found) found.revealed=checked; })} /> Público</label>}</div>
+              {masterActions && !playerPreview && !point.clueTargetHex && <details className="hex-player-search mt-3"><summary><Search size={15} /> Liberar buscas neste local</summary><MasterContextActions key={selected+point.id+"permissions"} game={game} controls={masterActions} context={{kind:"search",hexId:selected,pointId:point.id}} /></details>}
               {playerPreview && playerActions && game.publicPlayerActions?.hexId === selected && <details className="hex-player-search mt-3"><summary><Search size={15} /> Buscar e recolher neste local</summary><PlayerContextActions key={selected+point.id} game={game} controls={playerActions} context={{kind:"search",hexId:selected,pointId:point.id}} /></details>}
               {point.signal && <p className="mt-1">{point.signal}</p>}
               {!playerPreview && point.clueTargetHex && <Button size="sm" variant="outline" className="mt-2"
