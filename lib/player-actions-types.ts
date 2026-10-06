@@ -32,6 +32,7 @@ export type PlayerActionState = {
 const quantity = z.number().int().min(1).max(99);
 const base = { id, day: z.number().int().min(1).max(9999) };
 export const playerCommandSchema = z.discriminatedUnion("type", [
+  z.object({ ...base, type: z.literal("prepare-search"), hexId: id, pointId: id }).strict(),
   z.object({ ...base, type: z.literal("search"), hexId: id, pointId: id, areaId: id, objective, purpose: z.string().trim().min(1).max(240) }).strict(),
   z.object({ ...base, type: z.literal("travel"), destination: id }).strict(),
   z.object({ ...base, type: z.literal("rest"), kind: z.enum(["short", "long"]) }).strict(),
@@ -51,12 +52,14 @@ export const playerCommandSchema = z.discriminatedUnion("type", [
   z.object({ ...base, type: z.literal("clear-marker") }).strict(),
 ]);
 export type PlayerCommand = z.infer<typeof playerCommandSchema>;
+export type PublicSearchAreaState = "available" | "ongoing" | "deep-available" | "deep-ongoing" | "exhausted" | "searched" | "narrative";
 export type PublicPlayerActions = {
   policy: Omit<PlayerActionPolicy, "areas" | "routes" | "supplies">;
   actorId: string; hexId: string; busy: string | null;
   peers: { id: string; name: string; hex: string }[];
-  areas: { hexId: string; pointId: string; areaId: string; name: string; pointName: string; signal: string; minutes: number; noise: number; access: "open" | "risk" | "blocked"; objectives: string[]; available: boolean }[];
-  stock: { hexId: string; pointId: string; stockId: string; name: string; remaining: number; accessible: boolean }[];
+  locations: { hexId: string; pointId: string; pointName: string; prepared: boolean; areaCount: number; searchedAreas: number; availableAreas: number; narrativeAreas: number; stockUnits: number; activeSearches: number }[];
+  areas: { hexId: string; pointId: string; areaId: string; name: string; pointName: string; signal: string; minutes: number; noise: number; access: "open" | "risk" | "blocked"; objectives: string[]; available: boolean; searchable: boolean; state: PublicSearchAreaState }[];
+  stock: { hexId: string; pointId: string; areaId: string; stockId: string; name: string; remaining: number; accessible: boolean }[];
   routes: { destination: string; name: string; minutes: number }[];
   operations: Omit<TeamOperation, "itemSnapshot" | "plans">[];
   supplies: { key: string; itemId?: string; name: string; available: number; allowance: number }[];
