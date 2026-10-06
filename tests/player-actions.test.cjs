@@ -6,7 +6,7 @@ const ts = require('typescript');
 require.extensions['.ts'] = (module, path) => module._compile(ts.transpileModule(fs.readFileSync(path, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText, path);
 const { defaultState, initialSurvivor, content } = require('../lib/game.ts');
 const { assignCustomSector } = require('../lib/sectors.ts');
-const { prepareLocation, searchAreaSessionState, startSearch } = require('../lib/hex-automation.ts');
+const { prepareLocation, prepareLocationForExploration, registerVisibleStock, searchAreaSessionState, startSearch } = require('../lib/hex-automation.ts');
 const { applyPlayerAction, projectPlayerActions, setPlayerPolicy, playerActionState } = require('../lib/player-actions.ts');
 const { validPlayerActionState } = require('../lib/player-actions-types.ts');
 const { projectPlayerGame } = require('../lib/collaboration.ts');
@@ -102,17 +102,43 @@ test('buscas não exigem liberação e parâmetros forjados ou dias antigos não
  denied(f,f.ids[0],{type:'withdraw',resource:'food',quantity:-1},/inválidos/);
 });
 
+test('local legado já preparado recebe camada aparente quando o jogador abre',()=>{
+ const f=fixture();const point=f.game.hexes['0,0'].points[0];
+ assert.ok(point.preparation.areas.every(area=>area.visibleOutcome===undefined));
+ let view=projectPlayerActions(f.game,f.ids[0]);
+ assert.equal(view.locations[0].prepared,false);
+ ok(f,f.ids[0],{type:'prepare-search',hexId:'0,0',pointId:'market'});
+ view=projectPlayerActions(f.game,f.ids[0]);
+ assert.equal(view.locations[0].prepared,true);
+ const updated=f.game.hexes['0,0'].points[0];
+ assert.ok(updated.preparation.areas.every(area=>area.visibleOutcome==='item'||area.visibleOutcome==='none'));
+});
+
 test('jogador prepara automaticamente local revelado sem depender de ação do mestre',()=>{
  const f=fixture(); const point=f.game.hexes['0,0'].points[0]; delete point.preparation;
  let view=projectPlayerActions(f.game,f.ids[0]);
  assert.equal(view.locations[0].prepared,false);assert.equal(view.areas.length,0);
  ok(f,f.ids[0],{type:'prepare-search',hexId:'0,0',pointId:'market'});
  assert.ok(f.game.hexes['0,0'].points[0].preparation);
+ assert.ok(f.game.hexes['0,0'].points[0].preparation.areas.every(area=>area.visibleOutcome==='item'||area.visibleOutcome==='none'));
  view=projectPlayerActions(f.game,f.ids[0]);
  assert.equal(view.locations[0].prepared,true);assert.ok(view.areas.length>0);
+ assert.ok(view.areas.every(area=>area.visibleOutcome==='item'||area.visibleOutcome==='none'));
  assert.equal(f.game.log.some(entry=>entry.kind==='equipe'&&entry.text.includes('ação da equipe')),false);
  const other=fixture();delete other.game.hexes['0,0'].points[0].preparation;other.game.survivors[0].hex='1,0';
  denied(other,other.ids[0],{type:'prepare-search',hexId:'0,0',pointId:'market'},/disponível/);
+});
+
+test('item aparente em área narrativa é público e pode ser recolhido pelo jogador',()=>{
+ const f=fixture();const point=f.game.hexes['0,0'].points[0];
+ const area=point.preparation.areas.find(row=>row.searchable===false);assert.ok(area);
+ area.access='open';area.collectible=true;
+ assert.equal(registerVisibleStock(f.game,'0,0','market',area.id,'visible-narrative-player','Bebidas::Garrafa de água lacrada',1),null);
+ const view=projectPlayerActions(f.game,f.ids[0]);
+ const visible=view.stock.find(row=>row.stockId==='visible-narrative-player');
+ assert.ok(visible);assert.equal(visible.source,'apparent');assert.equal(visible.accessible,true);
+ ok(f,f.ids[0],{type:'collect',hexId:'0,0',pointId:'market',stockId:'visible-narrative-player',quantity:1});
+ assert.ok(f.game.survivors[0].inventory.some(item=>item.name==='Garrafa de água lacrada'));
 });
 
 test('jogador pode executar busca profunda plausível sem liberação manual do mestre',()=>{
@@ -131,6 +157,7 @@ test('jogador pode executar busca profunda plausível sem liberação manual do 
 });
 test('projeção mostra somente autorização local e não vaza preparação, tabela, dificuldade ou fichas dos colegas',()=>{
  const f=fixture(); f.game.hexes['0,0'].points[0].preparation.areas[0].difficulty=99;
+ assert.equal(prepareLocationForExploration(f.game,'0,0','market',()=>0.99),null);
  const own=projectPlayerGame(f.game,f.ids[0]);
  assert.equal(own.playerActions,undefined); assert.equal(own.survivors.length,1);
  assert.equal(own.publicPlayerActions.areas.length,f.game.hexes['0,0'].points[0].preparation.areas.length); assert.equal(own.hexes['0,0'].points[0].preparation,undefined);

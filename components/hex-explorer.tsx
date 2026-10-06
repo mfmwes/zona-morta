@@ -30,7 +30,7 @@ import { eventStatus, eventTriggerLabel, eventTriggerReady, generateHexContent }
 import { HexEventActionDialog, type HexEventActionRequest } from "@/components/hex-event-action-dialog";
 import { eventActionLinkLabels, eventActionUsed, hexEventActionLabels, suggestedEventActionKind } from "@/lib/hex-event-actions";
 import type { HexEventActionKind } from "@/lib/game";
-import { prepareHex, prepareLocation, searchAreaState } from "@/lib/hex-automation";
+import { prepareHex, prepareLocationForExploration, searchAreaState } from "@/lib/hex-automation";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 
@@ -414,6 +414,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
                   : "Revisar local";
                 const playerStatus = !location?.prepared ? "O sistema organiza as áreas ao abrir"
                   : location.activeSearches ? `${location.activeSearches} busca(s) em andamento`
+                  : location.apparentStockUnits ? `${location.apparentStockUnits} item(ns) aparente(s) à vista`
                   : location.stockUnits ? `${location.stockUnits} item(ns) aguardando coleta`
                   : `${location.searchedAreas}/${location.areaCount} áreas vasculhadas`;
                 return <div className="hex-point-session-flow">
@@ -436,7 +437,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
                   {deepAvailable > 0 && !activeAttempts.length && !stockRemaining && <small>{deepAvailable} cômodo(s) com busca profunda disponível</small>}
                 </div>
                 <Button size="sm" variant={activeAttempts.length || stockRemaining ? "default" : "outline"} disabled={Boolean(searchIssue)}
-                  onClick={() => { edit(draft => { const target = draft.hexes[selected].points.find(row => row.id === point.id); if (target) prepareLocation(target); }); setSheetOpen(false); setSearchRequest({ hexId: selected, pointId: point.id, participantIds: activeGroup?.hex === selected ? activeGroup.members.map(row => row.id) : [] }); }}>
+                  onClick={() => { edit(draft => { prepareLocationForExploration(draft, selected, point.id); }); setSheetOpen(false); setSearchRequest({ hexId: selected, pointId: point.id, participantIds: activeGroup?.hex === selected ? activeGroup.members.map(row => row.id) : [] }); }}>
                   <Search size={15} /> {actionLabel}
                 </Button>
                 {searchIssue && <p className="hex-point-session-issue">{searchIssue}</p>}

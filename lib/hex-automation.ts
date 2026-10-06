@@ -518,6 +518,46 @@ export function suggestVisibleStock(area: SearchArea, random = Math.random): Vis
     reason: catalog.name + " é plausível como algo já visível em “" + area.name + "” pela tabela “" + area.table + "”. Esta sugestão não consome busca, tempo ou Barulho.",
   };
 }
+
+export function prepareLocationForExploration(game: GameState, hexId: string, pointId: string, random = Math.random): string | null {
+  const point = pointAt(game, hexId, pointId);
+  if (!point || point.clueTargetHex) return "Este local não está disponível para exploração.";
+  prepareLocation(point);
+  const prep = point.preparation;
+  if (!prep) return "Não foi possível preparar este local.";
+
+  const established: string[] = [];
+  for (const area of prep.areas) {
+    const apparent = prep.stock.filter(row => row.areaId === area.id && row.attemptId === undefined);
+    if (apparent.length) {
+      area.visibleOutcome = "item";
+      continue;
+    }
+    if (area.visibleOutcome) continue;
+    const suggestion = suggestVisibleStock(area, random);
+    if (suggestion.kind === "none") {
+      area.visibleOutcome = "none";
+      continue;
+    }
+    const entry = content.catalog.find(row => catalogKey(row) === suggestion.catalogKey);
+    if (!entry || prep.stock.length >= 240) {
+      area.visibleOutcome = "none";
+      continue;
+    }
+    const id = createId();
+    prep.stock.push({
+      id,
+      areaId: area.id,
+      item: itemFromCatalog(entry, suggestion.quantity, "Íntegro", game.day),
+      remaining: suggestion.quantity,
+      accessible: area.collectible !== false,
+    });
+    area.visibleOutcome = "item";
+    established.push(`${suggestion.quantity} × ${entry.name} em ${area.name}`);
+  }
+  if (established.length) addLog(game, "busca", `${point.name}: itens aparentes estabelecidos automaticamente — ${established.join(" · ")}.`);
+  return null;
+}
 export function deepSearchCandidateKeys(area: SearchArea) {
   const table = lootDefinitions.find(row => row.table === area.table);
   if (!table) return [];

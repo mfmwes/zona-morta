@@ -9,7 +9,7 @@ import { content, survivorsAtHex, type GameState } from "@/lib/game";
 import { createId } from "@/lib/id";
 import { catalogKey } from "@/lib/inventory";
 import { searchAvailabilityError } from "@/lib/exploration";
-import { collectLocationStock, deepSearchLimit, deepSearchesUsed, finishPreparedSearch, declareSearchArea, depositExpeditionItems, locationScaleLabels, locationScaleOf, lootDefinitions, pendingPlayerSearchOperation, prepareLocation, quickSearchOptions, registerVisibleStock, resolveNoVisibleStock, resizeLocationPreparation, resolvePreparedSearch, searchAreaSessionState, searchAreaState, searchResult, startDeepSearch, suggestCollection, suggestVisibleStock, warehouseWorkers, type CollectionLine, type VisibleStockSuggestion } from "@/lib/hex-automation";
+import { collectLocationStock, deepSearchLimit, deepSearchesUsed, finishPreparedSearch, declareSearchArea, depositExpeditionItems, locationScaleLabels, locationScaleOf, lootDefinitions, pendingPlayerSearchOperation, prepareLocationForExploration, quickSearchOptions, registerVisibleStock, resolveNoVisibleStock, resizeLocationPreparation, resolvePreparedSearch, searchAreaSessionState, searchAreaState, searchResult, startDeepSearch, suggestCollection, suggestVisibleStock, warehouseWorkers, type CollectionLine, type VisibleStockSuggestion } from "@/lib/hex-automation";
 import { RollForm } from "@/components/roll-dialog";
 import type { LocationScale, SearchArea } from "@/lib/hex-automation-types";
 import { parallelTimeLabel, participantTimePreview, survivorTimedCommitment } from "@/lib/activity";
@@ -153,7 +153,7 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
     <DialogHeader><DialogTitle>Explorar {point?.name ?? "local removido"}</DialogTitle><DialogDescription>Escolha um cômodo, resolva a busca e recolha os achados. Preparação e ajustes avançados ficam disponíveis sem ocupar o fluxo principal.</DialogDescription></DialogHeader>
     <div className="hex-location-path"><span><small>Setor do mapa · Hex {request.hexId}</small><b>{hex?.sector?.name ?? "Não revelado"}</b></span><span><small>Local neste setor</small><b>{point?.name ?? "Removido"}</b></span></div>
     {available && <p role="alert" className="text-sm text-red-700">{available}</p>}
-    {!prep && point && <section className="hex-search-step"><h3>Preparar este local</h3><p className="text-sm subtle">Organiza áreas internas e preserva buscas antigas. Revise acesso e sinais antes de iniciar.</p><Button onClick={() => edit(draft => { const target = draft.hexes[request.hexId].points.find(row => row.id === request.pointId); if (target) prepareLocation(target); })}>Preparar áreas e buscas</Button></section>}
+    {!prep && point && <section className="hex-search-step"><h3>Preparar este local</h3><p className="text-sm subtle">Organiza áreas internas, resolve a camada de itens aparentes uma única vez e preserva buscas antigas.</p><Button onClick={() => edit(draft => { prepareLocationForExploration(draft, request.hexId, request.pointId); })}>Preparar exploração</Button></section>}
     {prep && area && <>
       <div className="hex-search-location-summary">
         <div>

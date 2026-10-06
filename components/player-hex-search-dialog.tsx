@@ -80,6 +80,8 @@ export function PlayerHexSearchDialog({
   const operation = view?.operations.find(op => ["forming", "access"].includes(op.status) && (!area || op.areaId === area.areaId));
   const stock = view?.stock ?? [];
   const stockUnits = stock.reduce((sum, row) => sum + row.remaining, 0);
+  const apparentStock = area ? stock.filter(row => row.areaId === area.areaId && row.source === "apparent") : [];
+  const apparentUnits = apparentStock.reduce((sum, row) => sum + row.remaining, 0);
   const member = Boolean(operation?.participantIds.includes(controls.actorId));
   const owner = operation?.initiatorId === controls.actorId;
   const deep = area?.state === "deep-available";
@@ -170,7 +172,7 @@ export function PlayerHexSearchDialog({
           <div>
             <span className="tag">{location.areaCount} áreas internas</span>
             <b>{location.searchedAreas} vasculhada(s) · {location.availableAreas} disponível(is)</b>
-            <small>{location.narrativeAreas} narrativa(s){location.stockUnits ? ` · ${location.stockUnits} item(ns) aguardando coleta` : ""}{location.activeSearches ? ` · ${location.activeSearches} busca(s) em andamento` : ""}</small>
+            <small>{location.narrativeAreas} narrativa(s){location.apparentStockUnits ? ` · ${location.apparentStockUnits} item(ns) à vista` : ""}{location.stockUnits ? ` · ${location.stockUnits} item(ns) no local` : ""}{location.activeSearches ? ` · ${location.activeSearches} busca(s) em andamento` : ""}</small>
           </div>
         </div>
 
@@ -197,12 +199,14 @@ export function PlayerHexSearchDialog({
             <div className="hex-search-area-list">
               {areas.map(row => {
                 const Icon = stateIcon(row.state);
-                const remaining = stock.filter(item => item.areaId === row.areaId).reduce((sum, item) => sum + item.remaining, 0);
+                const areaStock = stock.filter(item => item.areaId === row.areaId);
+                const remaining = areaStock.reduce((sum, item) => sum + item.remaining, 0);
+                const visible = areaStock.filter(item => item.source === "apparent").reduce((sum, item) => sum + item.remaining, 0);
                 return <button type="button" key={row.areaId}
                   className={`hex-search-area-card ${row.areaId === area?.areaId ? "is-active" : ""} is-${row.state}`}
                   aria-pressed={row.areaId === area?.areaId} onClick={() => selectArea(row.areaId)}>
                   <Icon size={16} aria-hidden="true" />
-                  <span><b>{row.name}</b><small>{stateLabels[row.state]}{remaining ? ` · ${remaining} item(ns) no local` : ""}</small></span>
+                  <span><b>{row.name}</b><small>{stateLabels[row.state]}{visible ? ` · ${visible} à vista` : remaining ? ` · ${remaining} item(ns) no local` : ""}</small></span>
                 </button>;
               })}
             </div>
@@ -218,6 +222,8 @@ export function PlayerHexSearchDialog({
               <p className="text-xs subtle">{area.searchable
                 ? `${area.minutes} min · Barulho +${area.noise} · ${area.access === "open" ? "acesso livre" : area.access === "risk" ? "acesso sob risco" : "acesso bloqueado"}.`
                 : "Este espaço existe na exploração, mas não concede uma rolagem própria de recursos."}</p>
+              {area.visibleOutcome === "none" && <div className="hex-visible-resolved"><Circle size={17} /><span><b>Nada evidente à vista</b><small>O restante deste cômodo depende de busca ou da exploração narrativa.</small></span></div>}
+              {area.visibleOutcome === "item" && <div className="hex-visible-resolved"><Search size={17} /><span><b>Item aparente</b><small>{apparentUnits > 0 ? apparentStock.map(row => `${row.remaining} × ${row.name}`).join(" · ") : "O item aparente deste cômodo já foi recolhido."}</small></span></div>}
             </section>}
 
             {area && !operation && (area.state === "available" || area.state === "deep-available") && <section className={`hex-search-step ${deep ? "hex-deep-search" : ""}`}>
@@ -283,7 +289,7 @@ export function PlayerHexSearchDialog({
             <Field label="Quantidade a recolher" type="number" value={quantity} onChange={setQuantity} />
             <div className="hex-search-stock-list">
               {stock.map(row => <div key={row.stockId} className={`hex-search-stock-row ${row.accessible ? "" : "is-locked"}`}>
-                <span><b>{row.name}</b><small>{areas.find(candidate => candidate.areaId === row.areaId)?.name ?? "Área"}</small></span>
+                <span><b>{row.name}</b><small>{row.source === "apparent" ? "À vista" : "Encontrado na busca"} · {areas.find(candidate => candidate.areaId === row.areaId)?.name ?? "Área"}{row.condition && row.condition !== "Íntegro" ? ` · ${row.condition}` : ""}{row.requiresFuelContainer ? " · exige galão vazio" : ""}</small></span>
                 <strong>{row.remaining}</strong>
                 <Button size="sm" disabled={busy || !row.accessible || !validCount || count > row.remaining || view?.policy.paused}
                   onClick={() => void perform({ type: "collect", hexId: row.hexId, pointId: row.pointId, stockId: row.stockId, quantity: count }, "Item recolhido para sua mochila.")}>Recolher</Button>

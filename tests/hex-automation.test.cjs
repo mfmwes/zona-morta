@@ -185,6 +185,19 @@ test('sugestão de item aparente é leve, contextual e não oferece equipamento 
   assert.equal(narrativeSuggestion.kind,'item');
 });
 
+test('preparar exploração resolve itens aparentes uma única vez em todos os cômodos', () => {
+  const f=campaign();delete f.point.preparation;
+  const beforeMinutes=f.game.minutes;
+  assert.equal(auto.prepareLocationForExploration(f.game,'0,0','market',()=>0),null);
+  let point=f.game.hexes['0,0'].points[0];
+  assert.ok(point.preparation.areas.every(area=>['item','none'].includes(area.visibleOutcome)));
+  assert.equal(f.game.minutes,beforeMinutes);
+  const snapshot=structuredClone(point.preparation);
+  assert.equal(auto.prepareLocationForExploration(f.game,'0,0','market',()=>{throw Error('não deve rerrolar');}),null);
+  point=f.game.hexes['0,0'].points[0];
+  assert.deepEqual(point.preparation,snapshot);
+});
+
 test('aceitar item aparente ou nada à vista resolve a camada do cômodo sem consumir busca', () => {
   const f=campaign();
   const beforeMinutes=f.game.minutes;
