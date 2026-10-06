@@ -509,7 +509,7 @@ export default function CampaignApp() {
   }
 
   async function importBackup(file: File) {
-    if (roleRef.current !== "mestre") return;
+    if (roleRef.current !== "mestre" || previewSession.current) return;
     if (!window.confirm("Substituir o mapa e as fichas desta campanha pelos dados da cópia? Baixe uma cópia atual antes de continuar.")) return;
     try {
       const state = JSON.parse(await file.text()) as GameState;
@@ -670,7 +670,7 @@ export default function CampaignApp() {
               <DropdownMenuItem onSelect={() => void fetch("/api/auth", { method: "DELETE" }).then(() => window.location.assign("/"))}><LogOut size={16} />Sair</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          {role === "mestre" && <input ref={importInput} className="sr-only" type="file" accept="application/json,.json" aria-label="Importar cópia da campanha" onChange={event => {
+          {role === "mestre" && !playerPreview && <input ref={importInput} className="sr-only" type="file" accept="application/json,.json" aria-label="Importar cópia da campanha" onChange={event => {
             const file = event.target.files?.[0]; if (file) void importBackup(file); event.target.value = "";
           }} />}
         </div>
