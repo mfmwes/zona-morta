@@ -710,9 +710,9 @@ export default function CampaignApp() {
         <p className="text-sm subtle mt-2">Simulação local: ações, rolagens e alterações não são salvas na campanha. Trocar de sobrevivente ou sair descarta a simulação.</p>
         <Button size="sm" variant="outline" className="mt-2" onClick={() => viewedSurvivorId && startPreview(viewedSurvivorId)}>Reiniciar simulação</Button>
       </div>}
-      {readOnlyPreview && <div className="player-preview-banner" role="status">
-        <span className="flex items-center gap-2"><Eye size={18} /><b>{role === "jogador" ? "Dossiê do jogador" : "Prévia dos jogadores"}</b> · Informações reservadas do mestre não aparecem nesta visão.</span>
-        {role === "mestre" && <Button size="sm" variant="outline" onClick={stopPreview}>Voltar ao mestre</Button>}
+      {playerPreview && role === "mestre" && <div className="player-preview-banner" role="status">
+        <span className="flex items-center gap-2"><Eye size={18} /><b>Prévia dos jogadores</b> · Simulação local; ações aqui não alteram a campanha.</span>
+        <Button size="sm" variant="outline" onClick={stopPreview}>Voltar ao mestre</Button>
       </div>}
       <main className="page">
         {!playerPreview && teamActionError && <div className="team-error mb-4" role="alert"><p>{teamActionError}</p><Button size="sm" variant="outline" disabled={status!=="salvo"} onClick={()=>{if(teamActionRetry.current) void executeTeamAction(teamActionRetry.current).catch(cause=>toast.error(cause instanceof Error?cause.message:"Falha ao reenviar."));}}>Reenviar ação pendente</Button></div>}
