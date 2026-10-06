@@ -20,6 +20,7 @@ export type TeamOperation = {
   day: number; scene: number; hexId: string; status: "forming" | "access" | "done" | "cancelled";
   participantIds: string[]; invitedIds: string[]; pointId?: string; areaId?: string; destination?: string;
   objective?: z.infer<typeof objective>; purpose?: string; itemId?: string; itemSnapshot?: string; quantity?: number;
+  depth?: "normal" | "deep";
   kind?: RestKind; plans?: Record<string, RestChoice[]>; result?: string; attention?: string;
   individualChoices?: boolean; awaitingNight?: boolean;
 };
@@ -32,7 +33,9 @@ export type PlayerActionState = {
 const quantity = z.number().int().min(1).max(99);
 const base = { id, day: z.number().int().min(1).max(9999) };
 export const playerCommandSchema = z.discriminatedUnion("type", [
+  z.object({ ...base, type: z.literal("prepare-search"), hexId: id, pointId: id }).strict(),
   z.object({ ...base, type: z.literal("search"), hexId: id, pointId: id, areaId: id, objective, purpose: z.string().trim().min(1).max(240) }).strict(),
+  z.object({ ...base, type: z.literal("deep-search"), hexId: id, pointId: id, areaId: id, objective: z.enum(["food", "water", "medicine", "parts", "fuel"]), purpose: z.string().trim().min(1).max(240) }).strict(),
   z.object({ ...base, type: z.literal("travel"), destination: id }).strict(),
   z.object({ ...base, type: z.literal("rest"), kind: z.enum(["short", "long"]) }).strict(),
   z.object({ ...base, type: z.literal("request-rest"), kind: z.enum(["short", "long"]) }).strict(),
@@ -51,12 +54,14 @@ export const playerCommandSchema = z.discriminatedUnion("type", [
   z.object({ ...base, type: z.literal("clear-marker") }).strict(),
 ]);
 export type PlayerCommand = z.infer<typeof playerCommandSchema>;
+export type PublicSearchAreaState = "available" | "ongoing" | "deep-available" | "deep-ongoing" | "exhausted" | "searched" | "narrative";
 export type PublicPlayerActions = {
   policy: Omit<PlayerActionPolicy, "areas" | "routes" | "supplies">;
   actorId: string; hexId: string; busy: string | null;
   peers: { id: string; name: string; hex: string }[];
-  areas: { hexId: string; pointId: string; areaId: string; name: string; pointName: string; signal: string; minutes: number; noise: number; access: "open" | "risk" | "blocked"; objectives: string[]; available: boolean }[];
-  stock: { hexId: string; pointId: string; stockId: string; name: string; remaining: number; accessible: boolean }[];
+  locations: { hexId: string; pointId: string; pointName: string; prepared: boolean; areaCount: number; searchedAreas: number; availableAreas: number; narrativeAreas: number; stockUnits: number; activeSearches: number }[];
+  areas: { hexId: string; pointId: string; areaId: string; name: string; pointName: string; signal: string; minutes: number; noise: number; access: "open" | "risk" | "blocked"; objectives: string[]; available: boolean; searchable: boolean; state: PublicSearchAreaState }[];
+  stock: { hexId: string; pointId: string; areaId: string; stockId: string; name: string; remaining: number; accessible: boolean }[];
   routes: { destination: string; name: string; minutes: number }[];
   operations: Omit<TeamOperation, "itemSnapshot" | "plans">[];
   supplies: { key: string; itemId?: string; name: string; available: number; allowance: number }[];
@@ -69,7 +74,7 @@ const operationSchema = z.object({
   status: z.enum(["forming", "access", "done", "cancelled"]), participantIds: z.array(id).max(30), invitedIds: z.array(id).max(30),
   pointId: id.optional(), areaId: id.optional(), destination: id.optional(), objective: objective.optional(),
   purpose: z.string().max(500).optional(), itemId: id.optional(), itemSnapshot: z.string().max(20000).optional(),
-  quantity: quantity.optional(), kind: z.enum(["short", "long"]).optional(), result: z.string().max(6000).optional(), attention: z.string().max(500).optional(),
+  quantity: quantity.optional(), depth: z.enum(["normal", "deep"]).optional(), kind: z.enum(["short", "long"]).optional(), result: z.string().max(6000).optional(), attention: z.string().max(500).optional(),
   individualChoices: z.boolean().optional(), awaitingNight: z.boolean().optional(),
   plans: z.record(id, z.array(z.object({ action: z.enum(["hp", "stress", "armor", "hp-full", "stress-full", "armor-full", "prepare", "fiction"]), targetId: id }).strict()).length(2)).optional(),
 }).strict();

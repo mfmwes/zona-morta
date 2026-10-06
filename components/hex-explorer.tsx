@@ -23,6 +23,7 @@ import { addLog, establishShelter, hexDistance, survivorsAtHex, type GameState }
 import { assignCustomSector, redrawSector, revealSector } from "@/lib/sectors";
 import { searchAreaLabel, searchAvailabilityError } from "@/lib/exploration";
 import { HexSearchDialog, type HexSearchRequest } from "@/components/hex-search-dialog";
+import { PlayerHexSearchDialog, type PlayerHexSearchRequest } from "@/components/player-hex-search-dialog";
 import { movementSources, performHexAction, type HexQuickAction } from "@/lib/hex-actions";
 import { shelterTravelMinutes } from "@/lib/shelter-projects";
 import { eventStatus, eventTriggerLabel, eventTriggerReady, generateHexContent } from "@/lib/hex-generators";
@@ -66,6 +67,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
   const [generatorRequest, setGeneratorRequest] = useState<HexGeneratorRequest | null>(null);
   const [eventActionRequest, setEventActionRequest] = useState<HexEventActionRequest | null>(null);
   const [searchRequest, setSearchRequest] = useState<HexSearchRequest | null>(null);
+  const [playerSearchRequest, setPlayerSearchRequest] = useState<PlayerHexSearchRequest | null>(null);
   const [gmOpen, setGmOpen] = useState(false);
   const [masterRevealState, setMasterRevealState] = useState<"avistado" | "explorado">("avistado");
   const [customSectorName, setCustomSectorName] = useState("");
@@ -403,7 +405,25 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
               <div className="hex-point-heading"><div><p className="dossier-title">{point.clueTargetHex ? "Pista" : point.kind === "comércio" ? "Comércio neste setor" : "Local neste setor"}</p><b>{point.name}</b></div>
                 {!playerPreview && <label className="flex items-center gap-2 text-xs whitespace-nowrap"><Switch size="sm" checked={point.revealed}
                   onCheckedChange={checked => edit(draft => { const found = draft.hexes[selected].points.find(p=>p.id===point.id); if(found) found.revealed=checked; })} /> Público</label>}</div>
-              {playerPreview && playerActions && game.publicPlayerActions?.hexId === selected && <details className="hex-player-search mt-3"><summary><Search size={15} /> Buscar e recolher neste local</summary><PlayerContextActions key={selected+point.id} game={game} controls={playerActions} context={{kind:"search",hexId:selected,pointId:point.id}} /></details>}
+              {playerPreview && playerActions && game.publicPlayerActions?.hexId === selected && !point.clueTargetHex && (() => {
+                const location = game.publicPlayerActions?.locations.find(row => row.hexId === selected && row.pointId === point.id);
+                const playerActionLabel = !location?.prepared ? "Explorar local"
+                  : location.activeSearches ? "Retomar busca"
+                  : location.stockUnits ? "Recolher achados"
+                  : location.availableAreas ? "Escolher cômodo e buscar"
+                  : "Revisar local";
+                const playerStatus = !location?.prepared ? "O sistema organiza as áreas ao abrir"
+                  : location.activeSearches ? `${location.activeSearches} busca(s) em andamento`
+                  : location.stockUnits ? `${location.stockUnits} item(ns) aguardando coleta`
+                  : `${location.searchedAreas}/${location.areaCount} áreas vasculhadas`;
+                return <div className="hex-point-session-flow">
+                  <div className="hex-point-session-state"><span className={location?.activeSearches ? "is-active" : location?.stockUnits ? "has-stock" : ""}><Search size={14} /> {playerStatus}</span></div>
+                  <Button size="sm" variant={location?.activeSearches || location?.stockUnits ? "default" : "outline"}
+                    onClick={() => { setSheetOpen(false); setPlayerSearchRequest({ hexId: selected, pointId: point.id }); }}>
+                    <Search size={15} /> {playerActionLabel}
+                  </Button>
+                </div>;
+              })()}
               {point.signal && <p className="mt-1">{point.signal}</p>}
               {!playerPreview && point.clueTargetHex && <Button size="sm" variant="outline" className="mt-2"
                 disabled={!game.hexes[point.clueTargetHex]} onClick={() => { setFocusHex(point.clueTargetHex!); selectHex(point.clueTargetHex!); }}>
@@ -652,6 +672,9 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
       game={game} edit={edit} request={eventActionRequest} onClose={() => { setEventActionRequest(null); if (compact) setSheetOpen(true); }} />}
     {searchRequest && !playerPreview && <HexSearchDialog key={`${searchRequest.hexId}:${searchRequest.pointId}`}
       game={game} edit={edit} request={searchRequest} onClose={() => { setSearchRequest(null); if (compact) setSheetOpen(true); }} />}
+    {playerSearchRequest && playerPreview && playerActions && <PlayerHexSearchDialog key={`${playerSearchRequest.hexId}:${playerSearchRequest.pointId}`}
+      game={game} controls={playerActions} request={playerSearchRequest}
+      onClose={() => { setPlayerSearchRequest(null); if (compact) setSheetOpen(true); }} />}
     {generatorRequest && !playerPreview && <HexGeneratorDialog game={game} edit={edit} request={generatorRequest}
       onOpenChange={open => { if (!open) { setGeneratorRequest(null); if (compact) setSheetOpen(true); } }} />}
     {moveDestination && <SurvivorMoveDialog game={game} edit={edit} destination={moveDestination}
