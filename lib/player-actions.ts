@@ -66,7 +66,8 @@ export function projectPlayerActions(game: GameState, actorId: string): PublicPl
       hexId,
       pointId: point.id,
       pointName: point.name,
-      prepared: Boolean(prep),
+      prepared: Boolean(prep && publicAreas.every(area => area.visibleOutcome
+        || prep.stock.some(stock => stock.areaId === area.id && stock.attemptId === undefined))),
       areaCount: publicAreas.length,
       searchedAreas: areaStates.filter(({ state }) => ["deep-available", "deep-ongoing", "exhausted", "searched"].includes(state)).length,
       availableAreas: areaStates.filter(({ state }) => state === "available").length,
