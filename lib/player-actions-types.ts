@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { RestChoice, RestKind } from "./abilities";
 
 const id = z.string().min(1).max(120);
-const objective = z.enum(["open", "food", "water", "medicine", "parts", "fuel"]);
+const objective = z.enum(["open", "food", "water", "medicine", "parts", "fuel", "item"]);
 const restChoices = z.array(z.object({ action: z.enum(["hp", "stress", "armor", "hp-full", "stress-full", "armor-full", "prepare", "fiction"]), targetId: id }).strict()).length(2);
 export const playerPolicySchema = z.object({
   paused: z.boolean(), transfers: z.boolean(), deposits: z.boolean(), rest: z.boolean(), tokens: z.boolean(),
@@ -19,7 +19,7 @@ export type TeamOperation = {
   id: string; type: "search" | "travel" | "transfer" | "rest" | "exception"; initiatorId: string;
   day: number; scene: number; hexId: string; status: "forming" | "access" | "done" | "cancelled";
   participantIds: string[]; invitedIds: string[]; pointId?: string; areaId?: string; destination?: string;
-  objective?: z.infer<typeof objective>; purpose?: string; itemId?: string; itemSnapshot?: string; quantity?: number;
+  objective?: z.infer<typeof objective>; objectiveLabel?: string; catalogKey?: string; purpose?: string; itemId?: string; itemSnapshot?: string; quantity?: number;
   depth?: "normal" | "deep";
   kind?: RestKind; plans?: Record<string, RestChoice[]>; result?: string; attention?: string;
   individualChoices?: boolean; awaitingNight?: boolean;
@@ -34,8 +34,8 @@ const quantity = z.number().int().min(1).max(99);
 const base = { id, day: z.number().int().min(1).max(9999) };
 export const playerCommandSchema = z.discriminatedUnion("type", [
   z.object({ ...base, type: z.literal("prepare-search"), hexId: id, pointId: id }).strict(),
-  z.object({ ...base, type: z.literal("search"), hexId: id, pointId: id, areaId: id, objective, purpose: z.string().trim().min(1).max(240) }).strict(),
-  z.object({ ...base, type: z.literal("deep-search"), hexId: id, pointId: id, areaId: id, objective: z.enum(["food", "water", "medicine", "parts", "fuel"]), purpose: z.string().trim().min(1).max(240) }).strict(),
+  z.object({ ...base, type: z.literal("search"), hexId: id, pointId: id, areaId: id, objective, catalogKey: z.string().max(240).optional(), objectiveLabel: z.string().trim().min(1).max(240).optional(), purpose: z.string().trim().min(1).max(240) }).strict(),
+  z.object({ ...base, type: z.literal("deep-search"), hexId: id, pointId: id, areaId: id, objective, catalogKey: z.string().max(240).optional(), objectiveLabel: z.string().trim().min(1).max(240).optional(), purpose: z.string().trim().min(1).max(240) }).strict(),
   z.object({ ...base, type: z.literal("travel"), destination: id }).strict(),
   z.object({ ...base, type: z.literal("rest"), kind: z.enum(["short", "long"]) }).strict(),
   z.object({ ...base, type: z.literal("request-rest"), kind: z.enum(["short", "long"]) }).strict(),
@@ -45,9 +45,9 @@ export const playerCommandSchema = z.discriminatedUnion("type", [
   z.object({ ...base, type: z.literal("withdraw"), resource: z.enum(["food", "water", "item"]), itemId: id.optional(), quantity }).strict(),
   z.object({ ...base, type: z.literal("join"), operationId: id }).strict(),
   z.object({ ...base, type: z.literal("leave"), operationId: id }).strict(),
-  z.object({ ...base, type: z.literal("execute"), operationId: id }).strict(),
-  z.object({ ...base, type: z.literal("roll-access"), operationId: id, trait: z.enum(["Agilidade", "Força", "Finesse", "Instinto", "Presença", "Conhecimento"]), experiences: z.array(z.enum(["origin", "free"])).max(2) }).strict(),
-  z.object({ ...base, type: z.literal("collect"), hexId: id, pointId: id, stockId: id, quantity }).strict(),
+  z.object({ ...base, type: z.literal("execute"), operationId: id, warehouseWorkerId: id.optional() }).strict(),
+  z.object({ ...base, type: z.literal("roll-access"), operationId: id, trait: z.enum(["Agilidade", "Força", "Finesse", "Instinto", "Presença", "Conhecimento"]), experiences: z.array(z.enum(["origin", "free"])).max(2), edge: z.enum(["none", "advantage", "disadvantage"]).optional(), mentorId: id.optional() }).strict(),
+  z.object({ ...base, type: z.literal("collect"), hexId: id, pointId: id, stockId: id, quantity, cartId: id.optional() }).strict(),
   z.object({ ...base, type: z.literal("request"), text: z.string().trim().min(1).max(500) }).strict(),
   z.object({ ...base, type: z.literal("token"), sceneId: id, objectId: id, x: z.number().int(), y: z.number().int(), beforeX: z.number().int(), beforeY: z.number().int() }).strict(),
   z.object({ ...base, type: z.literal("marker"), sceneId: id, x: z.number().int(), y: z.number().int(), label: z.string().trim().min(1).max(80) }).strict(),
@@ -60,8 +60,8 @@ export type PublicPlayerActions = {
   actorId: string; hexId: string; busy: string | null;
   peers: { id: string; name: string; hex: string }[];
   locations: { hexId: string; pointId: string; pointName: string; prepared: boolean; areaCount: number; searchedAreas: number; availableAreas: number; narrativeAreas: number; stockUnits: number; apparentStockUnits: number; activeSearches: number }[];
-  areas: { hexId: string; pointId: string; areaId: string; name: string; pointName: string; signal: string; minutes: number; noise: number; access: "open" | "risk" | "blocked"; objectives: string[]; available: boolean; searchable: boolean; state: PublicSearchAreaState; visibleOutcome: "none" | "item" | null }[];
-  stock: { hexId: string; pointId: string; areaId: string; stockId: string; name: string; remaining: number; accessible: boolean; source: "apparent" | "search"; condition?: string; requiresFuelContainer: boolean }[];
+  areas: { hexId: string; pointId: string; areaId: string; name: string; pointName: string; signal: string; minutes: number; noise: number; access: "open" | "risk" | "blocked"; objectives: string[]; available: boolean; searchable: boolean; state: PublicSearchAreaState; visibleOutcome: "none" | "item" | null; specificItems: { key: string; name: string }[]; warehouseWorkers: { id: string; name: string }[]; mentors: { id: string; name: string }[]; lastResult?: string; lastResultDepth?: "normal" | "deep"; lastAttention?: string }[];
+  stock: { hexId: string; pointId: string; areaId: string; stockId: string; name: string; catalogKey?: string; remaining: number; accessible: boolean; source: "apparent" | "search"; condition?: string; requiresFuelContainer: boolean }[];
   routes: { destination: string; name: string; minutes: number }[];
   operations: Omit<TeamOperation, "itemSnapshot" | "plans">[];
   supplies: { key: string; itemId?: string; name: string; available: number; allowance: number }[];
@@ -73,6 +73,7 @@ const operationSchema = z.object({
   day: z.number().int().min(1).max(9999), scene: z.number().int().min(1), hexId: id,
   status: z.enum(["forming", "access", "done", "cancelled"]), participantIds: z.array(id).max(30), invitedIds: z.array(id).max(30),
   pointId: id.optional(), areaId: id.optional(), destination: id.optional(), objective: objective.optional(),
+  objectiveLabel: z.string().max(240).optional(), catalogKey: z.string().max(240).optional(),
   purpose: z.string().max(500).optional(), itemId: id.optional(), itemSnapshot: z.string().max(20000).optional(),
   quantity: quantity.optional(), depth: z.enum(["normal", "deep"]).optional(), kind: z.enum(["short", "long"]).optional(), result: z.string().max(6000).optional(), attention: z.string().max(500).optional(),
   individualChoices: z.boolean().optional(), awaitingNight: z.boolean().optional(),

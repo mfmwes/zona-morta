@@ -6,11 +6,11 @@ const ts = require('typescript');
 require.extensions['.ts'] = (module, path) => module._compile(ts.transpileModule(fs.readFileSync(path, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText, path);
 const { defaultState, initialSurvivor, content } = require('../lib/game.ts');
 const { assignCustomSector } = require('../lib/sectors.ts');
-const { prepareLocation, prepareLocationForExploration, registerVisibleStock, searchAreaSessionState, startSearch } = require('../lib/hex-automation.ts');
+const { deepSearchCandidateKeys, prepareLocation, prepareLocationForExploration, registerVisibleStock, resolvePreparedSearch, searchAreaSessionState, startSearch } = require('../lib/hex-automation.ts');
 const { applyPlayerAction, projectPlayerActions, setPlayerPolicy, playerActionState } = require('../lib/player-actions.ts');
 const { validPlayerActionState } = require('../lib/player-actions-types.ts');
 const { projectPlayerGame } = require('../lib/collaboration.ts');
-const { itemFromCatalog } = require('../lib/inventory.ts');
+const { catalogKey, itemFromCatalog } = require('../lib/inventory.ts');
 const { createSceneBoardScene, createSceneBoardObject } = require('../lib/scene-board.ts');
 const { requestTableRest, currentTableRest, tableRestReadyForNight } = require('../lib/table-rest.ts');
 let serial = 0;
@@ -155,6 +155,65 @@ test('jogador pode executar busca profunda plausível sem liberação manual do 
  assert.equal(f.game.hexes['0,0'].points[0].preparation.attempts.find(row=>row.id===deep).status,'completed');
  view=projectPlayerActions(f.game,f.ids[0]);assert.ok(['exhausted','searched'].includes(view.areas.find(row=>row.areaId===f.areaId).state));
 });
+test('jogador escolhe qualquer item plausível sem depender do mestre e recebe resultado persistente',()=>{
+ const f=fixture();const point=f.game.hexes['0,0'].points[0];
+ const publicArea=projectPlayerActions(f.game,f.ids[0]).areas.find(row=>row.areaId===f.areaId);
+ assert.ok(publicArea.specificItems.length>0);
+ const item=publicArea.specificItems[0];
+ const op=ok(f,f.ids[0],{type:'search',hexId:'0,0',pointId:'market',areaId:f.areaId,objective:'item',catalogKey:item.key,objectiveLabel:item.name,purpose:'Precisamos deste item'}).input.id;
+ const saved=f.game.playerActions.operations.find(row=>row.id===op);assert.equal(saved.catalogKey,item.key);assert.equal(saved.objectiveLabel,item.name);
+ ok(f,f.ids[0],{type:'execute',operationId:op});
+ const attempt=f.game.hexes['0,0'].points[0].preparation.attempts.find(row=>row.id===op);
+ assert.equal(attempt.catalogKey,item.key);assert.equal(attempt.status,'completed');
+ const after=projectPlayerActions(f.game,f.ids[0]).areas.find(row=>row.areaId===f.areaId);
+ assert.ok(after.lastResult);assert.equal(after.lastResultDepth,'normal');assert.ok(after.lastResult.includes(item.name));
+});
+
+test('item específico forjado fora da área é rejeitado antes de criar operação',()=>{
+ const f=fixture();const area=f.game.hexes['0,0'].points[0].preparation.areas[0];
+ const plausible=new Set(deepSearchCandidateKeys(area));
+ const outsider=content.catalog.find(entry=>!plausible.has(catalogKey(entry)));assert.ok(outsider);
+ denied(f,f.ids[0],{type:'search',hexId:'0,0',pointId:'market',areaId:f.areaId,objective:'item',catalogKey:catalogKey(outsider),objectiveLabel:outsider.name,purpose:'Forjar'},/plausível/);
+});
+
+test('Trabalhador de depósito pode reduzir busca longa pelo próprio fluxo do jogador',()=>{
+ const f=fixture();const point=f.game.hexes['0,0'].points[0],area=point.preparation.areas[0];
+ f.game.survivors[0].origin='Trabalhador(a) de depósito';area.minutes=60;area.spacious=true;
+ const view=projectPlayerActions(f.game,f.ids[0]);assert.ok(view.areas.find(row=>row.areaId===f.areaId).warehouseWorkers.some(row=>row.id===f.ids[0]));
+ const op=propose(f);ok(f,f.ids[0],{type:'execute',operationId:op,warehouseWorkerId:f.ids[0]});
+ const attempt=f.game.hexes['0,0'].points[0].preparation.attempts.find(row=>row.id===op);
+ assert.equal(attempt.minutes,30);assert.equal(attempt.warehouseWorker,f.ids[0]);assert.ok(f.game.survivors[0].abilityUses);
+});
+
+test('apoio de Docente e vantagem são validados e usados na rolagem do jogador',()=>{
+ const f=fixture();const area=f.game.hexes['0,0'].points[0].preparation.areas[0];
+ area.access='risk';area.difficulty=2;f.game.survivors[1].origin='Docente';
+ const op=propose(f);ok(f,f.ids[1],{type:'join',operationId:op});ok(f,f.ids[0],{type:'execute',operationId:op});
+ const projected=projectPlayerActions(f.game,f.ids[0]).areas.find(row=>row.areaId===f.areaId);
+ assert.ok(projected.mentors.some(row=>row.id===f.ids[1]));
+ const dice=[6,2,3,1];ok(f,f.ids[0],{type:'roll-access',operationId:op,trait:'Instinto',experiences:[],edge:'advantage',mentorId:f.ids[1]},()=>dice.shift());
+ const attempt=f.game.hexes['0,0'].points[0].preparation.attempts.find(row=>row.id===op);
+ assert.equal(attempt.status,'completed');assert.equal(attempt.actorId,f.ids[0]);assert.ok(f.game.survivors[1].abilityUses);
+});
+
+test('jogador recolhe achado diretamente no próprio carrinho aberto',()=>{
+ const f=fixture();const cartEntry=content.catalog.find(entry=>entry.name==='Carrinho dobrável');assert.ok(cartEntry);
+ const cart=itemFromCatalog(cartEntry,1);cart.cartDeployed=true;cart.cartItems=[];f.game.survivors[0].inventory=[cart];
+ assert.equal(registerVisibleStock(f.game,'0,0','market',f.areaId,'cart-stock','Bebidas::Garrafa de água lacrada',1),null);
+ ok(f,f.ids[0],{type:'collect',hexId:'0,0',pointId:'market',stockId:'cart-stock',quantity:1,cartId:cart.id});
+ const savedCart=f.game.survivors[0].inventory.find(item=>item.id===cart.id);
+ assert.ok(savedCart.cartItems.some(item=>item.name==='Garrafa de água lacrada'));
+});
+
+test('busca direta do mestre aplica a mesma pausa de consequência e projeta resultado ao jogador',()=>{
+ const f=fixture();const point=f.game.hexes['0,0'].points[0],area=point.preparation.areas[0];area.noise=3;
+ const key=deepSearchCandidateKeys(area)[0];assert.ok(key);
+ assert.equal(resolvePreparedSearch(f.game,{id:'master-search',hexId:'0,0',pointId:'market',areaId:f.areaId,participants:[f.ids[0]],mode:'specific',objective:'Item útil',purpose:'Teste da regra comum',catalogKey:key,quantity:1}),null);
+ assert.equal(f.game.playerActions.policy.paused,true);
+ const projected=projectPlayerActions(f.game,f.ids[0]).areas.find(row=>row.areaId===f.areaId);
+ assert.ok(projected.lastResult);
+});
+
 test('projeção mostra somente autorização local e não vaza preparação, tabela, dificuldade ou fichas dos colegas',()=>{
  const f=fixture(); f.game.hexes['0,0'].points[0].preparation.areas[0].difficulty=99;
  assert.equal(prepareLocationForExploration(f.game,'0,0','market',()=>0.99),null);

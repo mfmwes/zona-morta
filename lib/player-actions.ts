@@ -1,7 +1,7 @@
-import { addLog, survivorHex, survivorIsDown, survivorStats, type GameState } from "./game";
-import { collectLocationStock, finishPreparedSearch, pendingPlayerSearchOperation, prepareLocationForExploration, quickSearchOptions, rollSearchAccess, searchAreaSessionState, searchAreaState, startDeepSearch, startSearch } from "./hex-automation";
+import { addLog, content as gameContent, survivorHex, survivorIsDown, survivorStats, type GameState } from "./game";
+import { collectLocationStock, deepSearchCandidateKeys, finishPreparedSearch, pendingPlayerSearchOperation, prepareLocationForExploration, quickSearchOptions, rollSearchAccess, searchAreaSessionState, searchAreaState, searchMentors, startDeepSearch, startSearch, warehouseWorkers } from "./hex-automation";
 import { moveSurvivors } from "./hex-actions";
-import { atSharedStorage, transferItem, transferProvisions } from "./inventory";
+import { atSharedStorage, catalogKey, transferItem, transferProvisions } from "./inventory";
 import { survivorTimedCommitment } from "./activity";
 import { resolveGroupRest, restActionsFor, type RestChoice } from "./abilities";
 import { eventTriggerReady } from "./hex-generators";
@@ -27,7 +27,8 @@ function areaPermission(game: GameState, hexId: string, pointId: string, areaId:
   const point = hex?.points.find(p => p.id === pointId && p.revealed && !p.clueTargetHex);
   const area = point?.preparation?.areas.find(a => a.id === areaId);
   if (hex?.discovery !== "explorado" || !area || area.searchable === false) return undefined;
-  return { objectives: ["open", ...quickSearchOptions(area).filter(option => option.available).map(option => option.id)] };
+  const specificItems = deepSearchCandidateKeys(area);
+  return { objectives: ["open", ...quickSearchOptions(area).filter(option => option.available).map(option => option.id), ...(specificItems.length ? ["item" as const] : [])], specificItems };
 }
 export function playerTimedActionIssue(game: GameState, ids: string[], except?: string) {
   if (game.conflict?.active) return "Resolva o conflito antes de iniciar exploração, viagem ou descanso.";
@@ -83,17 +84,37 @@ export function projectPlayerActions(game: GameState, actorId: string): PublicPl
     for (const area of publicAreas) {
       const permission = areaPermission(game, hexId, point.id, area.id);
       const state = searchAreaSessionState(game, hexId, point.id, area);
-      const objectives = permission?.objectives.filter(o => o === "open" || quickSearchOptions(area).some(option => option.id === o && option.available)) ?? [];
+      const objectives = permission?.objectives.filter(o => o === "open" || o === "item" || quickSearchOptions(area).some(option => option.id === o && option.available)) ?? [];
+      const attempt = prep?.attempts.find(candidate => candidate.areaId === area.id && ["pending", "ready"].includes(candidate.status));
+      const knownKeys = new Set(prep?.stock.filter(stock => stock.areaId === area.id && stock.remaining > 0).map(stock => stock.item.catalogKey).filter(Boolean) ?? []);
+      const specificItems = (permission?.specificItems ?? [])
+        .filter(key => state !== "deep-available" || !knownKeys.has(key))
+        .map(key => {
+          const item = gameContent.catalog.find(entry => catalogKey(entry) === key);
+          return item ? { key, name: item.name } : null;
+        }).filter((item): item is { key: string; name: string } => Boolean(item));
+      const eligibleWorkers = (area.spacious || area.minutes === 60)
+        ? warehouseWorkers(game, hexId).map(person => ({ id: person.id, name: person.name }))
+        : [];
+      const mentors = attempt ? searchMentors(game, hexId, point.id, attempt.id, actorId).map(person => ({ id: person.id, name: person.name })) : [];
+      const completed = [...(prep?.attempts.filter(candidate => candidate.areaId === area.id && ["completed", "failed"].includes(candidate.status)) ?? [])].at(-1);
+      const lastAttention = completed?.outcome?.success === false
+        ? "Falha no acesso: o mestre resolve a consequência narrativa."
+        : completed?.outcome?.with === "Fear"
+          ? "Rolagem com Medo: o mestre pode introduzir uma complicação."
+          : undefined;
       result.areas.push({
         hexId, pointId: point.id, areaId: area.id, name: area.name, pointName: point.name, signal: area.signal,
         minutes: area.minutes, noise: area.noise, access: area.access, objectives,
         available: Boolean(permission) && state === "available" && !pendingPlayerSearchOperation(game, hexId, point.id, area.id), searchable: area.searchable !== false, state,
-        visibleOutcome: area.visibleOutcome ?? null,
+        visibleOutcome: area.visibleOutcome ?? null, specificItems, warehouseWorkers: eligibleWorkers, mentors,
+        ...(completed?.result ? { lastResult: completed.result, lastResultDepth: completed.kind === "deep" ? "deep" as const : "normal" as const } : {}),
+        ...(lastAttention ? { lastAttention } : {}),
       });
       for (const stock of prep?.stock.filter(s => s.areaId === area.id && s.remaining > 0) ?? []) {
         if (stock.attemptId && !prep?.attempts.some(a => a.id === stock.attemptId && a.status === "completed")) continue;
         result.stock.push({
-          hexId, pointId: point.id, areaId: area.id, stockId: stock.id, name: stock.item.name, remaining: stock.remaining,
+          hexId, pointId: point.id, areaId: area.id, stockId: stock.id, name: stock.item.name, catalogKey: stock.item.catalogKey, remaining: stock.remaining,
           accessible: area.access !== "blocked" && stock.accessible !== false,
           source: stock.attemptId ? "search" : "apparent",
           condition: stock.item.condition,
@@ -167,8 +188,18 @@ function executeCommand(game: GameState, actorId: string, cmd: PlayerCommand, di
       const areaState = point && area ? searchAreaState(point, area) : undefined;
       const expectedState = cmd.type === "deep-search" ? "deep-available" : "available";
       if (cmd.hexId !== hexId || !permission?.objectives.includes(cmd.objective) || !point?.revealed || game.hexes[hexId].discovery !== "explorado" || !area || area.access === "blocked" || areaState !== expectedState || area.searchable === false) return "Esta área ou objetivo não está disponível para sua busca.";
+      if (cmd.type === "deep-search" && cmd.objective === "open") return "A busca profunda precisa de um foco específico.";
+      if (cmd.objective === "item" && (!cmd.catalogKey || !permission.specificItems.includes(cmd.catalogKey))) return "Escolha um item plausível para esta área.";
+      if (cmd.objective !== "item" && (cmd.catalogKey || cmd.objectiveLabel)) return "Use a seleção específica apenas ao procurar um item.";
       if (state.operations.some(o => active(game, o) && o.type === "search" && o.hexId === hexId && o.pointId === point.id && o.areaId === area.id)) return "Já existe uma busca proposta para esta área. Entre nela.";
-      Object.assign(proposal, { pointId: cmd.pointId, areaId: cmd.areaId, objective: cmd.objective, purpose: cmd.purpose, depth: cmd.type === "deep-search" ? "deep" : "normal" });
+      Object.assign(proposal, {
+        pointId: cmd.pointId, areaId: cmd.areaId, objective: cmd.objective, purpose: cmd.purpose,
+        depth: cmd.type === "deep-search" ? "deep" : "normal",
+        ...(cmd.objective === "item" ? {
+          catalogKey: cmd.catalogKey,
+          objectiveLabel: gameContent.catalog.find(entry => catalogKey(entry) === cmd.catalogKey)?.name,
+        } : {}),
+      });
     } else if (cmd.type === "travel") {
       if (!policy.routes.some(r => r.from === hexId && r.to === cmd.destination) || !game.hexes[cmd.destination] || game.hexes[cmd.destination].discovery === "desconhecido") return "Esta rota não foi liberada pelo mestre.";
       proposal.destination = cmd.destination;
@@ -229,23 +260,32 @@ function executeCommand(game: GameState, actorId: string, cmd: PlayerCommand, di
       if (cmd.type === "execute") {
         if (op.status !== "forming") return "Esta busca já começou; resolva o acesso.";
         const selected = quickSearchOptions(area).find(o => o.id === op.objective && o.available);
+        const specificKey = op.objective === "item" ? op.catalogKey : selected?.key;
+        const specificLabel = op.objective === "item" ? op.objectiveLabel : selected?.label;
         if (op.depth === "deep") {
-          if (!selected?.key || op.objective === "open") return "Escolha um foco plausível para a busca profunda.";
+          if (!specificKey || op.objective === "open") return "Escolha um foco plausível para a busca profunda.";
           const error = startDeepSearch(game, { id: op.id, hexId: op.hexId, pointId: op.pointId!, areaId: op.areaId!, participants: op.participantIds,
-            objective: selected.label, purpose: op.purpose!, catalogKey: selected.key });
+            objective: specificLabel || "Item específico", purpose: op.purpose!, catalogKey: specificKey });
           if (error) return error;
           op.status = "access";
           return null;
         }
         const specific = op.objective !== "open";
-        if (specific && !selected?.key) return "O objetivo não é previsto para esta área. Escolha outra categoria ou faça uma busca aberta.";
-        const error = startSearch(game, { id: op.id, hexId: op.hexId, pointId: op.pointId!, areaId: op.areaId!, participants: op.participantIds, mode: specific ? "specific" : "open", objective: specific ? selected!.label : "Vasculhar", purpose: op.purpose!, catalogKey: specific ? selected!.key : undefined, quantity: 1 });
+        if (specific && !specificKey) return "O objetivo não é previsto para esta área. Escolha outra categoria ou faça uma busca aberta.";
+        const error = startSearch(game, {
+          id: op.id, hexId: op.hexId, pointId: op.pointId!, areaId: op.areaId!, participants: op.participantIds,
+          mode: specific ? "specific" : "open", objective: specific ? (specificLabel || "Item específico") : "Vasculhar",
+          purpose: op.purpose!, catalogKey: specific ? specificKey : undefined, quantity: 1,
+          warehouseWorker: cmd.warehouseWorkerId,
+        });
         if (error) return error;
         op.status = "access";
         if (area.access === "risk") return null;
       } else {
         if (op.status !== "access") return "Inicie a busca antes de resolver o acesso.";
-        const error = rollSearchAccess(game, op.hexId, op.pointId!, op.id, { actorId, trait: cmd.trait, experiences: cmd.experiences, other: 0, edge: "none" }, die);
+        const error = rollSearchAccess(game, op.hexId, op.pointId!, op.id, {
+          actorId, trait: cmd.trait, experiences: cmd.experiences, other: 0, edge: cmd.edge ?? "none", mentorId: cmd.mentorId,
+        }, die);
         if (error) return error;
       }
       const error = finishPreparedSearch(game, op.hexId, op.pointId!, op.id, die); if (error) return error;
@@ -265,7 +305,7 @@ function executeCommand(game: GameState, actorId: string, cmd: PlayerCommand, di
     if (cmd.hexId !== hexId || !stock || !area || area.access === "blocked" || stock.accessible === false
       || (stock.attemptId && !point?.preparation?.attempts.some(a => a.id === stock.attemptId && a.status === "completed"))) return "Este achado não está liberado para você.";
     if (point?.preparation?.collections.some(c => c.id === cmd.id)) return "Este identificador já foi usado em outra coleta.";
-    return collectLocationStock(game, cmd.hexId, cmd.pointId, cmd.id, [{ stockId: cmd.stockId, ownerId: actorId, quantity: cmd.quantity }]);
+    return collectLocationStock(game, cmd.hexId, cmd.pointId, cmd.id, [{ stockId: cmd.stockId, ownerId: actorId, quantity: cmd.quantity, cartId: cmd.cartId }]);
   }
   if (cmd.type === "offer") {
     const receiver = game.survivors.find(p => p.id === cmd.targetId);

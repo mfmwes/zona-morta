@@ -230,6 +230,13 @@ test('fluxo de exploração prioriza ação atual e recolhe configurações avan
   assert.match(dialog,/Recolher achados/);
   assert.match(dialog,/Busca proposta pelos jogadores/);
   assert.match(dialog,/A área fica reservada até o grupo iniciar ou cancelar a proposta/);
+  const playerDialog=fs.readFileSync(require.resolve('../components/player-hex-search-dialog.tsx'),'utf8');
+  assert.match(playerDialog,/Item plausível nesta área/);
+  assert.match(playerDialog,/Apoio de Trabalhador\(a\) de depósito/);
+  assert.match(playerDialog,/Apoio de Docente/);
+  assert.match(playerDialog,/Vantagem \+d6/);
+  assert.match(playerDialog,/Destino da coleta/);
+  assert.match(playerDialog,/Última busca nesta área/);
   assert.match(dialog,/Distribuir automaticamente/);
   assert.match(dialog,/Ajustar distribuição manualmente/);
   assert.match(explorer,/Preparação do setor/);

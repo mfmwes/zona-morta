@@ -6,7 +6,7 @@ import { expirePhysicalFood } from "./provisions";
 import { normalizedSector, searchAreaLabel, searchAvailabilityError } from "./exploration";
 import { advanceParticipantTime } from "./time";
 import { abilityAvailable, recordAbilityUse } from "./abilities";
-import { generateHexContent, suggestedLootTable } from "./hex-generators";
+import { eventTriggerReady, generateHexContent, suggestedLootTable } from "./hex-generators";
 import { equipmentModifiers } from "./equipment";
 import { resolveActionRoll, resolveRollResources, rollDie, type Edge } from "./rolls";
 import type { LocationScale, SearchAttempt, SearchArea } from "./hex-automation-types";
@@ -687,6 +687,8 @@ export function searchResult(point: Point, attempt: SearchAttempt) {
 /** Commit clock, ability, stock and history together. All validation runs on a clone. */
 export function completeSearch(game: GameState, hexId: string, pointId: string, attemptId: string): string | null {
   const draft = structuredClone(game);
+  const readyBefore = new Set(Object.entries(draft.hexes).flatMap(([candidateHexId, hex]) =>
+    hex.events.filter(event => eventTriggerReady(draft, candidateHexId, event)).map(event => event.id)));
   const point = pointAt(draft, hexId, pointId);
   const prep = point?.preparation;
   const attempt = prep?.attempts.find(row => row.id === attemptId);
@@ -728,7 +730,11 @@ export function completeSearch(game: GameState, hexId: string, pointId: string, 
   draft.noise = Math.min(5, draft.noise + attempt.noise);
   attempt.status = attempt.outcome?.success === false ? "failed" : "completed"; attempt.result = result;
   const timing = timeResult.overlapMinutes ? ` · ${parallelTimeLabel(timeResult)}` : "";
-  addLog(draft, "busca", `${point.name} / ${area.name}${attempt.kind === "deep" ? " · busca profunda" : ""}: ${result} · ${attempt.minutes} min${timing}.${draft.noise >= 3 ? " Barulho elevado: o mestre decide a consequência na cena." : ""}`);
+  const triggered = Object.entries(draft.hexes).some(([candidateHexId, hex]) =>
+    hex.events.some(event => eventTriggerReady(draft, candidateHexId, event) && !readyBefore.has(event.id)));
+  const needsAttention = attempt.outcome?.success === false || attempt.outcome?.with === "Fear" || draft.noise >= 3 || triggered;
+  if (needsAttention && draft.playerActions) draft.playerActions.policy.paused = true;
+  addLog(draft, "busca", `${point.name} / ${area.name}${attempt.kind === "deep" ? " · busca profunda" : ""}: ${result} · ${attempt.minutes} min${timing}.${draft.noise >= 3 ? " Barulho elevado: o mestre decide a consequência na cena." : ""}${triggered ? " Um acontecimento ficou pronto." : ""}`);
   Object.assign(game, draft);
   return null;
 }
