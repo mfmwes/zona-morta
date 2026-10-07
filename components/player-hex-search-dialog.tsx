@@ -191,6 +191,7 @@ export function PlayerHexSearchDialog({
       {!controls.canAct && <p className="team-notice">Aguarde a sincronização da campanha antes de agir.</p>}
       {controls.pending && <p className="team-notice">Há uma ação anterior aguardando confirmação da conexão. Reenvie a mesma ação antes de iniciar outra.</p>}
       {view?.busy && <p className="team-notice" role="status"><b>Busca indisponível agora:</b> {view.busy}</p>}
+      {view?.policy.paused && <p className="team-notice" role="status"><b>Ações da equipe pausadas:</b> uma consequência anterior ainda precisa ser resolvida pelo mestre antes de iniciar outra busca.</p>}
       {error && <p className="team-error" role="alert">{error}</p>}
       {notice && <p className="team-notice" role="status">{notice}</p>}
 
@@ -271,7 +272,7 @@ export function PlayerHexSearchDialog({
                   ? `${area.minutes} min · Barulho +${area.noise} · Busca geral: 1d12 determina o achado após resolver o acesso.`
                   : `${area.minutes} min · Barulho +${area.noise} · Busca específica: procura o foco escolhido e não rola o d12 de achados.`}</p>
                 <Button disabled={busy || !controls.canAct || Boolean(view?.busy) || view?.policy.paused || area.access === "blocked" || !purpose.trim() || !goal || (goal === "item" && !chosenSpecificKey)}
-                  title={view?.busy || (!controls.canAct ? "Aguarde a sincronização da campanha." : undefined)}
+                  title={view?.policy.paused ? "O mestre precisa resolver a consequência pendente antes de novas ações." : view?.busy || (!controls.canAct ? "Aguarde a sincronização da campanha." : undefined)}
                   onClick={() => void perform({
                     type: deep ? "deep-search" : "search",
                     hexId: area.hexId,
