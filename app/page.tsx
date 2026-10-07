@@ -29,6 +29,7 @@ import { DayCloseDialog } from "@/components/day-close-dialog";
 import { TablePresentationControl, TablePresentationViewer } from "@/components/table-presentation";
 import { SceneBoard } from "@/components/scene-board";
 import { TeamActionError } from "@/components/player-actions-panel";
+import { ActivityTimeline } from "@/components/activity-timeline";
 import { MasterOverview } from "@/components/master-overview";
 import { addLog, displayTime, survivorHex, type GameState, type Point, type Survivor, type TablePresentation } from "@/lib/game";
 import { createId } from "@/lib/id";
@@ -439,9 +440,11 @@ export default function CampaignApp() {
     edit(draft => {
       previous = displayTime(draft.minutes);
       const result = setCampaignTime(draft, targetMinute);
+      if (!result.ok || result.issue) { previous = ""; toast.error(result.issue ?? "Não foi possível ajustar o horário."); return; }
       completedWork = result.completedWork;
       addLog(draft, "tempo", `Horário ajustado pelo mestre: ${previous} → ${displayTime(draft.minutes)}.`);
     });
+    if (!previous) return;
     setTimeEditorOpen(false);
     setManualTimeRollbackConfirmed(false);
     toast.success("Horário ajustado", {
@@ -587,7 +590,7 @@ export default function CampaignApp() {
   </section></main>;
 
   const readOnlyPreview = playerPreview || role === "jogador";
-  const requestedRest = currentTableRest(game);
+  const requestedRest = currentTableRest(game, viewedSurvivorId ?? undefined);
   const previewActionGame = game;
   const communityView = readOnlyPreview ? npcPlayerView(previewActionGame) : game;
   const publicConflictActive = readOnlyPreview && Boolean(previewActionGame.publicConflict?.active);
@@ -724,6 +727,7 @@ export default function CampaignApp() {
         <Button size="sm" variant="outline" onClick={stopPreview}>Voltar ao mestre</Button>
       </div>}
       <main className="page">
+        <ActivityTimeline game={game} controls={masterActionControls} canAct={status === "salvo"} />
         {readOnlyPreview && requestedRest && <div className="team-notice mb-4" role="status"><p>Descanso {requestedRest.kind === "short" ? "curto" : "longo"} solicitado · {requestedRest.participantIds.length}/{requestedRest.invitedIds.length} confirmados.{requestedRest.awaitingNight ? " Escolhas prontas para Encerrar dia." : requestedRest.participantIds.includes(viewedSurvivorId ?? "") ? " Suas escolhas estão confirmadas." : " Escolha suas duas ações na ficha."}</p>{!requestedRest.awaitingNight && <Button size="sm" variant="outline" onClick={() => { setTab("sobreviventes"); window.setTimeout(() => window.dispatchEvent(new CustomEvent("zona-morta:rest-focus")), 0); }}>Ver meu descanso</Button>}</div>}
         {!playerPreview && teamActionError && <div className="team-error mb-4" role="alert"><p>{teamActionError}</p><Button size="sm" variant="outline" disabled={status!=="salvo"} onClick={()=>{if(teamActionRetry.current) void executeTeamAction(teamActionRetry.current).catch(cause=>toast.error(cause instanceof Error?cause.message:"Falha ao reenviar."));}}>Reenviar ação pendente</Button></div>}
         <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
@@ -857,10 +861,13 @@ export default function CampaignApp() {
             {[30,60,120].map(amount=><Button key={amount} size="sm" variant="outline" disabled={game.minutes+amount>=1440}
               onClick={() => {
                 let completedWork: { name: string; points: number; completed: boolean }[] = [];
+                let issue = "";
                 edit(d => {
                   const result = advanceCampaignTime(d, amount, `Passaram ${amount} minutos na expedição.`);
                   completedWork = result.completedWork;
+                  issue = result.issue ?? (result.ok ? "" : "Não foi possível avançar o relógio.");
                 });
+                if (issue) { toast.info("Avanço interrompido", {description:issue}); return; }
                 toast("Tempo avançado", {
                   description: completedWork.length
                     ? `+${amount < 60 ? `${amount} min` : `${amount / 60} h`} · ${completedWork.map(row => `${row.name} +${row.points}${row.completed ? " concluída" : ""}`).join(" · ")}`

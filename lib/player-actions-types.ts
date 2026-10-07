@@ -17,7 +17,7 @@ export function defaultPlayerPolicy(): PlayerActionPolicy {
 }
 export type TeamOperation = {
   id: string; type: "search" | "travel" | "transfer" | "rest" | "exception"; initiatorId: string;
-  day: number; scene: number; hexId: string; status: "forming" | "access" | "done" | "cancelled";
+  day: number; scene: number; hexId: string; status: "forming" | "access" | "scheduled" | "done" | "cancelled";
   participantIds: string[]; invitedIds: string[]; pointId?: string; areaId?: string; destination?: string;
   objective?: z.infer<typeof objective>; objectiveLabel?: string; catalogKey?: string; purpose?: string; itemId?: string; itemSnapshot?: string; quantity?: number;
   depth?: "normal" | "deep";
@@ -38,7 +38,7 @@ export const playerCommandSchema = z.discriminatedUnion("type", [
   z.object({ ...base, type: z.literal("deep-search"), hexId: id, pointId: id, areaId: id, objective, catalogKey: z.string().max(240).optional(), objectiveLabel: z.string().trim().min(1).max(240).optional(), purpose: z.string().trim().min(1).max(240) }).strict(),
   z.object({ ...base, type: z.literal("travel"), destination: id }).strict(),
   z.object({ ...base, type: z.literal("rest"), kind: z.enum(["short", "long"]) }).strict(),
-  z.object({ ...base, type: z.literal("request-rest"), kind: z.enum(["short", "long"]) }).strict(),
+  z.object({ ...base, type: z.literal("request-rest"), kind: z.enum(["short", "long"]), participantIds: z.array(id).min(1).max(30).optional() }).strict(),
   z.object({ ...base, type: z.literal("confirm-rest"), operationId: id, choices: restChoices }).strict(),
   z.object({ ...base, type: z.literal("offer"), targetId: id, itemId: id, quantity }).strict(),
   z.object({ ...base, type: z.literal("deposit"), itemId: id, quantity }).strict(),
@@ -71,7 +71,7 @@ export type PublicPlayerActions = {
 const operationSchema = z.object({
   id, type: z.enum(["search", "travel", "transfer", "rest", "exception"]), initiatorId: id,
   day: z.number().int().min(1).max(9999), scene: z.number().int().min(1), hexId: id,
-  status: z.enum(["forming", "access", "done", "cancelled"]), participantIds: z.array(id).max(30), invitedIds: z.array(id).max(30),
+  status: z.enum(["forming", "access", "scheduled", "done", "cancelled"]), participantIds: z.array(id).max(30), invitedIds: z.array(id).max(30),
   pointId: id.optional(), areaId: id.optional(), destination: id.optional(), objective: objective.optional(),
   objectiveLabel: z.string().max(240).optional(), catalogKey: z.string().max(240).optional(),
   purpose: z.string().max(500).optional(), itemId: id.optional(), itemSnapshot: z.string().max(20000).optional(),

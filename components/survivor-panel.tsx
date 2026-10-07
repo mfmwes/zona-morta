@@ -30,16 +30,15 @@ import { SurvivorConflictHud } from "@/components/survivor-conflict-hud";
 import { Counter, Field, Pick } from "@/components/game-controls";
 import { traitLabel, localizeRollLog } from "@/lib/terminology";
 import { absoluteMinutes, addLog, ammunitionCount, ammunitionItemType, ammunitionTypes, content, survivorHex, survivorIsDown, survivorStats, traits, type EquipmentSlot, type GameState, type Infection, type Survivor } from "@/lib/game";
-import { activeCart, atSharedStorage, batteryStateFor, cartStoredLoad, catalogForItem, countsAsMedication, discardItem, stowSlot } from "@/lib/inventory";
+import { activeCart, atSharedStorage, batteryStateFor, cartStoredLoad, catalogForItem, countsAsMedication, stowSlot } from "@/lib/inventory";
 import { provisionBreakdown, provisionDisplay, provisionItemInfo } from "@/lib/provision-items";
 import { equipmentModifiers, getPrimary, getProtection, getSecondary, unarmedAttack, weaponAmmoType } from "@/lib/equipment";
-import { rollDie } from "@/lib/rolls";
 import { consumeDailyProvision } from "@/lib/survival";
 import { adjustProvisionCount } from "@/lib/provisions";
 import { abilityCosts, abilityPeriod, costLabels, periodLabels, recordAbilityUse, restActionLabels, restActionsFor, type AbilityCost, type RestAction, type RestChoice, type RestKind } from "@/lib/abilities";
 import { abilityUseOptions, abilityUseState } from "@/lib/ability-presentation";
 import { shelterTreatmentBonus } from "@/lib/shelter-projects";
-import { advanceParticipantTime } from "@/lib/time";
+import { scheduleExposureTreatment } from "@/lib/treatment";
 import { participantTimePreview, survivorTimedCommitment } from "@/lib/activity";
 
 type Edit = (fn: (draft: GameState) => void) => void;
@@ -130,10 +129,15 @@ function RestPlanner({ game, edit, selected, playerMode, playerPreview, restPeer
   const [choices, setChoices] = useState<[RestChoice, RestChoice]>([{action:"hp",targetId:selected.id},{action:"stress",targetId:selected.id}]);
   const [busy, setBusy] = useState(false);
   const personalPlanning = playerMode || playerPreview;
-  const request = currentTableRest(game);
+  const request = currentTableRest(game, selected.id);
   const peers = personalPlanning ? restPeers : game.survivors.map(person => ({id:person.id,name:person.name,hex:survivorHex(game,person)}));
+  const [restGroupSelection, setRestGroupSelection] = useState<{ forId: string; ids: string[] } | null>(null);
+  const groupPeers = [{id:selected.id,name:selected.name,hex:survivorHex(game,selected)},...peers.filter(p=>p.id!==selected.id)]
+    .filter(peer=>(peer.hex??game.partyHex)===survivorHex(game,selected));
+  const occupiedIds = new Set([...(game.activities ?? []).filter(a=>a.status==="running").flatMap(a=>a.participantIds), ...(game.publicActivities ?? []).flatMap(a=>a.participantIds)]);
+  const restGroupIds = restGroupSelection?.forId === selected.id ? restGroupSelection.ids : groupPeers.filter(p=>!occupiedIds.has(p.id)).map(p=>p.id);
   const targets = [{id:selected.id,name:selected.name,hex:survivorHex(game,selected)},...peers.filter(p=>p.id!==selected.id)]
-    .filter(peer=>(peer.hex??game.partyHex)===survivorHex(game,selected)).map(peer=>({value:peer.id,label:peer.name}));
+    .filter(peer=>(peer.hex??game.partyHex)===survivorHex(game,selected) && (request?.invitedIds ?? restGroupIds).includes(peer.id)).map(peer=>({value:peer.id,label:peer.name}));
   const confirmed = Boolean(request?.participantIds.includes(selected.id));
   function begin(nextKind: RestKind) {
     setKind(nextKind);
@@ -148,12 +152,12 @@ function RestPlanner({ game, edit, selected, playerMode, playerPreview, restPeer
     try {
       if (personalPlanning) {
         if (!playerActions) throw new Error("Não foi possível registrar o descanso.");
-        await playerActions.send(type==="request-rest" ? {type,id:createId(),day:game.day,kind:nextKind} : {type,id:createId(),day:game.day,operationId:request?.id,choices});
+        await playerActions.send(type==="request-rest" ? {type,id:createId(),day:game.day,kind:nextKind,participantIds:restGroupIds} : {type,id:createId(),day:game.day,operationId:request?.id,choices});
       } else {
         let error: string|null=null;
         edit(draft=>{
           const next=structuredClone(draft);
-          error=type==="request-rest" ? requestTableRest(next,nextKind!) : confirmTableRest(next,selected.id,request!.id,choices);
+          error=type==="request-rest" ? requestTableRest(next,nextKind!,selected.id,restGroupIds) : confirmTableRest(next,selected.id,request!.id,choices);
           if (!error) Object.assign(draft,next);
         });
         if (error) throw new Error(error);
@@ -164,21 +168,21 @@ function RestPlanner({ game, edit, selected, playerMode, playerPreview, restPeer
   }
   function cancel() {
     edit(draft=>{
-      const pending=currentTableRest(draft);
+      const pending=currentTableRest(draft,selected.id);
       if (!pending) return;
       pending.status="cancelled";
       for (const person of draft.survivors) if (JSON.stringify(person.restPlan?.choices)===JSON.stringify(pending.plans?.[person.id])) delete person.restPlan;
     });
   }
-  const disabled=busy||Boolean(game.conflict?.active||game.publicConflict?.active||game.publicPlayerActions?.policy.paused||game.playerActions?.policy.paused)||Boolean(personalPlanning&&(!playerActions?.canAct||playerActions.pending));
-  return <section id="character-rest-panel" className="character-surface character-rest-panel"><SectionHeading index="05" title={personalPlanning?"Seu descanso":"Descanso da mesa"} aside={<span className="character-micro">2 AÇÕES POR PESSOA</span>}/>
+  const disabled=busy||Boolean(game.conflict?.active||game.publicConflict?.active||game.publicPlayerActions?.policy.paused||game.playerActions?.policy.paused)||occupiedIds.has(selected.id)||Boolean(personalPlanning&&(!playerActions?.canAct||playerActions.pending));
+  return <section id="character-rest-panel" className="character-surface character-rest-panel"><SectionHeading index="05" title={personalPlanning?"Seu descanso":"Descanso do grupo"} aside={<span className="character-micro">2 AÇÕES POR PESSOA</span>}/>
     {request ? <>
       <p className="character-section-intro">Descanso <b>{request.kind==="short"?"curto · 1h":"longo · 6h"}</b> solicitado. Cada pessoa confirma suas duas ações na própria ficha.</p>
       <div className="character-chips">{request.invitedIds.map(id=><span key={id}>{peers.find(p=>p.id===id)?.name??(id===selected.id?selected.name:"Sobrevivente")} · {request.participantIds.includes(id)?"Confirmado":"Aguardando escolhas"}</span>)}</div>
       {request.awaitingNight ? <p className="character-rest-status">Todos confirmaram. O mestre aplica estas escolhas em Encerrar dia.</p> : <div className="character-rest-actions"><Button disabled={disabled} onClick={()=>begin(request.kind!)}>{confirmed?"Alterar minhas escolhas":personalPlanning?"Escolher minhas duas ações":`Escolher ações de ${selected.name}`}</Button></div>}
       {!personalPlanning&&<Button size="sm" variant="outline" disabled={busy} onClick={cancel}>Cancelar descanso</Button>}
-    </> : <div className="character-rest-actions"><Button variant="outline" disabled={disabled} onClick={()=>void send("request-rest","short")}><Moon size={16}/> Solicitar descanso curto · 1h</Button><Button disabled={disabled} onClick={()=>void send("request-rest","long")}><Moon size={16}/> Solicitar descanso longo · 6h</Button></div>}
-    <Dialog open={open} onOpenChange={setOpen}><DialogContent className="rest-planner-dialog"><DialogHeader><DialogTitle>Suas ações de descanso {kind==="short"?"curto":"longo"}</DialogTitle><DialogDescription>Escolha duas ações. Cada benefício pode ir para você ou alguém no mesmo hex. O descanso é aplicado quando todos confirmarem.</DialogDescription></DialogHeader>
+    </> : <><div className="rest-group-picker" aria-label="Participantes do descanso">{groupPeers.map(peer=><label key={peer.id}><input type="checkbox" checked={restGroupIds.includes(peer.id)} disabled={peer.id===selected.id||disabled||occupiedIds.has(peer.id)} onChange={event=>setRestGroupSelection({forId:selected.id,ids:event.target.checked?[...restGroupIds,peer.id]:restGroupIds.filter(id=>id!==peer.id)})}/>{peer.name}</label>)}</div><div className="character-rest-actions"><Button variant="outline" disabled={disabled} onClick={()=>void send("request-rest","short")}><Moon size={16}/> Solicitar descanso curto · 1h</Button><Button disabled={disabled} onClick={()=>void send("request-rest","long")}><Moon size={16}/> Solicitar descanso longo · 6h</Button></div></>}
+    <Dialog open={open} onOpenChange={setOpen}><DialogContent className="rest-planner-dialog"><DialogHeader><DialogTitle>Suas ações de descanso {kind==="short"?"curto":"longo"}</DialogTitle><DialogDescription>Escolha duas ações. Cada benefício pode ir para você ou alguém no mesmo hex. O descanso começa quando os participantes confirmarem. Os benefícios são aplicados no horário de conclusão.</DialogDescription></DialogHeader>
       <div className="rest-planner-row"><b>{selected.name}</b><div className="rest-planner-choices">{([0,1] as const).map(index=><div className="rest-planner-action" key={index}><span className="rest-planner-action-title">AÇÃO {index+1}</span><Pick label="O que fazer" value={choices[index].action} options={restActionsFor(kind).map(action=>({value:action,label:restActionLabels[action]}))} onChange={value=>setChoices(current=>current.map((choice,i)=>i===index?{...choice,action:value as RestAction}:choice) as [RestChoice,RestChoice])}/><Pick label="Quem recebe o benefício" value={choices[index].targetId} options={targets} onChange={value=>setChoices(current=>current.map((choice,i)=>i===index?{...choice,targetId:value}:choice) as [RestChoice,RestChoice])}/></div>)}</div></div>
       <DialogFooter><Button variant="outline" onClick={()=>setOpen(false)}>Cancelar</Button><Button disabled={disabled||!request||request.awaitingNight} onClick={()=>void send("confirm-rest")}>Confirmar minhas ações</Button></DialogFooter>
     </DialogContent></Dialog>
@@ -416,51 +420,10 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
       toast.error("Não há tempo suficiente", { description: "O tratamento leva 30 min e precisa terminar dentro da janela de Exposição e antes da passagem de dia." });
       return;
     }
-    const hope = rollDie(12), fear = rollDie(12);
-    const support = shelterTreatmentBonus(game, selected.id);
-    const total = hope + fear + (selected.attributes.Conhecimento ?? 0) + support.bonus;
-    const success = hope === fear || total >= 13;
-    let applied = false;
-    let failure = "Não foi possível concluir o tratamento.";
-    edit(draft => {
-      const s = draft.survivors.find(x => x.id === selected.id);
-      if (!s || s.infection !== "Exposto" || s.treatmentAttempted) return;
-      const busy = survivorTimedCommitment(draft, s.id);
-      if (busy) { failure = busy.label; return; }
-      const treatmentPreview = participantTimePreview(draft, [s.id], 30);
-      if (!treatmentPreview.ok || (draft.day - 1) * 1440 + treatmentPreview.endMinute > (s.exposureDeadline ?? 0)) {
-        failure = "A janela de Exposição termina antes dos 30 min necessários para o tratamento."; return;
-      }
-      if (chosenMedicine === "shared") {
-        if (!atSharedStorage(draft, s.id) || draft.shelter.medications < 1) { failure = "A fonte de Medicamentos não está mais acessível."; return; }
-      } else {
-        const item = s.inventory.find(x => x.id === chosenMedicine);
-        if (!item || !countsAsMedication(item) || item.qty < 1) { failure = "O item de tratamento não está mais disponível."; return; }
-      }
-      if (!advanceParticipantTime(draft, [s.id], 30, `Tratamento de Exposição de ${s.name}: 30 min reservados.`).ok) {
-        failure = "Não foi possível avançar o relógio para o tratamento."; return;
-      }
-      let sourceLabel = "";
-      if (chosenMedicine === "shared") {
-        draft.shelter.medications -= 1;
-        sourceLabel = "reservas compartilhadas";
-      } else {
-        const item = s.inventory.find(x => x.id === chosenMedicine)!;
-        sourceLabel = item.name;
-        if (!discardItem(draft, s.id, item.id, 1)) { failure = "Não foi possível consumir o Medicamentos selecionado."; return; }
-      }
-      s.treatmentAttempted = true;
-      if (success) { s.infection = "Saudável"; s.exposureDeadline = null; }
-      if (hope === fear) { s.hope = Math.min(6, s.hope + 1); s.stress = Math.max(0, s.stress - 1); }
-      else if (hope > fear) s.hope = Math.min(6, s.hope + 1);
-      else draft.fear = Math.min(12, draft.fear + 1);
-      addLog(draft, "tratamento", s.name + ": limpeza de Exposição (" + hope + " Esperança / " + fear + " Medo + Conhecimento" +
-        (support.bonus ? " + " + support.bonus + " infraestrutura [" + support.sources.join(" + ") + "]" : "") + " = " + total +
-        ", Dificuldade 13). " + (success ? "Saudável" : "Permanece Exposto") + ". Gastou 1 Medicamentos de " + sourceLabel + ".", s.id);
-      applied = true;
-    });
-    if (!applied) { toast.error("Tratamento não concluído", { description: failure }); return; }
-    toast.success("Tratamento concluído", { description: "30 min foram consumidos no relógio da campanha." });
+    let result: ReturnType<typeof scheduleExposureTreatment> | undefined;
+    edit(draft => { result = scheduleExposureTreatment(draft, selected.id, chosenMedicine, cleanWaterConfirmed); });
+    if (!result?.ok) { toast.error("Tratamento não iniciado", { description: result?.message }); return; }
+    toast.success("Tratamento iniciado", { description: "O medicamento foi consumido. O resultado será aplicado na conclusão, após 30 min." });
     setTreatmentOpen(false); setCleanWaterConfirmed(false);
   }
 
@@ -736,7 +699,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
               {selected.infection === "Exposto" && <div className="character-treatment"><b>Janela: até {deadlineLabel(selected.exposureDeadline)}</b><span>{selected.treatmentAttempted ? "Tentativa já usada" : "Uma tentativa possível"} · {medicineSources.length} fonte(s) de Medicamentos acessível(is)</span>
                 {!playerMode ? <>
                 <Dialog open={treatmentOpen} onOpenChange={value => { setTreatmentOpen(value); if (!value) setCleanWaterConfirmed(false); }}><DialogTrigger asChild><Button size="sm" disabled={selected.treatmentAttempted || (selected.exposureDeadline ?? 0) < absoluteMinutes(game) || !chosenMedicine}><Stethoscope size={16} /> Tentar limpar exposição</Button></DialogTrigger>
-                  <DialogContent><DialogHeader><DialogTitle>Tratamento imediato · 30 min</DialogTitle><DialogDescription>Escolha 1 Medicamentos acessível, confirme água limpa e role Conhecimento contra 13. O procedimento consome 30 min e precisa terminar dentro da janela de Exposição. Uma tentativa por Exposição.{treatmentSupport.bonus ? ` Infraestrutura do abrigo: +${treatmentSupport.bonus} (${treatmentSupport.sources.join(" + ")}).` : ""}</DialogDescription></DialogHeader>
+                  <DialogContent><DialogHeader><DialogTitle>Tratamento de Exposição · 30 min</DialogTitle><DialogDescription>Escolha 1 Medicamentos acessível, confirme água limpa e role Conhecimento contra 13. O procedimento consome 30 min e precisa terminar dentro da janela de Exposição. Uma tentativa por Exposição.{treatmentSupport.bonus ? ` Infraestrutura do abrigo: +${treatmentSupport.bonus} (${treatmentSupport.sources.join(" + ")}).` : ""}</DialogDescription></DialogHeader>
                     <Pick label="Fonte do tratamento" value={chosenMedicine} options={medicineSources} onChange={setTreatmentSource} />
                     <label className="inventory-ready"><input type="checkbox" checked={cleanWaterConfirmed} onChange={event => setCleanWaterConfirmed(event.target.checked)} /><span>Há água limpa e condições de cuidar da ferida nesta cena.</span></label>
                     <DialogFooter><Button variant="outline" onClick={() => setTreatmentOpen(false)}>Cancelar</Button><Button disabled={!cleanWaterConfirmed || !chosenMedicine} onClick={treatExposure}>Confirmar e rolar</Button></DialogFooter></DialogContent>

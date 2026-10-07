@@ -2,12 +2,12 @@ import { addLog, survivorHex, type GameState } from "./game";
 import { createId } from "./id";
 import { defaultPlayerPolicy, type TeamOperation } from "./player-actions-types";
 import { participantTimePreview, timedActionParticipantIssue } from "./activity";
-import { resolveGroupRest, restActionsFor, restDurationMinutes, type RestChoice, type RestKind } from "./abilities";
+import { scheduleGroupRest, restActionsFor, restDurationMinutes, type RestChoice, type RestKind } from "./abilities";
 import { rollDie } from "./rolls";
 
-export function currentTableRest(game: GameState): TeamOperation | undefined {
+export function currentTableRest(game: GameState, actorId?: string): TeamOperation | undefined {
   const operations = game.publicPlayerActions?.operations ?? game.playerActions?.operations ?? [];
-  return operations.find(op => op.type === "rest" && op.individualChoices && op.status === "forming" && op.day === game.day && op.scene === (game.scene ?? 1));
+  return operations.find(op => op.type === "rest" && op.individualChoices && op.status === "forming" && op.day === game.day && op.scene === (game.scene ?? 1) && (!actorId || op.invitedIds.includes(actorId)));
 }
 
 export function tableRestReadyForNight(game: GameState) {
@@ -25,49 +25,56 @@ function availabilityIssue(game: GameState, ids: string[]) {
   return unresolved ? "Conclua a busca em andamento antes do descanso." : null;
 }
 
-export function requestTableRest(game: GameState, kind: RestKind, initiatorId = game.survivors[0]?.id) {
+export function requestTableRest(game: GameState, kind: RestKind, initiatorId = game.survivors[0]?.id, selectedIds?: string[]) {
   if (!game.survivors.length) return "Não há sobreviventes para descansar.";
   if (game.conflict?.active) return "Encerre o conflito antes de solicitar descanso.";
   if (game.playerActions?.policy.paused) return "Resolva a pausa da mesa antes de solicitar descanso.";
-  if (game.playerActions?.operations.some(op => op.type === "rest" && op.status === "forming" && op.day === game.day && op.scene === (game.scene ?? 1))) return "Já há um descanso aguardando confirmação.";
-  const issue = availabilityIssue(game, game.survivors.map(p => p.id));
+  const hex = survivorHex(game, initiatorId!);
+  const invitedIds = selectedIds ?? game.survivors.filter(p => survivorHex(game, p) === hex && !timedActionParticipantIssue(game, [p.id])).map(p => p.id);
+  if (!invitedIds.length || new Set(invitedIds).size !== invitedIds.length || !invitedIds.includes(initiatorId!)
+    || invitedIds.some(id => !game.survivors.some(p => p.id === id && survivorHex(game, p) === hex))) return "Escolha participantes presentes no mesmo hex, incluindo quem solicita.";
+  if (game.playerActions?.operations.some(op => op.type === "rest" && op.status === "forming" && op.day === game.day
+    && op.invitedIds.some(id => invitedIds.includes(id)))) return "Já há um descanso aguardando confirmação destes participantes.";
+  const issue = availabilityIssue(game, invitedIds);
   if (issue) return issue;
-  if (kind === "short" && !participantTimePreview(game, game.survivors.map(p => p.id), restDurationMinutes.short).ok) return "O descanso curto precisa terminar antes da passagem de dia.";
+  if (kind === "short" && !participantTimePreview(game, invitedIds, restDurationMinutes.short).ok) return "O descanso curto precisa terminar antes da passagem de dia.";
+  if (kind === "long" && !participantTimePreview(game, invitedIds, restDurationMinutes.long).ok && invitedIds.length !== game.survivors.length) return "O descanso deste subgrupo precisa terminar antes da passagem de dia.";
   game.playerActions ??= { policy: defaultPlayerPolicy(), operations: [], receipts: [], withdrawals: [], markers: [] };
-  game.playerActions.operations = game.playerActions.operations.filter(op => op.day === game.day && op.scene === (game.scene ?? 1));
+  game.playerActions.operations = game.playerActions.operations.filter(op => op.day === game.day && (op.scene === (game.scene ?? 1) || op.status === "scheduled" || game.activities?.some(a => a.status === "running" && a.operationId === op.id)));
   if (game.playerActions.operations.length >= 150) return "Limite de operações atingido.";
   game.playerActions.operations.push({ id: createId(), type: "rest", individualChoices: true, initiatorId: initiatorId!,
-    day: game.day, scene: game.scene ?? 1, hexId: game.partyHex, kind, status: "forming", participantIds: [],
-    invitedIds: game.survivors.map(p => p.id), plans: {} });
-  addLog(game, "equipe", `Descanso ${kind === "short" ? "curto" : "longo"} solicitado: cada sobrevivente escolhe duas ações na própria ficha.`);
+    day: game.day, scene: game.scene ?? 1, hexId: hex, kind, status: "forming", participantIds: [],
+    invitedIds, plans: {} });
+  addLog(game, "equipe", `Descanso ${kind === "short" ? "curto" : "longo"} solicitado: cada participante escolhe duas ações na própria ficha.`);
   return null;
 }
 
-export function confirmTableRest(game: GameState, actorId: string, operationId: string, choices: RestChoice[], die = rollDie) {
+export function confirmTableRest(game: GameState, actorId: string, operationId: string, choices: RestChoice[], _die = rollDie) {
+  void _die;
   const op = game.playerActions?.operations.find(op => op.id === operationId);
   const actor = game.survivors.find(p => p.id === actorId);
-  if (!op || op !== currentTableRest(game) || !op.kind || !actor || !op.invitedIds.includes(actorId) || op.awaitingNight) return "Este descanso não aceita suas escolhas.";
+  if (!op || op !== currentTableRest(game, actorId) || !op.kind || !actor || !op.invitedIds.includes(actorId) || op.awaitingNight) return "Este descanso não aceita suas escolhas.";
   if (game.conflict?.active) return "Encerre o conflito antes de confirmar o descanso.";
   const issue = availabilityIssue(game, [actorId]);
   if (issue) return issue;
-  if (choices.length !== 2 || choices.some(choice => !restActionsFor(op.kind!).includes(choice.action) || !game.survivors.some(target => target.id === choice.targetId && survivorHex(game, target) === survivorHex(game, actor)))) return "Escolha duas ações válidas e alvos presentes no mesmo hex.";
-  if (game.survivors.length !== op.invitedIds.length || game.survivors.some(p => !op.invitedIds.includes(p.id))) return "O grupo mudou. Cancele e solicite outro descanso.";
+  if (choices.length !== 2 || choices.some(choice => !restActionsFor(op.kind!).includes(choice.action) || !game.survivors.some(target => target.id === choice.targetId && op.invitedIds.includes(target.id) && survivorHex(game, target) === survivorHex(game, actor)))) return "Escolha duas ações válidas e alvos presentes no mesmo hex.";
+  if (op.invitedIds.some(id => !game.survivors.some(p => p.id === id && survivorHex(game, p) === op.hexId))) return "O grupo mudou. Cancele e solicite outro descanso.";
   op.plans ??= {};
   op.plans[actorId] = structuredClone(choices);
   actor.restPlan = { kind: op.kind, choices: structuredClone(choices) };
   if (!op.participantIds.includes(actorId)) op.participantIds.push(actorId);
-  if (!game.survivors.every(p => op.participantIds.includes(p.id))) return null;
-  if (game.survivors.some(p => p.restPlan?.kind !== op.kind || JSON.stringify(p.restPlan?.choices) !== JSON.stringify(op.plans?.[p.id]))) return "Uma escolha confirmada mudou. Confirme novamente antes de concluir.";
-  const allIssue = availabilityIssue(game, game.survivors.map(p => p.id));
+  if (!op.invitedIds.every(id => op.participantIds.includes(id))) return null;
+  if (game.survivors.filter(p => op.invitedIds.includes(p.id)).some(p => p.restPlan?.kind !== op.kind || JSON.stringify(p.restPlan?.choices) !== JSON.stringify(op.plans?.[p.id]))) return "Uma escolha confirmada mudou. Confirme novamente antes de concluir.";
+  const allIssue = availabilityIssue(game, op.invitedIds);
   if (allIssue) return allIssue;
   if (op.kind === "long" && !participantTimePreview(game, op.invitedIds, restDurationMinutes.long).ok) {
     op.awaitingNight = true;
     op.result = "Todos confirmaram. Escolhas prontas para Encerrar dia.";
     return null;
   }
-  const result = resolveGroupRest(game, op.kind, game.survivors.map(p => ({ survivorId: p.id, choices: op.plans![p.id] })), die);
+  const result = scheduleGroupRest(game, op.kind, op.invitedIds.map(id => ({ survivorId: id, choices: op.plans![id] })), op.id);
   if (!result.ok) return result.message;
-  op.status = "done";
-  op.result = `Descanso concluído · ${result.minutes / 60}h · Medo +${result.fear}.`;
+  op.status = "scheduled";
+  op.result = "Descanso iniciado. Benefícios serão aplicados na conclusão.";
   return null;
 }

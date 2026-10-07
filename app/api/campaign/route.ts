@@ -1,5 +1,6 @@
 import { playerTeamPeers as restPeers } from "@/lib/player-preview";
 import { applyPlayerSheetEdit, type SheetEditPayload } from "@/lib/player-sheet-edit";
+import { validActivities } from "@/lib/activity-timeline-validation";
 import { validPlayerActionState } from "@/lib/player-actions-types";
 import { validPortraitFrame } from "@/lib/portrait-frame";
 import { campaignExists, campaignOwnerId, campaignRevision, findPlayer, readCampaign, restoreAccountCharacterToCampaign, wasRevoked, writeCampaign } from "@/db/state";
@@ -162,6 +163,8 @@ function validState(value: unknown): value is GameState {
   return Number.isInteger(state.day) && state.day! > 0 && state.day! < 100000
     && Number.isInteger(state.minutes) && state.minutes! >= 0 && state.minutes! < 1440
     && validParallelTime(state.parallelTime, state)
+    && validActivities(state.activities, state)
+    && state.publicActivities === undefined
     && Number.isInteger(state.fear) && state.fear! >= 0 && state.fear! <= 12
     && Number.isInteger(state.noise) && state.noise! >= 0 && state.noise! <= 5
     && typeof state.partyHex === "string" && /^-?\d+,-?\d+$/.test(state.partyHex)

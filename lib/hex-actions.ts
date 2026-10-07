@@ -13,6 +13,9 @@ import { adjacentHexes, parseHex } from "./world";
 import { advanceCampaignTime, advanceParticipantTime } from "./time";
 import { shelterTravelMinutes } from "./shelter-projects";
 import { parallelTimeLabel, participantTimePreview, survivorTimedCommitment } from "./activity";
+import { registerActivityHandler } from "./activity-handlers";
+import { scheduleActivity } from "./activity-timeline";
+import { eventTriggerReady } from "./hex-generators";
 import { prepareHex } from "./hex-automation";
 
 export type HexQuickAction =
@@ -57,7 +60,7 @@ function revealAround(game: GameState, id: string) {
   return destination;
 }
 
-export function moveSurvivors(game: GameState, destination: string, survivorIds: string[]) {
+export function moveSurvivors(game: GameState, destination: string, survivorIds: string[], options: { advanceTime?: boolean; durationMinutes?: number } = {}) {
   const record = game.hexes[destination];
   if (!record || record.discovery === "desconhecido") return { ok: false, message: "" };
   const ids = [...new Set(survivorIds)];
@@ -74,12 +77,12 @@ export function moveSurvivors(game: GameState, destination: string, survivorIds:
   const target = parseHex(destination);
   if (!source || !target || hexDistance(target.q - source.q, target.r - source.r) !== 1) return { ok: false, message: "" };
 
-  const travelMinutes = shelterTravelMinutes(game, sourceHex, destination, record.routeHours * 60);
+  const travelMinutes = options.durationMinutes ?? shelterTravelMinutes(game, sourceHex, destination, record.routeHours * 60);
   const timePreview = participantTimePreview(game, ids, travelMinutes);
-  if (!timePreview.ok) return { ok: false, message: "O trajeto não cabe no tempo restante deste dia para este grupo." };
+  if (options.advanceTime !== false && !timePreview.ok) return { ok: false, message: "O trajeto não cabe no tempo restante deste dia para este grupo." };
 
   const wholeSourceGroup = people.length === survivorsAtHex(game, sourceHex).length;
-  const timeResult = advanceParticipantTime(game, ids, travelMinutes);
+  const timeResult = options.advanceTime === false ? { ok: true, overlapMinutes: 0 } : advanceParticipantTime(game, ids, travelMinutes);
   if (!timeResult.ok) return { ok: false, message: "" };
   for (const person of people) person.hex = destination;
   for (const npc of game.npcs ?? []) {
@@ -99,9 +102,9 @@ export function moveSurvivors(game: GameState, destination: string, survivorIds:
   const sector = revealAround(game, destination);
   const names = people.map(person => person.name);
   const subject = names.length === 1 ? names[0] : names.join(", ");
-  const timing = timeResult.overlapMinutes ? ` · ${parallelTimeLabel(timeResult)}` : "";
+  const timing = timeResult.overlapMinutes ? ` · ${parallelTimeLabel(timeResult as ReturnType<typeof advanceParticipantTime>)}` : "";
   const message = `${subject} ${names.length === 1 ? "entrou" : "entraram"} em ${sector?.name ?? `hex ${destination}`} após ${travelDurationLabel(travelMinutes)} de trajeto${timing}.`;
-  addLog(game, "travessia", message);
+  addLog(game, "travessia", message, ids[0], ids);
   return { ok: true, message, sourceHex, destination, survivorIds: ids };
 }
 
@@ -162,7 +165,7 @@ export function performHexAction(game: GameState, id: string, action: HexQuickAc
   if (action.type === "travel") {
     if (!options.canTravel) return { ok: false, message: "" };
     const mainGroup = survivorsAtHex(game, game.partyHex);
-    if (mainGroup.length > 0) return moveSurvivors(game, id, mainGroup.map(person => person.id));
+    if (mainGroup.length > 0) return scheduleSurvivorTravel(game, id, mainGroup.map(person => person.id));
 
     // Compatibilidade com campanhas sem sobreviventes criados.
     if (!advanceCampaignTime(game, options.travelMinutes).ok) return { ok: false, message: "" };
@@ -194,3 +197,31 @@ export function performHexAction(game: GameState, id: string, action: HexQuickAc
 
   return { ok: false, message: "" };
 }
+
+/** Declara a viagem; posições e revelações só mudam na chegada. */
+export function scheduleSurvivorTravel(game: GameState, destination: string, ids: string[], operationId?: string) {
+  const destinationHex = game.hexes[destination];
+  const sources = movementSources(game, destination);
+  const source = sources.find(group => ids.length > 0 && ids.every(id => group.members.some(p => p.id === id)));
+  if (!destinationHex || destinationHex.discovery === "desconhecido" || !source)
+    return { ok: false, message: "Escolha sobreviventes no mesmo hex adjacente e um destino revelado." };
+  const minutes = shelterTravelMinutes(game, source.hex, destination, destinationHex.routeHours * 60);
+  const result = scheduleActivity(game, { type: "travel", destination }, ids, minutes,
+    `Viagem para ${destinationHex.sector?.name ?? `Hex ${destination}`}`, { operationId });
+  return result.ok ? { ok: true, message: `Viagem iniciada · chegada às ${String(Math.floor(result.activity.endMinute / 60)).padStart(2, "0")}:${String(result.activity.endMinute % 60).padStart(2, "0")}.`, destination, sourceHex: source.hex, survivorIds: ids } : result;
+}
+
+registerActivityHandler("travel", (game, activity) => {
+  if (activity.type !== "travel") return { ok: false, message: "Viagem inválida." };
+  const readyBefore = new Set(Object.entries(game.hexes).flatMap(([hexId, hex]) => hex.events.filter(e=>eventTriggerReady(game,hexId,e)).map(e=>e.id)));
+  const moved = moveSurvivors(game, activity.destination, activity.participantIds,
+    { advanceTime: false, durationMinutes: activity.endMinute - activity.startMinute });
+  if (!moved.ok) return { ok: false, message: moved.message || "O destino ou os participantes da viagem mudaram." };
+  const triggered = Object.entries(game.hexes).some(([hexId,hex])=>hex.events.some(e=>eventTriggerReady(game,hexId,e)&&!readyBefore.has(e.id)));
+  if (triggered && game.playerActions) {
+    game.playerActions.policy.paused = true;
+    const op = game.playerActions.operations.find(o=>o.id===activity.operationId);
+    if (op) op.attention = "Um acontecimento ficou pronto na chegada: o mestre resolve a consequência.";
+  }
+  return { ok: true, message: moved.message };
+});

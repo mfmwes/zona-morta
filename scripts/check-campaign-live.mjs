@@ -110,7 +110,20 @@ try {
   };
   const search=await act({id:'search-without-permission',type:'search',hexId:'0,0',pointId:'market',areaId:location.preparation.areas[0].id,objective:'open',purpose:'Suprimentos'});
   assert.equal(search.state.publicPlayerActions.operations.find(op=>op.id==='search-without-permission').status,'forming');
-  const completedSearch=await act({id:'execute-search',type:'execute',operationId:'search-without-permission'});
+  const startedSearch=await act({id:'execute-search',type:'execute',operationId:'search-without-permission'});
+  assert.equal(startedSearch.state.publicPlayerActions.stock.filter(stock=>stock.source==='search').length,0);
+  assert.equal(startedSearch.state.publicActivities.length,1);
+  const advance=async id=>{
+    const latest=await (await mf.dispatchFetch(origin+path,{headers:headers('master')})).json();
+    const {nextActivityMinute}=require('../lib/time.ts');
+    const command={type:'advance-activity',id,day:latest.state.day,expectedMinute:latest.state.minutes,expectedNext:nextActivityMinute(latest.state)};
+    const response=await mf.dispatchFetch(origin+actionPath,{method:'POST',headers:{...headers('master'),'Content-Type':'application/json'},body:JSON.stringify(command)});
+    const payload=await response.json();assert.equal(response.status,200,JSON.stringify(payload));
+    const replay=await mf.dispatchFetch(origin+actionPath,{method:'POST',headers:{...headers('master'),'Content-Type':'application/json'},body:JSON.stringify(command)});
+    assert.equal((await replay.json()).revision,payload.revision);
+    return (await mf.dispatchFetch(origin+path+'&survivor='+actor.id,{headers:headers('player')})).json();
+  };
+  const completedSearch=await advance('master-search-next');
   const found=completedSearch.state.publicPlayerActions.stock.find(stock=>stock.source==='search'&&stock.accessible&&!stock.requiresFuelContainer);
   assert.ok(found,'Completed search must expose collectible stock');
   assert.ok(found.item,'Public stock must include its physical item state for the capacity preview');
@@ -147,7 +160,9 @@ try {
   assert.ok(rest);assert.deepEqual(rest.participantIds,[]);assert.equal(rest.plans,undefined);
   const beforeRest=requested.state.minutes;
   const confirm={id:'rest-confirm',type:'confirm-rest',operationId:rest.id,choices:[{action:'stress',targetId:actor.id},{action:'prepare',targetId:actor.id}]};
-  const rested=await act(confirm);
+  const startedRest=await act(confirm);
+  assert.equal(startedRest.state.minutes,beforeRest);assert.equal(startedRest.state.publicActivities.length,1);
+  const rested=await advance("master-rest-next");
   assert.equal(rested.state.minutes,beforeRest+60);assert.equal(rested.state.shortRest,2);assert.equal(rested.state.survivors[0].stress,0);
   const repeated=await act(confirm);assert.equal(repeated.revision,rested.revision);assert.equal(repeated.state.minutes,rested.state.minutes);
   const afterRest=await (await mf.dispatchFetch(origin+path,{headers:headers('master')})).json();

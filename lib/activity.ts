@@ -1,7 +1,7 @@
 import { absoluteMinutes, displayTime, type GameState } from "./game";
 
 export type SurvivorTimedCommitment = {
-  kind: "shelter-work";
+  kind: "shelter-work" | "travel" | "search" | "rest" | "treatment";
   projectId: string;
   projectName: string;
   endAbsoluteMinute: number;
@@ -12,7 +12,12 @@ export type SurvivorTimedCommitment = {
 /** Compromissos temporais impedem que o mesmo sobrevivente use as mesmas horas
  * em viagem, busca ou descanso. Hoje o único compromisso persistente é trabalho
  * no abrigo; a função fica centralizada para novas atividades futuras. */
-export function survivorTimedCommitment(game: GameState, survivorId: string): SurvivorTimedCommitment | null {
+export function survivorTimedCommitment(game: GameState, survivorId: string, exceptActivityId?: string): SurvivorTimedCommitment | null {
+  const activity = game.activities?.find(a => a.day === game.day && a.status === "running" && a.id !== exceptActivityId && a.participantIds.includes(survivorId));
+  if (activity) {
+    const until = displayTime(activity.endMinute);
+    return { kind: activity.type, projectId: activity.id, projectName: activity.label, endAbsoluteMinute: (game.day - 1) * 1440 + activity.endMinute, until, label: `${activity.label} até ${until}` };
+  }
   const now = absoluteMinutes(game);
   for (const project of game.shelter.projects ?? []) {
     const shift = (project.volunteerShifts ?? [])
@@ -32,11 +37,11 @@ export function survivorTimedCommitment(game: GameState, survivorId: string): Su
   return null;
 }
 
-export function timedActionParticipantIssue(game: GameState, survivorIds: string[], actionLabel = "esta ação") {
+export function timedActionParticipantIssue(game: GameState, survivorIds: string[], actionLabel = "esta ação", exceptActivityId?: string) {
   for (const id of survivorIds) {
     const person = game.survivors.find(candidate => candidate.id === id);
-    const commitment = survivorTimedCommitment(game, id);
-    if (person && commitment) return `${person.name} está ocupado: trabalhando em ${commitment.projectName} até ${commitment.until}. Não pode participar de ${actionLabel} nas mesmas horas.`;
+    const commitment = survivorTimedCommitment(game, id, exceptActivityId);
+    if (person && commitment) return `${person.name} está ocupado: ${commitment.label}. Não pode participar de ${actionLabel} nas mesmas horas.`;
   }
   return null;
 }
@@ -52,11 +57,6 @@ export type ParticipantTimePreview = {
   overlapMinutes: number;
   fullyParallel: boolean;
 };
-
-/** Retorna a linha de tempo individual de hoje sem criar estado novo. */
-function currentParallelTime(game: GameState) {
-  return game.parallelTime?.day === game.day ? game.parallelTime : undefined;
-}
 
 /** Garante curso temporal individual para os sobreviventes atuais. Campanhas
  * antigas começam sincronizadas no horário em que a primeira ação paralela ocorre. */
@@ -87,11 +87,8 @@ export function participantTimePreview(game: GameState, survivorIds: string[], d
     return { ok: false, startMinute: game.minutes, endMinute: game.minutes, worldBefore: game.minutes,
       worldAfter: game.minutes, worldAdvance: 0, overlapMinutes: 0, fullyParallel: false };
   }
-  const timeline = currentParallelTime(game);
-  const startMinute = Math.max(...ids.map(id => {
-    const minute = timeline?.survivorMinutes[id];
-    return Number.isInteger(minute) && Number(minute) >= 0 && Number(minute) <= game.minutes ? Number(minute) : game.minutes;
-  }));
+  // Atividades novas sempre começam agora. Não há ações retroativas.
+  const startMinute = game.minutes;
   const endMinute = startMinute + durationMinutes;
   if (endMinute >= 1440) {
     return { ok: false, startMinute, endMinute, worldBefore: game.minutes, worldAfter: game.minutes,

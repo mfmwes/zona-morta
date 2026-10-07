@@ -10,6 +10,7 @@ const { deepSearchCandidateKeys, prepareLocation, prepareLocationForExploration,
 const { applyPlayerAction, projectPlayerActions, setPlayerPolicy, playerActionState } = require('../lib/player-actions.ts');
 const { validPlayerActionState } = require('../lib/player-actions-types.ts');
 const { projectPlayerGame } = require('../lib/collaboration.ts');
+const { advanceToNextActivity } = require('../lib/time.ts');
 const { catalogKey, itemFromCatalog } = require('../lib/inventory.ts');
 const { createSceneBoardScene, createSceneBoardObject } = require('../lib/scene-board.ts');
 const { requestTableRest, currentTableRest, tableRestReadyForNight } = require('../lib/table-rest.ts');
@@ -38,7 +39,10 @@ function command(f, actor, body, die=()=>1) {
   if(result.ok) f.game=result.state;
   return {...result,input};
 }
-function ok(f, actor, body, die) { const r=command(f,actor,body,die); assert.equal(r.ok,true,r.error); assert.equal(validPlayerActionState(f.game.playerActions),true); return r; }
+function ok(f, actor, body, die) { const r=command(f,actor,body,die); assert.equal(r.ok,true,r.error);
+ // Os cenários de efeitos finais incluem o avanço explícito do mestre.
+ if (['execute','roll-access','confirm-rest'].includes(body.type) && f.game.activities?.some(a=>a.status==='running'&&a.operationId===body.operationId)
+   && f.game.playerActions.operations.find(o=>o.id===body.operationId)?.status==='scheduled') advanceToNextActivity(f.game,die??(()=>1)); assert.equal(validPlayerActionState(f.game.playerActions),true); return r; }
 function denied(f,actor,body,pattern) { const before=structuredClone(f.game); const r=command(f,actor,body); assert.equal(r.ok,false); if(pattern) assert.match(r.error,pattern); assert.deepEqual(f.game,before); return r; }
 function propose(f) { return ok(f,f.ids[0],{type:'search',hexId:'0,0',pointId:'market',areaId:f.areaId,objective:'open',purpose:'Suprimentos'}).input.id; }
 function catalogItem(qty=3) { return itemFromCatalog(content.catalog.find(e=>e.name==='Faca resistente')??content.catalog[0],qty); }
@@ -49,7 +53,8 @@ test('busca registra participantes, local, resultado e d12 somente quando usado;
   ok(f,f.ids[1],{type:'join',operationId:op});
   const logCount=f.game.log.length;
   const execution=ok(f,f.ids[0],{type:'execute',operationId:op});
-  assert.equal(f.game.log.length,logCount+1);
+  assert.equal(f.game.log.filter(log=>log.kind==='busca').length,1);
+  assert.ok(f.game.log.length>logCount);
   const log=f.game.log[0];assert.equal(log.kind,'busca');
   assert.match(log.text,/Nina, Bia: busca geral em Mercado.*d12 1.*Resultado: 1 × Barra de cereal.*30 min · Barulho \+0/);
   assert.deepEqual(log.participantIds,f.ids.slice(0,2));
@@ -103,6 +108,7 @@ test('jogador solicita descanso sem escolhas antecipadas; confirma somente a pr�
  f.game.survivors[2].hex='1,0';
  denied(f,f.ids[1],{type:'confirm-rest',operationId:op.id,choices:[{action:'hp',targetId:f.ids[2]},{action:'fiction',targetId:f.ids[1]}]},/mesmo hex/);
  assert.equal(f.game.survivors[0].restPlan,undefined);
+ f.game.survivors[2].hex='0,0';
  ok(f,f.ids[1],{type:'confirm-rest',operationId:op.id,choices:[{action:'hp',targetId:f.ids[0]},{action:'fiction',targetId:f.ids[1]}]});
  assert.deepEqual(currentTableRest(f.game).participantIds,[f.ids[1]]);
 });
@@ -243,6 +249,7 @@ test('busca direta do mestre aplica a mesma pausa de consequência e projeta res
  const f=fixture();const point=f.game.hexes['0,0'].points[0],area=point.preparation.areas[0];area.noise=3;
  const key=deepSearchCandidateKeys(area)[0];assert.ok(key);
  assert.equal(resolvePreparedSearch(f.game,{id:'master-search',hexId:'0,0',pointId:'market',areaId:f.areaId,participants:[f.ids[0]],mode:'specific',objective:'Item útil',purpose:'Teste da regra comum',catalogKey:key,quantity:1}),null);
+ advanceToNextActivity(f.game,()=>1);
  assert.equal(f.game.playerActions.policy.paused,true);
  const projected=projectPlayerActions(f.game,f.ids[0]).areas.find(row=>row.areaId===f.areaId);
  assert.ok(projected.lastResult);
@@ -419,7 +426,7 @@ test('descanso que atravessa o dia e operação expirada não alteram recursos o
  for(const p of f.game.survivors) p.restPlan={kind:'long',choices:[{action:'hp-full',targetId:p.id},{action:'stress-full',targetId:p.id}]};
  const op=ok(f,f.ids[0],{type:'rest',kind:'long'}).input.id;
  ok(f,f.ids[1],{type:'join',operationId:op}); ok(f,f.ids[2],{type:'join',operationId:op});
- denied(f,f.ids[0],{type:'execute',operationId:op},/fim do dia/);
+ denied(f,f.ids[0],{type:'execute',operationId:op},/passagem de dia/);
  f.game.day++; denied(f,f.ids[0],{type:'execute',operationId:op},/expirou/);
 });
 

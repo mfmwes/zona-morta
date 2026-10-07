@@ -142,7 +142,7 @@ export function MasterOverview({ game, onNavigate, masterActions }: Props) {
         <header><div><Search size={18} /><span><b>Em andamento</b><small>Buscas e trabalhos que já foram iniciados.</small></span></div></header>
         <div className="master-overview-list">
           {searches.slice(0, 5).map(search => <button type="button" className="master-overview-row" key={search.id} onClick={() => onNavigate("mapa")}>
-            <Search size={15} /><span><b>{search.deep ? "Busca profunda" : "Busca"} · {search.point}</b><small>{search.area} · {hexLabel(game, search.hexId)} · {search.status === "pending" ? "aguarda teste" : "pronta para confirmar"}</small></span>
+            <Search size={15} /><span><b>{search.deep ? "Busca profunda" : "Busca"} · {search.point}</b><small>{search.area} · {hexLabel(game, search.hexId)} · {search.status === "pending" ? "aguarda teste" : "aguarda horário de conclusão"}</small></span>
           </button>)}
           {activeProjects.slice(0, 5).map(project => {
             const progress = projectProgress(project);

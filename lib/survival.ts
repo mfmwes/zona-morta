@@ -366,6 +366,7 @@ function advanceMorning(game: GameState) {
 }
 
 export function closeDayWithPlan(game: GameState, plan: DayClosePlan): DayCloseResult {
+  if (game.activities?.some(a => a.day === game.day && a.status === "running")) return { ok: false, ...inspectDayClosePlan(game, plan) };
   if (game.day !== plan.expectedDay || !validResidentCount(plan.residentsFood) || !validResidentCount(plan.residentsWater))
     return { ok: false, ...inspectDayClosePlan(game, plan), stale: true };
 
@@ -488,6 +489,7 @@ export function closeDayWithPlan(game: GameState, plan: DayClosePlan): DayCloseR
 /** Legacy numeric flow kept for tests/backward compatibility. New UI uses
  * closeDayWithPlan so shortages are attributed to specific survivors. */
 export function closeDay(game: GameState, food: number, water: number, expectedDay = game.day) {
+  if (game.activities?.some(a => a.day === game.day && a.status === "running")) return false;
   if (game.day !== expectedDay || ![food, water].every(n => Number.isInteger(n) && n >= 0 && n <= 999)) return false;
   const foodResult = consumeMany(game.shelter, "food", food);
   const waterResult = consumeMany(game.shelter, "water", water);
