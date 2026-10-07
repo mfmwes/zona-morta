@@ -12,7 +12,7 @@ import { ShelterMoveDialog } from "@/components/shelter-move";
 import { SurvivorMoveDialog } from "@/components/survivor-move-dialog";
 import { WorldMapViewport } from "@/components/world-map-viewport";
 import { WorldExpansionDialog } from "@/components/world-expansion-dialog";
-import { hexCenter, parseHex, passages, terrains, worldHexes, type Terrain, type Passage } from "@/lib/world";
+import { hexCenter, parseHex, passages, terrainDetails, terrainMapColors, terrains, worldHexes, type Terrain, type Passage } from "@/lib/world";
 import { MapGroupMarker } from "@/components/map-group-marker";
 import { HexContextMenu } from "@/components/hex-context-menu";
 import { HexGeneratorDialog, type HexGeneratorKind, type HexGeneratorRequest } from "@/components/hex-generator-dialog";
@@ -51,6 +51,19 @@ function travelDurationLabel(minutes: number) {
   if (!hours) return `${rest} min`;
   if (!rest) return `${hours} h`;
   return `${hours}h${String(rest).padStart(2, "0")}`;
+}
+
+function terrainPatternMark(terrain: Terrain) {
+  const common = { stroke: "#ffffff", strokeWidth: 1, opacity: .22, fill: "none" } as const;
+  if (terrain === "urban") return <path d="M0 4H12M0 9H12M4 0V12M9 0V12" {...common} />;
+  if (terrain === "suburban") return <><path d="M1 8L4 5L7 8V11H1Z" {...common} /><path d="M7 5L9.5 2.5L12 5" {...common} /></>;
+  if (terrain === "industrial") return <><path d="M-2 12L12-2M4 14L14 4" {...common} /><rect x="2" y="2" width="4" height="4" {...common} /></>;
+  if (terrain === "rural") return <path d="M0 3C3 1 6 5 12 3M0 8C4 6 8 10 12 8" {...common} />;
+  if (terrain === "forest") return <><circle cx="3" cy="4" r="2" {...common} /><circle cx="9" cy="7" r="2.5" {...common} /><path d="M3 6V10M9 9.5V12" {...common} /></>;
+  if (terrain === "open") return <><circle cx="3" cy="3" r=".8" fill="#fff" opacity=".2" /><circle cx="9" cy="8" r=".8" fill="#fff" opacity=".2" /></>;
+  if (terrain === "roadway") return <><path d="M0 4H12M0 8H12" {...common} /><path d="M2 6H5M7 6H10" stroke="#fff" strokeWidth=".8" opacity=".28" /></>;
+  if (terrain === "swamp") return <path d="M0 3C2 1 4 5 6 3S10 1 12 3M0 8C2 6 4 10 6 8S10 6 12 8" {...common} />;
+  return <path d="M0 10L4 4L7 8L10 2L12 6" {...common} />;
 }
 
 export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerActions, masterActions }: {
@@ -100,6 +113,10 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
 
   const area = parseHex(selected)!;
   const record = game.hexes[selected];
+  const terrain = (record.terrain ?? "urban") as Terrain;
+  const terrainInfo = terrainDetails[terrain];
+  const visibleTerrainKeys = (Object.keys(terrains) as Terrain[]).filter(key =>
+    Object.values(game.hexes).some(hex => (hex.terrain ?? "urban") === key && (!playerPreview || hex.discovery !== "desconhecido")));
   const sectorName = record.sector?.name ?? "Setor ainda não revelado";
   const signs = signsDraft?.key === selected && signsDraft.source === record.signs ? signsDraft.value : record.signs;
   const notes = notesDraft?.key === selected && notesDraft.source === record.notes ? notesDraft.value : record.notes;
@@ -249,12 +266,17 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div><p className="dossier-title">Setor do mapa · Hex {selected}</p><h2 className="text-xl font-extrabold mt-1">{record.discovery !== "desconhecido" && visible ? sectorName : "Além do horizonte"}</h2></div>
         <div className="flex flex-wrap gap-2"><span className="tag">{record.discovery}</span>
-          {visible && <span className="tag">{terrains[record.terrain ?? "urban"]}{record.passage && record.passage !== "none" ? ` · ${passages[record.passage]}` : ""}</span>}
+          {visible && <span className="tag">{terrainInfo.code} · {terrains[terrain]}{record.passage && record.passage !== "none" ? ` · ${passages[record.passage]}` : ""}</span>}
           {!playerPreview && <span className={record.infestation !== null && record.infestation >= 4 ? "tag tag-danger" : "tag"}>
             Infestação {record.infestation === null ? "?" : `${record.infestation}/5`}
           </span>}
           {selected === game.shelter.hex && <span className="tag">Abrigo</span>}</div>
       </div>
+      {visible && <div className={`hex-terrain-summary terrain-${terrain}`}>
+        <span className="hex-terrain-code" style={{ borderColor: terrainMapColors[terrain].stroke }}>{terrainInfo.code}</span>
+        <div><small>TERRENO DO HEX</small><b>{terrains[terrain]}</b><p>{terrainInfo.description}</p></div>
+        <div className="hex-terrain-effect"><small>IDENTIDADE PROCEDURAL</small><span>{terrainInfo.generatorHint}</span><em>Travessia-base: {terrainInfo.travelHours} h{record.routeHours !== terrainInfo.travelHours ? ` · atual: ${record.routeHours} h` : ""}</em></div>
+      </div>}
       {publicMembersHere.length > 0 && <div className="hex-presence-card mt-3">
         {selected === game.partyHex ? <Footprints size={17} aria-hidden="true" /> : <Users size={17} aria-hidden="true" />}
         <div><b>{selected === game.partyHex ? "Grupo principal" : publicMembersHere.length === 1 ? "Sobrevivente isolado" : "Subgrupo neste hex"}</b>
@@ -551,12 +573,17 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
         <span><small>GRUPO ATIVO</small><b>{activeGroup.members.map(person => person.name).join(", ")}</b></span>
         <em>Hex {activeGroup.hex}</em>
       </div>}
+      <div className="map-terrain-legend" aria-label="Legenda de terrenos visíveis">
+        {visibleTerrainKeys.map(key => <span key={key}><i style={{ background: terrainMapColors[key].fill, borderColor: terrainMapColors[key].stroke }} /> <b>{terrainDetails[key].code}</b> {terrains[key]}</span>)}
+      </div>
       <div className="map-surface">
         <WorldMapViewport hexes={game.hexes} activeHex={activeSourceHex} selected={selected} focusHex={focusHex} playerPreview={playerPreview} onSelect={selectHex}>
-          <defs><pattern id="setor-avistado" width="8" height="8" patternUnits="userSpaceOnUse">
-            <rect width="8" height="8" fill="#2d4d50" />
-            <path d="M-2 8L8-2M2 10L10 2" stroke="#527478" strokeWidth="1" opacity=".58" />
-          </pattern></defs>
+          <defs>
+            {(Object.keys(terrains) as Terrain[]).map(key => <pattern key={key} id={`terrain-${key}`} width="12" height="12" patternUnits="userSpaceOnUse">
+              <rect width="12" height="12" fill={terrainMapColors[key].fill} />
+              {terrainPatternMark(key)}
+            </pattern>)}
+          </defs>
           {worldHexes(game.hexes).map(hex => {
             const id = hex.id;
             const state = game.hexes[id];
@@ -568,8 +595,8 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
             const discovered = state.discovery === "explorado";
             const observed = state.discovery === "avistado";
             const nearby = hexDistance(hex.q-activeQ, hex.r-activeR) === 1;
-            const terrainColors = { urban: "#35686a", rural: "#636544", forest: "#365a3e", mountain: "#505c6d", swamp: "#45625b" };
-            const fill = discovered ? terrainColors[state.terrain ?? "urban"] : observed ? "url(#setor-avistado)" : "#17282d";
+            const terrainKey = (state.terrain ?? "urban") as Terrain;
+            const fill = discovered || observed ? `url(#terrain-${terrainKey})` : "#17282d";
             const title = discovered || observed ? state.sector?.name ?? "Setor sem nome" : "Fora do horizonte";
             const shownPoints = playerPreview
               ? state.discovery === "desconhecido" ? 0 : state.points.filter(point => point.revealed).length
@@ -587,11 +614,15 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
               activeGroupHex={activeGroupHex}
               onMoveSurvivors={() => openMovement(id)}>
               <g role="button" tabIndex={0} className="map-cell" aria-pressed={id === selected}
-                aria-label={`${id}: ${title}${nearby ? ", adjacente ao grupo ativo" : ""}${id === game.shelter.hex ? ", abrigo" : ""}${formerBase ? ", antiga base com depósito" : ""}${membersHere.length ? `, sobreviventes: ${membersHere.map(person => person.name).join(", ")}` : ""}`}
+                aria-label={`${id}: ${title}${discovered || observed ? `, terreno ${terrains[terrainKey]}` : ""}${nearby ? ", adjacente ao grupo ativo" : ""}${id === game.shelter.hex ? ", abrigo" : ""}${formerBase ? ", antiga base com depósito" : ""}${membersHere.length ? `, sobreviventes: ${membersHere.map(person => person.name).join(", ")}` : ""}`}
                 onClick={() => selectHex(id)} onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectHex(id); } }}>
-                <title>{title} · Hex {id}{discovered || observed ? ` · ${terrains[state.terrain ?? "urban"]}${state.passage && state.passage !== "none" ? ` · ${passages[state.passage]}` : ""}` : ""}</title>
+                <title>{title} · Hex {id}{discovered || observed ? ` · ${terrains[terrainKey]}${state.passage && state.passage !== "none" ? ` · ${passages[state.passage]}` : ""}` : ""}</title>
                 <polygon points={polygon} className={`map-hex ${id === selected ? "selected" : ""} ${nearby ? "nearby" : ""}`}
-                  fill={fill} stroke={observed ? "#759897" : "#49666a"} strokeWidth="2" />
+                  fill={fill} opacity={observed ? .72 : 1} stroke={discovered || observed ? terrainMapColors[terrainKey].stroke : "#49666a"} strokeWidth="2" />
+                {(discovered || observed) && <g className="map-terrain-badge" aria-hidden="true">
+                  <rect x={x-45} y={y-39} width="29" height="14" rx="4" fill="#12282ccc" stroke={terrainMapColors[terrainKey].stroke} strokeWidth="1" />
+                  <text x={x-30.5} y={y-29} textAnchor="middle" fontSize="7.5" fontWeight="900" fill="#eef5ef" fontFamily="monospace">{terrainDetails[terrainKey].code}</text>
+                </g>}
                 <text x={x} y={y-17} textAnchor="middle" fontSize="10" fill="#c4d8d3" fontFamily="monospace">{id}</text>
                 <text x={x} y={lines.length > 1 ? y-1 : y+8} textAnchor="middle" fontSize={discovered || observed ? "11.5" : "17"} fontWeight="700" fill={discovered ? "#f5f8f2" : "#d1e0dc"}>
                   {lines.map((line,index) => <tspan key={index} x={x} dy={index ? 13 : 0}>{line}</tspan>)}
