@@ -1,4 +1,5 @@
 "use client";
+import { eventGuide } from "@/lib/event-guides";
 
 import { useState } from "react";
 import { Dice5, MapPin, RotateCcw } from "lucide-react";
@@ -181,6 +182,7 @@ export function HexGeneratorDialog({
       </div>}
 
       {request.kind === "eventos" ? <div className="grid gap-3">
+        {generated && <details className="event-guide-options"><summary>Prévia do guia de condução</summary><p><b>O que está em jogo:</b> {eventGuide({id:"preview",text:result,trigger:"",revealed:false,generatorRoll:generated.roll}).stakes}</p>{eventGuide({id:"preview",text:result,trigger:"",revealed:false,generatorRoll:generated.roll}).approaches.map(a=><p key={a.id}><b>{a.label}:</b> {a.description}</p>)}</details>}
         <Field label="Texto que pode chegar aos jogadores" value={result} onChange={setResult} multiline />
         <div className="grid gap-3 sm:grid-cols-2">
           <Pick

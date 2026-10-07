@@ -83,8 +83,8 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
   visible.sceneBoard = projectPlayerSceneBoard(hydrateSceneBoardTokens(game.sceneBoard, sceneTokenSnapshots));
   // A ficha do jogador mantém apenas o próprio histórico e o chat. Resultados
   // de outra ficha não precisam ser enviados para que a mesa os narre.
-  visible.log = visible.log.filter(entry => entry.kind === "chat" || entry.kind === "ameaça" || entry.actorId === survivorId
-    || (entry.kind === "busca" && entry.participantIds?.includes(survivorId)));
+  visible.log = visible.log.filter(entry => entry.kind !== "evento" && (entry.kind === "chat" || entry.kind === "ameaça" || entry.actorId === survivorId
+    || (entry.kind === "busca" && entry.participantIds?.includes(survivorId))));
   for (const hex of Object.values(visible.hexes)) {
     delete hex.searchSequence;
     hex.notes = "";
@@ -118,6 +118,7 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
         delete visibleEvent.generatorRoll;
         delete visibleEvent.generatorCategory;
         delete visibleEvent.actionLinks;
+        delete visibleEvent.resolutions;
         delete visibleEvent.searchBaseline;
         return visibleEvent;
       });

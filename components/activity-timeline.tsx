@@ -1,6 +1,6 @@
 "use client";
 
-import { HeartPulse, Clock3, Footprints, Moon, Search, Wrench } from "lucide-react";
+import { BookOpen, HeartPulse, Clock3, Footprints, Moon, Search, Wrench } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -48,7 +48,7 @@ export function ActivityTimeline({ game, edit, canAct = true, controls }: { cont
     </div>
     <div className="activity-timeline-list">
       {activities.map(activity => {
-        const Icon = activity.type === "travel" ? Footprints : activity.type === "search" ? Search : activity.type === "treatment" ? HeartPulse : Moon;
+        const Icon = activity.type === "event" ? BookOpen : activity.type === "travel" ? Footprints : activity.type === "search" ? Search : activity.type === "treatment" ? HeartPulse : Moon;
         return <article className={`activity-timeline-item${activity.issue ? " has-issue" : ""}`} key={activity.id}>
           <Icon size={16} /><div><b>{activity.participantIds.map(id => peers.find(p => p.id === id)?.name ?? "Sobrevivente").join(", ")}</b>
             <small>{activity.label} · {displayTime(activity.startMinute)} → <strong>{displayTime(activity.endMinute)}</strong></small>

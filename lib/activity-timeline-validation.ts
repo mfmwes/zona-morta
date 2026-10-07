@@ -9,6 +9,7 @@ const base = { id, day: z.number().int().min(1).max(99999), startMinute: minute,
   participantIds: z.array(id).min(1).max(30), hexId: hex, label: z.string().min(1).max(2400),
   status: z.enum(["running", "completed", "cancelled"]), issue: z.string().max(4000).optional(), operationId: id.optional() };
 const schema = z.array(z.discriminatedUnion("type", [
+  z.object({ ...base, type: z.literal("event"), eventId: id, resolutionId: id }).strict(),
   z.object({ ...base, type: z.literal("treatment"), medicineSource: z.string().min(1).max(240), modifier: z.number().int().min(-20).max(20) }).strict(),
   z.object({ ...base, type: z.literal("travel"), destination: hex }).strict(),
   z.object({ ...base, type: z.literal("search"), pointId: id, attemptId: id }).strict(),

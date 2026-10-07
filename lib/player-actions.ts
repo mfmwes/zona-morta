@@ -1,3 +1,4 @@
+import "./event-resolution";
 import "./treatment";
 import { addLog, content as gameContent, survivorHex, survivorIsDown, survivorStats, type GameState } from "./game";
 import { collectLocationStock, deepSearchCandidateKeys, finishPreparedSearch, pendingPlayerSearchOperation, prepareLocationForExploration, quickSearchOptions, rollSearchAccess, searchAreaSessionState, searchAreaState, searchMentors, schedulePreparedDeepSearch, schedulePreparedSearch, warehouseWorkers } from "./hex-automation";

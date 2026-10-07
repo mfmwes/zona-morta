@@ -175,6 +175,30 @@ try {
   const singleDone=await act(singleConfirm);assert.equal(singleDone.state.minutes,singleRequest.state.minutes+60);assert.equal(singleDone.state.publicActivities.length,0);
   const singleReplay=await act(singleConfirm);assert.equal(singleReplay.revision,singleDone.revision);assert.equal(singleReplay.state.minutes,singleDone.state.minutes);
 
+  const {eventResolutionFingerprint}=require('../lib/event-resolution.ts');
+  const eventLatest=await (await mf.dispatchFetch(origin+path,{headers:headers('master')})).json();
+  const withEvent=structuredClone(eventLatest.state);
+  withEvent.hexes['0,0'].events=[{id:'guided-event',text:'Porta bloqueada.',trigger:'',revealed:true,status:'active',generatorRoll:52}];
+  const putEvent=await mf.dispatchFetch(origin+path,{method:'PUT',headers:{...headers('master'),'Content-Type':'application/json'},body:JSON.stringify({revision:eventLatest.revision,state:withEvent})});assert.equal(putEvent.status,200,await putEvent.text());
+  const resolve={type:'resolve-event',id:'runtime-event',day:withEvent.day,expectedMinute:withEvent.minutes,expectedEvent:eventResolutionFingerprint(withEvent.hexes['0,0'].events[0]),hexId:'0,0',eventId:'guided-event',approachId:'careful',outcome:'success',summary:'Passagem aberta',continuity:'Senha privada do mestre',participantIds:[actor.id],minutes:5,noise:1,fear:0};
+  const masterCommand=async command=>{
+    const response=await mf.dispatchFetch(origin+actionPath,{method:'POST',headers:{...headers('master'),'Content-Type':'application/json'},body:JSON.stringify(command)});
+    const payload=await response.json();assert.equal(response.status,200,JSON.stringify(payload));return payload;
+  };
+  const deniedEvent=await mf.dispatchFetch(origin+actionPath,{method:'POST',headers:{...headers('player'),'Content-Type':'application/json'},body:JSON.stringify(resolve)});assert.equal(deniedEvent.status,403,await deniedEvent.text());
+  connections.forEach(c=>{c.messages.length=0;});
+  const resolved=await masterCommand(resolve);assert.equal(resolved.state.minutes,withEvent.minutes+5);assert.equal(resolved.state.hexes['0,0'].events[0].resolutions[0].status,'completed');
+  await until(()=>connections.every(c=>c.messages.some(m=>m.revision===resolved.revision)),'Event outcome must notify both roles');
+  assert.equal((await masterCommand(resolve)).revision,resolved.revision);
+  const publicOutcome=await (await mf.dispatchFetch(origin+path,{headers:headers('player')})).json();assert.equal(JSON.stringify(publicOutcome.state).includes('Senha privada do mestre'),false);
+  const separated=structuredClone(resolved.state);separated.survivors[1].hex='1,0';separated.hexes['0,0'].events[0].status='active';
+  const putSeparated=await mf.dispatchFetch(origin+path,{method:'PUT',headers:{...headers('master'),'Content-Type':'application/json'},body:JSON.stringify({revision:resolved.revision,state:separated})});assert.equal(putSeparated.status,200,await putSeparated.text());
+  const parallel=await masterCommand({...resolve,id:'runtime-parallel-event',expectedMinute:separated.minutes,expectedEvent:eventResolutionFingerprint(separated.hexes['0,0'].events[0]),noise:0,minutes:10});
+  assert.equal(parallel.state.minutes,separated.minutes);assert.equal(parallel.state.hexes['0,0'].events[0].resolutions[1].status,'scheduled');
+  const publicWaiting=await (await mf.dispatchFetch(origin+path,{headers:headers('player')})).json();assert.equal(publicWaiting.state.publicActivities[0].label,'Resolver evento');assert.equal(JSON.stringify(publicWaiting.state).includes('Senha privada do mestre'),false);
+  const eventDone=await advance('runtime-event-next');assert.equal(eventDone.state.minutes,separated.minutes+10);
+  const persistedEvent=await (await mf.dispatchFetch(origin+path,{headers:headers('master')})).json();assert.equal(persistedEvent.state.hexes['0,0'].events[0].resolutions[1].status,'completed');
+
   connections.forEach(c=>{c.messages.length=0;});
   const imagePath='/api/campaign/presentation?campanha=test-campaign';
   const presented=await mf.dispatchFetch(origin+imagePath,{method:'PUT',headers:{...headers('master'),'Content-Type':'application/json'},body:JSON.stringify({id:'image',image:'https://example.test/image.png',active:true})});
@@ -187,7 +211,7 @@ try {
   await db.prepare('UPDATE campaign_players SET revoked_at=? WHERE owner_id=?').bind(now,state.campaignId).run();
   assert.equal((await mf.dispatchFetch(origin+path+'&since=3',{headers:headers('player')})).status,403);
   assert.equal(isolatedMessages.length,0);
-  console.log('Runtime passed: live updates, conflict closure, automatic searches, collection while paused and replay, inventory persistence, individual rest confirmation/replay, image show/close, campaign isolation, private projection and revoked access.');
+  console.log('Runtime passed: live updates, conflict closure, automatic searches, collection while paused and replay, inventory persistence, individual rest confirmation/replay, event guides and parallel outcomes/replay, image show/close, campaign isolation, private projection and revoked access.');
 } finally {
   connections.forEach(c=>c.socket.close());
   isolatedConnections.forEach(socket=>socket.close());

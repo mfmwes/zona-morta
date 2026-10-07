@@ -1,3 +1,4 @@
+import type { EventResolution } from "./event-resolution-types";
 import type { PlayerActionState, PublicPlayerActions } from "./player-actions-types";
 import content from "./content.json";
 import { revealSector, sectorProfiles, type Sector } from "./sectors";
@@ -55,6 +56,8 @@ export type HexEvent = {
   searchBaseline?: number;
   status?: HexEventStatus;
   guidance?: string;
+  /** Histórico reservado ao mestre, com efeitos aplicados uma única vez. */
+  resolutions?: EventResolution[];
   generatorKind?: "eventos";
   generatorRoll?: number;
   generatorCategory?: string;

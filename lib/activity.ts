@@ -1,7 +1,7 @@
 import { absoluteMinutes, displayTime, type GameState } from "./game";
 
 export type SurvivorTimedCommitment = {
-  kind: "shelter-work" | "travel" | "search" | "rest" | "treatment";
+  kind: "shelter-work" | "travel" | "search" | "rest" | "treatment" | "event";
   projectId: string;
   projectName: string;
   endAbsoluteMinute: number;
