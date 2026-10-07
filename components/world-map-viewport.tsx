@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Crosshair, Maximize, Search, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { HexState } from "@/lib/game";
-import { hexCenter, mapBounds, parseHex, worldHexes } from "@/lib/world";
+import { hexCenter, mapBounds, parseHex, terrains, worldHexes } from "@/lib/world";
 
 export function WorldMapViewport({ hexes, activeHex, selected, focusHex, playerPreview, onSelect, children }: {
   hexes: Record<string, HexState>; activeHex: string; selected: string; focusHex: string;
@@ -104,7 +104,9 @@ export function WorldMapViewport({ hexes, activeHex, selected, focusHex, playerP
         <Button size="sm" variant="outline" aria-label="Buscar no mapa"><Search /></Button>
         {query.trim() && <div className="world-map-results">
           {matches.map(([id, hex]) => <button type="button" key={id} onClick={() => navigate(id)}>
-            <b>Hex {id}</b> · {hex.discovery !== "desconhecido" || !playerPreview ? hex.sector?.name ?? "Desconhecido" : "Desconhecido"}
+            <b>Hex {id}</b> · {hex.discovery !== "desconhecido" || !playerPreview
+              ? `${hex.sector?.name ?? "Desconhecido"} · ${terrains[hex.terrain ?? "urban"]}`
+              : "Desconhecido"}
           </button>)}
           <p role="status">{message || (!matches.length ? "Nenhum hex encontrado." : "Selecione para centralizar e consultar.")}</p>
         </div>}
