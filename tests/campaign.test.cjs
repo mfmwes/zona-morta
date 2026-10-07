@@ -1128,6 +1128,16 @@ test('mestre pode revelar hex distante, nomear setor e substituir sem perder con
   assert.equal(g.hexes[id].events[0].text, 'Sirenes ao longe');
 });
 
+test('reiniciar cidade usa ação transacional do servidor em vez de edição local otimista', () => {
+  const source = fs.readFileSync(require.resolve('../app/page.tsx'),'utf8');
+  const route = fs.readFileSync(require.resolve('../app/api/campaign/actions/route.ts'),'utf8');
+  assert.match(source,/type: "reset-city"/);
+  assert.match(source,/await executeTeamAction/);
+  assert.doesNotMatch(source,/preserved = resetCityPreservingSurvivors/);
+  assert.match(route,/resetCityPreservingSurvivors/);
+  assert.match(route,/payload\.type === "reset-city"/);
+});
+
 test('Ferramentas do mestre expõem revelação direta sem mostrar o controle na prévia', () => {
   const explorer = fs.readFileSync(require.resolve('../components/hex-explorer.tsx'), 'utf8');
   assert.match(explorer, /Revelação direta do mestre/);
