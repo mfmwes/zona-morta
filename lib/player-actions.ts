@@ -108,7 +108,11 @@ export function projectPlayerActions(game: GameState, actorId: string): PublicPl
         minutes: area.minutes, noise: area.noise, access: area.access, objectives,
         available: Boolean(permission) && state === "available" && !pendingPlayerSearchOperation(game, hexId, point.id, area.id), searchable: area.searchable !== false, state,
         visibleOutcome: area.visibleOutcome ?? null, specificItems, warehouseWorkers: eligibleWorkers, mentors,
-        ...(completed?.result ? { lastResult: completed.result, lastResultDepth: completed.kind === "deep" ? "deep" as const : "normal" as const } : {}),
+        ...(completed?.result ? {
+          lastResult: completed.result,
+          lastResultDepth: completed.kind === "deep" ? "deep" as const : "normal" as const,
+          ...(completed.mode === "open" && completed.roll ? { lastRoll: completed.effectiveRoll ?? completed.roll } : {}),
+        } : {}),
         ...(lastAttention ? { lastAttention } : {}),
       });
       for (const stock of prep?.stock.filter(s => s.areaId === area.id && s.remaining > 0) ?? []) {

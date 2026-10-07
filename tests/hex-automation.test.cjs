@@ -231,6 +231,9 @@ test('fluxo de exploração prioriza ação atual e recolhe configurações avan
   assert.match(dialog,/Busca proposta pelos jogadores/);
   assert.match(dialog,/A área fica reservada até o grupo iniciar ou cancelar a proposta/);
   const playerDialog=fs.readFileSync(require.resolve('../components/player-hex-search-dialog.tsx'),'utf8');
+  assert.match(playerDialog,/Busca geral \(1d12\)/);
+  assert.match(playerDialog,/Busca geral: 1d12 determina o achado/);
+  assert.match(playerDialog,/Busca indisponível agora/);
   assert.match(playerDialog,/Item plausível nesta área/);
   assert.match(playerDialog,/Apoio de Trabalhador\(a\) de depósito/);
   assert.match(playerDialog,/Apoio de Docente/);
