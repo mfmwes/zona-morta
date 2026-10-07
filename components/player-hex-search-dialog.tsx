@@ -15,7 +15,7 @@ import type { PublicSearchAreaState } from "@/lib/player-actions-types";
 export type PlayerHexSearchRequest = { hexId: string; pointId: string };
 
 const objectiveLabels: Record<string, string> = {
-  open: "Vasculhar por achados",
+  open: "Busca geral (1d12)",
   food: "Comida",
   water: "Água",
   medicine: "Medicamentos",
@@ -110,12 +110,20 @@ export function PlayerHexSearchDialog({
     : completedSearches[0];
   const displayedResult = area?.lastResult ?? recentResult?.result;
   const displayedDepth = area?.lastResultDepth ?? recentResult?.depth;
+  const displayedRoll = area?.lastRoll;
   const displayedAttention = area?.lastAttention ?? recentResult?.attention;
   const count = Number(quantity);
   const validCount = Number.isInteger(count) && count > 0 && count <= 99;
 
   async function perform(input: Record<string, unknown>, success?: string) {
-    if (busy || !controls.canAct) return false;
+    if (busy) {
+      setNotice("A ação anterior ainda está sendo registrada.");
+      return false;
+    }
+    if (!controls.canAct) {
+      setError("A campanha ainda está sincronizando ou possui um salvamento pendente. Aguarde a conclusão antes de tentar novamente.");
+      return false;
+    }
     setBusy(true);
     setError("");
     setNotice("");
@@ -181,6 +189,8 @@ export function PlayerHexSearchDialog({
       </div>
 
       {!controls.canAct && <p className="team-notice">Aguarde a sincronização da campanha antes de agir.</p>}
+      {controls.pending && <p className="team-notice">Há uma ação anterior aguardando confirmação da conexão. Reenvie a mesma ação antes de iniciar outra.</p>}
+      {view?.busy && <p className="team-notice" role="status"><b>Busca indisponível agora:</b> {view.busy}</p>}
       {error && <p className="team-error" role="alert">{error}</p>}
       {notice && <p className="team-notice" role="status">{notice}</p>}
 
@@ -212,7 +222,7 @@ export function PlayerHexSearchDialog({
               ? operation.status === "access" ? "Quem iniciou resolve o teste; o resultado e o custo são registrados para toda a mesa." : "Outros sobreviventes presentes podem confirmar participação antes de começar."
               : stockUnits ? "Recolher não exige uma nova busca. O que não couber continua salvo no local."
               : area?.state === "deep-available" ? "A busca profunda custa 30 minutos, aumenta o Barulho e exige um teste. O sistema só oferece focos plausíveis para esta área."
-              : area?.state === "available" ? "Você pode vasculhar livremente ou focar uma categoria plausível. Nenhuma autorização manual do mestre é necessária."
+              : area?.state === "available" ? "A Busca geral rola 1d12 na tabela desta área. Você também pode focar uma categoria ou item plausível; buscas específicas não usam esse d12."
               : "As limitações desta área continuam sendo aplicadas pelo sistema."}</p>
           </div>
         </section>
@@ -257,8 +267,11 @@ export function PlayerHexSearchDialog({
                 {goal === "item" && <Pick label="Item plausível nesta área" value={chosenSpecificKey}
                   options={specificItems.map(item => ({ value: item.key, label: item.name }))} onChange={setSpecificKey} />}
                 <Field label="Finalidade da busca" value={purpose} onChange={setPurpose} />
-                <p className="text-sm subtle">{deep ? "30 min · Barulho adicional · teste necessário · máximo 1 item." : `${area.minutes} min · Barulho +${area.noise} · ${area.access === "risk" ? "teste de acesso necessário" : "acesso livre"}.`}</p>
-                <Button disabled={busy || Boolean(view?.busy) || view?.policy.paused || area.access === "blocked" || !purpose.trim() || !goal || (goal === "item" && !chosenSpecificKey)}
+                <p className="text-sm subtle">{deep ? "30 min · Barulho adicional · teste necessário · máximo 1 item." : goal === "open"
+                  ? `${area.minutes} min · Barulho +${area.noise} · Busca geral: 1d12 determina o achado após resolver o acesso.`
+                  : `${area.minutes} min · Barulho +${area.noise} · Busca específica: procura o foco escolhido e não rola o d12 de achados.`}</p>
+                <Button disabled={busy || !controls.canAct || Boolean(view?.busy) || view?.policy.paused || area.access === "blocked" || !purpose.trim() || !goal || (goal === "item" && !chosenSpecificKey)}
+                  title={view?.busy || (!controls.canAct ? "Aguarde a sincronização da campanha." : undefined)}
                   onClick={() => void perform({
                     type: deep ? "deep-search" : "search",
                     hexId: area.hexId,
@@ -271,7 +284,7 @@ export function PlayerHexSearchDialog({
                     } : {}),
                     purpose,
                   }, deep ? "Busca profunda proposta ao grupo." : "Busca proposta ao grupo.")}>
-                  {deep ? "Propor busca profunda" : "Propor busca"}
+                  {deep ? "Propor busca profunda" : goal === "open" ? "Propor busca geral (1d12)" : "Propor busca específica"}
                 </Button>
                 <p className="text-xs subtle">Você começa como participante. Outros sobreviventes presentes podem entrar antes de quem propôs iniciar a busca.</p>
               </> : <p className="team-empty">Nenhum foco automático plausível foi encontrado para esta área. Escolha outro cômodo ou resolva um objetivo excepcional pela ficção.</p>}
@@ -280,6 +293,11 @@ export function PlayerHexSearchDialog({
             {operation && <section className="hex-search-step">
               <h3><Users size={18} /> {operation.depth === "deep" ? "Busca profunda proposta" : "Busca em grupo"}</h3>
               <p className="text-sm">{operation.purpose}</p>
+              <p className="text-xs subtle">{operation.depth === "deep"
+                ? "Busca profunda · foco específico · sem d12 base."
+                : operation.objective === "open"
+                  ? "Busca geral · o achado será determinado por 1d12 ao iniciar a busca."
+                  : "Busca específica · o foco escolhido substitui a rolagem base de d12."}</p>
               <p className="text-xs subtle">Confirmados: {operation.participantIds.map(id => view?.peers.find(peer => peer.id === id)?.name ?? "Sobrevivente").join(", ")}</p>
               {operation.status === "forming" && <>
                 {owner && operation.depth !== "deep" && operationWorkers.length > 0 && <Pick label="Apoio de Trabalhador(a) de depósito · opcional"
@@ -315,7 +333,7 @@ export function PlayerHexSearchDialog({
 
             {!operation && displayedResult && <section className="hex-search-step">
               <h3><CheckCircle2 size={18} /> Última busca nesta área</h3>
-              <p className="text-sm"><b>{displayedDepth === "deep" ? "Busca profunda" : "Busca"}</b> · {displayedResult}</p>
+              <p className="text-sm"><b>{displayedDepth === "deep" ? "Busca profunda" : displayedRoll ? `Busca geral · d12 = ${displayedRoll}` : "Busca específica"}</b> · {displayedResult || "Nenhum achado útil."}</p>
               {displayedAttention && <p className="team-notice mt-2">{displayedAttention}</p>}
             </section>}
 
