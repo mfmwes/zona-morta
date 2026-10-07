@@ -7,6 +7,8 @@ const Module=require('node:module');
 const path=require('node:path');
 require.extensions['.ts']=(m,p)=>m._compile(ts.transpileModule(fs.readFileSync(p,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,esModuleInterop:true}}).outputText,p);
 const {defaultState,initialSurvivor,content}=require('../lib/game.ts');
+const {assignCustomSector}=require('../lib/sectors.ts');
+const {prepareLocation}=require('../lib/hex-automation.ts');
 let state, revision, actor, authenticated, origin, race, writes;
 const db={campaignOwnerId:async()=> 'master',findPlayer:async()=>({survivor_id:actor}),readCampaign:async()=>({state:structuredClone(state),revision}),writeCampaign:async(_,next,expected)=>{
  writes++;
@@ -51,6 +53,31 @@ test('endpoint exige sessão, mesma origem e associação; jogador não altera p
  reset();assert.equal((await send({type:'policy',policy:{}})).status,403);
  assert.equal((await send({type:'request',id:'fake',day:state.day,text:'Ajuda',actorId:'outro'})).status,409);assert.equal(writes,0);
 });
+test('fluxo real do jogador propõe busca geral e ao iniciar resolve o d12 base',async()=>{
+ reset();
+ state.survivors[0].hex='0,0';
+ assignCustomSector(state,'0,0','Mercado abandonado','explorado');
+ state.hexes['0,0'].events=[];
+ state.hexes['0,0'].points=[{id:'market',name:'Mercado',kind:'comércio',signal:'Prateleiras reviradas',access:'',notes:'',revealed:true,lootTable:content.lootTables[1].name,searches:[]}];
+ const point=state.hexes['0,0'].points[0];prepareLocation(point);
+ const area=point.preparation.areas.find(row=>row.searchable!==false);assert.ok(area);
+ area.access='open';area.noise=0;area.minutes=30;
+ const propose={type:'search',id:'player-d12-proposal',day:state.day,hexId:'0,0',pointId:'market',areaId:area.id,objective:'open',purpose:'Busca geral de suprimentos'};
+ const proposed=await send(propose);assert.equal(proposed.status,200);
+ let payload=await proposed.json();
+ let op=payload.state.publicPlayerActions.operations.find(row=>row.id===propose.id);
+ assert.ok(op);assert.equal(op.status,'forming');assert.equal(op.objective,'open');
+ const execute=await send({type:'execute',id:'player-d12-execute',day:state.day,operationId:propose.id});
+ assert.equal(execute.status,200);
+ payload=await execute.json();
+ const projectedArea=payload.state.publicPlayerActions.areas.find(row=>row.areaId===area.id);
+ const attempt=state.hexes['0,0'].points[0].preparation.attempts.find(row=>row.id===propose.id);
+ assert.ok(attempt);assert.equal(attempt.mode,'open');assert.equal(attempt.status,'completed');
+ assert.ok(Number.isInteger(attempt.roll)&&attempt.roll>=1&&attempt.roll<=12);
+ assert.equal(projectedArea.lastRoll,attempt.effectiveRoll??attempt.roll);
+ assert.ok(typeof projectedArea.lastResult==='string');
+});
+
 test('endpoint refaz CAS sem perder edição paralela; reenvio não cria segundo pedido ou gravação',async()=>{
  reset();race=true;
  const input={type:'request',id:'same-request',day:state.day,text:'Abrir porta bloqueada'};
