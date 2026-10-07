@@ -86,3 +86,14 @@
   .hex-terrain-effect { grid-column:1/-1; padding:10px 0 0; border-left:0; border-top:1px solid var(--border); }
   .map-terrain-legend { max-height:84px; overflow:auto; }
 }
+.world-terrain-preview-card {
+  display:grid;
+  gap:4px;
+  padding:11px 12px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:color-mix(in srgb,var(--card) 92%,var(--muted));
+}
+.world-terrain-preview-card b { font-size:.88rem; }
+.world-terrain-preview-card p { margin:0; font-size:.8rem; line-height:1.45; }
+.world-terrain-preview-card small { color:var(--muted-foreground); font-size:.74rem; line-height:1.4; }
