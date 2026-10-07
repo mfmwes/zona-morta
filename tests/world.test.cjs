@@ -69,7 +69,9 @@ test('mapa renderiza legenda, textura e cartão de identidade do terreno', () =>
   assert.match(explorer,/map-terrain-legend/);
   assert.match(explorer,/terrainPatternMark/);
   assert.match(explorer,/hex-terrain-summary/);
-  assert.match(explorer,/terrainDetails\[terrainKey\]\.code/);
+  assert.doesNotMatch(explorer,/terrainDetails\[terrainKey\]\.code/);
+  assert.doesNotMatch(explorer,/map-terrain-badge/);
+  assert.match(explorer,/terrainMapColors\[terrainKey\]\.stroke/);
   assert.match(css,/Terrain identity prototype/);
   assert.match(css,/\.hex-terrain-summary/);
 });
