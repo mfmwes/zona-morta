@@ -2,7 +2,7 @@ import content from "./content.json";
 import { normalizeSurvivorAmmunition, type GameState, type HexState, type InventoryItem, type Survivor } from "./game";
 import { createId } from "./id";
 import { normalizeShelter } from "./shelter-projects";
-import { type Terrain } from "./world";
+import { defaultTerrainForCoordinate, inferTerrainFromSector, type Terrain } from "./world";
 
 export type Sector = { id: string; name: string; border: string; invites: string[] };
 
@@ -43,10 +43,30 @@ export const sectorProfiles: Sector[] = [
 ];
 
 const landscapes: Record<Exclude<Terrain, "urban">, { names: string[]; border: string; invites: string[] }> = {
+  suburban: {
+    names: ["Bairro residencial", "Conjunto de casas", "Loteamento silencioso", "Faixa suburbana"],
+    border: "casas baixas, muros, pequenos comércios e ruas residenciais",
+    invites: ["examinar as casas", "seguir a via principal do bairro"],
+  },
+  industrial: {
+    names: ["Distrito industrial", "Pátio logístico", "Cinturão de galpões", "Complexo fabril"],
+    border: "galpões, portões largos, pátios de carga e infraestrutura técnica",
+    invites: ["verificar os portões de serviço", "seguir as vias de carga"],
+  },
   rural: { names: ["Campos abandonados", "Sítios isolados", "Pastagens vazias", "Pomar esquecido"], border: "cercas gastas, caminhos de terra e construções espaçadas", invites: ["observar as construções", "seguir os caminhos entre os campos"] },
   forest: { names: ["Mata fechada", "Clareira silenciosa", "Bosque antigo", "Vale arborizado"], border: "copas densas, vegetação e sinais de passagem no chão", invites: ["examinar os rastros", "buscar uma passagem entre as árvores"] },
+  open: {
+    names: ["Terrenos abertos", "Parque abandonado", "Campos urbanos", "Área de lazer vazia"],
+    border: "vegetação baixa, espaços expostos e poucas estruturas oferecendo cobertura",
+    invites: ["observar o terreno de longe", "procurar estruturas nas bordas"],
+  },
+  roadway: {
+    names: ["Nó rodoviário", "Trevo de acesso", "Corredor de viadutos", "Terminal de estrada"],
+    border: "pistas, acostamentos, rampas, placas e veículos abandonados",
+    invites: ["avaliar a pista transitável", "examinar postos e acessos laterais"],
+  },
+  swamp: { names: ["Margem alagada", "Várzea silenciosa", "Canal tomado", "Faixa de mangue"], border: "água parada, vegetação úmida e trechos descontínuos de solo firme", invites: ["testar o terreno", "observar os canais de água"] },
   mountain: { names: ["Encosta rochosa", "Passo da serra", "Vale pedregoso", "Crista elevada"], border: "rochas expostas, desníveis e vento entre os morros", invites: ["avaliar a subida", "procurar um ponto de observação"] },
-  swamp: { names: ["Brejo profundo", "Margem alagada", "Várzea silenciosa", "Ilhas de junco"], border: "água parada, juncos e trechos de solo firme", invites: ["testar o terreno", "observar os canais de água"] },
 };
 
 function generatedSector(terrain: Terrain): Sector {
@@ -178,6 +198,13 @@ export function preserveKnownSectors(state: GameState) {
     hex.sector = key === "0,0" ? structuredClone(legacyShelterSector) : established
       ? { id: `original-${key}`, name: area.name, border: area.border, invites: [...area.invites] }
       : null;
+  }
+  for (const [key, hex] of Object.entries(state.hexes)) {
+    if (hex.terrain) continue;
+    const [q, r] = key.split(",").map(Number);
+    hex.terrain = hex.sector
+      ? inferTerrainFromSector(`${hex.sector.name} ${hex.sector.border}`)
+      : defaultTerrainForCoordinate(q, r);
   }
   return state;
 }
