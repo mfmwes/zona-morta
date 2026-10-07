@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Archive, CheckCircle2, ChevronDown, Compass, Dice5, Eye, Footprints, House, MapPin, Package, Play, Route, Search, Trash2, Undo2, Users, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ShelterMoveDialog } from "@/components/shelter-move";
@@ -85,17 +87,18 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
 
   useEffect(() => {
     const query = window.matchMedia("(max-width: 1279px)");
-    const update = () => { setCompact(query.matches); if (!query.matches) setSheetOpen(false); };
+    const update = () => { setCompact(query.matches); if (!query.matches && playerPreview) setSheetOpen(false); };
     update(); query.addEventListener("change", update);
     return () => query.removeEventListener("change", update);
-  }, []);
+  }, [playerPreview]);
 
-  function selectHex(id: string) {
+  function selectHex(id: string, openDetails = true) {
     if (id !== selected) {
       setSelected(id);
       setSignsDraft(null); setNotesDraft(null);
+      setGmOpen(false);
     }
-    if (compact) setSheetOpen(true);
+    if (openDetails && (compact || !playerPreview)) setSheetOpen(true);
   }
 
   const area = parseHex(selected)!;
@@ -139,7 +142,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
   function selectGroup(hex: string) {
     setActiveGroupHex(hex);
     setFocusHex(hex);
-    selectHex(hex);
+    selectHex(hex, false);
   }
 
   function runHexAction(id: string, action: HexQuickAction) {
@@ -150,7 +153,12 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
     return true;
   }
 
-  function travel() { runHexAction(selected, { type: "travel" }); }
+  function travel() {
+    if (runHexAction(selected, { type: "travel" })) {
+      setActiveGroupHex(selected);
+      setFocusHex(selected);
+    }
+  }
 
   function observe() { runHexAction(selected, { type: "observe" }); }
 
@@ -242,142 +250,18 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
   function openMovement(id: string) {
     selectHex(id);
     setMoveDestination(id);
+    if (!playerPreview) setSheetOpen(false);
     setMoveOpen(true);
   }
 
-  const detailPanel = <section className="panel panel-pad min-w-0">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div><p className="dossier-title">Setor do mapa · Hex {selected}</p><h2 className="text-xl font-extrabold mt-1">{record.discovery !== "desconhecido" && visible ? sectorName : "Além do horizonte"}</h2></div>
-        <div className="flex flex-wrap gap-2"><span className="tag">{record.discovery}</span>
-          {visible && <span className="tag">{terrains[record.terrain ?? "urban"]}{record.passage && record.passage !== "none" ? ` · ${passages[record.passage]}` : ""}</span>}
-          {!playerPreview && <span className={record.infestation !== null && record.infestation >= 4 ? "tag tag-danger" : "tag"}>
-            Infestação {record.infestation === null ? "?" : `${record.infestation}/5`}
-          </span>}
-          {selected === game.shelter.hex && <span className="tag">Abrigo</span>}</div>
-      </div>
-      {publicMembersHere.length > 0 && <div className="hex-presence-card mt-3">
-        {selected === game.partyHex ? <Footprints size={17} aria-hidden="true" /> : <Users size={17} aria-hidden="true" />}
-        <div><b>{selected === game.partyHex ? "Grupo principal" : publicMembersHere.length === 1 ? "Sobrevivente isolado" : "Subgrupo neste hex"}</b>
-          <span>{publicMembersHere.map(person => person.name).join(", ")}</span></div>
-      </div>}
-      {(game.formerShelters ?? []).some(site => site.hex === selected) && visible && <p className="character-rule-note mt-3"><Package size={15} aria-hidden="true" className="inline mr-1" /> Antiga base registrada. Sobreviventes presentes neste hex podem abrir Abrigo para retirar suprimentos.</p>}
-      {!visible ? <div className="mt-6 p-4 rounded-md bg-secondary leading-relaxed">Essa área ainda não foi avistada. Seu conteúdo permanece em aberto.</div>
-      : <>
-        {record.discovery !== "desconhecido" && record.sector?.border && <div className="list-card mt-5 text-sm leading-relaxed">
-          <b>{selected === "0,0" ? "Desde o início" : "Sinal da borda"}</b><p className="mt-1">{record.sector.border}</p>
-        </div>}
-        {record.signs && <p className="mt-3 text-sm"><b>Outros sinais:</b> {record.signs}</p>}
-        {masterActions && !playerPreview && <details className="hex-player-travel mt-3"><summary><Footprints size={15} /> Liberar rotas a partir deste hex</summary><MasterContextActions key={selected+"routes"} game={game} controls={masterActions} context={{kind:"travel",destination:selected}} /></details>}
+  const explorationPanel = <>
+        {!visible ? <div className="mt-4 p-4 rounded-md bg-secondary">Essa área ainda não foi avistada. Seu conteúdo permanece em aberto.</div> : <>
+        {playerPreview && record.discovery !== "desconhecido" && record.sector?.border && <div className="list-card mt-5 text-sm leading-relaxed"><b>{selected === "0,0" ? "Desde o início" : "Sinal da borda"}</b><p className="mt-1">{record.sector.border}</p></div>}
+        {playerPreview && record.signs && <p className="mt-3 text-sm"><b>Outros sinais:</b> {record.signs}</p>}
         {playerActions && <details className="hex-player-travel mt-3"><summary><Footprints size={15} /> {selected === game.publicPlayerActions?.hexId ? "Viagens a partir deste hex" : "Viajar para este hex"}</summary><PlayerContextActions key={selected+"travel"} game={game} controls={playerActions} context={{kind:"travel",destination:selected === game.publicPlayerActions?.hexId?undefined:selected}} /></details>}
-        {!playerPreview && <>
-          <div className="next-step-card mt-4 rounded-md border p-3">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div><p className="dossier-title">Próximo passo</p><p className="text-sm mt-1">
-                {actualMembersHere.length > 0
-                  ? `${actualMembersHere.length} sobrevivente(s) estão neste setor. Selecione o grupo desejado no mapa para destacar sua rota.`
-                  : activeAdjacentToSelected
-                    ? record.discovery === "desconhecido"
-                      ? "Este setor está ao lado do grupo ativo. Avistar não gasta tempo."
-                      : `O grupo ativo pode chegar aqui em ${travelDurationLabel(activeTravelMinutes)} de travessia${activeTravelMinutes < record.routeHours * 60 ? " com o Quadro de rotas" : ""}.`
-                    : nearbyGroups.length > 0
-                      ? "Outro grupo está próximo. Selecione o marcador dele antes de planejar este deslocamento."
-                      : "Nenhum grupo está em um hex vizinho deste setor."}</p></div>
-              <div className="flex flex-wrap gap-2">
-                {record.discovery === "desconhecido" && activeAdjacentToSelected && <Button size="sm" onClick={observe}>Avistar setor</Button>}
-                {activeCanMoveSelected &&
-                  <Button size="sm" disabled={game.minutes+activeTravelMinutes>=1440} onClick={() => openMovement(selected)}><Footprints /> {activeGroupHex === game.partyHex ? "Separar sobreviventes" : "Mover / dividir subgrupo"}</Button>}
-                {activeGroupHex === game.partyHex && selected !== game.partyHex && canTravel && record.discovery !== "desconhecido" &&
-                  <Button size="sm" variant="outline" disabled={game.minutes+travelMinutes>=1440} onClick={travel}><Route /> Mover grupo principal</Button>}
-                {actualMembersHere.length > 0 && <span className="tag">Grupo presente</span>}
-              </div>
-            </div>
-            {activeCanMoveSelected && game.minutes+activeTravelMinutes>=1440 && <p className="text-sm subtle mt-2">O trajeto do grupo ativo cruzaria o fim do dia. Feche o dia ou ajuste a ficção antes de prosseguir.</p>}
-          </div>
-          {canMakeBase && (game.shelter.hex ? <ShelterMoveDialog game={game} edit={edit} mode="relocate" destination={selected} /> : <Button size="sm" variant="outline" className="mt-3" onClick={() => edit(draft => { establishShelter(draft, selected); })}>
-            <House /> Estabelecer abrigo aqui</Button>)}
-          <Collapsible open={gmOpen} onOpenChange={setGmOpen} className="mt-4 border-t pt-3">
-            <CollapsibleTrigger asChild><Button variant="ghost" className="gm-tools-trigger w-full justify-between">
-              <span className="flex items-center gap-2"><Compass size={18} /> Ferramentas do mestre</span>
-              <ChevronDown size={18} className={gmOpen ? "rotate-180" : ""} />
-            </Button></CollapsibleTrigger>
-            <CollapsibleContent className="pt-4">
-          <h3 className="section-title mb-3">Estado do setor do mapa</h3>
-          <div className="grid gap-3 sm:grid-cols-2 mb-3">
-            <Pick label="Terreno" value={record.terrain ?? "urban"} options={Object.entries(terrains).map(([value, label]) => ({ value, label }))}
-              onChange={value => edit(draft => { draft.hexes[selected].terrain = value as Terrain; })} />
-            <Pick label="Via" value={record.passage ?? "none"} options={Object.entries(passages).map(([value, label]) => ({ value, label }))}
-              onChange={value => edit(draft => { draft.hexes[selected].passage = value as Passage; })} />
-          </div>
-          <Button size="sm" variant="outline" className="mb-3" onClick={() => { setSheetOpen(false); setExpansionOpen(true); }}><Plus /> Expandir a partir deste hex</Button>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Pick label="Descoberta" value={record.discovery}
-              options={actualMembersHere.length > 0 || selected === game.shelter.hex
-                ? ["explorado"] : ["desconhecido", "avistado", "explorado"]}
-              onChange={value => edit(draft => {
-                if ((survivorsAtHex(draft, selected).length > 0 || selected === draft.shelter.hex) && value !== "explorado") return;
-                if (value !== "desconhecido") revealSector(draft, selected);
-                draft.hexes[selected].discovery = value as typeof record.discovery;
-              })} />
-            <Pick label="Travessia" value={String(record.routeHours)} options={["1", "2"]}
-              onChange={value => edit(draft => { draft.hexes[selected].routeHours = Number(value) as 1 | 2; })} />
-          </div>
-          <div className="hex-master-reveal mt-4 rounded-md border border-dashed p-3">
-            <div className="flex flex-wrap items-start justify-between gap-2">
-              <div><p className="dossier-title">Revelação direta do mestre</p>
-                <p className="text-sm subtle mt-1">Revele qualquer hex sem proximidade. O procedimento normal de exploração continua sendo o padrão para os jogadores.</p></div>
-              {record.sector && <span className="tag">Atual: {record.sector.name}</span>}
-            </div>
-            <div className="grid gap-3 mt-3 sm:grid-cols-2">
-              <Pick label="Estado após revelar" value={masterRevealState} options={["avistado", "explorado"]}
-                onChange={value => setMasterRevealState(value as "avistado" | "explorado")} />
-              <Field label="Nome personalizado" value={customSectorName} onChange={setCustomSectorName}
-                placeholder="Ex.: Hospital São Vicente" />
-            </div>
-            <div className="flex flex-wrap gap-2 mt-3">
-              <Button size="sm" variant="outline" onClick={() => requestSectorOverride("random")}><Dice5 size={15} /> Sortear e revelar</Button>
-              <Button size="sm" onClick={() => requestSectorOverride("custom")} disabled={!customSectorName.trim()}><MapPin size={15} /> Definir nome</Button>
-            </div>
-            <p className="text-xs subtle mt-2">Setores personalizados recebem um ID próprio e não retiram opções do sorteio procedural.</p>
-          </div>
-          {record.infestation === null ? <div className="mt-3 rounded-md border border-dashed border-[#a7c1bd] p-3">
-            <p className="text-sm font-bold">Infestação · ?</p>
-            <p className="text-sm subtle mt-1">Ainda não definida. Escolha um nível após observar sinais; 0 significa ausência confirmada.</p>
-            <div className="mt-3 max-w-xs"><Pick label="Definir infestação" value="" placeholder="Escolher nível 0–5"
-              options={["0","1","2","3","4","5"]}
-              onChange={value => edit(draft => { draft.hexes[selected].infestation = Number(value); })} /></div>
-          </div> : <div className="mt-3"><Counter compact label="Infestação (0–5)" value={record.infestation} max={5}
-            onChange={value => edit(draft => { draft.hexes[selected].infestation = value; })} /></div>}
-          <div className="flex flex-wrap gap-2 mt-3">
-            {record.infestation !== null && <Button size="sm" variant="outline" onClick={() => edit(draft => { draft.hexes[selected].infestation = null; })}>Deixar em aberto</Button>}
-            <span className="text-sm subtle self-center">Nível muda por causa duradoura, no máximo 1 por incidente.</span>
-          </div>
-          <div className="grid gap-3 mt-4">
-            <Field label="Sinais adicionais mostrados" value={signs} onChange={setSigns} multiline placeholder="O que o grupo conseguiu observar?" />
-            <Field label="Anotações reservadas" value={notes} onChange={setNotes} multiline placeholder="Acessos, posição de ameaças e fatos fixados." />
-            <Button size="sm" variant="outline" onClick={() => edit(draft => { draft.hexes[selected].signs = signs.trim(); draft.hexes[selected].notes = notes.trim(); })}>Salvar anotações</Button>
-          </div>
-            </CollapsibleContent>
-          </Collapsible>
-        </>}
-        <div className="divider" />
-        {!playerPreview && record.discovery !== "desconhecido" && <Collapsible className="hex-sector-preparation">
-          <CollapsibleTrigger asChild><Button variant="ghost" className="hex-sector-preparation-trigger">
-            <span><Compass size={16} /><span><b>Preparação do setor</b><small>Gerar locais, eventos e conteúdo reservado</small></span></span>
-            <ChevronDown size={16} />
-          </Button></CollapsibleTrigger>
-          <CollapsibleContent className="hex-content-tools">
-            <p className="text-sm subtle">Ferramentas de preparação ficam fora do fluxo principal da sessão. Use quando precisar criar ou revisar conteúdo do setor.</p>
-            <label className="flex items-center gap-2 text-sm mt-2"><Switch size="sm" checked={game.explorationPreferences?.autoPrepare ?? false} onCheckedChange={autoPrepare => edit(draft => { draft.explorationPreferences = { ...draft.explorationPreferences, autoPrepare, participantIds: draft.explorationPreferences?.participantIds ?? [] }; })} /> Preparar conteúdo reservado ao entrar em novos hexes</label>
-            <div className="flex flex-wrap gap-2 mt-3" role="group" aria-label="Adicionar conteúdo ao setor">
-              <Button size="sm" onClick={() => { edit(draft => { prepareHex(draft, selected); }); toast.success("Hex preparado; conteúdo reservado para revisão"); }}><Package size={15} /> Preparar hex</Button>
-              <Button size="sm" variant="outline" onClick={() => openGenerator(selected, "locais")}><Dice5 size={15} /> Gerar local</Button>
-              <Button size="sm" variant="outline" onClick={() => openGenerator(selected, "comercios")}><Dice5 size={15} /> Gerar comércio</Button>
-              <Button size="sm" variant="outline" onClick={() => openGenerator(selected, "eventos")}><Dice5 size={15} /> Gerar evento</Button>
-              <Button size="sm" variant="ghost" onClick={() => openManualPoint(selected)}><Plus size={15} /> Adicionar local</Button>
-            </div>
-          </CollapsibleContent>
-        </Collapsible>}
-        <div className="hex-points-heading"><MapPin size={18} aria-hidden="true" /><h3 className="section-title">Locais e pistas neste setor</h3><span className="tag">{exposedPoints.length}</span></div>
+        <div className="hex-sector-locations-bar"><div className="hex-points-heading"><MapPin size={18} aria-hidden="true" /><h3 className="section-title">Locais e pistas neste setor</h3><span className="tag">{exposedPoints.length}</span></div>
+          {!playerPreview && record.discovery !== "desconhecido" && <div className="hex-sector-actions"><Button size="sm" variant="ghost" onClick={() => { edit(draft => { prepareHex(draft, selected); }); toast.success("Hex preparado; conteúdo reservado para revisão"); }}><Package size={15} /> Preparar hex</Button><Button size="sm" variant="outline" onClick={() => openManualPoint(selected)}><Plus size={15} /> Adicionar local</Button></div>}
+        </div>
         {exposedPoints.length === 0 && <p className="intro-line mt-3">Nenhum local ou pista registrado neste setor.</p>}
         {exposedPoints.length > 0 && <div key={selected} className="hex-points-list" role="region" aria-label={`Locais e pistas do setor ${selected}`} tabIndex={0}>
           {exposedPoints.map(point => {
@@ -425,7 +309,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
                   </Button>
                 </div>;
               })()}
-              {point.signal && <p className="mt-1">{point.signal}</p>}
+              {playerPreview && point.signal && <p className="mt-1">{point.signal}</p>}
               {!playerPreview && point.clueTargetHex && <Button size="sm" variant="outline" className="mt-2"
                 disabled={!game.hexes[point.clueTargetHex]} onClick={() => { setFocusHex(point.clueTargetHex!); selectHex(point.clueTargetHex!); }}>
                 <Route size={14} /> Destino da pista: {point.clueTargetHex} · {game.hexes[point.clueTargetHex]?.sector?.name ?? "setor ainda não revelado"}
@@ -436,16 +320,17 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
                   <span className={activeAttempts.length ? "is-active" : stockRemaining ? "has-stock" : ""}><Search size={14} /> {statusLabel}</span>
                   {deepAvailable > 0 && !activeAttempts.length && !stockRemaining && <small>{deepAvailable} cômodo(s) com busca profunda disponível</small>}
                 </div>
-                <Button size="sm" variant={activeAttempts.length || stockRemaining ? "default" : "outline"} disabled={Boolean(searchIssue)}
+                <Button size="sm" variant={activeAttempts.length || stockRemaining ? "default" : "outline"} disabled={Boolean(searchIssue)} title={actionLabel}
                   onClick={() => { edit(draft => { prepareLocationForExploration(draft, selected, point.id); }); setSheetOpen(false); setSearchRequest({ hexId: selected, pointId: point.id, participantIds: activeGroup?.hex === selected ? activeGroup.members.map(row => row.id) : [] }); }}>
-                  <Search size={15} /> {actionLabel}
+                  <Search size={15} /> {activeAttempts.length ? "Retomar busca" : stockRemaining ? "Recolher achados" : "Explorar local"}
                 </Button>
                 {searchIssue && <p className="hex-point-session-issue">{searchIssue}</p>}
               </div>}
 
-              {!playerPreview && (point.access || point.generatorCategory || point.condition || point.risk || point.lootTable || point.notes) && <details className="hex-point-master-details">
+              {!playerPreview && (point.signal || point.access || point.generatorCategory || point.condition || point.risk || point.lootTable || point.notes) && <details className="hex-point-master-details">
                 <summary>Detalhes do mestre</summary>
                 <div>
+                  {point.signal && <p><b>Sinal:</b> {point.signal}</p>}
                   {point.access && <p><b>Acesso:</b> {point.access}</p>}
                   {(point.generatorCategory || point.condition || point.risk || point.lootTable) && <div className="flex flex-wrap gap-2">
                     {point.generatorCategory && <span className="tag">{point.generatorCategory}</span>}
@@ -531,15 +416,148 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
             </CollapsibleContent>
           </Collapsible>}
         </div>}
-        {!playerPreview && record.discovery !== "desconhecido" && record.sector && record.sector.invites.length > 0 && <div className="mt-5 rounded-md border border-dashed border-[#b2c8c5] p-3">
-          <p className="dossier-title mb-2 flex items-center gap-1"><Compass size={14} /> Convites possíveis</p>
-          <ul className="space-y-1 text-sm subtle list-disc pl-5">{record.sector.invites.map(x => <li key={x}>{x}</li>)}</ul>
-        </div>}
-        {!playerPreview && record.notes && <p className="mt-4 text-xs subtle flex gap-2"><Eye size={15} /> Mestre: {record.notes}</p>}
-      </>}
-    </section>;
 
-  return <div className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(345px,.75fr)]">
+        {!playerPreview && <div className="hex-sector-notes">
+          <details key={selected+"signs"}><summary><Eye size={14} /> Sinais adicionais <span>{signs || "Sem sinais adicionais"}</span></summary><div className="hex-sector-note-editor"><Field label="Sinais adicionais mostrados" value={signs} onChange={setSigns} multiline placeholder="O que o grupo conseguiu observar?" /><Button size="sm" variant="outline" onClick={() => edit(draft => { draft.hexes[selected].signs = signs.trim(); })}>Salvar sinais</Button></div></details>
+          <details key={selected+"notes"}><summary><Archive size={14} /> Notas reservadas <span>Só mestre</span></summary><div className="hex-sector-note-editor"><Field label="Anotações reservadas" value={notes} onChange={setNotes} multiline placeholder="Acessos, posição de ameaças e fatos fixados." /><Button size="sm" variant="outline" onClick={() => edit(draft => { draft.hexes[selected].notes = notes.trim(); })}>Salvar notas</Button></div></details>
+          {masterActions && <details key={selected+"routes"} className="hex-player-travel"><summary><Footprints size={15} /> Liberar rotas</summary><MasterContextActions game={game} controls={masterActions} context={{kind:"travel",destination:selected}} /></details>}
+        </div>}
+        </>}
+  </>;
+
+  const detailPanel = <section className={`panel panel-pad min-w-0${playerPreview ? "" : " hex-sector-compact"}`}>
+    {playerPreview ? <>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div><p className="dossier-title">Setor do mapa · Hex {selected}</p><h2 className="text-xl font-extrabold mt-1">{record.discovery !== "desconhecido" && visible ? sectorName : "Além do horizonte"}</h2></div>
+        <div className="flex flex-wrap gap-2"><span className="tag">{record.discovery}</span>
+          {visible && <span className="tag">{terrains[record.terrain ?? "urban"]}{record.passage && record.passage !== "none" ? ` · ${passages[record.passage]}` : ""}</span>}
+          {!playerPreview && <span className={record.infestation !== null && record.infestation >= 4 ? "tag tag-danger" : "tag"}>
+            Infestação {record.infestation === null ? "?" : `${record.infestation}/5`}
+          </span>}
+          {selected === game.shelter.hex && <span className="tag">Abrigo</span>}</div>
+      </div>
+      {publicMembersHere.length > 0 && <div className="hex-presence-card mt-3">
+        {selected === game.partyHex ? <Footprints size={17} aria-hidden="true" /> : <Users size={17} aria-hidden="true" />}
+        <div><b>{selected === game.partyHex ? "Grupo principal" : publicMembersHere.length === 1 ? "Sobrevivente isolado" : "Subgrupo neste hex"}</b>
+          <span>{publicMembersHere.map(person => person.name).join(", ")}</span></div>
+      </div>}
+      {(game.formerShelters ?? []).some(site => site.hex === selected) && visible && <p className="character-rule-note mt-3"><Package size={15} aria-hidden="true" className="inline mr-1" /> Antiga base registrada. Sobreviventes presentes neste hex podem abrir Abrigo para retirar suprimentos.</p>}
+    </> : <header className="hex-sector-header">
+      <div className="hex-sector-heading">
+        <div className="hex-sector-heading-title"><h2 className="text-xl font-extrabold">{record.discovery !== "desconhecido" && visible ? sectorName : "Além do horizonte"}</h2><p className="dossier-title">Hex {selected}</p></div>
+        <div className="hex-sector-tags"><span className="tag">{record.discovery}</span>
+          {visible && <span className="tag">{terrains[record.terrain ?? "urban"]}{record.passage && record.passage !== "none" ? ` · ${passages[record.passage]}` : ""}</span>}
+          {!playerPreview && <Button size="sm" variant="ghost" className={`hex-sector-infestation ${record.infestation !== null && record.infestation >= 4 ? "tag-danger" : ""}`} onClick={() => setGmOpen(true)} aria-label="Editar infestação na gestão do setor">
+            Infestação {record.infestation === null ? "desconhecida" : record.infestation === 0 ? "0 · Ausência confirmada" : `${record.infestation}/5`}
+          </Button>}
+          {selected === game.shelter.hex && <span className="tag">Abrigo</span>}
+        </div>
+        {!playerPreview && <Button size="sm" variant="ghost" className="hex-sector-close" onClick={() => setSheetOpen(false)}>Fechar</Button>}
+      </div>
+      <div className="hex-sector-context">
+        <div className="hex-sector-signal">
+          {record.discovery !== "desconhecido" && record.sector?.border && <p><Eye size={15} aria-hidden="true" /><span><b>{selected === "0,0" ? "Desde o início" : "Sinal da borda"}:</b> {record.sector.border}</span></p>}
+          {!playerPreview && <p className="subtle text-sm">{actualMembersHere.length > 0 ? `${actualMembersHere.length} sobrevivente(s) neste setor.`
+            : activeAdjacentToSelected ? record.discovery === "desconhecido" ? "Avistar este setor não gasta tempo." : `Travessia: ${travelDurationLabel(activeTravelMinutes)}${activeTravelMinutes < record.routeHours * 60 ? " com o Quadro de rotas" : ""}.`
+            : nearbyGroups.length > 0 ? "Selecione o grupo próximo no mapa para planejar o deslocamento." : "Nenhum grupo em um hex vizinho."}</p>}
+        </div>
+        {!playerPreview && <div className="hex-sector-actions">
+          {record.discovery === "desconhecido" && activeAdjacentToSelected && <Button size="sm" onClick={observe}>Avistar setor</Button>}
+          {activeGroupHex === game.partyHex && selected !== game.partyHex && canTravel && record.discovery !== "desconhecido" &&
+            <Button size="sm" className="hex-sector-move-button" disabled={game.minutes+travelMinutes>=1440} onClick={travel} aria-label={`Mover grupo principal · ${travelDurationLabel(travelMinutes)}`}><Route /><span>Mover grupo · {travelDurationLabel(travelMinutes)}</span></Button>}
+          {activeCanMoveSelected && <Button size="sm" variant="outline" className="hex-sector-move-button" disabled={game.minutes+activeTravelMinutes>=1440} onClick={() => openMovement(selected)}><Footprints /><span>{activeGroupHex === game.partyHex ? "Separar sobreviventes" : "Mover / dividir subgrupo"}</span></Button>}
+          {canMakeBase && (game.shelter.hex ? <ShelterMoveDialog game={game} edit={edit} mode="relocate" destination={selected} /> : <Button size="sm" variant="outline" onClick={() => edit(draft => { establishShelter(draft, selected); })}><House /> Estabelecer abrigo aqui</Button>)}
+        </div>}
+      </div>
+      {!playerPreview && activeCanMoveSelected && game.minutes+activeTravelMinutes>=1440 && <p className="text-sm subtle mt-2">O trajeto do grupo ativo cruzaria o fim do dia. Feche o dia ou ajuste a ficção antes de prosseguir.</p>}
+      {publicMembersHere.length > 0 && (playerPreview ? <div className="hex-presence-card mt-3"><Footprints size={17} aria-hidden="true" /><div><b>{selected === game.partyHex ? "Grupo principal" : "Sobreviventes neste hex"}</b><span>{publicMembersHere.map(person => person.name).join(", ")}</span></div></div> : <details className="hex-sector-presence"><summary><Users size={14} />{selected === game.partyHex ? "Grupo principal" : "Sobreviventes neste hex"} · {publicMembersHere.length}</summary><p>{publicMembersHere.map(person => person.name).join(", ")}</p></details>)}
+      {(game.formerShelters ?? []).some(site => site.hex === selected) && visible && <p className="character-rule-note mt-2"><Package size={15} aria-hidden="true" className="inline mr-1" /> Antiga base registrada. Sobreviventes presentes neste hex podem abrir Abrigo para retirar suprimentos.</p>}
+    </header>}
+    {playerPreview ? explorationPanel : <Tabs value={!playerPreview && gmOpen ? "management" : "exploration"} onValueChange={value => setGmOpen(value === "management")} className="hex-sector-tabs">
+      {!playerPreview && <TabsList variant="line" className="hex-sector-tabs-list"><TabsTrigger value="exploration"><Compass size={15} /> Exploração</TabsTrigger><TabsTrigger value="management"><Archive size={15} /> Gestão do setor</TabsTrigger></TabsList>}
+      <TabsContent value="exploration" forceMount className="hex-sector-exploration data-[state=inactive]:hidden">
+        {explorationPanel}
+      </TabsContent>
+      {!playerPreview && <>
+        <TabsContent value="management" forceMount className="data-[state=inactive]:hidden">
+          <div className="hex-sector-management">
+            <section className="hex-sector-management-group">
+          <h3 className="section-title mb-3">Estado do setor do mapa</h3>
+          <div className="grid gap-3 sm:grid-cols-2 mb-3">
+            <Pick label="Terreno" value={record.terrain ?? "urban"} options={Object.entries(terrains).map(([value, label]) => ({ value, label }))}
+              onChange={value => edit(draft => { draft.hexes[selected].terrain = value as Terrain; })} />
+            <Pick label="Via" value={record.passage ?? "none"} options={Object.entries(passages).map(([value, label]) => ({ value, label }))}
+              onChange={value => edit(draft => { draft.hexes[selected].passage = value as Passage; })} />
+          </div>
+          <Button size="sm" variant="outline" className="mb-3" onClick={() => { setSheetOpen(false); setExpansionOpen(true); }}><Plus /> Expandir a partir deste hex</Button>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Pick label="Descoberta" value={record.discovery}
+              options={actualMembersHere.length > 0 || selected === game.shelter.hex
+                ? ["explorado"] : ["desconhecido", "avistado", "explorado"]}
+              onChange={value => edit(draft => {
+                if ((survivorsAtHex(draft, selected).length > 0 || selected === draft.shelter.hex) && value !== "explorado") return;
+                if (value !== "desconhecido") revealSector(draft, selected);
+                draft.hexes[selected].discovery = value as typeof record.discovery;
+              })} />
+            <Pick label="Travessia" value={String(record.routeHours)} options={["1", "2"]}
+              onChange={value => edit(draft => { draft.hexes[selected].routeHours = Number(value) as 1 | 2; })} />
+          </div>
+          {record.infestation === null ? <div className="mt-3">
+            <p className="text-sm font-bold">Infestação · ?</p>
+            <p className="text-sm subtle mt-1">Ainda não definida. Escolha um nível após observar sinais; 0 significa ausência confirmada.</p>
+            <div className="mt-3 max-w-xs"><Pick label="Definir infestação" value="" placeholder="Escolher nível 0–5"
+              options={["0","1","2","3","4","5"]}
+              onChange={value => edit(draft => { draft.hexes[selected].infestation = Number(value); })} /></div>
+          </div> : <div className="mt-3"><Counter compact label="Infestação (0–5)" value={record.infestation} max={5}
+            onChange={value => edit(draft => { draft.hexes[selected].infestation = value; })} /></div>}
+          <div className="flex flex-wrap gap-2 mt-3">
+            {record.infestation !== null && <Button size="sm" variant="outline" onClick={() => edit(draft => { draft.hexes[selected].infestation = null; })}>Deixar em aberto</Button>}
+            <span className="text-sm subtle self-center">Nível muda por causa duradoura, no máximo 1 por incidente.</span>
+          </div>
+
+            </section>
+            <section className="hex-sector-management-group">
+          <div className="hex-master-reveal">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div><p className="dossier-title">Revelação direta do mestre</p>
+                <p className="text-sm subtle mt-1">Revele este hex sem exigência de proximidade.</p></div>
+              {record.sector && <span className="tag">Atual: {record.sector.name}</span>}
+            </div>
+            <div className="grid gap-3 mt-3">
+              <Pick label="Estado após revelar" value={masterRevealState} options={["avistado", "explorado"]}
+                onChange={value => setMasterRevealState(value as "avistado" | "explorado")} />
+              <Field label="Nome personalizado" value={customSectorName} onChange={setCustomSectorName}
+                placeholder="Ex.: Hospital São Vicente" />
+            </div>
+            <div className="flex flex-wrap gap-2 mt-3">
+              <Button size="sm" variant="outline" onClick={() => requestSectorOverride("random")}><Dice5 size={15} /> Sortear e revelar</Button>
+              <Button size="sm" onClick={() => requestSectorOverride("custom")} disabled={!customSectorName.trim()}><MapPin size={15} /> Definir nome</Button>
+            </div>
+            <p className="text-xs subtle mt-2">Setores personalizados recebem um ID próprio e não retiram opções do sorteio procedural.</p>
+          </div>
+
+            </section>
+            <section className="hex-sector-management-group"><h3 className="section-title mb-3">Preparação do setor</h3>
+              {record.discovery !== "desconhecido" ? <div className="hex-content-tools">
+
+            <label className="flex items-center gap-2 text-sm mt-2"><Switch size="sm" checked={game.explorationPreferences?.autoPrepare ?? false} onCheckedChange={autoPrepare => edit(draft => { draft.explorationPreferences = { ...draft.explorationPreferences, autoPrepare, participantIds: draft.explorationPreferences?.participantIds ?? [] }; })} /> Preparar conteúdo reservado ao entrar em novos hexes</label>
+            <div className="hex-sector-generators" role="group" aria-label="Adicionar conteúdo ao setor">
+              <Button size="sm" onClick={() => { edit(draft => { prepareHex(draft, selected); }); setGmOpen(false); toast.success("Hex preparado; conteúdo reservado para revisão"); }}><Package size={15} /> Preparar hex</Button>
+              <Button size="sm" variant="outline" onClick={() => openGenerator(selected, "locais")}><Dice5 size={15} /> Gerar local</Button>
+              <Button size="sm" variant="outline" onClick={() => openGenerator(selected, "comercios")}><Dice5 size={15} /> Gerar comércio</Button>
+              <Button size="sm" variant="outline" onClick={() => openGenerator(selected, "eventos")}><Dice5 size={15} /> Gerar evento</Button>
+              <Button size="sm" variant="ghost" onClick={() => openManualPoint(selected)}><Plus size={15} /> Adicionar local</Button>
+            </div>
+              </div> : <p className="text-sm subtle">Avistar ou revelar o setor permite preparar seu conteúdo.</p>}
+              {record.discovery !== "desconhecido" && record.sector && record.sector.invites.length > 0 && <details className="hex-sector-invites"><summary><Compass size={14} /> Convites possíveis</summary><ul className="space-y-1 text-sm subtle list-disc pl-5 mt-2">{record.sector.invites.map(x => <li key={x}>{x}</li>)}</ul></details>}
+            </section>
+          </div>
+        </TabsContent>
+      </>}
+    </Tabs>}
+  </section>;
+
+  return <div className={playerPreview ? "grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(345px,.75fr)]" : "grid gap-5"}>
     <section className="panel panel-pad min-w-0 self-start">
       <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
         <div><p className="dossier-title">Mundo / {Object.keys(game.hexes).length} áreas</p><h2 className="section-title mt-1">Mapa de exploração</h2></div>
@@ -670,25 +688,31 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
     </AlertDialog>
 
     {eventActionRequest && !playerPreview && <HexEventActionDialog key={`${eventActionRequest.hexId}:${eventActionRequest.eventId}:${eventActionRequest.type}`}
-      game={game} edit={edit} request={eventActionRequest} onClose={() => { setEventActionRequest(null); if (compact) setSheetOpen(true); }} />}
+      game={game} edit={edit} request={eventActionRequest} onClose={() => { setEventActionRequest(null); if (compact || !playerPreview) setSheetOpen(true); }} />}
     {searchRequest && !playerPreview && <HexSearchDialog key={`${searchRequest.hexId}:${searchRequest.pointId}`}
-      game={game} edit={edit} request={searchRequest} onClose={() => { setSearchRequest(null); if (compact) setSheetOpen(true); }} />}
+      game={game} edit={edit} request={searchRequest} onClose={() => { setSearchRequest(null); if (compact || !playerPreview) setSheetOpen(true); }} />}
     {playerSearchRequest && playerPreview && playerActions && <PlayerHexSearchDialog key={`${playerSearchRequest.hexId}:${playerSearchRequest.pointId}`}
       game={game} controls={playerActions} request={playerSearchRequest}
-      onClose={() => { setPlayerSearchRequest(null); if (compact) setSheetOpen(true); }} />}
+      onClose={() => { setPlayerSearchRequest(null); if (compact || !playerPreview) setSheetOpen(true); }} />}
     {generatorRequest && !playerPreview && <HexGeneratorDialog game={game} edit={edit} request={generatorRequest}
-      onOpenChange={open => { if (!open) { setGeneratorRequest(null); if (compact) setSheetOpen(true); } }} />}
+      onOpenChange={open => { if (!open) { setGeneratorRequest(null); if (compact || !playerPreview) setSheetOpen(true); } }} />}
     {moveDestination && <SurvivorMoveDialog game={game} edit={edit} destination={moveDestination}
-      open={moveOpen} onOpenChange={setMoveOpen}
+      open={moveOpen} onOpenChange={open => { setMoveOpen(open); if (!open && !playerPreview) setSheetOpen(true); }}
       preferredSourceHex={activeGroupHex}
       onMoved={destination => { setActiveGroupHex(destination); setSelected(destination); setFocusHex(destination); }} />}
     {relocateDestination && <ShelterMoveDialog game={game} edit={edit} mode="relocate" destination={relocateDestination}
       open={relocateOpen} onOpenChange={setRelocateOpen} hideTrigger />}
-    {compact ? <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+    {!playerPreview && !compact ? <Dialog open={sheetOpen} onOpenChange={setSheetOpen}>
+      <DialogContent showCloseButton={false} className="hex-sector-dialog">
+        <DialogTitle className="sr-only">Setor do mapa · Hex {selected}</DialogTitle>
+        <DialogDescription className="sr-only">Exploração, locais e ferramentas de gestão do setor selecionado.</DialogDescription>
+        {detailPanel}
+      </DialogContent>
+    </Dialog> : compact ? <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
       <SheetContent side="bottom" showCloseButton={false} className="max-h-[88dvh] overflow-y-auto rounded-t-xl p-0">
-        <SheetHeader className="sticky top-0 z-10 flex flex-row items-center justify-between border-b bg-background px-4 py-3">
+        <SheetHeader className={playerPreview ? "sticky top-0 z-10 flex flex-row items-center justify-between border-b bg-background px-4 py-3" : "sr-only"}>
           <div><SheetTitle>Hex {selected}</SheetTitle><SheetDescription className="sr-only">Detalhes do setor selecionado no mapa.</SheetDescription></div>
-          <Button size="sm" variant="outline" onClick={() => setSheetOpen(false)}>Fechar</Button>
+          {playerPreview && <Button size="sm" variant="outline" onClick={() => setSheetOpen(false)}>Fechar</Button>}
         </SheetHeader>
         {detailPanel}
       </SheetContent>

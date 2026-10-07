@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "./visual-system.css";
 import "./hex-discovered-points.css";
+import "./hex-sector-layout.css";
 import "./chat.css";
 import "./scene-board.css";
 import "./conflict-workflow.css";
