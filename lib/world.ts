@@ -16,61 +16,51 @@ export const terrains = {
 export type Terrain = keyof typeof terrains;
 
 export const terrainDetails: Record<Terrain, {
-  code: string;
   description: string;
   travelHours: 1 | 2;
   generatorHint: string;
 }> = {
   urban: {
-    code: "URB",
     description: "Alta densidade de prédios, comércio, ruas estreitas e interiores complexos.",
     travelHours: 1,
     generatorHint: "Mais edifícios, comércio, serviços e recursos variados.",
   },
   suburban: {
-    code: "SUB",
     description: "Casas, condomínios, escolas, pequenos comércios e vias residenciais.",
     travelHours: 1,
     generatorHint: "Mais moradias, mercados menores, oficinas locais e áreas comunitárias.",
   },
   industrial: {
-    code: "IND",
     description: "Galpões, fábricas, depósitos, oficinas, pátios e infraestrutura técnica.",
     travelHours: 1,
     generatorHint: "Mais ferramentas, peças, combustível, veículos e grandes áreas internas.",
   },
   rural: {
-    code: "RUR",
     description: "Sítios, fazendas, estradas de terra, campos cultivados e construções isoladas.",
     travelHours: 2,
     generatorHint: "Mais alimentos, água, recursos de sobrevivência e estruturas espaçadas.",
   },
   forest: {
-    code: "MAT",
     description: "Mata, bosque e vegetação densa com trilhas, clareiras e pouca construção.",
     travelHours: 2,
     generatorHint: "Poucos edifícios; mais ambiente, passagem difícil e pontos naturais.",
   },
   open: {
-    code: "ABR",
     description: "Campos, parques, terrenos baldios, praças e áreas com pouca cobertura.",
     travelHours: 2,
     generatorHint: "Mais áreas externas, infraestrutura dispersa e exposição durante a travessia.",
   },
   roadway: {
-    code: "ROD",
     description: "Rodovias, viadutos, terminais, postos, estacionamentos e corredores de deslocamento.",
     travelHours: 1,
     generatorHint: "Mais veículos, combustível, oficinas, postos e estruturas ligadas à mobilidade.",
   },
   swamp: {
-    code: "ALA",
     description: "Canais, margens, várzeas, mangue ou terreno frequentemente inundado.",
     travelHours: 2,
     generatorHint: "Mais obstáculos ambientais, passagens estreitas e recursos ligados à água.",
   },
   mountain: {
-    code: "SER",
     description: "Encostas, morros, serras e terreno acidentado com linhas de visão irregulares.",
     travelHours: 2,
     generatorHint: "Mais desníveis, acessos difíceis, mirantes e construções isoladas.",
@@ -78,15 +68,15 @@ export const terrainDetails: Record<Terrain, {
 };
 
 export const terrainMapColors: Record<Terrain, { fill: string; stroke: string }> = {
-  urban: { fill: "#35686a", stroke: "#83aaa8" },
-  suburban: { fill: "#5a735d", stroke: "#a9c7a8" },
-  industrial: { fill: "#665f57", stroke: "#b8aa99" },
-  rural: { fill: "#727044", stroke: "#c2ba75" },
-  forest: { fill: "#315d3b", stroke: "#78a47f" },
-  open: { fill: "#7b8053", stroke: "#c1c98a" },
-  roadway: { fill: "#59636c", stroke: "#a8b7c0" },
-  swamp: { fill: "#3f6961", stroke: "#7fb8aa" },
-  mountain: { fill: "#535d70", stroke: "#9da9bd" },
+  urban: { fill: "#3f6fa8", stroke: "#9fc3e8" },
+  suburban: { fill: "#69a55f", stroke: "#b9dda9" },
+  industrial: { fill: "#a85f32", stroke: "#e2ad82" },
+  rural: { fill: "#b08a3a", stroke: "#e4cb86" },
+  forest: { fill: "#2f7447", stroke: "#8bc69d" },
+  open: { fill: "#c09a43", stroke: "#ead58c" },
+  roadway: { fill: "#596a78", stroke: "#b6c5cf" },
+  swamp: { fill: "#2e8683", stroke: "#91d1cb" },
+  mountain: { fill: "#6b668f", stroke: "#bcb4dc" },
 };
 
 export function terrainTravelHours(terrain: Terrain): 1 | 2 {
