@@ -77,6 +77,18 @@ export const terrainDetails: Record<Terrain, {
   },
 };
 
+export const terrainMapColors: Record<Terrain, { fill: string; stroke: string }> = {
+  urban: { fill: "#35686a", stroke: "#83aaa8" },
+  suburban: { fill: "#5a735d", stroke: "#a9c7a8" },
+  industrial: { fill: "#665f57", stroke: "#b8aa99" },
+  rural: { fill: "#727044", stroke: "#c2ba75" },
+  forest: { fill: "#315d3b", stroke: "#78a47f" },
+  open: { fill: "#7b8053", stroke: "#c1c98a" },
+  roadway: { fill: "#59636c", stroke: "#a8b7c0" },
+  swamp: { fill: "#3f6961", stroke: "#7fb8aa" },
+  mountain: { fill: "#535d70", stroke: "#9da9bd" },
+};
+
 export function terrainTravelHours(terrain: Terrain): 1 | 2 {
   return terrainDetails[terrain].travelHours;
 }
