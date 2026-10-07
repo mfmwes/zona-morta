@@ -737,7 +737,11 @@ export function completeSearch(game: GameState, hexId: string, pointId: string, 
     hex.events.some(event => eventTriggerReady(draft, candidateHexId, event) && !readyBefore.has(event.id)));
   const needsAttention = attempt.outcome?.success === false || attempt.outcome?.with === "Fear" || draft.noise >= 3 || triggered;
   if (needsAttention && draft.playerActions) draft.playerActions.policy.paused = true;
-  addLog(draft, "busca", `${point.name} / ${area.name}${attempt.kind === "deep" ? " · busca profunda" : ""}: ${result} · ${attempt.minutes} min${timing}.${draft.noise >= 3 ? " Barulho elevado: o mestre decide a consequência na cena." : ""}${triggered ? " Um acontecimento ficou pronto." : ""}`);
+  const names = attempt.participants.map(id => draft.survivors.find(person => person.id === id)?.name ?? "Sobrevivente").join(", ");
+  const mode = attempt.kind === "deep" ? "busca profunda" : attempt.mode === "open" ? "busca geral" : "busca específica";
+  const focus = attempt.mode === "specific" ? ` de ${attempt.objective}` : "";
+  const roll = attempt.mode === "open" && attempt.roll ? ` · d12 ${attempt.roll}${attempt.effectiveRoll && attempt.effectiveRoll !== attempt.roll ? ` → ${attempt.effectiveRoll}` : ""}` : "";
+  addLog(draft, "busca", `${names}: ${mode}${focus} em ${point.name} / ${area.name} (Hex ${hexId})${roll}. Resultado: ${result || "Nenhum achado útil."} Finalidade: ${attempt.purpose}. ${attempt.minutes} min · Barulho +${attempt.noise}${timing}.${draft.noise >= 3 ? " Barulho elevado: o mestre decide a consequência na cena." : ""}${triggered ? " Um acontecimento ficou pronto." : ""}`, attempt.actorId ?? attempt.participants[0], attempt.participants);
   Object.assign(game, draft);
   return null;
 }
@@ -751,6 +755,7 @@ export function collectLocationStock(game: GameState, hexId: string, pointId: st
   if (!operationId || !lines.length || lines.length > 240 || prep.collections.length >= 200) return "Escolha os itens a recolher.";
   const error = searchAvailabilityError(draft, hexId, pointId);
   if (error) return error;
+  const collected = new Map<string, string[]>();
   for (const line of lines) {
     const stock = prep.stock.find(row => row.id === line.stockId);
     const actor = survivorsAtHex(draft, hexId).find(row => row.id === line.ownerId);
@@ -758,6 +763,9 @@ export function collectLocationStock(game: GameState, hexId: string, pointId: st
     if (!stock || stock.accessible === false || !Number.isInteger(line.quantity) || line.quantity < 1 || line.quantity > stock.remaining || (!actor && !shared)) return "O estoque, o acesso, a quantidade ou o destinatário mudou.";
     const incoming = { ...stock.item, qty: line.quantity };
     expirePhysicalFood(draft, [incoming]);
+    const areaName = prep.areas.find(area => area.id === stock.areaId)?.name ?? "Área";
+    const details = `${line.quantity} × ${incoming.name} (${stock.attemptId ? "encontrado na busca" : "à vista"} · ${areaName}${incoming.condition && incoming.condition !== "Íntegro" ? ` · ${incoming.condition}` : ""}${incoming.battery === "Descarregada" ? " · sem bateria" : ""}) → ${shared ? "estoque do abrigo" : stock.requiresFuelContainer ? "galão no inventário" : line.cartId ? "carrinho aberto" : "inventário pessoal"}`;
+    collected.set(line.ownerId, [...(collected.get(line.ownerId) ?? []), details]);
     if (shared) addStack(draft.shelter.inventory ??= [], incoming);
     else {
       if (line.cartId) {
@@ -777,7 +785,11 @@ export function collectLocationStock(game: GameState, hexId: string, pointId: st
     stock.remaining -= line.quantity;
   }
   prep.collections.push({ id: operationId, lines: structuredClone(lines) });
-  addLog(draft, "inventário", `Achados recolhidos de ${pointAt(draft, hexId, pointId)!.name}; o restante continua no local.`);
+  const remaining = prep.stock.reduce((sum, stock) => sum + stock.remaining, 0);
+  for (const [ownerId, items] of collected) {
+    const name = draft.survivors.find(person => person.id === ownerId)?.name ?? "Abrigo";
+    addLog(draft, "inventário", `${name} recolheu em ${pointAt(draft, hexId, pointId)!.name} (Hex ${hexId}): ${items.join("; ")}. ${remaining ? `${remaining} unidade(s) continuam no local.` : "Todos os achados foram recolhidos."}`, ownerId === "shared" ? undefined : ownerId);
+  }
   Object.assign(game, draft);
   return null;
 }

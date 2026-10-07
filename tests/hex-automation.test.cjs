@@ -15,6 +15,7 @@ const { moveSurvivors } = require('../lib/hex-actions.ts');
 const { abilityAvailable } = require('../lib/abilities.ts');
 const { catalogKey, itemFromCatalog } = require('../lib/inventory.ts');
 const auto = require('../lib/hex-automation.ts');
+const { previewSearchCollection } = require('../lib/search-collection-preview.ts');
 const shelterProjects = require('../lib/shelter-projects.ts');
 const campaignTime = require('../lib/time.ts');
 const { validExplorationPreferences } = require('../lib/hex-automation-validation.ts');
@@ -128,16 +129,15 @@ test('atalhos de busca usam categorias do catálogo e respeitam a tabela de cada
   assert.equal(garage.find(option=>option.id==='fuel').available,true);
 });
 
-test('interface explica atalhos indisponíveis em vez de depender de regex no nome do item', () => {
+test('interface mantém itens plausíveis e escolha excepcional na preparação compacta', () => {
   const source=fs.readFileSync(require.resolve('../components/hex-search-dialog.tsx'),'utf8');
-  assert.match(source,/Busca rápida nesta área/);
-  assert.match(source,/quickSearchOptions/);
-  assert.match(source,/Toque nos apagados para entender/);
+  assert.match(source,/Item plausível combinado/);
+  assert.match(source,/Outro item justificado na ficção/);
   assert.match(source,/Atualizar áreas contextuais/);
   assert.doesNotMatch(source,/pattern:\s*\/água|pattern:\s*\/ração|pattern:\s*\/tratamento/);
   assert.match(source,/Busca específica encontra no máximo/);
   assert.doesNotMatch(source,/Quantidade prometida/);
-  assert.match(source,/profundas \{deepUsed\}\/\{deepLimit\}/);
+  assert.match(source,/Profundas \{deepUsed\}\/\{deepLimit\}/);
 });
 
 
@@ -225,9 +225,9 @@ test('fluxo de exploração prioriza ação atual e recolhe configurações avan
   const dialog=fs.readFileSync(require.resolve('../components/hex-search-dialog.tsx'),'utf8');
   const explorer=fs.readFileSync(require.resolve('../components/hex-explorer.tsx'),'utf8');
   assert.match(dialog,/Explorar \{point\?\.name/);
-  assert.match(dialog,/Fluxo de exploração do local/);
-  assert.match(dialog,/PRÓXIMA AÇÃO/);
-  assert.match(dialog,/Preparação do local/);
+  assert.match(dialog,/SearchTabs/);
+  assert.doesNotMatch(dialog,/PRÓXIMA AÇÃO|ETAPA 3/);
+  assert.match(dialog,/Preparação e ajustes/);
   assert.match(dialog,/Recolher achados/);
   assert.match(dialog,/Busca proposta pelos jogadores/);
   assert.match(dialog,/A área fica reservada até o grupo iniciar ou cancelar a proposta/);
@@ -243,8 +243,8 @@ test('fluxo de exploração prioriza ação atual e recolhe configurações avan
   assert.match(playerDialog,/Vantagem \+d6/);
   assert.match(playerDialog,/Destino da coleta/);
   assert.match(playerDialog,/Última busca nesta área/);
-  assert.match(dialog,/Distribuir automaticamente/);
-  assert.match(dialog,/Ajustar distribuição manualmente/);
+  assert.match(dialog,/Sugerir distribuição/);
+  assert.match(dialog,/Dividir com outro destino/);
   assert.match(explorer,/Preparação do setor/);
   assert.match(explorer,/Detalhes do mestre/);
   assert.match(explorer,/Retomar busca/);
@@ -342,6 +342,8 @@ test('busca profunda só abre depois da busca normal e não usa outro d12 de saq
   assert.equal(deepAttempt.roll,undefined);
   assert.equal(persisted.searches.find(row=>row.id==='deep-1').depth,'deep');
   assert.equal(persisted.preparation.stock.filter(row=>row.attemptId==='deep-1').length,1);
+  assert.match(f.game.log[0].text,/Nina: busca profunda de Compartimento oculto/);
+  assert.doesNotMatch(f.game.log[0].text,/d12/);
   assert.equal(auto.searchAreaState(persisted,persisted.preparation.areas.find(row=>row.id===area.id)),'exhausted');
   assert.match(auto.startDeepSearch(f.game,{...deep,id:'deep-2'}),/já recebeu uma busca profunda/);
 });
@@ -527,6 +529,7 @@ test('recolhimento parcial conserva saldo, estado físico e impede repetição',
   const p=f.game.hexes['0,0'].points[0]; assert.equal(p.preparation.stock[0].remaining,2); assert.equal(f.game.minutes,beforeTime);
   const item=f.game.survivors[0].inventory[0]; assert.equal(item.foundDay,f.game.day); assert.ok(item.provisionResource); assert.equal(item.catalogKey,key);
   const before=structuredClone(f.game); auto.collectLocationStock(f.game,'0,0','market','collect-1',[{stockId:'visible',ownerId:f.actor.id,quantity:1}]); assert.deepEqual(f.game,before);
+  assert.match(f.game.log[0].text,/Nina recolheu em Mercado.*1 × Garrafa de água lacrada.*à vista.*2 unidade\(s\) continuam/);
 });
 test('retirada agregada excessiva e carga insuficiente revertem o lote inteiro', () => {
   const f=campaign(); auto.registerVisibleStock(f.game,'0,0','market',f.area.id,'visible','Suprimentos abstratos::Peças (1 unidade)',3);
@@ -596,6 +599,25 @@ test('combustível em tanque exige recipiente e preenche galão sem duplicar res
  const fuel=f.game.shelter.fuel; assert.equal(auto.collectLocationStock(f.game,'0,0','market','fuel',[line]),null);
  const gallon=f.game.survivors[0].inventory.find(row=>row.name==='Galão vazio'); assert.equal(gallon.storedResource,'fuel'); assert.equal(gallon.storedAmount,1); assert.equal(f.game.shelter.fuel,fuel);
  assert.equal(f.game.survivors[0].inventory.some(row=>row.name==='Combustível (1 unidade)'),false);
+});
+
+test('prévia usa cargas de porções e combustível sem alterar campanha ou registros', () => {
+  const f=campaign();
+  auto.registerVisibleStock(f.game,'0,0','market',f.area.id,'water','Bebidas::Garrafa de água lacrada',4);
+  const before=structuredClone(f.game);
+  const preview=previewSearchCollection(f.game,'0,0','market',[{stockId:'water',ownerId:f.actor.id,quantity:4}]);
+  assert.equal(preview.error,null);assert.deepEqual(f.game,before);
+  assert.equal(survivorStats(preview.state.survivors[0]).carried,1);
+  const stock=f.game.hexes['0,0'].points[0].preparation.stock[0];
+  stock.item=itemFromCatalog(entry('Suprimentos abstratos::Combustível (1 unidade)'));stock.requiresFuelContainer=true;stock.remaining=1;
+  const needsGallon=previewSearchCollection(f.game,'0,0','market',[{stockId:'water',ownerId:f.actor.id,quantity:1}]);
+  assert.match(needsGallon.error,/galão/);
+  f.game.survivors[0].inventory.push(itemFromCatalog(content.catalog.find(item=>item.name==='Galão vazio')));
+  const withGallon=structuredClone(f.game);
+  assert.equal(previewSearchCollection(f.game,'0,0','market',[{stockId:'water',ownerId:f.actor.id,quantity:1}]).error,null);
+  assert.deepEqual(f.game,withGallon);
+  assert.equal(auto.collectLocationStock(f.game,'0,0','market','fuel-logged',[{stockId:'water',ownerId:f.actor.id,quantity:1}]),null);
+  assert.match(f.game.log[0].text,/Combustível.*galão no inventário/);
 });
 test('alimento deixado no local usa o prazo do catálogo e preserva condição na coleta', () => {
  const f=campaign(); const food=content.catalog.find(row=>row.category==='Alimentos'&&row.fields.some(field=>field.label==='Prazo'&&field.value==='R'));

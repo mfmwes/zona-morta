@@ -43,6 +43,40 @@ function denied(f,actor,body,pattern) { const before=structuredClone(f.game); co
 function propose(f) { return ok(f,f.ids[0],{type:'search',hexId:'0,0',pointId:'market',areaId:f.areaId,objective:'open',purpose:'Suprimentos'}).input.id; }
 function catalogItem(qty=3) { return itemFromCatalog(content.catalog.find(e=>e.name==='Faca resistente')??content.catalog[0],qty); }
 
+test('busca registra participantes, local, resultado e d12 somente quando usado; coleta detalhada substitui mensagem genérica', () => {
+  const f=fixture(), op=propose(f);
+  assert.match(f.game.log[0].text, /Nina propôs busca geral em Mercado.*Hex 0,0.*Suprimentos/);
+  ok(f,f.ids[1],{type:'join',operationId:op});
+  const logCount=f.game.log.length;
+  const execution=ok(f,f.ids[0],{type:'execute',operationId:op});
+  assert.equal(f.game.log.length,logCount+1);
+  const log=f.game.log[0];assert.equal(log.kind,'busca');
+  assert.match(log.text,/Nina, Bia: busca geral em Mercado.*d12 1.*Resultado: 1 × Barra de cereal.*30 min · Barulho \+0/);
+  assert.deepEqual(log.participantIds,f.ids.slice(0,2));
+  assert.ok(projectPlayerGame(f.game,f.ids[1]).log.some(entry=>entry.id===log.id));
+  assert.ok(!projectPlayerGame(f.game,f.ids[2]).log.some(entry=>entry.id===log.id));
+  assert.doesNotMatch(JSON.stringify(projectPlayerGame(f.game,f.ids[1]).log),/SEGREDO|dificuldade/i);
+  const saved=structuredClone(f.game);assert.equal(applyPlayerAction(f.game,f.ids[0],execution.input).replay,true);assert.deepEqual(f.game,saved);
+  const stock=f.game.hexes['0,0'].points[0].preparation.stock[0];
+  const collected=ok(f,f.ids[0],{type:'collect',hexId:'0,0',pointId:'market',stockId:stock.id,quantity:1});
+  assert.equal(f.game.log.length,saved.log.length+1);
+  assert.equal(f.game.log[0].kind,'inventário');assert.equal(f.game.log[0].actorId,f.ids[0]);
+  assert.match(f.game.log[0].text,/Nina recolheu em Mercado.*1 × Barra de cereal.*encontrado na busca.*inventário pessoal.*Todos os achados foram recolhidos/);
+  assert.doesNotMatch(f.game.log[0].text,/ação da equipe registrada/);
+  const after=structuredClone(f.game);assert.equal(applyPlayerAction(f.game,f.ids[0],collected.input).replay,true);assert.deepEqual(f.game,after);
+});
+
+test('busca específica não informa d12 e projeção dos achados preserva dados físicos para prévia', () => {
+  const f=fixture();
+  const proposed=ok(f,f.ids[0],{type:'search',hexId:'0,0',pointId:'market',areaId:f.areaId,objective:'water',purpose:'Beber'});
+  ok(f,f.ids[0],{type:'execute',operationId:proposed.input.id});
+  assert.match(f.game.log[0].text,/busca específica de Água.*Resultado: 1 × Suco em caixa fechado/);
+  assert.doesNotMatch(f.game.log[0].text,/d12/);
+  const publicItem=projectPlayerActions(f.game,f.ids[0]).stock[0].item;
+  assert.equal(publicItem.provisionResource,'water');assert.equal(publicItem.portionsPerUnit,1);
+  assert.equal(publicItem.foundDay,f.game.day);
+});
+
 test('descanso solicitado pelo mestre recebe escolhas individuais e conclui uma única vez',()=>{
  const f=fixture(); f.game.playerActions.policy.rest=false;
  assert.equal(requestTableRest(f.game,'short'),null);
@@ -262,6 +296,31 @@ test('coleta consome estoque real, aceita reenvio seguro e rejeita retirada maio
  assert.equal(f.game.hexes['0,0'].points[0].preparation.stock[0].remaining,0); assert.ok(f.game.survivors[0].inventory.length);
  assert.equal(applyPlayerAction(f.game,f.ids[0],r.input).replay,true);
  denied(f,f.ids[1],{type:'collect',hexId:'0,0',pointId:'market',stockId:stock.id,quantity:1});
+});
+
+test('pausa após busca mantém coleta de achados liberados sem liberar outra busca ou cobrar tempo',()=>{
+ const f=fixture();f.game.noise=3;
+ const op=propose(f);ok(f,f.ids[0],{type:'execute',operationId:op});
+ assert.equal(f.game.playerActions.policy.paused,true);
+ const point=f.game.hexes['0,0'].points[0];
+ const narrative=point.preparation.areas.find(area=>area.searchable===false);
+ narrative.access='open';
+ assert.equal(registerVisibleStock(f.game,'0,0','market',narrative.id,'apparent-after-search','Bebidas::Garrafa de água lacrada',2),null);
+ const stock=point.preparation.stock.find(row=>row.attemptId===op);
+ assert.ok(stock);
+ const before={minutes:f.game.minutes,noise:f.game.noise,fear:f.game.fear,searches:structuredClone(point.searches),attempts:structuredClone(point.preparation.attempts)};
+ ok(f,f.ids[0],{type:'collect',hexId:'0,0',pointId:'market',stockId:stock.id,quantity:1});
+ const collected=ok(f,f.ids[0],{type:'collect',hexId:'0,0',pointId:'market',stockId:'apparent-after-search',quantity:1});
+ const saved=structuredClone(f.game);
+ assert.equal(applyPlayerAction(f.game,f.ids[0],collected.input).replay,true);assert.deepEqual(f.game,saved);
+ const updated=f.game.hexes['0,0'].points[0];
+ assert.deepEqual({minutes:f.game.minutes,noise:f.game.noise,fear:f.game.fear,searches:updated.searches,attempts:updated.preparation.attempts},before);
+ assert.equal(f.game.playerActions.policy.paused,true);
+ assert.equal(updated.preparation.stock.find(row=>row.id==='apparent-after-search').remaining,1);
+ denied(f,f.ids[0],{type:'search',hexId:'0,0',pointId:'market',areaId:f.areaId,objective:'open',purpose:'Outra busca'},/pausadas/);
+ denied(f,f.ids[0],{type:'travel',destination:'1,0'},/pausadas/);
+ f.game.hexes['0,0'].points[0].preparation.areas.find(row=>row.id===narrative.id).access='blocked';
+ denied(f,f.ids[0],{type:'collect',hexId:'0,0',pointId:'market',stockId:'apparent-after-search',quantity:1},/liberado/);
 });
 test('teste de acesso rola no servidor, falha cobra tempo e Medo preserva achados do sucesso e pausa para o mestre',()=>{
  for(const success of [false,true]) {

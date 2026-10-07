@@ -7,6 +7,7 @@ import "./scene-board.css";
 import "./conflict-workflow.css";
 import "./community-scene-workflow.css";
 import "./player-actions.css";
+import "./search-session.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeToggle } from "@/components/theme-toggle";
 

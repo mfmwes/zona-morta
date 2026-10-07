@@ -443,7 +443,7 @@ export type GameState = {
   sceneBoard?: SceneBoardState;
   shelter: ShelterState;
   formerShelters?: ShelterState[];
-  log: { id: string; day: number; time: string; kind: string; text: string; actorId?: string; actorName?: string; actorPortrait?: string }[];
+  log: { id: string; day: number; time: string; kind: string; text: string; actorId?: string; actorName?: string; actorPortrait?: string; participantIds?: string[] }[];
 };
 
 export const traits = ["Agilidade", "Força", "Finesse", "Instinto", "Presença", "Conhecimento"];
@@ -473,11 +473,12 @@ export function displayTime(minutes: number) {
   return `${String(h).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
 }
 export function absoluteMinutes(state: GameState) { return (state.day - 1) * 1440 + state.minutes; }
-export function addLog(state: GameState, kind: string, text: string, actorId?: string) {
+export function addLog(state: GameState, kind: string, text: string, actorId?: string, participantIds?: string[]) {
   const actor = actorId ? state.survivors.find(person => person.id === actorId) : null;
   state.log.unshift({ id: createId(), day: state.day,
     time: displayTime(state.minutes), kind, text,
     ...(actorId ? { actorId } : {}),
+    ...(participantIds?.length ? { participantIds: [...new Set(participantIds)] } : {}),
     ...(actor?.name ? { actorName: actor.name } : {}),
     ...(actor?.portrait ? { actorPortrait: actor.portrait } : {}) });
   state.log = state.log.slice(0, 200);
