@@ -70,6 +70,23 @@ test('terreno e infestação alteram o peso dos resultados sem excluir a tabela'
   assert.ok(highThreats > lowThreats * 3, `ameaças: infestação 0=${lowThreats}, infestação 5=${highThreats}`);
 });
 
+test('novos terrenos mudam fortemente o perfil procedural sem excluir o d100', () => {
+  const cases = [
+    ['industrial','locais','industrial',170],
+    ['roadway','comercios','veiculos',170],
+    ['suburban','locais','residencial',130],
+  ];
+  for (const [terrain,kind,category,minimum] of cases) {
+    const game=defaultState();
+    game.hexes['0,0'].terrain=terrain;
+    game.hexes['0,0'].sector=null;
+    const random=rng(710 + terrain.length);
+    let count=0;
+    for(let i=0;i<400;i++) if(generators.generateHexContent(game,'0,0',kind,random).category===category) count++;
+    assert.ok(count>minimum,`${terrain}/${kind}: ${category}=${count}`);
+  }
+});
+
 test('orientação do mestre é separada do texto público', () => {
   const split = generators.splitGeneratorText('Distribuidora de água. Galões vazios predominam; pergunte pela origem dos cheios.');
   assert.match(split.publicText, /Galões vazios predominam/);
