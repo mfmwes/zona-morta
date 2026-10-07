@@ -113,7 +113,7 @@ test('avistamento, travessia, subgrupos, PNJs e abrigo funcionam fora das 19 ár
   assert.equal(game.minutes, 480);
   assert.equal(movementSources(game, '3,0').length, 1);
   assert.equal(moveSurvivors(game, '3,0', [ana.id]).ok, true);
-  assert.equal(game.minutes, 540);
+  assert.equal(game.minutes, 600);
   assert.equal(bia.hex, '2,0'); assert.equal(game.partyHex, '2,0'); assert.equal(game.npcs[0].hex, '3,0');
   assert.equal(game.hexes['3,0'].discovery, 'explorado');
   assert.equal(game.hexes['4,0'].discovery, 'avistado');
