@@ -244,3 +244,32 @@ test('desfecho exige mestre, preserva edição paralela e reenvio não cobra efe
  assert.equal((await send({...command,noise:2})).status,409);
  assert.equal(JSON.stringify(projectPlayerGame(state,actor)).includes('Senha reservada do mestre'),false);
 });
+
+
+test('remoções do mestre são autenticadas, transacionais e idempotentes mesmo após substituir a construção',async()=>{
+ reset();
+ const {createShelterProject}=require('../lib/shelter-projects.ts');
+ const {removalFingerprint}=require('../lib/master-removals.ts');
+ const project=createShelterProject('generator');state.shelter.hex='0,0';state.shelter.projects=[project];
+ const command={type:'remove-shelter-project',id:'delete-project',day:state.day,shelterHex:'0,0',projectId:project.id,expectedFingerprint:await removalFingerprint(project)};
+ assert.equal((await send(command)).status,403);assert.equal(writes,0);
+ authenticated={id:'master'};race=true;
+ assert.equal((await send(command)).status,200);assert.equal(writes,2);assert.equal(state.fear,4);assert.deepEqual(state.shelter.projects,[]);
+ const replacement=createShelterProject(project.key);state.shelter.projects.push(replacement);
+ const before=revision;assert.equal((await send(command)).status,200);assert.equal(revision,before);assert.equal(state.shelter.projects[0].id,replacement.id);
+ assert.equal((await send({...command,projectId:replacement.id})).status,409);
+ assert.equal((await send({...command,id:'stale-removal'})).status,409);
+});
+test('excluir cena rejeita snapshot antigo e mantém outras cenas, fichas e apresentação independente',async()=>{
+ reset();
+ const {createSceneBoardScene}=require('../lib/scene-board.ts');
+ const {removalFingerprint}=require('../lib/master-removals.ts');
+ const scene=createSceneBoardScene('Sala'),other=createSceneBoardScene('Outra');scene.visibleToPlayers=true;
+ state.sceneBoard={scenes:[scene,other],activeSceneId:scene.id};
+ const command={type:'delete-scene',id:'delete-scene',day:state.day,sceneId:scene.id,expectedActiveSceneId:scene.id,expectedFingerprint:await removalFingerprint(scene)};
+ assert.equal((await send(command)).status,403);authenticated={id:'master'};
+ state.sceneBoard.scenes[0].name='Mudou';assert.equal((await send(command)).status,409);assert.equal(writes,0);
+ state.sceneBoard.scenes[0].name='Sala';assert.equal((await send(command)).status,200);
+ assert.equal(state.sceneBoard.activeSceneId,undefined);assert.deepEqual(state.sceneBoard.scenes.map(s=>s.id),[other.id]);assert.equal(state.survivors.length,1);
+ const previous=revision;assert.equal((await send(command)).status,200);assert.equal(revision,previous);
+});

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   AlertTriangle,
   BatteryCharging,
@@ -15,6 +15,7 @@ import {
   Plus,
   ShieldCheck,
   Users,
+  Trash2,
   Wrench,
   Zap,
 } from "lucide-react";
@@ -61,6 +62,11 @@ import {
   type ShelterIncidentKind,
 } from "@/lib/shelter-projects";
 
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import type { MasterActionControls } from "@/components/player-actions-panel";
+import { projectRemovalLabel, removalFingerprint } from "@/lib/master-removals";
+import { createId } from "@/lib/id";
+
 type Edit = (fn: (draft: GameState) => void) => void;
 type CatalogFilter = "Recomendados" | "Segurança" | "Sobrevivência" | "Saúde" | "Energia e infraestrutura" | "Comunicação" | "Produção e manutenção" | "Comunidade";
 
@@ -106,7 +112,7 @@ function integrityGlyph(project: ShelterProject) {
   return `${"●".repeat(value)}${"○".repeat(Math.max(0, 3 - value))}`;
 }
 
-export function ShelterProjectsManager({ game, edit, playerPreview, playerSurvivorId }: { game: GameState; edit: Edit; playerPreview: boolean; playerSurvivorId?: string | null }) {
+export function ShelterProjectsManager({ game, edit, playerPreview, playerSurvivorId, masterActions }: { game: GameState; edit: Edit; playerPreview: boolean; playerSurvivorId?: string | null; masterActions?: MasterActionControls }) {
   const shelter = game.shelter;
   const recommendations = shelterRecommendations(game, shelter);
   const [filter, setFilter] = useState<CatalogFilter>("Recomendados");
@@ -119,6 +125,29 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
   const [incidentImpact, setIncidentImpact] = useState(2);
   const [incidentCatastrophic, setIncidentCatastrophic] = useState(false);
   const [incidentTargets, setIncidentTargets] = useState<string[]>([]);
+
+  const [removalTarget, setRemovalTarget] = useState<{ project: ShelterProject; day: number; hex: string; id: string } | null>(null);
+  const [removalPending, setRemovalPending] = useState(false);
+  const [removalError, setRemovalError] = useState("");
+  const removalLock = useRef(false);
+
+  async function confirmRemoval() {
+    if (playerPreview || !removalTarget || !masterActions?.canAct || masterActions.pending || removalLock.current) return;
+    removalLock.current = true;
+    setRemovalPending(true);
+    setRemovalError("");
+    try {
+      await masterActions.send({ type: "remove-shelter-project", id: removalTarget.id, day: removalTarget.day,
+        shelterHex: removalTarget.hex, projectId: removalTarget.project.id,
+        expectedFingerprint: await removalFingerprint(removalTarget.project) });
+      setRemovalTarget(null);
+      setPlanningKey(null);
+      setPlanningSlotId(null);
+      setIncidentTargets(ids => ids.filter(id => id !== removalTarget.project.id));
+      toast.success(removalTarget.project.state === "Planejado" ? "Solicitação cancelada" : "Construção removida");
+    } catch (error) { setRemovalError(error instanceof Error ? error.message : "Não foi possível remover a construção."); }
+    finally { removalLock.current = false; setRemovalPending(false); }
+  }
 
   if (!shelter.hex) return null;
 
@@ -778,6 +807,10 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
           </div>}
 
           {!playerPreview && <div className="construction-detail-actions">
+            {selectedProject && <Button variant="outline" disabled={!masterActions?.canAct || masterActions.pending || removalPending}
+              onClick={() => { setRemovalError(""); setRemovalTarget({ project: structuredClone(selectedProject), day: game.day, hex: shelter.hex!, id: createId() }); }}>
+              <Trash2 size={15} /> {projectRemovalLabel(selectedProject)}
+            </Button>}
             {!selectedProject && selectedDefinition.kind === "facility" && <Button disabled={Boolean(dependencyIssue)} onClick={() => { setPlanningKey(selectedDefinition.key); setPlanningSlotId(null); }}>
               <Plus size={15} /> 1 · Escolher local na planta
             </Button>}
@@ -810,6 +843,18 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
         </div>
       </aside>
     </div>
+
+    {!playerPreview && <Dialog open={Boolean(removalTarget)} onOpenChange={open => { if (!open && !removalLock.current) setRemovalTarget(null); }}>
+      <DialogContent><DialogHeader><DialogTitle>{removalTarget ? projectRemovalLabel(removalTarget.project) : "Remover construção"}?</DialogTitle>
+        <DialogDescription>{removalTarget?.project.name}. {removalTarget?.project.slotId ? `${projectLocation(removalTarget.project)} ficará disponível para outra construção.` : "A melhoria será removida do abrigo."}</DialogDescription>
+      </DialogHeader>
+      <p className="text-sm">Os turnos serão cancelados e a equipe ficará livre. Os benefícios desta construção deixarão de valer; estruturas dependentes podem parar de funcionar.</p>
+      <p className="text-sm subtle">{removalTarget?.project.state === "Planejado" && !removalTarget.project.costsPaid ? "Nenhum custo de construção foi pago." : "Materiais já gastos na obra ou no reparo não serão devolvidos."} Esta remoção não pode ser desfeita.</p>
+      {removalError && <p role="alert" className="text-sm text-destructive">{removalError}</p>}
+      <DialogFooter><Button variant="outline" disabled={removalPending} onClick={() => { if (!removalLock.current) setRemovalTarget(null); }}>Manter construção</Button>
+        <Button variant="destructive" disabled={!masterActions?.canAct || masterActions.pending || removalPending} onClick={confirmRemoval}>{removalPending ? "Removendo…" : removalTarget ? projectRemovalLabel(removalTarget.project) : "Remover"}</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>}
 
     {catalogOpen && !playerPreview && <div className="construction-catalog-overlay">
       <button type="button" className="construction-catalog-backdrop" aria-label="Fechar catálogo" onClick={() => setCatalogOpen(false)} />

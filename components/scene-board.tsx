@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Field } from "@/components/game-controls";
 import { Button } from "@/components/ui/button";
 import { survivorIsDown, type GameState } from "@/lib/game";
+import { removalFingerprint } from "@/lib/master-removals";
 import { createId } from "@/lib/id";
 import { portraitFrame, type PortraitFrame } from "@/lib/portrait-frame";
 import {
@@ -285,6 +286,10 @@ export function SceneBoard({ game, edit, playerPreview, playerActions, masterAct
   const [pan, setPan] = useState<Pan | null>(null);
   const [wallDraft, setWallDraft] = useState<WallDraft | null>(null);
   const [fogDraft, setFogDraft] = useState<FogDraft | null>(null);
+  const [deletionTarget, setDeletionTarget] = useState<{ scene: SceneBoardScene; activeSceneId: string | null; day: number; id: string } | null>(null);
+  const [deletionPending, setDeletionPending] = useState(false);
+  const [deletionError, setDeletionError] = useState("");
+  const deletionLock = useRef(false);
   const dragRef = useRef<Drag | null>(null);
   const panRef = useRef<Pan | null>(null);
   const wallDraftRef = useRef<WallDraft | null>(null);
@@ -686,6 +691,40 @@ export function SceneBoard({ game, edit, playerPreview, playerActions, masterAct
     patchSelected(object => { object.locked = shouldLock; });
   }
 
+  async function confirmSceneDeletion() {
+    if (readonly || !deletionTarget || !masterActions?.canAct || masterActions.pending || deletionLock.current) return;
+    deletionLock.current = true;
+    setDeletionPending(true);
+    setDeletionError("");
+    try {
+      await masterActions.send({ type: "delete-scene", id: deletionTarget.id, day: deletionTarget.day,
+        sceneId: deletionTarget.scene.id, expectedActiveSceneId: deletionTarget.activeSceneId,
+        expectedFingerprint: await removalFingerprint(deletionTarget.scene) });
+      setDeletionTarget(null);
+      selectScene(board.scenes.find(entry => entry.id !== deletionTarget.scene.id && entry.id === board.activeSceneId)?.id
+        ?? board.scenes.find(entry => entry.id !== deletionTarget.scene.id)?.id ?? "");
+      if (deletionTarget.activeSceneId === deletionTarget.scene.id) setWorkspaceMode("prepare");
+      setDrag(null); dragRef.current = null;
+      setPan(null); panRef.current = null;
+      setWallDraft(null); wallDraftRef.current = null;
+      setFogDraft(null); fogDraftRef.current = null;
+      setPlayerPosition(null);
+      toast.success("Cena excluída");
+    } catch (error) { setDeletionError(error instanceof Error ? error.message : "Não foi possível excluir a cena."); }
+    finally { deletionLock.current = false; setDeletionPending(false); }
+  }
+
+  const deletionDialog = !readonly && <Dialog open={Boolean(deletionTarget)} onOpenChange={open => { if (!open && !deletionLock.current) setDeletionTarget(null); }}>
+    <DialogContent><DialogHeader><DialogTitle>Excluir cena?</DialogTitle>
+      <DialogDescription>A cena “{deletionTarget?.scene.name}”, seus elementos e marcações serão excluídos permanentemente.</DialogDescription></DialogHeader>
+      {deletionTarget?.activeSceneId === deletionTarget?.scene.id && <p className="text-sm">Esta cena está ao vivo. A apresentação aos jogadores será encerrada.</p>}
+      <p className="text-sm subtle">Os sobreviventes, PNJs e ameaças representados pelos tokens continuam cadastrados na campanha.</p>
+      {deletionError && <p role="alert" className="text-sm text-destructive">{deletionError}</p>}
+      <DialogFooter><Button variant="outline" disabled={deletionPending} onClick={() => { if (!deletionLock.current) setDeletionTarget(null); }}>Manter cena</Button>
+        <Button variant="destructive" disabled={!masterActions?.canAct || masterActions.pending || deletionPending} onClick={confirmSceneDeletion}>{deletionPending ? "Excluindo…" : "Excluir definitivamente"}</Button></DialogFooter>
+    </DialogContent>
+  </Dialog>;
+
   const creationDialog = !readonly && <Dialog open={createOpen} onOpenChange={setCreateOpen}>
     <DialogContent><DialogHeader><DialogTitle>Criar cena visual</DialogTitle>
       <DialogDescription>A cena começa privada. Você escolhe quando apresentá-la aos jogadores.</DialogDescription></DialogHeader>
@@ -702,7 +741,7 @@ export function SceneBoard({ game, edit, playerPreview, playerActions, masterAct
     <div><p className="dossier-title">Cena visual</p><h2 className="section-title mt-1">{readonly ? "Nenhuma cena está sendo apresentada" : "Comece com uma tela em branco"}</h2>
       <p className="intro-line mt-2">{readonly ? "Quando o mestre apresentar uma cena ela aparecerá aqui." : "Monte corredores, portas, objetos e posições sem transformar o jogo em um mapa tático rígido."}</p></div>
     {!readonly && <Button onClick={openCreateScene}><Plus size={16} /> Criar primeira cena</Button>}
-  </section>{masterActions && !readonly && <details className="team-card"><summary>Liberar tokens e marcações dos jogadores</summary><MasterContextActions game={game} controls={masterActions} context={{kind:"scene"}} /></details>}{creationDialog}</>;
+  </section>{masterActions && !readonly && <details className="team-card"><summary>Liberar tokens e marcações dos jogadores</summary><MasterContextActions game={game} controls={masterActions} context={{kind:"scene"}} /></details>}{creationDialog}{deletionDialog}</>;
 
   const live = board.activeSceneId === scene.id && scene.visibleToPlayers;
   const walls = scene.objects.filter(object => object.kind === "wall");
@@ -724,7 +763,9 @@ export function SceneBoard({ game, edit, playerPreview, playerActions, masterAct
         <Button size="sm" variant="outline" onClick={centerScene}>Centralizar</Button>
         {!readonly && <>
           {live ? <Button size="sm" variant="outline" onClick={hide}><EyeOff size={15} /> Ocultar da mesa</Button>
-            : <Button size="sm" onClick={present}><Eye size={15} /> Apresentar</Button>}</>}
+            : <Button size="sm" onClick={present}><Eye size={15} /> Apresentar</Button>}
+          <Button size="sm" variant="outline" disabled={!masterActions?.canAct || masterActions.pending || deletionPending}
+            onClick={() => { setDeletionError(""); setDeletionTarget({ scene: structuredClone(scene), activeSceneId: board.activeSceneId ?? null, day: game.day, id: createId() }); }}><Trash2 size={15} /> Excluir cena</Button></>}
       </div>
     </header>
 
@@ -915,5 +956,6 @@ export function SceneBoard({ game, edit, playerPreview, playerActions, masterAct
       </aside>}
     </div>
     {creationDialog}
+    {deletionDialog}
   </section>;
 }
