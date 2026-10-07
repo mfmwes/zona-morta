@@ -51,8 +51,30 @@ test('endpoint exige sessão, mesma origem e associação; jogador não altera p
  reset();authenticated=null;assert.equal((await send({})).status,401);
  reset();origin=false;assert.equal((await send({})).status,403);
  reset();assert.equal((await send({type:'policy',policy:{}})).status,403);
+ assert.equal((await send({type:'reset-city',withShelter:false})).status,403);
  assert.equal((await send({type:'request',id:'fake',day:state.day,text:'Ajuda',actorId:'outro'})).status,409);assert.equal(writes,0);
 });
+test('reset da cidade é transacional, refaz CAS e devolve o estado novo para sincronização',async()=>{
+ reset();authenticated={id:'master',email:'master@example.test'};
+ const survivorId=actor,campaignId=state.campaignId;
+ state.fear=9;state.noise=4;
+ state.hexes['0,0'].points.push({id:'old-point',name:'Mapa antigo',kind:'local',signal:'Antigo',access:'',notes:'',revealed:true,searches:[]});
+ const {defaultPlayerPolicy}=require('../lib/player-actions-types.ts');
+ state.playerActions={policy:{...defaultPlayerPolicy(),paused:true},operations:[],receipts:[],withdrawals:[],markers:[]};
+ race=true;
+ const response=await send({type:'reset-city',withShelter:false});
+ assert.equal(response.status,200);
+ const payload=await response.json();
+ assert.equal(writes,2);
+ assert.equal(state.campaignId,campaignId);
+ assert.equal(state.fear,0);assert.equal(state.noise,0);
+ assert.equal(state.playerActions,undefined);
+ assert.equal(state.survivors.length,1);assert.equal(state.survivors[0].id,survivorId);assert.equal(state.survivors[0].hex,'0,0');
+ assert.equal(state.hexes['0,0'].points.some(point=>point.id==='old-point'),false);
+ assert.equal(payload.state.hexes['0,0'].points.some(point=>point.id==='old-point'),false);
+ assert.equal(payload.state.survivors[0].id,survivorId);
+});
+
 test('fluxo real do jogador propõe busca geral e ao iniciar resolve o d12 base',async()=>{
  reset();
  state.survivors[0].hex='0,0';
