@@ -1,6 +1,6 @@
 import content from "./content.json";
 import type { GameState, HexEvent, Point } from "./game";
-import type { Terrain } from "./world";
+import { terrains, type Terrain } from "./world";
 
 export type HexGeneratorKind = "locais" | "comercios" | "eventos";
 export type GeneratorCategory =
@@ -73,19 +73,27 @@ function terrainWeight(kind: HexGeneratorKind, category: GeneratorCategory, terr
   if (terrain === "urban") return 1;
   if (kind === "locais") {
     const weights: Record<Exclude<Terrain, "urban">, Partial<Record<GeneratorCategory, number>>> = {
+      suburban: { residencial: 3.8, institucional: 1.5, industrial: .45, aberto: 1.8, especial: 1.1 },
+      industrial: { residencial: .22, institucional: .45, industrial: 5.2, aberto: 1.7, especial: 1.1 },
       rural: { residencial: 2.1, institucional: .6, industrial: 1, aberto: 4.5, especial: 1.1 },
       forest: { residencial: .18, institucional: .08, industrial: .08, aberto: 6, especial: 1.4 },
-      mountain: { residencial: .22, institucional: .08, industrial: .12, aberto: 5.5, especial: 1.6 },
+      open: { residencial: .25, institucional: .6, industrial: .55, aberto: 5.4, especial: 1.5 },
+      roadway: { residencial: .18, institucional: .35, industrial: 1.8, aberto: 4.2, especial: 1.2 },
       swamp: { residencial: .12, institucional: .06, industrial: .08, aberto: 6, especial: 1.2 },
+      mountain: { residencial: .22, institucional: .08, industrial: .12, aberto: 5.5, especial: 1.6 },
     };
     return weights[terrain][category] ?? .1;
   }
   if (kind === "comercios") {
     const weights: Record<Exclude<Terrain, "urban">, Partial<Record<GeneratorCategory, number>>> = {
+      suburban: { alimentos: 2.1, saude: 1.15, ferramentas: 1.05, veiculos: 1.2, servicos: 1.6 },
+      industrial: { alimentos: .45, saude: .3, ferramentas: 3.7, veiculos: 3.8, servicos: .7 },
       rural: { alimentos: 2.4, saude: .65, ferramentas: 1.7, veiculos: 1.5, servicos: .6 },
       forest: { alimentos: .25, saude: .12, ferramentas: .55, veiculos: .4, servicos: .12 },
-      mountain: { alimentos: .28, saude: .12, ferramentas: .65, veiculos: .55, servicos: .12 },
+      open: { alimentos: .45, saude: .18, ferramentas: 1.25, veiculos: 1.35, servicos: .35 },
+      roadway: { alimentos: .95, saude: .25, ferramentas: 1.5, veiculos: 4.6, servicos: .75 },
       swamp: { alimentos: .22, saude: .1, ferramentas: .5, veiculos: .35, servicos: .1 },
+      mountain: { alimentos: .28, saude: .12, ferramentas: .65, veiculos: .55, servicos: .12 },
     };
     return weights[terrain][category] ?? .1;
   }
@@ -264,7 +272,7 @@ function triggerSuggestion(game: GameState, category: GeneratorCategory) {
 export function generatorContextLabel(game: GameState, hexId: string) {
   const hex = game.hexes[hexId];
   if (!hex) return `Hex ${hexId}`;
-  const terrain = ({ urban:"Urbano", rural:"Rural", forest:"Floresta", mountain:"Montanha", swamp:"Pântano" } as const)[hex.terrain ?? "urban"];
+  const terrain = terrains[hex.terrain ?? "urban"];
   const infestation = hex.infestation === null ? "Infestação ?" : `Infestação ${hex.infestation}/5`;
   return [terrain, hex.sector?.name, infestation, `Barulho ${game.noise}/5`].filter(Boolean).join(" · ");
 }
