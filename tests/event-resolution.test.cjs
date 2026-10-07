@@ -2,7 +2,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript');
 require.extensions['.ts']=(m,p)=>m._compile(ts.transpileModule(fs.readFileSync(p,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,esModuleInterop:true}}).outputText,p);
 const {defaultState,initialSurvivor,content}=require('../lib/game.ts');
-const {eventGuides,eventGuide}=require('../lib/event-guides.ts');
+const {eventGuides,eventGuide,eventOutcomeSuggestion,legacyEventGuides}=require('../lib/event-guides.ts');
 const {resolveHexEvent,eventResolutionFingerprint}=require('../lib/event-resolution.ts');
 const {eventResolutionCommandSchema}=require('../lib/event-resolution-types.ts');
 const {validWorld}=require('../lib/world.ts');
@@ -15,7 +15,7 @@ function fixture(split=false){const g=defaultState(),a=content.archetypes[0];g.m
 function command(g,extra={}){const e=g.hexes['0,0'].events[0];return {type:'resolve-event',id:'resolution',day:g.day,expectedMinute:g.minutes,expectedEvent:eventResolutionFingerprint(e),hexId:'0,0',eventId:e.id,participantIds:[g.survivors[0].id],approachId:'risk',outcome:'complication',summary:'A grade abriu com ruído.',continuity:'Passagem aberta; vigia ouviu.',minutes:5,noise:1,fear:0,...extra};}
 test('100 guias próprios preservam tabela, alternativas, desfechos e continuidade',()=>{
  assert.equal(eventGuides.length,100);assert.equal(new Set(eventGuides.map(g=>g.roll)).size,100);
- for(const g of eventGuides){assert.equal(g.title,content.generators.eventos[g.roll-1].text.split('.')[0]);assert.equal(g.approaches.length,3);assert.equal(g.approaches[2].minutes,0);for(const o of ['success','complication','failure','withdrawn']){assert.ok(g.outcomes[o].summary.length>20);assert.ok(g.outcomes[o].continuity.length>20);}}
+ for(const g of eventGuides){assert.equal(g.title,content.generators.eventos[g.roll-1].text.split('.')[0]);assert.equal(g.approaches.length,3);assert.ok(Number.isInteger(g.approaches[2].minutes)&&g.approaches[2].minutes>=0);for(const o of ['success','complication','failure','withdrawn']){assert.ok(g.outcomes[o].summary.length>20);assert.ok(g.outcomes[o].continuity.length>20);}}
  assert.equal(new Set(eventGuides.map(g=>g.stakes)).size,100);assert.equal(new Set(eventGuides.map(g=>g.outcomes.success.summary)).size,100);
  assert.equal(eventGuide({text:'Grade emperrada. Texto legado'}).roll,52);assert.equal(eventGuide({text:'Evento personalizado',guidance:'Um risco próprio'}).stakes,'Um risco próprio');
  assert.equal(suggestedEventActionKind({text:content.generators.eventos[93].text,generatorRoll:94,generatorCategory:'Ameaça'}),null);
@@ -53,4 +53,33 @@ test('dados inválidos, meia-noite e conflitos não criam registros parciais',()
  const g=fixture(),saved=structuredClone(g);assert.equal(resolveHexEvent(g,command(g,{minutes:1.5})).ok,false);assert.deepEqual(g,saved);
  g.minutes=1435;const before=structuredClone(g);assert.equal(resolveHexEvent(g,command(g,{minutes:10})).ok,false);assert.deepEqual(g,before);
  assert.equal(eventResolutionCommandSchema.safeParse(command(g,{noise:6})).success,false);g.hexes['0,0'].events[0].resolutions=[{id:'bogus'}];assert.equal(validWorld(g.hexes),false);
+});
+
+
+test('observar ou planejar não concede reparo, retirada ou identificação que não ocorreu',()=>{
+ const tank=eventGuide({text:content.generators.eventos[62].text,generatorRoll:63});
+ assert.match(eventOutcomeSuggestion(tank,'careful','success').summary,/reparo continuam por resolver/);
+ assert.match(eventOutcomeSuggestion(tank,'risk','success').summary,/perda é contida/);
+ const heavy=eventGuides[78];assert.match(eventOutcomeSuggestion(heavy,'risk','success').summary,/só é retirado quando a ação ocorrer/);
+ const child=eventGuides[23];assert.match(eventOutcomeSuggestion(child,'careful','success').summary,/só é identificado se estiver perceptível/);
+ const exit=eventGuides[98];assert.match(exit.approaches[2].description,/só existe se já tiver sido estabelecida/);
+});
+test('20 versões antigas conservam fatos salvos; novas versões têm preparação e escolhas concretas',()=>{
+ assert.equal(legacyEventGuides.length,20);
+ const {splitGeneratorText}=require('../lib/hex-generators.ts');
+ for(const old of legacyEventGuides){
+  const event={text:splitGeneratorText(old.sourceTexts[0]).publicText,generatorRoll:old.roll};const before=structuredClone(event);
+  assert.equal(eventGuide(event).legacy,true);assert.equal(eventGuide(event).setup,undefined);assert.deepEqual(event,before);
+  const fresh=eventGuide({text:content.generators.eventos[old.roll-1].text,generatorRoll:old.roll});assert.notEqual(fresh.legacy,true);assert.ok(fresh.setup.length>50);
+ }
+ const edited=eventGuide({text:'Caixa lacrada. Um evento escrito pelo mestre.',generatorRoll:69,guidance:'Decisão própria'});
+ assert.equal(edited.roll,undefined);assert.equal(edited.stakes,'Decisão própria');
+ assert.equal(eventGuide({text:legacyEventGuides.find(g=>g.roll===91).sourceTexts[0]}).roll,91);
+});
+test('dificuldades e duração seguem ação e risco, com cena breve e desvios locais explícitos',()=>{
+ const levels=new Set(eventGuides.flatMap(g=>g.approaches.filter(a=>a.test).map(a=>a.test.difficulty)));assert.deepEqual([...levels].sort((a,b)=>a-b),[12,13,15]);
+ for(const g of eventGuides)for(const a of g.approaches)if(a.test)assert.ok(a.test.when.length>30);
+ assert.equal(eventGuides[55].format,'brief');assert.equal(eventGuides[24].format,'scene');
+ assert.ok(eventGuides[51].approaches[2].minutes>0);assert.match(eventGuides[51].approaches[2].timeNote,/custo do mapa/);
+ assert.match(eventGuides[68].setup,/peças compatíveis/);assert.match(eventGuides[11].setup,/prazo passar/);
 });

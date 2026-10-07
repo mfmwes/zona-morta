@@ -62,6 +62,8 @@ function categoryFor(kind: HexGeneratorKind, roll: number): GeneratorCategory {
     if (roll <= 80) return "veiculos";
     return "servicos";
   }
+  if ([44, 65, 66, 80, 91].includes(roll)) return "pista";
+  if (roll === 73) return "pessoas";
   if (roll <= 20) return "pista";
   if (roll <= 40) return "pessoas";
   if (roll <= 60) return "ambiente";

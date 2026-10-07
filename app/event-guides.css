@@ -28,3 +28,6 @@
 .hex-event-resolution-summary summary { cursor:pointer; font-weight:700; }
 .hex-event-resolution-summary p { margin-top:6px; }
 @media(max-width:760px) { .event-guide-columns { grid-template-columns:minmax(0,1fr); gap:16px; } }
+
+.event-guide-draft-note { display:flex; flex-wrap:wrap; align-items:center; gap:5px; }
+.event-guide-columns h3 .tag { font-size:10px; vertical-align:middle; margin-left:5px; }
