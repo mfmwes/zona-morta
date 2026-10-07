@@ -1120,9 +1120,11 @@ test('mestre pode revelar hex distante, nomear setor e substituir sem perder con
   const proceduralIdsBefore = new Set(sectorProfiles.map(profile => profile.id));
   assert.equal(proceduralIdsBefore.has(customId), false);
 
+  const terrain = g.hexes[id].terrain ?? 'urban';
   const redrawn = redrawSector(g, id);
   g.hexes[id].discovery = 'explorado';
-  assert.equal(proceduralIdsBefore.has(redrawn.id), true);
+  if (terrain === 'urban') assert.equal(proceduralIdsBefore.has(redrawn.id), true);
+  else assert.match(redrawn.id, /^generated-/);
   assert.notEqual(redrawn.id, customId);
   assert.equal(g.hexes[id].points[0].name, 'Farmácia');
   assert.equal(g.hexes[id].events[0].text, 'Sirenes ao longe');
