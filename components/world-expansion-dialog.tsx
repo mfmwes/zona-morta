@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Counter, Pick } from "@/components/game-controls";
 import { addLog, type GameState } from "@/lib/game";
-import { directions, expandWorld, expansionHexes, hexCenter, mapBounds, MAX_WORLD_HEXES, passages, terrains, worldHexes, type Expansion, type Passage, type Terrain } from "@/lib/world";
+import { directions, expandWorld, expansionHexes, hexCenter, mapBounds, MAX_WORLD_HEXES, passages, terrainDetails, terrainMapColors, terrains, worldHexes, type Expansion, type Passage, type Terrain } from "@/lib/world";
 
 export function WorldExpansionDialog({ game, origin, edit, onClose, onExpanded }: {
   game: GameState; origin: string; edit: (fn: (draft: GameState) => void) => void;
@@ -53,7 +53,12 @@ export function WorldExpansionDialog({ game, origin, edit, onClose, onExpanded }
         <Pick contentClassName="z-[110]" label="Terreno dos novos hexes" value={terrain} options={Object.entries(terrains).map(([value, label]) => ({ value, label }))} onChange={value => setTerrain(value as Terrain)} />
         <Pick contentClassName="z-[110]" label="Via dos novos hexes" value={passage} options={Object.entries(passages).map(([value, label]) => ({ value, label }))} onChange={value => setPassage(value as Passage)} />
       </div>
-      <p className="text-sm subtle">Terreno e via são independentes: uma estrada pode atravessar a floresta. A travessia começa em 1 hora e pode ser ajustada nas ferramentas de cada hex.</p>
+      <div className="world-terrain-preview-card">
+        <b>{terrainDetails[terrain].code} · {terrains[terrain]}</b>
+        <p>{terrainDetails[terrain].description}</p>
+        <small>{terrainDetails[terrain].generatorHint} · travessia-base {terrainDetails[terrain].travelHours} h.</small>
+      </div>
+      <p className="text-sm subtle">Terreno e via são independentes: uma estrada pode atravessar a floresta. O tempo-base vem do terreno e continua ajustável nas ferramentas de cada hex.</p>
       <div className="world-expansion-preview">
         <svg viewBox={`${bounds.x - bounds.width / 2} ${bounds.y - bounds.height / 2} ${bounds.width} ${bounds.height}`} role="img" aria-label={`Prévia: ${additions.length} novos hexes destacados em dourado`}>
           {[...existing, ...additions].map(hex => {
@@ -63,7 +68,14 @@ export function WorldExpansionDialog({ game, origin, edit, onClose, onExpanded }
               const a = Math.PI / 180 * (60 * i - 30);
               return `${x + 49 * Math.cos(a)},${y + 49 * Math.sin(a)}`;
             }).join(" ");
-            return <polygon key={hex.id} points={points} fill={isNew ? "#edc578" : hex.id === origin ? "#9fd7cc" : "#35686a"} stroke="#17282d" strokeWidth="3"><title>Hex {hex.id}{isNew ? " · novo" : ""}</title></polygon>;
+            const existingTerrain = (game.hexes[hex.id]?.terrain ?? "urban") as Terrain;
+            const previewTerrain = isNew ? terrain : existingTerrain;
+            return <polygon key={hex.id} points={points}
+              fill={isNew ? terrainMapColors[previewTerrain].fill : hex.id === origin ? "#9fd7cc" : terrainMapColors[previewTerrain].fill}
+              opacity={isNew ? .92 : .72}
+              stroke={isNew ? terrainMapColors[previewTerrain].stroke : "#17282d"} strokeWidth="3">
+              <title>Hex {hex.id}{isNew ? ` · novo · ${terrains[previewTerrain]}` : ` · ${terrains[previewTerrain]}`}</title>
+            </polygon>;
           })}
         </svg>
         <p aria-live="polite"><b>{additions.length} novos</b> · {total} áreas no total · dourado = expansão</p>
