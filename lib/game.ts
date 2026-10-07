@@ -7,7 +7,7 @@ import { transferPortionLots } from "./provisions";
 import { groupedProvisionPortions } from "./provision-items";
 import { defaultThreatTemplates, type ThreatTemplate } from "./threats";
 import type { ConflictScene, PublicConflictScene } from "./conflict";
-import type { Terrain, Passage } from "./world";
+import { defaultTerrainForCoordinate, terrainTravelHours, type Terrain, type Passage } from "./world";
 import type { SceneBoardState } from "./scene-board";
 import type { LocationPreparation } from "./hex-automation-types";
 
@@ -487,11 +487,13 @@ export function defaultState(options: { startSectorId?: string; withShelter?: bo
   const hexes: Record<string, HexState> = {};
   for (const area of content.hexes) {
     const distance = hexDistance(area.q, area.r);
+    const terrain = defaultTerrainForCoordinate(area.q, area.r);
     hexes[hexKey(area.q, area.r)] = {
       sector: null,
       discovery: distance === 0 ? "explorado" : distance === 1 ? "avistado" : "desconhecido",
       infestation: null,
-      signs: "", notes: "", routeHours: 1, points: [], events: [],
+      terrain,
+      signs: "", notes: "", routeHours: terrainTravelHours(terrain), points: [], events: [],
     };
   }
   const chosen = sectorProfiles.find(profile => profile.id === options.startSectorId);
