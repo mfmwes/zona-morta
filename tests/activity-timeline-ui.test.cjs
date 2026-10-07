@@ -24,7 +24,7 @@ function nodes(node,found=[]){if(Array.isArray(node))node.forEach(n=>nodes(n,fou
 function text(node){if(Array.isArray(node))return node.map(text).join('');if(node&&typeof node==='object')return text(node.props?.children);return typeof node==='string'||typeof node==='number'?String(node):'';}
 function fixture(){
   state=false;
-  const game={day:1,minutes:540,survivors:[{id:'ana',name:'Ana',hex:'0,0'}],hexes:{'0,0':{events:[],points:[{id:'secret',name:'Local reservado',revealed:false}]}},shelter:{projects:[]},activities:[{id:'travel',type:'travel',destination:'1,0',hexId:'0,0',label:'Viagem para Garagens',participantIds:['ana'],day:1,startMinute:540,endMinute:600,status:'running'}]};
+  const game={day:1,minutes:540,survivors:[{id:'ana',name:'Ana',hex:'0,0'},{id:'bia',name:'Bia',hex:'1,0'}],hexes:{'0,0':{events:[],points:[{id:'secret',name:'Local reservado',revealed:false}]}},shelter:{projects:[]},activities:[{id:'travel',type:'travel',destination:'1,0',hexId:'0,0',label:'Viagem para Garagens',participantIds:['ana'],day:1,startMinute:540,endMinute:600,status:'running'}]};
   return game;
 }
 test('faixa agenda avanço pelo servidor, mostra horários e bloqueia novo clique durante envio',async()=>{
@@ -49,4 +49,15 @@ test('atividade privada e acesso pendente continuam visíveis ao mestre com cont
   const controls={canAct:true,send:async command=>{calls.push(command);}};
   const view=ActivityTimeline({game,controls});assert.match(text(view),/Busca reservada.*Resolva o acesso/);assert.match(text(view),/Resolver conclusão/);
   await nodes(view).find(n=>n.type==='button'&&text(n)==='Interromper').props.onClick();assert.equal(calls[0].type,'cancel-activity');assert.equal(calls[0].activityId,'travel');
+});
+
+test('grupo único esconde agendamento de busca e de obras sem atividades antigas pendentes',()=>{
+ const game=fixture();game.survivors[1].hex='0,0';game.activities=[];game.shelter.projects=[{id:'work',name:'Barricada',workShift:{endAbsoluteMinute:600}}];
+ assert.equal(ActivityTimeline({game,controls:{canAct:true,send:async()=>{}}}),null);
+ game.activities=[{id:'search',type:'search',pointId:'secret',attemptId:'attempt',hexId:'0,0',label:'Busca',participantIds:['ana'],day:1,startMinute:540,endMinute:570,status:'running'}];
+ game.hexes['0,0'].points[0].preparation={attempts:[{id:'attempt',status:'ready'}]};
+ assert.equal(ActivityTimeline({game,controls:{canAct:true,send:async()=>{}}}),null);
+});
+test('atividade antiga continua acessível ao mestre após reunião das equipes',()=>{
+ const game=fixture();game.survivors[1].hex='0,0';assert.match(text(ActivityTimeline({game,controls:{canAct:true,send:async()=>{}}})),/Avançar até/);
 });

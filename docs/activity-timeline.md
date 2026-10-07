@@ -1,6 +1,10 @@
 # Atividades e relógio da campanha
 
-Viagens, buscas, descansos e tratamentos de Exposição são agendados no horário atual. Cada atividade registra participantes, origem e horário de conclusão. O relógio não avança ao iniciar a atividade, e não existem ações retroativas.
+O agendamento paralelo aparece quando existem dois ou mais grupos de sobreviventes em hexes diferentes. Com um único grupo, confirmar viagens, buscas, descansos e tratamentos de Exposição aplica os efeitos e avança o relógio diretamente. Dividir uma equipe pela primeira vez também usa o avanço direto; as próximas ações passam ao fluxo paralelo. Ao reunir todos no mesmo hex, o fluxo simples volta automaticamente.
+
+Atividades que já estavam em andamento continuam acessíveis até concluir ou interromper, mesmo após a reunião dos grupos. Buscas de um único grupo que exigem teste de acesso são concluídas na própria tela da busca, sem botão de agendamento.
+
+No fluxo paralelo, viagens, buscas, descansos e tratamentos de Exposição são agendados no horário atual. Cada atividade registra participantes, origem e horário de conclusão. O relógio não avança ao iniciar a atividade, e não existem ações retroativas.
 
 O mestre usa **Avançar até HH:MM** na faixa de atividades. O próximo horário é o menor prazo entre atividades de campo, turnos do abrigo e o anoitecer quando existem acontecimentos noturnos pendentes. Todas as conclusões nesse horário são processadas juntas. Um teste de acesso pendente mantém sua busca ocupada, mas não impede outras atividades de terminarem no mesmo horário. O relógio não segue para um horário posterior até esse acesso ser resolvido ou a busca ser interrompida.
 

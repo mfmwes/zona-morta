@@ -1,4 +1,5 @@
 "use client";
+import { hasMultipleSurvivorGroups } from "@/lib/game";
 
 import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, Circle, Clock3, Search, ShieldAlert, Users } from "lucide-react";
@@ -279,7 +280,7 @@ export function PlayerHexSearchDialog({
                   </label>)}
                 </div>
                 <Button disabled={experiences.length > actor.hope || view?.policy.paused}
-                  onClick={() => void perform({ type: "roll-access", operationId: operation.id, trait, experiences, edge, ...(mentorId ? { mentorId } : {}) }, "Teste registrado. A busca será concluída no horário agendado.")}>Rolar acesso</Button>
+                  onClick={() => void perform({ type: "roll-access", operationId: operation.id, trait, experiences, edge, ...(mentorId ? { mentorId } : {}) }, hasMultipleSurvivorGroups(game) ? "Teste registrado. A busca será concluída no horário agendado." : "Teste registrado e busca concluída.")}>Rolar acesso</Button>
               </div>}
               {operation.status === "scheduled" && <p className="team-notice">Busca em andamento. Os achados serão liberados quando o mestre avançar até a conclusão.</p>}
               {operation.status === "access" && !owner && <p className="team-notice">Aguardando quem iniciou a busca resolver o acesso.</p>}

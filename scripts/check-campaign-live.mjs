@@ -50,7 +50,7 @@ try {
   const state = defaultState(); state.campaignId = 'test-campaign';
   const archetype = content.archetypes[0];
   const actor = initialSurvivor({ name: 'Jogador', origin: content.origins[1].name, past: '', archetype: archetype.name, specialty: archetype.specialties[0].name, freeExperience: 'Resgates', techniques: [], attributes: { Agilidade: 2, Força: 1, Finesse: 1, Instinto: 0, Presença: 0, Conhecimento: -1 }, primary: '', secondary: '', protection: '', personal: '' });
-  state.survivors = [actor];
+  state.survivors = [actor,{...structuredClone(actor),id:'other-group',name:'Bia',hex:'1,0'}];
   actor.hex = '0,0';
   assignCustomSector(state,'0,0','Bairro residencial','explorado');
   state.hexes['0,0'].events=[];
@@ -167,6 +167,14 @@ try {
   const repeated=await act(confirm);assert.equal(repeated.revision,rested.revision);assert.equal(repeated.state.minutes,rested.state.minutes);
   const afterRest=await (await mf.dispatchFetch(origin+path,{headers:headers('master')})).json();
   assert.equal(afterRest.state.shortRest,2);assert.equal(afterRest.state.survivors[0].stress,0);
+  const joined=structuredClone(afterRest.state);joined.survivors[1].hex=joined.survivors[0].hex??joined.partyHex;
+  const reunion=await mf.dispatchFetch(origin+path,{method:'PUT',headers:{...headers('master'),'Content-Type':'application/json'},body:JSON.stringify({revision:afterRest.revision,state:joined})});assert.equal(reunion.status,200,await reunion.text());
+  const singleRequest=await act({id:'single-rest-request',type:'request-rest',kind:'short',participantIds:[actor.id]});
+  const singleRest=singleRequest.state.publicPlayerActions.operations.find(op=>op.id!==rest.id&&op.status==='forming'&&op.individualChoices);assert.ok(singleRest);
+  const singleConfirm={id:'single-rest-confirm',type:'confirm-rest',operationId:singleRest.id,choices:[{action:'stress',targetId:actor.id},{action:'prepare',targetId:actor.id}]};
+  const singleDone=await act(singleConfirm);assert.equal(singleDone.state.minutes,singleRequest.state.minutes+60);assert.equal(singleDone.state.publicActivities.length,0);
+  const singleReplay=await act(singleConfirm);assert.equal(singleReplay.revision,singleDone.revision);assert.equal(singleReplay.state.minutes,singleDone.state.minutes);
+
   connections.forEach(c=>{c.messages.length=0;});
   const imagePath='/api/campaign/presentation?campanha=test-campaign';
   const presented=await mf.dispatchFetch(origin+imagePath,{method:'PUT',headers:{...headers('master'),'Content-Type':'application/json'},body:JSON.stringify({id:'image',image:'https://example.test/image.png',active:true})});

@@ -423,7 +423,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
     let result: ReturnType<typeof scheduleExposureTreatment> | undefined;
     edit(draft => { result = scheduleExposureTreatment(draft, selected.id, chosenMedicine, cleanWaterConfirmed); });
     if (!result?.ok) { toast.error("Tratamento não iniciado", { description: result?.message }); return; }
-    toast.success("Tratamento iniciado", { description: "O medicamento foi consumido. O resultado será aplicado na conclusão, após 30 min." });
+    toast.success(result.completed ? "Tratamento concluído" : "Tratamento iniciado", { description: result.completed ? "O relógio avançou 30 min e o resultado foi registrado." : "O medicamento foi consumido. O resultado será aplicado na conclusão, após 30 min." });
     setTreatmentOpen(false); setCleanWaterConfirmed(false);
   }
 

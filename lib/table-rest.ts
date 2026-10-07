@@ -50,7 +50,6 @@ export function requestTableRest(game: GameState, kind: RestKind, initiatorId = 
 }
 
 export function confirmTableRest(game: GameState, actorId: string, operationId: string, choices: RestChoice[], _die = rollDie) {
-  void _die;
   const op = game.playerActions?.operations.find(op => op.id === operationId);
   const actor = game.survivors.find(p => p.id === actorId);
   if (!op || op !== currentTableRest(game, actorId) || !op.kind || !actor || !op.invitedIds.includes(actorId) || op.awaitingNight) return "Este descanso não aceita suas escolhas.";
@@ -72,9 +71,10 @@ export function confirmTableRest(game: GameState, actorId: string, operationId: 
     op.result = "Todos confirmaram. Escolhas prontas para Encerrar dia.";
     return null;
   }
-  const result = scheduleGroupRest(game, op.kind, op.invitedIds.map(id => ({ survivorId: id, choices: op.plans![id] })), op.id);
+  const result = scheduleGroupRest(game, op.kind, op.invitedIds.map(id => ({ survivorId: id, choices: op.plans![id] })), op.id, _die);
   if (!result.ok) return result.message;
-  op.status = "scheduled";
-  op.result = "Descanso iniciado. Benefícios serão aplicados na conclusão.";
+  const saved = game.playerActions!.operations.find(row => row.id === op.id)!;
+  saved.status = result.completed ? "done" : "scheduled";
+  saved.result = result.completed ? "Descanso concluído." : "Descanso iniciado. Benefícios serão aplicados na conclusão.";
   return null;
 }

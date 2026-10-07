@@ -471,6 +471,12 @@ export function survivorPositionGroups(state: GameState) {
   }
   return [...groups.entries()].map(([hex, members]) => ({ hex, members }));
 }
+/** Equipes são definidas pela posição física, inclusive na projeção dos jogadores. */
+export function hasMultipleSurvivorGroups(state: GameState) {
+  const peers = state.publicPlayerActions?.peers ?? state.survivors;
+  return new Set(peers.map(person => person.hex ?? state.partyHex)).size > 1;
+}
+
 export function displayTime(minutes: number) {
   const h = Math.floor(minutes / 60) % 24;
   return `${String(h).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;

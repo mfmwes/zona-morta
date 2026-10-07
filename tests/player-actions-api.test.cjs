@@ -78,7 +78,7 @@ test('reset da cidade é transacional, refaz CAS e devolve o estado novo para si
 });
 
 test('fluxo real do jogador agenda busca geral; achados só aparecem após avanço do mestre',async()=>{
- reset();
+ reset();const peer=structuredClone(state.survivors[0]);peer.id='other-group';peer.hex='-1,0';state.survivors.push(peer);
  state.survivors[0].hex='0,0';
  assignCustomSector(state,'0,0','Mercado abandonado','explorado');
  state.hexes['0,0'].events=[];
@@ -96,7 +96,7 @@ test('fluxo real do jogador agenda busca geral; achados só aparecem após avan�
  payload=await execute.json();
  assert.equal(state.minutes,480); assert.equal(payload.state.publicPlayerActions.stock.length,0);
  assert.equal(payload.state.publicActivities.length,1);
- assert.equal(advanceToNextActivity(state).ok,true);revision++;
+ if(state.activities?.some(a=>a.status==='running')){assert.equal(advanceToNextActivity(state).ok,true);revision++;}
  payload.state=projectPlayerGame(state,actor);
  const projectedArea=payload.state.publicPlayerActions.areas.find(row=>row.areaId===area.id);
  const attempt=state.hexes['0,0'].points[0].preparation.attempts.find(row=>row.id===propose.id);
@@ -126,7 +126,7 @@ test('coleta de achado após busca pausada persiste, refaz CAS e projeta invent�
  state.noise=3;
  assert.equal((await send({type:'search',id:'noisy-search',day:state.day,hexId:'0,0',pointId:'market',areaId:area.id,objective:'open',purpose:'Suprimentos'})).status,200);
  assert.equal((await send({type:'execute',id:'noisy-execute',day:state.day,operationId:'noisy-search'})).status,200);
- assert.equal(advanceToNextActivity(state).ok,true);revision++;
+ if(state.activities?.some(a=>a.status==='running')){assert.equal(advanceToNextActivity(state).ok,true);revision++;}
  assert.equal(state.playerActions.policy.paused,true);
  const stock=state.hexes['0,0'].points[0].preparation.stock.find(row=>row.attemptId==='noisy-search');assert.ok(stock);
  const beforeMinutes=state.minutes,beforeNoise=state.noise,beforeStock=stock.remaining;
@@ -178,7 +178,7 @@ test('PATCH de PV aceita ficha legada e preserva notas concorrentes sem bloquear
 });
 
 test('avanço do mestre é exclusivo, preserva CAS e pode ser reenviado sem concluir a próxima atividade',async()=>{
- reset();
+ reset();const peer=structuredClone(state.survivors[0]);peer.id='other-group';peer.hex='-1,0';state.survivors.push(peer);
  const {scheduleSurvivorTravel}=require('../lib/hex-actions.ts');
  assignCustomSector(state,'1,0','Garagens','avistado');state.hexes['1,0'].routeHours=1;
  assert.equal(scheduleSurvivorTravel(state,'1,0',[actor]).ok,true);
@@ -191,10 +191,41 @@ test('avanço do mestre é exclusivo, preserva CAS e pode ser reenviado sem conc
 });
 
 test('interrupção de atividade exige mestre e reenvio mantém posição e relógio',async()=>{
- reset();const {scheduleSurvivorTravel}=require('../lib/hex-actions.ts');assignCustomSector(state,'1,0','Garagens','avistado');
+ reset();const peer=structuredClone(state.survivors[0]);peer.id='other-group';peer.hex='-1,0';state.survivors.push(peer);const {scheduleSurvivorTravel}=require('../lib/hex-actions.ts');assignCustomSector(state,'1,0','Garagens','avistado');
  assert.equal(scheduleSurvivorTravel(state,'1,0',[actor]).ok,true);
  const activity=state.activities[0];const command={type:'cancel-activity',id:'cancel-1',day:state.day,activityId:activity.id};
  assert.equal((await send(command)).status,403);authenticated={id:'master'};
  assert.equal((await send(command)).status,200);assert.equal(state.minutes,480);assert.equal(state.survivors[0].hex??state.partyHex,'0,0');
  const saved=structuredClone(state);assert.equal((await send(command)).status,200);assert.deepEqual(state,saved);assert.equal(writes,1);
+});
+
+test('grupo único conclui busca no endpoint, preserva CAS e reenvio não cobra tempo novamente',async()=>{
+ reset();
+ state.survivors[0].hex='0,0';
+ assignCustomSector(state,'0,0','Mercado abandonado','explorado');
+ state.hexes['0,0'].events=[];
+ state.hexes['0,0'].points=[{id:'market',name:'Mercado',kind:'comércio',signal:'Prateleiras reviradas',access:'',notes:'',revealed:true,lootTable:content.lootTables[1].name,searches:[]}];
+ const point=state.hexes['0,0'].points[0];prepareLocation(point);
+ const area=point.preparation.areas.find(row=>row.searchable!==false);assert.ok(area);
+ area.access='open';area.noise=0;area.minutes=30;
+ const propose={type:'search',id:'player-d12-proposal',day:state.day,hexId:'0,0',pointId:'market',areaId:area.id,objective:'open',purpose:'Busca geral de suprimentos'};
+ const proposed=await send(propose);assert.equal(proposed.status,200);
+ let payload=await proposed.json();
+ let op=payload.state.publicPlayerActions.operations.find(row=>row.id===propose.id);
+ assert.ok(op);assert.equal(op.status,'forming');assert.equal(op.objective,'open');
+ race=true;const beforeWrites=writes;
+ const execute=await send({type:'execute',id:'player-d12-execute',day:state.day,operationId:propose.id});
+ assert.equal(execute.status,200);
+ payload=await execute.json();
+ assert.equal(state.minutes,510);assert.equal(writes,beforeWrites+2);assert.equal(state.fear,4);assert.equal(payload.state.publicActivities.length,0);
+ const saved=structuredClone(state),count=writes;
+ assert.equal((await send({type:'execute',id:'player-d12-execute',day:state.day,operationId:propose.id})).status,200);assert.equal(writes,count);assert.deepEqual(state,saved);
+ if(state.activities?.some(a=>a.status==='running')){assert.equal(advanceToNextActivity(state).ok,true);revision++;}
+ payload.state=projectPlayerGame(state,actor);
+ const projectedArea=payload.state.publicPlayerActions.areas.find(row=>row.areaId===area.id);
+ const attempt=state.hexes['0,0'].points[0].preparation.attempts.find(row=>row.id===propose.id);
+ assert.ok(attempt);assert.equal(attempt.mode,'open');assert.equal(attempt.status,'completed');
+ assert.ok(Number.isInteger(attempt.roll)&&attempt.roll>=1&&attempt.roll<=12);
+ assert.equal(projectedArea.lastRoll,attempt.effectiveRoll??attempt.roll);
+ assert.ok(typeof projectedArea.lastResult==='string');
 });

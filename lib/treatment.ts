@@ -2,10 +2,12 @@ import { absoluteMinutes, addLog, type GameState } from "./game";
 import { atSharedStorage, countsAsMedication, discardItem } from "./inventory";
 import { shelterTreatmentBonus } from "./shelter-projects";
 import { scheduleActivity } from "./activity-timeline";
+import { completeSingleGroupActivity } from "./time";
+import { rollDie } from "./rolls";
 import { registerActivityHandler } from "./activity-handlers";
 
 /** O medicamento é comprometido no início. A limpeza só termina após 30 min. */
-export function scheduleExposureTreatment(game: GameState, survivorId: string, medicineId: string, cleanWater: boolean) {
+export function scheduleExposureTreatment(game: GameState, survivorId: string, medicineId: string, cleanWater: boolean, die = rollDie) {
   const draft = structuredClone(game);
   const person = draft.survivors.find(p => p.id === survivorId);
   if (!person || person.infection !== "Exposto" || person.treatmentAttempted || !cleanWater)
@@ -24,8 +26,9 @@ export function scheduleExposureTreatment(game: GameState, survivorId: string, m
   else if (!discardItem(draft, survivorId, medicineId, 1)) return { ok: false as const, message: "Não foi possível reservar o medicamento." };
   person.treatmentAttempted = true;
   // A rolagem e seus efeitos entram no horário de conclusão.
+  const completed = completeSingleGroupActivity(draft, scheduled.activity.id, die);
   Object.assign(game, draft);
-  return scheduled;
+  return { ...scheduled, completed };
 }
 
 registerActivityHandler("treatment", (game, activity, die) => {

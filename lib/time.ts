@@ -1,4 +1,4 @@
-import { absoluteMinutes, addLog, type GameState } from "./game";
+import { absoluteMinutes, addLog, hasMultipleSurvivorGroups, type GameState } from "./game";
 import { processScheduledShelterWork } from "./shelter-projects";
 import { runningActivities } from "./activity-timeline";
 import { resolveActivityEffect } from "./activity-handlers";
@@ -92,6 +92,16 @@ export function nextActivityMinute(game: GameState): number | null {
   const night = game.minutes < 1080 && Object.values(game.hexes).some(hex=>hex.events.some(e=>e.triggerType==="night"&&(e.status??"pending")==="pending")) ? 1080 : undefined;
   const deadlines = [work === undefined ? undefined : work - (game.day - 1) * 1440, minute, night].filter((n): n is number => n !== undefined);
   return deadlines.length ? Math.max(game.minutes, Math.min(...deadlines)) : null;
+}
+
+/** Com uma única equipe, a confirmação conclui a ação e cobra o tempo diretamente. */
+export function completeSingleGroupActivity(game: GameState, id: string, die = rollDie) {
+  if (hasMultipleSurvivorGroups(game)) return false;
+  const activities = runningActivities(game);
+  if (activities.length !== 1 || activities[0].id !== id) return false;
+  const result = advanceWorldToMinute(game, Math.max(game.minutes, activities[0].endMinute), undefined, die);
+  if (result.ok) syncAllParticipantsToCurrentTime(game);
+  return Boolean(result.completedActivities?.includes(id));
 }
 
 export function advanceToNextActivity(game: GameState, die = rollDie): AdvanceTimeResult {

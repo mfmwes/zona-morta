@@ -1,4 +1,5 @@
 "use client";
+import { hasMultipleSurvivorGroups } from "@/lib/game";
 import { useState } from "react";
 import { CheckCircle2, Clock3, Eye, EyeOff, RefreshCw, Search, ShieldAlert, Sparkles } from "lucide-react";
 import { toast } from "sonner";
@@ -27,6 +28,7 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
   const [areaId, setAreaId] = useState("");
   const [mode, setMode] = useState<"open" | "specific">("open");
   const [objective, setObjective] = useState("");
+  const parallel = hasMultipleSurvivorGroups(game);
   const [purpose, setPurpose] = useState("Suprimentos úteis para o grupo");
   const [itemKey, setItemKey] = useState("");
   const quantity = 1;
@@ -201,8 +203,8 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
           {attempt && !done && <section className="hex-search-step"><h3><Clock3 size={18} /> Retomar busca</h3><p className="text-sm">{attempt.mode === "open" ? "Busca aberta do grupo" : `${attempt.objective} · ${attempt.purpose}`} · {attempt.minutes} min · Barulho +{attempt.noise}</p>
             {attempt.status === "pending" && <><Pick label="Quem executa o acesso?" value={actorId || attempt.participants[0]} options={people.filter(row => attempt.participants.includes(row.id)).map(row => ({ value: row.id, label: row.name }))} onChange={setActorId} /><RollForm key={`${attempt.id}:${actorId}`} game={game} edit={edit} request={{ survivorId: actorId || attempt.participants[0], kind: "action", trait: "Instinto", search: { ...request, attemptId: attempt.id, difficulty: area.difficulty } }} onCompleted={() => toast.success("Acesso registrado na busca")} /></>}
             {attempt.outcome && <div role="status" className="list-card text-sm"><b>{attempt.outcome.success ? "Sucesso" : "Falha"} · {attempt.outcome.total} · {attempt.outcome.with === "Hope" ? "Esperança" : "Medo"}</b>{attempt.outcome.with === "Fear" && <p>O mestre escolhe a complicação. Um sucesso mantém os achados prometidos.</p>}</div>}
-            {attempt.status === "ready" && <p className="text-sm subtle">Busca em andamento · conclusão às {displayTime(game.activities?.find(a => a.type === "search" && a.attemptId === attempt.id && a.status === "running")?.endMinute ?? game.minutes + attempt.minutes)}. Os achados serão liberados quando o mestre avançar o relógio.</p>}
-            {attempt.status === "ready" && !game.activities?.some(a=>a.type==="search"&&a.attemptId===attempt.id) && <Button onClick={()=>act(draft=>finishPreparedSearch(draft,request.hexId,request.pointId,attempt.id),"Busca agendada")}>Agendar busca pendente</Button>}
+            {parallel && attempt.status === "ready" && <p className="text-sm subtle">Busca em andamento · conclusão às {displayTime(game.activities?.find(a => a.type === "search" && a.attemptId === attempt.id && a.status === "running")?.endMinute ?? game.minutes + attempt.minutes)}. Os achados serão liberados quando o mestre avançar o relógio.</p>}
+            {attempt.status === "ready" && (!parallel || !game.activities?.some(a=>a.type==="search"&&a.attemptId===attempt.id)) && <Button onClick={()=>act(draft=>finishPreparedSearch(draft,request.hexId,request.pointId,attempt.id),parallel ? "Busca agendada" : "Busca concluída")}>{parallel ? "Agendar busca pendente" : "Concluir busca"}</Button>}
 
           </section>}
           {done && <section className="hex-search-step"><h3><CheckCircle2 size={18} /> Busca normal concluída nesta área</h3><p className="text-sm"><b>{attempt.mode === "open" ? `Busca geral${attempt.roll ? ` · d12 ${attempt.roll}` : ""}` : "Busca específica"}</b> · {attempt.result || "Nenhum achado útil."}</p>{stockUnits > 0 && <Button size="sm" variant="outline" onClick={() => setTab("finds")}>Ver achados</Button>}{attempt.adjustmentReason && <p className="text-xs subtle">d12 original {attempt.roll} → resultado {attempt.effectiveRoll}: {attempt.adjustmentReason}</p>}<p className="text-xs subtle">O registro e o estoque continuam salvos ao sair desta tela.</p></section>}
@@ -243,8 +245,8 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
               <p className="mt-1">{deepAttempt.outcome.success ? `Achado possível: ${deepChosenName || deepAttempt.objective}.` : "Nenhum item extra será criado, mas tempo e Barulho ainda serão consumidos."}</p>
               {deepAttempt.outcome.with === "Fear" && <p className="mt-1">O mestre recebe Medo normalmente e pode introduzir uma complicação coerente.</p>}
             </div>}
-            {deepAttempt.status === "ready" && <p className="text-sm subtle">Busca profunda em andamento · conclusão às {displayTime(game.activities?.find(a => a.type === "search" && a.attemptId === deepAttempt.id && a.status === "running")?.endMinute ?? game.minutes + 30)}. O resultado será aplicado quando o mestre avançar o relógio.</p>}
-            {deepAttempt.status === "ready" && !game.activities?.some(a=>a.type==="search"&&a.attemptId===deepAttempt.id) && <Button onClick={()=>act(draft=>finishPreparedSearch(draft,request.hexId,request.pointId,deepAttempt.id),"Busca profunda agendada")}>Agendar busca profunda pendente</Button>}
+            {parallel && deepAttempt.status === "ready" && <p className="text-sm subtle">Busca profunda em andamento · conclusão às {displayTime(game.activities?.find(a => a.type === "search" && a.attemptId === deepAttempt.id && a.status === "running")?.endMinute ?? game.minutes + 30)}. O resultado será aplicado quando o mestre avançar o relógio.</p>}
+            {deepAttempt.status === "ready" && (!parallel || !game.activities?.some(a=>a.type==="search"&&a.attemptId===deepAttempt.id)) && <Button onClick={()=>act(draft=>finishPreparedSearch(draft,request.hexId,request.pointId,deepAttempt.id),parallel ? "Busca profunda agendada" : "Busca profunda concluída")}>{parallel ? "Agendar busca profunda pendente" : "Concluir busca profunda"}</Button>}
 
           </section>}
 
