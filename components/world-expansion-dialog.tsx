@@ -54,7 +54,7 @@ export function WorldExpansionDialog({ game, origin, edit, onClose, onExpanded }
         <Pick contentClassName="z-[110]" label="Via dos novos hexes" value={passage} options={Object.entries(passages).map(([value, label]) => ({ value, label }))} onChange={value => setPassage(value as Passage)} />
       </div>
       <div className="world-terrain-preview-card">
-        <b>{terrainDetails[terrain].code} · {terrains[terrain]}</b>
+        <b>{terrains[terrain]}</b>
         <p>{terrainDetails[terrain].description}</p>
         <small>{terrainDetails[terrain].generatorHint} · travessia-base {terrainDetails[terrain].travelHours} h.</small>
       </div>
