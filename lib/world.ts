@@ -2,8 +2,111 @@ import type { GameState, HexState } from "./game";
 import { validEventActionLinks, validHexEventOrigin } from "./hex-event-links";
 import { validLocationPreparation } from "./hex-automation-validation";
 
-export const terrains = { urban: "Urbano", rural: "Rural", forest: "Floresta", mountain: "Montanha", swamp: "Pântano" } as const;
+export const terrains = {
+  urban: "Urbano",
+  suburban: "Suburbano",
+  industrial: "Industrial",
+  rural: "Rural",
+  forest: "Floresta / mata",
+  open: "Área aberta",
+  roadway: "Rodoviário",
+  swamp: "Alagado / ribeirinho",
+  mountain: "Serra / relevo acidentado",
+} as const;
 export type Terrain = keyof typeof terrains;
+
+export const terrainDetails: Record<Terrain, {
+  code: string;
+  description: string;
+  travelHours: 1 | 2;
+  generatorHint: string;
+}> = {
+  urban: {
+    code: "URB",
+    description: "Alta densidade de prédios, comércio, ruas estreitas e interiores complexos.",
+    travelHours: 1,
+    generatorHint: "Mais edifícios, comércio, serviços e recursos variados.",
+  },
+  suburban: {
+    code: "SUB",
+    description: "Casas, condomínios, escolas, pequenos comércios e vias residenciais.",
+    travelHours: 1,
+    generatorHint: "Mais moradias, mercados menores, oficinas locais e áreas comunitárias.",
+  },
+  industrial: {
+    code: "IND",
+    description: "Galpões, fábricas, depósitos, oficinas, pátios e infraestrutura técnica.",
+    travelHours: 1,
+    generatorHint: "Mais ferramentas, peças, combustível, veículos e grandes áreas internas.",
+  },
+  rural: {
+    code: "RUR",
+    description: "Sítios, fazendas, estradas de terra, campos cultivados e construções isoladas.",
+    travelHours: 2,
+    generatorHint: "Mais alimentos, água, recursos de sobrevivência e estruturas espaçadas.",
+  },
+  forest: {
+    code: "MAT",
+    description: "Mata, bosque e vegetação densa com trilhas, clareiras e pouca construção.",
+    travelHours: 2,
+    generatorHint: "Poucos edifícios; mais ambiente, passagem difícil e pontos naturais.",
+  },
+  open: {
+    code: "ABR",
+    description: "Campos, parques, terrenos baldios, praças e áreas com pouca cobertura.",
+    travelHours: 2,
+    generatorHint: "Mais áreas externas, infraestrutura dispersa e exposição durante a travessia.",
+  },
+  roadway: {
+    code: "ROD",
+    description: "Rodovias, viadutos, terminais, postos, estacionamentos e corredores de deslocamento.",
+    travelHours: 1,
+    generatorHint: "Mais veículos, combustível, oficinas, postos e estruturas ligadas à mobilidade.",
+  },
+  swamp: {
+    code: "ALA",
+    description: "Canais, margens, várzeas, mangue ou terreno frequentemente inundado.",
+    travelHours: 2,
+    generatorHint: "Mais obstáculos ambientais, passagens estreitas e recursos ligados à água.",
+  },
+  mountain: {
+    code: "SER",
+    description: "Encostas, morros, serras e terreno acidentado com linhas de visão irregulares.",
+    travelHours: 2,
+    generatorHint: "Mais desníveis, acessos difíceis, mirantes e construções isoladas.",
+  },
+};
+
+export function terrainTravelHours(terrain: Terrain): 1 | 2 {
+  return terrainDetails[terrain].travelHours;
+}
+
+export function inferTerrainFromSector(text: string): Terrain {
+  const value = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
+  if (/industrial|galp|fabrica|porto seco|conteiner|armazem|deposito|obra/.test(value)) return "industrial";
+  if (/rodov|viaduto|terminal|estacao|ferrovi|posto|pista|garagem|patio/.test(value)) return "roadway";
+  if (/parque|jardim|cemiter|quadra|campo|praca|aberto/.test(value)) return "open";
+  if (/canal|alag|margem|varzea|mangue|ribeir/.test(value)) return "swamp";
+  if (/morro|serra|encosta|vale|crista|pedreg/.test(value)) return "mountain";
+  if (/mata|bosque|florest|arboriz|clareira/.test(value)) return "forest";
+  if (/sitio|fazenda|pastagem|pomar|rural|agricol/.test(value)) return "rural";
+  if (/conjunto|resid|bairro|casas|condominio|loteamento/.test(value)) return "suburban";
+  return "urban";
+}
+
+/** Distribuição estável para mapas novos e hexes legados sem terreno definido. */
+export function defaultTerrainForCoordinate(q: number, r: number): Terrain {
+  const distance = Math.max(Math.abs(q), Math.abs(r), Math.abs(q + r));
+  if (distance === 0) return "urban";
+  if (distance === 1) {
+    const ring: Terrain[] = ["urban", "suburban", "industrial", "suburban", "urban", "roadway"];
+    const index = ((q * 17 + r * 31) % ring.length + ring.length) % ring.length;
+    return ring[index];
+  }
+  const outer: Terrain[] = ["suburban", "industrial", "rural", "forest", "open", "roadway", "swamp", "mountain"];
+  const index = ((q * 37 + r * 53 + distance * 11) % outer.length + outer.length) % outer.length;
+  return outer[index];
+}
 export const passages = { none: "Sem via definida", road: "Estrada", trail: "Trilha", railway: "Ferrovia" } as const;
 export type Passage = keyof typeof passages;
 export type HexCoordinate = { q: number; r: number; id: string };
@@ -56,7 +159,7 @@ export function expandWorld(game: GameState, input: Expansion): string[] {
   if (Object.keys(game.hexes).length + additions.length > MAX_WORLD_HEXES) return [];
   for (const hex of additions) game.hexes[hex.id] = {
     sector: null, discovery: "desconhecido", infestation: null, signs: "", notes: "",
-    terrain: input.terrain, passage: input.passage, routeHours: 1, points: [], events: [],
+    terrain: input.terrain, passage: input.passage, routeHours: terrainTravelHours(input.terrain), points: [], events: [],
   };
   return additions.map(hex => hex.id);
 }
