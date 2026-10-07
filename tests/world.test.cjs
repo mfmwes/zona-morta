@@ -7,7 +7,7 @@ require.extensions['.ts'] = (module, path) => module._compile(ts.transpileModule
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
 }).outputText, path);
 const { defaultState, initialSurvivor, content } = require('../lib/game.ts');
-const { expansionHexes, expandWorld, validWorld, parseHex, worldFrontier, MAX_WORLD_HEXES, mapBounds, worldHexes } = require('../lib/world.ts');
+const { expansionHexes, expandWorld, validWorld, parseHex, worldFrontier, MAX_WORLD_HEXES, mapBounds, worldHexes, terrainDetails, terrains } = require('../lib/world.ts');
 const { revealSector, redrawSector, preserveKnownSectors, sectorProfiles } = require('../lib/sectors.ts');
 const { performHexAction, moveSurvivors, movementSources } = require('../lib/hex-actions.ts');
 const { projectPlayerGame, playerEditPayload } = require('../lib/collaboration.ts');
@@ -31,10 +31,47 @@ test('expansão preserva integralmente o mapa anterior, começa desconhecida e p
   const other = structuredClone(game); delete other.hexes['3,0'];
   assert.deepEqual(other, before);
   assert.deepEqual(game.hexes['3,0'], { sector: null, discovery: 'desconhecido', infestation: null,
-    terrain: 'forest', passage: 'road', routeHours: 1, signs: '', notes: '', points: [], events: [] });
+    terrain: 'forest', passage: 'road', routeHours: 2, signs: '', notes: '', points: [], events: [] });
   assert.deepEqual(expandWorld(game, expansion()), []);
   assert.deepEqual(expandWorld(game, expansion({ origin: '3,0', mode: 'direction', length: 12 })),
     Array.from({ length: 12 }, (_, i) => `${i + 4},0`));
+});
+
+test('mapa novo distribui identidades de terreno e aplica travessia-base coerente', () => {
+  const game = defaultState();
+  const present = new Set(Object.values(game.hexes).map(hex => hex.terrain));
+  assert.ok(present.size >= 5, `terrenos distintos no mapa inicial: ${[...present].join(', ')}`);
+  assert.equal(game.hexes['0,0'].terrain, 'urban');
+  for (const hex of Object.values(game.hexes)) {
+    assert.ok(Object.hasOwn(terrains, hex.terrain));
+    assert.equal(hex.routeHours, terrainDetails[hex.terrain].travelHours);
+  }
+  assert.equal(terrainDetails.industrial.travelHours, 1);
+  assert.equal(terrainDetails.forest.travelHours, 2);
+  assert.equal(terrainDetails.roadway.travelHours, 1);
+});
+
+test('campanha legada sem terrain recebe identidade sem reescrever setor estabelecido', () => {
+  const game = defaultState();
+  const originalSector = structuredClone(game.hexes['0,0'].sector);
+  for (const hex of Object.values(game.hexes)) delete hex.terrain;
+  game.hexes['0,0'].sector = { id:'custom-old', name:'Distrito industrial antigo', border:'galpões e pátios', invites:[] };
+  const restored = preserveKnownSectors(game);
+  assert.equal(restored.hexes['0,0'].sector.id, 'custom-old');
+  assert.equal(restored.hexes['0,0'].terrain, 'industrial');
+  assert.ok(Object.values(restored.hexes).every(hex => Object.hasOwn(terrains, hex.terrain)));
+  assert.ok(originalSector);
+});
+
+test('mapa renderiza legenda, textura e cartão de identidade do terreno', () => {
+  const explorer = fs.readFileSync(require.resolve('../components/hex-explorer.tsx'), 'utf8');
+  const css = fs.readFileSync(require.resolve('../app/world-map.css'), 'utf8');
+  assert.match(explorer,/map-terrain-legend/);
+  assert.match(explorer,/terrainPatternMark/);
+  assert.match(explorer,/hex-terrain-summary/);
+  assert.match(explorer,/terrainDetails\[terrainKey\]\.code/);
+  assert.match(css,/Terrain identity prototype/);
+  assert.match(css,/\.hex-terrain-summary/);
 });
 
 test('anéis seguem a borda atual: 19, 37, 61; direções pulam hexes existentes sem reescrevê-los', () => {
@@ -104,7 +141,7 @@ test('revelação não esgota o catálogo urbano; terrenos geram setores própri
   const key = Object.keys(game.hexes).at(-1);
   assert.ok(redrawSector(game, key));
   let origin = '6,0';
-  for (const terrain of ['forest', 'rural', 'mountain', 'swamp']) {
+  for (const terrain of ['suburban', 'industrial', 'forest', 'rural', 'open', 'roadway', 'mountain', 'swamp']) {
     const added = expandWorld(game, expansion({ origin, terrain }));
     assert.equal(added.length, 1);
     const sector = revealSector(game, added[0]);
