@@ -30,7 +30,7 @@ import { TablePresentationControl, TablePresentationViewer } from "@/components/
 import { SceneBoard } from "@/components/scene-board";
 import { TeamActionError } from "@/components/player-actions-panel";
 import { MasterOverview } from "@/components/master-overview";
-import { addLog, displayTime, resetCityPreservingSurvivors, survivorHex, type GameState, type Point, type Survivor, type TablePresentation } from "@/lib/game";
+import { addLog, displayTime, survivorHex, type GameState, type Point, type Survivor, type TablePresentation } from "@/lib/game";
 import { createId } from "@/lib/id";
 import { npcPlayerView } from "@/lib/npc-presentation";
 import { sectorProfiles } from "@/lib/sectors";
@@ -743,7 +743,7 @@ export default function CampaignApp() {
               <AlertDialogTrigger asChild><Button variant="outline" size="sm"><RotateCcw /> Reiniciar cidade</Button></AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader><AlertDialogTitle>Reiniciar esta cidade?</AlertDialogTitle>
-                  <AlertDialogDescription>Isso reinicia o mapa, os sobreviventes, as reservas e o diário desta campanha. Para manter esta mesa e começar outra, volte a Seus dossiês e crie uma nova campanha.</AlertDialogDescription>
+                  <AlertDialogDescription>Isso reinicia o mapa, as reservas, o diário e o estado operacional desta campanha. Os sobreviventes são preservados e retornam ao hex inicial. Para manter esta cidade e começar outra, volte a Seus dossiês e crie uma nova campanha.</AlertDialogDescription>
                 </AlertDialogHeader>
                 <div className="grid gap-4 py-2">
                   <Pick label="Setor de partida (hex 0,0)" value={startSectorId} onChange={setStartSectorId}
@@ -763,14 +763,19 @@ export default function CampaignApp() {
                 <AlertDialogFooter>
                   <Button variant="outline" onClick={downloadBackup}><Download /> Baixar cópia</Button>
                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction variant="destructive" onClick={() => {
-                    let preserved = 0;
-                    edit(draft => { preserved = resetCityPreservingSurvivors(draft, {
-                      startSectorId: startSectorId === "random" ? undefined : startSectorId,
-                      withShelter: startWithShelter,
-                    }); });
-                    setTab("mapa"); setPlayerPreview(false);
-                    toast.success("Cidade reiniciada", { description: `Mapa, reservas e diário foram reiniciados. ${preserved} sobrevivente(s) foram preservados.` });
+                  <AlertDialogAction variant="destructive" onClick={async () => {
+                    const preserved = current.current?.survivors.length ?? 0;
+                    try {
+                      await executeTeamAction({
+                        type: "reset-city",
+                        ...(startSectorId === "random" ? {} : { startSectorId }),
+                        withShelter: startWithShelter,
+                      });
+                      setTab("mapa"); setPlayerPreview(false);
+                      toast.success("Cidade reiniciada", { description: `Mapa, reservas e diário foram reiniciados no servidor. ${preserved} sobrevivente(s) foram preservados.` });
+                    } catch (cause) {
+                      toast.error(cause instanceof Error ? cause.message : "Não foi possível reiniciar a cidade.");
+                    }
                   }}>Reiniciar cidade</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>

@@ -305,7 +305,10 @@ export function prepareHex(game: GameState, hexId: string) {
       lootTable: generated.suggestedLootTable, condition: generated.suggestedCondition, risk: generated.suggestedRisk,
       generatorKind: "locais", generatorRoll: generated.roll, generatorCategory: generated.categoryLabel });
   }
-  hex.points.forEach(prepareLocation);
+  for (const point of hex.points) {
+    if (point.clueTargetHex) continue;
+    prepareLocationForExploration(game, hexId, point.id);
+  }
   if (!hex.events.length) {
     hex.searchSequence ??= searchSequence(game, hexId);
     const generated = generateHexContent(game, hexId, "eventos");

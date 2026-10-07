@@ -1,6 +1,8 @@
 import { campaignOwnerId, findPlayer, readCampaign, writeCampaign } from "@/db/state";
 import { sameOrigin, siteUser } from "@/lib/auth";
 import { projectPlayerGame } from "@/lib/collaboration";
+import { resetCityPreservingSurvivors } from "@/lib/game";
+import { sectorProfiles } from "@/lib/sectors";
 import { applyPlayerAction, playerActionState, setPlayerPolicy } from "@/lib/player-actions";
 
 export const dynamic = "force-dynamic";
@@ -22,12 +24,19 @@ export async function POST(request: Request) {
     let payload: Record<string, unknown>;
     try { payload = JSON.parse(raw); } catch { return Response.json({ error: "Dados inválidos." }, { status: 400 }); }
     if (!payload || typeof payload !== "object" || Array.isArray(payload)) return Response.json({ error: "Dados inválidos." }, { status: 400 });
-    if (!master && ["policy", "review"].includes(String(payload.type))) return Response.json({ error: "Somente o mestre altera as liberações e resolve avisos." }, { status: 403 });
+    if (!master && ["policy", "review", "reset-city"].includes(String(payload.type))) return Response.json({ error: "Somente o mestre altera a campanha inteira." }, { status: 403 });
     for (let attempt = 0; attempt < 4; attempt++) {
       const data = await readCampaign(campaignId);
       let next = data.state;
       if (master) {
-        if (payload.type === "policy") {
+        if (payload.type === "reset-city") {
+          const withShelter = payload.withShelter === true;
+          const startSectorId = typeof payload.startSectorId === "string" ? payload.startSectorId : undefined;
+          if (startSectorId && !sectorProfiles.some(profile => profile.id === startSectorId))
+            return Response.json({ error: "Setor inicial inválido." }, { status: 400 });
+          next = structuredClone(data.state);
+          resetCityPreservingSurvivors(next, { startSectorId, withShelter });
+        } else if (payload.type === "policy") {
           if (typeof payload.expectedPolicy !== "string" || (payload.expectedPolicy !== JSON.stringify(playerActionState(data.state).policy) && JSON.stringify(payload.policy) !== JSON.stringify(playerActionState(data.state).policy)))
             return Response.json({ error: "As liberações mudaram em outra janela. Descarte o rascunho e revise antes de salvar." }, { status: 409 });
           const configured = setPlayerPolicy(data.state, payload.policy);

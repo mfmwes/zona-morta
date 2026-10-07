@@ -544,6 +544,11 @@ export function resetCityPreservingSurvivors(state: GameState, options: { startS
   fresh.survivors = survivors;
   if (threats !== undefined) fresh.threats = threats;
   if (survivors.length) addLog(fresh, "sobrevivente", `${survivors.length} sobrevivente(s) da conta foram preservados ao reiniciar a cidade.`);
+  // Reset é substituição completa: propriedades opcionais do mundo anterior
+  // (playerActions, conflito, relógios paralelos, projeções públicas etc.)
+  // não podem sobreviver só porque não existem no estado novo.
+  const target = state as unknown as Record<string, unknown>;
+  for (const key of Object.keys(target)) delete target[key];
   Object.assign(state, fresh);
   return survivors.length;
 }

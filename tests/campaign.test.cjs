@@ -441,6 +441,9 @@ test('reiniciar cidade preserva fichas, ids e campanha mas limpa o mundo e estad
   g.day = 9;
   g.minutes = 900;
   g.hexes['0,0'].notes = 'cidade antiga';
+  g.playerActions = { policy:{ paused:true, transfers:false, deposits:false, rest:false, tokens:false, areas:[], routes:[], supplies:{food:0,water:0,items:{}} }, operations:[], receipts:[], withdrawals:[], markers:[] };
+  g.explorationPreferences = { autoPrepare:true, participantIds:[ana.id] };
+  g.parallelTime = { day:g.day, survivorMinutes:{ [ana.id]:300 } };
 
   const count = resetCityPreservingSurvivors(g, { withShelter:true });
   assert.equal(count, 2);
@@ -459,6 +462,9 @@ test('reiniciar cidade preserva fichas, ids e campanha mas limpa o mundo e estad
   assert.equal(g.survivors[0].abilityUses, undefined);
   assert.equal(g.survivors[0].restPlan, undefined);
   assert.equal(g.survivors[0].ammoSpentScene, undefined);
+  assert.equal(g.playerActions, undefined);
+  assert.equal(g.explorationPreferences, undefined);
+  assert.equal(g.parallelTime, undefined);
 });
 
 test('resolução privada de alvo existe sem enviar dificuldade ao cliente jogador', () => {
@@ -571,11 +577,11 @@ test('rota de dano exige o sobrevivente alvo e resolve PV ou Armadura no servido
 test('persistência de conta mantém tabela e sincronização de sobreviventes fora do estado da cidade', () => {
   const schema = fs.readFileSync(require.resolve('../db/schema.ts'), 'utf8');
   const state = fs.readFileSync(require.resolve('../db/state.ts'), 'utf8');
-  const page = fs.readFileSync(require.resolve('../app/page.tsx'), 'utf8');
+  const actions = fs.readFileSync(require.resolve('../app/api/campaign/actions/route.ts'), 'utf8');
   assert.match(schema, /sqliteTable\("user_characters"/);
   assert.match(state, /syncCampaignAccountCharacters\(campaignId, persisted\)/);
   assert.match(state, /INSERT INTO user_characters/);
-  assert.match(page, /resetCityPreservingSurvivors/);
+  assert.match(actions, /resetCityPreservingSurvivors/);
 });
 
 test('jogador cria ficha válida sem poder injetar recursos ou escolhas fora do arquétipo', () => {
@@ -1126,6 +1132,16 @@ test('mestre pode revelar hex distante, nomear setor e substituir sem perder con
   assert.notEqual(redrawn.id, customId);
   assert.equal(g.hexes[id].points[0].name, 'Farmácia');
   assert.equal(g.hexes[id].events[0].text, 'Sirenes ao longe');
+});
+
+test('reiniciar cidade usa ação transacional do servidor em vez de edição local otimista', () => {
+  const source = fs.readFileSync(require.resolve('../app/page.tsx'),'utf8');
+  const route = fs.readFileSync(require.resolve('../app/api/campaign/actions/route.ts'),'utf8');
+  assert.match(source,/type: "reset-city"/);
+  assert.match(source,/await executeTeamAction/);
+  assert.doesNotMatch(source,/preserved = resetCityPreservingSurvivors/);
+  assert.match(route,/resetCityPreservingSurvivors/);
+  assert.match(route,/payload\.type === "reset-city"/);
 });
 
 test('Ferramentas do mestre expõem revelação direta sem mostrar o controle na prévia', () => {

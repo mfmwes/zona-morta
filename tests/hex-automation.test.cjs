@@ -50,6 +50,7 @@ test('preparação idempotente conserva fatos, cria áreas privadas e não movim
   const {game,point,actor} = campaign();
   const minutes = game.minutes;
   auto.prepareHex(game,'0,0');
+  assert.ok(point.preparation.areas.every(area=>['item','none'].includes(area.visibleOutcome)));
   const before = structuredClone(game);
   auto.prepareHex(game,'0,0'); assert.deepEqual(game,before);
   assert.equal(game.minutes,minutes); assert.equal(actor.hex,'0,0'); assert.equal(game.conflict,undefined);
@@ -234,6 +235,8 @@ test('fluxo de exploração prioriza ação atual e recolhe configurações avan
   assert.match(playerDialog,/Busca geral \(1d12\)/);
   assert.match(playerDialog,/Busca geral: 1d12 determina o achado/);
   assert.match(playerDialog,/Busca indisponível agora/);
+  assert.match(playerDialog,/Ações da equipe pausadas/);
+  assert.match(playerDialog,/consequência anterior ainda precisa ser resolvida/);
   assert.match(playerDialog,/Item plausível nesta área/);
   assert.match(playerDialog,/Apoio de Trabalhador\(a\) de depósito/);
   assert.match(playerDialog,/Apoio de Docente/);
