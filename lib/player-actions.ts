@@ -1,9 +1,10 @@
+import "./treatment";
 import { addLog, content as gameContent, survivorHex, survivorIsDown, survivorStats, type GameState } from "./game";
-import { collectLocationStock, deepSearchCandidateKeys, finishPreparedSearch, pendingPlayerSearchOperation, prepareLocationForExploration, quickSearchOptions, rollSearchAccess, searchAreaSessionState, searchAreaState, searchMentors, startDeepSearch, startSearch, warehouseWorkers } from "./hex-automation";
-import { moveSurvivors } from "./hex-actions";
+import { collectLocationStock, deepSearchCandidateKeys, finishPreparedSearch, pendingPlayerSearchOperation, prepareLocationForExploration, quickSearchOptions, rollSearchAccess, searchAreaSessionState, searchAreaState, searchMentors, schedulePreparedDeepSearch, schedulePreparedSearch, warehouseWorkers } from "./hex-automation";
+import { scheduleSurvivorTravel } from "./hex-actions";
 import { atSharedStorage, catalogKey, transferItem, transferProvisions } from "./inventory";
 import { survivorTimedCommitment } from "./activity";
-import { resolveGroupRest, restActionsFor, type RestChoice } from "./abilities";
+import { scheduleGroupRest, restActionsFor, type RestChoice } from "./abilities";
 import { eventTriggerReady } from "./hex-generators";
 import { projectPlayerSceneBoard, type SceneBoardScene } from "./scene-board";
 import { shelterTravelMinutes } from "./shelter-projects";
@@ -15,7 +16,8 @@ export function playerActionState(game: GameState): PlayerActionState {
   return game.playerActions ?? { policy: defaultPlayerPolicy(), operations: [], receipts: [], withdrawals: [], markers: [] };
 }
 function active(game: GameState, op: TeamOperation) {
-  if (op.day !== game.day || op.scene !== (game.scene ?? 1) || !["forming", "access"].includes(op.status)) return false;
+  if (op.day === game.day && game.activities?.some(a => a.status === "running" && a.operationId === op.id)) return true;
+  if (op.day !== game.day || (op.status !== "scheduled" && op.scene !== (game.scene ?? 1)) || !["forming", "access", "scheduled"].includes(op.status)) return false;
   if (op.type === "search" && op.status === "access") {
     const attempt = game.hexes[op.hexId]?.points.find(p => p.id === op.pointId)?.preparation?.attempts.find(a => a.id === op.id);
     if (attempt && ["completed", "failed"].includes(attempt.status)) return false;
@@ -35,7 +37,7 @@ export function playerTimedActionIssue(game: GameState, ids: string[], except?: 
   for (const id of ids) {
     const person = game.survivors.find(p => p.id === id);
     if (!person || survivorIsDown(person)) return "Um participante está ausente ou caído.";
-    const commitment = survivorTimedCommitment(game, id);
+    const commitment = survivorTimedCommitment(game, id, except);
     if (commitment) return commitment.label;
     if (playerActionState(game).operations.some(op => op.id !== except && active(game, op) && op.status === "access" && op.participantIds.includes(id))) return "Conclua a busca em andamento antes de outra atividade.";
   }
@@ -129,7 +131,7 @@ export function projectPlayerActions(game: GameState, actorId: string): PublicPl
     }
   }
   result.routes = state.policy.routes.filter(r => r.from === hexId && game.hexes[r.to]?.discovery !== "desconhecido" && game.hexes[r.to]).map(r => ({ destination: r.to, name: game.hexes[r.to].sector?.name ?? `Hex ${r.to}`, minutes: shelterTravelMinutes(game, r.from, r.to, game.hexes[r.to].routeHours * 60) }));
-  result.operations = state.operations.filter(op => op.day === game.day && op.scene === (game.scene ?? 1) && (op.type === "transfer" || op.type === "exception" ? op.initiatorId === actorId || op.invitedIds.includes(actorId) : op.hexId === hexId || op.initiatorId === actorId || op.invitedIds.includes(actorId) || op.type === "rest")).map(op => {
+  result.operations = state.operations.filter(op => op.day === game.day && (op.status === "scheduled" || game.activities?.some(a => a.status === "running" && a.operationId === op.id) || op.scene === (game.scene ?? 1)) && (op.type === "transfer" || op.type === "exception" ? op.initiatorId === actorId || op.invitedIds.includes(actorId) : op.hexId === hexId || op.initiatorId === actorId || op.invitedIds.includes(actorId))).map(op => {
     const safe: Omit<TeamOperation, "itemSnapshot" | "plans"> = { ...op };
     delete (safe as TeamOperation).itemSnapshot; delete (safe as TeamOperation).plans;
     if (safe.type === "search" && safe.status === "access" && !active(game, op)) safe.status = "done";
@@ -167,10 +169,12 @@ function executeCommand(game: GameState, actorId: string, cmd: PlayerCommand, di
   const hexId = survivorHex(game, actor);
   // Coletar estoque já liberado não inicia uma atividade nem avança tempo ou risco.
   if (policy.paused && !["collect", "leave", "request", "clear-marker"].includes(cmd.type)) return "As ações da equipe estão pausadas pelo mestre.";
+  if (["collect", "offer", "deposit", "withdraw"].includes(cmd.type) && game.activities?.some(a => a.status === "running" && a.participantIds.includes(actorId)))
+    return "Conclua a atividade em andamento antes de recolher ou transferir itens.";
   const op = "operationId" in cmd ? state.operations.find(o => o.id === cmd.operationId) : undefined;
   if ("operationId" in cmd && (!op || !active(game, op))) return "Esta operação terminou, expirou ou mudou de cena.";
   if (cmd.type === "confirm-rest") return confirmTableRest(game, actorId, cmd.operationId, cmd.choices, die);
-  if (cmd.type === "request-rest") return requestTableRest(game, cmd.kind, actorId);
+  if (cmd.type === "request-rest") return requestTableRest(game, cmd.kind, actorId, cmd.participantIds);
   if (op?.individualChoices && cmd.type !== "request") return "Use as escolhas de descanso na sua própria ficha.";
   if (cmd.type === "request") {
     if (state.operations.filter(o => active(game, o) && o.type === "exception" && o.initiatorId === actorId).length >= 3) return "Você já tem três pedidos aguardando o mestre.";
@@ -213,7 +217,7 @@ function executeCommand(game: GameState, actorId: string, cmd: PlayerCommand, di
       if (!policy.rest) return "O mestre ainda não liberou a conclusão de descansos pela equipe.";
       const choices = checkPlan(game, actorId, cmd.kind); if (!choices) return "Registre suas duas escolhas na ficha antes de propor o descanso.";
       if (state.operations.some(o => active(game, o) && o.type === "rest")) return "Já há um descanso proposto para a mesa.";
-      proposal.kind = cmd.kind; proposal.plans = { [actorId]: choices }; proposal.invitedIds = game.survivors.map(p => p.id);
+      proposal.kind = cmd.kind; proposal.plans = { [actorId]: choices }; proposal.invitedIds = game.survivors.filter(p => survivorHex(game, p) === hexId).map(p => p.id);
     }
     state.operations.push(proposal); return null;
   }
@@ -250,14 +254,14 @@ function executeCommand(game: GameState, actorId: string, cmd: PlayerCommand, di
     if (op.type !== "rest" && !sameParty(game, op)) return "Um participante saiu do hex. Atualize o grupo.";
     if (op.type === "travel") {
       if (cmd.type !== "execute" || !policy.routes.some(r => r.from === op.hexId && r.to === op.destination)) return "A rota deixou de estar liberada.";
-      const result = moveSurvivors(game, op.destination!, op.participantIds); if (!result.ok) return result.message || "Este deslocamento não está disponível.";
-      op.result = result.message; op.status = "done";
+      const result = scheduleSurvivorTravel(game, op.destination!, op.participantIds, op.id); if (!result.ok) return result.message || "Este deslocamento não está disponível.";
+      op.result = result.message; op.status = "scheduled";
     } else if (op.type === "rest") {
-      if (cmd.type !== "execute" || !policy.rest || game.survivors.some(p => !op.participantIds.includes(p.id)) || op.participantIds.length !== game.survivors.length) return "Todos os sobreviventes precisam confirmar suas duas ações.";
-      if (game.survivors.some(p => JSON.stringify(checkPlan(game, p.id, op.kind!)) !== JSON.stringify(op.plans?.[p.id]))) return "As escolhas mudaram: cancele e proponha o descanso novamente.";
-      const result = resolveGroupRest(game, op.kind!, game.survivors.map(p => ({ survivorId: p.id, choices: op.plans![p.id] })), die);
+      if (cmd.type !== "execute" || !policy.rest || op.invitedIds.some(id => !op.participantIds.includes(id)) || op.participantIds.length !== op.invitedIds.length) return "Todos os sobreviventes precisam confirmar suas duas ações.";
+      if (game.survivors.filter(p => op.invitedIds.includes(p.id)).some(p => JSON.stringify(checkPlan(game, p.id, op.kind!)) !== JSON.stringify(op.plans?.[p.id]))) return "As escolhas mudaram: cancele e proponha o descanso novamente.";
+      const result = scheduleGroupRest(game, op.kind!, op.invitedIds.map(id => ({ survivorId: id, choices: op.plans![id] })), op.id);
       if (!result.ok) return result.message;
-      op.result = `Descanso concluído · ${result.minutes / 60}h · Medo +${result.fear}.`; op.status = "done";
+      op.result = "Descanso iniciado. Benefícios serão aplicados na conclusão."; op.status = "scheduled";
     } else if (op.type === "search") {
       const point = game.hexes[op.hexId]?.points.find(p => p.id === op.pointId);
       const area = point?.preparation?.areas.find(a => a.id === op.areaId);
@@ -270,22 +274,22 @@ function executeCommand(game: GameState, actorId: string, cmd: PlayerCommand, di
         const specificLabel = op.objective === "item" ? op.objectiveLabel : selected?.label;
         if (op.depth === "deep") {
           if (!specificKey || op.objective === "open") return "Escolha um foco plausível para a busca profunda.";
-          const error = startDeepSearch(game, { id: op.id, hexId: op.hexId, pointId: op.pointId!, areaId: op.areaId!, participants: op.participantIds,
+          const error = schedulePreparedDeepSearch(game, { id: op.id, hexId: op.hexId, pointId: op.pointId!, areaId: op.areaId!, participants: op.participantIds,
             objective: specificLabel || "Item específico", purpose: op.purpose!, catalogKey: specificKey });
           if (error) return error;
-          op.status = "access";
+          game.playerActions!.operations.find(saved => saved.id === op.id)!.status = "access";
           return null;
         }
         const specific = op.objective !== "open";
         if (specific && !specificKey) return "O objetivo não é previsto para esta área. Escolha outra categoria ou faça uma busca aberta.";
-        const error = startSearch(game, {
+        const error = schedulePreparedSearch(game, {
           id: op.id, hexId: op.hexId, pointId: op.pointId!, areaId: op.areaId!, participants: op.participantIds,
           mode: specific ? "specific" : "open", objective: specific ? (specificLabel || "Item específico") : "Vasculhar",
           purpose: op.purpose!, catalogKey: specific ? specificKey : undefined, quantity: 1,
           warehouseWorker: cmd.warehouseWorkerId,
         });
         if (error) return error;
-        op.status = "access";
+        game.playerActions!.operations.find(saved => saved.id === op.id)!.status = "access";
         if (area.access === "risk") return null;
       } else {
         if (op.status !== "access") return "Inicie a busca antes de resolver o acesso.";
@@ -298,9 +302,9 @@ function executeCommand(game: GameState, actorId: string, cmd: PlayerCommand, di
       // A conclusão usa um clone internamente: recupere a operação do novo estado.
       const saved = game.playerActions!.operations.find(o => o.id === op.id)!;
       const attempt = game.hexes[op.hexId].points.find(p => p.id === op.pointId)!.preparation!.attempts.find(a => a.id === op.id)!;
-      saved.status = "done"; saved.result = attempt.result || "Busca concluída sem achados.";
-      if (attempt.outcome?.success === false) saved.attention = "Falha no acesso: o mestre resolve a consequência narrativa. Nenhum achado foi sorteado.";
-      if (attempt.outcome?.with === "Fear") saved.attention = "Rolagem com Medo: o mestre escolhe a complicação; os achados de um sucesso são preservados.";
+      saved.status = "scheduled"; saved.result = "Busca em andamento. Achados serão liberados na conclusão.";
+      if (attempt.status === "failed" && attempt.outcome?.success === false) saved.attention = "Falha no acesso: o mestre resolve a consequência narrativa. Nenhum achado foi sorteado.";
+      if (attempt.status === "completed" && attempt.outcome?.with === "Fear") saved.attention = "Rolagem com Medo: o mestre escolhe a complicação; os achados de um sucesso são preservados.";
     } else return "Esta operação não pode ser executada.";
     return null;
   }
@@ -360,7 +364,7 @@ export function applyPlayerAction(game: GameState, actorId: string, input: unkno
   if (receipt) return receipt.fingerprint === fingerprint ? { ok: true, state: game, replay: true } : { ok: false, error: "O identificador já foi usado para outra ação." };
   const draft = structuredClone(game);
   draft.playerActions = structuredClone(state);
-  draft.playerActions.operations = draft.playerActions.operations.filter(o => o.day === game.day && o.scene === (game.scene ?? 1));
+  draft.playerActions.operations = draft.playerActions.operations.filter(o => o.day === game.day && (o.scene === (game.scene ?? 1) || game.activities?.some(a => a.status === "running" && a.operationId === o.id)));
   draft.playerActions.receipts = draft.playerActions.receipts.filter(r => r.day === game.day);
   draft.playerActions.withdrawals = draft.playerActions.withdrawals.filter(r => r.day === game.day);
   if ((["search", "deep-search", "travel", "rest", "request-rest", "offer", "request"].includes(cmd.type) && draft.playerActions.operations.length >= 150) || draft.playerActions.receipts.length >= 2000) return { ok: false, error: "Limite de ações deste dia atingido. O mestre pode continuar pelas ferramentas da campanha." };
@@ -381,7 +385,7 @@ export function applyPlayerAction(game: GameState, actorId: string, input: unkno
       ?? (area ? quickSearchOptions(area).find(option => option.id === cmd.objective)?.label : undefined) ?? cmd.objective;
     addLog(draft, "equipe", `${draft.survivors.find(p => p.id === actorId)!.name} propôs ${cmd.type === "deep-search" ? `busca profunda de ${focus}` : cmd.objective === "open" ? "busca geral" : `busca específica de ${focus}`} em ${point?.name} / ${area?.name} (Hex ${cmd.hexId}). Finalidade: ${cmd.purpose}.`, actorId);
   } else if (cmd.type !== "prepare-search" && cmd.type !== "collect" && !((cmd.type === "execute" || cmd.type === "roll-access") && searchOperation?.status === "done"))
-    addLog(draft, "equipe", `${draft.survivors.find(p => p.id === actorId)!.name}: ${cmd.type === "roll-access" ? "acesso à busca resolvido" : cmd.type === "execute" ? "operação concluída" : cmd.type === "join" ? "participação confirmada" : cmd.type === "leave" ? "participação cancelada" : "ação da equipe registrada"}.`, actorId);
+    addLog(draft, "equipe", `${draft.survivors.find(p => p.id === actorId)!.name}: ${cmd.type === "roll-access" ? "acesso à busca resolvido" : cmd.type === "execute" ? "atividade iniciada" : cmd.type === "join" ? "participação confirmada" : cmd.type === "leave" ? "participação cancelada" : "ação da equipe registrada"}.`, actorId);
   return { ok: true, state: draft, replay: false };
 }
 export function setPlayerPolicy(game: GameState, input: unknown) {

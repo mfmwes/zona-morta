@@ -1588,6 +1588,8 @@ test('ações contextuais de hex respeitam avistamento, viagem e relógio', () =
 
   result = hexActions.performHexAction(g, id, { type:'travel' });
   assert.equal(result.ok, true);
+  assert.equal(g.partyHex, '0,0');
+  assert.equal(campaignTime.advanceToNextActivity(g).ok, true);
   assert.equal(g.partyHex, id);
   assert.equal(g.hexes[id].discovery, 'explorado');
   assert.equal(g.minutes, before + hours * 60);
@@ -1650,8 +1652,8 @@ test('movimento individual divide e reúne grupos sem perder a posição princip
   assert.equal(require('../lib/game.ts').survivorHex(g, bia), destination);
   assert.equal(g.partyHex, destination);
   assert.equal(require('../lib/game.ts').survivorsAtHex(g, destination).length, 2);
-  assert.equal(g.minutes, afterAna);
-  assert.match(result.message, /em paralelo/);
+  assert.equal(g.minutes, afterAna + g.hexes[destination].routeHours * 60);
+  assert.doesNotMatch(result.message, /em paralelo/);
 });
 
 test('um subgrupo pode seguir viagem enquanto outro permanece no hex anterior', () => {
@@ -2223,40 +2225,16 @@ test('interfaces de tempo avisam correção para trás, eventos pendentes e trat
   assert.match(page, /não desfaz buscas, obras, recursos, eventos/i);
   assert.match(close, /evento\(s\) temporal\(is\) pendente/);
   assert.match(close, /Aplicar descanso longo durante a noite/);
-  assert.match(survivor, /Tratamento imediato · 30 min/);
-  assert.match(survivor, /advanceParticipantTime\(draft, \[s\.id\], 30/);
+  assert.match(survivor, /Tratamento de Exposição · 30 min/);
+  assert.match(survivor, /scheduleExposureTreatment\(draft, selected\.id/);
 });
 
-test('relógio paralelo permite intercalar durações diferentes sem cobrar as mesmas horas duas vezes', () => {
-  const g = campaign(); const [ana,bia] = g.survivors;
-  const start = g.minutes;
-
-  let result = campaignTime.advanceParticipantTime(g, [ana.id], 120);
-  assert.equal(result.ok, true);
-  assert.equal(result.startMinute, start);
-  assert.equal(result.endMinute, start + 120);
-  assert.equal(g.minutes, start + 120);
-
-  result = campaignTime.advanceParticipantTime(g, [bia.id], 60);
-  assert.equal(result.ok, true);
-  assert.equal(result.fullyParallel, true);
-  assert.equal(result.startMinute, start);
-  assert.equal(result.endMinute, start + 60);
-  assert.equal(g.minutes, start + 120);
-
-  result = campaignTime.advanceParticipantTime(g, [bia.id], 60);
-  assert.equal(result.ok, true);
-  assert.equal(result.fullyParallel, true);
-  assert.equal(result.startMinute, start + 60);
-  assert.equal(result.endMinute, start + 120);
-  assert.equal(g.minutes, start + 120);
-
-  result = campaignTime.advanceParticipantTime(g, [ana.id], 60);
-  assert.equal(result.ok, true);
-  assert.equal(result.worldAdvance, 60);
-  assert.equal(g.minutes, start + 180);
-  assert.equal(g.parallelTime.survivorMinutes[ana.id], start + 180);
-  assert.equal(g.parallelTime.survivorMinutes[bia.id], start + 120);
+test('ações imediatas legadas começam no relógio atual e não criam ações retroativas', () => {
+  const g=campaign(); const [ana,bia]=g.survivors; const start=g.minutes;
+  assert.equal(campaignTime.advanceParticipantTime(g,[ana.id],120).ok,true);
+  const result=campaignTime.advanceParticipantTime(g,[bia.id],60);
+  assert.equal(result.startMinute,start+120); assert.equal(result.overlapMinutes,0);
+  assert.equal(g.minutes,start+180);
 });
 
 test('avanço global sincroniza subgrupos e encerra folgas paralelas anteriores', () => {

@@ -1,4 +1,5 @@
 import { env } from "cloudflare:workers";
+import { restorePendingActivities } from "@/lib/activity-timeline";
 import { addLog, defaultState, normalizeSurvivorAmmunition, type GameState, type Survivor, type TablePresentation } from "@/lib/game";
 import { preserveKnownSectors } from "@/lib/sectors";
 import { normalizeShelter } from "@/lib/shelter-projects";
@@ -166,6 +167,7 @@ export async function readCampaign(campaignId: string) {
     }
   }
   delete state.presentation;
+  restorePendingActivities(state);
   normalizeShelter(state.shelter);
   for (const site of state.formerShelters ?? []) normalizeShelter(site);
   for (const survivor of state.survivors) {
@@ -182,6 +184,7 @@ export async function writeCampaign(campaignId: string, state: GameState, expect
   // incorporar esse payload ao corpo principal da campanha.
   const persisted = { ...state, campaignId };
   delete persisted.presentation;
+  delete persisted.publicActivities;
   delete persisted.publicConflict;
   delete persisted.publicShelterCommunity;
   const body = JSON.stringify(persisted);

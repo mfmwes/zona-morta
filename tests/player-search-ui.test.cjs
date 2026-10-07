@@ -18,6 +18,7 @@ const { assignCustomSector } = require('../lib/sectors.ts');
 const { prepareLocation, registerVisibleStock } = require('../lib/hex-automation.ts');
 const { applyPlayerAction, playerActionState } = require('../lib/player-actions.ts');
 const { projectPlayerGame } = require('../lib/collaboration.ts');
+const { advanceToNextActivity } = require('../lib/time.ts');
 const { itemFromCatalog } = require('../lib/inventory.ts');
 const { TeamActionError } = require('../components/player-actions-panel.tsx');
 let host;
@@ -203,12 +204,15 @@ test('resultado permanece no cômodo escolhido e início salvo pode ser reenviad
   entry.node.props.onClick();await f.flush();
   await f.click('Propor busca geral (1d12)');
   f.controls.disconnect = true;await f.click('Iniciar busca');
-  assert.match(textOf(f.render()), /Última busca nesta área/);
+  assert.match(textOf(f.render()), /Busca em andamento/);
+  assert.equal(f.state().hexes['0,0'].points[0].preparation.attempts[0].roll,undefined);
   assert.equal(f.button('Iniciar busca'), undefined);
   const minutes = f.state().minutes, attempts = structuredClone(f.state().hexes['0,0'].points[0].preparation.attempts);
   await f.click('Tentar novamente a mesma ação');
   assert.deepEqual(f.calls[2], f.calls[1]);assert.equal(f.state().minutes, minutes);
   assert.deepEqual(f.state().hexes['0,0'].points[0].preparation.attempts, attempts);
+  advanceToNextActivity(f.state(),()=>1);
+  assert.match(textOf(f.render()), /Última busca nesta área/);
 });
 
 test('quantidades ficam em cada achado e estoque de outros cômodos permanece visível', async () => {

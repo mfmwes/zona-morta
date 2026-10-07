@@ -4,6 +4,8 @@ import { createId } from "./id";
 import { addStack, catalogKey, fillReusableContainer, itemFromCatalog, removeFromCart, sharedStorageHex, transferItem } from "./inventory";
 import { expirePhysicalFood } from "./provisions";
 import { normalizedSector, searchAreaLabel, searchAvailabilityError } from "./exploration";
+import { registerActivityHandler } from "./activity-handlers";
+import { scheduleActivity, runningActivities } from "./activity-timeline";
 import { advanceParticipantTime } from "./time";
 import { abilityAvailable, recordAbilityUse } from "./abilities";
 import { eventTriggerReady, generateHexContent, suggestedLootTable } from "./hex-generators";
@@ -688,7 +690,7 @@ export function searchResult(point: Point, attempt: SearchAttempt) {
 }
 
 /** Commit clock, ability, stock and history together. All validation runs on a clone. */
-export function completeSearch(game: GameState, hexId: string, pointId: string, attemptId: string): string | null {
+export function completeSearch(game: GameState, hexId: string, pointId: string, attemptId: string, options: { advanceTime?: boolean } = {}): string | null {
   const draft = structuredClone(game);
   const readyBefore = new Set(Object.entries(draft.hexes).flatMap(([candidateHexId, hex]) =>
     hex.events.filter(event => eventTriggerReady(draft, candidateHexId, event)).map(event => event.id)));
@@ -705,14 +707,14 @@ export function completeSearch(game: GameState, hexId: string, pointId: string, 
   const area = attempt.areaSnapshot ?? prep.areas.find(row => row.id === attempt.areaId)!;
   if (attempt.status !== "ready" || (attempt.mode === "open" && attempt.outcome?.success !== false && !attempt.roll)) return "Resolva o acesso e o achado antes de confirmar.";
   const timePreview = participantTimePreview(draft, attempt.participants, attempt.minutes);
-  if (!timePreview.ok) return "A busca precisa terminar antes da passagem de dia para este grupo.";
+  if (options.advanceTime !== false && !timePreview.ok) return "A busca precisa terminar antes da passagem de dia para este grupo.";
   if (prep.stock.length >= 240 || point.searches.length >= 80) return "O local atingiu o limite de registros.";
   if (attempt.warehouseWorker && !recordAbilityUse(draft, attempt.warehouseWorker, `origin:${warehouseOrigin}`,
     warehouseOrigin, warehouseEffect(), "free")) return "A habilidade de depósito foi usada em outra operação.";
   const result = searchResult(point, attempt);
   const items = attempt.outcome?.success === false ? [] : attempt.mode === "specific"
     ? [{ catalogKey: attempt.catalogKey!, qty: attempt.quantity }] : searchLoot(area, attempt.effectiveRoll ?? attempt.roll!);
-  const timeResult = advanceParticipantTime(draft, attempt.participants, attempt.minutes);
+  const timeResult = options.advanceTime === false ? { ok: true, overlapMinutes: 0 } : advanceParticipantTime(draft, attempt.participants, attempt.minutes);
   if (!timeResult.ok) return "Não foi possível avançar o relógio.";
   attempt.stockIds = [];
   for (const found of items) {
@@ -732,7 +734,7 @@ export function completeSearch(game: GameState, hexId: string, pointId: string, 
   draft.hexes[hexId].searchSequence = sequence + 1;
   draft.noise = Math.min(5, draft.noise + attempt.noise);
   attempt.status = attempt.outcome?.success === false ? "failed" : "completed"; attempt.result = result;
-  const timing = timeResult.overlapMinutes ? ` · ${parallelTimeLabel(timeResult)}` : "";
+  const timing = timeResult.overlapMinutes ? ` · ${parallelTimeLabel(timeResult as ReturnType<typeof advanceParticipantTime>)}` : "";
   const triggered = Object.entries(draft.hexes).some(([candidateHexId, hex]) =>
     hex.events.some(event => eventTriggerReady(draft, candidateHexId, event) && !readyBefore.has(event.id)));
   const needsAttention = attempt.outcome?.success === false || attempt.outcome?.with === "Fear" || draft.noise >= 3 || triggered;
@@ -869,29 +871,53 @@ export function expireLocationFood(game: GameState) {
   return expired;
 }
 
-export function resolvePreparedSearch(game: GameState, input: StartSearch, die = rollDie): string | null {
+export function resolvePreparedSearch(game: GameState, input: StartSearch, _die = rollDie): string | null {
+  void _die;
   const draft = structuredClone(game);
-  const error = startSearch(draft, input);
+  const error = schedulePreparedSearch(draft, input);
   if (error) return error;
   const attempt = pointAt(draft, input.hexId, input.pointId)!.preparation!.attempts.find(row => row.id === input.id)!;
   if (["completed", "failed"].includes(attempt.status)) return null;
   if (attempt.status === "pending") { Object.assign(game, draft); return null; }
-  if (attempt.mode === "open") rollSearchLoot(draft, input.hexId, input.pointId, input.id, die);
-  const completion = completeSearch(draft, input.hexId, input.pointId, input.id);
-  if (completion) return completion;
+  // O sorteio de achados ocorre na conclusão, sem liberar informações antecipadas.
+  // O resultado é aplicado pelo relógio apenas no fim do intervalo.
   Object.assign(game, draft);
   return null;
 }
 
-export function finishPreparedSearch(game: GameState, hexId: string, pointId: string, attemptId: string, die = rollDie): string | null {
+export function finishPreparedSearch(game: GameState, hexId: string, pointId: string, attemptId: string, _die = rollDie): string | null {
+  void _die;
   const draft = structuredClone(game);
   const attempt = pointAt(draft, hexId, pointId)?.preparation?.attempts.find(row => row.id === attemptId);
-  if (attempt?.mode === "open" && attempt.status === "ready" && attempt.outcome?.success !== false) rollSearchLoot(draft, hexId, pointId, attemptId, die);
-  const error = completeSearch(draft, hexId, pointId, attemptId);
-  if (error) return error;
+  if (!attempt) return "Busca não encontrada.";
+  if (["completed", "failed"].includes(attempt.status)) return null;
+  if (attempt.status !== "ready") return "Resolva o acesso antes de confirmar.";
+  if (!runningActivities(draft).some(a => a.type === "search" && a.attemptId === attemptId)) {
+    // Buscas antigas ainda abertas entram na linha do tempo a partir de agora.
+    const scheduled = scheduleActivity(draft, { type: "search", pointId, attemptId }, attempt.participants, attempt.minutes,
+      `Busca em ${pointAt(draft, hexId, pointId)!.name}`, { id: attemptId, operationId: attemptId });
+    if (!scheduled.ok) return scheduled.message;
+  }
+  // A confirmação apenas registra prontidão; o relógio determina a conclusão.
   Object.assign(game, draft);
   return null;
 }
+
+export function schedulePreparedSearch(game: GameState, input: StartSearch | StartDeepSearch, deep = false): string | null {
+  const draft = structuredClone(game);
+  const error = deep ? startDeepSearch(draft, input as StartDeepSearch) : startSearch(draft, input as StartSearch);
+  if (error) return error;
+  const point = pointAt(draft, input.hexId, input.pointId)!;
+  const attempt = point.preparation!.attempts.find(a => a.id === input.id)!;
+  if (["completed", "failed"].includes(attempt.status)) return null;
+  const scheduled = scheduleActivity(draft, { type: "search", pointId: input.pointId, attemptId: input.id }, input.participants,
+    attempt.minutes, `${deep ? "Busca profunda" : "Busca"} em ${point.name}`, { id: input.id, operationId: input.id });
+  if (!scheduled.ok) return scheduled.message;
+  Object.assign(game, draft);
+  return null;
+}
+
+export function schedulePreparedDeepSearch(game: GameState, input: StartDeepSearch) { return schedulePreparedSearch(game, input, true); }
 
 export function registerVisibleStock(game: GameState, hexId: string, pointId: string, areaId: string,
   id: string, key: string, quantity: number): string | null {
@@ -921,3 +947,19 @@ export function resolveNoVisibleStock(game: GameState, hexId: string, pointId: s
   addLog(game, "busca", `${point.name} / ${area.name}: nada relevante estabelecido à vista.`);
   return null;
 }
+
+registerActivityHandler("search", (game, activity, die) => {
+  if (activity.type !== "search") return { ok: false, message: "Busca inválida." };
+  const attempt = pointAt(game, activity.hexId, activity.pointId)?.preparation?.attempts.find(a => a.id === activity.attemptId);
+  if (!attempt || attempt.status === "pending") return { ok: false, message: "Resolva o acesso da busca antes de concluir este horário." };
+  if (attempt.mode === "open" && attempt.outcome?.success !== false && !attempt.roll) rollSearchLoot(game, activity.hexId, activity.pointId, activity.attemptId, die);
+  const error = completeSearch(game, activity.hexId, activity.pointId, activity.attemptId, { advanceTime: false });
+  if (error) return { ok: false, message: error };
+  const completed = pointAt(game, activity.hexId, activity.pointId)!.preparation!.attempts.find(a => a.id === activity.attemptId)!;
+  const op = game.playerActions?.operations.find(op => op.id === activity.operationId);
+  if (op) {
+    if (completed.outcome?.success === false) op.attention = "Falha no acesso: o mestre resolve a consequência narrativa. Nenhum achado foi sorteado.";
+    if (completed.outcome?.with === "Fear") op.attention = "Rolagem com Medo: o mestre escolhe a complicação; os achados de um sucesso são preservados.";
+  }
+  return { ok: true, message: completed.result || "Busca concluída sem achados." };
+});

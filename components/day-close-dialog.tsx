@@ -169,6 +169,7 @@ export function DayCloseDialog({
   }
 
   function nextMorning() {
+    if (game.activities?.some(a => a.day === game.day && a.status === "running")) { toast.error("Conclua ou interrompa as atividades em andamento antes de encerrar o dia."); return; }
     if (awaitingChoices) { toast.error("Aguarde as escolhas do descanso ou cancele a solicitação antes de encerrar o dia."); return; }
     const outcome: { value: DayCloseResult | null } = { value: null };
     let restApplied = false;
@@ -338,6 +339,7 @@ export function DayCloseDialog({
         O sistema consome primeiro as provisões com maior risco de perda: unidades abertas e recursos que vencem antes. Se alguém ficar sem comida ou água, a privação será registrada no diário, mas nenhuma consequência mecânica nova será aplicada automaticamente.
       </p>
 
+      {game.activities?.some(a => a.day === game.day && a.status === "running") && <p className="day-close-warning">Há atividades em andamento. Conclua ou interrompa essas atividades na linha do tempo antes de encerrar o dia.</p>}
       {timedEvents.length > 0 && <div className="day-close-warning"><AlertTriangle size={15} /><span><b>Há {timedEvents.length} evento(s) temporal(is) pendente(s) antes do amanhecer.</b> {timedEvents.slice(0, 3).map(row => `${row.sector}: ${row.event.triggerType === "night" ? "evento noturno" : "evento de Barulho"}`).join(" · ")}{timedEvents.length > 3 ? ` · +${timedEvents.length - 3}` : ""}. Você ainda pode encerrar o dia; o aviso evita que esses gatilhos sejam esquecidos.</span></div>}
       {inspection.stale && <p className="day-close-warning"><AlertTriangle size={15} /> O dia mudou desde que este painel foi aberto. Feche e abra novamente para recalcular.</p>}
       {hasWarnings && !inspection.stale && <p className="day-close-warning">

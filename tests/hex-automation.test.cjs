@@ -36,6 +36,19 @@ function input(fixture, changes = {}) {
 function die(...values) { return () => { const next = values.shift(); assert.ok(next, 'Não deve repetir uma rolagem'); return next; }; }
 function entry(key) { return content.catalog.find(row => catalogKey(row) === key); }
 
+// Estes cenários conferem efeitos finais: incluem a etapa explícita do mestre.
+function resolveAndConcludeSearch(game, input, die) {
+  const error = auto.resolvePreparedSearch(game, input, die);
+  if (error) return error;
+  const attempt = game.hexes[input.hexId].points.find(p=>p.id===input.pointId).preparation.attempts.find(a=>a.id===input.id);
+  if (attempt.status === 'ready') campaignTime.advanceToNextActivity(game, die);
+  return null;
+}
+function finishAndConcludeSearch(game, hex, point, id, die) {
+  const error = auto.finishPreparedSearch(game, hex, point, id, die);
+  if (!error && game.activities?.some(a=>a.status==='running'&&a.id===id)) campaignTime.advanceToNextActivity(game, die);
+  return error;
+}
 test('168 definições mantêm os 14 d12 e todos os achados correspondem ao catálogo', () => {
   assert.equal(auto.lootDefinitions.length, 14);
   for (const table of auto.lootDefinitions) {
@@ -160,7 +173,7 @@ test('porte pode ser ajustado antes da primeira busca e fica estável depois que
   assert.equal(auto.resizeLocationPreparation(f.point,'large'),true);
   assert.equal(f.point.preparation.areas.length,6);
   f.area=f.point.preparation.areas[0];
-  assert.equal(auto.resolvePreparedSearch(f.game,input(f),die(1)),null);
+  assert.equal(resolveAndConcludeSearch(f.game,input(f),die(1)),null);
   const current=f.game.hexes['0,0'].points[0];
   const before=structuredClone(current.preparation);
   assert.equal(auto.resizeLocationPreparation(current,'small'),false);
@@ -295,11 +308,11 @@ test('histórico antigo bloqueia a área e nunca cria inventário ou estoque ret
 });
 test('busca comum confirma d12, relógio, estoque e ocorrência uma única vez', () => {
   const f = campaign(); const before = f.game.minutes;
-  assert.equal(auto.resolvePreparedSearch(f.game,input(f),die(1)),null);
+  assert.equal(resolveAndConcludeSearch(f.game,input(f),die(1)),null);
   const point=f.game.hexes['0,0'].points[0];
   assert.equal(f.game.minutes,before+30); assert.equal(point.searches.length,1); assert.equal(point.preparation.stock.length,1);
   const after=structuredClone(f.game);
-  assert.equal(auto.resolvePreparedSearch(f.game,input(f),die()),null); assert.deepEqual(f.game,after);
+  assert.equal(resolveAndConcludeSearch(f.game,input(f),die()),null); assert.deepEqual(f.game,after);
   assert.equal(auto.completeSearch(f.game,'0,0','market','search-1'),null); assert.deepEqual(f.game,after);
   assert.equal(auto.searchSequence(f.game,'0,0'),1);
 });
@@ -312,7 +325,7 @@ test('busca profunda só abre depois da busca normal e não usa outro d12 de saq
     objective:'Item oculto',purpose:'Vasculhar a fundo',catalogKey:candidates[0]};
   assert.match(auto.startDeepSearch(f.game,early),/Conclua a busca normal/);
 
-  assert.equal(auto.resolvePreparedSearch(f.game,input(f),die(1)),null);
+  assert.equal(resolveAndConcludeSearch(f.game,input(f),die(1)),null);
   const point=f.game.hexes['0,0'].points[0];
   const area=point.preparation.areas.find(row=>row.id===f.area.id);
   const known=new Set(point.preparation.stock.filter(row=>row.areaId===area.id).map(row=>row.item.catalogKey));
@@ -334,7 +347,7 @@ test('busca profunda só abre depois da busca normal e não usa outro d12 de saq
   assert.equal(auto.rollSearchAccess(f.game,'0,0','market','deep-1',{actorId:f.actor.id,trait:'Instinto',edge:'none',experiences:[],other:0},die(8,7)),null);
   assert.equal(attempt.status,'ready');
   assert.equal(attempt.roll,undefined);
-  assert.equal(auto.finishPreparedSearch(f.game,'0,0','market','deep-1',die()),null);
+  assert.equal(finishAndConcludeSearch(f.game,'0,0','market','deep-1',die()),null);
   assert.equal(f.game.minutes,beforeMinutes+30);
   const persisted=f.game.hexes['0,0'].points[0];
   const deepAttempt=persisted.preparation.attempts.find(row=>row.id==='deep-1');
@@ -356,8 +369,8 @@ test('porte limita buscas profundas no local e força escolha entre áreas', () 
   const second=f.point.preparation.areas.find(area=>area.searchable!==false && area.id!==first.id);
   assert.ok(first && second);
 
-  assert.equal(auto.resolvePreparedSearch(f.game,input(f,{id:'normal-a',areaId:first.id}),die(1)),null);
-  assert.equal(auto.resolvePreparedSearch(f.game,input(f,{id:'normal-b',areaId:second.id}),die(2)),null);
+  assert.equal(resolveAndConcludeSearch(f.game,input(f,{id:'normal-a',areaId:first.id}),die(1)),null);
+  assert.equal(resolveAndConcludeSearch(f.game,input(f,{id:'normal-b',areaId:second.id}),die(2)),null);
   const point=f.game.hexes['0,0'].points[0];
   const freshFirst=point.preparation.areas.find(area=>area.id===first.id);
   const freshSecond=point.preparation.areas.find(area=>area.id===second.id);
@@ -378,7 +391,7 @@ test('porte limita buscas profundas no local e força escolha entre áreas', () 
 
 test('falha na busca profunda consome tempo e Barulho, mas não cria item', () => {
   const f=campaign();
-  assert.equal(auto.resolvePreparedSearch(f.game,input(f),die(1)),null);
+  assert.equal(resolveAndConcludeSearch(f.game,input(f),die(1)),null);
   const point=f.game.hexes['0,0'].points[0];
   const area=point.preparation.areas[0];
   const known=new Set(point.preparation.stock.filter(row=>row.areaId===area.id).map(row=>row.item.catalogKey));
@@ -390,7 +403,7 @@ test('falha na busca profunda consome tempo e Barulho, mas não cria item', () =
   const beforeMinutes=f.game.minutes;
   const beforeNoise=f.game.noise;
   assert.equal(auto.rollSearchAccess(f.game,'0,0','market','deep-fail',{actorId:f.actor.id,trait:'Instinto',edge:'none',experiences:[],other:0},die(1,2)),null);
-  assert.equal(auto.finishPreparedSearch(f.game,'0,0','market','deep-fail',die()),null);
+  assert.equal(finishAndConcludeSearch(f.game,'0,0','market','deep-fail',die()),null);
   const persisted=f.game.hexes['0,0'].points[0];
   assert.equal(f.game.minutes,beforeMinutes+30);
   assert.ok(f.game.noise>beforeNoise);
@@ -448,27 +461,14 @@ test('participante em turno do abrigo não pode iniciar nem concluir busca nas m
   assert.deepEqual(f.game,pending);
 });
 
-test('busca de subgrupo atrasado preenche janela paralela sem avançar novamente o relógio geral', () => {
-  const f=campaign();
-  const archetype=content.archetypes[0];
-  const other=initialSurvivor({ name:'Bia', origin:content.origins[0].name, past:'', archetype:archetype.name,
-    specialty:archetype.specialties[0].name, freeExperience:'Vigilância', techniques:[],
-    attributes:{ Agilidade:1, Força:1, Finesse:1, Instinto:1, Presença:0, Conhecimento:0 },
-    primary:'', secondary:'', protection:'', personal:'' });
-  other.hex='0,0'; other.inventory=[];
-  f.game.survivors.push(other);
-
+test('busca nova começa no horário atual, sem preencher horas anteriores retroativamente', () => {
+  const f=campaign(); f.area.access='open'; f.area.noise=0;
   const start=f.game.minutes;
-  const outside=campaignTime.advanceParticipantTime(f.game,[other.id],60);
-  assert.equal(outside.ok,true);
-  assert.equal(f.game.minutes,start+60);
-  assert.equal(f.game.parallelTime.survivorMinutes[f.actor.id],start);
-
+  assert.equal(campaignTime.advanceCampaignTime(f.game,60).ok,true);
   const beforeSearch=f.game.minutes;
-  assert.equal(auto.resolvePreparedSearch(f.game,input(f),die(1)),null);
-  assert.equal(f.game.minutes,beforeSearch);
-  assert.equal(f.game.parallelTime.survivorMinutes[f.actor.id],start+f.area.minutes);
-  assert.ok(f.game.log.some(row=>row.kind==='busca' && /em paralelo/.test(row.text)));
+  assert.equal(resolveAndConcludeSearch(f.game,input(f),die(1)),null);
+  assert.equal(f.game.minutes,beforeSearch+f.area.minutes);
+  assert.equal(f.game.minutes,start+60+f.area.minutes);
 });
 
 test('falha de validação e passagem de dia não cobram tempo ou habilidade', () => {
@@ -480,7 +480,7 @@ test('falha de validação e passagem de dia não cobram tempo ou habilidade', (
 });
 test('habilidade de depósito reduz tempo e usa a mesma chave da ficha', () => {
   const f=campaign('Trabalhador(a) de depósito'); f.area.minutes=60;
-  assert.equal(auto.resolvePreparedSearch(f.game,input(f,{warehouseWorker:f.actor.id}),die(1)),null);
+  assert.equal(resolveAndConcludeSearch(f.game,input(f,{warehouseWorker:f.actor.id}),die(1)),null);
   assert.equal(f.game.hexes['0,0'].points[0].preparation.attempts[0].minutes,30);
   const origin=content.origins.find(row=>row.name===f.actor.origin);
   assert.equal(abilityAvailable(f.game,f.actor.id,`origin:${origin.name}`,origin.effect),false);
@@ -560,7 +560,7 @@ test('depósito físico exige retorno, preserva munição comprometida e não du
   assert.equal(auto.depositExpeditionItems(f.game,[f.actor.id]),null); assert.equal(f.game.shelter.inventory.length,1); assert.equal(f.game.shelter.parts,parts); assert.equal(f.game.survivors[0].inventory.length,0);
 });
 test('eventos de busca novos ignoram histórico anterior, incluindo busca legada posterior', () => {
-  const f=campaign(); auto.resolvePreparedSearch(f.game,input(f),die(1)); auto.prepareHex(f.game,'0,0');
+  const f=campaign(); resolveAndConcludeSearch(f.game,input(f),die(1)); auto.prepareHex(f.game,'0,0');
   const event=f.game.hexes['0,0'].events[0]; assert.equal(eventTriggerReady(f.game,'0,0',event),false);
   assert.equal(recordSearch(f.game,{hex:'0,0',pointId:'market',sector:'Sala distinta',mode:'specific',what:'Água',result:'Nada',minutes:30}),true);
   assert.equal(eventTriggerReady(f.game,'0,0',event),true); assert.equal(event.status,'pending');
@@ -592,7 +592,7 @@ test('carrinho já aberto recebe o excedente dentro de quatro espaços sem equip
  const stats=survivorStats(f.game.survivors[0]); assert.equal(stats.cart.carried,4); assert.ok(stats.carried<=stats.capacity);
 });
 test('combustível em tanque exige recipiente e preenche galão sem duplicar reserva', () => {
- const f=campaign(); f.area.table='Ruas / veículos abandonados'; auto.resolvePreparedSearch(f.game,input(f),die(11));
+ const f=campaign(); f.area.table='Ruas / veículos abandonados'; resolveAndConcludeSearch(f.game,input(f),die(11));
  const stock=f.game.hexes['0,0'].points[0].preparation.stock[0]; const line={stockId:stock.id,ownerId:f.actor.id,quantity:1}; const before=structuredClone(f.game);
  assert.match(auto.collectLocationStock(f.game,'0,0','market','fuel',[line]),/galão/); assert.deepEqual(f.game,before);
  f.game.survivors[0].inventory.push(itemFromCatalog(content.catalog.find(row=>row.name==='Galão vazio')));
@@ -653,11 +653,11 @@ test('depósito descarrega carrinho e guarda somente munição livre', () => {
 });
 test('concluir busca com risco reúne d12 e relógio e preserva o resultado entre confirmações', () => {
  const f=campaign(); f.area.access='risk'; auto.startSearch(f.game,input(f)); auto.rollSearchAccess(f.game,'0,0','market','search-1',{actorId:f.actor.id,trait:'Instinto',edge:'none',experiences:[],other:0},die(6,8));
- const minutes=f.game.minutes; assert.equal(auto.finishPreparedSearch(f.game,'0,0','market','search-1',die(2)),null); assert.equal(f.game.minutes,minutes+30);
- const before=structuredClone(f.game); assert.equal(auto.finishPreparedSearch(f.game,'0,0','market','search-1',die()),null); assert.deepEqual(f.game,before);
+ const minutes=f.game.minutes; assert.equal(finishAndConcludeSearch(f.game,'0,0','market','search-1',die(2)),null); assert.equal(f.game.minutes,minutes+30);
+ const before=structuredClone(f.game); assert.equal(finishAndConcludeSearch(f.game,'0,0','market','search-1',die()),null); assert.deepEqual(f.game,before);
 });
 test('excluir histórico depois de preparar evento não apaga sua referência de ocorrência', () => {
- const f=campaign(); auto.resolvePreparedSearch(f.game,input(f),die(1)); auto.prepareHex(f.game,'0,0'); const event=f.game.hexes['0,0'].events[0];
+ const f=campaign(); resolveAndConcludeSearch(f.game,input(f),die(1)); auto.prepareHex(f.game,'0,0'); const event=f.game.hexes['0,0'].events[0];
  f.game.hexes['0,0'].points[0].searches=[];
  assert.equal(recordSearch(f.game,{hex:'0,0',pointId:'market',sector:'Sala separada',mode:'specific',what:'Água',result:'Nada',minutes:30}),true);
  assert.equal(eventTriggerReady(f.game,'0,0',event),true);

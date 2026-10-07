@@ -45,6 +45,7 @@ Module._load = function(name, parent, main) {
 };
 const { HexExplorer } = require('../components/hex-explorer.tsx');
 Module._load = load;
+const { advanceToNextActivity } = require('../lib/time.ts');
 const { defaultState, initialSurvivor, content } = require('../lib/game.ts');
 const { assignCustomSector } = require('../lib/sectors.ts');
 const text = node => node == null || typeof node === 'boolean' ? '' : Array.isArray(node) ? node.map(text).join('') : typeof node === 'object' ? text(node.props?.children) : String(node);
@@ -114,12 +115,14 @@ test('jogador recebe apenas locais públicos e nunca recebe controles de gestão
   assert.equal(f.find(node => typeof node.type === 'string' && text(node) === 'Depósito secreto'), undefined);
 });
 
-test('movimento usa a ação real, mantém o grupo ativo no destino e bloqueia travessia após o fim do dia', () => {
+test('movimento agenda a ação real, mantém origem até chegada e bloqueia viagem após o fim do dia', () => {
   const f = fixture();f.select('1,0');
   const before = f.state().minutes;
   const move = f.find(node => node.type === 'button' && node.props['aria-label']?.startsWith('Mover grupo principal'));
   assert.ok(move);assert.equal(move.props.disabled, false);move.props.onClick();
-  assert.equal(f.state().partyHex, '1,0');assert.equal(f.state().survivors[0].hex, '1,0');assert.equal(f.state().minutes, before + 60);
+  assert.equal(f.state().partyHex, '0,0');assert.equal(f.state().survivors[0].hex, '0,0');assert.equal(f.state().minutes, before);
+  assert.equal(advanceToNextActivity(f.state()).ok,true);
+  assert.equal(f.state().partyHex, '1,0');assert.equal(f.state().survivors[0].hex, '1,0');assert.equal(f.state().minutes, before+60);
   const marker = f.find(node => node.type === 'MapGroupMarker' && node.props.hexId === '1,0');assert.equal(marker.props.active, true);
   const late = fixture();late.state().minutes = 1400;late.select('1,0');assert.equal(late.find(node => node.type === 'button' && node.props['aria-label']?.startsWith('Mover grupo principal')).props.disabled, true);
 });

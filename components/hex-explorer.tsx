@@ -1,5 +1,7 @@
 "use client";
 
+import { timedActionParticipantIssue } from "@/lib/activity";
+
 import { MasterContextActions, PlayerContextActions, type MasterActionControls, type PlayerActionControls } from "@/components/player-actions-panel";
 
 import { useEffect, useState } from "react";
@@ -135,6 +137,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
     ?? publicGroups.find(group => group.main)
     ?? publicGroups[0];
   const activeSourceHex = activeGroup?.hex ?? game.partyHex;
+  const mainTravelIssue = timedActionParticipantIssue(game, survivorsAtHex(game, game.partyHex).map(p=>p.id));
   const activeTravelMinutes = shelterTravelMinutes(game, activeSourceHex, selected, record.routeHours * 60);
   const [activeQ, activeR] = activeSourceHex.split(",").map(Number);
   const activeAdjacentToSelected = hexDistance(area.q - activeQ, area.r - activeR) === 1;
@@ -155,8 +158,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
 
   function travel() {
     if (runHexAction(selected, { type: "travel" })) {
-      setActiveGroupHex(selected);
-      setFocusHex(selected);
+      setFocusHex(activeSourceHex);
     }
   }
 
@@ -463,8 +465,8 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
         </div>
         {!playerPreview && <div className="hex-sector-actions">
           {record.discovery === "desconhecido" && activeAdjacentToSelected && <Button size="sm" onClick={observe}>Avistar setor</Button>}
-          {activeGroupHex === game.partyHex && selected !== game.partyHex && canTravel && record.discovery !== "desconhecido" &&
-            <Button size="sm" className="hex-sector-move-button" disabled={game.minutes+travelMinutes>=1440} onClick={travel} aria-label={`Mover grupo principal · ${travelDurationLabel(travelMinutes)}`}><Route /><span>Mover grupo · {travelDurationLabel(travelMinutes)}</span></Button>}
+          {activeSourceHex === game.partyHex && selected !== game.partyHex && canTravel && record.discovery !== "desconhecido" &&
+            <Button size="sm" className="hex-sector-move-button" disabled={game.minutes+travelMinutes>=1440 || Boolean(mainTravelIssue) || Boolean(game.conflict?.active)} onClick={travel} aria-label={`Mover grupo principal · ${travelDurationLabel(travelMinutes)}`}><Route /><span>Mover grupo · {travelDurationLabel(travelMinutes)}</span></Button>}
           {activeCanMoveSelected && <Button size="sm" variant="outline" className="hex-sector-move-button" disabled={game.minutes+activeTravelMinutes>=1440} onClick={() => openMovement(selected)}><Footprints /><span>{activeGroupHex === game.partyHex ? "Separar sobreviventes" : "Mover / dividir subgrupo"}</span></Button>}
           {canMakeBase && (game.shelter.hex ? <ShelterMoveDialog game={game} edit={edit} mode="relocate" destination={selected} /> : <Button size="sm" variant="outline" onClick={() => edit(draft => { establishShelter(draft, selected); })}><House /> Estabelecer abrigo aqui</Button>)}
         </div>}
@@ -602,7 +604,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
               onCreatePoint={() => openManualPoint(id)}
               onOpenMasterTools={() => openMasterTools(id)}
               onRelocateShelter={() => openRelocation(id)}
-              activeGroupHex={activeGroupHex}
+              activeGroupHex={activeSourceHex}
               onMoveSurvivors={() => openMovement(id)}>
               <g role="button" tabIndex={0} className="map-cell" aria-pressed={id === selected}
                 aria-label={`${id}: ${title}${nearby ? ", adjacente ao grupo ativo" : ""}${id === game.shelter.hex ? ", abrigo" : ""}${formerBase ? ", antiga base com depósito" : ""}${membersHere.length ? `, sobreviventes: ${membersHere.map(person => person.name).join(", ")}` : ""}`}
@@ -636,7 +638,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
                   y={y}
                   members={membersHere}
                   main={id === game.partyHex}
-                  active={activeGroupHex === id}
+                  active={activeSourceHex === id}
                   onSelect={() => selectGroup(id)}
                 />}
               </g>
@@ -658,12 +660,12 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
       </div>
       <div className="map-group-summary" aria-label="Selecionar grupo ativo">
         {publicGroups.map(group => <button type="button" key={group.hex}
-          className={`map-group-chip ${activeGroupHex === group.hex ? "is-active" : ""}`}
-          aria-pressed={activeGroupHex === group.hex}
+          className={`map-group-chip ${activeSourceHex === group.hex ? "is-active" : ""}`}
+          aria-pressed={activeSourceHex === group.hex}
           onClick={() => selectGroup(group.hex)}
           title={`${group.main ? "Grupo principal" : "Subgrupo"} · Hex ${group.hex}: ${group.members.map(person => person.name).join(", ")}`}>
           {group.main ? <Footprints size={13} /> : <Users size={13} />}
-          <span><b>{group.main ? "Principal" : group.members.length === 1 ? group.members[0].name : group.members.map(person => person.name.split(" ")[0]).join(" · ")}</b><small>Hex {group.hex}</small></span>
+          <span><b>{group.main ? "Principal" : group.members.length === 1 ? group.members[0].name : group.members.map(person => person.name.split(" ")[0]).join(" · ")}</b><small>Hex {group.hex} · {game.publicActivities?.some(a=>a.participantIds.some(id=>group.members.some(p=>p.id===id))) || game.activities?.some(a=>a.status==="running"&&a.participantIds.some(id=>group.members.some(p=>p.id===id))) ? "em atividade" : "disponível"}</small></span>
         </button>)}
       </div>
       <p className="text-sm subtle mt-2">Clique ou toque nas pegadas/retratos para escolher o grupo ativo; os hexes adjacentes a ele ficam destacados. Clique em um hex para abrir os detalhes e, no computador, use o botão direito para ações rápidas.</p>

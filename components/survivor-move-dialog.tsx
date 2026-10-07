@@ -8,7 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Pick } from "@/components/game-controls";
 import { survivorHex, survivorsAtHex, type GameState } from "@/lib/game";
-import { movementSources, moveSurvivors } from "@/lib/hex-actions";
+import { shelterTravelMinutes } from "@/lib/shelter-projects";
+import { displayTime } from "@/lib/game";
+import { timedActionParticipantIssue } from "@/lib/activity";
+import { movementSources, scheduleSurvivorTravel } from "@/lib/hex-actions";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 
@@ -39,7 +42,8 @@ export function SurvivorMoveDialog({
   const selected = selectedIds.length || sourceHex ? selectedIds : members.map(person => person.id);
   const destinationMembers = survivorsAtHex(game, destination);
   const destinationName = game.hexes[destination]?.sector?.name ?? `Hex ${destination}`;
-  const travelHours = game.hexes[destination]?.routeHours ?? 1;
+  const travelMinutes = shelterTravelMinutes(game, source?.hex ?? game.partyHex, destination, (game.hexes[destination]?.routeHours ?? 1) * 60);
+  const issue = timedActionParticipantIssue(game, selected);
 
   function changeSource(value: string) {
     const next = sources.find(group => group.hex === value);
@@ -56,8 +60,8 @@ export function SurvivorMoveDialog({
 
   function confirm() {
     if (!selected.length || !source) return;
-    const outcome: { value: ReturnType<typeof moveSurvivors> | null } = { value: null };
-    edit(draft => { outcome.value = moveSurvivors(draft, destination, selected); });
+    const outcome: { value: ReturnType<typeof scheduleSurvivorTravel> | null } = { value: null };
+    edit(draft => { outcome.value = scheduleSurvivorTravel(draft, destination, selected); });
     if (!outcome.value?.ok) {
       toast.error("Não foi possível mover os sobreviventes.", {
         description: "Confira a origem, o horário e se o destino continua adjacente e revelado.",
@@ -65,7 +69,7 @@ export function SurvivorMoveDialog({
       return;
     }
     toast.success("Deslocamento registrado", { description: outcome.value.message });
-    onMoved?.(destination);
+    onMoved?.(source.hex);
     onOpenChange(false);
   }
 
@@ -92,7 +96,7 @@ export function SurvivorMoveDialog({
         {source && <div className="survivor-move-route">
           <div><span>ORIGEM</span><b>{game.hexes[source.hex]?.sector?.name ?? `Hex ${source.hex}`}</b><small>Hex {source.hex}</small></div>
           <Footprints size={20} aria-hidden="true" />
-          <div><span>DESTINO</span><b>{destinationName}</b><small>{travelHours} h de travessia</small></div>
+          <div><span>DESTINO</span><b>{destinationName}</b><small>{travelMinutes} min · chegada {displayTime(game.minutes + travelMinutes)}</small></div>
         </div>}
 
         <div className="survivor-move-members">
@@ -118,13 +122,14 @@ export function SurvivorMoveDialog({
         {destinationMembers.length > 0 && <p className="character-rule-note">
           Já estão no destino: {destinationMembers.map(person => person.name).join(", ")}. Quem chegar ficará reunido com eles.
         </p>}
-        <p className="text-sm subtle">A travessia avança o relógio da campanha uma vez, independentemente de quantos sobreviventes selecionados viajem juntos.</p>
+        <p className="text-sm subtle">A viagem começa às {displayTime(game.minutes)}. O grupo permanece na origem até a chegada, quando o mestre avançar o relógio.</p>
+        {issue && <p className="character-rule-note">{issue}</p>}
       </>}
 
       <DialogFooter>
         <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-        <Button disabled={!source || selected.length === 0 || game.minutes + travelHours * 60 >= 1440} onClick={confirm}>
-          <Footprints size={16} /> Mover {selected.length || ""} sobrevivente{selected.length === 1 ? "" : "s"}
+        <Button disabled={!source || selected.length === 0 || Boolean(issue) || game.minutes + travelMinutes >= 1440 || Boolean(game.conflict?.active)} onClick={confirm}>
+          <Footprints size={16} /> Iniciar viagem · {selected.length || ""} sobrevivente{selected.length === 1 ? "" : "s"}
         </Button>
       </DialogFooter>
     </DialogContent>

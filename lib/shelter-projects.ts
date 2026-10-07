@@ -2,7 +2,7 @@ import { absoluteMinutes, addLog, content, displayTime, normalizeShelterAmmo, sh
 import { createId } from "./id";
 import { recordProvisionLot } from "./provisions";
 import { advanceCampaignTime } from "./time";
-import { markParticipantTime, syncParticipantsToCurrentTime } from "./activity";
+import { timedActionParticipantIssue, markParticipantTime, syncParticipantsToCurrentTime } from "./activity";
 
 export type ShelterProjectKind = "facility" | "upgrade";
 export type ShelterBlueprintZone = "interior" | "utility" | "exterior";
@@ -403,6 +403,8 @@ export function scheduleSurvivorWorkShift(game: GameState, project: ShelterProje
     return { ok: false, message: "Você já tem um turno programado nesta obra." };
   const preview = survivorWorkPreview(game, project, survivorId);
   if (preview.issue || preview.points < 1) return { ok: false, message: preview.issue ?? "Não foi possível programar seu turno." };
+  const issue = timedActionParticipantIssue(game, [survivorId], "trabalho no abrigo");
+  if (issue) return { ok: false, message: issue };
   const durationMinutes = hours * 60;
   if (game.parallelTime?.day === game.day) syncParticipantsToCurrentTime(game, [survivorId]);
   project.volunteerShifts ??= [];
@@ -517,17 +519,17 @@ export function shelterOvercrowded(game: GameState, shelter: ShelterState = game
   return shelterPopulationBreakdown(game, shelter).present > metrics.capacity;
 }
 
-export function shelterComfortFearReduction(game: GameState) {
+export function shelterComfortFearReduction(game: GameState, ids = game.survivors.map(p => p.id)) {
   const shelter = game.shelter;
   if (!shelter.hex || !game.survivors.length || shelter.comfortRestDay === game.day) return 0;
-  if (!game.survivors.every(person => survivorHex(game, person) === shelter.hex)) return 0;
+  if (!game.survivors.filter(p => ids.includes(p.id)).every(person => survivorHex(game, person) === shelter.hex)) return 0;
   if (shelterOvercrowded(game, shelter)) return 0;
   const comfort = shelterMetrics(shelter, game).comfort;
   return comfort >= 4 ? 2 : comfort >= 2 ? 1 : 0;
 }
 
-export function consumeShelterComfortRest(game: GameState) {
-  const reduction = shelterComfortFearReduction(game);
+export function consumeShelterComfortRest(game: GameState, ids = game.survivors.map(p => p.id)) {
+  const reduction = shelterComfortFearReduction(game, ids);
   if (reduction > 0) game.shelter.comfortRestDay = game.day;
   return reduction;
 }

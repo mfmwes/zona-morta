@@ -23,6 +23,8 @@ Module._load=function(name,parent,main){
  if(name.startsWith('@/'))return originalLoad.call(this,path.join(__dirname,'..',name.slice(2)+'.ts'),parent,main);
  return originalLoad.call(this,name,parent,main);
 };
+const {advanceToNextActivity}=require('../lib/time.ts');
+const {projectPlayerGame}=require('../lib/collaboration.ts');
 const {POST}=require('../app/api/campaign/actions/route.ts');
 const {PATCH}=require('../app/api/campaign/route.ts');
 const {POST:spotlightPOST}=require('../app/api/campaign/spotlight/route.ts');
@@ -75,7 +77,7 @@ test('reset da cidade é transacional, refaz CAS e devolve o estado novo para si
  assert.equal(payload.state.survivors[0].id,survivorId);
 });
 
-test('fluxo real do jogador propõe busca geral e ao iniciar resolve o d12 base',async()=>{
+test('fluxo real do jogador agenda busca geral; achados só aparecem após avanço do mestre',async()=>{
  reset();
  state.survivors[0].hex='0,0';
  assignCustomSector(state,'0,0','Mercado abandonado','explorado');
@@ -92,6 +94,10 @@ test('fluxo real do jogador propõe busca geral e ao iniciar resolve o d12 base'
  const execute=await send({type:'execute',id:'player-d12-execute',day:state.day,operationId:propose.id});
  assert.equal(execute.status,200);
  payload=await execute.json();
+ assert.equal(state.minutes,480); assert.equal(payload.state.publicPlayerActions.stock.length,0);
+ assert.equal(payload.state.publicActivities.length,1);
+ assert.equal(advanceToNextActivity(state).ok,true);revision++;
+ payload.state=projectPlayerGame(state,actor);
  const projectedArea=payload.state.publicPlayerActions.areas.find(row=>row.areaId===area.id);
  const attempt=state.hexes['0,0'].points[0].preparation.attempts.find(row=>row.id===propose.id);
  assert.ok(attempt);assert.equal(attempt.mode,'open');assert.equal(attempt.status,'completed');
@@ -120,6 +126,7 @@ test('coleta de achado após busca pausada persiste, refaz CAS e projeta invent�
  state.noise=3;
  assert.equal((await send({type:'search',id:'noisy-search',day:state.day,hexId:'0,0',pointId:'market',areaId:area.id,objective:'open',purpose:'Suprimentos'})).status,200);
  assert.equal((await send({type:'execute',id:'noisy-execute',day:state.day,operationId:'noisy-search'})).status,200);
+ assert.equal(advanceToNextActivity(state).ok,true);revision++;
  assert.equal(state.playerActions.policy.paused,true);
  const stock=state.hexes['0,0'].points[0].preparation.stock.find(row=>row.attemptId==='noisy-search');assert.ok(stock);
  const beforeMinutes=state.minutes,beforeNoise=state.noise,beforeStock=stock.remaining;
@@ -168,4 +175,26 @@ test('PATCH de PV aceita ficha legada e preserva notas concorrentes sem bloquear
  const saved=(await second.json()).state.survivors[0];
  assert.equal(saved.hp,2);assert.equal(saved.notes,'Nota nova do mestre');assert.equal(saved.campoAntigo,'preservar');
  assert.equal(writes,2);
+});
+
+test('avanço do mestre é exclusivo, preserva CAS e pode ser reenviado sem concluir a próxima atividade',async()=>{
+ reset();
+ const {scheduleSurvivorTravel}=require('../lib/hex-actions.ts');
+ assignCustomSector(state,'1,0','Garagens','avistado');state.hexes['1,0'].routeHours=1;
+ assert.equal(scheduleSurvivorTravel(state,'1,0',[actor]).ok,true);
+ const input={type:'advance-activity',id:'master-next',day:state.day,expectedMinute:state.minutes,expectedNext:state.minutes+60};
+ assert.equal((await send(input)).status,403);assert.equal(writes,0);
+ authenticated={id:'master'};race=true;
+ const advanced=await send(input);assert.equal(advanced.status,200);assert.equal(writes,2);assert.equal(state.minutes,540);assert.equal(state.survivors[0].hex,'1,0');assert.equal(state.fear,4);
+ const saved=structuredClone(state);const replay=await send(input);assert.equal(replay.status,200);assert.equal(writes,2);assert.deepEqual(state,saved);
+ assert.equal((await send({...input,id:'stale-next'})).status,409);assert.equal(writes,2);
+});
+
+test('interrupção de atividade exige mestre e reenvio mantém posição e relógio',async()=>{
+ reset();const {scheduleSurvivorTravel}=require('../lib/hex-actions.ts');assignCustomSector(state,'1,0','Garagens','avistado');
+ assert.equal(scheduleSurvivorTravel(state,'1,0',[actor]).ok,true);
+ const activity=state.activities[0];const command={type:'cancel-activity',id:'cancel-1',day:state.day,activityId:activity.id};
+ assert.equal((await send(command)).status,403);authenticated={id:'master'};
+ assert.equal((await send(command)).status,200);assert.equal(state.minutes,480);assert.equal(state.survivors[0].hex??state.partyHex,'0,0');
+ const saved=structuredClone(state);assert.equal((await send(command)).status,200);assert.deepEqual(state,saved);assert.equal(writes,1);
 });

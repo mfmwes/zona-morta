@@ -4,6 +4,8 @@ import { consumeShelterComfortRest } from "./shelter-projects";
 import { settleSceneAmmunition } from "./combat-resources";
 import { localizeRulesText } from "./terminology";
 import { endConflictScene } from "./conflict";
+import { registerActivityHandler } from "./activity-handlers";
+import { scheduleActivity } from "./activity-timeline";
 import { advanceParticipantTime } from "./time";
 import { participantTimePreview, timedActionParticipantIssue } from "./activity";
 
@@ -13,7 +15,7 @@ export type RestKind = "short" | "long";
 export type RestAction = "hp" | "stress" | "armor" | "prepare" | "fiction" | "hp-full" | "stress-full" | "armor-full";
 export type RestChoice = { action: RestAction; targetId: string };
 export type RestSelection = { survivorId: string; choices: RestChoice[] };
-export type RestResolutionOptions = { advanceTime?: boolean; ignoreCommitments?: boolean };
+export type RestResolutionOptions = { advanceTime?: boolean; ignoreCommitments?: boolean; participantIds?: string[] };
 
 export const restDurationMinutes: Record<RestKind, number> = { short: 60, long: 360 };
 
@@ -61,15 +63,16 @@ export const periodLabels: Record<NonNullable<AbilityPeriod>, string> = {
   place: "1× por hex/local", patient: "1× por paciente",
 };
 
-function usageKey(game: GameState, period: AbilityPeriod, effect: string) {
+function usageKey(game: GameState, period: AbilityPeriod, effect: string, survivorId?: string) {
+  const counters = game.survivors.find(p => p.id === survivorId)?.restCounters;
   if (period === "place") return "local:já usado";
   if (period === "patient") return /durante um descanso curto/i.test(effect)
-    ? `paciente:descanso-curto:${game.shortRest ?? 1}` : `paciente:cena:${game.day}.${game.scene ?? 1}`;
+    ? `paciente:descanso-curto:${counters?.short ?? game.shortRest ?? 1}` : `paciente:cena:${game.day}.${game.scene ?? 1}`;
   if (period === "scene") return `cena:${game.day}.${game.scene ?? 1}`;
   if (period === "day") return `dia:${game.day}`;
   if (period === "expedition") return `expedição:${game.expedition ?? 1}`;
-  if (period === "shortRest" || period === "rest") return `descanso:${game.shortRest ?? 1}`;
-  if (period === "longRest") return `descanso-longo:${game.longRest ?? 1}`;
+  if (period === "shortRest" || period === "rest") return `descanso:${counters?.short ?? game.shortRest ?? 1}`;
+  if (period === "longRest") return `descanso-longo:${counters?.long ?? game.longRest ?? 1}`;
   return "";
 }
 function instanceKey(abilityId: string, period: AbilityPeriod, context: string, hex: string) {
@@ -82,7 +85,7 @@ export function abilityAvailable(game: GameState, survivorId: string, abilityId:
   if (!person) return false;
   const period = abilityPeriod(effect);
   if (period === "patient" && !context.trim()) return false;
-  const key = usageKey(game, period, effect);
+  const key = usageKey(game, period, effect, survivorId);
   return !key || person.abilityUses?.[instanceKey(abilityId, period, context, survivorHex(game, person))] !== key;
 }
 
@@ -103,7 +106,7 @@ export function recordAbilityUse(game: GameState, survivorId: string, abilityId:
     person.armorMarked = (person.armorMarked ?? 0) + 1;
   }
   const period = abilityPeriod(effect);
-  const key = usageKey(game, period, effect);
+  const key = usageKey(game, period, effect, survivorId);
   if (key) { person.abilityUses ??= {}; person.abilityUses[instanceKey(abilityId, period, context, survivorHex(game, person))] = key; }
   addLog(game, "habilidade", `${person.name} usou ${name}${context.trim() ? ` (${context.trim()})` : ""}; custo registrado: ${costLabels[cost]}. Resolva o efeito descrito na cena.`, person.id);
   return true;
@@ -124,7 +127,11 @@ export function beginExpedition(game: GameState) {
   game.expedition = (game.expedition ?? 1) + 1;
   addLog(game, "expedição", "Nova expedição: habilidades por expedição estão disponíveis.");
 }
-export function registerRest(game: GameState, kind: RestKind) {
+export function registerRest(game: GameState, kind: RestKind, ids = game.survivors.map(p => p.id)) {
+  for (const person of game.survivors) {
+    person.restCounters ??= { short: game.shortRest ?? 1, long: game.longRest ?? 1 };
+    if (ids.includes(person.id)) { person.restCounters.short += 1; if (kind === "long") person.restCounters.long += 1; }
+  }
   game.shortRest = (game.shortRest ?? 1) + 1;
   if (kind === "long") game.longRest = (game.longRest ?? 1) + 1;
   addLog(game, "descanso", `Descanso ${kind === "short" ? "curto" : "longo"} concluído: benefícios escolhidos e limites de habilidade foram atualizados.`);
@@ -142,26 +149,27 @@ export function plannedRestSelections(game: GameState, kind: RestKind): RestSele
 
 export function resolveGroupRest(game: GameState, kind: RestKind, selections: RestSelection[], roll = rollDie,
   options: RestResolutionOptions = {}) {
-  if (!game.survivors.length || selections.length !== game.survivors.length) return { ok: false as const, message: "Defina duas ações para cada sobrevivente." };
+  const participants = options.participantIds ? game.survivors.filter(p => options.participantIds!.includes(p.id)) : game.survivors;
+  if (!participants.length || selections.length !== participants.length) return { ok: false as const, message: "Defina duas ações para cada sobrevivente." };
 
   const validActions = new Set(restActionsFor(kind));
   const selectionBySurvivor = new Map(selections.map(selection => [selection.survivorId, selection]));
-  if (selectionBySurvivor.size !== game.survivors.length || game.survivors.some(person => {
+  if (selectionBySurvivor.size !== participants.length || participants.some(person => {
     const choices = selectionBySurvivor.get(person.id)?.choices;
     return !choices || choices.length !== 2 || choices.some(choice => {
-      const target = game.survivors.find(candidate => candidate.id === choice.targetId);
+      const target = participants.find(candidate => candidate.id === choice.targetId);
       return !validActions.has(choice.action) || !target || survivorHex(game, target) !== survivorHex(game, person);
     });
   })) return { ok: false as const, message: "Cada sobrevivente precisa de duas ações válidas com alvos presentes no mesmo hex." };
 
   if (!options.ignoreCommitments) {
-    const commitmentIssue = timedActionParticipantIssue(game, game.survivors.map(person => person.id),
+    const commitmentIssue = timedActionParticipantIssue(game, participants.map(person => person.id),
       kind === "short" ? "um descanso curto" : "um descanso longo");
     if (commitmentIssue) return { ok: false as const, message: commitmentIssue };
   }
   if (options.advanceTime !== false) {
     const duration = restDurationMinutes[kind];
-    const participantIds = game.survivors.map(person => person.id);
+    const participantIds = participants.map(person => person.id);
     const preview = participantTimePreview(game, participantIds, duration);
     if (!preview.ok) return { ok: false as const,
       message: kind === "long"
@@ -173,19 +181,19 @@ export function resolveGroupRest(game: GameState, kind: RestKind, selections: Re
   }
 
   const preparedByHex = new Map<string, number>();
-  for (const person of game.survivors) {
+  for (const person of participants) {
     if (!selectionBySurvivor.get(person.id)!.choices.some(choice => choice.action === "prepare")) continue;
     const hex = survivorHex(game, person);
     preparedByHex.set(hex, (preparedByHex.get(hex) ?? 0) + 1);
   }
   const summaries: string[] = [];
 
-  for (const person of game.survivors) {
+  for (const person of participants) {
     const choices = selectionBySurvivor.get(person.id)!.choices;
     const prepareGain = (preparedByHex.get(survivorHex(game, person)) ?? 0) >= 2 ? 2 : 1;
     const results: string[] = [];
     for (const choice of choices) {
-      const target = game.survivors.find(candidate => candidate.id === choice.targetId)!;
+      const target = participants.find(candidate => candidate.id === choice.targetId)!;
       const targetPrefix = target.id === person.id ? "" : `Para ${target.name}: `;
       if (choice.action === "hp") {
         const rolled = Math.max(2, Math.min(5, Math.trunc(roll(4)) + 1));
@@ -218,13 +226,13 @@ export function resolveGroupRest(game: GameState, kind: RestKind, selections: Re
   }
 
   const fearDie = Math.max(1, Math.min(4, Math.trunc(roll(4))));
-  const comfortReduction = consumeShelterComfortRest(game);
-  const rawFear = fearDie + (kind === "long" ? game.survivors.length : 0);
+  const comfortReduction = consumeShelterComfortRest(game, participants.map(p => p.id));
+  const rawFear = fearDie + (kind === "long" ? participants.length : 0);
   const fearGain = Math.max(0, rawFear - comfortReduction);
   const actualFear = Math.min(12 - game.fear, fearGain);
   game.fear += actualFear;
-  addLog(game, "descanso", `Descanso ${kind === "short" ? "curto" : "longo"}: Medo +${actualFear}${kind === "long" ? ` (d4 ${fearDie} + ${game.survivors.length} PJ${game.survivors.length === 1 ? "" : "s"}` : ` (d4 ${fearDie}`}${comfortReduction ? ` − ${comfortReduction} Conforto do abrigo` : ""}).`);
-  registerRest(game, kind);
+  addLog(game, "descanso", `Descanso ${kind === "short" ? "curto" : "longo"}: Medo +${actualFear}${kind === "long" ? ` (d4 ${fearDie} + ${participants.length} PJ${participants.length === 1 ? "" : "s"}` : ` (d4 ${fearDie}`}${comfortReduction ? ` − ${comfortReduction} Conforto do abrigo` : ""}).`);
+  registerRest(game, kind, participants.map(p => p.id));
   return { ok: true as const, fear: actualFear, summaries, minutes: options.advanceTime === false ? 0 : restDurationMinutes[kind] };
 }
 
@@ -233,3 +241,20 @@ export function resolvePlannedOvernightRest(game: GameState, roll = rollDie) {
   if (!selections) return { ok: false as const, message: "Todos os sobreviventes precisam registrar duas escolhas de descanso longo antes do amanhecer." };
   return resolveGroupRest(game, "long", selections, roll, { advanceTime: false, ignoreCommitments: true });
 }
+
+/** Valida agora, mas recuperações, Medo e limites só mudam na conclusão. */
+export function scheduleGroupRest(game: GameState, kind: RestKind, selections: RestSelection[], operationId?: string) {
+  const ids = selections.map(s => s.survivorId);
+  const validation = resolveGroupRest(structuredClone(game), kind, selections, () => 1,
+    { advanceTime: false, participantIds: ids });
+  if (!validation.ok) return validation;
+  return scheduleActivity(game, { type: "rest", kind, selections: structuredClone(selections) }, ids,
+    restDurationMinutes[kind], `Descanso ${kind === "short" ? "curto" : "longo"}`, { operationId });
+}
+
+registerActivityHandler("rest", (game, activity, die) => {
+  if (activity.type !== "rest") return { ok: false, message: "Descanso inválido." };
+  const rest = resolveGroupRest(game, activity.kind, activity.selections, die,
+    { advanceTime: false, participantIds: activity.participantIds });
+  return rest.ok ? { ok: true, message: `Descanso concluído · Medo +${rest.fear}.` } : rest;
+});

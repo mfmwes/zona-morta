@@ -1,3 +1,4 @@
+import { publicActivities } from "./activity-timeline";
 import { playerTimedActionIssue, projectPlayerActions } from "./player-actions";
 import { addLog, ammunitionTypes, survivorIsDown, survivorStats, type AmmunitionType, type GameState, type InventoryItem, type NPC, type Survivor } from "./game";
 import { publicConflictScene } from "./conflict";
@@ -38,6 +39,8 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
   delete visible.presentation;
   delete visible.explorationPreferences;
   delete visible.parallelTime;
+  delete visible.activities;
+  visible.publicActivities = publicActivities(game);
   visible.log = visible.log.map(entry => {
     const actor = entry.actorId ? game.survivors.find(person => person.id === entry.actorId) : null;
     return actor ? { ...entry, actorName: entry.actorName ?? actor.name, actorPortrait: entry.actorPortrait ?? actor.portrait } : entry;

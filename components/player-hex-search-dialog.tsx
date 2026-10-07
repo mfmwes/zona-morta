@@ -74,7 +74,7 @@ export function PlayerHexSearchDialog({
   const [canRetry, setCanRetry] = useState(false);
 
   const areas = view?.areas ?? [];
-  const activeOperation = view?.operations.find(op => ["forming", "access"].includes(op.status));
+  const activeOperation = view?.operations.find(op => ["forming", "access", "scheduled"].includes(op.status));
   const preferredAreaId = activeOperation?.areaId
     ?? areas.find(area => area.state === "available")?.areaId
     ?? areas.find(area => area.state === "deep-available")?.areaId
@@ -82,7 +82,7 @@ export function PlayerHexSearchDialog({
   const area = areas.find(row => row.areaId === selectedArea)
     ?? areas.find(row => row.areaId === preferredAreaId)
     ?? areas[0];
-  const operation = view?.operations.find(op => ["forming", "access"].includes(op.status) && (!area || op.areaId === area.areaId));
+  const operation = view?.operations.find(op => ["forming", "access", "scheduled"].includes(op.status) && (!area || op.areaId === area.areaId));
   const stock = view?.stock ?? [];
   const stockUnits = stock.reduce((sum, row) => sum + row.remaining, 0);
   const apparentStock = area ? stock.filter(row => row.areaId === area.areaId && row.source === "apparent") : [];
@@ -249,7 +249,7 @@ export function PlayerHexSearchDialog({
               <p className="text-xs subtle">{operation.depth === "deep"
                 ? "Busca profunda · foco específico · sem d12 base."
                 : operation.objective === "open"
-                  ? "Busca geral · o achado será determinado por 1d12 ao iniciar a busca."
+                  ? "Busca geral · o achado será determinado por 1d12 na conclusão da busca."
                   : "Busca específica · o foco escolhido substitui a rolagem base de d12."}</p>
               <p className="text-xs subtle">Confirmados: {operation.participantIds.map(id => view?.peers.find(peer => peer.id === id)?.name ?? "Sobrevivente").join(", ")}</p>
               {operation.status === "forming" && <>
@@ -279,8 +279,9 @@ export function PlayerHexSearchDialog({
                   </label>)}
                 </div>
                 <Button disabled={experiences.length > actor.hope || view?.policy.paused}
-                  onClick={() => void perform({ type: "roll-access", operationId: operation.id, trait, experiences, edge, ...(mentorId ? { mentorId } : {}) }, "Teste resolvido e busca concluída.")}>Rolar acesso e concluir busca</Button>
+                  onClick={() => void perform({ type: "roll-access", operationId: operation.id, trait, experiences, edge, ...(mentorId ? { mentorId } : {}) }, "Teste registrado. A busca será concluída no horário agendado.")}>Rolar acesso</Button>
               </div>}
+              {operation.status === "scheduled" && <p className="team-notice">Busca em andamento. Os achados serão liberados quando o mestre avançar até a conclusão.</p>}
               {operation.status === "access" && !owner && <p className="team-notice">Aguardando quem iniciou a busca resolver o acesso.</p>}
             </section>}
 

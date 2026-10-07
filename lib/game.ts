@@ -394,6 +394,7 @@ export type Survivor = {
   ammoSpentTypes?: string[];
   inventory: InventoryItem[];
   notes: string;
+  restCounters?: { short: number; long: number };
   restPlan?: {
     kind: "short" | "long";
     choices: { action: string; targetId: string }[];
@@ -425,6 +426,8 @@ export type GameState = {
   longRest?: number;
   /** Curso temporal individual dos sobreviventes dentro do dia. Permite que subgrupos independentes preencham o mesmo intervalo sem cobrar o relógio global duas vezes. */
   parallelTime?: ParallelTimeState;
+  activities?: import("./activity-timeline").ScheduledActivity[];
+  publicActivities?: import("./activity-timeline").PublicActivity[];
   explorationPreferences?: { autoPrepare: boolean; participantIds: string[]; transport?: "personal-first" | "cart-first" };
   hexes: Record<string, HexState>;
   survivors: Survivor[];
