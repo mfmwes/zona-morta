@@ -37,8 +37,6 @@
 }
 .map-terrain-legend span { display:flex; align-items:center; gap:5px; white-space:nowrap; }
 .map-terrain-legend i { width:12px; height:12px; border:1px solid; border-radius:3px; box-shadow:inset 0 0 0 1px #ffffff18; }
-.map-terrain-legend b { font:800 .68rem var(--font-mono); letter-spacing:.04em; color:#f4f7ef; }
-.map-terrain-badge { pointer-events:none; }
 
 .hex-terrain-summary {
   display:grid;
@@ -52,26 +50,22 @@
   border-radius:8px;
   background:color-mix(in srgb,var(--card) 92%,var(--muted));
 }
-.hex-terrain-summary.terrain-urban { --terrain-stroke:#83aaa8; }
-.hex-terrain-summary.terrain-suburban { --terrain-stroke:#a9c7a8; }
-.hex-terrain-summary.terrain-industrial { --terrain-stroke:#b8aa99; }
-.hex-terrain-summary.terrain-rural { --terrain-stroke:#c2ba75; }
-.hex-terrain-summary.terrain-forest { --terrain-stroke:#78a47f; }
-.hex-terrain-summary.terrain-open { --terrain-stroke:#c1c98a; }
-.hex-terrain-summary.terrain-roadway { --terrain-stroke:#a8b7c0; }
-.hex-terrain-summary.terrain-swamp { --terrain-stroke:#7fb8aa; }
-.hex-terrain-summary.terrain-mountain { --terrain-stroke:#9da9bd; }
-.hex-terrain-code {
-  display:grid;
-  place-items:center;
-  width:45px;
-  height:45px;
+.hex-terrain-summary.terrain-urban { --terrain-stroke:#9fc3e8; }
+.hex-terrain-summary.terrain-suburban { --terrain-stroke:#b9dda9; }
+.hex-terrain-summary.terrain-industrial { --terrain-stroke:#e2ad82; }
+.hex-terrain-summary.terrain-rural { --terrain-stroke:#e4cb86; }
+.hex-terrain-summary.terrain-forest { --terrain-stroke:#8bc69d; }
+.hex-terrain-summary.terrain-open { --terrain-stroke:#ead58c; }
+.hex-terrain-summary.terrain-roadway { --terrain-stroke:#b6c5cf; }
+.hex-terrain-summary.terrain-swamp { --terrain-stroke:#91d1cb; }
+.hex-terrain-summary.terrain-mountain { --terrain-stroke:#bcb4dc; }
+.hex-terrain-swatch {
+  display:block;
+  width:44px;
+  height:44px;
   border:2px solid;
-  border-radius:7px;
-  background:#173033;
-  color:#eef5ef;
-  font:900 .78rem var(--font-mono);
-  letter-spacing:.08em;
+  border-radius:9px;
+  box-shadow:inset 0 0 0 1px #ffffff20;
 }
 .hex-terrain-summary > div { min-width:0; display:grid; gap:3px; }
 .hex-terrain-summary small { color:var(--muted-foreground); font:800 .65rem var(--font-mono); letter-spacing:.1em; }
