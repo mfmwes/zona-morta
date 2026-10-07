@@ -49,7 +49,7 @@ const landscapes: Record<Exclude<Terrain, "urban">, { names: string[]; border: s
     invites: ["examinar as casas", "seguir a via principal do bairro"],
   },
   industrial: {
-    names: ["Distrito industrial", "Pátio logístico", "Cinturão de galpões", "Complexo fabril"],
+    names: ["Zona fabril", "Pátio logístico", "Cinturão de galpões", "Complexo fabril"],
     border: "galpões, portões largos, pátios de carga e infraestrutura técnica",
     invites: ["verificar os portões de serviço", "seguir as vias de carga"],
   },
@@ -61,7 +61,7 @@ const landscapes: Record<Exclude<Terrain, "urban">, { names: string[]; border: s
     invites: ["observar o terreno de longe", "procurar estruturas nas bordas"],
   },
   roadway: {
-    names: ["Nó rodoviário", "Trevo de acesso", "Corredor de viadutos", "Terminal de estrada"],
+    names: ["Trevo rodoviário", "Faixa de acesso", "Corredor de viadutos", "Terminal de estrada"],
     border: "pistas, acostamentos, rampas, placas e veículos abandonados",
     invites: ["avaliar a pista transitável", "examinar postos e acessos laterais"],
   },
