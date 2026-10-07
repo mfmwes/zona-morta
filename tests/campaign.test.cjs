@@ -441,6 +441,9 @@ test('reiniciar cidade preserva fichas, ids e campanha mas limpa o mundo e estad
   g.day = 9;
   g.minutes = 900;
   g.hexes['0,0'].notes = 'cidade antiga';
+  g.playerActions = { policy:{ paused:true, transfers:false, deposits:false, rest:false, tokens:false, areas:[], routes:[], supplies:{food:0,water:0,items:{}} }, operations:[], receipts:[], withdrawals:[], markers:[] };
+  g.explorationPreferences = { autoPrepare:true, participantIds:[ana.id] };
+  g.parallelTime = { day:g.day, survivorMinutes:{ [ana.id]:300 } };
 
   const count = resetCityPreservingSurvivors(g, { withShelter:true });
   assert.equal(count, 2);
@@ -459,6 +462,9 @@ test('reiniciar cidade preserva fichas, ids e campanha mas limpa o mundo e estad
   assert.equal(g.survivors[0].abilityUses, undefined);
   assert.equal(g.survivors[0].restPlan, undefined);
   assert.equal(g.survivors[0].ammoSpentScene, undefined);
+  assert.equal(g.playerActions, undefined);
+  assert.equal(g.explorationPreferences, undefined);
+  assert.equal(g.parallelTime, undefined);
 });
 
 test('resolução privada de alvo existe sem enviar dificuldade ao cliente jogador', () => {
