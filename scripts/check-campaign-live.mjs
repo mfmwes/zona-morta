@@ -113,6 +113,9 @@ try {
   const completedSearch=await act({id:'execute-search',type:'execute',operationId:'search-without-permission'});
   const found=completedSearch.state.publicPlayerActions.stock.find(stock=>stock.source==='search'&&stock.accessible&&!stock.requiresFuelContainer);
   assert.ok(found,'Completed search must expose collectible stock');
+  assert.ok(found.item,'Public stock must include its physical item state for the capacity preview');
+  const searchLog=completedSearch.state.log.find(entry=>entry.kind==='busca');
+  assert.ok(searchLog);assert.match(searchLog.text,/Jogador: busca geral.*Mercado.*Resultado:.*30 min/);
   const beforeCollect=await (await mf.dispatchFetch(origin+path,{headers:headers('master')})).json();
   const policy=beforeCollect.state.playerActions.policy;
   const setPaused=async paused=>{
@@ -128,11 +131,16 @@ try {
   assert.equal(collected.state.minutes,completedSearch.state.minutes);
   assert.equal(collected.state.noise,completedSearch.state.noise);
   assert.equal(collected.state.publicPlayerActions.policy.paused,true);
+  const collectionLog=collected.state.log.find(entry=>entry.kind==='inventário'&&entry.text.includes('recolheu em Mercado'));
+  assert.ok(collectionLog);assert.equal(collectionLog.actorId,actor.id);
+  assert.ok(collectionLog.text.includes(`1 × ${found.name}`));assert.match(collectionLog.text,/inventário pessoal/);
+  assert.equal(collected.state.log.length,completedSearch.state.log.length+1);
   const reloaded=await (await mf.dispatchFetch(origin+path,{headers:headers('master')})).json();
   assert.deepEqual(reloaded.state.survivors[0].inventory,collected.state.survivors[0].inventory);
   assert.equal(reloaded.state.hexes[found.hexId].points.find(point=>point.id===found.pointId).preparation.stock.find(stock=>stock.id===found.stockId).remaining,found.remaining-1);
   const collectReplay=await act(collect);assert.equal(collectReplay.revision,collected.revision);
   assert.deepEqual(collectReplay.state.survivors[0].inventory,collected.state.survivors[0].inventory);
+  assert.deepEqual(collectReplay.state.log,collected.state.log);
   await setPaused(false);
   const requested=await act({id:'rest-request',type:'request-rest',kind:'short'});
   const rest=requested.state.publicPlayerActions.operations.find(op=>op.individualChoices&&op.status==='forming');

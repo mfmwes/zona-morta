@@ -46,30 +46,36 @@ const hooks = {
 };
 const originalLoad = Module._load;
 Module._load = function(name, parent, main) {
-  if (parent?.filename.endsWith('player-hex-search-dialog.tsx')) {
+  if (parent?.filename.endsWith('player-hex-search-dialog.tsx') || parent?.filename.endsWith('hex-search-dialog.tsx')) {
     if (name === 'react') return hooks;
     if (name === '@/components/ui/button') return { Button: 'button' };
     if (name === '@/components/ui/dialog') return Object.fromEntries(['Dialog', 'DialogContent', 'DialogDescription', 'DialogFooter', 'DialogHeader', 'DialogTitle'].map(key => [key, key]));
-    if (name === '@/components/game-controls') return { Field: 'field', Pick: 'pick' };
+    if (name === '@/components/game-controls') return { Field: 'field', Pick: 'pick', Counter: 'counter' };
+    if (name === '@/components/roll-dialog') return { RollForm: 'roll' };
   }
   return originalLoad.call(this, name, parent, main);
 };
 const { PlayerHexSearchDialog } = require('../components/player-hex-search-dialog.tsx');
+const { HexSearchDialog } = require('../components/hex-search-dialog.tsx');
 Module._load = originalLoad;
+const presentation = new Set(['SearchTabs', 'SearchRooms', 'SearchStockRow', 'SearchCapacity', 'ItemArt']);
+function expand(node) { return typeof node?.type === 'function' && presentation.has(node.type.name) ? node.type(node.props) : node; }
 function textOf(node) {
   if (node == null || typeof node === 'boolean') return '';
   if (Array.isArray(node)) return node.map(textOf).join('');
+  node = expand(node);
   return typeof node === 'object' ? textOf(node.props?.children) : String(node);
 }
 function elements(node, disabled = false, found = []) {
   if (Array.isArray(node)) { node.forEach(child => elements(child, disabled, found)); return found; }
   if (!node || typeof node !== 'object' || !node.props) return found;
+  node = expand(node);
   const blocked = disabled || Boolean(node.props.disabled);
   found.push({ node, disabled: blocked });
   elements(node.props.children, blocked, found);
   return found;
 }
-function fixture() {
+function fixture(role = 'player') {
   let game = defaultState();
   const archetype = content.archetypes[0];
   game.survivors = [initialSurvivor({ name: 'Nina', origin: content.origins[1].name, past: '', archetype: archetype.name, specialty: archetype.specialties[0].name, freeExperience: 'Resgates', techniques: [], attributes: { Instinto: 1 }, primary: '', secondary: '', protection: '', personal: '' })];
@@ -83,6 +89,7 @@ function fixture() {
   game.playerActions = playerActionState(game);
   const calls = [], controls = { actorId, canAct: true, pending: false, send: async payload => {
     calls.push(structuredClone(payload));
+    controls.beforeSend?.();
     const result = applyPlayerAction(game, actorId, payload, () => 1);
     if (!result.ok) throw new TeamActionError(result.error, true);
     game = result.state;
@@ -94,13 +101,21 @@ function fixture() {
   const render = () => {
     for (let pass = 0; pass < 10; pass++) {
       host = instance;instance.cursor = 0;instance.effects = [];instance.dirty = false;
-      tree = PlayerHexSearchDialog({ game: projectPlayerGame(game, actorId), controls, request: { hexId: '0,0', pointId: 'market' }, onClose: () => {} });
+      const props = { request: { hexId: '0,0', pointId: 'market' }, onClose: () => {} };
+      tree = role === 'master' ? HexSearchDialog({ ...props, game, edit: fn => { const next = structuredClone(game); fn(next);game = next;instance.dirty = true; } })
+        : PlayerHexSearchDialog({ ...props, game: projectPlayerGame(game, actorId), controls });
       instance.effects.forEach(effect => effect());
       if (!instance.dirty) return tree;
     }
     throw new Error('Render did not settle');
   };
-  const button = label => { render();return elements(tree).find(({ node }) => node.type === 'button' && textOf(node) === label); };
+  const button = label => {
+    render();
+    if (label === 'Recolher' && !elements(tree).some(({ node }) => node.type === 'button' && textOf(node) === label)) {
+      elements(tree).find(({ node }) => node.type === 'button' && textOf(node).startsWith('Achados'))?.node.props.onClick();render();
+    }
+    return elements(tree).find(({ node }) => node.type === 'button' && (label === 'Achados' ? textOf(node).startsWith(label) : textOf(node) === label));
+  };
   const flush = async () => { await new Promise(resolve => setImmediate(resolve));render(); };
   const click = async label => { const entry = button(label);assert.ok(entry, label);assert.equal(entry.disabled, false, label);entry.node.props.onClick();await flush(); };
   return { controls, calls, render, button, flush, click, state: () => game, actorId, areaId };
@@ -136,11 +151,16 @@ test('queda após coleta salva permite reenviar exatamente o mesmo comando sem d
 
 test('rejeição por capacidade mostra erro, mantém estoque e permite corrigir sem reenvio pendente', async () => {
   const f = fixture();f.state().survivors[0].inventory = [{ id: 'full', name: 'Carga', qty: 99, load: 1, condition: 'Íntegro' }];
+  assert.equal(f.button('Recolher').disabled, true);
+  assert.match(textOf(f.render()), /não tem capacidade/);
+  f.state().survivors[0].inventory = [];
+  f.controls.beforeSend = () => { f.state().survivors[0].inventory = [{ id: 'full', name: 'Carga', qty: 99, load: 1 }]; };
   await f.click('Recolher');
   assert.match(textOf(f.render()), /não tem capacidade/);
   assert.equal(f.button('Tentar novamente a mesma ação'), undefined);
   assert.equal(f.state().hexes['0,0'].points[0].preparation.stock[0].remaining, 2);
   f.state().survivors[0].inventory = [];
+  f.controls.beforeSend = undefined;
   await f.click('Recolher');assert.notEqual(f.calls[1].id, f.calls[0].id);
   assert.equal(f.state().survivors[0].inventory[0].qty, 1);
 });
@@ -148,6 +168,7 @@ test('rejeição por capacidade mostra erro, mantém estoque e permite corrigir 
 test('botão coleta no carrinho escolhido e preserva combustível em galão no inventário', async () => {
   const f = fixture(), cart = itemFromCatalog(content.catalog.find(row => row.name === 'Carrinho dobrável'));
   cart.cartDeployed = true;cart.cartItems = [];f.state().survivors[0].inventory.push(cart);
+  await f.click('Achados');
   const destination = elements(f.render()).find(({ node }) => node.type === 'pick' && node.props.label === 'Destino da coleta');
   destination.node.props.onChange(cart.id);await f.flush();
   f.state().playerActions.policy.paused = true;
@@ -165,11 +186,12 @@ test('botão coleta no carrinho escolhido e preserva combustível em galão no i
 
 test('quantidade inválida e acesso bloqueado desativam coleta; reabertura orienta recuperar ação pendente', () => {
   const f = fixture();
+  f.button('Recolher');
   for (const quantity of ['0', '1.5', '3', 'abc']) {
-    elements(f.render()).find(({ node }) => node.type === 'field' && node.props.label === 'Quantidade a recolher').node.props.onChange(quantity);
+    elements(f.render()).find(({ node }) => node.type === 'input' && node.props.type === 'number').node.props.onChange({ target: { value: quantity } });
     assert.equal(f.button('Recolher').disabled, true);
   }
-  elements(f.render()).find(({ node }) => node.type === 'field' && node.props.label === 'Quantidade a recolher').node.props.onChange('1');
+  elements(f.render()).find(({ node }) => node.type === 'input' && node.props.type === 'number').node.props.onChange({ target: { value: '1' } });
   f.state().hexes['0,0'].points[0].preparation.areas[0].access = 'blocked';assert.equal(f.button('Recolher').disabled, true);
   f.controls.pending = true;assert.match(textOf(f.render()), /Feche esta janela e use Reenviar ação pendente/);
 });
@@ -187,4 +209,70 @@ test('resultado permanece no cômodo escolhido e início salvo pode ser reenviad
   await f.click('Tentar novamente a mesma ação');
   assert.deepEqual(f.calls[2], f.calls[1]);assert.equal(f.state().minutes, minutes);
   assert.deepEqual(f.state().hexes['0,0'].points[0].preparation.attempts, attempts);
+});
+
+test('quantidades ficam em cada achado e estoque de outros cômodos permanece visível', async () => {
+  const f = fixture(), point = f.state().hexes['0,0'].points[0], other = point.preparation.areas[1];
+  assert.equal(registerVisibleStock(f.state(), '0,0', 'market', other.id, 'second', 'Bebidas::Garrafa de água lacrada', 4), null);
+  const room = elements(f.render()).find(({ node }) => node.type === 'button' && textOf(node).startsWith(other.name));
+  room.node.props.onClick();await f.flush();await f.click('Achados');
+  const quantities = elements(f.render()).filter(({ node }) => node.type === 'input' && node.props.type === 'number');
+  assert.equal(quantities.length, 2);
+  quantities[1].node.props.onChange({ target: { value: '3' } });await f.flush();
+  const current = elements(f.render()).filter(({ node }) => node.type === 'input' && node.props.type === 'number');
+  assert.equal(current[0].node.props.value, '1');assert.equal(current[1].node.props.value, '3');
+  assert.equal(elements(f.render()).filter(({ node }) => node.type === 'article').length, 2);
+  assert.match(textOf(f.render()), /À vista/);
+  assert.equal(elements(f.render()).filter(({ node }) => node.props['data-sheet']).length, 2);
+});
+
+function changeNumber(f, index, value) {
+  const input = elements(f.render()).filter(({ node }) => node.type === 'input' && node.props.type === 'number')[index];
+  assert.ok(input);input.node.props.onChange({ target: { value: String(value) } });
+}
+test('mestre usa a mesma lista ilustrada; sugestão não move itens e confirmação é atômica', async () => {
+  const f = fixture('master'), before = structuredClone(f.state());
+  const settings = elements(f.render()).find(({ node }) => node.type === 'details' && textOf(node).startsWith('Preparação e ajustes'));
+  assert.ok(settings);assert.equal(settings.node.props.open, undefined);
+  await f.click('Achados');assert.deepEqual(f.state(), before);
+  assert.equal(f.button('Confirmar coleta').disabled, true);
+  await f.click('Sugerir distribuição');assert.deepEqual(f.state(), before);
+  assert.match(textOf(f.render()), /Inventário/);assert.match(textOf(f.render()), /→/);
+  await f.click('Confirmar coleta');
+  assert.equal(f.state().survivors[0].inventory[0].qty, 2);
+  assert.equal(f.state().hexes['0,0'].points[0].preparation.stock[0].remaining, 0);
+  assert.equal(f.state().log.filter(entry => entry.kind === 'inventário').length, 1);
+  assert.match(f.state().log[0].text, /Nina recolheu.*2 × Garrafa de água lacrada.*inventário pessoal/);
+});
+
+test('mestre divide estoque entre pessoas na própria linha e bloqueia excesso agregado', async () => {
+  const f = fixture('master'), second = structuredClone(f.state().survivors[0]);second.id = 'second-person';second.name = 'Beto';f.state().survivors.push(second);
+  await f.click('Achados');await f.click('+ Dividir com outro destino');
+  changeNumber(f, 0, 2);changeNumber(f, 1, 1);
+  assert.equal(f.button('Confirmar coleta').disabled, true);
+  assert.match(textOf(f.render()), /estoque, o acesso/);
+  assert.equal(f.state().hexes['0,0'].points[0].preparation.collections.length, 0);
+  changeNumber(f, 0, 1);
+  const destinations = elements(f.render()).filter(({ node }) => node.type === 'select' && node.props['aria-label']?.startsWith('Destino de'));
+  destinations[1].node.props.onChange({ target: { value: second.id } });await f.flush();
+  await f.click('Confirmar coleta');
+  assert.equal(f.state().survivors[0].inventory[0].qty, 1);assert.equal(f.state().survivors[1].inventory[0].qty, 1);
+  assert.equal(f.state().log.filter(entry => entry.kind === 'inventário').length, 2);
+  const nina = projectPlayerGame(f.state(), f.actorId), beto = projectPlayerGame(f.state(), second.id);
+  assert.match(nina.log[0].text, /Nina recolheu/);assert.doesNotMatch(nina.log[0].text, /Beto/);
+  assert.match(beto.log[0].text, /Beto recolheu/);assert.doesNotMatch(beto.log[0].text, /Nina/);
+});
+
+test('mestre valida carrinho, quantidades fracionárias e mudança de estoque antes de confirmar', async () => {
+  const f = fixture('master'), cart = itemFromCatalog(content.catalog.find(row => row.name === 'Carrinho dobrável'));
+  cart.cartDeployed = true;cart.cartItems = [];f.state().survivors[0].inventory.push(cart);
+  await f.click('Achados');changeNumber(f, 0, 1.5);assert.equal(f.button('Confirmar coleta').disabled, true);
+  changeNumber(f, 0, 2);
+  const transport = elements(f.render()).find(({ node }) => node.type === 'select' && node.props['aria-label']?.startsWith('Transporte de'));
+  transport.node.props.onChange({ target: { value: cart.id } });await f.flush();
+  f.state().hexes['0,0'].points[0].preparation.stock[0].remaining = 1;
+  assert.equal(f.button('Confirmar coleta').disabled, true);
+  changeNumber(f, 0, 1);await f.click('Confirmar coleta');
+  assert.equal(f.state().survivors[0].inventory.find(item => item.id === cart.id).cartItems[0].qty, 1);
+  assert.match(f.state().log[0].text, /carrinho aberto/);
 });

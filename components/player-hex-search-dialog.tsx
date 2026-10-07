@@ -5,10 +5,12 @@ import { CheckCircle2, Circle, Clock3, Search, ShieldAlert, Users } from "lucide
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field, Pick } from "@/components/game-controls";
+import { SearchCapacity, SearchRooms, SearchStockRow, SearchTabs, type SearchTab } from "@/components/search-session";
+import { previewSearchCollection } from "@/lib/search-collection-preview";
 import { actionsInContext } from "@/lib/player-action-context";
 import { createId } from "@/lib/id";
 import { traitLabel } from "@/lib/terminology";
-import type { GameState } from "@/lib/game";
+import { survivorStats, type GameState } from "@/lib/game";
 import { TeamActionError, type PlayerActionControls } from "@/components/player-actions-panel";
 import type { PublicSearchAreaState } from "@/lib/player-actions-types";
 
@@ -34,13 +36,6 @@ const stateLabels: Record<PublicSearchAreaState, string> = {
   searched: "Vasculhada",
   narrative: "Exploração narrativa",
 };
-
-function stateIcon(state: PublicSearchAreaState) {
-  if (state === "proposed" || state === "ongoing" || state === "deep-ongoing") return Clock3;
-  if (state === "available" || state === "deep-available") return Search;
-  if (state === "narrative") return Circle;
-  return CheckCircle2;
-}
 
 export function PlayerHexSearchDialog({
   game,
@@ -68,7 +63,8 @@ export function PlayerHexSearchDialog({
   const [edge, setEdge] = useState<"none" | "advantage" | "disadvantage">("none");
   const [mentorId, setMentorId] = useState("");
   const [cartId, setCartId] = useState("");
-  const [quantity, setQuantity] = useState("1");
+  const [quantities, setQuantities] = useState<Record<string, string>>({});
+  const [tab, setTab] = useState<SearchTab>("explore");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -115,9 +111,6 @@ export function PlayerHexSearchDialog({
   const displayedDepth = area?.lastResultDepth ?? recentResult?.depth;
   const displayedRoll = area?.lastRoll;
   const displayedAttention = area?.lastAttention ?? recentResult?.attention;
-  const count = Number(quantity);
-  const validCount = Number.isInteger(count) && count > 0 && count <= 99;
-
   async function perform(input: Record<string, unknown>, success?: string, retrying = false) {
     if (inFlight.current) {
       setNotice("A ação anterior ainda está sendo registrada.");
@@ -142,6 +135,7 @@ export function PlayerHexSearchDialog({
       await controls.send(pending.payload);
       retry.current = null;
       setCanRetry(false);
+      if (pending.payload.type === "collect") setQuantities(current => ({ ...current, [String(pending.payload.stockId)]: "1" }));
       if (pending.success) setNotice(pending.success);
       return true;
     } catch (cause) {
@@ -174,36 +168,17 @@ export function PlayerHexSearchDialog({
     setNotice("");
   }
 
-  const nextAction = !location?.prepared
-    ? "Organizando as áreas deste local"
-    : operation
-      ? operation.status === "access" ? "Resolver o acesso da busca" : "Confirmar participantes e iniciar"
-      : stockUnits > 0
-        ? "Há achados esperando coleta"
-        : area?.state === "proposed"
-          ? `Há uma busca proposta em ${area.name}`
-          : area?.state === "available"
-          ? `Decida como vasculhar ${area.name}`
-          : area?.state === "deep-available"
-            ? `Vasculhe ${area.name} a fundo`
-            : area?.state === "narrative"
-              ? "Explore este espaço pela ficção"
-              : "Escolha outra área para continuar";
-
   return <Dialog open onOpenChange={open => { if (!open) onClose(); }}>
-    <DialogContent className="inventory-dialog hex-search-dialog sm:max-w-4xl">
+    <DialogContent className="inventory-dialog hex-search-dialog search-session-dialog">
       <DialogHeader>
         <DialogTitle>Explorar {point?.name ?? location?.pointName ?? "local"}</DialogTitle>
         <DialogDescription>
-          Escolha uma área, organize quem participa, resolva a busca e recolha os achados. O sistema cuida da preparação e das validações automaticamente.
+          Hex {request.hexId} · {game.hexes[request.hexId]?.sector?.name ?? "Local"} · Escolha um cômodo ou recolha os achados.
         </DialogDescription>
       </DialogHeader>
 
-      <div className="hex-location-path">
-        <span><small>Setor do mapa · Hex {request.hexId}</small><b>{game.hexes[request.hexId]?.sector?.name ?? "Não revelado"}</b></span>
-        <span><small>Local neste setor</small><b>{point?.name ?? location?.pointName ?? "Local"}</b></span>
-      </div>
-
+      <SearchTabs value={tab} units={stockUnits} onChange={setTab} />
+      <div className="search-session-body">
       {!controls.canAct && <p className="team-notice">Aguarde a sincronização da campanha antes de agir.</p>}
       {controls.pending && <p className="team-notice">Há uma ação anterior aguardando confirmação da conexão. {canRetry ? "Use o botão abaixo para reenviar a mesma ação." : "Feche esta janela e use Reenviar ação pendente na campanha antes de iniciar outra."}</p>}
       {view?.busy && <p className="team-notice" role="status"><b>Busca indisponível agora:</b> {view.busy}</p>}
@@ -222,50 +197,8 @@ export function PlayerHexSearchDialog({
           void perform({ type: "prepare-search", hexId: request.hexId, pointId: request.pointId }, "Áreas do local organizadas automaticamente.");
         }}>Tentar novamente</Button>}
       </section> : <>
-        <div className="hex-search-location-summary">
-          <div>
-            <span className="tag">{location.areaCount} áreas internas</span>
-            <b>{location.searchedAreas} vasculhada(s) · {location.availableAreas} disponível(is)</b>
-            <small>{location.narrativeAreas} narrativa(s){location.apparentStockUnits ? ` · ${location.apparentStockUnits} item(ns) à vista` : ""}{location.stockUnits ? ` · ${location.stockUnits} item(ns) no local` : ""}{location.activeSearches ? ` · ${location.activeSearches} busca(s) em andamento` : ""}</small>
-          </div>
-        </div>
-
-        <nav className="hex-search-flow" aria-label="Fluxo de exploração do local">
-          <button type="button" className="is-done"><span>1</span><b>Cômodo</b><small>{area?.name ?? "Escolher"}</small></button>
-          <button type="button" className={operation ? "is-active" : area && ["searched", "exhausted", "deep-available"].includes(area.state) ? "is-done" : ""}><span>2</span><b>Buscar</b><small>{operation ? "em andamento" : area ? stateLabels[area.state] : "escolher área"}</small></button>
-          <button type="button" className={stockUnits ? "is-active" : ""}><span>3</span><b>Recolher</b><small>{stockUnits ? `${stockUnits} item(ns) no local` : "quando houver achados"}</small></button>
-        </nav>
-
-        <section className="hex-search-recommended">
-          <div><small>PRÓXIMA AÇÃO</small><b>{nextAction}</b>
-            <p>{operation
-              ? operation.status === "access" ? "Quem iniciou resolve o teste; o resultado e o custo são registrados para toda a mesa." : "Outros sobreviventes presentes podem confirmar participação antes de começar."
-              : stockUnits ? "Recolher não exige uma nova busca. O que não couber continua salvo no local."
-              : area?.state === "deep-available" ? "A busca profunda custa 30 minutos, aumenta o Barulho e exige um teste. O sistema só oferece focos plausíveis para esta área."
-              : area?.state === "available" ? "A Busca geral rola 1d12 na tabela desta área. Você também pode focar uma categoria ou item plausível; buscas específicas não usam esse d12."
-              : "As limitações desta área continuam sendo aplicadas pelo sistema."}</p>
-          </div>
-        </section>
-
-        <div className="hex-search-workspace">
-          <aside className="hex-search-area-panel" aria-label="Áreas internas do local">
-            <div className="hex-search-area-panel-head"><b>Áreas do local</b><small>Escolha onde agir</small></div>
-            <div className="hex-search-area-list">
-              {areas.map(row => {
-                const Icon = stateIcon(row.state);
-                const areaStock = stock.filter(item => item.areaId === row.areaId);
-                const remaining = areaStock.reduce((sum, item) => sum + item.remaining, 0);
-                const visible = areaStock.filter(item => item.source === "apparent").reduce((sum, item) => sum + item.remaining, 0);
-                return <button type="button" key={row.areaId}
-                  className={`hex-search-area-card ${row.areaId === area?.areaId ? "is-active" : ""} is-${row.state}`}
-                  aria-pressed={row.areaId === area?.areaId} onClick={() => selectArea(row.areaId)}>
-                  <Icon size={16} aria-hidden="true" />
-                  <span><b>{row.name}</b><small>{stateLabels[row.state]}{visible ? ` · ${visible} à vista` : remaining ? ` · ${remaining} item(ns) no local` : ""}</small></span>
-                </button>;
-              })}
-            </div>
-          </aside>
-
+        {tab === "explore" && <div className="hex-search-workspace search-session-workspace">
+          <SearchRooms rooms={areas.map(row => ({ id: row.areaId, name: row.name, state: stateLabels[row.state], units: stock.filter(item => item.areaId === row.areaId).reduce((sum, item) => sum + item.remaining, 0) }))} selected={area?.areaId ?? ""} onChange={selectArea} />
           <div className="hex-search-area-detail">
             {area && <section className="hex-search-step hex-search-area-intro">
               <div className="hex-search-area-title">
@@ -354,45 +287,54 @@ export function PlayerHexSearchDialog({
             {!operation && displayedResult && <section className="hex-search-step">
               <h3><CheckCircle2 size={18} /> Última busca nesta área</h3>
               <p className="text-sm"><b>{displayedDepth === "deep" ? "Busca profunda" : displayedRoll ? `Busca geral · d12 = ${displayedRoll}` : "Busca específica"}</b> · {displayedResult || "Nenhum achado útil."}</p>
+              {stockUnits > 0 && <Button size="sm" variant="outline" onClick={() => setTab("finds")}>Ver achados</Button>}
               {displayedAttention && <p className="team-notice mt-2">{displayedAttention}</p>}
             </section>}
 
             {area && !operation && ["searched", "exhausted"].includes(area.state) && <section className="hex-search-step">
               <h3><CheckCircle2 size={18} /> Área já vasculhada</h3>
-              <p className="text-sm subtle">Não há outra busca disponível aqui. Achados que ficaram para trás continuam na etapa de coleta.</p>
+              <p className="text-sm subtle">Não há outra busca disponível aqui. Achados que ficaram para trás continuam na aba Achados.</p>
             </section>}
 
             {area?.state === "narrative" && <section className="hex-search-narrative-note">
               <Circle size={17} /><span><b>Exploração narrativa</b><small>Use este espaço para pistas, obstáculos e elementos visíveis. Ele não cria uma rolagem extra de saque.</small></span>
             </section>}
           </div>
-        </div>
+        </div>}
 
-        <section className="hex-search-step hex-search-collection">
-          <div className="hex-search-collection-heading">
-            <div><p className="dossier-title">ETAPA 3</p><h3>Recolher achados</h3><p className="text-sm subtle">Recolher não exige uma nova busca. Sua capacidade é validada antes de mover o item.</p></div>
-            <span className="tag">{stockUnits} item(ns)</span>
-          </div>
-          {stock.length ? <>
-            <Field label="Quantidade a recolher" type="number" value={quantity} onChange={setQuantity} />
-            {deployedCarts.length > 0 && <Pick label="Destino da coleta" value={cartId || "personal"}
-              options={[{ value: "personal", label: "Meu inventário" }, ...deployedCarts.map(cart => ({ value: cart.id, label: "Meu carrinho aberto" }))]}
-              onChange={value => setCartId(value === "personal" ? "" : value)} />}
-            <div className="hex-search-stock-list">
-              {stock.map(row => <div key={row.stockId} className={`hex-search-stock-row ${row.accessible ? "" : "is-locked"}`}>
-                <span><b>{row.name}</b><small>{row.source === "apparent" ? "À vista" : "Encontrado na busca"} · {areas.find(candidate => candidate.areaId === row.areaId)?.name ?? "Área"}{row.condition && row.condition !== "Íntegro" ? ` · ${row.condition}` : ""}{row.requiresFuelContainer ? " · exige galão vazio" : ""}</small></span>
-                <strong>{row.remaining}</strong>
-                <Button size="sm" disabled={!row.accessible || !validCount || count > row.remaining}
-                  onClick={() => void perform({
+        {tab === "finds" && <section className="search-session-finds">
+          <div className="search-session-finds-heading"><div><h3>Recolher achados</h3><p>Escolha quanto levar. O restante continua no local.</p></div></div>
+          {actor && <div className="search-session-capacities"><SearchCapacity person={actor} /></div>}
+          {deployedCarts.length > 0 && <Pick label="Destino da coleta" value={cartId || "personal"}
+            options={[{ value: "personal", label: "Meu inventário" }, ...deployedCarts.map(cart => ({ value: cart.id, label: "Meu carrinho aberto" }))]}
+            onChange={value => setCartId(value === "personal" ? "" : value)} />}
+          {stock.length ? <div className="search-session-stock-list">
+            {stock.map(row => {
+              const quantity = quantities[row.stockId] ?? "1", count = Number(quantity);
+              const valid = Number.isInteger(count) && count > 0 && count <= Math.min(99, row.remaining);
+              const destination = !row.requiresFuelContainer ? cartId : "";
+              const preview = valid && row.accessible ? previewSearchCollection(game, row.hexId, row.pointId, [{ stockId: row.stockId, ownerId: controls.actorId, quantity: count, ...(destination ? { cartId: destination } : {}) }], stock) : undefined;
+              const next = preview?.state?.survivors.find(person => person.id === controls.actorId);
+              const stats = next ? survivorStats(next) : undefined;
+              return <SearchStockRow key={row.stockId} name={row.name} category={row.item?.category} source={row.source}
+                room={areas.find(candidate => candidate.areaId === row.areaId)?.name ?? "Área"} remaining={row.remaining} condition={row.condition}
+                battery={row.item?.battery} fuel={row.requiresFuelContainer} locked={!row.accessible}>
+                <div className="search-session-pickup">
+                  <label>Quantidade<input aria-label={`Quantidade de ${row.name}`} type="number" inputMode="numeric" min={1} max={Math.min(99, row.remaining)} value={quantity} onChange={event => setQuantities(current => ({ ...current, [row.stockId]: event.target.value }))} /></label>
+                  <Button size="sm" disabled={!row.accessible || !valid || Boolean(preview?.error)} onClick={() => void perform({
                     type: "collect", hexId: row.hexId, pointId: row.pointId, stockId: row.stockId, quantity: count,
-                    ...(!row.requiresFuelContainer && cartId ? { cartId } : {}),
-                  }, !row.requiresFuelContainer && cartId ? "Item recolhido para seu carrinho." : "Item recolhido para seu inventário.")}>Recolher</Button>
-              </div>)}
-            </div>
-          </> : <p className="team-empty">Nenhum achado aguardando coleta neste local.</p>}
-        </section>
+                    ...(destination ? { cartId: destination } : {}),
+                  }, `Coleta concluída: ${count} × ${row.name} para ${destination ? "seu carrinho" : "seu inventário"}.`)}>Recolher</Button>
+                </div>
+                {preview?.error ? <small className="search-session-validation" role="status">{preview.error}</small>
+                  : stats && <small className="search-session-preview">Após coleta: {destination && stats.cart ? `carrinho ${stats.cart.carried}/${stats.cart.capacity}` : `inventário ${stats.carried}/${stats.capacity}`}</small>}
+              </SearchStockRow>;
+            })}
+          </div> : <p className="team-empty">Nenhum achado aguardando coleta neste local. Explore um cômodo para continuar.</p>}
+        </section>}
       </>}
       </fieldset>
+      </div>
 
       <DialogFooter>
         <Button variant="outline" onClick={onClose}>Fechar</Button>

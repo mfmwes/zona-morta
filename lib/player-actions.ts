@@ -122,6 +122,7 @@ export function projectPlayerActions(game: GameState, actorId: string): PublicPl
           accessible: area.access !== "blocked" && stock.accessible !== false,
           source: stock.attemptId ? "search" : "apparent",
           condition: stock.item.condition,
+          item: structuredClone(stock.item),
           requiresFuelContainer: Boolean(stock.requiresFuelContainer),
         });
       }
@@ -372,7 +373,14 @@ export function applyPlayerAction(game: GameState, actorId: string, input: unkno
     if (op?.status === "done") attentionAfter(draft, op, beforeEvents);
   }
   draft.playerActions!.receipts.push({ id: cmd.id, day: game.day, actorId, fingerprint });
-  if (cmd.type !== "prepare-search")
+  const searchOperation = "operationId" in cmd ? draft.playerActions!.operations.find(op => op.id === cmd.operationId && op.type === "search") : undefined;
+  if (cmd.type === "search" || cmd.type === "deep-search") {
+    const point = draft.hexes[cmd.hexId]?.points.find(row => row.id === cmd.pointId);
+    const area = point?.preparation?.areas.find(row => row.id === cmd.areaId);
+    const focus = draft.playerActions!.operations.find(op => op.id === cmd.id)?.objectiveLabel
+      ?? (area ? quickSearchOptions(area).find(option => option.id === cmd.objective)?.label : undefined) ?? cmd.objective;
+    addLog(draft, "equipe", `${draft.survivors.find(p => p.id === actorId)!.name} propôs ${cmd.type === "deep-search" ? `busca profunda de ${focus}` : cmd.objective === "open" ? "busca geral" : `busca específica de ${focus}`} em ${point?.name} / ${area?.name} (Hex ${cmd.hexId}). Finalidade: ${cmd.purpose}.`, actorId);
+  } else if (cmd.type !== "prepare-search" && cmd.type !== "collect" && !((cmd.type === "execute" || cmd.type === "roll-access") && searchOperation?.status === "done"))
     addLog(draft, "equipe", `${draft.survivors.find(p => p.id === actorId)!.name}: ${cmd.type === "roll-access" ? "acesso à busca resolvido" : cmd.type === "execute" ? "operação concluída" : cmd.type === "join" ? "participação confirmada" : cmd.type === "leave" ? "participação cancelada" : "ação da equipe registrada"}.`, actorId);
   return { ok: true, state: draft, replay: false };
 }
