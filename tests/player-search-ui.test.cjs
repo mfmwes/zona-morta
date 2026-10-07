@@ -198,7 +198,7 @@ test('quantidade inválida e acesso bloqueado desativam coleta; reabertura orien
 });
 
 test('resultado permanece no cômodo escolhido e início salvo pode ser reenviado após desaparecer da tela', async () => {
-  const f = fixture(), area = f.state().hexes['0,0'].points[0].preparation.areas.find(row => row.searchable !== false && row.id !== f.areaId);
+  const f = fixture();const peer=structuredClone(f.state().survivors[0]);peer.id='other-group';peer.hex='1,0';f.state().survivors.push(peer);const area = f.state().hexes['0,0'].points[0].preparation.areas.find(row => row.searchable !== false && row.id !== f.areaId);
   assert.ok(area);
   const entry = elements(f.render()).find(({ node }) => node.type === 'button' && node.props['aria-pressed'] === false && textOf(node).startsWith(area.name));
   entry.node.props.onClick();await f.flush();

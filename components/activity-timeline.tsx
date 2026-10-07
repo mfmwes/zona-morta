@@ -8,7 +8,7 @@ import { createId } from "@/lib/id";
 import type { MasterActionControls } from "@/components/player-actions-panel";
 import { cancelActivity, runningActivities } from "@/lib/activity-timeline";
 import { advanceToNextActivity, nextActivityMinute } from "@/lib/time";
-import { displayTime, type GameState } from "@/lib/game";
+import { displayTime, hasMultipleSurvivorGroups, type GameState } from "@/lib/game";
 
 export function ActivityTimeline({ game, edit, canAct = true, controls }: { controls?: MasterActionControls; game: GameState; edit?: (fn: (draft: GameState) => void) => void; canAct?: boolean }) {
   const [busy, setBusy] = useState(false);
@@ -20,7 +20,10 @@ export function ActivityTimeline({ game, edit, canAct = true, controls }: { cont
     ...(project.volunteerShifts ?? []).map(shift => ({ id: `${project.id}-${shift.survivorId}`, label: `${game.survivors.find(p => p.id === shift.survivorId)?.name ?? "Sobrevivente"} · ${project.name}`, end: shift.endAbsoluteMinute - (game.day - 1) * 1440 })),
   ]).filter(row => row.end >= game.minutes);
   const next = master ? nextActivityMinute(game) : null;
-  if (!activities.length && !work.length) return null;
+  const parallel = hasMultipleSurvivorGroups(game);
+  // Mantém acesso às atividades da versão anterior ou que aguardam uma consequência.
+  const needsCompletion = master && runningActivities(game).some(a => a.type !== "search" || a.issue);
+  if ((!parallel && !needsCompletion) || (!activities.length && !work.length)) return null;
   const peers = game.publicPlayerActions?.peers ?? game.survivors;
   async function advance() {
     if (busy) return;

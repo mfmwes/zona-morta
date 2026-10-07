@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Pick } from "@/components/game-controls";
-import { survivorHex, survivorsAtHex, type GameState } from "@/lib/game";
+import { survivorHex, survivorsAtHex, hasMultipleSurvivorGroups, type GameState } from "@/lib/game";
 import { shelterTravelMinutes } from "@/lib/shelter-projects";
 import { displayTime } from "@/lib/game";
 import { timedActionParticipantIssue } from "@/lib/activity";
@@ -43,6 +43,7 @@ export function SurvivorMoveDialog({
   const destinationMembers = survivorsAtHex(game, destination);
   const destinationName = game.hexes[destination]?.sector?.name ?? `Hex ${destination}`;
   const travelMinutes = shelterTravelMinutes(game, source?.hex ?? game.partyHex, destination, (game.hexes[destination]?.routeHours ?? 1) * 60);
+  const parallel = hasMultipleSurvivorGroups(game);
   const issue = timedActionParticipantIssue(game, selected);
 
   function changeSource(value: string) {
@@ -69,7 +70,7 @@ export function SurvivorMoveDialog({
       return;
     }
     toast.success("Deslocamento registrado", { description: outcome.value.message });
-    onMoved?.(source.hex);
+    onMoved?.(outcome.value.completed ? destination : source.hex);
     onOpenChange(false);
   }
 
@@ -122,14 +123,14 @@ export function SurvivorMoveDialog({
         {destinationMembers.length > 0 && <p className="character-rule-note">
           Já estão no destino: {destinationMembers.map(person => person.name).join(", ")}. Quem chegar ficará reunido com eles.
         </p>}
-        <p className="text-sm subtle">A viagem começa às {displayTime(game.minutes)}. O grupo permanece na origem até a chegada, quando o mestre avançar o relógio.</p>
+        <p className="text-sm subtle">{parallel ? `A viagem começa às ${displayTime(game.minutes)}. O grupo permanece na origem até a chegada, quando o mestre avançar o relógio.` : `A travessia move os sobreviventes e avança o relógio em ${travelMinutes} min.`}</p>
         {issue && <p className="character-rule-note">{issue}</p>}
       </>}
 
       <DialogFooter>
         <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-        <Button disabled={!source || selected.length === 0 || Boolean(issue) || game.minutes + travelMinutes >= 1440 || Boolean(game.conflict?.active)} onClick={confirm}>
-          <Footprints size={16} /> Iniciar viagem · {selected.length || ""} sobrevivente{selected.length === 1 ? "" : "s"}
+        <Button className="whitespace-nowrap" disabled={!source || selected.length === 0 || Boolean(issue) || game.minutes + travelMinutes >= 1440 || Boolean(game.conflict?.active)} onClick={confirm}>
+          <Footprints size={16} /> {parallel ? "Agendar viagem" : "Mover grupo"} · {selected.length || ""} sobrevivente{selected.length === 1 ? "" : "s"}
         </Button>
       </DialogFooter>
     </DialogContent>

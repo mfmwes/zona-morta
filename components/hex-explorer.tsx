@@ -1,4 +1,5 @@
 "use client";
+import { hasMultipleSurvivorGroups } from "@/lib/game";
 
 import { timedActionParticipantIssue } from "@/lib/activity";
 
@@ -158,7 +159,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
 
   function travel() {
     if (runHexAction(selected, { type: "travel" })) {
-      setFocusHex(activeSourceHex);
+      setFocusHex(hasMultipleSurvivorGroups(game) ? activeSourceHex : selected);
     }
   }
 

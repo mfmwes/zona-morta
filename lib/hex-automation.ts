@@ -6,7 +6,7 @@ import { expirePhysicalFood } from "./provisions";
 import { normalizedSector, searchAreaLabel, searchAvailabilityError } from "./exploration";
 import { registerActivityHandler } from "./activity-handlers";
 import { scheduleActivity, runningActivities } from "./activity-timeline";
-import { advanceParticipantTime } from "./time";
+import { advanceParticipantTime, completeSingleGroupActivity } from "./time";
 import { abilityAvailable, recordAbilityUse } from "./abilities";
 import { eventTriggerReady, generateHexContent, suggestedLootTable } from "./hex-generators";
 import { equipmentModifiers } from "./equipment";
@@ -872,21 +872,18 @@ export function expireLocationFood(game: GameState) {
 }
 
 export function resolvePreparedSearch(game: GameState, input: StartSearch, _die = rollDie): string | null {
-  void _die;
   const draft = structuredClone(game);
-  const error = schedulePreparedSearch(draft, input);
+  const error = schedulePreparedSearch(draft, input, false, _die);
   if (error) return error;
   const attempt = pointAt(draft, input.hexId, input.pointId)!.preparation!.attempts.find(row => row.id === input.id)!;
-  if (["completed", "failed"].includes(attempt.status)) return null;
+  if (["completed", "failed"].includes(attempt.status)) { Object.assign(game, draft); return null; }
   if (attempt.status === "pending") { Object.assign(game, draft); return null; }
-  // O sorteio de achados ocorre na conclusão, sem liberar informações antecipadas.
-  // O resultado é aplicado pelo relógio apenas no fim do intervalo.
+  // Equipes separadas aguardam a conclusão; uma equipe única já foi resolvida.
   Object.assign(game, draft);
   return null;
 }
 
 export function finishPreparedSearch(game: GameState, hexId: string, pointId: string, attemptId: string, _die = rollDie): string | null {
-  void _die;
   const draft = structuredClone(game);
   const attempt = pointAt(draft, hexId, pointId)?.preparation?.attempts.find(row => row.id === attemptId);
   if (!attempt) return "Busca não encontrada.";
@@ -898,12 +895,12 @@ export function finishPreparedSearch(game: GameState, hexId: string, pointId: st
       `Busca em ${pointAt(draft, hexId, pointId)!.name}`, { id: attemptId, operationId: attemptId });
     if (!scheduled.ok) return scheduled.message;
   }
-  // A confirmação apenas registra prontidão; o relógio determina a conclusão.
+  completeSingleGroupActivity(draft, attemptId, _die);
   Object.assign(game, draft);
   return null;
 }
 
-export function schedulePreparedSearch(game: GameState, input: StartSearch | StartDeepSearch, deep = false): string | null {
+export function schedulePreparedSearch(game: GameState, input: StartSearch | StartDeepSearch, deep = false, die = rollDie): string | null {
   const draft = structuredClone(game);
   const error = deep ? startDeepSearch(draft, input as StartDeepSearch) : startSearch(draft, input as StartSearch);
   if (error) return error;
@@ -913,6 +910,7 @@ export function schedulePreparedSearch(game: GameState, input: StartSearch | Sta
   const scheduled = scheduleActivity(draft, { type: "search", pointId: input.pointId, attemptId: input.id }, input.participants,
     attempt.minutes, `${deep ? "Busca profunda" : "Busca"} em ${point.name}`, { id: input.id, operationId: input.id });
   if (!scheduled.ok) return scheduled.message;
+  if (attempt.status === "ready") completeSingleGroupActivity(draft, scheduled.activity.id, die);
   Object.assign(game, draft);
   return null;
 }

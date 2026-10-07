@@ -6,7 +6,7 @@ import { localizeRulesText } from "./terminology";
 import { endConflictScene } from "./conflict";
 import { registerActivityHandler } from "./activity-handlers";
 import { scheduleActivity } from "./activity-timeline";
-import { advanceParticipantTime } from "./time";
+import { advanceParticipantTime, completeSingleGroupActivity } from "./time";
 import { participantTimePreview, timedActionParticipantIssue } from "./activity";
 
 export type AbilityCost = "free" | "hope1" | "hope3" | "stress1" | "armor1";
@@ -242,14 +242,16 @@ export function resolvePlannedOvernightRest(game: GameState, roll = rollDie) {
   return resolveGroupRest(game, "long", selections, roll, { advanceTime: false, ignoreCommitments: true });
 }
 
-/** Valida agora, mas recuperações, Medo e limites só mudam na conclusão. */
-export function scheduleGroupRest(game: GameState, kind: RestKind, selections: RestSelection[], operationId?: string) {
+/** Equipes separadas aguardam o relógio; equipe única conclui na confirmação. */
+export function scheduleGroupRest(game: GameState, kind: RestKind, selections: RestSelection[], operationId?: string, die = rollDie) {
   const ids = selections.map(s => s.survivorId);
   const validation = resolveGroupRest(structuredClone(game), kind, selections, () => 1,
     { advanceTime: false, participantIds: ids });
   if (!validation.ok) return validation;
-  return scheduleActivity(game, { type: "rest", kind, selections: structuredClone(selections) }, ids,
+  const result = scheduleActivity(game, { type: "rest", kind, selections: structuredClone(selections) }, ids,
     restDurationMinutes[kind], `Descanso ${kind === "short" ? "curto" : "longo"}`, { operationId });
+  if (!result.ok) return result;
+  return { ...result, completed: completeSingleGroupActivity(game, result.activity.id, die) };
 }
 
 registerActivityHandler("rest", (game, activity, die) => {

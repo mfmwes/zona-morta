@@ -10,7 +10,7 @@ import {
 } from "./game";
 import { revealSector } from "./sectors";
 import { adjacentHexes, parseHex } from "./world";
-import { advanceCampaignTime, advanceParticipantTime } from "./time";
+import { advanceCampaignTime, advanceParticipantTime, completeSingleGroupActivity } from "./time";
 import { shelterTravelMinutes } from "./shelter-projects";
 import { parallelTimeLabel, participantTimePreview, survivorTimedCommitment } from "./activity";
 import { registerActivityHandler } from "./activity-handlers";
@@ -198,7 +198,7 @@ export function performHexAction(game: GameState, id: string, action: HexQuickAc
   return { ok: false, message: "" };
 }
 
-/** Declara a viagem; posições e revelações só mudam na chegada. */
+/** Agenda para equipes separadas; uma única equipe viaja com avanço direto. */
 export function scheduleSurvivorTravel(game: GameState, destination: string, ids: string[], operationId?: string) {
   const destinationHex = game.hexes[destination];
   const sources = movementSources(game, destination);
@@ -208,7 +208,9 @@ export function scheduleSurvivorTravel(game: GameState, destination: string, ids
   const minutes = shelterTravelMinutes(game, source.hex, destination, destinationHex.routeHours * 60);
   const result = scheduleActivity(game, { type: "travel", destination }, ids, minutes,
     `Viagem para ${destinationHex.sector?.name ?? `Hex ${destination}`}`, { operationId });
-  return result.ok ? { ok: true, message: `Viagem iniciada · chegada às ${String(Math.floor(result.activity.endMinute / 60)).padStart(2, "0")}:${String(result.activity.endMinute % 60).padStart(2, "0")}.`, destination, sourceHex: source.hex, survivorIds: ids } : result;
+  if (!result.ok) return result;
+  const completed = completeSingleGroupActivity(game, result.activity.id);
+  return { ok: true, completed, message: completed ? `Viagem concluída · chegada às ${String(Math.floor(game.minutes / 60)).padStart(2, "0")}:${String(game.minutes % 60).padStart(2, "0")}.` : `Viagem iniciada · chegada às ${String(Math.floor(result.activity.endMinute / 60)).padStart(2, "0")}:${String(result.activity.endMinute % 60).padStart(2, "0")}.`, destination, sourceHex: source.hex, survivorIds: ids };
 }
 
 registerActivityHandler("travel", (game, activity) => {

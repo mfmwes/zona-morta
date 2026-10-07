@@ -25,6 +25,7 @@ function fixture() {
     const person = initialSurvivor({ name, origin: content.origins[1].name, past: '', archetype: archetype.name, specialty: archetype.specialties[0].name, freeExperience: 'Resgates', techniques: [], attributes: { Agilidade: 2, Força: 1, Finesse: 1, Instinto: 0, Presença: 0, Conhecimento: -1 }, primary: '', secondary: '', protection: '', personal: '' });
     person.hex = '0,0'; person.hope = 3; person.hp = 2; return person;
   });
+  game.survivors[2].hex = '1,0';
   assignCustomSector(game, '0,0', 'Mercado', 'explorado');
   assignCustomSector(game, '1,0', 'Garagens', 'avistado');
   game.hexes['1,0'].routeHours = 1; game.hexes['0,0'].events = [];
@@ -181,9 +182,9 @@ test('jogador inicia viagem sem mover a posição; mestre conclui e publica a ch
 test('turnos do abrigo usam o mesmo próximo horário das atividades de campo', () => {
   const f = fixture(); establishShelter(f.game, '0,0'); f.game.shelter.parts = 10;
   const project = work.createShelterProject('barricades'); f.game.shelter.projects.push(project);
-  assert.equal(work.joinShelterProjectAsSurvivor(f.game, project, f.ids[2]), null);
+  assert.equal(work.joinShelterProjectAsSurvivor(f.game, project, f.ids[0]), null);
   assert.equal(work.startProject(f.game.shelter, project), null);
-  assert.equal(work.scheduleSurvivorWorkShift(f.game, project, f.ids[2], 1).ok, true);
+  assert.equal(work.scheduleSurvivorWorkShift(f.game, project, f.ids[0], 1).ok, true);
   assert.equal(search(f), null); advanceToNextActivity(f.game, () => 1);
   assert.equal(f.game.minutes, 570); assert.equal(project.volunteerShifts.length, 1);
   advanceToNextActivity(f.game, () => 1); assert.equal(f.game.minutes, 600);
@@ -228,7 +229,7 @@ test('busca com acesso pendente permanece executável após mudar de cena', () =
 });
 
 test('chegada sinaliza acontecimento sem pular o restante da linha do tempo', () => {
-  const f=fixture();f.game.playerActions=playerActionState(f.game);
+  const f=fixture();f.game.survivors[2].hex='-1,0';f.game.playerActions=playerActionState(f.game);
   f.game.hexes['1,0'].events=[{id:'arrival-event',text:'Um encontro',triggerType:'enter',status:'pending'}];
   assert.equal(scheduleSurvivorTravel(f.game,'1,0',[f.ids[0]]).ok,true);
   advanceToNextActivity(f.game,()=>1);assert.equal(f.game.minutes,600);assert.equal(f.game.playerActions.policy.paused,true);
@@ -238,4 +239,44 @@ test('salto manual para a noite para exatamente no gatilho pendente das 18h', ()
   const f=fixture();f.game.playerActions=playerActionState(f.game);f.game.minutes=1020;
   f.game.hexes['0,0'].events=[{id:'night-event',text:'Sinais noturnos',triggerType:'night',status:'pending'}];
   const result=setCampaignTime(f.game,1140);assert.match(result.issue,/Anoiteceu/);assert.equal(f.game.minutes,1080);assert.equal(f.game.playerActions.policy.paused,true);
+});
+
+function singleGroup() { const f=fixture();f.game.survivors.forEach(p=>{p.hex='0,0';});for(const hex of Object.values(f.game.hexes))hex.events=[];return f; }
+
+test('grupo único viaja e cobra tempo sem exigir avanço separado do mestre',()=>{
+ const f=singleGroup();const result=scheduleSurvivorTravel(f.game,'1,0',f.ids);
+ assert.equal(result.ok,true);assert.equal(result.completed,true);assert.equal(f.game.minutes,600);
+ assert.equal(f.game.survivors.every(p=>survivorHex(f.game,p)==='1,0'),true);assert.equal(runningActivities(f.game).length,0);
+});
+test('grupo único conclui busca livre, libera achados e cobra tempo na confirmação',()=>{
+ const f=singleGroup();assert.equal(search(f),null);assert.equal(f.game.minutes,570);
+ assert.equal(f.game.hexes['0,0'].points[0].preparation.stock.length,1);assert.equal(runningActivities(f.game).length,0);
+});
+test('acesso de grupo único aguarda teste e conclui na própria busca sem agendamento visível',()=>{
+ const f=singleGroup();f.area.access='risk';assert.equal(search(f),null);assert.equal(f.game.minutes,540);
+ assert.equal(rollSearchAccess(f.game,'0,0','market','search-b',{actorId:f.ids[1],trait:'Agilidade',edge:'none',experiences:[],other:0},()=>12),null);
+ assert.equal(finishPreparedSearch(f.game,'0,0','market','search-b',()=>1),null);
+ assert.equal(f.game.minutes,570);assert.equal(runningActivities(f.game).length,0);assert.equal(f.game.hexes['0,0'].points[0].preparation.stock.length,1);
+});
+test('descanso de grupo único conclui após a última confirmação e recupera somente convidados',()=>{
+ const f=singleGroup();assert.equal(requestTableRest(f.game,'short',f.ids[0],[f.ids[0],f.ids[1]]),null);
+ const op=currentTableRest(f.game,f.ids[0]);assert.equal(confirmTableRest(f.game,f.ids[0],op.id,plans([f.ids[0]])[0].choices,()=>1),null);
+ assert.equal(f.game.minutes,540);assert.equal(confirmTableRest(f.game,f.ids[1],op.id,plans([f.ids[1]])[0].choices,()=>1),null);
+ assert.equal(f.game.minutes,600);assert.equal(f.game.survivors[0].hp,0);assert.equal(f.game.survivors[2].hp,2);
+ assert.equal(f.game.playerActions.operations[0].status,'done');assert.equal(runningActivities(f.game).length,0);
+});
+test('tratamento de grupo único cobra 30min e aplica a rolagem imediatamente',()=>{
+ const {scheduleExposureTreatment}=require('../lib/treatment.ts');const f=singleGroup();const p=f.game.survivors[0];
+ p.infection='Exposto';p.exposureDeadline=700;establishShelter(f.game,'0,0');f.game.shelter.medications=1;
+ const result=scheduleExposureTreatment(f.game,p.id,'shared',true,()=>12);assert.equal(result.ok,true);assert.equal(result.completed,true);
+ assert.equal(f.game.minutes,570);assert.equal(f.game.survivors[0].infection,'Saudável');assert.equal(runningActivities(f.game).length,0);
+});
+test('primeira separação usa avanço direto; equipes separadas usam paralelo; reunião retorna ao fluxo simples',()=>{
+ const {hasMultipleSurvivorGroups}=require('../lib/game.ts');const f=singleGroup();
+ assert.equal(hasMultipleSurvivorGroups(f.game),false);assert.equal(scheduleSurvivorTravel(f.game,'1,0',[f.ids[0]]).completed,true);
+ assert.equal(hasMultipleSurvivorGroups(f.game),true);assert.equal(f.game.minutes,600);
+ assert.equal(scheduleSurvivorTravel(f.game,'0,0',[f.ids[0]]).completed,false);assert.equal(f.game.minutes,600);
+ assert.equal(advanceToNextActivity(f.game,()=>1).ok,true);assert.equal(hasMultipleSurvivorGroups(f.game),false);
+ assert.equal(search(f),null);assert.equal(runningActivities(f.game).length,0);
+ assert.equal(hasMultipleSurvivorGroups(projectPlayerGame(f.game,f.ids[0])),false);
 });

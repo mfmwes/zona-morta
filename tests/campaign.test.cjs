@@ -1588,8 +1588,6 @@ test('ações contextuais de hex respeitam avistamento, viagem e relógio', () =
 
   result = hexActions.performHexAction(g, id, { type:'travel' });
   assert.equal(result.ok, true);
-  assert.equal(g.partyHex, '0,0');
-  assert.equal(campaignTime.advanceToNextActivity(g).ok, true);
   assert.equal(g.partyHex, id);
   assert.equal(g.hexes[id].discovery, 'explorado');
   assert.equal(g.minutes, before + hours * 60);

@@ -255,13 +255,15 @@ function executeCommand(game: GameState, actorId: string, cmd: PlayerCommand, di
     if (op.type === "travel") {
       if (cmd.type !== "execute" || !policy.routes.some(r => r.from === op.hexId && r.to === op.destination)) return "A rota deixou de estar liberada.";
       const result = scheduleSurvivorTravel(game, op.destination!, op.participantIds, op.id); if (!result.ok) return result.message || "Este deslocamento não está disponível.";
-      op.result = result.message; op.status = "scheduled";
+      const saved = game.playerActions!.operations.find(row => row.id === op.id)!;
+      saved.result = result.message; saved.status = result.completed ? "done" : "scheduled";
     } else if (op.type === "rest") {
       if (cmd.type !== "execute" || !policy.rest || op.invitedIds.some(id => !op.participantIds.includes(id)) || op.participantIds.length !== op.invitedIds.length) return "Todos os sobreviventes precisam confirmar suas duas ações.";
       if (game.survivors.filter(p => op.invitedIds.includes(p.id)).some(p => JSON.stringify(checkPlan(game, p.id, op.kind!)) !== JSON.stringify(op.plans?.[p.id]))) return "As escolhas mudaram: cancele e proponha o descanso novamente.";
-      const result = scheduleGroupRest(game, op.kind!, op.invitedIds.map(id => ({ survivorId: id, choices: op.plans![id] })), op.id);
+      const result = scheduleGroupRest(game, op.kind!, op.invitedIds.map(id => ({ survivorId: id, choices: op.plans![id] })), op.id, die);
       if (!result.ok) return result.message;
-      op.result = "Descanso iniciado. Benefícios serão aplicados na conclusão."; op.status = "scheduled";
+      const saved = game.playerActions!.operations.find(row => row.id === op.id)!;
+      saved.result = result.completed ? "Descanso concluído." : "Descanso iniciado. Benefícios serão aplicados na conclusão."; saved.status = result.completed ? "done" : "scheduled";
     } else if (op.type === "search") {
       const point = game.hexes[op.hexId]?.points.find(p => p.id === op.pointId);
       const area = point?.preparation?.areas.find(a => a.id === op.areaId);
@@ -287,7 +289,7 @@ function executeCommand(game: GameState, actorId: string, cmd: PlayerCommand, di
           mode: specific ? "specific" : "open", objective: specific ? (specificLabel || "Item específico") : "Vasculhar",
           purpose: op.purpose!, catalogKey: specific ? specificKey : undefined, quantity: 1,
           warehouseWorker: cmd.warehouseWorkerId,
-        });
+        }, false, die);
         if (error) return error;
         game.playerActions!.operations.find(saved => saved.id === op.id)!.status = "access";
         if (area.access === "risk") return null;
@@ -302,9 +304,7 @@ function executeCommand(game: GameState, actorId: string, cmd: PlayerCommand, di
       // A conclusão usa um clone internamente: recupere a operação do novo estado.
       const saved = game.playerActions!.operations.find(o => o.id === op.id)!;
       const attempt = game.hexes[op.hexId].points.find(p => p.id === op.pointId)!.preparation!.attempts.find(a => a.id === op.id)!;
-      saved.status = "scheduled"; saved.result = "Busca em andamento. Achados serão liberados na conclusão.";
-      if (attempt.status === "failed" && attempt.outcome?.success === false) saved.attention = "Falha no acesso: o mestre resolve a consequência narrativa. Nenhum achado foi sorteado.";
-      if (attempt.status === "completed" && attempt.outcome?.with === "Fear") saved.attention = "Rolagem com Medo: o mestre escolhe a complicação; os achados de um sucesso são preservados.";
+      saved.status = ["completed", "failed"].includes(attempt.status) ? "done" : "scheduled"; saved.result = saved.status === "done" ? attempt.result : "Busca em andamento. Achados serão liberados na conclusão.";
     } else return "Esta operação não pode ser executada.";
     return null;
   }
