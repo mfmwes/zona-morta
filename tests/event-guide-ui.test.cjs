@@ -69,12 +69,34 @@ test('guia envia desfecho revisado ao servidor, bloqueia repetição e não apli
  assert.deepEqual(f.game,before);assert.equal(f.edits(),0);assert.equal(f.find(n=>n.type==='button'&&text(n)==='Registrar desfecho').props.disabled,true);
  release();await pending;await new Promise(resolve=>setImmediate(resolve));assert.equal(f.closed(),1);
 });
-test('abordagem cuidadosa e recuo não sugerem penalidade automática; erro mantém o rascunho',async()=>{
+test('abordagem cuidadosa não penaliza automaticamente; recuo preserva tempo e erro mantém rascunho',async()=>{
  const f=fixture({canAct:true,pending:false,send:async()=>{throw new Error('O evento mudou');}});
  f.find(n=>n.props?.label==='Desfecho escolhido').props.onChange('failure');assert.equal(f.find(n=>n.props?.label==='Barulho').props.value,0);
  f.find(n=>n.type==='button'&&text(n).startsWith('Intervir / negociar')).props.onClick();
- f.find(n=>n.props?.label==='Desfecho escolhido').props.onChange('withdrawn');assert.equal(f.find(n=>n.props?.label==='Tempo (min)').props.value,0);
+ f.find(n=>n.props?.label==='Desfecho escolhido').props.onChange('withdrawn');assert.equal(f.find(n=>n.props?.label==='Tempo (min)').props.value,5);
  f.find(n=>n.type==='button'&&text(n)==='Registrar desfecho').props.onClick();await new Promise(resolve=>setImmediate(resolve));
  assert.match(text(f.find(n=>n.props?.role==='alert')),/O evento mudou/);assert.equal(f.closed(),0);
  f.event.status='resolved';assert.equal(f.find(n=>n.type==='button'&&text(n)==='Registrar desfecho'),undefined);
+});
+
+
+test('trocar abordagem atualiza somente sugestões e preserva relato e efeitos editados',()=>{
+ const f=fixture({canAct:true,pending:false,send:async()=>{}});
+ f.event.generatorRoll=63;f.event.text=content.generators.eventos[62].text;
+ assert.match(f.find(n=>n.props?.label==='O que aconteceu').props.value,/reparo continuam por resolver/);
+ f.find(n=>n.type==='button'&&text(n).startsWith('Intervir / negociar')).props.onClick();
+ assert.match(f.find(n=>n.props?.label==='O que aconteceu').props.value,/perda é contida/);
+ f.find(n=>n.props?.label==='O que aconteceu').props.onChange('O grupo só identificou a válvula');
+ f.find(n=>n.props?.label==='O que permanece para próximas visitas').props.onChange('Falta uma ferramenta');
+ f.find(n=>n.props?.label==='Tempo (min)').props.onChange(7);f.find(n=>n.props?.label==='Barulho').props.onChange(2);
+ f.find(n=>n.props?.label==='Desfecho escolhido').props.onChange('withdrawn');
+ f.find(n=>n.type==='button'&&text(n).startsWith('Observar / preparar')).props.onClick();
+ assert.equal(f.find(n=>n.props?.label==='O que aconteceu').props.value,'O grupo só identificou a válvula');assert.equal(f.find(n=>n.props?.label==='O que permanece para próximas visitas').props.value,'Falta uma ferramenta');assert.equal(f.find(n=>n.props?.label==='Tempo (min)').props.value,7);assert.equal(f.find(n=>n.props?.label==='Barulho').props.value,2);
+ f.find(n=>n.type==='button'&&text(n)==='Usar sugestão do desfecho').props.onClick();assert.notEqual(f.find(n=>n.props?.label==='O que aconteceu').props.value,'O grupo só identificou a válvula');assert.equal(f.find(n=>n.props?.label==='Tempo (min)').props.value,7);
+});
+test('reconhecer desvio tem custo local e mostra condição do teste sem realizar deslocamento',()=>{
+ const f=fixture({canAct:true,pending:false,send:async()=>{}}),before=structuredClone(f.game);
+ f.find(n=>n.type==='button'&&text(n).startsWith('Outra saída / recuar')).props.onClick();
+ assert.equal(f.find(n=>n.props?.label==='Tempo (min)').props.value,10);assert.match(text(f.find(n=>n.type==='p'&&text(n).includes('custo do mapa'))),/custo do mapa/);assert.deepEqual(f.game,before);
+ f.find(n=>n.type==='button'&&text(n).startsWith('Intervir / negociar')).props.onClick();assert.ok(f.find(n=>n.type==='details'&&text(n).includes('Quando propor um teste')));assert.match(text(f.find(n=>n.type==='details'&&text(n).includes('Quando propor um teste'))),/forçar a grade travada/);
 });

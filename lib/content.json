@@ -2513,7 +2513,7 @@
       },
       {
         "roll": 12,
-        "text": "Calendário alterado. Data atual circulada marca encontro ou prazo desconhecido."
+        "text": "Calendário alterado. Um aviso marca coleta de remédios em quinze minutos; o endereço está legível, mas o estoque não foi confirmado."
       },
       {
         "roll": 13,
@@ -2557,7 +2557,7 @@
       },
       {
         "roll": 23,
-        "text": "Moradora com pressa. Pergunta pelas horas antes de explicar o motivo."
+        "text": "Moradora com pressa. Precisa alcançar uma vizinha com mobilidade reduzida antes de a chuva cortar a passagem baixa; pede orientação ou companhia."
       },
       {
         "roll": 24,
@@ -2565,7 +2565,7 @@
       },
       {
         "roll": 25,
-        "text": "Vigia nervoso. Avisa sobre um acesso e pede distância; como respondem?"
+        "text": "Vigia nervoso. Protege uma passagem silenciosa usada por moradores; abrir o portão ajuda uma evacuação, mas expõe esse acesso."
       },
       {
         "roll": 26,
@@ -2573,7 +2573,7 @@
       },
       {
         "roll": 27,
-        "text": "Vendedor de trocas. Oferece informação por serviço, sem estoque definido."
+        "text": "Vendedor de trocas. Mostra um registro de abastecimento e pede que um recado seja entregue antes de ceder uma cópia."
       },
       {
         "roll": 28,
@@ -2597,7 +2597,7 @@
       },
       {
         "roll": 33,
-        "text": "Vizinho em conflito. Dois relatos sobre a mesma passagem se contradizem."
+        "text": "Vizinho em conflito. Uma passagem poupa tempo, mas atravessa o espaço de uma família; dois moradores discordam sobre quem pode autorizar o uso."
       },
       {
         "roll": 34,
@@ -2617,7 +2617,7 @@
       },
       {
         "roll": 38,
-        "text": "Mensageira de bicicleta. Mostra endereço e pede rota mais segura."
+        "text": "Mensageira de bicicleta. Leva um pedido de ajuda com endereço de um abrigo; quer uma rota segura sem expor esse endereço a terceiros."
       },
       {
         "roll": 39,
@@ -2641,7 +2641,7 @@
       },
       {
         "roll": 44,
-        "text": "Poça recente. Rastro revela vazamento de cima; água não é própria ainda."
+        "text": "Poça recente. Água escorre por uma marca de tinta igual à de um depósito próximo; o rastro segue até uma porta lateral."
       },
       {
         "roll": 45,
@@ -2649,7 +2649,7 @@
       },
       {
         "roll": 46,
-        "text": "Goteira de teto. Água pinga perto de documentos ou aparelho; o que salvam?"
+        "text": "Goteira de teto. A água alcança um rádio de contato e um livro de registros; o primeiro alcance permite retirar apenas um deles."
       },
       {
         "roll": 47,
@@ -2693,7 +2693,7 @@
       },
       {
         "roll": 57,
-        "text": "Lona solta. Esconde algo imóvel; vento dá pista antes da aproximação."
+        "text": "Lona solta. O vento revela um carrinho de reparos com nome e ponto de devolução; a lona está prestes a rasgar."
       },
       {
         "roll": 58,
@@ -2717,7 +2717,7 @@
       },
       {
         "roll": 63,
-        "text": "Tanque pingando. Há líquido identificável; conter a perda exige ação."
+        "text": "Tanque pingando. Um rótulo identifica o conteúdo e uma bandeja contém parte da perda; conter o vazamento exige ferramenta compatível."
       },
       {
         "roll": 64,
@@ -2725,11 +2725,11 @@
       },
       {
         "roll": 65,
-        "text": "Cadeira diante da janela. Alguém observou a rua há pouco; investigam o posto?"
+        "text": "Cadeira diante da janela. Um caderno marca os horários de passagem na rua; a cadeira ainda tem sinais recentes de uso."
       },
       {
         "roll": 66,
-        "text": "Saco rasgado. Pegadas e trilha de grãos mostram para onde foi levado."
+        "text": "Saco rasgado. Grãos formam uma trilha junto de um aviso de distribuição; a marca do saco pode ligar a carga a quem aguardava alimento."
       },
       {
         "roll": 67,
@@ -2741,11 +2741,11 @@
       },
       {
         "roll": 69,
-        "text": "Caixa lacrada. Etiqueta indica uso, sem garantir conteúdo intacto."
+        "text": "Caixa lacrada. A etiqueta diz reparo de bomba e traz o nome de um responsável; alguém marcou recolher hoje."
       },
       {
         "roll": 70,
-        "text": "Chuva captada. Recipiente encheu; qualidade da água ainda importa."
+        "text": "Chuva captada. Um recipiente tem marcas de partilha e dois nomes; água recente se mistura a uma sobra cuja condição é desconhecida."
       },
       {
         "roll": 71,
@@ -2757,7 +2757,7 @@
       },
       {
         "roll": 73,
-        "text": "Ferrolho novo. Alguém reforçou acesso; procurar dono ou outra entrada?"
+        "text": "Ferrolho novo. Um aviso pede silêncio: moradores reforçaram a porta enquanto aguardam alguém de fora."
       },
       {
         "roll": 74,
@@ -2769,7 +2769,7 @@
       },
       {
         "roll": 76,
-        "text": "Reservatório vazando. Reparar pode salvar água já existente no lugar."
+        "text": "Reservatório vazando. A água abastece um ponto de cuidados e moradores próximos; um reparo provisório exige material que alguém também precisa."
       },
       {
         "roll": 77,
@@ -2777,7 +2777,7 @@
       },
       {
         "roll": 78,
-        "text": "Pequena troca possível. Uma pessoa mostra o que procura, sem preço definido."
+        "text": "Pequena troca possível. Uma pessoa oferece um item visível e pede ajuda para levar uma carga até um ponto próximo."
       },
       {
         "roll": 79,
@@ -2785,7 +2785,7 @@
       },
       {
         "roll": 80,
-        "text": "Rota liberada. Entulho removido por alguém revela passagem e marcas."
+        "text": "Rota liberada. Uma barreira foi removida para a passagem de moradores; um aviso pede que seja fechada após o último grupo."
       },
       {
         "roll": 81,
@@ -2829,7 +2829,7 @@
       },
       {
         "roll": 91,
-        "text": "Estilhaços no chão. Quem correr aqui fará ruído; por onde desviam?"
+        "text": "Vidro de dentro para fora. Os fragmentos e uma marca recente indicam que alguém saiu pela janela; um objeto ficou preso na esquadria."
       },
       {
         "roll": 92,
@@ -2861,7 +2861,7 @@
       },
       {
         "roll": 99,
-        "text": "Saída quase fechada. Uma mão empurra do outro lado; anuncie tempo para agir."
+        "text": "Saída quase fechada. Uma mão empurra do outro lado; a voz pede pressa antes de fechar a barreira. O intervalo para reagir é perceptível."
       },
       {
         "roll": 100,

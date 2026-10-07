@@ -106,3 +106,10 @@ test('eventos pendentes e orientação reservada não vazam para jogadores', () 
   assert.equal(active.guidance, '');
   assert.equal(active.trigger, '');
 });
+
+
+test('pista de saída recente tem categoria e gatilho de informação, sem virar ameaça por número',()=>{
+ const g=defaultState(),random=rng(123);let result;
+ for(let i=0;i<2000;i++){const row=generators.generateHexContent(g,'0,0','eventos',random);if(row.roll===91){result=row;break;}}
+ assert.ok(result);assert.equal(result.category,'pista');assert.equal(result.suggestedTriggerType,'manual');assert.match(result.publicText,/Vidro de dentro para fora/);
+});
