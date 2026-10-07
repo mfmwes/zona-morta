@@ -1,0 +1,94 @@
+/* Compact master sector: session content first, management available in its own tab. */
+.hex-sector-dialog[data-slot="dialog-content"] {
+  width: min(1120px, calc(100vw - 40px));
+  max-width: none;
+  max-height: 88dvh;
+  overflow-y: auto;
+  padding: 0;
+  gap: 0;
+  background: var(--card);
+}
+.hex-sector-dialog > .hex-sector-compact {
+  border: 0;
+  box-shadow: none;
+}
+.hex-sector-compact.panel-pad { padding: 16px 18px; }
+.hex-sector-compact .hex-sector-header { padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.hex-sector-compact .hex-sector-heading,
+.hex-sector-compact .hex-sector-heading-title,
+.hex-sector-compact .hex-sector-tags,
+.hex-sector-compact .hex-sector-context,
+.hex-sector-compact .hex-sector-actions,
+.hex-sector-compact .hex-sector-locations-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; min-width: 0; }
+.hex-sector-compact .hex-sector-heading-title h2 { overflow-wrap: anywhere; }
+.hex-sector-compact .hex-sector-heading-title .dossier-title { font-size: .72rem; white-space: nowrap; }
+.hex-sector-compact .hex-sector-tags { flex: 1 1 auto; gap: 6px; }
+.hex-sector-compact .hex-sector-tags .tag,
+.hex-sector-compact .hex-sector-infestation { padding: 4px 7px; min-height: 28px; height: auto; font-size: .72rem; }
+.hex-sector-compact .hex-sector-infestation { border: 1px solid var(--border); background: var(--accent); color: var(--accent-foreground); }
+.hex-sector-compact .hex-sector-close { margin-left: auto; }
+.hex-sector-compact .hex-sector-context { justify-content: space-between; margin-top: 10px; align-items: flex-start; }
+.hex-sector-compact .hex-sector-signal { flex: 1 1 340px; min-width: 0; }
+.hex-sector-compact .hex-sector-signal > p:first-child { display: flex; align-items: flex-start; gap: 7px; font-size: .82rem; }
+.hex-sector-compact .hex-sector-signal > p:first-child > svg { flex: none; margin-top: 2px; color: var(--primary); }
+.hex-sector-compact .hex-sector-signal > p + p { margin-top: 3px; font-size: .74rem; }
+.hex-sector-compact .hex-sector-actions { gap: 7px; }
+.hex-sector-compact .hex-sector-move-button,
+.hex-sector-compact .hex-sector-move-button > span {
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
+  flex: 0 0 auto;
+}
+.hex-sector-compact .hex-sector-move-button { width: max-content; max-width: none; }
+.hex-sector-compact .hex-sector-presence { margin-top: 7px; font-size: .75rem; }
+.hex-sector-compact .hex-sector-presence > summary { display: flex; align-items: center; gap: 6px; color: var(--muted-foreground); cursor: pointer; }
+.hex-sector-compact .hex-sector-presence > p { margin-top: 5px; }
+.hex-sector-compact .hex-sector-tabs { gap: 10px; }
+.hex-sector-compact .hex-sector-tabs-list { margin-top: 5px; }
+.hex-sector-compact .hex-sector-tabs-list [data-slot="tabs-trigger"] { min-height: 34px; padding-inline: 10px; }
+.hex-sector-compact .hex-sector-locations-bar { justify-content: space-between; }
+.hex-sector-compact .hex-points-heading .section-title { font-size: .88rem; }
+.hex-sector-compact .hex-points-heading .tag { padding: 2px 6px; font-size: .72rem; }
+.hex-sector-compact .hex-sector-locations-bar button { font-size: .75rem; }
+.hex-sector-compact .hex-points-list { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; margin-top: 8px; max-height: min(24rem, 44dvh); }
+.hex-sector-compact .hex-point-heading > div { flex-basis: 150px; }
+.hex-sector-compact .hex-point-heading .dossier-title { font-size: .65rem; margin-bottom: 2px; }
+.hex-sector-compact .hex-point-heading b { font-size: .9rem; }
+.hex-sector-compact .hex-point-session-flow { padding: 0; border: 0; background: transparent; margin-top: 8px; }
+.hex-sector-compact .hex-point-session-state { flex-basis: 160px; }
+.hex-sector-compact .hex-point-session-flow button { font-size: .75rem; }
+.hex-sector-compact .hex-point-master-details { margin-top: 8px; }
+.hex-sector-compact .hex-sector-notes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 12px; align-items: start; }
+.hex-sector-compact .hex-sector-notes > details { min-width: 0; border-top: 1px solid var(--border); padding-top: 8px; }
+.hex-sector-compact .hex-sector-notes > details > summary { display: flex; align-items: center; gap: 6px; font-size: .75rem; font-weight: 700; cursor: pointer; }
+.hex-sector-compact .hex-sector-notes > details > summary > span { min-width: 0; flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--muted-foreground); font-size: .68rem; font-weight: 400; }
+.hex-sector-compact .hex-sector-note-editor { display: grid; gap: 8px; padding-top: 10px; }
+.hex-sector-compact .hex-sector-note-editor button { justify-self: start; }
+.hex-sector-compact .hex-sector-management { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.hex-sector-compact .hex-sector-management-group { min-width: 0; }
+.hex-sector-compact .hex-sector-management-group + .hex-sector-management-group { border-left: 1px solid var(--border); padding-left: 18px; }
+.hex-sector-compact .hex-sector-management-group .section-title,
+.hex-sector-compact .hex-master-reveal .dossier-title { font-size: .83rem; }
+.hex-sector-compact .hex-sector-management .field label,
+.hex-sector-compact .hex-sector-management .field-label { font-size: .76rem; }
+.hex-sector-compact .hex-sector-management .field input { font-size: .84rem; }
+.hex-sector-compact .hex-master-reveal .tag { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.hex-sector-compact .hex-sector-management .hex-content-tools { margin-bottom: 0; }
+.hex-sector-compact .hex-sector-generators { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.hex-sector-compact .hex-sector-generators button { min-width: 0; font-size: .73rem; }
+.hex-sector-compact .hex-sector-invites { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 9px; }
+.hex-sector-compact .hex-sector-invites > summary { display: flex; gap: 6px; align-items: center; cursor: pointer; font-size: .76rem; }
+@media (max-width: 900px) {
+  .hex-sector-compact .hex-sector-management { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hex-sector-compact .hex-sector-management-group:last-child { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--border); padding: 12px 0 0; }
+  .hex-sector-compact .hex-sector-notes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 620px) {
+  .hex-sector-compact.panel-pad { padding: 14px; }
+  .hex-sector-compact .hex-points-list,
+  .hex-sector-compact .hex-sector-management,
+  .hex-sector-compact .hex-sector-notes { grid-template-columns: minmax(0, 1fr); }
+  .hex-sector-compact .hex-sector-management-group + .hex-sector-management-group { border-left: 0; border-top: 1px solid var(--border); padding: 12px 0 0; }
+  .hex-sector-compact .hex-sector-tabs-list [data-slot="tabs-trigger"] { font-size: .78rem; }
+}
