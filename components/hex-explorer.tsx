@@ -266,14 +266,14 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div><p className="dossier-title">Setor do mapa · Hex {selected}</p><h2 className="text-xl font-extrabold mt-1">{record.discovery !== "desconhecido" && visible ? sectorName : "Além do horizonte"}</h2></div>
         <div className="flex flex-wrap gap-2"><span className="tag">{record.discovery}</span>
-          {visible && <span className="tag">{terrainInfo.code} · {terrains[terrain]}{record.passage && record.passage !== "none" ? ` · ${passages[record.passage]}` : ""}</span>}
+          {visible && <span className="tag">{terrains[terrain]}{record.passage && record.passage !== "none" ? ` · ${passages[record.passage]}` : ""}</span>}
           {!playerPreview && <span className={record.infestation !== null && record.infestation >= 4 ? "tag tag-danger" : "tag"}>
             Infestação {record.infestation === null ? "?" : `${record.infestation}/5`}
           </span>}
           {selected === game.shelter.hex && <span className="tag">Abrigo</span>}</div>
       </div>
-      {visible && <div className={`hex-terrain-summary terrain-${terrain}`}>
-        <span className="hex-terrain-code" style={{ borderColor: terrainMapColors[terrain].stroke }}>{terrainInfo.code}</span>
+      {visible && <div className={`hex-terrain-summary terrain-${terrain}`} style={{ borderLeftColor: terrainMapColors[terrain].fill }}>
+        <span className="hex-terrain-swatch" style={{ background: terrainMapColors[terrain].fill, borderColor: terrainMapColors[terrain].stroke }} aria-hidden="true" />
         <div><small>TERRENO DO HEX</small><b>{terrains[terrain]}</b><p>{terrainInfo.description}</p></div>
         <div className="hex-terrain-effect"><small>IDENTIDADE PROCEDURAL</small><span>{terrainInfo.generatorHint}</span><em>Travessia-base: {terrainInfo.travelHours} h{record.routeHours !== terrainInfo.travelHours ? ` · atual: ${record.routeHours} h` : ""}</em></div>
       </div>}
@@ -574,7 +574,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
         <em>Hex {activeGroup.hex}</em>
       </div>}
       <div className="map-terrain-legend" aria-label="Legenda de terrenos visíveis">
-        {visibleTerrainKeys.map(key => <span key={key}><i style={{ background: terrainMapColors[key].fill, borderColor: terrainMapColors[key].stroke }} /> <b>{terrainDetails[key].code}</b> {terrains[key]}</span>)}
+        {visibleTerrainKeys.map(key => <span key={key}><i style={{ background: terrainMapColors[key].fill, borderColor: terrainMapColors[key].stroke }} /> {terrains[key]}</span>)}
       </div>
       <div className="map-surface">
         <WorldMapViewport hexes={game.hexes} activeHex={activeSourceHex} selected={selected} focusHex={focusHex} playerPreview={playerPreview} onSelect={selectHex}>
@@ -619,10 +619,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
                 <title>{title} · Hex {id}{discovered || observed ? ` · ${terrains[terrainKey]}${state.passage && state.passage !== "none" ? ` · ${passages[state.passage]}` : ""}` : ""}</title>
                 <polygon points={polygon} className={`map-hex ${id === selected ? "selected" : ""} ${nearby ? "nearby" : ""}`}
                   fill={fill} opacity={observed ? .72 : 1} stroke={discovered || observed ? terrainMapColors[terrainKey].stroke : "#49666a"} strokeWidth="2" />
-                {(discovered || observed) && <g className="map-terrain-badge" aria-hidden="true">
-                  <rect x={x-45} y={y-39} width="29" height="14" rx="4" fill="#12282ccc" stroke={terrainMapColors[terrainKey].stroke} strokeWidth="1" />
-                  <text x={x-30.5} y={y-29} textAnchor="middle" fontSize="7.5" fontWeight="900" fill="#eef5ef" fontFamily="monospace">{terrainDetails[terrainKey].code}</text>
-                </g>}
+                
                 <text x={x} y={y-17} textAnchor="middle" fontSize="10" fill="#c4d8d3" fontFamily="monospace">{id}</text>
                 <text x={x} y={lines.length > 1 ? y-1 : y+8} textAnchor="middle" fontSize={discovered || observed ? "11.5" : "17"} fontWeight="700" fill={discovered ? "#f5f8f2" : "#d1e0dc"}>
                   {lines.map((line,index) => <tspan key={index} x={x} dy={index ? 13 : 0}>{line}</tspan>)}
