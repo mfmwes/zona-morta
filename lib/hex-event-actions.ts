@@ -6,6 +6,7 @@ import { normalizeNpcCapabilities } from "./npc-presentation";
 import { threatLibrary } from "./threats";
 import { generateNpcDrafts } from "./npc-generator";
 import { adjacentHexes } from "./world";
+import { eventGuide } from "./event-guides";
 import { suggestedLootTable } from "./hex-generators";
 
 export type HexEventAction =
@@ -52,7 +53,9 @@ function normalizedName(name: string) {
   return name.trim().replace(/\s+/g, " ").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
 }
 
-export function suggestedEventActionKind(event: HexEvent): HexEventActionKind {
+export function suggestedEventActionKind(event: HexEvent): HexEventActionKind | null {
+  const guide=eventGuide(event);
+  if(guide.roll!==undefined)return guide.suggestedAction??null;
   const category = event.generatorCategory ?? "";
   if (/pessoa/i.test(category)) return "npc";
   if (/ameaça/i.test(category)) return "threat";

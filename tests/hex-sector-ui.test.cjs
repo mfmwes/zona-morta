@@ -29,7 +29,7 @@ const stubs = {
   'world-map-viewport': ['WorldMapViewport'], 'world-expansion-dialog': ['WorldExpansionDialog'],
   'map-group-marker': ['MapGroupMarker'], 'hex-context-menu': ['HexContextMenu'],
   'hex-generator-dialog': ['HexGeneratorDialog'], 'hex-search-dialog': ['HexSearchDialog'],
-  'player-hex-search-dialog': ['PlayerHexSearchDialog'], 'hex-event-action-dialog': ['HexEventActionDialog'],
+  'player-hex-search-dialog': ['PlayerHexSearchDialog'], 'hex-event-action-dialog': ['HexEventActionDialog'], 'hex-event-guide-dialog': ['HexEventGuideDialog'],
 };
 const load = Module._load;
 Module._load = function(name, parent, main) {
@@ -136,4 +136,15 @@ test('fechar busca ou gerador devolve o mestre ao setor selecionado', () => {
   const searchDialog = search.find(node => node.type === 'HexSearchDialog');assert.ok(searchDialog);
   assert.equal(searchDialog.props.request.pointId, 'workshop');searchDialog.props.onClose();
   assert.ok(search.find(node => node.type === 'Tabs' && node.props.value === 'exploration'));
+});
+
+
+test('mestre abre guia do evento e jogador não recebe o controle de desfecho', () => {
+  const f = fixture();
+  f.state().hexes['0,0'].events = [{id:'scene',text:'Porta bloqueada.',trigger:'',revealed:true,status:'active',generatorRoll:52}];
+  f.select('0,0');f.click('Conduzir evento');
+  const guide = f.find(node => node.type === 'HexEventGuideDialog');assert.ok(guide);assert.equal(guide.props.eventId,'scene');
+  guide.props.onClose();assert.ok(f.find(node => node.type === 'Tabs'));
+  const player = fixture(true);player.state().hexes['0,0'].events = structuredClone(f.state().hexes['0,0'].events);
+  assert.equal(player.button('Conduzir evento'),undefined);assert.equal(player.find(node=>node.type==='HexEventGuideDialog'),undefined);
 });

@@ -1,0 +1,5202 @@
+[
+  {
+    "roll": 1,
+    "title": "Rádio entrecortado",
+    "stakes": "A transmissão pode terminar antes de revelar o endereço.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Escutar de cobertura e anotar palavras.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Responder para pedir a informação que falta.",
+        "minutes": 2,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Marcar a frequência e seguir.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O endereço e um horário de contato ficam claros.",
+        "continuity": "Frequência, endereço e horário anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A informação chega, mas a resposta permite reconhecer a voz do grupo.",
+        "continuity": "Frequência, endereço e horário anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O sinal some; um fragmento ainda indica o que verificar.",
+        "continuity": "A origem da transmissão permanece desconhecida. O sinal some; um fragmento ainda indica o que verificar.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A origem da transmissão permanece desconhecida.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "clue"
+  },
+  {
+    "roll": 2,
+    "title": "Bilhete recente",
+    "stakes": "O bilhete oferece um encontro que pode já ter mudado.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Comparar escrita, data e sinais na porta.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Seguir o endereço antes de confirmar sua origem.",
+        "minutes": 2,
+        "test": {
+          "trait": "Conhecimento",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Guardar uma cópia e escolher outro caminho.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "Autoria, hora e lugar recebem uma confirmação concreta.",
+        "continuity": "Destino e condição do encontro registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A pista é válida, mas alguém percebe que o bilhete foi consultado.",
+        "continuity": "Destino e condição do encontro registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "Uma referência está desatualizada; outra fonte pode esclarecer.",
+        "continuity": "O encontro continua sem confirmação. Uma referência está desatualizada; outra fonte pode esclarecer.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O encontro continua sem confirmação.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "clue"
+  },
+  {
+    "roll": 3,
+    "title": "Pintura nova",
+    "stakes": "A seta e a placa apontam caminhos incompatíveis.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Comparar tinta fresca com marcas de passagem.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Testar a indicação nova pela primeira esquina.",
+        "minutes": 2,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Usar uma terceira rota já conhecida.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo identifica qual indicação leva ao destino escolhido.",
+        "continuity": "Origem e validade da seta registradas.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O caminho serve, mas atravessa um trecho exposto.",
+        "continuity": "Origem e validade da seta registradas. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A indicação leva a um bloqueio visível; é possível voltar.",
+        "continuity": "As duas indicações permanecem contraditórias. A indicação leva a um bloqueio visível; é possível voltar.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "As duas indicações permanecem contraditórias.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "clue"
+  },
+  {
+    "roll": 4,
+    "title": "Janela de observação",
+    "stakes": "O clarão permite localizar atividade sem revelar quem a produz.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Observar de cobertura até reconhecer um padrão.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Responder ao clarão e chamar atenção.",
+        "minutes": 2,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Marcar o ponto sem investigar agora.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "Uma referência visual permite identificar o hex de origem.",
+        "continuity": "Direção e padrão de sinais registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A origem é localizada, mas também percebe a observação.",
+        "continuity": "Direção e padrão de sinais registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O clarão cessa; restam direção e referência de altura.",
+        "continuity": "A identidade de quem sinaliza permanece incerta. O clarão cessa; restam direção e referência de altura.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A identidade de quem sinaliza permanece incerta.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "clue"
+  },
+  {
+    "roll": 5,
+    "title": "Mapa rasgado",
+    "stakes": "O mapa indica uma passagem de serviço cujo estado é desconhecido.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Comparar o fragmento com ruas já avistadas.",
+        "minutes": 10
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Procurar a entrada pelo acesso mais exposto.",
+        "minutes": 5,
+        "test": {
+          "trait": "Conhecimento",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Guardar o fragmento para conferir depois.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "A entrada da passagem é localizada, sem presumir que esteja livre.",
+        "continuity": "Entrada e trecho efetivamente verificado anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A entrada existe, mas há sinais de uso recente por outra pessoa.",
+        "continuity": "Entrada e trecho efetivamente verificado anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "Uma parte do trajeto está ilegível; o grupo encontra só a primeira referência.",
+        "continuity": "A passagem continua sem inspeção. Uma parte do trajeto está ilegível; o grupo encontra só a primeira referência.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A passagem continua sem inspeção.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "clue"
+  },
+  {
+    "roll": 6,
+    "title": "Telefone tocando",
+    "stakes": "O toque pode cessar e a ligação revelar a presença do grupo.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Escutar e observar o aparelho antes de atender.",
+        "minutes": 1
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Atender e pedir uma identificação verificável.",
+        "minutes": 1,
+        "test": {
+          "trait": "Presença",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Deixar tocar e marcar o aparelho.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "A pessoa do outro lado fornece uma informação verificável.",
+        "continuity": "Contato e informação confirmada registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A informação chega, mas a conversa exige um compromisso.",
+        "continuity": "Contato e informação confirmada registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A ligação cai; uma palavra ou som oferece outra pista.",
+        "continuity": "A identidade de quem ligou permanece desconhecida. A ligação cai; uma palavra ou som oferece outra pista.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A identidade de quem ligou permanece desconhecida.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "clue"
+  },
+  {
+    "roll": 7,
+    "title": "Luz em sequência",
+    "stakes": "O padrão de flashes pode ser um pedido ou um código.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Observar vários ciclos de cobertura.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Responder com um sinal breve.",
+        "minutes": 2,
+        "test": {
+          "trait": "Conhecimento",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Anotar o padrão e manter distância.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo entende a intenção e localiza a fonte.",
+        "continuity": "Código e intenção confirmada anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A fonte responde, mas espera uma contrapartida.",
+        "continuity": "Código e intenção confirmada anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A resposta é mal interpretada; ainda há oportunidade de esclarecer.",
+        "continuity": "O significado dos flashes permanece aberto. A resposta é mal interpretada; ainda há oportunidade de esclarecer.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O significado dos flashes permanece aberto.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "clue"
+  },
+  {
+    "roll": 8,
+    "title": "Pegadas pequenas",
+    "stakes": "As pegadas mostram um circuito recente entre duas portas.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Examinar direção, tamanho e sobreposições.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Seguir as marcas até a segunda entrada.",
+        "minutes": 5,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Marcar as portas sem entrar.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O circuito revela um acesso usado e uma pista sobre seu ocupante.",
+        "continuity": "Circuito e sinais encontrados registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O acesso é encontrado, mas o ocupante nota a aproximação.",
+        "continuity": "Circuito e sinais encontrados registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "As marcas se confundem; uma das portas ainda pode ser investigada.",
+        "continuity": "O ocupante das portas permanece desconhecido. As marcas se confundem; uma das portas ainda pode ser investigada.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O ocupante das portas permanece desconhecido.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "clue"
+  },
+  {
+    "roll": 9,
+    "title": "Marca de roda",
+    "stakes": "O rastro de carrinho pode levar a carga útil ou a seu dono.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Examinar peso aparente e direção das rodas.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Seguir o rastro por trecho exposto.",
+        "minutes": 5,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Marcar o último ponto legível.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo alcança uma referência da carga e identifica a rota.",
+        "continuity": "Último trecho confirmado do carrinho anotado.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A rota fica clara, mas o carregador percebe que está sendo seguido.",
+        "continuity": "Último trecho confirmado do carrinho anotado. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O rastro desaparece numa superfície dura; sobra uma direção provável.",
+        "continuity": "A carga e sua posse continuam incertas. O rastro desaparece numa superfície dura; sobra uma direção provável.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A carga e sua posse continuam incertas.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "clue"
+  },
+  {
+    "roll": 10,
+    "title": "Aviso na água",
+    "stakes": "O aviso não confirma sozinho se a água está contaminada.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Conferir origem, sinais e quem deixou a placa.",
+        "minutes": 10
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Procurar quem conhece o reservatório.",
+        "minutes": 5,
+        "test": {
+          "trait": "Conhecimento",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Evitar o consumo até obter confirmação.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "Uma fonte confiável esclarece a condição daquela água.",
+        "continuity": "Resultado da verificação e fonte registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A condição é esclarecida, mas obter confirmação exige um favor.",
+        "continuity": "Resultado da verificação e fonte registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A avaliação é inconclusiva; a água segue sem liberação para consumo.",
+        "continuity": "A qualidade da água permanece não verificada. A avaliação é inconclusiva; a água segue sem liberação para consumo.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A qualidade da água permanece não verificada.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "clue"
+  },
+  {
+    "roll": 11,
+    "title": "Lista de nomes",
+    "stakes": "Um endereço novo pode indicar destino, refúgio ou alguém procurado.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Comparar tinta, nomes e anotações antigas.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Consultar uma pessoa ligada à lista.",
+        "minutes": 5,
+        "test": {
+          "trait": "Conhecimento",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Copiar a lista e seguir.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo descobre a relação entre um nome e o endereço.",
+        "continuity": "Nome, endereço e fonte confirmados anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A relação fica clara, mas consultar a lista cria uma obrigação.",
+        "continuity": "Nome, endereço e fonte confirmados anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "Os nomes não são reconhecidos; outro contato poderá identificá-los.",
+        "continuity": "O motivo dos nomes riscados permanece aberto. Os nomes não são reconhecidos; outro contato poderá identificá-los.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O motivo dos nomes riscados permanece aberto.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "clue"
+  },
+  {
+    "roll": 12,
+    "title": "Calendário alterado",
+    "stakes": "A data circulada representa um prazo que ainda não foi explicado.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Procurar contexto nas páginas vizinhas.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Perguntar a alguém ligado ao calendário.",
+        "minutes": 5,
+        "test": {
+          "trait": "Conhecimento",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Anotar a data para acompanhar depois.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O prazo e o que acontecerá nele ficam claros.",
+        "continuity": "Prazo e participantes confirmados registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O prazo é entendido, mas o grupo tem pouco tempo para decidir.",
+        "continuity": "Prazo e participantes confirmados registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O significado não é confirmado; existe uma referência para consultar.",
+        "continuity": "O compromisso daquela data continua desconhecido. O significado não é confirmado; existe uma referência para consultar.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O compromisso daquela data continua desconhecido.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "clue"
+  },
+  {
+    "roll": 13,
+    "title": "Porta sinalizada",
+    "stakes": "A fita marca um acesso usado por alguém, sem garantir segurança.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Observar desgaste e sinais de entrada.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Investigar quem usa o código de cores.",
+        "minutes": 5,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Escolher outro acesso.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo identifica o sentido daquela fita.",
+        "continuity": "Significado e autoria confirmados anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O código é entendido, mas seu usuário nota a investigação.",
+        "continuity": "Significado e autoria confirmados anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O código permanece incerto; a entrada continua disponível para inspeção.",
+        "continuity": "A autoria da marca permanece desconhecida. O código permanece incerto; a entrada continua disponível para inspeção.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A autoria da marca permanece desconhecida.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "clue"
+  },
+  {
+    "roll": 14,
+    "title": "Arquivo aberto",
+    "stakes": "O arquivo descreve um problema que pode continuar ativo.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Relacionar a página a registros recentes.",
+        "minutes": 10
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Verificar uma evidência no local indicado.",
+        "minutes": 5,
+        "test": {
+          "trait": "Conhecimento",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Copiar a referência e adiar a investigação.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "Uma evidência confirma o problema ou sua solução.",
+        "continuity": "Problema, evidência e estado atual registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A evidência existe, mas alcançá-la desperta a atenção de um responsável.",
+        "continuity": "Problema, evidência e estado atual registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A página está incompleta; outra seção do arquivo contém a próxima pista.",
+        "continuity": "O problema descrito continua sem confirmação. A página está incompleta; outra seção do arquivo contém a próxima pista.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O problema descrito continua sem confirmação.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "clue"
+  },
+  {
+    "roll": 15,
+    "title": "Chave pendurada",
+    "stakes": "A chave oferece acesso, mas pode ter um dono que a procura.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Conferir etiqueta e sinais de uso.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Retirar a chave e procurar a sala.",
+        "minutes": 2,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Anotar o número sem levar a chave.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "A chave e a porta correspondente são identificadas.",
+        "continuity": "Porta correspondente e posse da chave registradas.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O acesso é confirmado, mas o dono percebe que a chave mudou de lugar.",
+        "continuity": "Porta correspondente e posse da chave registradas. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O número não corresponde à primeira porta; a chave ainda pode ser conferida.",
+        "continuity": "A chave permanece no estado e lugar estabelecidos. O número não corresponde à primeira porta; a chave ainda pode ser conferida.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A chave permanece no estado e lugar estabelecidos.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "clue"
+  },
+  {
+    "roll": 16,
+    "title": "Mensagem em giz",
+    "stakes": "A instrução incompleta pode ocultar um obstáculo no último trecho.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Comparar o giz com referências do bairro.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Verificar o primeiro trecho sem assumir o restante.",
+        "minutes": 5,
+        "test": {
+          "trait": "Conhecimento",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Copiar a mensagem e usar uma rota conhecida.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo identifica onde a orientação termina e o que falta verificar.",
+        "continuity": "Trechos confirmados e lacuna do percurso anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O trajeto funciona até um ponto exposto que exige nova decisão.",
+        "continuity": "Trechos confirmados e lacuna do percurso anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "Uma referência não existe mais; o trecho inicial permanece útil.",
+        "continuity": "O fim da travessia continua desconhecido. Uma referência não existe mais; o trecho inicial permanece útil.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O fim da travessia continua desconhecido.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "clue"
+  },
+  {
+    "roll": 17,
+    "title": "Sinal sonoro distante",
+    "stakes": "As batidas podem ser contato, trabalho ou um pedido de ajuda.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Escutar direção e ritmo de cobertura.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Responder com uma batida combinada.",
+        "minutes": 2,
+        "test": {
+          "trait": "Presença",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Manter silêncio e marcar a direção.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "A resposta esclarece a intenção de quem bate.",
+        "continuity": "Origem e código de contato registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O contato se estabelece, mas outros também ouvem a resposta.",
+        "continuity": "Origem e código de contato registrados. Registre a condição adicional escolhida.",
+        "noise": 1
+      },
+      "failure": {
+        "summary": "A resposta não é entendida; ainda é possível observar a origem.",
+        "continuity": "A fonte das batidas continua desconhecida. A resposta não é entendida; ainda é possível observar a origem.",
+        "noise": 1
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A fonte das batidas continua desconhecida.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "clue"
+  },
+  {
+    "roll": 18,
+    "title": "Linha no horizonte",
+    "stakes": "A fumaça indica atividade distante, sem confirmar um incêndio.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Observar duração, cor e direção.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Buscar uma posição de observação mais exposta.",
+        "minutes": 5,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Marcar a direção e seguir.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo distingue atividade humana de um foco ambiental verificável.",
+        "continuity": "Origem efetivamente observada registrada.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A origem é identificada, mas observar aproxima o grupo de uma rota ocupada.",
+        "continuity": "Origem efetivamente observada registrada. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A fumaça cessa; restam direção e referências do terreno.",
+        "continuity": "A causa da fumaça continua incerta. A fumaça cessa; restam direção e referências do terreno.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A causa da fumaça continua incerta.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "clue"
+  },
+  {
+    "roll": 19,
+    "title": "Caixa postal usada",
+    "stakes": "Uma carta recente aponta alguém em outro hex.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Examinar remetente, data e destinatário.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Procurar quem usa a caixa postal.",
+        "minutes": 5,
+        "test": {
+          "trait": "Conhecimento",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Deixar a carta e anotar o endereço.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O destinatário e uma forma plausível de contato são identificados.",
+        "continuity": "Destino confirmado e situação da carta registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A pista funciona, mas mexer na carta afeta a confiança do remetente.",
+        "continuity": "Destino confirmado e situação da carta registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O endereço está incompleto; o remetente oferece outro caminho de investigação.",
+        "continuity": "A entrega permanece pendente. O endereço está incompleto; o remetente oferece outro caminho de investigação.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A entrega permanece pendente.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "clue"
+  },
+  {
+    "roll": 20,
+    "title": "Mapa de rotas",
+    "stakes": "Duas rotas precisam ser conferidas antes de orientar outros grupos.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Comparar marcas do mapa com o terreno visível.",
+        "minutes": 10
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Reconhecer a primeira entrada por trecho exposto.",
+        "minutes": 5,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Guardar o mapa sem declarar as rotas seguras.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "Um trecho de uma rota recebe confirmação física.",
+        "continuity": "Somente os trechos realmente conferidos anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O trecho existe, mas há um obstáculo que exige desvio.",
+        "continuity": "Somente os trechos realmente conferidos anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "Uma marca está errada; outra referência continua utilizável.",
+        "continuity": "As rotas continuam não verificadas. Uma marca está errada; outra referência continua utilizável.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "As rotas continuam não verificadas.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "clue"
+  },
+  {
+    "roll": 21,
+    "title": "Pessoa à janela",
+    "stakes": "A pessoa pode estar assustada ou protegendo sua privacidade.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Chamar de uma posição aberta e respeitar a distância.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Aproximar-se para propor contato.",
+        "minutes": 2,
+        "test": {
+          "trait": "Presença",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Seguir sem insistir.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "A pessoa aceita uma conversa e explica o que viu.",
+        "continuity": "Nome, disposição e acordo obtidos registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "Ela conversa, mas exige distância ou um compromisso.",
+        "continuity": "Nome, disposição e acordo obtidos registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "Ela recusa contato agora; um gesto deixa uma possibilidade futura.",
+        "continuity": "A cortina fica fechada e o contato permanece sem acordo. Ela recusa contato agora; um gesto deixa uma possibilidade futura.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A cortina fica fechada e o contato permanece sem acordo.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "npc"
+  },
+  {
+    "roll": 22,
+    "title": "Carregador solitário",
+    "stakes": "Ajudar o carregador pode comprometer a rota ou o transporte do grupo.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Oferecer ajuda e perguntar o destino.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Negociar um percurso comum.",
+        "minutes": 5,
+        "test": {
+          "trait": "Presença",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Deixar que siga sozinho.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "Um acordo define carga, destino e participação de cada pessoa.",
+        "continuity": "Destino e condições da ajuda registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O acordo funciona, mas inclui um desvio que deve ser aceito.",
+        "continuity": "Destino e condições da ajuda registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "Não há acordo; a carga continua com seu dono.",
+        "continuity": "O carregador mantém o percurso estabelecido. Não há acordo; a carga continua com seu dono.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O carregador mantém o percurso estabelecido.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "npc"
+  },
+  {
+    "roll": 23,
+    "title": "Moradora com pressa",
+    "stakes": "A pressa tem uma causa e um prazo que o grupo ainda desconhece.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Informar o horário e ouvir a explicação.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Pedir que explique antes de continuar.",
+        "minutes": 2,
+        "test": {
+          "trait": "Presença",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Dar espaço para que ela siga.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "A moradora explica a urgência e um pedido concreto.",
+        "continuity": "Prazo, destino e pedido conhecidos anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "Ela explica, mas precisa de uma decisão imediata.",
+        "continuity": "Prazo, destino e pedido conhecidos anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A insistência encerra a conversa; ela deixa uma referência para procurá-la.",
+        "continuity": "A urgência continua sem intervenção do grupo. A insistência encerra a conversa; ela deixa uma referência para procurá-la.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A urgência continua sem intervenção do grupo.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "npc"
+  },
+  {
+    "roll": 24,
+    "title": "Criança chamando",
+    "stakes": "A criança chama de um local visível; a presença de um adulto é incerta.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Conversar à distância e observar o entorno.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Aproximar-se mantendo uma rota de retorno.",
+        "minutes": 2,
+        "test": {
+          "trait": "Presença",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Marcar o local e procurar outro contato.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo entende o pedido e identifica quem acompanha a criança.",
+        "continuity": "Pedido e responsáveis efetivamente encontrados registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O pedido fica claro, mas um adulto exige explicações.",
+        "continuity": "Pedido e responsáveis efetivamente encontrados registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A criança se recolhe; o local oferece outra forma de contato.",
+        "continuity": "A situação da criança permanece como foi observada. A criança se recolhe; o local oferece outra forma de contato.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A situação da criança permanece como foi observada.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "npc"
+  },
+  {
+    "roll": 25,
+    "title": "Vigia nervoso",
+    "stakes": "O aviso e a distância pedida precisam ser compreendidos.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Ouvir o vigia de fora do acesso.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Negociar uma aproximação supervisionada.",
+        "minutes": 2,
+        "test": {
+          "trait": "Presença",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Usar outro caminho.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O vigia esclarece o risco e uma condição de passagem.",
+        "continuity": "Risco confirmado e acordo com o vigia registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "Ele permite contato, mas exige um favor ou espera.",
+        "continuity": "Risco confirmado e acordo com o vigia registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A aproximação aumenta a desconfiança; o acesso continua fechado.",
+        "continuity": "O vigia mantém a distância e o acesso estabelecidos. A aproximação aumenta a desconfiança; o acesso continua fechado.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O vigia mantém a distância e o acesso estabelecidos.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "npc"
+  },
+  {
+    "roll": 26,
+    "title": "Socorrista improvisado",
+    "stakes": "A ajuda solicitada é concreta, mas o paciente está fora de vista.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Perguntar o que falta e onde está a pessoa.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Oferecer o material disponível sob condições claras.",
+        "minutes": 5,
+        "test": {
+          "trait": "Presença",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Indicar outra fonte de ajuda.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo combina uma ajuda que realmente possui.",
+        "continuity": "Pedido, material efetivamente entregue e acordo anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A ajuda é aceita, mas demanda tempo ou acompanhamento.",
+        "continuity": "Pedido, material efetivamente entregue e acordo anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O recurso oferecido não serve; o socorrista esclarece outra necessidade.",
+        "continuity": "A necessidade de ajuda continua pendente. O recurso oferecido não serve; o socorrista esclarece outra necessidade.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A necessidade de ajuda continua pendente.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "npc"
+  },
+  {
+    "roll": 27,
+    "title": "Vendedor de trocas",
+    "stakes": "A informação oferecida depende de um serviço ainda não definido.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Ouvir a oferta e pedir uma prova verificável.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Negociar serviço e informação em etapas.",
+        "minutes": 5,
+        "test": {
+          "trait": "Presença",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Recusar a troca sem assumir dívida.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "Uma troca clara define entrega e contrapartida.",
+        "continuity": "Termos e informação efetivamente obtida registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O acordo é possível, mas inclui uma condição adicional.",
+        "continuity": "Termos e informação efetivamente obtida registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "As partes não concordam; a oferta continua aberta.",
+        "continuity": "Nenhuma informação ou dívida é presumida. As partes não concordam; a oferta continua aberta.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "Nenhuma informação ou dívida é presumida.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "npc"
+  },
+  {
+    "roll": 28,
+    "title": "Pessoa perdida",
+    "stakes": "A descrição da fachada não combina com a direção indicada.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Comparar a descrição com referências conhecidas.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Acompanhar a pessoa até uma referência próxima.",
+        "minutes": 5,
+        "test": {
+          "trait": "Conhecimento",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Indicar um ponto seguro para pedir orientação.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "A pessoa recebe um destino corrigido e verificável.",
+        "continuity": "Fachada correta e ajuda combinada anotadas.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O destino é encontrado, mas acompanhar exige um desvio.",
+        "continuity": "Fachada correta e ajuda combinada anotadas. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A identificação segue incerta; uma característica elimina um caminho errado.",
+        "continuity": "A pessoa continua sem orientação confirmada. A identificação segue incerta; uma característica elimina um caminho errado.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A pessoa continua sem orientação confirmada.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "npc"
+  },
+  {
+    "roll": 29,
+    "title": "Motorista parado",
+    "stakes": "Ligar o motor pode produzir ruído antes de a rota estar decidida.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Orientar o motorista com o motor desligado.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Combinar um trajeto e sinal de partida.",
+        "minutes": 2,
+        "test": {
+          "trait": "Presença",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Afastar-se antes de ele decidir.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O motorista entende a rota e a condição de partida.",
+        "continuity": "Rota, horário de partida e acordo anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A rota fica clara, mas uma partida prematura produz ruído.",
+        "continuity": "Rota, horário de partida e acordo anotados. Registre a condição adicional escolhida.",
+        "noise": 1
+      },
+      "failure": {
+        "summary": "Ele entende a direção errada; ainda é possível corrigir antes da partida.",
+        "continuity": "O veículo permanece no estado estabelecido. Ele entende a direção errada; ainda é possível corrigir antes da partida.",
+        "noise": 1
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O veículo permanece no estado estabelecido.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "npc"
+  },
+  {
+    "roll": 30,
+    "title": "Gente carregando água",
+    "stakes": "A água transportada tem uma origem e um proprietário.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Perguntar origem e destino dos recipientes.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Negociar troca ou ajuda no transporte.",
+        "minutes": 5,
+        "test": {
+          "trait": "Presença",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Deixar o transporte seguir.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "Origem, posse e eventual acordo ficam claros.",
+        "continuity": "Fonte informada e acordo efetivo registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "Há acordo, mas ele depende de uma entrega ou favor.",
+        "continuity": "Fonte informada e acordo efetivo registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A negociação falha; ninguém cede a água.",
+        "continuity": "A posse e a qualidade da água permanecem não alteradas. A negociação falha; ninguém cede a água.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A posse e a qualidade da água permanecem não alteradas.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "npc"
+  },
+  {
+    "roll": 31,
+    "title": "Alguém num telhado",
+    "stakes": "O sinal de parada e a alternativa precisam ser verificados.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Observar o telhado e a rota indicada.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Pedir uma explicação breve por sinais.",
+        "minutes": 2,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Recuar até uma cobertura conhecida.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo entende o aviso e confirma a alternativa visível.",
+        "continuity": "Aviso confirmado e rota realmente observada anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A rota é útil, mas fica sob observação de outra pessoa.",
+        "continuity": "Aviso confirmado e rota realmente observada anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O sinal não é entendido; permanece possível reconhecer a alternativa.",
+        "continuity": "O risco anunciado permanece sem intervenção. O sinal não é entendido; permanece possível reconhecer a alternativa.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O risco anunciado permanece sem intervenção.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "npc"
+  },
+  {
+    "roll": 32,
+    "title": "Conversa atrás da porta",
+    "stakes": "A conversa pode revelar intenção, mas interrompê-la muda a relação.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Escutar somente o que chega do lado de fora.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Anunciar a presença e pedir esclarecimento.",
+        "minutes": 2,
+        "test": {
+          "trait": "Presença",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Seguir sem confrontar quem conversa.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "Uma intenção ou preocupação concreta é esclarecida.",
+        "continuity": "Informação confirmada e reação ao contato registradas.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A intenção fica clara, mas a escuta compromete a confiança.",
+        "continuity": "Informação confirmada e reação ao contato registradas. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A conversa cessa; uma frase ainda oferece uma pista verificável.",
+        "continuity": "As pessoas atrás da porta permanecem sem acordo com o grupo. A conversa cessa; uma frase ainda oferece uma pista verificável.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "As pessoas atrás da porta permanecem sem acordo com o grupo.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "npc"
+  },
+  {
+    "roll": 33,
+    "title": "Vizinho em conflito",
+    "stakes": "Dois relatos contraditórios não bastam para declarar uma passagem segura.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Ouvir as duas versões e buscar uma evidência.",
+        "minutes": 10
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Negociar uma inspeção conjunta.",
+        "minutes": 5,
+        "test": {
+          "trait": "Conhecimento",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Usar outra passagem.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "Uma evidência permite corrigir parte da contradição.",
+        "continuity": "Fatos observados e acordos entre moradores anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A evidência ajuda, mas uma parte se sente desautorizada.",
+        "continuity": "Fatos observados e acordos entre moradores anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "Não há conclusão; fica claro qual informação ainda falta.",
+        "continuity": "A disputa e a passagem permanecem sem confirmação. Não há conclusão; fica claro qual informação ainda falta.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A disputa e a passagem permanecem sem confirmação.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "npc"
+  },
+  {
+    "roll": 34,
+    "title": "Animal preso",
+    "stakes": "Libertar o animal pode exigir aproximação e provocar movimento.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Observar como está preso e abrir espaço para saída.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Soltar rapidamente o ponto de retenção.",
+        "minutes": 2,
+        "test": {
+          "trait": "Finesse",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Manter distância e procurar o responsável.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O animal fica livre e encontra uma saída.",
+        "continuity": "Forma de libertação e direção seguida registradas.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "Ele fica livre, mas sua movimentação produz ruído.",
+        "continuity": "Forma de libertação e direção seguida registradas. Registre a condição adicional escolhida.",
+        "noise": 1
+      },
+      "failure": {
+        "summary": "A retenção permanece; outro ponto de acesso ainda pode ajudar.",
+        "continuity": "O animal permanece na situação observada. A retenção permanece; outro ponto de acesso ainda pode ajudar.",
+        "noise": 1
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O animal permanece na situação observada.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 35,
+    "title": "Cão farejando",
+    "stakes": "O cão segue um cheiro e pode reagir a uma aproximação brusca.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Observar o rastro mantendo distância.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Aproximar-se devagar para reconhecer o que procura.",
+        "minutes": 5,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Deixar o cão seguir.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo identifica a origem do cheiro ou um destino.",
+        "continuity": "Rastro e destino efetivamente encontrados anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O rastro é encontrado, mas o cão corre e chama atenção.",
+        "continuity": "Rastro e destino efetivamente encontrados anotados. Registre a condição adicional escolhida.",
+        "noise": 1
+      },
+      "failure": {
+        "summary": "O cão se afasta; sobra uma última direção observada.",
+        "continuity": "O destino do cão permanece desconhecido. O cão se afasta; sobra uma última direção observada.",
+        "noise": 1
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O destino do cão permanece desconhecido.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 36,
+    "title": "Gato de coleira",
+    "stakes": "A coleira indica vínculo, mas o prédio pode estar ocupado.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Observar a entrada e a identificação da coleira.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Seguir apenas até a primeira área visível.",
+        "minutes": 5,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Marcar o prédio sem entrar.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "Um sinal confirma o dono ou o uso recente do prédio.",
+        "continuity": "Identificação e entrada conferida registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A pista é obtida, mas alguém percebe a aproximação.",
+        "continuity": "Identificação e entrada conferida registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O gato desaparece; a entrada continua investigável.",
+        "continuity": "O interior do prédio permanece desconhecido. O gato desaparece; a entrada continua investigável.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O interior do prédio permanece desconhecido.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 37,
+    "title": "Pessoa com febre",
+    "stakes": "Febre não confirma Exposição nem permite presumir sua causa.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Ouvir a pessoa e verificar que ajuda pede.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Combinar auxílio com os recursos realmente disponíveis.",
+        "minutes": 5,
+        "test": {
+          "trait": "Presença",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Indicar ajuda sem alterar sua condição.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo esclarece uma necessidade e combina ajuda adequada à ficção.",
+        "continuity": "Sintomas observados, pedido e ajuda efetiva anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A pessoa aceita ajuda, mas precisa de acompanhamento ou tempo.",
+        "continuity": "Sintomas observados, pedido e ajuda efetiva anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "Não há acordo imediato; outra necessidade ou contato é identificado.",
+        "continuity": "A condição da pessoa não muda automaticamente. Não há acordo imediato; outra necessidade ou contato é identificado.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A condição da pessoa não muda automaticamente.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "npc"
+  },
+  {
+    "roll": 38,
+    "title": "Mensageira de bicicleta",
+    "stakes": "A mensageira precisa de uma rota segura para um endereço específico.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Conferir endereço e trechos conhecidos.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Negociar reconhecimento de uma passagem.",
+        "minutes": 5,
+        "test": {
+          "trait": "Conhecimento",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Indicar limites da informação disponível.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "Um trecho seguro é confirmado e explicado.",
+        "continuity": "Endereço, trecho confirmado e acordo registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A orientação funciona, mas exige um desvio ou compromisso.",
+        "continuity": "Endereço, trecho confirmado e acordo registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O endereço não é localizado; uma referência ajuda a nova tentativa.",
+        "continuity": "O trajeto completo continua não verificado. O endereço não é localizado; uma referência ajuda a nova tentativa.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O trajeto completo continua não verificado.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "npc"
+  },
+  {
+    "roll": 39,
+    "title": "Morador repetindo aviso",
+    "stakes": "O aviso pode ser testemunho direto ou rumor repetido.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Perguntar quando, onde e o que foi visto.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Confrontar inconsistências sem presumir mentira.",
+        "minutes": 2,
+        "test": {
+          "trait": "Presença",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Registrar o relato como não confirmado.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo distingue observação direta de informação recebida.",
+        "continuity": "Fonte e grau de confirmação registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A distinção fica clara, mas a conversa causa desconfiança.",
+        "continuity": "Fonte e grau de confirmação registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O morador não esclarece a origem; oferece outro nome para consultar.",
+        "continuity": "O aviso permanece sem confirmação independente. O morador não esclarece a origem; oferece outro nome para consultar.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O aviso permanece sem confirmação independente.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "npc"
+  },
+  {
+    "roll": 40,
+    "title": "Grupo atravessando",
+    "stakes": "O grupo que atravessa quer distância; abordar interrompe sua passagem.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Dar passagem e oferecer um contato breve.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Negociar informação sem bloquear a rota.",
+        "minutes": 2,
+        "test": {
+          "trait": "Presença",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Deixar passar sem contato.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "Há uma troca voluntária de informação ou auxílio.",
+        "continuity": "Contato, informação e condições acordadas anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "Há contato, mas exige distância ou compensação pelo atraso.",
+        "continuity": "Contato, informação e condições acordadas anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O contato é recusado; a rota permanece transitável.",
+        "continuity": "Os viajantes seguem seu percurso sem vínculo presumido. O contato é recusado; a rota permanece transitável.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "Os viajantes seguem seu percurso sem vínculo presumido.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "npc"
+  },
+  {
+    "roll": 41,
+    "title": "Chuva repentina",
+    "stakes": "A chuva oferece a escolha entre abrigo e continuidade da travessia.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Esperar na cobertura visível.",
+        "minutes": 10
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Seguir até outra cobertura reconhecida.",
+        "minutes": 5,
+        "test": {
+          "trait": "Agilidade",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Alterar a rota para evitar exposição.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo alcança cobertura ou atravessa o trecho combinado.",
+        "continuity": "Trecho percorrido e equipamento efetivamente afetado anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O trajeto funciona, mas algum equipamento precisa de cuidado.",
+        "continuity": "Trecho percorrido e equipamento efetivamente afetado anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A chuva interrompe o trecho; há uma cobertura para nova decisão.",
+        "continuity": "A intensidade da chuva continua como foi estabelecida. A chuva interrompe o trecho; há uma cobertura para nova decisão.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A intensidade da chuva continua como foi estabelecida.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 42,
+    "title": "Rajada de vento",
+    "stakes": "Uma porta solta pode bater e denunciar presença.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Segurar e apoiar a porta sem pressa.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Prender a porta antes da próxima rajada.",
+        "minutes": 2,
+        "test": {
+          "trait": "Finesse",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Passar por outro acesso.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "A porta fica apoiada e para de bater.",
+        "continuity": "Estado final e apoio usado registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "Ela fica segura, mas uma batida produz ruído.",
+        "continuity": "Estado final e apoio usado registrados. Registre a condição adicional escolhida.",
+        "noise": 1
+      },
+      "failure": {
+        "summary": "O apoio não se mantém; outra forma de fixação pode funcionar.",
+        "continuity": "A porta segue solta até receber uma intervenção. O apoio não se mantém; outra forma de fixação pode funcionar.",
+        "noise": 1
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A porta segue solta até receber uma intervenção.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 43,
+    "title": "Queda de telhas",
+    "stakes": "Os estalos anunciam queda de material antes de ocorrer.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Contornar o trecho sinalizado.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Escorar um ponto alcançável sem se colocar sob a queda.",
+        "minutes": 5,
+        "test": {
+          "trait": "Força",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Recuar para uma área já atravessada.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo usa um caminho seguro ou estabiliza o ponto escolhido.",
+        "continuity": "Trecho evitado ou ponto estabilizado anotado.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O caminho funciona, mas cai material e produz ruído.",
+        "continuity": "Trecho evitado ou ponto estabilizado anotado. Registre a condição adicional escolhida.",
+        "noise": 1
+      },
+      "failure": {
+        "summary": "A estabilização falha; o trecho deve ser evitado.",
+        "continuity": "O risco de queda permanece sinalizado. A estabilização falha; o trecho deve ser evitado.",
+        "noise": 1
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O risco de queda permanece sinalizado.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 44,
+    "title": "Poça recente",
+    "stakes": "O vazamento deixa um rastro; sua água não está verificada.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Seguir visualmente o rastro até a origem.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Alcançar um registro ou recipiente acessível.",
+        "minutes": 5,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Evitar a poça e seguir.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "A origem é localizada e a perda pode ser interrompida.",
+        "continuity": "Origem e estado efetivo do vazamento registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A origem é encontrada, mas exige acesso a uma área ocupada.",
+        "continuity": "Origem e estado efetivo do vazamento registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O acesso não é alcançado; o rastro ainda oferece uma referência.",
+        "continuity": "A água continua não verificada para consumo. O acesso não é alcançado; o rastro ainda oferece uma referência.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A água continua não verificada para consumo.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 45,
+    "title": "Fiação baixa",
+    "stakes": "O cabo oscilante exige verificar a energia antes de qualquer contato.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Buscar indicação de energia de uma posição afastada.",
+        "minutes": 10
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Investigar um desligamento acessível sem tocar no cabo.",
+        "minutes": 5,
+        "test": {
+          "trait": "Conhecimento",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Contornar a área e sinalizar o risco.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "Uma verificação confiável define se a passagem pode ser usada.",
+        "continuity": "Verificação, isolamento e caminho usado anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A passagem é esclarecida, mas uma área precisa continuar isolada.",
+        "continuity": "Verificação, isolamento e caminho usado anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A energia não é confirmada; o cabo permanece fora de alcance.",
+        "continuity": "O cabo deve continuar tratado como risco não verificado. A energia não é confirmada; o cabo permanece fora de alcance.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O cabo deve continuar tratado como risco não verificado.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 46,
+    "title": "Goteira de teto",
+    "stakes": "O grupo precisa escolher o que retirar da água que pinga.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Priorizar e mover um objeto alcançável.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Salvar vários objetos antes de a água atingir mais área.",
+        "minutes": 2,
+        "test": {
+          "trait": "Finesse",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Marcar o dano e procurar outro acesso.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "Os objetos escolhidos são protegidos da goteira.",
+        "continuity": "Objetos realmente salvos ou danificados registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "Parte é salva, mas um item precisa de reparo ou secagem.",
+        "continuity": "Objetos realmente salvos ou danificados registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O alvo não é retirado a tempo; outro objeto ainda pode ser salvo.",
+        "continuity": "A goteira continua até intervenção na origem. O alvo não é retirado a tempo; outro objeto ainda pode ser salvo.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A goteira continua até intervenção na origem.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 47,
+    "title": "Poeira no ar",
+    "stakes": "A poeira revela movimento, mas não identifica o ocupante.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Observar a porta de cobertura.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Chamar o ocupante ou mudar de posição para enxergar.",
+        "minutes": 2,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Recuar por um trecho já conhecido.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo identifica a origem do movimento.",
+        "continuity": "Movimento observado e reação ao contato anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A origem fica clara, mas percebe a observação.",
+        "continuity": "Movimento observado e reação ao contato anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O movimento cessa; a poeira marca o último ponto.",
+        "continuity": "O ocupante permanece sem identificação. O movimento cessa; a poeira marca o último ponto.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O ocupante permanece sem identificação.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 48,
+    "title": "Lama na via",
+    "stakes": "A lama afeta uma passagem estreita e pode exigir desvio.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Reconhecer um contorno visível.",
+        "minutes": 10
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Atravessar o trecho usando apoios já firmes.",
+        "minutes": 5,
+        "test": {
+          "trait": "Agilidade",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Voltar ao último caminho conhecido.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo atravessa ou confirma o desvio.",
+        "continuity": "Rota usada e carga efetivamente afetada anotadas.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A passagem funciona, mas cobra um atraso ou cuidado com a carga.",
+        "continuity": "Rota usada e carga efetivamente afetada anotadas. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O trecho não é vencido; a carga pode ser recuperada antes de tentar outra rota.",
+        "continuity": "A passagem permanece enlameada. O trecho não é vencido; a carga pode ser recuperada antes de tentar outra rota.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A passagem permanece enlameada.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 49,
+    "title": "Fumaça leve",
+    "stakes": "A fumaça indica uma origem aproximada e pede escolha de aproximação.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Observar de fora da área enfumaçada.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Reconhecer uma rota lateral de observação.",
+        "minutes": 5,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Afastar-se pela rota conhecida.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "A origem e um limite seguro de aproximação são reconhecidos.",
+        "continuity": "Origem observada e áreas evitadas registradas.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A informação é obtida, mas uma rota deve ser abandonada.",
+        "continuity": "Origem observada e áreas evitadas registradas. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A origem não é identificada; o grupo precisa recuar até uma referência.",
+        "continuity": "A causa da fumaça continua sem confirmação. A origem não é identificada; o grupo precisa recuar até uma referência.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A causa da fumaça continua sem confirmação.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 50,
+    "title": "Calor sob a porta",
+    "stakes": "A porta quente pode ocultar fogo; há um acesso lateral visível.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Observar o acesso lateral sem abrir a porta quente.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Avisar ocupantes de uma posição com retorno disponível.",
+        "minutes": 5,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Recuar e sinalizar o trecho.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "A observação esclarece o foco e uma saída utilizável.",
+        "continuity": "Saída confirmada e pessoas avisadas anotadas.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A saída é confirmada, mas alguém precisa de orientação para usá-la.",
+        "continuity": "Saída confirmada e pessoas avisadas anotadas. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A inspeção não é possível; permanece a alternativa de afastamento.",
+        "continuity": "O foco permanece não controlado. A inspeção não é possível; permanece a alternativa de afastamento.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O foco permanece não controlado.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 51,
+    "title": "Estrutura rangendo",
+    "stakes": "A fissura piora sob peso; o caminho alternativo já existe.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Contornar o trecho que range.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Investigar um apoio alcançável fora da área frágil.",
+        "minutes": 5,
+        "test": {
+          "trait": "Conhecimento",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Interditar o trecho e recuar.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo usa a alternativa ou confirma um apoio efetivo.",
+        "continuity": "Rota usada e área interditada registradas.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A passagem funciona, mas uma parte deve ser interditada.",
+        "continuity": "Rota usada e área interditada registradas. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O apoio não é confiável; a rota frágil continua indisponível.",
+        "continuity": "A estrutura segue sinalizada como instável. O apoio não é confiável; a rota frágil continua indisponível.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A estrutura segue sinalizada como instável.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 52,
+    "title": "Grade emperrada",
+    "stakes": "Abrir com calma é possível; a pressa pode produzir ruído.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Abrir lentamente pelo movimento já possível.",
+        "minutes": 10
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Forçar a grade antes de alguém se aproximar.",
+        "minutes": 5,
+        "test": {
+          "trait": "Força",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Usar outro acesso e deixar a grade marcada.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "A grade abre e a passagem fica utilizável.",
+        "continuity": "Estado da grade e passagem efetivamente liberada anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A grade abre, mas o atrito produz ruído anunciado.",
+        "continuity": "Estado da grade e passagem efetivamente liberada anotados. Registre a condição adicional escolhida.",
+        "noise": 1
+      },
+      "failure": {
+        "summary": "A grade não abre; outra posição ou ferramenta oferece nova tentativa.",
+        "continuity": "A grade permanece fechada. A grade não abre; outra posição ou ferramenta oferece nova tentativa.",
+        "noise": 1
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A grade permanece fechada.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 53,
+    "title": "Portão automático",
+    "stakes": "O motor incompleto pode prender o acesso ou continuar fazendo ruído.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Observar o ciclo e procurar comando acessível.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Desligar pelo controle identificado.",
+        "minutes": 5,
+        "test": {
+          "trait": "Conhecimento",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Usar uma passagem fora do curso do portão.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O comando interrompe o ciclo e define uma passagem utilizável.",
+        "continuity": "Estado final do motor e do acesso registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O ciclo para, mas o portão fica numa posição inconveniente.",
+        "continuity": "Estado final do motor e do acesso registrados. Registre a condição adicional escolhida.",
+        "noise": 1
+      },
+      "failure": {
+        "summary": "O comando não responde; outro acesso permanece disponível.",
+        "continuity": "O motor segue no ciclo estabelecido. O comando não responde; outro acesso permanece disponível.",
+        "noise": 1
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O motor segue no ciclo estabelecido.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 54,
+    "title": "Alagamento subindo",
+    "stakes": "A marca na parede permite estimar o avanço e avisar ocupantes.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Observar o nível e indicar uma saída.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Avisar quem está dentro por acesso com retorno.",
+        "minutes": 5,
+        "test": {
+          "trait": "Presença",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Recuar para terreno já seco.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "As pessoas recebem aviso e uma rota de saída confirmada.",
+        "continuity": "Pessoas avisadas, nível e saídas conferidas anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O aviso funciona, mas retirar alguém ou carga exige tempo.",
+        "continuity": "Pessoas avisadas, nível e saídas conferidas anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "Uma área fica inacessível; permanece possível avisar por outro ponto.",
+        "continuity": "O nível continua seguindo a progressão anunciada. Uma área fica inacessível; permanece possível avisar por outro ponto.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O nível continua seguindo a progressão anunciada.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 55,
+    "title": "Luz falhando",
+    "stakes": "O corredor escuro tem uma saída ainda iluminada.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Observar o caminho pela saída iluminada.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Atravessar usando referências visíveis antes da falha.",
+        "minutes": 5,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Manter-se na área iluminada.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo alcança a saída ou reconhece o limite da iluminação.",
+        "continuity": "Trajeto conferido e objetos deixados registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O caminho funciona, mas a carga ou um objeto fica para trás.",
+        "continuity": "Trajeto conferido e objetos deixados registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "Uma referência é perdida; o grupo retorna à luz disponível.",
+        "continuity": "O corredor continua com iluminação instável. Uma referência é perdida; o grupo retorna à luz disponível.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O corredor continua com iluminação instável.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 56,
+    "title": "Vidraça partida",
+    "stakes": "Os fragmentos tornam a corrida ruidosa e oferecem possibilidade de desvio.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Passar devagar pelos pontos sem vidro.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Atravessar rapidamente protegendo a carga.",
+        "minutes": 2,
+        "test": {
+          "trait": "Agilidade",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Contornar a vidraça por outra rota.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo atravessa pelo caminho escolhido.",
+        "continuity": "Trajeto usado e área limpa, se houver, anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A passagem funciona, mas o vidro produz ruído.",
+        "continuity": "Trajeto usado e área limpa, se houver, anotados. Registre a condição adicional escolhida.",
+        "noise": 1
+      },
+      "failure": {
+        "summary": "A passagem rápida é interrompida; ainda é possível recuar e contornar.",
+        "continuity": "Os fragmentos permanecem no piso. A passagem rápida é interrompida; ainda é possível recuar e contornar.",
+        "noise": 1
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "Os fragmentos permanecem no piso.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 57,
+    "title": "Lona solta",
+    "stakes": "O vento oferece pistas sobre algo imóvel sob a lona.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Observar os momentos em que a lona se levanta.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Levantar um canto mantendo distância de retorno.",
+        "minutes": 2,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Marcar a lona e seguir.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O conteúdo visível é identificado antes da aproximação.",
+        "continuity": "Conteúdo realmente visto e estado da lona registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O conteúdo é identificado, mas a lona bate e chama atenção.",
+        "continuity": "Conteúdo realmente visto e estado da lona registrados. Registre a condição adicional escolhida.",
+        "noise": 1
+      },
+      "failure": {
+        "summary": "A lona não permite observação suficiente; outro ângulo pode ajudar.",
+        "continuity": "O conteúdo continua não identificado. A lona não permite observação suficiente; outro ângulo pode ajudar.",
+        "noise": 1
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O conteúdo continua não identificado.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 58,
+    "title": "Gás no ar",
+    "stakes": "O odor anuncia risco e limita os acessos que podem ser usados.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Reconhecer um registro alcançável de fora da área afetada.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Investigar uma interrupção acessível sem entrar no ambiente.",
+        "minutes": 5,
+        "test": {
+          "trait": "Conhecimento",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Afastar-se e sinalizar o trecho.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "Uma intervenção segura na ficção interrompe a origem reconhecida.",
+        "continuity": "Origem identificada e isolamento efetivo anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A origem é localizada, mas outra área deve permanecer isolada.",
+        "continuity": "Origem identificada e isolamento efetivo anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A interrupção não é possível pelo acesso disponível; é necessário afastar-se.",
+        "continuity": "A área continua sinalizada como risco e sem liberação. A interrupção não é possível pelo acesso disponível; é necessário afastar-se.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A área continua sinalizada como risco e sem liberação.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 59,
+    "title": "Trânsito bloqueado",
+    "stakes": "O veículo bloqueia uma rota, mas deixa uma lateral transitável.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Conferir a lateral e quem está perto do veículo.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Negociar remoção ou passagem com o responsável.",
+        "minutes": 5,
+        "test": {
+          "trait": "Presença",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Usar a lateral sem mexer no veículo.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "A rota lateral ou uma passagem negociada fica confirmada.",
+        "continuity": "Rota conferida e acordo de passagem registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A passagem é possível, mas demanda favor ou desvio da carga.",
+        "continuity": "Rota conferida e acordo de passagem registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A remoção não é combinada; a lateral permanece alternativa.",
+        "continuity": "O veículo permanece no lugar estabelecido. A remoção não é combinada; a lateral permanece alternativa.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O veículo permanece no lugar estabelecido.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 60,
+    "title": "Chuva cessando",
+    "stakes": "A trilha que secou pode voltar a servir, mas ainda precisa ser conferida.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Reconhecer o primeiro trecho por marcas visíveis.",
+        "minutes": 10
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Testar a passagem com carga reduzida.",
+        "minutes": 5,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Continuar pela rota já conhecida.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O trecho reconhecido volta a ser utilizável.",
+        "continuity": "Somente o trecho efetivamente reconhecido anotado.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A trilha serve, mas um ponto ainda exige cuidado ou desvio.",
+        "continuity": "Somente o trecho efetivamente reconhecido anotado. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "Um trecho continua encharcado; a entrada permanece conhecida.",
+        "continuity": "A trilha completa segue sem confirmação. Um trecho continua encharcado; a entrada permanece conhecida.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A trilha completa segue sem confirmação.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 61,
+    "title": "Garrafa esquecida",
+    "stakes": "A marca no recipiente indica posse; o conteúdo ainda precisa ser verificado.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Conferir marca, lacre e sinais de uso.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Procurar o dono ou propor uma troca.",
+        "minutes": 2,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Deixar o recipiente onde foi encontrado.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "Posse e condição do recipiente são esclarecidas.",
+        "continuity": "Posse, condição e eventual coleta efetiva registradas.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O grupo pode obtê-lo, mas fica uma obrigação com o dono.",
+        "continuity": "Posse, condição e eventual coleta efetiva registradas. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "Não há confirmação do conteúdo; ele continua sem liberação de consumo.",
+        "continuity": "O recipiente conserva posse e condição estabelecidas. Não há confirmação do conteúdo; ele continua sem liberação de consumo.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O recipiente conserva posse e condição estabelecidas.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 62,
+    "title": "Ferramenta no caminho",
+    "stakes": "A ferramenta pode ser útil, mas sua posse e condição importam.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Inspecionar a peça e procurar marcas de dono.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Usá-la no problema imediato e registrar onde ficou.",
+        "minutes": 2,
+        "test": {
+          "trait": "Conhecimento",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Marcar a ferramenta para voltar depois.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "A condição e uma utilização plausível são confirmadas.",
+        "continuity": "Uso, condição e posse efetiva anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "Ela ajuda, mas precisa de reparo ou devolução.",
+        "continuity": "Uso, condição e posse efetiva anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A ferramenta não serve ao uso pretendido; outra função permanece possível.",
+        "continuity": "A ferramenta permanece no lugar e condição estabelecidos. A ferramenta não serve ao uso pretendido; outra função permanece possível.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A ferramenta permanece no lugar e condição estabelecidos.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 63,
+    "title": "Tanque pingando",
+    "stakes": "O tanque perde um líquido que precisa ser identificado antes de guardar.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Conferir marca e origem da perda.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Conter o vazamento por ponto acessível.",
+        "minutes": 5,
+        "test": {
+          "trait": "Conhecimento",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Sinalizar e deixar a área.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O líquido é identificado e a perda é contida na ficção.",
+        "continuity": "Conteúdo confirmado e estado do vazamento anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A perda diminui, mas parte já se perdeu ou exige outro recipiente.",
+        "continuity": "Conteúdo confirmado e estado do vazamento anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A contenção não funciona; outro acesso ou ferramenta pode ajudar.",
+        "continuity": "O tanque continua perdendo líquido no ritmo anunciado. A contenção não funciona; outro acesso ou ferramenta pode ajudar.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O tanque continua perdendo líquido no ritmo anunciado.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 64,
+    "title": "Porta que antes abria",
+    "stakes": "A porta mudou de estado; sinais devem indicar quem está dentro.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Ouvir e procurar sinais recentes do lado de fora.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Chamar e negociar a abertura.",
+        "minutes": 2,
+        "test": {
+          "trait": "Presença",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Usar outro acesso.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo entende por que a porta foi travada e combina acesso.",
+        "continuity": "Ocupante confirmado e acordo de acesso registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O acesso é oferecido sob uma condição.",
+        "continuity": "Ocupante confirmado e acordo de acesso registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A abertura é recusada; outro contato ou passagem ainda pode existir.",
+        "continuity": "A porta continua travada por dentro. A abertura é recusada; outro contato ou passagem ainda pode existir.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A porta continua travada por dentro.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 65,
+    "title": "Cadeira diante da janela",
+    "stakes": "A cadeira indica observação recente, sem esclarecer a intenção.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Examinar campo de visão e sinais de uso.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Investigar o ponto observado pela janela.",
+        "minutes": 5,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Marcar o posto sem ocupar.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo identifica o que era observado e uma pista sobre quem usou o posto.",
+        "continuity": "Campo observado e sinais confirmados anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A pista é encontrada, mas o ocupante percebe a investigação.",
+        "continuity": "Campo observado e sinais confirmados anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "Os sinais são insuficientes; o campo de visão ainda é conhecido.",
+        "continuity": "A autoria do posto permanece incerta. Os sinais são insuficientes; o campo de visão ainda é conhecido.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A autoria do posto permanece incerta.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "point"
+  },
+  {
+    "roll": 66,
+    "title": "Saco rasgado",
+    "stakes": "Os grãos e pegadas apontam carga levada, sem definir posse.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Conferir direção e sobreposição dos rastros.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Seguir a trilha até uma referência visível.",
+        "minutes": 5,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Marcar o último trecho legível.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O trajeto da carga recebe uma confirmação concreta.",
+        "continuity": "Último trecho e posse confirmada registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O trajeto fica claro, mas seu dono nota o acompanhamento.",
+        "continuity": "Último trecho e posse confirmada registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A trilha acaba; uma direção e referência continuam úteis.",
+        "continuity": "Carga e destino continuam sem confirmação. A trilha acaba; uma direção e referência continuam úteis.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "Carga e destino continuam sem confirmação.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 67,
+    "title": "Carrinho abandonado",
+    "stakes": "O carrinho pode ser reparado ou deixado como referência de outra rota.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Examinar roda, carga e marcas de dono.",
+        "minutes": 10
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Tentar um reparo com peças disponíveis.",
+        "minutes": 5,
+        "test": {
+          "trait": "Conhecimento",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Marcar o carrinho e procurar transporte diferente.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "Um reparo plausível torna o carrinho utilizável.",
+        "continuity": "Condição, limite e reparo efetivo anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "Ele pode andar, mas tem uma limitação de carga ou precisa de peça.",
+        "continuity": "Condição, limite e reparo efetivo anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O reparo não resolve a roda; outro uso ou transporte permanece possível.",
+        "continuity": "O carrinho conserva a avaria e a posse estabelecidas. O reparo não resolve a roda; outro uso ou transporte permanece possível.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O carrinho conserva a avaria e a posse estabelecidas.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 68,
+    "title": "Comida exposta",
+    "stakes": "A comida tem sinais de deterioração que precisam ser avaliados.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Conferir embalagem e condição observável.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Consultar uma fonte confiável antes de registrar consumo.",
+        "minutes": 5,
+        "test": {
+          "trait": "Conhecimento",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Deixar a comida sem consumir.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "A condição é verificada e só o conteúdo confirmado pode ser registrado.",
+        "continuity": "Condição, prazo e quantidade efetivamente coletada anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "Parte é aproveitável, mas exige preparo ou tem prazo curto.",
+        "continuity": "Condição, prazo e quantidade efetivamente coletada anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A avaliação é inconclusiva; o consumo permanece indisponível.",
+        "continuity": "A comida continua com qualidade não verificada. A avaliação é inconclusiva; o consumo permanece indisponível.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A comida continua com qualidade não verificada.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 69,
+    "title": "Caixa lacrada",
+    "stakes": "A etiqueta informa uso, mas não garante o conteúdo da caixa.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Examinar lacre, etiqueta e sinais de dano.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Abrir com ferramentas adequadas disponíveis.",
+        "minutes": 5,
+        "test": {
+          "trait": "Finesse",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Marcar a caixa e procurar seu responsável.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O conteúdo real é identificado sem presumir uma reserva.",
+        "continuity": "Conteúdo real, condição e posse registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O conteúdo é identificado, mas parte está danificada ou tem dono presente.",
+        "continuity": "Conteúdo real, condição e posse registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A caixa não é aberta; outro método ou responsável pode ajudar.",
+        "continuity": "O conteúdo permanece desconhecido. A caixa não é aberta; outro método ou responsável pode ajudar.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O conteúdo permanece desconhecido.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 70,
+    "title": "Chuva captada",
+    "stakes": "A água de chuva acumulada ainda não tem qualidade confirmada.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Conferir recipiente, captação e sinais de uso.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Buscar uma forma de verificação antes de guardar para consumo.",
+        "minutes": 5,
+        "test": {
+          "trait": "Conhecimento",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Marcar o recipiente sem consumir.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "A condição é verificada antes de qualquer registro como recurso.",
+        "continuity": "Qualidade confirmada e volume realmente guardado anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "Há água aproveitável, mas preparo ou transporte exige custo.",
+        "continuity": "Qualidade confirmada e volume realmente guardado anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A qualidade permanece incerta; a água não é liberada para consumo.",
+        "continuity": "A água segue não verificada e no recipiente existente. A qualidade permanece incerta; a água não é liberada para consumo.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A água segue não verificada e no recipiente existente.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 71,
+    "title": "Rádio acende",
+    "stakes": "A energia permite somente uma escuta curta e uma escolha de frequência.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Escolher uma frequência conhecida antes de ligar.",
+        "minutes": 2
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Sintonizar um sinal novo durante a janela restante.",
+        "minutes": 1,
+        "test": {
+          "trait": "Conhecimento",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Guardar o aparelho sem gastar essa escuta.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "Uma mensagem útil é captada e anotada.",
+        "continuity": "Frequência, mensagem e carga efetiva registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A mensagem chega incompleta e aponta um contato que exige confirmação.",
+        "continuity": "Frequência, mensagem e carga efetiva registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A energia termina; permanece um fragmento verificável.",
+        "continuity": "A energia restante conserva o estado estabelecido. A energia termina; permanece um fragmento verificável.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A energia restante conserva o estado estabelecido.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 72,
+    "title": "Painel de energia",
+    "stakes": "O painel controla um circuito local, sem criar energia armazenada.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Identificar a chave e o circuito de posição acessível.",
+        "minutes": 10
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Acionar o controle reconhecido e observar a resposta.",
+        "minutes": 5,
+        "test": {
+          "trait": "Conhecimento",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Deixar desligado e usar outra fonte de luz.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "A resposta confirma quais pontos dependem daquele circuito.",
+        "continuity": "Circuito, posição da chave e resposta observada anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O circuito funciona, mas também sinaliza presença em outra área.",
+        "continuity": "Circuito, posição da chave e resposta observada anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O circuito não responde; sua extensão permanece parcialmente conhecida.",
+        "continuity": "A chave continua na posição estabelecida. O circuito não responde; sua extensão permanece parcialmente conhecida.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A chave continua na posição estabelecida.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 73,
+    "title": "Ferrolho novo",
+    "stakes": "O ferrolho novo indica alguém protegendo aquele acesso.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Observar marcas e procurar contato do proprietário.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Negociar uso temporário da entrada.",
+        "minutes": 2,
+        "test": {
+          "trait": "Presença",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Usar uma entrada diferente.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O dono ou o motivo do reforço é confirmado e o acesso pode ser combinado.",
+        "continuity": "Proprietário confirmado e condição de acesso anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "Há acesso, mas com condição de devolução ou vigilância.",
+        "continuity": "Proprietário confirmado e condição de acesso anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "Não há acordo; outro acesso continua possível.",
+        "continuity": "O ferrolho conserva o fechamento estabelecido. Não há acordo; outro acesso continua possível.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O ferrolho conserva o fechamento estabelecido.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 74,
+    "title": "Escada colocada",
+    "stakes": "A escada dá acesso alto com exposição visível.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Conferir apoios e o que pode ser visto do alto.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Subir até um ponto anunciado de observação.",
+        "minutes": 5,
+        "test": {
+          "trait": "Agilidade",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Manter-se no nível da rua.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "Um acesso ou campo de visão é confirmado.",
+        "continuity": "Apoios, altura alcançada e observação real registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O acesso funciona, mas a presença fica visível a outra pessoa.",
+        "continuity": "Apoios, altura alcançada e observação real registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A subida não é concluída; o apoio inicial permite retorno.",
+        "continuity": "A escada permanece na posição estabelecida. A subida não é concluída; o apoio inicial permite retorno.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A escada permanece na posição estabelecida.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 75,
+    "title": "Sombra em galpão",
+    "stakes": "O espaço seco só serve como pausa se a vigilância for viável.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Observar entradas e sinais de ocupação.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Combinar turnos de observação com quem estiver presente.",
+        "minutes": 5,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Procurar outra cobertura.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo confirma condições para uma pausa e suas entradas.",
+        "continuity": "Entradas, ocupação e condição de pausa anotadas.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O local serve, mas exige vigia ou um acordo com ocupante.",
+        "continuity": "Entradas, ocupação e condição de pausa anotadas. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A pausa não é segura nas condições atuais; outra saída fica conhecida.",
+        "continuity": "O galpão não vira abrigo nem concede descanso automaticamente. A pausa não é segura nas condições atuais; outra saída fica conhecida.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O galpão não vira abrigo nem concede descanso automaticamente.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "point"
+  },
+  {
+    "roll": 76,
+    "title": "Reservatório vazando",
+    "stakes": "O reparo pode preservar água existente, sem criar estoque novo.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Examinar a perda e os materiais disponíveis.",
+        "minutes": 10
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Aplicar um reparo plausível no ponto alcançável.",
+        "minutes": 5,
+        "test": {
+          "trait": "Conhecimento",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Sinalizar a perda e procurar ajuda.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "A perda é contida no ponto reparado.",
+        "continuity": "Reparo, manutenção e água realmente preservada registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "Ela diminui, mas o reparo exige manutenção ou material adicional.",
+        "continuity": "Reparo, manutenção e água realmente preservada registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O reparo não segura; outro ponto ou material é necessário.",
+        "continuity": "O reservatório continua com o vazamento estabelecido. O reparo não segura; outro ponto ou material é necessário.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O reservatório continua com o vazamento estabelecido.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 77,
+    "title": "Cartaz de serviço",
+    "stakes": "O endereço de serviço é legível, mas seu funcionamento é desconhecido.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Comparar endereço com o bairro adjacente avistado.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Procurar uma referência de quem presta o serviço.",
+        "minutes": 5,
+        "test": {
+          "trait": "Conhecimento",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Copiar o cartaz para consultar depois.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo localiza o endereço e confirma uma forma de contato.",
+        "continuity": "Endereço e condição de atendimento confirmados anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O serviço existe, mas há fila, favor ou condição de atendimento.",
+        "continuity": "Endereço e condição de atendimento confirmados anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O endereço mudou; uma referência aponta onde perguntar.",
+        "continuity": "O serviço continua sem confirmação de disponibilidade. O endereço mudou; uma referência aponta onde perguntar.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O serviço continua sem confirmação de disponibilidade.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "clue"
+  },
+  {
+    "roll": 78,
+    "title": "Pequena troca possível",
+    "stakes": "A troca começa com uma necessidade concreta, sem preço definido.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Ouvir o pedido e conferir o que cada parte possui.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Negociar uma troca pequena e verificável.",
+        "minutes": 5,
+        "test": {
+          "trait": "Presença",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Recusar sem assumir compromisso.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "Um acordo define exatamente os itens ou serviços trocados.",
+        "continuity": "Termos e entregas efetivamente realizadas anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O acordo funciona, mas inclui prazo ou contrapartida adicional.",
+        "continuity": "Termos e entregas efetivamente realizadas anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A troca não é aceita; nenhuma entrega é presumida.",
+        "continuity": "Cada pessoa conserva seus recursos estabelecidos. A troca não é aceita; nenhuma entrega é presumida.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "Cada pessoa conserva seus recursos estabelecidos.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "npc"
+  },
+  {
+    "roll": 79,
+    "title": "Objeto pesado visível",
+    "stakes": "O objeto visível exige transporte compatível com seu peso.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Conferir tamanho, condição e rota de retirada.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Planejar a retirada com transporte disponível.",
+        "minutes": 5,
+        "test": {
+          "trait": "Força",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Deixar uma marca de retorno no mapa.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo define e executa uma retirada viável na ficção.",
+        "continuity": "Posse, transporte e posição final do objeto anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A retirada funciona, mas exige tempo, ajuda ou limita outra carga.",
+        "continuity": "Posse, transporte e posição final do objeto anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A retirada não é possível com o equipamento atual.",
+        "continuity": "O objeto permanece no local estabelecido. A retirada não é possível com o equipamento atual.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O objeto permanece no local estabelecido.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "point"
+  },
+  {
+    "roll": 80,
+    "title": "Rota liberada",
+    "stakes": "O entulho removido indica passagem recente e possível responsável.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Conferir a extensão livre e as marcas de remoção.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Reconhecer a próxima referência da passagem.",
+        "minutes": 5,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Anotar a entrada sem declarar toda a rota segura.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "Um trecho da passagem fica confirmado.",
+        "continuity": "Trecho livre e autoria confirmada registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O trecho funciona, mas quem removeu o entulho exige contato.",
+        "continuity": "Trecho livre e autoria confirmada registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "Um bloqueio posterior interrompe o reconhecimento.",
+        "continuity": "A rota completa continua não verificada. Um bloqueio posterior interrompe o reconhecimento.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A rota completa continua não verificada.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "clue"
+  },
+  {
+    "roll": 81,
+    "title": "Arranhões na porta",
+    "stakes": "Os arranhões e sons indicam movimento atrás de uma porta.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Escutar e observar de fora do alcance.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Provocar uma resposta por contato à distância.",
+        "minutes": 2,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Manter a porta fechada e contornar.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo estima origem e alcance do movimento.",
+        "continuity": "Movimento observado e estado da barreira anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A estimativa funciona, mas o contato provoca mais ruído.",
+        "continuity": "Movimento observado e estado da barreira anotados. Registre a condição adicional escolhida.",
+        "noise": 1
+      },
+      "failure": {
+        "summary": "A origem permanece incerta; a porta continua como barreira.",
+        "continuity": "O interior permanece não identificado e fechado. A origem permanece incerta; a porta continua como barreira.",
+        "noise": 1
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O interior permanece não identificado e fechado.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 82,
+    "title": "Passos arrastados",
+    "stakes": "Um infectado cruza outra rua; esperar pode evitar o contato.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Esperar em cobertura até a travessia terminar.",
+        "minutes": 10
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Reconhecer uma passagem fora de seu percurso.",
+        "minutes": 5,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Recuar e manter distância.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo segue sem entrar no alcance do infectado.",
+        "continuity": "Posição vista e rota de evasão registradas.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A passagem funciona, mas exige um desvio ou deixa uma rota ocupada.",
+        "continuity": "Posição vista e rota de evasão registradas. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O infectado muda de direção; o grupo recebe nova decisão antes do contato.",
+        "continuity": "A posição do infectado segue a movimentação anunciada. O infectado muda de direção; o grupo recebe nova decisão antes do contato.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A posição do infectado segue a movimentação anunciada.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "threat"
+  },
+  {
+    "roll": 83,
+    "title": "Silêncio interrompido",
+    "stakes": "A batida fixa tem uma origem que pode ser observada antes de agir.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Escutar ritmo e direção de cobertura.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Procurar um ângulo de observação com retorno.",
+        "minutes": 5,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Deixar o ponto para investigar depois.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "A origem da batida é identificada.",
+        "continuity": "Origem confirmada e reação à observação anotadas.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A origem é vista, mas nota a observação.",
+        "continuity": "Origem confirmada e reação à observação anotadas. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A batida cessa; o ponto continua localizável.",
+        "continuity": "A fonte permanece sem identificação. A batida cessa; o ponto continua localizável.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A fonte permanece sem identificação.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 84,
+    "title": "Corredor estreito ocupado",
+    "stakes": "O vulto ainda não percebeu o grupo e existe outra passagem.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Esperar fora de seu campo de visão.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Usar o caminho alternativo observado.",
+        "minutes": 5,
+        "test": {
+          "trait": "Agilidade",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Voltar pelo trecho conhecido.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo evita o contato e confirma a passagem usada.",
+        "continuity": "Posição observada e rota usada registradas.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O grupo passa, mas perde uma oportunidade ou precisa de desvio.",
+        "continuity": "Posição observada e rota usada registradas. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O vulto muda de rota; o grupo pode escolher outro caminho antes de se aproximar.",
+        "continuity": "A identidade e intenção do vulto continuam incertas. O vulto muda de rota; o grupo pode escolher outro caminho antes de se aproximar.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A identidade e intenção do vulto continuam incertas.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 85,
+    "title": "Vultos atrás da grade",
+    "stakes": "A grade intacta mantém a concentração separada do grupo.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Observar alcance e estado da barreira.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Contornar sem entrar junto à grade.",
+        "minutes": 5,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Manter distância e deixar o acesso fechado.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo confirma um caminho fora do alcance.",
+        "continuity": "Alcance, concentração e rota de contorno anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O caminho funciona, mas deixa uma rota indisponível por enquanto.",
+        "continuity": "Alcance, concentração e rota de contorno anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O caminho pretendido fica ocupado; outro contorno ainda pode ser reconhecido.",
+        "continuity": "A grade permanece intacta, sem ataque automático. O caminho pretendido fica ocupado; outro contorno ainda pode ser reconhecido.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A grade permanece intacta, sem ataque automático.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 86,
+    "title": "Infectado preso",
+    "stakes": "O infectado imobilizado ainda alcança quem entra perto.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Observar de fora do alcance anunciado.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Passar por um trecho que mantém a distância.",
+        "minutes": 5,
+        "test": {
+          "trait": "Agilidade",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Marcar o alcance e recuar.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo atravessa sem entrar no alcance.",
+        "continuity": "Alcance e caminho realmente usado registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A travessia funciona, mas exige um desvio da carga.",
+        "continuity": "Alcance e caminho realmente usado registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O caminho não oferece distância suficiente; ainda é possível recuar.",
+        "continuity": "O infectado continua preso na condição estabelecida. O caminho não oferece distância suficiente; ainda é possível recuar.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O infectado continua preso na condição estabelecida.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "threat"
+  },
+  {
+    "roll": 87,
+    "title": "Passos seguindo som",
+    "stakes": "O infectado já sinalizado muda de direção seguindo um som.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Observar a nova direção de cobertura.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Ajustar a rota sem entrar em seu alcance.",
+        "minutes": 5,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Esperar numa cobertura já conhecida.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo adapta o caminho ao movimento observado.",
+        "continuity": "Posição atual e mudança de rota anotadas.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O ajuste funciona, mas uma travessia precisa ser adiada.",
+        "continuity": "Posição atual e mudança de rota anotadas. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A rota escolhida cruza o novo percurso; outra decisão é oferecida.",
+        "continuity": "O infectado conserva a identidade e movimentação sinalizadas. A rota escolhida cruza o novo percurso; outra decisão é oferecida.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O infectado conserva a identidade e movimentação sinalizadas.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "threat"
+  },
+  {
+    "roll": 88,
+    "title": "Alarme quase ativo",
+    "stakes": "Os sinais do carro anunciam alarme antes de ele disparar.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Afastar-se ou observar o acionamento de cobertura.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Intervir num controle reconhecido sem tocar ao acaso.",
+        "minutes": 2,
+        "test": {
+          "trait": "Finesse",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Contornar o carro e deixar o risco marcado.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo evita o alarme ou interrompe o acionamento plausível.",
+        "continuity": "Estado do alarme e atenção realmente atraída anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A intervenção funciona, mas um toque ou sinal chama atenção.",
+        "continuity": "Estado do alarme e atenção realmente atraída anotados. Registre a condição adicional escolhida.",
+        "noise": 2
+      },
+      "failure": {
+        "summary": "O alarme anunciado dispara; há espaço para afastar-se antes de outra consequência.",
+        "continuity": "O carro conserva o estado de acionamento estabelecido. O alarme anunciado dispara; há espaço para afastar-se antes de outra consequência.",
+        "noise": 2
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O carro conserva o estado de acionamento estabelecido.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 89,
+    "title": "Pássaros levantam voo",
+    "stakes": "O voo das aves aponta movimento, sem revelar sua identidade.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Observar a direção de cobertura.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Buscar um ângulo para enxergar sob as árvores.",
+        "minutes": 5,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Usar uma rota fora da direção indicada.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo identifica o movimento que levantou as aves.",
+        "continuity": "Movimento realmente visto e direção registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A origem é identificada, mas percebe alguém observando.",
+        "continuity": "Movimento realmente visto e direção registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O movimento some; a direção permanece conhecida.",
+        "continuity": "A identidade sob as árvores continua incerta. O movimento some; a direção permanece conhecida.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A identidade sob as árvores continua incerta.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 90,
+    "title": "Porta golpeada",
+    "stakes": "A porta oferece uma resistência visível e tempo para decidir.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Observar o ritmo dos golpes e um caminho de retirada.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Reforçar um apoio alcançável com material disponível.",
+        "minutes": 2,
+        "test": {
+          "trait": "Força",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Sair antes de a resistência anunciada terminar.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo se retira ou sustenta a barreira pelo intervalo combinado.",
+        "continuity": "Estado da barreira, apoio e prazo restante anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O apoio funciona, mas exige material ou manutenção.",
+        "continuity": "Estado da barreira, apoio e prazo restante anotados. Registre a condição adicional escolhida.",
+        "noise": 1
+      },
+      "failure": {
+        "summary": "O apoio não segura; o prazo restante é anunciado antes de nova decisão.",
+        "continuity": "A porta segue o desgaste e prazo já mostrados. O apoio não segura; o prazo restante é anunciado antes de nova decisão.",
+        "noise": 1
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A porta segue o desgaste e prazo já mostrados.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 91,
+    "title": "Estilhaços no chão",
+    "stakes": "Correr nos estilhaços produz ruído; o desvio pode ser reconhecido.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Procurar um trajeto sem fragmentos.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Atravessar rapidamente pelo caminho escolhido.",
+        "minutes": 2,
+        "test": {
+          "trait": "Agilidade",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Recuar e usar outra entrada.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo atravessa pelo trajeto combinado.",
+        "continuity": "Trajeto usado e ruído efetivamente provocado registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A travessia funciona, mas os fragmentos produzem ruído.",
+        "continuity": "Trajeto usado e ruído efetivamente provocado registrados. Registre a condição adicional escolhida.",
+        "noise": 1
+      },
+      "failure": {
+        "summary": "A passagem é interrompida; permanece possível mudar o trajeto.",
+        "continuity": "Os estilhaços continuam na área sinalizada. A passagem é interrompida; permanece possível mudar o trajeto.",
+        "noise": 1
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "Os estilhaços continuam na área sinalizada.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 92,
+    "title": "Figura imóvel",
+    "stakes": "A figura pode ser pessoa, corpo ou infectado e há distância para observar.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Observar sinais de movimento de cobertura.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Chamar de fora de um alcance anunciado.",
+        "minutes": 2,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Manter distância e marcar o ponto.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo identifica a figura por evidência observável.",
+        "continuity": "Identidade confirmada e reação registrada.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A identidade fica clara, mas a figura reage ao contato.",
+        "continuity": "Identidade confirmada e reação registrada. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "Os sinais continuam inconclusivos; outro ângulo pode esclarecer.",
+        "continuity": "A figura permanece sem identificação automática. Os sinais continuam inconclusivos; outro ângulo pode esclarecer.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A figura permanece sem identificação automática.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 93,
+    "title": "Rastro de arrasto",
+    "stakes": "O rastro recente entra num recinto e ainda permite recuar.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Examinar direção e sinais junto à entrada.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Observar somente a primeira área com retorno disponível.",
+        "minutes": 5,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Marcar o recinto sem entrar.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "Uma evidência esclarece o arrasto e a condição da entrada.",
+        "continuity": "Evidência e trecho realmente observado anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A evidência é obtida, mas o ocupante nota a investigação.",
+        "continuity": "Evidência e trecho realmente observado anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O interior não é identificado; as marcas na entrada continuam disponíveis.",
+        "continuity": "O recinto continua sem inspeção completa. O interior não é identificado; as marcas na entrada continuam disponíveis.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O recinto continua sem inspeção completa.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 94,
+    "title": "Alarme distante",
+    "stakes": "O alarme atrai atenção para outro ponto, sem exigir confronto.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Observar de cobertura para onde o movimento vai.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Usar uma rota que evita o foco do som.",
+        "minutes": 5,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Esperar o movimento se estabilizar.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo confirma o foco do alarme e uma rota fora dele.",
+        "continuity": "Foco observado e rotas afetadas registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A observação ajuda, mas uma passagem fica ocupada temporariamente.",
+        "continuity": "Foco observado e rotas afetadas registrados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A direção não é esclarecida; o grupo conserva uma rota de recuo.",
+        "continuity": "A origem do alarme e quem foi atraído seguem sem confirmação. A direção não é esclarecida; o grupo conserva uma rota de recuo.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A origem do alarme e quem foi atraído seguem sem confirmação.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 95,
+    "title": "Sombra na escada",
+    "stakes": "Um infectado conhecido ocupa um trecho antes livre.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Observar seu alcance e movimento atual.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Reconhecer um contorno pela escada ou outro acesso.",
+        "minutes": 5,
+        "test": {
+          "trait": "Agilidade",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Recuar pelo trecho já conhecido.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo usa uma passagem fora do alcance.",
+        "continuity": "Posição, alcance e rota efetivamente usada anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O contorno funciona, mas exige atraso ou deixa carga para depois.",
+        "continuity": "Posição, alcance e rota efetivamente usada anotados. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O contorno fica ocupado; o grupo recebe outra escolha antes do contato.",
+        "continuity": "O trecho continua ocupado pelo infectado conhecido. O contorno fica ocupado; o grupo recebe outra escolha antes do contato.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O trecho continua ocupado pelo infectado conhecido.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "threat"
+  },
+  {
+    "roll": 96,
+    "title": "Ruído sob o piso",
+    "stakes": "O ruído sob o piso é localizável e há outro acesso disponível.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Escutar de uma posição fora da área suspeita.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Investigar por um ponto de observação lateral.",
+        "minutes": 5,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Usar o outro acesso sem pisar no trecho.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "A origem do ruído é esclarecida.",
+        "continuity": "Origem confirmada e área evitada registradas.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A origem é identificada, mas um trecho precisa ser evitado.",
+        "continuity": "Origem confirmada e área evitada registradas. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "A inspeção é inconclusiva; o outro acesso continua válido.",
+        "continuity": "A origem permanece incerta e o piso não é declarado seguro. A inspeção é inconclusiva; o outro acesso continua válido.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A origem permanece incerta e o piso não é declarado seguro.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 97,
+    "title": "Portão cedendo",
+    "stakes": "A deformação anuncia uma entrada futura e tempo para agir.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Observar a deformação e reconhecer uma retirada.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Reforçar um apoio com materiais disponíveis.",
+        "minutes": 2,
+        "test": {
+          "trait": "Força",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Sair antes do prazo anunciado.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O apoio segura pelo intervalo combinado ou o grupo se retira.",
+        "continuity": "Estado final, reforço e prazo restante anotados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O intervalo é obtido, mas exige material ou vigilância.",
+        "continuity": "Estado final, reforço e prazo restante anotados. Registre a condição adicional escolhida.",
+        "noise": 1
+      },
+      "failure": {
+        "summary": "O apoio cede; o tempo restante deve ser anunciado antes da entrada.",
+        "continuity": "O portão mantém o desgaste e prazo estabelecidos. O apoio cede; o tempo restante deve ser anunciado antes da entrada.",
+        "noise": 1
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "O portão mantém o desgaste e prazo estabelecidos.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 98,
+    "title": "Concentração na esquina",
+    "stakes": "A concentração na esquina pode ser evitada por um desvio visível.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Reconhecer o contorno de cobertura.",
+        "minutes": 10
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Atravessar o trecho de desvio já observado.",
+        "minutes": 5,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Esperar sem entrar na esquina.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo contorna a concentração sem contato.",
+        "continuity": "Rota de contorno e posição da concentração anotadas.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "O contorno funciona, mas cobra atraso ou deixa uma rota indisponível.",
+        "continuity": "Rota de contorno e posição da concentração anotadas. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O trecho escolhido fica ocupado; outro contorno ainda pode ser considerado.",
+        "continuity": "A concentração permanece na posição observada. O trecho escolhido fica ocupado; outro contorno ainda pode ser considerado.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A concentração permanece na posição observada.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": "threat"
+  },
+  {
+    "roll": 99,
+    "title": "Saída quase fechada",
+    "stakes": "A mão fecha a saída e o mestre anuncia o intervalo para reagir.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Chamar e pedir que a saída seja mantida.",
+        "minutes": 2
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Segurar um ponto alcançável durante a abertura.",
+        "minutes": 1,
+        "test": {
+          "trait": "Força",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Usar a outra saída conhecida ou recuar.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "A saída permanece aberta pelo intervalo necessário.",
+        "continuity": "Posição final da saída e acordo efetivo registrados.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A passagem funciona, mas exige acordo ou deixa o acesso depois fechado.",
+        "continuity": "Posição final da saída e acordo efetivo registrados. Registre a condição adicional escolhida.",
+        "noise": 1
+      },
+      "failure": {
+        "summary": "A abertura se fecha; a outra saída ou contato oferece continuidade.",
+        "continuity": "A saída segue o fechamento e prazo anunciados. A abertura se fecha; a outra saída ou contato oferece continuidade.",
+        "noise": 1
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A saída segue o fechamento e prazo anunciados.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  },
+  {
+    "roll": 100,
+    "title": "Barulho refletido",
+    "stakes": "O eco confunde a direção; esperar oferece nova referência.",
+    "approaches": [
+      {
+        "id": "careful",
+        "label": "Observar / preparar",
+        "description": "Escutar o próximo som de uma posição fixa.",
+        "minutes": 5
+      },
+      {
+        "id": "risk",
+        "label": "Intervir / negociar",
+        "description": "Comparar reflexos a partir de outro ponto de cobertura.",
+        "minutes": 2,
+        "test": {
+          "trait": "Instinto",
+          "difficulty": 13
+        }
+      },
+      {
+        "id": "alternative",
+        "label": "Outra saída / recuar",
+        "description": "Seguir por uma rota que evita a direção incerta.",
+        "minutes": 0
+      }
+    ],
+    "outcomes": {
+      "success": {
+        "summary": "O grupo localiza a direção real do som.",
+        "continuity": "Direção confirmada e referências acústicas anotadas.",
+        "noise": 0
+      },
+      "complication": {
+        "summary": "A direção é localizada, mas o deslocamento expõe uma posição.",
+        "continuity": "Direção confirmada e referências acústicas anotadas. Registre a condição adicional escolhida.",
+        "noise": 0
+      },
+      "failure": {
+        "summary": "O som não se repete; permanece uma faixa provável para observar.",
+        "continuity": "A origem do som continua sem localização confirmada. O som não se repete; permanece uma faixa provável para observar.",
+        "noise": 0
+      },
+      "withdrawn": {
+        "summary": "O grupo escolhe não intervir e mantém uma possibilidade de retorno.",
+        "continuity": "A origem do som continua sem localização confirmada.",
+        "noise": 0
+      }
+    },
+    "suggestedAction": null
+  }
+]

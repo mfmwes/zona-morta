@@ -10,6 +10,7 @@ type ActivityBase = {
   issue?: string; operationId?: string;
 };
 export type ScheduledActivity = ActivityBase & (
+  | { type: "event"; eventId: string; resolutionId: string }
   | { type: "travel"; destination: string }
   | { type: "search"; pointId: string; attemptId: string }
   | { type: "treatment"; medicineSource: string; modifier: number }
@@ -17,6 +18,7 @@ export type ScheduledActivity = ActivityBase & (
 );
 export type PublicActivity = Pick<ScheduledActivity, "id" | "type" | "label" | "participantIds" | "hexId" | "startMinute" | "endMinute" | "issue">;
 export type ActivityInput =
+  | { type: "event"; eventId: string; resolutionId: string }
   | { type: "travel"; destination: string }
   | { type: "search"; pointId: string; attemptId: string }
   | { type: "treatment"; medicineSource: string; modifier: number }
@@ -58,6 +60,10 @@ export function cancelActivity(game: GameState, id: string) {
     const attempt = game.hexes[activity.hexId]?.points.find(p => p.id === activity.pointId)?.preparation?.attempts.find(a => a.id === activity.attemptId);
     if (attempt) { attempt.status = "failed"; attempt.result = "Busca interrompida pelo mestre; nenhum achado liberado."; }
   }
+  if (activity.type === "event") {
+    const resolution=game.hexes[activity.hexId]?.events.find(e=>e.id===activity.eventId)?.resolutions?.find(r=>r.id===activity.resolutionId);
+    if(resolution){resolution.status="cancelled";resolution.endMinute=game.minutes;}
+  }
   if (activity.type === "rest") for (const person of game.survivors.filter(p => activity.participantIds.includes(p.id))) delete person.restPlan;
   const op = game.playerActions?.operations.find(op => op.id === activity.operationId);
   if (op) { op.status = "cancelled"; op.result = "Atividade interrompida pelo mestre."; }
@@ -66,7 +72,7 @@ export function cancelActivity(game: GameState, id: string) {
 }
 
 export function publicActivities(game: GameState): PublicActivity[] {
-  return runningActivities(game).filter(a => a.type !== "search" || Boolean(game.hexes[a.hexId]?.points.find(p => p.id === a.pointId)?.revealed)).map(({ id, type, label, participantIds, hexId, startMinute, endMinute, issue }) =>
+  return runningActivities(game).filter(a => a.type === "event" ? Boolean(game.hexes[a.hexId]?.events.find(e => e.id === a.eventId)?.revealed) : a.type !== "search" || Boolean(game.hexes[a.hexId]?.points.find(p => p.id === a.pointId)?.revealed)).map(({ id, type, label, participantIds, hexId, startMinute, endMinute, issue }) =>
     ({ id, type, label, participantIds, hexId, startMinute, endMinute, ...(issue ? { issue: "Aguarda resolução do mestre." } : {}) }));
 }
 

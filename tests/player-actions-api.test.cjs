@@ -229,3 +229,18 @@ test('grupo único conclui busca no endpoint, preserva CAS e reenvio não cobra 
  assert.equal(projectedArea.lastRoll,attempt.effectiveRoll??attempt.roll);
  assert.ok(typeof projectedArea.lastResult==='string');
 });
+
+
+test('desfecho exige mestre, preserva edição paralela e reenvio não cobra efeitos outra vez',async()=>{
+ reset();state.survivors[0].hex='0,0';
+ const event={id:'event-scene',text:'Entrada barrada.',trigger:'',revealed:true,status:'active'};state.hexes['0,0'].events=[event];
+ const {eventResolutionFingerprint}=require('../lib/event-resolution.ts');
+ const command={type:'resolve-event',id:'event-confirm',day:state.day,expectedMinute:state.minutes,expectedEvent:eventResolutionFingerprint(event),hexId:'0,0',eventId:event.id,approachId:'careful',outcome:'success',summary:'Entrada negociada',continuity:'Senha reservada do mestre',participantIds:[actor],minutes:5,noise:1,fear:1};
+ assert.equal((await send(command)).status,403);assert.equal(writes,0);
+ authenticated={id:'master'};race=true;
+ const response=await send(command);const result=await response.json();assert.equal(response.status,200,JSON.stringify(result));assert.equal(state.fear,5);assert.equal(writes,2);assert.equal(state.minutes,command.expectedMinute+5);
+ assert.equal(state.hexes['0,0'].events[0].resolutions[0].status,'completed');
+ const saved=structuredClone(state);assert.equal((await send(command)).status,200);assert.equal(writes,2);assert.deepEqual(state,saved);
+ assert.equal((await send({...command,noise:2})).status,409);
+ assert.equal(JSON.stringify(projectPlayerGame(state,actor)).includes('Senha reservada do mestre'),false);
+});

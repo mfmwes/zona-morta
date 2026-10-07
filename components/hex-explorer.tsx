@@ -32,6 +32,8 @@ import { PlayerHexSearchDialog, type PlayerHexSearchRequest } from "@/components
 import { movementSources, performHexAction, type HexQuickAction } from "@/lib/hex-actions";
 import { shelterTravelMinutes } from "@/lib/shelter-projects";
 import { eventStatus, eventTriggerLabel, eventTriggerReady, generateHexContent } from "@/lib/hex-generators";
+import { HexEventGuideDialog } from "@/components/hex-event-guide-dialog";
+import { eventOutcomeLabels } from "@/lib/event-resolution-types";
 import { HexEventActionDialog, type HexEventActionRequest } from "@/components/hex-event-action-dialog";
 import { eventActionLinkLabels, eventActionUsed, hexEventActionLabels, suggestedEventActionKind } from "@/lib/hex-event-actions";
 import type { HexEventActionKind } from "@/lib/game";
@@ -69,6 +71,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
   const selected = game.hexes[selectedId] ? selectedId : game.partyHex;
   const [signsDraft, setSignsDraft] = useState<{ key: string; source: string; value: string } | null>(null);
   const [notesDraft, setNotesDraft] = useState<{ key: string; source: string; value: string } | null>(null);
+  const [guideEventId,setGuideEventId]=useState<string|null>(null);
   const [generatorRequest, setGeneratorRequest] = useState<HexGeneratorRequest | null>(null);
   const [eventActionRequest, setEventActionRequest] = useState<HexEventActionRequest | null>(null);
   const [searchRequest, setSearchRequest] = useState<HexSearchRequest | null>(null);
@@ -188,6 +191,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
     edit(draft => {
       const event = draft.hexes[selected]?.events.find(row => row.id === eventId);
       if (!event) return;
+      if(event.resolutions?.some(r=>r.status==="scheduled")){toast.error("Conclua ou interrompa a resolução em andamento.");return;}
       event.status = status;
       const sector = draft.hexes[selected].sector?.name ?? `Hex ${selected}`;
       const action = status === "active" ? "ativado" : status === "resolved" ? "resolvido" : status === "archived" ? "arquivado" : "reaberto";
@@ -199,6 +203,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
     edit(draft => {
       const hex = draft.hexes[selected];
       if (!hex) return;
+      if(hex.events.find(event=>event.id===eventId)?.resolutions?.some(r=>r.status==="scheduled")){toast.error("Interrompa a resolução antes de excluir o evento.");return;}
       hex.events = hex.events.filter(event => event.id !== eventId);
     });
   }
@@ -363,6 +368,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
           <div className="grid gap-2">
             {exposedEvents.map(event => {
               const status = eventStatus(event);
+              const suggestedAction = suggestedEventActionKind(event);
               const ready = !playerPreview && eventTriggerReady(game, selected, event);
               return <div className={`list-card text-sm hex-event-card hex-event-${status}`} key={event.id}>
                 <div className="flex flex-wrap items-start justify-between gap-2">
@@ -373,15 +379,15 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
                       {!playerPreview && event.generatorCategory && <span className="tag">{event.generatorCategory}</span>}
                     </div>
                     <p className="mt-1">{event.text}</p>
-                    {!playerPreview && event.guidance && <p className="mt-2 subtle"><b>Orientação:</b> {event.guidance}</p>}
+
                   </div>
                   {!playerPreview && <label className="flex items-center gap-2 text-xs whitespace-nowrap"><Switch size="sm" checked={event.revealed}
                     onCheckedChange={checked => edit(draft => { const found = draft.hexes[selected].events.find(row=>row.id===event.id); if(found) found.revealed=checked; })} /> Público</label>}
                 </div>
                 {!playerPreview && <div className="flex flex-wrap gap-2 mt-3">
-                  {["pending", "active"].includes(status) && event.generatorCategory && <Button size="sm" variant="outline" disabled={eventActionUsed(game, selected, event, suggestedEventActionKind(event))} onClick={() => { setSheetOpen(false); setEventActionRequest({ hexId: selected, eventId: event.id, type: suggestedEventActionKind(event), suggested: true }); }}>Preparar consequência sugerida</Button>}
+                  {["pending", "active"].includes(status) && suggestedAction && <Button size="sm" variant="outline" disabled={eventActionUsed(game, selected, event, suggestedAction)} onClick={() => { setSheetOpen(false); setEventActionRequest({ hexId: selected, eventId: event.id, type: suggestedAction, suggested: true }); }}>Preparar elemento sugerido</Button>}
                   {status === "pending" && <Button size="sm" variant={ready ? "default" : "outline"} onClick={() => updateEventStatus(event.id, "active")}><Play size={14} /> Ativar</Button>}
-                  {status === "active" && <Button size="sm" variant="outline" onClick={() => updateEventStatus(event.id, "resolved")}><CheckCircle2 size={14} /> Resolver</Button>}
+                  <Button size="sm" onClick={()=>{setSheetOpen(false);setGuideEventId(event.id);}}><CheckCircle2 size={14}/> {["pending","active"].includes(status)?"Conduzir evento":"Ver desfecho"}</Button>
                   {status === "resolved" && <Button size="sm" variant="outline" onClick={() => updateEventStatus(event.id, "active")}><Undo2 size={14} /> Reabrir</Button>}
                   <Button size="sm" variant="ghost" onClick={() => updateEventStatus(event.id, "archived")}><Archive size={14} /> Arquivar</Button>
                 </div>}
@@ -399,6 +405,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
                   })}
                   </div></CollapsibleContent>
                 </Collapsible>}
+                {!playerPreview && Boolean(event.resolutions?.length) && <details className="hex-event-resolution-summary"><summary>{event.resolutions!.at(-1)!.status==="scheduled"?"Resolução em andamento":`Desfecho · ${eventOutcomeLabels[event.resolutions!.at(-1)!.outcome]}`}</summary><p>{event.resolutions!.at(-1)!.summary}</p><p className="subtle">{event.resolutions!.at(-1)!.continuity}</p></details>}
                 {!playerPreview && event.actionLinks && <div className="flex flex-wrap gap-2 mt-2" aria-label="Vínculos do evento">
                   {eventActionLinkLabels(game, selected, event).map(label => <span key={label} className="tag">{label}</span>)}
                 </div>}
@@ -690,6 +697,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
       </AlertDialogContent>
     </AlertDialog>
 
+    {guideEventId && !playerPreview && <HexEventGuideDialog key={`${selected}:${guideEventId}`} game={game} hexId={selected} eventId={guideEventId} controls={masterActions} edit={edit} onClose={()=>{setGuideEventId(null);setSheetOpen(true);}}/>}
     {eventActionRequest && !playerPreview && <HexEventActionDialog key={`${eventActionRequest.hexId}:${eventActionRequest.eventId}:${eventActionRequest.type}`}
       game={game} edit={edit} request={eventActionRequest} onClose={() => { setEventActionRequest(null); if (compact || !playerPreview) setSheetOpen(true); }} />}
     {searchRequest && !playerPreview && <HexSearchDialog key={`${searchRequest.hexId}:${searchRequest.pointId}`}
