@@ -164,7 +164,8 @@ function executeCommand(game: GameState, actorId: string, cmd: PlayerCommand, di
   const policy = state.policy;
   const actor = game.survivors.find(p => p.id === actorId)!;
   const hexId = survivorHex(game, actor);
-  if (policy.paused && !["leave", "request", "clear-marker"].includes(cmd.type)) return "As ações da equipe estão pausadas pelo mestre.";
+  // Coletar estoque já liberado não inicia uma atividade nem avança tempo ou risco.
+  if (policy.paused && !["collect", "leave", "request", "clear-marker"].includes(cmd.type)) return "As ações da equipe estão pausadas pelo mestre.";
   const op = "operationId" in cmd ? state.operations.find(o => o.id === cmd.operationId) : undefined;
   if ("operationId" in cmd && (!op || !active(game, op))) return "Esta operação terminou, expirou ou mudou de cena.";
   if (cmd.type === "confirm-rest") return confirmTableRest(game, actorId, cmd.operationId, cmd.choices, die);

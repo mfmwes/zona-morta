@@ -9,7 +9,7 @@ import { actionsInContext } from "@/lib/player-action-context";
 import { createId } from "@/lib/id";
 import { traitLabel } from "@/lib/terminology";
 import type { GameState } from "@/lib/game";
-import type { PlayerActionControls } from "@/components/player-actions-panel";
+import { TeamActionError, type PlayerActionControls } from "@/components/player-actions-panel";
 import type { PublicSearchAreaState } from "@/lib/player-actions-types";
 
 export type PlayerHexSearchRequest = { hexId: string; pointId: string };
@@ -73,6 +73,9 @@ export function PlayerHexSearchDialog({
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const preparationRequested = useRef(false);
+  const inFlight = useRef(false);
+  const retry = useRef<{ payload: Record<string, unknown>; success?: string } | null>(null);
+  const [canRetry, setCanRetry] = useState(false);
 
   const areas = view?.areas ?? [];
   const activeOperation = view?.operations.find(op => ["forming", "access"].includes(op.status));
@@ -115,8 +118,8 @@ export function PlayerHexSearchDialog({
   const count = Number(quantity);
   const validCount = Number.isInteger(count) && count > 0 && count <= 99;
 
-  async function perform(input: Record<string, unknown>, success?: string) {
-    if (busy) {
+  async function perform(input: Record<string, unknown>, success?: string, retrying = false) {
+    if (inFlight.current) {
       setNotice("A ação anterior ainda está sendo registrada.");
       return false;
     }
@@ -124,29 +127,42 @@ export function PlayerHexSearchDialog({
       setError("A campanha ainda está sincronizando ou possui um salvamento pendente. Aguarde a conclusão antes de tentar novamente.");
       return false;
     }
+    if ((controls.pending || retry.current) && !retrying) {
+      setError("Reenvie a ação pendente antes de iniciar outra.");
+      return false;
+    }
+    const pending = retrying ? retry.current : { payload: { ...input, id: createId(), day: game.day }, success };
+    if (!pending) return false;
+    if (area && ["search", "deep-search", "execute", "roll-access"].includes(String(pending.payload.type))) setSelectedArea(area.areaId);
+    inFlight.current = true;
     setBusy(true);
     setError("");
     setNotice("");
     try {
-      await controls.send({ ...input, id: createId(), day: game.day });
-      if (success) setNotice(success);
+      await controls.send(pending.payload);
+      retry.current = null;
+      setCanRetry(false);
+      if (pending.success) setNotice(pending.success);
       return true;
     } catch (cause) {
+      retry.current = cause instanceof TeamActionError && cause.rejected ? null : pending;
+      setCanRetry(Boolean(retry.current));
       setError(cause instanceof Error ? cause.message : "Não foi possível registrar a ação.");
       return false;
     } finally {
+      inFlight.current = false;
       setBusy(false);
     }
   }
 
   useEffect(() => {
-    if (!location || location.prepared || preparationRequested.current || busy || !controls.canAct) return;
+    if (!location || location.prepared || preparationRequested.current || busy || !controls.canAct || controls.pending || canRetry || view?.policy.paused) return;
     preparationRequested.current = true;
     void perform({ type: "prepare-search", hexId: request.hexId, pointId: request.pointId }, "Áreas do local organizadas automaticamente.")
       .then(ok => { if (!ok) preparationRequested.current = false; });
     // perform is intentionally driven by the latest projected location state.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location?.prepared, location?.pointId, controls.canAct, request.hexId, request.pointId]);
+  }, [location?.prepared, location?.pointId, controls.canAct, controls.pending, canRetry, view?.policy.paused, request.hexId, request.pointId]);
 
   function selectArea(id: string) {
     setSelectedArea(id);
@@ -189,12 +205,15 @@ export function PlayerHexSearchDialog({
       </div>
 
       {!controls.canAct && <p className="team-notice">Aguarde a sincronização da campanha antes de agir.</p>}
-      {controls.pending && <p className="team-notice">Há uma ação anterior aguardando confirmação da conexão. Reenvie a mesma ação antes de iniciar outra.</p>}
+      {controls.pending && <p className="team-notice">Há uma ação anterior aguardando confirmação da conexão. {canRetry ? "Use o botão abaixo para reenviar a mesma ação." : "Feche esta janela e use Reenviar ação pendente na campanha antes de iniciar outra."}</p>}
       {view?.busy && <p className="team-notice" role="status"><b>Busca indisponível agora:</b> {view.busy}</p>}
-      {view?.policy.paused && <p className="team-notice" role="status"><b>Ações da equipe pausadas:</b> uma consequência anterior ainda precisa ser resolvida pelo mestre antes de iniciar outra busca.</p>}
+      {view?.policy.paused && <p className="team-notice" role="status"><b>Ações da equipe pausadas:</b> uma consequência anterior ainda precisa ser resolvida pelo mestre antes de iniciar outra busca. Achados já liberados continuam disponíveis para coleta.</p>}
       {error && <p className="team-error" role="alert">{error}</p>}
+      {canRetry && <Button size="sm" variant="outline" disabled={busy || !controls.canAct}
+        onClick={() => void perform({}, undefined, true)}>Tentar novamente a mesma ação</Button>}
       {notice && <p className="team-notice" role="status">{notice}</p>}
 
+      <fieldset disabled={busy || !controls.canAct || controls.pending || canRetry} className="team-actions-fieldset" aria-busy={busy}>
       {!location?.prepared ? <section className="hex-search-step">
         <h3><Clock3 size={18} /> Preparando exploração</h3>
         <p className="text-sm subtle">O sistema está organizando os cômodos e limites de busca deste local. Isso não gasta tempo e não exige liberação do mestre.</p>
@@ -363,7 +382,7 @@ export function PlayerHexSearchDialog({
               {stock.map(row => <div key={row.stockId} className={`hex-search-stock-row ${row.accessible ? "" : "is-locked"}`}>
                 <span><b>{row.name}</b><small>{row.source === "apparent" ? "À vista" : "Encontrado na busca"} · {areas.find(candidate => candidate.areaId === row.areaId)?.name ?? "Área"}{row.condition && row.condition !== "Íntegro" ? ` · ${row.condition}` : ""}{row.requiresFuelContainer ? " · exige galão vazio" : ""}</small></span>
                 <strong>{row.remaining}</strong>
-                <Button size="sm" disabled={busy || !row.accessible || !validCount || count > row.remaining || view?.policy.paused}
+                <Button size="sm" disabled={!row.accessible || !validCount || count > row.remaining}
                   onClick={() => void perform({
                     type: "collect", hexId: row.hexId, pointId: row.pointId, stockId: row.stockId, quantity: count,
                     ...(!row.requiresFuelContainer && cartId ? { cartId } : {}),
@@ -373,6 +392,7 @@ export function PlayerHexSearchDialog({
           </> : <p className="team-empty">Nenhum achado aguardando coleta neste local.</p>}
         </section>
       </>}
+      </fieldset>
 
       <DialogFooter>
         <Button variant="outline" onClick={onClose}>Fechar</Button>

@@ -109,6 +109,32 @@ test('endpoint refaz CAS sem perder edição paralela; reenvio não cria segundo
  const replay=await send(input);assert.equal(replay.status,200);assert.equal(writes,2);assert.equal(state.playerActions.receipts.length,1);
  const changed=await send({...input,text:'Outro pedido'});assert.equal(changed.status,409);assert.equal(writes,2);
 });
+
+test('coleta de achado após busca pausada persiste, refaz CAS e projeta inventário sem duplicar no reenvio',async()=>{
+ reset();state.survivors[0].hex='0,0';state.survivors[0].inventory=[];
+ assignCustomSector(state,'0,0','Mercado abandonado','explorado');state.hexes['0,0'].events=[];
+ state.hexes['0,0'].points=[{id:'market',name:'Mercado',kind:'comércio',signal:'Porta aberta',access:'',notes:'',revealed:true,lootTable:content.lootTables[1].name,searches:[]}];
+ prepareLocation(state.hexes['0,0'].points[0]);
+ const area=state.hexes['0,0'].points[0].preparation.areas.find(row=>row.searchable!==false);
+ area.access='open';area.collectible=true;area.noise=0;
+ state.noise=3;
+ assert.equal((await send({type:'search',id:'noisy-search',day:state.day,hexId:'0,0',pointId:'market',areaId:area.id,objective:'open',purpose:'Suprimentos'})).status,200);
+ assert.equal((await send({type:'execute',id:'noisy-execute',day:state.day,operationId:'noisy-search'})).status,200);
+ assert.equal(state.playerActions.policy.paused,true);
+ const stock=state.hexes['0,0'].points[0].preparation.stock.find(row=>row.attemptId==='noisy-search');assert.ok(stock);
+ const beforeMinutes=state.minutes,beforeNoise=state.noise,beforeStock=stock.remaining;
+ const input={type:'collect',id:'paused-collect',day:state.day,hexId:'0,0',pointId:'market',stockId:stock.id,quantity:1};
+ race=true;const beforeWrites=writes;
+ const response=await send(input);const payload=await response.json();assert.equal(response.status,200,payload.error);
+ assert.equal(writes,beforeWrites+2);assert.equal(state.fear,4);
+ assert.equal(state.minutes,beforeMinutes);assert.equal(state.noise,beforeNoise);assert.equal(state.playerActions.policy.paused,true);
+ assert.equal(state.hexes['0,0'].points[0].preparation.stock.find(row=>row.id===stock.id).remaining,beforeStock-1);
+ assert.deepEqual(payload.state.survivors[0].inventory,state.survivors[0].inventory);
+ assert.equal(payload.state.survivors[0].inventory.find(item=>item.catalogKey===stock.item.catalogKey).qty,1);
+ assert.equal(payload.state.playerActions,undefined);
+ const saved=structuredClone(state),replay=await send(input);assert.equal(replay.status,200);
+ assert.equal((await replay.json()).revision,payload.revision);assert.equal(writes,beforeWrites+2);assert.deepEqual(state,saved);
+});
 test('mestre não sobrescreve rascunho de permissões desatualizado',async()=>{
  reset();authenticated={id:'master'};
  const {playerActionState}=require('../lib/player-actions.ts');

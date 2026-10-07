@@ -110,7 +110,30 @@ try {
   };
   const search=await act({id:'search-without-permission',type:'search',hexId:'0,0',pointId:'market',areaId:location.preparation.areas[0].id,objective:'open',purpose:'Suprimentos'});
   assert.equal(search.state.publicPlayerActions.operations.find(op=>op.id==='search-without-permission').status,'forming');
-  await act({id:'execute-search',type:'execute',operationId:'search-without-permission'});
+  const completedSearch=await act({id:'execute-search',type:'execute',operationId:'search-without-permission'});
+  const found=completedSearch.state.publicPlayerActions.stock.find(stock=>stock.source==='search'&&stock.accessible&&!stock.requiresFuelContainer);
+  assert.ok(found,'Completed search must expose collectible stock');
+  const beforeCollect=await (await mf.dispatchFetch(origin+path,{headers:headers('master')})).json();
+  const policy=beforeCollect.state.playerActions.policy;
+  const setPaused=async paused=>{
+    const response=await mf.dispatchFetch(origin+actionPath,{method:'POST',headers:{...headers('master'),'Content-Type':'application/json'},body:JSON.stringify({type:'policy',expectedPolicy:JSON.stringify(policy),policy:{...policy,paused}})});
+    const payload=await response.json();assert.equal(response.status,200,JSON.stringify(payload));
+    policy.paused=paused;
+  };
+  await setPaused(true);
+  connections.forEach(c=>{c.messages.length=0;});
+  const collect={id:'collect-after-search',type:'collect',hexId:found.hexId,pointId:found.pointId,stockId:found.stockId,quantity:1};
+  const collected=await act(collect);
+  await until(()=>connections.every(c=>c.messages.some(message=>message.revision===collected.revision)),'Collection must notify master and player');
+  assert.equal(collected.state.minutes,completedSearch.state.minutes);
+  assert.equal(collected.state.noise,completedSearch.state.noise);
+  assert.equal(collected.state.publicPlayerActions.policy.paused,true);
+  const reloaded=await (await mf.dispatchFetch(origin+path,{headers:headers('master')})).json();
+  assert.deepEqual(reloaded.state.survivors[0].inventory,collected.state.survivors[0].inventory);
+  assert.equal(reloaded.state.hexes[found.hexId].points.find(point=>point.id===found.pointId).preparation.stock.find(stock=>stock.id===found.stockId).remaining,found.remaining-1);
+  const collectReplay=await act(collect);assert.equal(collectReplay.revision,collected.revision);
+  assert.deepEqual(collectReplay.state.survivors[0].inventory,collected.state.survivors[0].inventory);
+  await setPaused(false);
   const requested=await act({id:'rest-request',type:'request-rest',kind:'short'});
   const rest=requested.state.publicPlayerActions.operations.find(op=>op.individualChoices&&op.status==='forming');
   assert.ok(rest);assert.deepEqual(rest.participantIds,[]);assert.equal(rest.plans,undefined);
@@ -133,7 +156,7 @@ try {
   await db.prepare('UPDATE campaign_players SET revoked_at=? WHERE owner_id=?').bind(now,state.campaignId).run();
   assert.equal((await mf.dispatchFetch(origin+path+'&since=3',{headers:headers('player')})).status,403);
   assert.equal(isolatedMessages.length,0);
-  console.log('Runtime passed: live updates, conflict closure, automatic searches, individual rest confirmation/replay, image show/close, campaign isolation, private projection and revoked access.');
+  console.log('Runtime passed: live updates, conflict closure, automatic searches, collection while paused and replay, inventory persistence, individual rest confirmation/replay, image show/close, campaign isolation, private projection and revoked access.');
 } finally {
   connections.forEach(c=>c.socket.close());
   isolatedConnections.forEach(socket=>socket.close());

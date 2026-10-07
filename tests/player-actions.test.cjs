@@ -263,6 +263,31 @@ test('coleta consome estoque real, aceita reenvio seguro e rejeita retirada maio
  assert.equal(applyPlayerAction(f.game,f.ids[0],r.input).replay,true);
  denied(f,f.ids[1],{type:'collect',hexId:'0,0',pointId:'market',stockId:stock.id,quantity:1});
 });
+
+test('pausa após busca mantém coleta de achados liberados sem liberar outra busca ou cobrar tempo',()=>{
+ const f=fixture();f.game.noise=3;
+ const op=propose(f);ok(f,f.ids[0],{type:'execute',operationId:op});
+ assert.equal(f.game.playerActions.policy.paused,true);
+ const point=f.game.hexes['0,0'].points[0];
+ const narrative=point.preparation.areas.find(area=>area.searchable===false);
+ narrative.access='open';
+ assert.equal(registerVisibleStock(f.game,'0,0','market',narrative.id,'apparent-after-search','Bebidas::Garrafa de água lacrada',2),null);
+ const stock=point.preparation.stock.find(row=>row.attemptId===op);
+ assert.ok(stock);
+ const before={minutes:f.game.minutes,noise:f.game.noise,fear:f.game.fear,searches:structuredClone(point.searches),attempts:structuredClone(point.preparation.attempts)};
+ ok(f,f.ids[0],{type:'collect',hexId:'0,0',pointId:'market',stockId:stock.id,quantity:1});
+ const collected=ok(f,f.ids[0],{type:'collect',hexId:'0,0',pointId:'market',stockId:'apparent-after-search',quantity:1});
+ const saved=structuredClone(f.game);
+ assert.equal(applyPlayerAction(f.game,f.ids[0],collected.input).replay,true);assert.deepEqual(f.game,saved);
+ const updated=f.game.hexes['0,0'].points[0];
+ assert.deepEqual({minutes:f.game.minutes,noise:f.game.noise,fear:f.game.fear,searches:updated.searches,attempts:updated.preparation.attempts},before);
+ assert.equal(f.game.playerActions.policy.paused,true);
+ assert.equal(updated.preparation.stock.find(row=>row.id==='apparent-after-search').remaining,1);
+ denied(f,f.ids[0],{type:'search',hexId:'0,0',pointId:'market',areaId:f.areaId,objective:'open',purpose:'Outra busca'},/pausadas/);
+ denied(f,f.ids[0],{type:'travel',destination:'1,0'},/pausadas/);
+ f.game.hexes['0,0'].points[0].preparation.areas.find(row=>row.id===narrative.id).access='blocked';
+ denied(f,f.ids[0],{type:'collect',hexId:'0,0',pointId:'market',stockId:'apparent-after-search',quantity:1},/liberado/);
+});
 test('teste de acesso rola no servidor, falha cobra tempo e Medo preserva achados do sucesso e pausa para o mestre',()=>{
  for(const success of [false,true]) {
   const f=fixture(); const area=f.game.hexes['0,0'].points[0].preparation.areas[0]; area.access='risk'; area.difficulty=success?2:99;
