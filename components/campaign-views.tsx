@@ -272,7 +272,7 @@ export function ShelterPanel({ game, edit, playerPreview, playerSurvivorId, play
 
       <TabsContent value="construction" className="shelter-tab-content">
         <RuntimeErrorBoundary title="A seção Construção encontrou um problema">
-          <ShelterProjectsManager game={game} edit={edit} playerPreview={playerPreview} playerSurvivorId={playerSurvivorId} />
+          <ShelterProjectsManager game={game} edit={edit} playerPreview={playerPreview} playerSurvivorId={playerSurvivorId} masterActions={masterActions} />
         </RuntimeErrorBoundary>
       </TabsContent>
 

@@ -199,6 +199,26 @@ try {
   const eventDone=await advance('runtime-event-next');assert.equal(eventDone.state.minutes,separated.minutes+10);
   const persistedEvent=await (await mf.dispatchFetch(origin+path,{headers:headers('master')})).json();assert.equal(persistedEvent.state.hexes['0,0'].events[0].resolutions[1].status,'completed');
 
+  const {createShelterProject,shelterBlueprintSlots}=require('../lib/shelter-projects.ts');
+  const {createSceneBoardScene}=require('../lib/scene-board.ts');
+  const {removalFingerprint}=require('../lib/master-removals.ts');
+  const removable=structuredClone(persistedEvent.state),project=createShelterProject('dormitories',shelterBlueprintSlots.find(s=>s.zone==='interior').id);
+  const visual=createSceneBoardScene('Cena removível'),privateScene=createSceneBoardScene('Cena preservada');visual.visibleToPlayers=true;
+  removable.shelter.hex='0,0';removable.shelter.projects=[project];removable.sceneBoard={scenes:[visual,privateScene],activeSceneId:visual.id};
+  const putRemovable=await mf.dispatchFetch(origin+path,{method:'PUT',headers:{...headers('master'),'Content-Type':'application/json'},body:JSON.stringify({revision:persistedEvent.revision,state:removable})});assert.equal(putRemovable.status,200,await putRemovable.text());
+  const removeProject={type:'remove-shelter-project',id:'runtime-remove-project',day:removable.day,shelterHex:'0,0',projectId:project.id,expectedFingerprint:await removalFingerprint(project)};
+  const removeScene={type:'delete-scene',id:'runtime-remove-scene',day:removable.day,sceneId:visual.id,expectedActiveSceneId:visual.id,expectedFingerprint:await removalFingerprint(visual)};
+  for(const command of [removeProject,removeScene]) {
+    const denied=await mf.dispatchFetch(origin+actionPath,{method:'POST',headers:{...headers('player'),'Content-Type':'application/json'},body:JSON.stringify(command)});assert.equal(denied.status,403,await denied.text());
+  }
+  const clearedProject=await masterCommand(removeProject);assert.deepEqual(clearedProject.state.shelter.projects,[]);assert.equal(clearedProject.state.shelter.parts,removable.shelter.parts);
+  assert.equal((await masterCommand(removeProject)).revision,clearedProject.revision);
+  connections.forEach(c=>{c.messages.length=0;});
+  const clearedScene=await masterCommand(removeScene);assert.deepEqual(clearedScene.state.sceneBoard.scenes.map(s=>s.id),[privateScene.id]);assert.equal(clearedScene.state.sceneBoard.activeSceneId,undefined);
+  await until(()=>connections.every(c=>c.messages.length),'Scene deletion notification missing');
+  const publicScene=await (await mf.dispatchFetch(origin+path,{headers:headers('player')})).json();assert.deepEqual(publicScene.state.sceneBoard,{scenes:[]});assert.equal(clearedScene.state.survivors.length,removable.survivors.length);
+  assert.equal((await masterCommand(removeScene)).revision,clearedScene.revision);
+
   connections.forEach(c=>{c.messages.length=0;});
   const imagePath='/api/campaign/presentation?campanha=test-campaign';
   const presented=await mf.dispatchFetch(origin+imagePath,{method:'PUT',headers:{...headers('master'),'Content-Type':'application/json'},body:JSON.stringify({id:'image',image:'https://example.test/image.png',active:true})});
@@ -211,7 +231,7 @@ try {
   await db.prepare('UPDATE campaign_players SET revoked_at=? WHERE owner_id=?').bind(now,state.campaignId).run();
   assert.equal((await mf.dispatchFetch(origin+path+'&since=3',{headers:headers('player')})).status,403);
   assert.equal(isolatedMessages.length,0);
-  console.log('Runtime passed: live updates, conflict closure, automatic searches, collection while paused and replay, inventory persistence, individual rest confirmation/replay, event guides and parallel outcomes/replay, image show/close, campaign isolation, private projection and revoked access.');
+  console.log('Runtime passed: live updates, conflict closure, automatic searches, collection while paused and replay, inventory persistence, individual rest confirmation/replay, event guides and parallel outcomes/replay, shelter cancellation and scene deletion/replay, image show/close, campaign isolation, private projection and revoked access.');
 } finally {
   connections.forEach(c=>c.socket.close());
   isolatedConnections.forEach(socket=>socket.close());

@@ -9,6 +9,7 @@ import { cancelActivity } from "@/lib/activity-timeline";
 import { masterActivityCommandSchema } from "@/lib/activity-timeline-validation";
 import { resolveHexEvent } from "@/lib/event-resolution";
 import { eventResolutionCommandSchema } from "@/lib/event-resolution-types";
+import { applyMasterRemoval, masterRemovalCommandSchema } from "@/lib/master-removals";
 import { rollDie } from "@/lib/rolls";
 
 export const dynamic = "force-dynamic";
@@ -30,15 +31,15 @@ export async function POST(request: Request) {
     let payload: Record<string, unknown>;
     try { payload = JSON.parse(raw); } catch { return Response.json({ error: "Dados inválidos." }, { status: 400 }); }
     if (!payload || typeof payload !== "object" || Array.isArray(payload)) return Response.json({ error: "Dados inválidos." }, { status: 400 });
-    if (!master && ["policy", "review", "reset-city", "advance-activity", "cancel-activity", "resolve-event"].includes(String(payload.type))) return Response.json({ error: "Somente o mestre altera a campanha inteira." }, { status: 403 });
+    if (!master && ["policy", "review", "reset-city", "advance-activity", "cancel-activity", "resolve-event", "remove-shelter-project", "delete-scene"].includes(String(payload.type))) return Response.json({ error: "Somente o mestre altera a campanha inteira." }, { status: 403 });
     const dice: { faces: number; value: number }[] = [];
     for (let attempt = 0; attempt < 4; attempt++) {
       const data = await readCampaign(campaignId);
       let next = data.state;
       if (master) {
-        if (payload.type === "advance-activity" || payload.type === "cancel-activity" || payload.type === "resolve-event") {
-          const parsed = (payload.type === "resolve-event" ? eventResolutionCommandSchema : masterActivityCommandSchema).safeParse(payload);
-          if (!parsed.success) return Response.json({ error: "Comando de atividade inválido." }, { status: 400 });
+        if (payload.type === "advance-activity" || payload.type === "cancel-activity" || payload.type === "resolve-event" || payload.type === "remove-shelter-project" || payload.type === "delete-scene") {
+          const parsed = (payload.type === "resolve-event" ? eventResolutionCommandSchema : payload.type === "remove-shelter-project" || payload.type === "delete-scene" ? masterRemovalCommandSchema : masterActivityCommandSchema).safeParse(payload);
+          if (!parsed.success) return Response.json({ error: "Comando do mestre inválido." }, { status: 400 });
           const command = parsed.data, fingerprint = JSON.stringify(command);
           const receipt = playerActionState(data.state).receipts.find(r => r.id === command.id && r.actorId === user.id);
           if (receipt) return receipt.fingerprint === fingerprint
@@ -53,6 +54,9 @@ export async function POST(request: Request) {
             let cursor = 0;
             const result = advanceToNextActivity(next, faces => { const index = cursor++; if (dice[index]?.faces !== faces) dice[index] = { faces, value: rollDie(faces) }; return dice[index].value; });
             if (!result.ok) return Response.json({ error: result.issue ?? "Não foi possível avançar a atividade." }, { status: 409 });
+          } else if (command.type === "remove-shelter-project" || command.type === "delete-scene") {
+            const result = await applyMasterRemoval(next, command);
+            if (!result.ok) return Response.json({ error: result.message }, { status: 409 });
           } else if (command.type === "resolve-event") {
             const result=resolveHexEvent(next,command);
             if(!result.ok)return Response.json({error:result.message},{status:409});
