@@ -1,3 +1,4 @@
+import { nextEventClockMinute, expireEventClocks } from "./event-clocks";
 import { absoluteMinutes, addLog, hasMultipleSurvivorGroups, type GameState } from "./game";
 import { processScheduledShelterWork } from "./shelter-projects";
 import { runningActivities } from "./activity-timeline";
@@ -54,7 +55,8 @@ function advanceWorldToMinute(game: GameState, targetMinute: number, logText?: s
     const workDue = dueWorkBefore(game, dayStart + targetMinute);
     const activityDue = runningActivities(game).find(a => a.endMinute <= targetMinute)?.endMinute;
     const nightDue = !options.ignoreNightEvents && game.minutes < 1080 && targetMinute >= 1080 && Object.values(game.hexes).some(hex=>hex.events.some(e=>e.triggerType==="night"&&(e.status??"pending")==="pending")) ? 1080 : undefined;
-    const deadlines = [workDue === undefined ? undefined : workDue - dayStart, activityDue, nightDue].filter((n): n is number => n !== undefined);
+    const eventDue = nextEventClockMinute(game);
+    const deadlines = [eventDue!==null && eventDue<=targetMinute?eventDue:undefined,workDue === undefined ? undefined : workDue - dayStart, activityDue, nightDue].filter((n): n is number => n !== undefined);
     if (!deadlines.length) break;
     game.minutes = Math.max(game.minutes, Math.min(...deadlines));
     const workResolved = processScheduledShelterWork(game);
@@ -71,6 +73,8 @@ function advanceWorldToMinute(game: GameState, targetMinute: number, logText?: s
       }
       completedActivities.push(activity.id);
     }
+    const expiredClocks=expireEventClocks(game);
+    if(expiredClocks.length)return {ok:true,issue:expiredClocks.join("\n"),completedWork,completedActivities};
     if (nightDue === game.minutes) {
       if (game.playerActions) game.playerActions.policy.paused = true;
       return { ok: true, issue: "Anoiteceu. Há acontecimentos noturnos para o mestre resolver antes de avançar mais.", completedWork, completedActivities };
@@ -90,7 +94,8 @@ export function nextActivityMinute(game: GameState): number | null {
   const work = dueWorkBefore(game, (game.day - 1) * 1440 + 1439);
   const minute = runningActivities(game)[0]?.endMinute;
   const night = game.minutes < 1080 && Object.values(game.hexes).some(hex=>hex.events.some(e=>e.triggerType==="night"&&(e.status??"pending")==="pending")) ? 1080 : undefined;
-  const deadlines = [work === undefined ? undefined : work - (game.day - 1) * 1440, minute, night].filter((n): n is number => n !== undefined);
+  const eventDue=nextEventClockMinute(game);
+  const deadlines = [eventDue!==null&&eventDue<1440?eventDue:undefined,work === undefined ? undefined : work - (game.day - 1) * 1440, minute, night].filter((n): n is number => n !== undefined);
   return deadlines.length ? Math.max(game.minutes, Math.min(...deadlines)) : null;
 }
 

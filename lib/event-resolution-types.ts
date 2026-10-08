@@ -4,15 +4,20 @@ export const eventOutcomeLabels = { success: "Sucesso", complication: "Sucesso c
 export type EventOutcome = keyof typeof eventOutcomeLabels;
 const id = z.string().min(1).max(120);
 const minute = z.number().int().min(0).max(1439);
-export const eventConditionSchema = z.object({ name: z.string().trim().min(1).max(80), effect: z.string().trim().min(1).max(400), clear: z.string().trim().min(1).max(400) }).strict();
+export const eventConditionSchema = z.object({ name: z.string().trim().min(1).max(80), effect: z.string().trim().min(1).max(400), clear: z.string().trim().min(1).max(400), preventsMovement: z.boolean().optional() }).strict();
 export type EventCondition = z.infer<typeof eventConditionSchema>;
 export const eventPersonalEffectSchema = z.object({ survivorId: id, hpMarks: z.number().int().min(0).max(3), armor: z.boolean(), stress: z.number().int().min(-6).max(6), hope: z.number().int().min(-6).max(6), food: z.number().int().min(-10).max(10), water: z.number().int().min(-10).max(10), condition: eventConditionSchema.optional() }).strict();
 export type EventPersonalEffect = z.infer<typeof eventPersonalEffectSchema>;
-export const eventNpcEffectSchema = z.object({ npcId: id, disposition: z.enum(["Hostil", "Desconfiado", "Neutro", "Aliado", "Leal"]), commitment: z.string().trim().min(1).max(600) }).strict();
+export const eventNpcEffectSchema = z.object({ npcId: id, disposition: z.enum(["Hostil", "Desconfiado", "Neutro", "Aliado", "Leal"]), mode: z.enum(["set", "at-least", "keep"]).optional(), condition: eventConditionSchema.optional(), commitment: z.string().trim().min(1).max(600) }).strict();
 export type EventNpcEffect = z.infer<typeof eventNpcEffectSchema>;
+export const eventClockSchema = z.object({ label: z.string().trim().min(1).max(120), consequence: z.string().trim().min(1).max(600), noise: z.number().int().min(0).max(5), dueAbsoluteMinute: z.number().int().min(0).max(1000000000), status: z.enum(["active", "expired", "cancelled"]) }).strict();
+export type EventClock = z.infer<typeof eventClockSchema>;
+export const eventClockInitialSchema = eventClockSchema.pick({label:true,consequence:true,noise:true}).extend({minutes:z.number().int().min(1).max(1440)}).strict();
+export const eventClockPlanSchema = z.object({ initial:eventClockInitialSchema.optional(), action:z.enum(["keep","extend","cancel"]), minutes:z.number().int().min(1).max(1440).optional() }).strict().refine(p=>p.action!=="extend"||p.minutes!==undefined);
+export type EventClockPlan = z.infer<typeof eventClockPlanSchema>;
 const effects = { minutes: z.number().int().min(0).max(360), noise: z.number().int().min(-5).max(5), fear: z.number().int().min(-12).max(12) };
 const plan = { id, outcome: z.enum(["success", "complication", "failure", "withdrawn"]), approachId: id,
-  closeEvent: z.boolean().optional(), personalEffects: z.array(eventPersonalEffectSchema).max(30).optional(), npcEffect: eventNpcEffectSchema.optional(), summary: z.string().trim().min(1).max(1600), continuity: z.string().trim().max(1600), participantIds: z.array(id).max(30), ...effects };
+  closeEvent: z.boolean().optional(), clock: eventClockPlanSchema.optional(), personalEffects: z.array(eventPersonalEffectSchema).max(30).optional(), npcEffect: eventNpcEffectSchema.optional(), summary: z.string().trim().min(1).max(1600), continuity: z.string().trim().max(1600), participantIds: z.array(id).max(30), ...effects };
 export const eventResolutionCommandSchema = z.object({ type: z.literal("resolve-event"), day: z.number().int().min(1), expectedMinute: minute,
   expectedEvent: z.string().min(1).max(12000), hexId: z.string().regex(/^-?\d+,-?\d+$/), eventId: id, ...plan }).strict();
 export type EventResolutionCommand = z.infer<typeof eventResolutionCommandSchema>;

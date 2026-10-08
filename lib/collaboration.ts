@@ -54,7 +54,7 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
   visible.npcs = publicNpcs(visible.npcs ?? []).map(npc => ({
     id: npc.id, name: npc.name, portrait: npc.portrait, portraitFrame: npc.portraitFrame, role: npc.role, description: npc.description,
     publicNotes: npc.publicNotes, hex: npc.hex, status: npc.status, infection: npc.infection,
-    disposition: npc.disposition, skills: npc.skills, duty: npc.duty, active: npc.active,
+    eventConditions: structuredClone(npc.eventConditions), disposition: npc.disposition, skills: npc.skills, duty: npc.duty, active: npc.active,
     accompaniesParty: npc.accompaniesParty,
   } as NPC));
   // Improvements are public infrastructure, but staff assignments, paid costs
@@ -121,6 +121,7 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
         delete visibleEvent.generatorCategory;
         delete visibleEvent.actionLinks;
         delete visibleEvent.resolutions;
+        delete visibleEvent.clock;
         delete visibleEvent.searchBaseline;
         return visibleEvent;
       });
