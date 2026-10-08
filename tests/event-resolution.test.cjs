@@ -17,7 +17,7 @@ test('100 guias próprios preservam tabela, alternativas, desfechos e continuida
  assert.equal(eventGuides.length,100);assert.equal(new Set(eventGuides.map(g=>g.roll)).size,100);
  for(const g of eventGuides){assert.equal(g.title,content.generators.eventos[g.roll-1].text.split('.')[0]);assert.equal(g.approaches.length,3);assert.ok(Number.isInteger(g.approaches[2].minutes)&&g.approaches[2].minutes>=0);for(const o of ['success','complication','failure','withdrawn']){assert.ok(g.outcomes[o].summary.length>20);assert.ok(g.outcomes[o].continuity.length>20);}}
  assert.equal(new Set(eventGuides.map(g=>g.stakes)).size,100);assert.equal(new Set(eventGuides.map(g=>g.outcomes.success.summary)).size,100);
- assert.equal(eventGuide({text:'Grade emperrada. Texto legado'}).roll,52);assert.equal(eventGuide({text:'Evento personalizado',guidance:'Um risco próprio'}).stakes,'Um risco próprio');
+ assert.equal(eventGuide({text:'Grade emperrada. Texto personalizado'}).roll,undefined);assert.equal(eventGuide({text:'Evento personalizado',guidance:'Um risco próprio'}).stakes,'Um risco próprio');
  assert.equal(suggestedEventActionKind({text:content.generators.eventos[93].text,generatorRoll:94,generatorCategory:'Ameaça'}),null);
  assert.match(eventGuides[36].stakes,/não confirma Exposição/);assert.match(eventGuides[84].outcomes.withdrawn.continuity,/intacta/);
 });
@@ -61,15 +61,15 @@ test('observar ou planejar não concede reparo, retirada ou identificação que 
  assert.match(eventOutcomeSuggestion(tank,'careful','success').summary,/reparo continuam por resolver/);
  assert.match(eventOutcomeSuggestion(tank,'risk','success').summary,/perda é contida/);
  const heavy=eventGuides[78];assert.match(eventOutcomeSuggestion(heavy,'risk','success').summary,/só é retirado quando a ação ocorrer/);
- const child=eventGuides[23];assert.match(eventOutcomeSuggestion(child,'careful','success').summary,/só é identificado se estiver perceptível/);
- const exit=eventGuides[98];assert.match(exit.approaches[2].description,/só existe se já tiver sido estabelecida/);
+ const child=eventGuides[23];assert.match(eventOutcomeSuggestion(child,'careful','success').summary,/localizar a avó por sua resposta/);
+ const exit=eventGuides[98];assert.match(exit.approaches[2].description,/trecho já acessível/);
 });
-test('20 versões antigas conservam fatos salvos; novas versões têm preparação e escolhas concretas',()=>{
- assert.equal(legacyEventGuides.length,20);
+test('120 versões anteriores conservam fatos salvos; todas as versões novas têm preparação própria',()=>{
+ assert.equal(legacyEventGuides.length,120);
  const {splitGeneratorText}=require('../lib/hex-generators.ts');
  for(const old of legacyEventGuides){
   const event={text:splitGeneratorText(old.sourceTexts[0]).publicText,generatorRoll:old.roll};const before=structuredClone(event);
-  assert.equal(eventGuide(event).legacy,true);assert.equal(eventGuide(event).setup,undefined);assert.deepEqual(event,before);
+  assert.equal(eventGuide(event).legacy,true);assert.equal(eventGuide(event).setup,old.setup);assert.deepEqual(event,before);
   const fresh=eventGuide({text:content.generators.eventos[old.roll-1].text,generatorRoll:old.roll});assert.notEqual(fresh.legacy,true);assert.ok(fresh.setup.length>50);
  }
  const edited=eventGuide({text:'Caixa lacrada. Um evento escrito pelo mestre.',generatorRoll:69,guidance:'Decisão própria'});
@@ -82,4 +82,28 @@ test('dificuldades e duração seguem ação e risco, com cena breve e desvios l
  assert.equal(eventGuides[55].format,'brief');assert.equal(eventGuides[24].format,'scene');
  assert.ok(eventGuides[51].approaches[2].minutes>0);assert.match(eventGuides[51].approaches[2].timeNote,/custo do mapa/);
  assert.match(eventGuides[68].setup,/peças compatíveis/);assert.match(eventGuides[11].setup,/prazo passar/);
+});
+
+test('registrar etapas mantém evento ativo, permite intervenção posterior e encerramento explícito',()=>{
+ const g=fixture();
+ assert.equal(resolveHexEvent(g,command(g,{closeEvent:false,approachId:'careful',minutes:0,noise:0})).ok,true);
+ assert.equal(g.hexes['0,0'].events[0].status,'active');
+ assert.equal(resolveHexEvent(g,command(g,{id:'intervention',closeEvent:true})).ok,true);
+ assert.equal(g.hexes['0,0'].events[0].status,'resolved');
+ assert.equal(g.hexes['0,0'].events[0].resolutions.length,2);assert.equal(validWorld(g.hexes),true);
+});
+test('etapa agendada mantém intenção de continuidade após recarregar e concluir',()=>{
+ let g=fixture(true);assert.equal(resolveHexEvent(g,command(g,{closeEvent:false})).completed,false);
+ g=JSON.parse(JSON.stringify(g));assert.equal(advanceToNextActivity(g).ok,true);
+ assert.equal(g.hexes['0,0'].events[0].status,'active');assert.equal(g.noise,1);
+ assert.equal(resolveHexEvent(g,command(g,{id:'finish',minutes:0,noise:0,closeEvent:true})).ok,true);
+ assert.equal(g.hexes['0,0'].events[0].status,'resolved');
+});
+test('todas as entradas têm situação, preparação, continuidade específica e espera com duração',()=>{
+ assert.equal(new Set(eventGuides.map(g=>g.setup)).size,100);
+ for(const g of eventGuides){assert.ok(g.setup.length>50);assert.ok(g.ignored.length>25);assert.ok(g.returnVisit.length>25);assert.ok(g.observation.length>25);assert.ok(g.application.length>25);assert.ok(Array.isArray(g.requirements));
+ for(const a of g.approaches){if(/Esperar/i.test(a.description))assert.ok(a.minutes>0);}
+ assert.doesNotMatch(JSON.stringify(g),/Um custo anunciado limita|Se a intervenção encontrar resistência|Registre a condição adicional escolhida/);}
+ const heavy=eventGuides[78];assert.match(heavy.outcomes.complication.summary,/plano/);assert.doesNotMatch(heavy.outcomes.complication.summary,/retirada funciona/);
+ assert.match(eventGuides[57].outcomes.complication.summary,/fonte é interrompida/);
 });

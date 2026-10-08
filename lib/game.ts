@@ -32,6 +32,7 @@ export type Point = {
   eventOrigin?: HexEventOrigin;
   /** Destino de uma pista. O texto público é decidido separadamente pelo mestre. */
   clueTargetHex?: string;
+  clue?: boolean;
   /** Metadados procedurais opcionais mantêm campanhas antigas compatíveis. */
   generatorKind?: "locais" | "comercios";
   generatorRoll?: number;

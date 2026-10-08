@@ -52,7 +52,7 @@ const elements = n => Array.isArray(n) ? n.flatMap(elements) : n && typeof n==='
 function fixture(controls) {
  const game=defaultState(),a=content.archetypes[0];
  const person=initialSurvivor({name:'Nina',origin:content.origins[1].name,past:'',archetype:a.name,specialty:a.specialties[0].name,freeExperience:'',techniques:[],attributes:{Instinto:1},primary:'',secondary:'',protection:'',personal:''});person.hex='0,0';game.survivors=[person];
- const event={id:'scene',text:'Porta bloqueada.',trigger:'',revealed:true,status:'active',generatorRoll:52};game.hexes['0,0'].events=[event];
+ const event={id:'scene',text:content.generators.eventos[51].text,trigger:'',revealed:true,status:'active',generatorRoll:52};game.hexes['0,0'].events=[event];
  const instance={slots:[],cursor:0,dirty:false};let closed=0,edits=0;
  const render=()=>{host=instance;host.cursor=0;return HexEventGuideDialog({game,hexId:'0,0',eventId:'scene',controls,edit:()=>{edits++;},onClose:()=>{closed++;}});};
  const find=predicate=>elements(render()).find(predicate);
@@ -64,9 +64,9 @@ test('guia envia desfecho revisado ao servidor, bloqueia repetição e não apli
  f.find(n=>n.props?.label==='O que aconteceu').props.onChange('Abrimos por outro acesso');
  f.find(n=>n.props?.label==='O que permanece para próximas visitas').props.onChange('Passagem segura marcada');
  f.find(n=>n.props?.label==='Barulho').props.onChange(2);
- const pending=f.find(n=>n.type==='button'&&text(n)==='Registrar desfecho').props.onClick();
+ const pending=f.find(n=>n.type==='button'&&text(n)==='Registrar etapa').props.onClick();
  assert.equal(command.type,'resolve-event');assert.equal(command.expectedEvent,eventResolutionFingerprint(f.event));assert.equal(command.summary,'Abrimos por outro acesso');assert.equal(command.continuity,'Passagem segura marcada');assert.equal(command.noise,2);assert.deepEqual(command.participantIds,[f.game.survivors[0].id]);
- assert.deepEqual(f.game,before);assert.equal(f.edits(),0);assert.equal(f.find(n=>n.type==='button'&&text(n)==='Registrar desfecho').props.disabled,true);
+ assert.deepEqual(f.game,before);assert.equal(f.edits(),0);assert.equal(f.find(n=>n.type==='button'&&text(n)==='Registrar etapa').props.disabled,true);
  release();await pending;await new Promise(resolve=>setImmediate(resolve));assert.equal(f.closed(),1);
 });
 test('abordagem cuidadosa não penaliza automaticamente; recuo preserva tempo e erro mantém rascunho',async()=>{
@@ -74,9 +74,9 @@ test('abordagem cuidadosa não penaliza automaticamente; recuo preserva tempo e 
  f.find(n=>n.props?.label==='Desfecho escolhido').props.onChange('failure');assert.equal(f.find(n=>n.props?.label==='Barulho').props.value,0);
  f.find(n=>n.type==='button'&&text(n).startsWith('Intervir / negociar')).props.onClick();
  f.find(n=>n.props?.label==='Desfecho escolhido').props.onChange('withdrawn');assert.equal(f.find(n=>n.props?.label==='Tempo (min)').props.value,5);
- f.find(n=>n.type==='button'&&text(n)==='Registrar desfecho').props.onClick();await new Promise(resolve=>setImmediate(resolve));
+ f.find(n=>n.type==='button'&&text(n)==='Registrar etapa').props.onClick();await new Promise(resolve=>setImmediate(resolve));
  assert.match(text(f.find(n=>n.props?.role==='alert')),/O evento mudou/);assert.equal(f.closed(),0);
- f.event.status='resolved';assert.equal(f.find(n=>n.type==='button'&&text(n)==='Registrar desfecho'),undefined);
+ f.event.status='resolved';assert.equal(f.find(n=>n.type==='button'&&text(n)==='Registrar etapa'),undefined);
 });
 
 
@@ -99,4 +99,31 @@ test('reconhecer desvio tem custo local e mostra condição do teste sem realiza
  f.find(n=>n.type==='button'&&text(n).startsWith('Outra saída / recuar')).props.onClick();
  assert.equal(f.find(n=>n.props?.label==='Tempo (min)').props.value,10);assert.match(text(f.find(n=>n.type==='p'&&text(n).includes('custo do mapa'))),/custo do mapa/);assert.deepEqual(f.game,before);
  f.find(n=>n.type==='button'&&text(n).startsWith('Intervir / negociar')).props.onClick();assert.ok(f.find(n=>n.type==='details'&&text(n).includes('Quando propor um teste')));assert.match(text(f.find(n=>n.type==='details'&&text(n).includes('Quando propor um teste'))),/forçar a grade travada/);
+});
+
+test('etapa pode manter situação ativa e encerrar explicitamente, sem cobrar tempo já contado',async()=>{
+ let sent;const f=fixture({canAct:true,pending:false,send:async c=>{sent=c;}});
+ assert.equal(f.find(n=>n.props?.label==='Após esta etapa').props.value,'continue');
+ f.find(n=>n.props?.label==='Após esta etapa').props.onChange('close');
+ f.find(n=>n.type==='input'&&n.props?.type==='checkbox'&&n.props.onChange&&n.props.checked===false).props.onChange({target:{checked:true}});
+ await f.find(n=>n.type==='button'&&text(n)==='Registrar e encerrar').props.onClick();
+ assert.equal(sent.closeEvent,true);assert.equal(sent.minutes,0);
+});
+test('abordagem livre exige relato próprio; bloqueio é explicado junto à confirmação',async()=>{
+ let sent;const f=fixture({canAct:true,pending:false,send:async c=>{sent=c;}});
+ f.find(n=>n.type==='button'&&text(n).startsWith('Abordagem livre')).props.onClick();
+ assert.equal(f.find(n=>n.type==='button'&&text(n)==='Registrar etapa').props.disabled,true);
+ assert.match(text(f.find(n=>n.props?.role==='status')),/Descreva o resultado/);
+ f.find(n=>n.props?.label==='O que aconteceu').props.onChange('Usamos a caixa como apoio e saímos pelo trecho visível.');
+ await f.find(n=>n.type==='button'&&text(n)==='Registrar etapa').props.onClick();
+ assert.equal(sent.approachId,'free');assert.equal(sent.closeEvent,false);
+});
+test('mudança concorrente pode ser revisada explicitamente sem apagar o rascunho',()=>{
+ const f=fixture({canAct:true,pending:false,send:async()=>{}});
+ f.find(n=>n.props?.label==='O que aconteceu').props.onChange('Relato da mesa');
+ f.event.actionLinks={npcId:'new'};
+ assert.equal(f.find(n=>n.type==='button'&&text(n)==='Registrar etapa').props.disabled,true);
+ f.find(n=>n.type==='button'&&text(n).startsWith('Conferi a versão atual')).props.onClick();
+ assert.equal(f.find(n=>n.props?.label==='O que aconteceu').props.value,'Relato da mesa');
+ assert.equal(f.find(n=>n.type==='button'&&text(n)==='Registrar etapa').props.disabled,false);
 });

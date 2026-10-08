@@ -21,3 +21,8 @@ export function validEventActionLinks(value: unknown): boolean {
     && new Set(threat.threatIds).size === threat.threatIds.length
     && Object.keys(threat).every(key => ["conflictId", "threatIds"].includes(key)));
 }
+
+/** Older clues were identified by a destination or origin; local clues use an explicit public marker. */
+export function isCluePoint(point: { clue?: boolean; clueTargetHex?: string; eventOrigin?: { action: string } }) {
+  return Boolean(point.clue || point.clueTargetHex || point.eventOrigin?.action === "clue");
+}

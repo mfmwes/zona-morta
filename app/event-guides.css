@@ -31,3 +31,6 @@
 
 .event-guide-draft-note { display:flex; flex-wrap:wrap; align-items:center; gap:5px; }
 .event-guide-columns h3 .tag { font-size:10px; vertical-align:middle; margin-left:5px; }
+
+.event-guide-elements { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.event-guide-time-choice { display:flex; align-items:center; gap:8px; font-size:12px; line-height:1.5; }

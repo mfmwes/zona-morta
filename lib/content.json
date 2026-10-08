@@ -2469,403 +2469,403 @@
     "eventos": [
       {
         "roll": 1,
-        "text": "Rádio entrecortado. Uma frase cita uma rua próxima; tentam captar o restante?"
+        "text": "Rádio entrecortado. Uma voz no rádio repete “entrega no portão azul antes do escuro”; o restante se perde na estática."
       },
       {
         "roll": 2,
-        "text": "Bilhete recente. Papel preso à porta indica hora e lugar ainda verificáveis."
+        "text": "Bilhete recente. Um bilhete na porta diz “voltamos ao meio-dia” e traz um desenho de três degraus."
       },
       {
         "roll": 3,
-        "text": "Pintura nova. Seta fresca contradiz uma placa antiga; qual seguem?"
+        "text": "Pintura nova. Uma seta pintada recentemente aponta para um beco; a placa antiga indica a rua bloqueada."
       },
       {
         "roll": 4,
-        "text": "Janela de observação. Clarão distante denuncia movimento em outro hex."
+        "text": "Janela de observação. Um clarão se repete no alto de uma construção distante, sempre voltado para a mesma direção."
       },
       {
         "roll": 5,
-        "text": "Mapa rasgado. Um pedaço mostra passagem de serviço, sem revelar seu estado."
+        "text": "Mapa rasgado. Um fragmento de mapa mostra uma entrada de serviço e a anotação “acesso pela caixa-d’água”."
       },
       {
         "roll": 6,
-        "text": "Telefone tocando. O aparelho pode parar a qualquer instante; atendem?"
+        "text": "Telefone tocando. Um telefone de mesa toca numa portaria; uma luz acesa no painel mostra que há energia."
       },
       {
         "roll": 7,
-        "text": "Luz em sequência. Dois flashes repetem padrão; observam de cobertura?"
+        "text": "Luz em sequência. Dois flashes curtos se repetem atrás de uma janela; um terceiro surge quando alguém passa na rua."
       },
       {
         "roll": 8,
-        "text": "Pegadas pequenas. Saem de uma porta e voltam por outra; acompanham?"
+        "text": "Pegadas pequenas. Pegadas pequenas vão de uma porta ao abrigo de uma varanda; há marcas de arrasto de uma caixa."
       },
       {
         "roll": 9,
-        "text": "Marca de roda. Carrinho carregado passou há pouco; rastro aponta direção."
+        "text": "Marca de roda. Um rastro de roda torta passa por pequenas manchas de óleo e termina atrás de um muro."
       },
       {
         "roll": 10,
-        "text": "Aviso na água. Placa improvisada alerta para contaminação ainda verificável."
+        "text": "Aviso na água. Um aviso junto ao reservatório diz “não usar: retorno de água suja” e traz assinatura e data."
       },
       {
         "roll": 11,
-        "text": "Lista de nomes. Vários estão riscados; um endereço foi acrescentado hoje."
+        "text": "Lista de nomes. Uma lista de nomes na parede ganhou uma linha com endereço e a palavra “transferidos”."
       },
       {
         "roll": 12,
-        "text": "Calendário alterado. Um aviso marca coleta de remédios em quinze minutos; o endereço está legível, mas o estoque não foi confirmado."
+        "text": "Calendário alterado. Um calendário mostra “entrega às 11h” sobre um horário riscado; o nome do responsável está ao lado."
       },
       {
         "roll": 13,
-        "text": "Porta sinalizada. Fita colorida marca acesso já usado; descobrem por quem?"
+        "text": "Porta sinalizada. Uma fita verde amarra a maçaneta; uma fita igual aparece num recipiente de ferramentas."
       },
       {
         "roll": 14,
-        "text": "Arquivo aberto. Página destaca problema local que ainda pode existir."
+        "text": "Arquivo aberto. Uma pasta aberta registra “válvula presa” e um desenho de corredor com um ponto circulado."
       },
       {
         "roll": 15,
-        "text": "Chave pendurada. Etiqueta mostra número de sala; levar tem dono possível."
+        "text": "Chave pendurada. Uma chave com etiqueta numerada está pendurada ao lado de uma porta de armário vazia."
       },
       {
         "roll": 16,
-        "text": "Mensagem em giz. Instrução para atravessar o bairro termina no meio."
+        "text": "Mensagem em giz. Uma mensagem em giz diz “seguir até a caixa vermelha”; a continuação está apagada."
       },
       {
         "roll": 17,
-        "text": "Sinal sonoro distante. Três batidas vêm de direção reconhecível; respondem?"
+        "text": "Sinal sonoro distante. Três batidas se repetem numa chapa distante; uma pausa longa separa cada sequência."
       },
       {
         "roll": 18,
-        "text": "Linha no horizonte. Fumaça breve aponta atividade, sem garantir incêndio."
+        "text": "Linha no horizonte. Uma coluna fina de fumaça sobe atrás de uma construção e muda de intensidade em intervalos."
       },
       {
         "roll": 19,
-        "text": "Caixa postal usada. Carta recém-deixada tem destinatário em outro hex."
+        "text": "Caixa postal usada. Uma caixa postal contém uma carta datada de ontem e um envelope com marca de retorno."
       },
       {
         "roll": 20,
-        "text": "Mapa de rotas. Duas travessias assinaladas pedem confirmação no terreno."
+        "text": "Mapa de rotas. Um mapa tem duas rotas assinaladas; só uma traz a data de inspeção e iniciais."
       },
       {
         "roll": 21,
-        "text": "Pessoa à janela. Observa o grupo e fecha a cortina; chamam de longe?"
+        "text": "Pessoa à janela. Uma pessoa afasta a cortina e pergunta baixinho se a rua ainda está livre."
       },
       {
         "roll": 22,
-        "text": "Carregador solitário. Puxa um carrinho pesado; aceitar ajuda muda a rota."
+        "text": "Carregador solitário. Uma pessoa carrega duas caixas e para ao ouvir a tampa de uma delas soltar."
       },
       {
         "roll": 23,
-        "text": "Moradora com pressa. Precisa alcançar uma vizinha com mobilidade reduzida antes de a chuva cortar a passagem baixa; pede orientação ou companhia."
+        "text": "Moradora com pressa. Uma moradora chama pelo nome de uma vizinha e aponta água avançando na passagem baixa."
       },
       {
         "roll": 24,
-        "text": "Criança chamando. A voz vem de lugar visível; um adulto pode estar perto."
+        "text": "Criança chamando. Uma criança chama da varanda: “Minha avó caiu. Você consegue chamar alguém?”"
       },
       {
         "roll": 25,
-        "text": "Vigia nervoso. Protege uma passagem silenciosa usada por moradores; abrir o portão ajuda uma evacuação, mas expõe esse acesso."
+        "text": "Vigia nervoso. Um vigia tenta manter uma passagem silenciosa enquanto uma família pede para passar com um carrinho."
       },
       {
         "roll": 26,
-        "text": "Socorrista improvisado. Procura pano limpo para alguém fora de vista."
+        "text": "Socorrista improvisado. Uma pessoa com luvas improvisadas pede um recipiente limpo pela fresta de uma porta."
       },
       {
         "roll": 27,
-        "text": "Vendedor de trocas. Mostra um registro de abastecimento e pede que um recado seja entregue antes de ceder uma cópia."
+        "text": "Vendedor de trocas. Um vendedor oferece copiar um registro de abastecimento em troca de levar um recado."
       },
       {
         "roll": 28,
-        "text": "Pessoa perdida. Descreve uma fachada conhecida mas indica lado errado."
+        "text": "Pessoa perdida. Uma pessoa compara uma fachada com uma fotografia e insiste que chegou à rua certa."
       },
       {
         "roll": 29,
-        "text": "Motorista parado. Pede orientação antes de ligar motor barulhento."
+        "text": "Motorista parado. Um motorista parado pergunta pela saída antes de ligar o motor; o escapamento está solto."
       },
       {
         "roll": 30,
-        "text": "Gente carregando água. Mostra recipiente; a origem e a posse importam."
+        "text": "Gente carregando água. Duas pessoas carregam água em recipientes marcados e param para conferir uma tampa."
       },
       {
         "roll": 31,
-        "text": "Alguém num telhado. Faz sinal de parada; uma rota alternativa é visível."
+        "text": "Alguém num telhado. Alguém num telhado faz sinal de parada e aponta para uma cobertura ao lado."
       },
       {
         "roll": 32,
-        "text": "Conversa atrás da porta. O grupo é mencionado sem perceberem que escuta."
+        "text": "Conversa atrás da porta. Vozes atrás da porta mencionam a mochila de alguém do grupo e uma entrega não concluída."
       },
       {
         "roll": 33,
-        "text": "Vizinho em conflito. Uma passagem poupa tempo, mas atravessa o espaço de uma família; dois moradores discordam sobre quem pode autorizar o uso."
+        "text": "Vizinho em conflito. Dois moradores discordam sobre abrir um pátio usado como passagem entre ruas."
       },
       {
         "roll": 34,
-        "text": "Animal preso. Movimento junto à grade pode atrair atenção; libertam?"
+        "text": "Animal preso. Um animal preso à grade puxa uma correia; cada puxão faz o metal vibrar."
       },
       {
         "roll": 35,
-        "text": "Cão farejando. Segue cheiro específico; aproximação lenta evita correria."
+        "text": "Cão farejando. Um cão fareja o chão e volta sempre a uma sacola fechada junto a uma porta."
       },
       {
         "roll": 36,
-        "text": "Gato de coleira. Entra em prédio ocupado ou recém-abandonado; seguem?"
+        "text": "Gato de coleira. Um gato de coleira passa por uma abertura e desaparece num prédio com uma tigela na entrada."
       },
       {
         "roll": 37,
-        "text": "Pessoa com febre. Pede água; sinais de Exposição não são presumidos."
+        "text": "Pessoa com febre. Uma pessoa febril pede água e mantém distância: “Não consigo continuar andando assim.”"
       },
       {
         "roll": 38,
-        "text": "Mensageira de bicicleta. Leva um pedido de ajuda com endereço de um abrigo; quer uma rota segura sem expor esse endereço a terceiros."
+        "text": "Mensageira de bicicleta. Uma mensageira de bicicleta pede uma rota para entregar um pedido de ajuda sem divulgar o endereço."
       },
       {
         "roll": 39,
-        "text": "Morador repetindo aviso. Pode confirmar se viu a ameaça ou só ouviu rumor."
+        "text": "Morador repetindo aviso. Um morador repete “não usem a escada” e aponta uma marca no corrimão."
       },
       {
         "roll": 40,
-        "text": "Grupo atravessando. Quer passar sem contato; abordar muda a cena."
+        "text": "Grupo atravessando. Um pequeno grupo atravessa a rua carregando uma maca e pede espaço para passar."
       },
       {
         "roll": 41,
-        "text": "Chuva repentina. Cobertura próxima existe; esperar ou seguir molhados?"
+        "text": "Chuva repentina. A chuva aumenta de repente; uma cobertura próxima está seca, mas a saída passa por um trecho molhado."
       },
       {
         "roll": 42,
-        "text": "Rajada de vento. Solta porta de metal; segurá-la evita ruído."
+        "text": "Rajada de vento. Uma porta de metal bate a cada rajada; um cordão rompido balança na maçaneta."
       },
       {
         "roll": 43,
-        "text": "Queda de telhas. Estalos anunciam risco; contornam ou escoram?"
+        "text": "Queda de telhas. Estalos no telhado antecedem a queda de uma telha; o piso abaixo está coberto de fragmentos."
       },
       {
         "roll": 44,
-        "text": "Poça recente. Água escorre por uma marca de tinta igual à de um depósito próximo; o rastro segue até uma porta lateral."
+        "text": "Poça recente. Uma poça leva tinta da cor das caixas de um depósito até uma porta lateral."
       },
       {
         "roll": 45,
-        "text": "Fiação baixa. Cabo oscila; descubram se há energia antes de tocar."
+        "text": "Fiação baixa. Um cabo baixo oscila entre dois apoios; uma luz de manutenção ainda está acesa."
       },
       {
         "roll": 46,
-        "text": "Goteira de teto. A água alcança um rádio de contato e um livro de registros; o primeiro alcance permite retirar apenas um deles."
+        "text": "Goteira de teto. Uma goteira alcança um rádio e um livro de registros; só um pode ser retirado no primeiro alcance."
       },
       {
         "roll": 47,
-        "text": "Poeira no ar. Movimento num cômodo próximo é denunciado antes de aparecer."
+        "text": "Poeira no ar. Poeira sai pela fresta de um cômodo e uma tosse curta interrompe o ruído de arrasto."
       },
       {
         "roll": 48,
-        "text": "Lama na via. A passagem estreita pode exigir desvio anunciado."
+        "text": "Lama na via. Uma faixa de lama ocupa a via e um carrinho deixou sulcos até um apoio firme."
       },
       {
         "roll": 49,
-        "text": "Fumaça leve. Cheiro indica origem aproximada; vistoriam ou se afastam?"
+        "text": "Fumaça leve. Uma fumaça fina sai de um acesso lateral; o cheiro de tecido queimado chega antes do calor."
       },
       {
         "roll": 50,
-        "text": "Calor sob a porta. Pode haver fogo atrás; acesso lateral ainda está livre."
+        "text": "Calor sob a porta. O calor atravessa a porta fechada; uma voz do acesso lateral pergunta o que está acontecendo."
       },
       {
         "roll": 51,
-        "text": "Estrutura rangendo. Pequena fissura piora ao pisar; outra rota existe."
+        "text": "Estrutura rangendo. Uma fissura se abre quando alguém pisa; um apoio de madeira está fora da faixa frágil."
       },
       {
         "roll": 52,
-        "text": "Grade emperrada. Abrir lentamente é possível; pressa causa Barulho."
+        "text": "Grade emperrada. Uma grade emperrada abre alguns centímetros; o atrito risca o chão e uma alavanca está ao lado."
       },
       {
         "roll": 53,
-        "text": "Portão automático. Motor tenta ligar sem concluir; escolha de desligar."
+        "text": "Portão automático. Um portão automático tenta mover e para; um controle de desligamento está identificado do lado externo."
       },
       {
         "roll": 54,
-        "text": "Alagamento subindo. Marca na parede mostra avanço; avisem quem estiver dentro."
+        "text": "Alagamento subindo. A água sobe por uma marca de parede; uma pessoa no interior ainda organiza caixas."
       },
       {
         "roll": 55,
-        "text": "Luz falhando. Um corredor fica escuro; saída iluminada permanece."
+        "text": "Luz falhando. A luz de um corredor pisca; uma saída iluminada continua visível no fundo."
       },
       {
         "roll": 56,
-        "text": "Vidraça partida. Fragmentos no piso anunciam ruído se correrem."
+        "text": "Vidraça partida. Fragmentos de vidro cobrem uma passagem; um caminho mais estreito evita os maiores cacos."
       },
       {
         "roll": 57,
-        "text": "Lona solta. O vento revela um carrinho de reparos com nome e ponto de devolução; a lona está prestes a rasgar."
+        "text": "Lona solta. Uma lona se solta e revela um carrinho de reparos com nome e ponto de devolução."
       },
       {
         "roll": 58,
-        "text": "Gás no ar. Odor junto ao registro; fechar exige acesso ventilado."
+        "text": "Gás no ar. Um odor forte vem de um registro externo; o acesso interno tem aviso de área isolada."
       },
       {
         "roll": 59,
-        "text": "Trânsito bloqueado. Veículo parou há pouco e deixa via lateral transitável."
+        "text": "Trânsito bloqueado. Um veículo bloqueia a via; seu responsável tenta reposicioná-lo sem alcançar o volante."
       },
       {
         "roll": 60,
-        "text": "Chuva cessando. Uma trilha antes encharcada se torna verificável."
+        "text": "Chuva cessando. A chuva cessa e revela uma trilha; uma estaca marca o último ponto firme."
       },
       {
         "roll": 61,
-        "text": "Garrafa esquecida. Um recipiente individual tem dono possível, indicado por marca."
+        "text": "Garrafa esquecida. Uma garrafa marcada com iniciais está ao lado de um banco; a tampa tem um cordão preso."
       },
       {
         "roll": 62,
-        "text": "Ferramenta no caminho. A peça pode ajudar agora ou ser levada e registrada."
+        "text": "Ferramenta no caminho. Uma ferramenta caída conserva uma etiqueta de empréstimo e barro recente no cabo."
       },
       {
         "roll": 63,
-        "text": "Tanque pingando. Um rótulo identifica o conteúdo e uma bandeja contém parte da perda; conter o vazamento exige ferramenta compatível."
+        "text": "Tanque pingando. Um tanque pinga sobre uma bandeja; o rótulo identifica o conteúdo e o ponto de perda é visível."
       },
       {
         "roll": 64,
-        "text": "Porta que antes abria. Agora está travada por dentro; mostre sinais de quem."
+        "text": "Porta que antes abria. Uma porta que estava aberta agora tem um apoio interno; alguém pergunta quem está do lado de fora."
       },
       {
         "roll": 65,
-        "text": "Cadeira diante da janela. Um caderno marca os horários de passagem na rua; a cadeira ainda tem sinais recentes de uso."
+        "text": "Cadeira diante da janela. Uma cadeira diante da janela tem um caderno com horários de passagem e marcas recentes de uso."
       },
       {
         "roll": 66,
-        "text": "Saco rasgado. Grãos formam uma trilha junto de um aviso de distribuição; a marca do saco pode ligar a carga a quem aguardava alimento."
+        "text": "Saco rasgado. Grãos caídos formam uma trilha entre um saco marcado e um aviso de distribuição."
       },
       {
         "roll": 67,
-        "text": "Carrinho abandonado. Roda quebrada indica reparo simples ou outra rota."
+        "text": "Carrinho abandonado. Um carrinho abandonado tem uma roda torta e um bilhete: “volto com a peça”."
       },
       {
         "roll": 68,
-        "text": "Comida exposta. Cheiro indica perecibilidade; avaliar antes de consumir."
+        "text": "Comida exposta. Uma caixa de comida exposta tem embalagem úmida e data legível; parte ficou sob cobertura."
       },
       {
         "roll": 69,
-        "text": "Caixa lacrada. A etiqueta diz reparo de bomba e traz o nome de um responsável; alguém marcou recolher hoje."
+        "text": "Caixa lacrada. Uma caixa lacrada tem etiqueta “reparo de bomba”, nome e ordem de recolher hoje."
       },
       {
         "roll": 70,
-        "text": "Chuva captada. Um recipiente tem marcas de partilha e dois nomes; água recente se mistura a uma sobra cuja condição é desconhecida."
+        "text": "Chuva captada. Um recipiente de chuva tem dois nomes e marcas de divisão; água nova se mistura ao restante."
       },
       {
         "roll": 71,
-        "text": "Rádio acende. Restou energia para uma escuta curta; sintonizam qual sinal?"
+        "text": "Rádio acende. Um rádio acende por bateria; o visor mostra uma frequência e uma barra quase vazia."
       },
       {
         "roll": 72,
-        "text": "Painel de energia. Uma chave desligada revela circuito local, não reserva."
+        "text": "Painel de energia. Um painel identifica dois circuitos; um alimenta a luz externa e outro permanece desligado."
       },
       {
         "roll": 73,
-        "text": "Ferrolho novo. Um aviso pede silêncio: moradores reforçaram a porta enquanto aguardam alguém de fora."
+        "text": "Ferrolho novo. Um ferrolho novo fecha uma porta; alguém de dentro pede um sinal antes de abrir."
       },
       {
         "roll": 74,
-        "text": "Escada colocada. Mudança recente dá acesso alto, porém exposto."
+        "text": "Escada colocada. Uma escada encostada dá vista sobre o muro; um degrau remendado range ao toque."
       },
       {
         "roll": 75,
-        "text": "Sombra em galpão. Um espaço seco oferece pausa se puderem vigiá-lo."
+        "text": "Sombra em galpão. Um galpão oferece sombra e piso seco; marcas mostram duas entradas usadas recentemente."
       },
       {
         "roll": 76,
-        "text": "Reservatório vazando. A água abastece um ponto de cuidados e moradores próximos; um reparo provisório exige material que alguém também precisa."
+        "text": "Reservatório vazando. Um reservatório perde água; uma lona usada para outra tarefa parece compatível com um remendo."
       },
       {
         "roll": 77,
-        "text": "Cartaz de serviço. Endereço de conserto ainda legível em bairro adjacente."
+        "text": "Cartaz de serviço. Um cartaz anuncia conserto de recipientes e um horário; há uma tira nova cobrindo o endereço antigo."
       },
       {
         "roll": 78,
-        "text": "Pequena troca possível. Uma pessoa oferece um item visível e pede ajuda para levar uma carga até um ponto próximo."
+        "text": "Pequena troca possível. Uma pessoa mostra um item e pede ajuda para levar uma carga até uma cobertura próxima."
       },
       {
         "roll": 79,
-        "text": "Objeto pesado visível. Retirar exige transporte ou deixar marcado no mapa."
+        "text": "Objeto pesado visível. Um objeto pesado está visível junto a uma saída; o piso tem marcas de uma tentativa de arrasto."
       },
       {
         "roll": 80,
-        "text": "Rota liberada. Uma barreira foi removida para a passagem de moradores; um aviso pede que seja fechada após o último grupo."
+        "text": "Rota liberada. Uma passagem abre por poucos minutos; moradores querem fechá-la após a última carga."
       },
       {
         "roll": 81,
-        "text": "Arranhões na porta. Algo está do outro lado; som permite estimar movimento."
+        "text": "Arranhões na porta. Arranhões recentes marcam a porta; um ruído se repete do outro lado na altura da maçaneta."
       },
       {
         "roll": 82,
-        "text": "Passos arrastados. Infectado cruza outra rua; esperar evita contato."
+        "text": "Passos arrastados. Um infectado cruza outra rua sem perceber o grupo; um veículo encobre parte de seu percurso."
       },
       {
         "roll": 83,
-        "text": "Silêncio interrompido. Batida repetida surge de ponto fixo; observem primeiro."
+        "text": "Silêncio interrompido. Uma batida regular interrompe o silêncio; a origem fica atrás de uma cobertura visível."
       },
       {
         "roll": 84,
-        "text": "Corredor estreito ocupado. Um vulto passa sem notar; há caminho alternativo."
+        "text": "Corredor estreito ocupado. Um vulto ocupa o corredor estreito; outra passagem já visível permite contornar."
       },
       {
         "roll": 85,
-        "text": "Vultos atrás da grade. Concentração visível não atravessa barreira intacta."
+        "text": "Vultos atrás da grade. Vultos se movem atrás de uma grade intacta; o lado externo oferece um contorno visível."
       },
       {
         "roll": 86,
-        "text": "Infectado preso. Está imobilizado, mas alcança quem se aproximar."
+        "text": "Infectado preso. Um infectado está preso por uma peça de metal; o braço ainda alcança parte da passagem."
       },
       {
         "roll": 87,
-        "text": "Passos seguindo som. O mesmo infectado sinalizado muda de direção; ajustem rota."
+        "text": "Passos seguindo som. Um infectado muda de direção ao seguir um som; seu novo caminho cruza uma esquina próxima."
       },
       {
         "roll": 88,
-        "text": "Alarme quase ativo. Um carro pisca e estala; desligar, afastar-se ou arriscar acioná-lo?"
+        "text": "Alarme quase ativo. Uma luz de alarme pisca num carro; o fio de um controle acessível está quase solto."
       },
       {
         "roll": 89,
-        "text": "Pássaros levantam voo. Movimento sob as árvores indica direção, não identidade."
+        "text": "Pássaros levantam voo. Pássaros levantam voo de uma árvore; galhos baixos continuam mexendo depois do primeiro susto."
       },
       {
         "roll": 90,
-        "text": "Porta golpeada. Algo insiste do outro lado; tempo de resistência é visível."
+        "text": "Porta golpeada. Uma porta recebe golpes; um apoio curto pode impedir que a trava salte."
       },
       {
         "roll": 91,
-        "text": "Vidro de dentro para fora. Os fragmentos e uma marca recente indicam que alguém saiu pela janela; um objeto ficou preso na esquadria."
+        "text": "Vidro de dentro para fora. Vidro espalhado de dentro para fora acompanha um objeto preso à borda da janela."
       },
       {
         "roll": 92,
-        "text": "Figura imóvel. Pode ser corpo, infectado ou pessoa; há distância para observar."
+        "text": "Figura imóvel. Uma figura imóvel ocupa um banco; há espaço para observar e chamar à distância."
       },
       {
         "roll": 93,
-        "text": "Rastro de arrasto. Marcas recentes entram num recinto; recuar ainda é fácil."
+        "text": "Rastro de arrasto. Um rastro de arrasto entra num recinto; uma tira de tecido fica na entrada."
       },
       {
         "roll": 94,
-        "text": "Alarme distante. O som atrai atenção para outro ponto; decidam se seguem."
+        "text": "Alarme distante. Um alarme distante atrai movimento para outra rua; a direção é perceptível entre os prédios."
       },
       {
         "roll": 95,
-        "text": "Sombra na escada. Um infectado conhecido ocupa trecho que antes estava livre."
+        "text": "Sombra na escada. Um infectado conhecido ocupa a escada que estava livre; um patamar oferece cobertura."
       },
       {
         "roll": 96,
-        "text": "Ruído sob o piso. Origem incerta é localizável; outro acesso permanece."
+        "text": "Ruído sob o piso. Um ruído vem debaixo do piso; uma abertura lateral permite observar sem pisar na área suspeita."
       },
       {
         "roll": 97,
-        "text": "Portão cedendo. A deformação anuncia entrada futura, não ataque imediato."
+        "text": "Portão cedendo. Um portão de chapa se deforma; a corrente estica e os apoios laterais estão desgastados."
       },
       {
         "roll": 98,
-        "text": "Concentração na esquina. Contorná-la é possível se aceitarem desvio visível."
+        "text": "Concentração na esquina. Uma concentração de infectados ocupa a esquina; um contorno visível passa atrás de uma cobertura."
       },
       {
         "roll": 99,
-        "text": "Saída quase fechada. Uma mão empurra do outro lado; a voz pede pressa antes de fechar a barreira. O intervalo para reagir é perceptível."
+        "text": "Saída quase fechada. Uma pessoa fecha uma barreira e avisa: “Vou fechar em um minuto; preciso proteger o interior.”"
       },
       {
         "roll": 100,
-        "text": "Barulho refletido. O eco confunde a direção; esperar o próximo som permite localizar."
+        "text": "Barulho refletido. Um som reflete entre superfícies e parece vir de duas direções; a segunda repetição é mais fraca."
       }
     ]
   },

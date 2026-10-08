@@ -1,28 +1,33 @@
-# Guias e desfechos de eventos
+# Condução dos 100 eventos
 
-Os 100 eventos da tabela B3 têm orientação própria por abordagem: o que está em jogo, três abordagens, possíveis desfechos e mudanças que permanecem. O guia distingue uma ocorrência breve de uma cena; uma decisão pode bastar sem teste ou conflito. O texto original do evento continua sendo a fonte dos fatos da cena. Os guias são sugestões de condução, não substituem decisões da mesa. Eventos personalizados e antigos recebem um guia inicial editável.
+Cada entrada da tabela B3 agora contém situação para narrar, preparação reservada, decisão relevante, observação, intervenção, alternativa, referência de teste, consequências próprias, continuidade se ignorada, retorno e requisitos de contexto. A extensão acompanha a situação: uma ocorrência breve pode terminar com uma decisão, enquanto uma cena pode ter várias etapas.
 
-## Uso pelo mestre
+## Fluxo na mesa
 
-No setor, escolha **Conduzir evento**. O diálogo usa duas colunas no computador e uma no celular. Escolha uma abordagem, conduza a decisão e os testes que fizerem sentido, depois registre sucesso, complicação, falha ou recuo. Cada teste sugere uma condição concreta e referências de Dificuldade 12, 13 ou 15, conforme a ação e o risco. Atributo e dificuldade podem mudar com a descrição dos jogadores. Testes só cabem quando existir risco e incerteza; nenhum dado é rolado automaticamente.
+1. Apresente o texto público e confira a preparação. Mostre sinais, interesses, prazos e riscos antes de pedir uma decisão. Os fatos já narrados prevalecem sobre a versão sugerida.
+2. Escolha uma abordagem sugerida ou **Abordagem livre**. Ler, observar sinais claros, aceitar acordo voluntário ou agir sem risco não exige teste. Atributo e dificuldade dependem da ação; as referências do guia são ajustáveis.
+3. Registre apenas a etapa executada. **Manter evento ativo** é a opção inicial: observar, planejar ou negociar não encerra a ocorrência. **Encerrar evento** conclui a situação quando o mestre escolher.
+4. Revise relato, continuidade, participantes, duração, Barulho e Medo. Quando a etapa já consumiu tempo pelo mapa, conflito ou outro controle, marque **O tempo desta etapa já foi contabilizado**. Isso registra sem cobrar duração novamente; consequências e participantes continuam sujeitos a revisão.
+5. Use **Elementos deste evento** para criar ou vincular uma pista, PNJ, local ou ameaça. O rascunho da condução fica preservado enquanto o formulário é aberto. Vínculos alteram a versão do evento; ao retornar, confira a versão atual antes de aplicar a etapa. Eventos encerrados ainda permitem registrar elementos pendentes, sem reabrir a ocorrência ou repetir custos.
 
-Revise o relato, o que permanece para próximas visitas, duração, participantes, Barulho e Medo antes de confirmar. As sugestões de relato, continuidade e Barulho acompanham a abordagem e o desfecho. Ao editar um campo, a alteração do mestre é preservada nas próximas trocas; **Usar sugestão do desfecho** restaura explicitamente apenas os textos. Recuar não zera a duração já escolhida. A prévia mostra os limites atuais dos marcadores. Itens, rotas, PNJs e ameaças usam os controles existentes de inventário e preparação; a confirmação do desfecho não cria esses elementos automaticamente.
+Textos editados e custos manuais são preservados nas trocas de abordagem e desfecho. Restaurar a sugestão muda apenas os textos. Uma solução livre exige relato próprio. Custos adicionais de espera explicitamente sugeridos podem alterar a duração inicial do desfecho; o mestre deve ajustar a duração à ação real. Recuar não elimina tempo já gasto. A interface explica bloqueios de participantes, horário, conflito, histórico e mudanças concorrentes.
 
-Com uma equipe definida no mapa, a confirmação avança o tempo e aplica as consequências. Com equipes em hexes diferentes, a resolução entra na linha do tempo, reserva os participantes e aplica as consequências na conclusão. Sem duração, o registro é imediato. Pausas existentes da exploração podem interromper o avanço antes da conclusão. Interromper uma atividade preserva o tempo já transcorrido e o histórico, sem aplicar os efeitos pendentes.
+## Tempo e consequências
 
-Cada evento guarda até 20 desfechos. **Ver desfecho** abre o histórico. Reabrir permite uma nova ocorrência sem apagar o registro anterior. Um evento em resolução não pode ser arquivado, reaberto ou excluído pelos controles do setor; conclua ou interrompa primeiro.
+Uma equipe aplica a etapa e avança o relógio pelo fluxo existente. Com equipes separadas, a etapa reserva participantes e aplica efeitos na conclusão. Etapas sem duração são imediatas. Encerrar ou manter ativo também é respeitado na conclusão de atividades agendadas após recarregar a campanha. Interromper mantém tempo transcorrido e histórico, sem aplicar efeitos pendentes.
 
-## Persistência e privacidade
+Os resultados descrevem a intenção declarada. Planejar uma retirada não transporta o objeto; combinar troca não entrega item; localizar apoio não repara estrutura. Qualidade de água ou comida não é confirmada por persuasão. Itens, execução de reparos, entregas, descanso e movimentos continuam nos controles próprios, com recursos reais.
 
-O servidor exige mestre, mesma origem, dia, relógio e versão do evento. Reenvios idênticos usam recibos e não repetem custos ou consequências. Gravações concorrentes são refeitas sem perder alterações de outras janelas; se o evento ou relógio tiver mudado, o mestre deve revisar novamente.
+Consequências ambientais, prazos e mudanças se o grupo ignorar são orientações para o mestre, não relógios automáticos. Declare a referência temporal na cena e confira o tempo efetivamente transcorrido. Não aplique novamente Barulho, Medo, encontro ou dano que já pertença ao gatilho usado para narrar o evento. A tabela não concede Horda, ferimento ou Exposição automática.
 
-Orientações, continuidade e histórico ficam reservados ao mestre, inclusive no log e na projeção do jogador. Uma atividade de evento público mostra somente “Resolver evento”, participantes e horário; eventos ocultos não aparecem na linha do tempo pública. Os ajustes globais de Barulho e Medo continuam visíveis pelos marcadores da campanha.
+## Pistas e contexto
 
+Uma pista pode não ter destino, referir-se ao próprio hex ou apontar outro hex existente. Ela continua uma pista, sem buscas de cômodos ou preparação automática de estoque. Os jogadores recebem texto e identificação de pista; origem e destino estruturado permanecem reservados.
 
-## Revisão de conteúdo
+No sorteio contextual, setores naturais sem estrutura compatível não recebem eventos que dependem de instalação construída ou circuito local. Eventos com veículos exigem via ou veículo compatível nesses setores. A tabela d100 permanece completa no livro; seleção e adaptação pelo mestre são possíveis. A preparação informa requisitos adicionais, como aparelho, alimentação e autorização: estes precisam ser confirmados antes de ativar, sem presumir que uma construção possui todos os recursos.
 
-Vinte entradas foram revistas: 12, 23, 25, 27, 33, 38, 44, 46, 57, 63, 65, 66, 69, 70, 73, 76, 78, 80, 91 e 99. A tabela B3 no texto de regras e o catálogo da aplicação são iguais. Os novos eventos oferecem prazos, interesses, oportunidades e compromissos específicos, mantendo possíveis explicações nos detalhes reservados do guia. O evento 91 passa a ser uma pista de saída recente, distinguindo-se do obstáculo de vidro do 56. Sua categoria e gatilho acompanham o novo conteúdo.
+## Compatibilidade e privacidade
 
-Observar o tanque não conserta a perda; planejar uma retirada não move o objeto; informação incompleta não cria uma saída ou confirma um ocupante. O mestre registra só a ação realizada. Alternativas com reconhecimento de desvio têm duração local positiva e não substituem a travessia entre hexes: os controles do mapa cobram o percurso e aplicam a chegada.
+Os 100 textos da aplicação e da tabela B3 são iguais. Há 120 guias anteriores preservados: vinte versões anteriores à revisão de 07/10 e as cem entradas daquela revisão. Identificação por texto exato evita introduzir fatos novos em eventos antigos ou personalizados. Texto personalizado recebe guia genérico e abordagem livre, mesmo que conserve número ou título de catálogo.
 
-Os eventos já salvos conservam o texto e o histórico. Vinte guias compatíveis com os textos anteriores evitam introduzir os fatos novos em uma cena antiga, inclusive quando só o texto público original foi salvo. Um texto personalizado numa entrada revista recebe o guia editável genérico, sem presumir o novo conteúdo da tabela.
+A atualização não reescreve ocorrências salvas. Históricos anteriores sem a opção de continuidade conservam a semântica de encerramento. Cada ocorrência comporta vinte registros; ao atingir o limite, prepare outra ocorrência. Guias, histórico, continuidade e vínculos ficam reservados ao mestre. Reenvios e mudanças concorrentes seguem validação de versão, relógio, participantes e recibos.

@@ -113,3 +113,14 @@ test('pista de saída recente tem categoria e gatilho de informação, sem virar
  for(let i=0;i<2000;i++){const row=generators.generateHexContent(g,'0,0','eventos',random);if(row.roll===91){result=row;break;}}
  assert.ok(result);assert.equal(result.category,'pista');assert.equal(result.suggestedTriggerType,'manual');assert.match(result.publicText,/Vidro de dentro para fora/);
 });
+
+test('setor natural sem estrutura não sorteia instalações artificiais, inclusive com aleatoriedade zero',()=>{
+ const game=defaultState(),hex=game.hexes['0,0'];hex.terrain='forest';hex.sector=null;hex.points=[];
+ for(const random of [()=>0,rng(777)])for(let i=0;i<300;i++){
+  const row=generators.generateHexContent(game,'0,0','eventos',random);
+  assert.equal(generators.eventContentCompatible(game,'0,0',row.roll),true);
+  assert.notEqual(row.roll,6);assert.notEqual(row.roll,53);
+ }
+ hex.points.push({name:'Cabana de manutenção',signal:'Instalação existente'});
+ assert.equal(generators.eventContentCompatible(game,'0,0',6),true);
+});

@@ -157,14 +157,13 @@ test('ameaças reutilizam o gerenciador, o snapshot e nomes únicos sem substitu
 });
 
 test('estado ou conflito alterado, destino inválido e dados incompletos são recusados atomicamente', () => {
-  for (const status of ['resolved', 'archived']) {
+  for (const status of ['archived']) {
     const game = campaign(status);
     for (const type of ['point', 'npc', 'clue', 'threat']) assertRejectedUnchanged(game, action(game, type), /Reabra/);
   }
   const game = campaign();
   assertRejectedUnchanged(game, action(game, 'npc', { name: ' ' }), /nome/);
-  assertRejectedUnchanged(game, action(game, 'clue', { targetHex: '0,0' }), /outro hex/);
-  assertRejectedUnchanged(game, action(game, 'clue', { targetHex: '999,999' }), /outro hex/);
+  assertRejectedUnchanged(game, action(game, 'clue', { targetHex: '999,999' }), /hex existente/);
   assertRejectedUnchanged(game, action(game, 'clue', { text: ' ' }), /texto/);
   assertRejectedUnchanged(game, action(game, 'threat', { templateId: 'missing' }), /ficha/);
   assertRejectedUnchanged(game, action(game, 'threat', { quantity: 0 }), /1 e 20/);
@@ -265,4 +264,24 @@ test('validação aceita campanhas antigas e vínculos persistidos, mas recusa m
   assert.equal(validConflict(saved.conflict), false);
   delete saved.conflict.threats[0].eventOrigin;
   assert.equal(validConflict(saved.conflict), true);
+});
+
+test('pistas locais ou no próprio hex não viram locais de busca nem expõem destino reservado',()=>{
+ const {isCluePoint}=require('../lib/hex-event-links.ts');
+ const {projectPlayerActions}=require('../lib/player-actions.ts');
+ for(const targetHex of ['', '0,0']){
+  const game=campaign();const draft=action(game,'clue',{targetHex,revealed:true});
+  assert.equal(applyEventAction(game,'0,0','event',draft).ok,true);
+  const point=game.hexes['0,0'].points.at(-1);assert.equal(isCluePoint(point),true);assert.equal(point.clue,true);
+  assert.equal(validWorld(game.hexes),true);
+  const view=projectPlayerGame(game,game.survivors[0].id),visible=view.hexes['0,0'].points.find(p=>p.id===point.id);
+  assert.equal(visible.clue,true);assert.equal(visible.clueTargetHex,undefined);assert.equal(visible.eventOrigin,undefined);
+  const actions=projectPlayerActions(game,game.survivors[0].id);assert.equal(actions.locations.some(s=>s.pointId===point.id),false);
+ }
+});
+test('evento encerrado pode concluir vínculos pendentes sem reabrir ou repetir custos',()=>{
+ const game=campaign('resolved'),before={minutes:game.minutes,noise:game.noise,fear:game.fear};
+ assert.equal(applyEventAction(game,'0,0','event',action(game,'npc')).ok,true);
+ assert.equal(game.hexes['0,0'].events[0].status,'resolved');
+ assert.deepEqual({minutes:game.minutes,noise:game.noise,fear:game.fear},before);
 });
