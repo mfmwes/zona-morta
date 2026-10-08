@@ -1,3 +1,4 @@
+import { readFreeDiceLog } from "./free-dice";
 import { isCluePoint } from "./hex-event-links";
 import { publicActivities } from "./activity-timeline";
 import { playerTimedActionIssue, projectPlayerActions } from "./player-actions";
@@ -85,7 +86,7 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
   visible.sceneBoard = projectPlayerSceneBoard(hydrateSceneBoardTokens(game.sceneBoard, sceneTokenSnapshots));
   // A ficha do jogador mantém apenas o próprio histórico e o chat. Resultados
   // de outra ficha não precisam ser enviados para que a mesa os narre.
-  visible.log = visible.log.filter(entry => entry.kind !== "evento" && (entry.kind === "chat" || entry.kind === "ameaça" || entry.actorId === survivorId
+  visible.log = visible.log.filter(entry => entry.kind !== "evento" && (entry.kind === "chat" || entry.kind === "rolagem" || entry.kind === "ameaça" || entry.actorId === survivorId
     || (entry.kind === "busca" && entry.participantIds?.includes(survivorId))));
   for (const hex of Object.values(visible.hexes)) {
     delete hex.searchSequence;
@@ -287,8 +288,8 @@ export function applyPlayerChange(game: GameState, survivorId: string, before: S
     || (changed("restPlan") && !validRestPlan(after.restPlan, game.survivors, after, game.partyHex))
     || (changed("inventory") && (!Array.isArray(after.inventory) || after.inventory.length > 120
       || after.inventory.some(item => !validInventoryItem(item))))
-    || logs.some(log => !log || !["chat", "dados", "dano", "inventário", "habilidade", "provisões", "tratamento"].includes(log.kind)
-      || typeof log.text !== "string" || log.text.length > 600)) return null;
+    || logs.some(log => !log || !["chat", "dados", "rolagem", "dano", "inventário", "habilidade", "provisões", "tratamento"].includes(log.kind)
+      || typeof log.text !== "string" || log.text.length > 600 || (log.kind === "rolagem" && !readFreeDiceLog(log.text)))) return null;
   const next = structuredClone(game);
   const index = next.survivors.findIndex(s => s.id === survivorId);
   next.survivors[index] = structuredClone(after);

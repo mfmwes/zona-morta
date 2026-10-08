@@ -16,6 +16,9 @@ import {
   Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { FreeDiceTray } from "@/components/free-dice-tray";
+import { rollFreeDice, freeDiceLog, readFreeDiceLog } from "@/lib/free-dice";
 import { RollDialog, type RollRequest } from "@/components/roll-dialog";
 import { rollInfo } from "@/lib/roll-log";
 import { localizeRollLog } from "@/lib/terminology";
@@ -37,7 +40,7 @@ function actor(game: GameState, entry: LogEntry) {
   const survivor = entry.actorId ? game.survivors.find(person => person.id === entry.actorId) : null;
   if (survivor) return { name: survivor.name, portrait: survivor.portrait, subtitle: survivor.archetype || survivor.origin };
   if (entry.actorName) return { name: entry.actorName, portrait: entry.actorPortrait, subtitle: "Sobrevivente" };
-  if (entry.kind === "chat") return { name: "Mestre", portrait: undefined, subtitle: "Narrador da mesa" };
+  if (entry.kind === "chat" || entry.kind === "rolagem") return { name: "Mestre", portrait: undefined, subtitle: "Narrador da mesa" };
   return { name: "Mesa", portrait: undefined, subtitle: "Zona Morta" };
 }
 
@@ -164,9 +167,21 @@ export function TableChat({
     ? player
     : speakerId === "master" ? null : game.survivors.find(person => person.id === speakerId);
 
+  function freeRoll(formula: string) {
+    if (readOnly || role === "convidado" || (role === "jogador" && !player)) return false;
+    try {
+      const result = rollFreeDice(formula);
+      const actorId = role === "jogador" ? survivorId ?? undefined : currentSpeaker?.id;
+      edit(draft => addLog(draft, "rolagem", freeDiceLog(result), actorId));
+      return true;
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Confira a fórmula."); return false; }
+  }
+
   function sendMessage() {
     const text = message.trim();
     if (!text || readOnly || role === "convidado") return;
+    const command = text.match(/^\/(?:r|roll)\s+(.+)$/i);
+    if (command) { if (freeRoll(command[1])) setMessage(""); return; }
     const actorId = role === "jogador" ? survivorId ?? undefined : currentSpeaker?.id;
     edit(draft => addLog(draft, "chat", text.slice(0, 600), actorId));
     setMessage("");
@@ -231,6 +246,14 @@ export function TableChat({
             <p>{row.entry.text}</p>
           </div>
         </article>;
+
+        if (row.entry.kind === "rolagem") {
+          const roll = readFreeDiceLog(row.entry.text);
+          return <article key={row.entry.id} className={`table-chat-roll${highlightedId === row.entry.id ? " is-new" : ""}`}>
+            <div className="table-chat-roll-author"><Avatar name={who.name} portrait={who.portrait}/><div><strong>{who.name}</strong><span>{who.subtitle}</span></div><time>Dia {row.entry.day} · {row.entry.time}</time>{canDelete&&<button type="button" onClick={()=>removeRows(row.ids)} aria-label="Excluir rolagem"><Trash2 size={14}/></button>}</div>
+            <div className="table-chat-roll-card"><p className="table-chat-roll-kicker"><Dice5 size={14}/>Rolagem livre</p>{roll?<><h3>{roll.formula}</h3><strong className="table-chat-roll-total">{roll.total}<small>total</small></strong><div className="table-chat-free-results">{roll.dice.map(d=><p key={d.faces}><b>d{d.faces}</b> · {d.values.join(" + ")}</p>)}{roll.modifier!==0&&<p>Modificador: {roll.modifier>0?"+":""}{roll.modifier}</p>}</div></>:<p>Registro de rolagem indisponível.</p>}</div>
+          </article>;
+        }
 
         if (row.entry.kind === "ameaça") {
           const threat = threatActionInfo(row.entry.text);
@@ -350,6 +373,7 @@ export function TableChat({
           <button type="button" onClick={() => openRoll("reaction")}><Zap size={15} /> Reação</button>
           <button type="button" onClick={() => openRoll("attack")}><Swords size={15} /> Ataque</button>
         </div>
+        {role !== "convidado" && <FreeDiceTray disabled={role === "jogador" && !player} onRoll={freeRoll}/>}
         <div className="table-chat-input">
           <textarea
             value={message}
@@ -362,7 +386,7 @@ export function TableChat({
             }}
             maxLength={600}
             rows={3}
-            placeholder="Digite uma mensagem…"
+            placeholder="Mensagem ou /r 2d6 + 3…"
             aria-label="Mensagem para a mesa"
           />
           <Button type="button" size="icon" onClick={sendMessage} disabled={!message.trim()} aria-label="Enviar mensagem"><Send size={17} /></Button>

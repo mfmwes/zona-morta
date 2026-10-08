@@ -696,3 +696,15 @@ html[data-theme="dark"] .table-chat-threat-damage > div b {
     border-bottom:1px solid #dfd2ce;
   }
 }
+
+.table-chat-free-dice { border: 1px solid var(--border); border-radius: 8px; padding: 8px; color: var(--foreground); }
+.table-chat-free-dice summary { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; font-weight: 700; }
+.table-chat-dice-buttons { display: grid; grid-template-columns: repeat(7,minmax(0,1fr)); gap: 4px; margin: 8px 0; }
+.table-chat-dice-buttons button { border: 1px solid var(--border); border-radius: 5px; padding: 6px 0; font-size: 12px; font-weight: 700; background: var(--background); }
+.table-chat-free-dice form { display: flex; gap: 5px; align-items: center; }
+.table-chat-free-dice input { min-width: 0; flex: 1; background: var(--background); border: 1px solid var(--border); border-radius: 5px; padding: 6px; font-size: 12px; color: var(--foreground); }
+.table-chat-free-dice form > button:last-child { font-size: 11px; }
+.table-chat-free-dice button:disabled { opacity: .45; cursor: not-allowed; }
+.table-chat-free-dice button:focus-visible, .table-chat-free-dice input:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.table-chat-free-dice > p { font-size: 11px; margin-top: 5px; }
+.table-chat-free-results { display: grid; gap: 4px; font-size: 13px; margin-top: 10px; }
