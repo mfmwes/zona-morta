@@ -31,3 +31,15 @@ No sorteio contextual, setores naturais sem estrutura compatível não recebem e
 Os 100 textos da aplicação e da tabela B3 são iguais. Há 120 guias anteriores preservados: vinte versões anteriores à revisão de 07/10 e as cem entradas daquela revisão. Identificação por texto exato evita introduzir fatos novos em eventos antigos ou personalizados. Texto personalizado recebe guia genérico e abordagem livre, mesmo que conserve número ou título de catálogo.
 
 A atualização não reescreve ocorrências salvas. Históricos anteriores sem a opção de continuidade conservam a semântica de encerramento. Cada ocorrência comporta vinte registros; ao atingir o limite, prepare outra ocorrência. Guias, histórico, continuidade e vínculos ficam reservados ao mestre. Reenvios e mudanças concorrentes seguem validação de versão, relógio, participantes e recibos.
+
+## Consequências concretas
+
+As 100 intervenções especificam benefício, custo e falha: acesso por prazo, vigia, serviço, porções existentes, dano, Estresse, condições ou compromissos. Sugestões de PNJ têm nome, necessidade e oferta ligados à ocorrência; criá-lo ou vinculá-lo continua sendo uma ação explícita.
+
+O mestre pode confirmar efeitos pessoais para um ou mais participantes: PV a marcar (0–3), redução de um nível com um espaço de Armadura cabível, Estresse, Esperança, porções soltas de Comida/Água e uma condição com efeito e remoção. Os valores iguais são aplicados somente aos alvos marcados, sem atingir todo o grupo automaticamente. O resumo mostra a aplicação prevista. Efeitos editados são preservados ao mudar o resultado.
+
+Condições aparecem na aba Condições da ficha e como lembrete na rolagem. A mesa escolhe vantagem/desvantagem quando a causa se aplica; não há vantagem automática sobre toda ação, remoção automática por relógio nem infecção implícita. O mestre remove a condição quando sua causa cessa. Restrito impede deslocamento na ficção; Vulnerável concede vantagem nas rolagens contra o alvo, conforme a situação anunciada. Encharcado, Tosse e Náusea são condições de cenário com duração e alcance explícitos.
+
+Vínculo atualiza a disposição do PNJ presente e registra compromisso, participantes e dia nas notas reservadas. Notas públicas continuam sendo o canal para compartilhar um acordo. Os textos de ocorrências salvas permanecem iguais; esta revisão concretiza a condução das cem entradas atuais. As 120 versões antigas continuam usando seus guias correspondentes.
+
+Efeitos só são aplicados na conclusão, nunca ao iniciar ou cancelar uma atividade. A conclusão revalida alvos, Armadura livre, estoque e PNJ; se algo mudou e inviabilizou o efeito, a atividade fica pendente sem efeitos parciais e pode ser interrompida. Reenvio do mesmo recibo não aplica nada novamente. Histórico registra deltas reais limitados aos máximos das fichas; provisões insuficientes bloqueiam em vez de fabricar o custo. Itens físicos, reparos, descanso, movimentos e pagamentos em estoques de locais usam seus fluxos próprios. Benefícios com uso único precisam ser consumidos pelo mestre na cena, evitando recompensas repetidas por registrar etapas.

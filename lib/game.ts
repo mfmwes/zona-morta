@@ -345,6 +345,8 @@ export type NPC = {
 };
 
 export type Survivor = {
+  /** Condições com efeito e remoção anunciados pelo mestre. */
+  eventConditions?: import("./event-resolution-types").EventCondition[];
   id: string;
   name: string;
   portrait?: string;

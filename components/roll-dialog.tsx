@@ -336,6 +336,7 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
       </label>) : <p className="text-sm subtle">Escolha um sobrevivente para utilizar Experiências.</p>}
       {experienceCost > 0 && <p className="roll-cost">Custo declarado: {experienceCost} Esperança · disponível antes da rolagem: {survivor?.hope ?? 0}</p>}
     </fieldset>
+    {Boolean(survivor?.eventConditions?.length)&&<details className="roll-hint" open><summary>Condições ativas deste personagem</summary>{survivor!.eventConditions!.map(c=><p key={c.name}><b>{c.name}:</b> {c.effect} <span>Remover: {c.clear}</span></p>)}<p>Confira com o mestre quais condições se aplicam e selecione vantagem/desvantagem abaixo. Condições que impedem a ação devem ser resolvidas antes de rolar.</p></details>}
     <div className="roll-edge"><span>Condição da rolagem</span><div role="group" aria-label="Vantagem ou desvantagem">
       {([ ["none", "Normal"], ["advantage", "Vantagem +d6"], ["disadvantage", "Desvantagem −d6"] ] as const).map(([value, label]) =>
         <button type="button" key={value} aria-pressed={edge === value} onClick={() => { setEdge(value); clearResult(); }}>{label}</button>)}

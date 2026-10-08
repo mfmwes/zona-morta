@@ -368,8 +368,9 @@ export function eventContentCompatible(game: GameState, hexId: string, roll: num
   const hex = game.hexes[hexId];
   if (!hex) return false;
   const guide = eventDefinitions.find(g => g.roll === roll);
-  const requiresStructure = guide?.requirements.includes("structure") || guide?.requirements.includes("power") || guide?.requirements.includes("communication");
-  const requiresVehicle = guide?.requirements.includes("vehicle");
+  const requirements: readonly string[] = guide?.requirements ?? [];
+  const requiresStructure = requirements.includes("structure") || requirements.includes("power") || requirements.includes("communication");
+  const requiresVehicle = requirements.includes("vehicle");
   if ((!requiresStructure && !requiresVehicle) || (hex.terrain ?? "urban") === "urban") return true;
   const surroundings = [hex.sector?.name, ...hex.points.filter(p => !p.clueTargetHex && !p.clue).map(p => `${p.name} ${p.signal}`)].join(" ");
   if (requiresVehicle && !/carro|veículo|veiculo|garagem|rodovia|estrada|estacionamento|oficina/i.test(surroundings)) return false;

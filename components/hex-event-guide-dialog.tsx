@@ -5,11 +5,11 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Field, Pick, Counter } from "@/components/game-controls";
-import { displayTime, hasMultipleSurvivorGroups, survivorsAtHex, type GameState, type HexEventActionKind } from "@/lib/game";
+import { displayTime, survivorStats, hasMultipleSurvivorGroups, survivorsAtHex, type GameState, type NPC, type HexEventActionKind } from "@/lib/game";
 import { eventGuide, eventOutcomeSuggestion } from "@/lib/event-guides";
 import { eventStatus } from "@/lib/hex-generators";
-import { eventOutcomeLabels, type EventOutcome } from "@/lib/event-resolution-types";
-import { eventResolutionFingerprint, resolveHexEvent } from "@/lib/event-resolution";
+import { eventOutcomeLabels, type EventOutcome, type EventPersonalEffect } from "@/lib/event-resolution-types";
+import { eventResolutionFingerprint, resolveHexEvent, eventEffectsIssue } from "@/lib/event-resolution";
 import { survivorTimedCommitment } from "@/lib/activity";
 import { createId } from "@/lib/id";
 import { HexEventActionDialog, type HexEventActionRequest } from "@/components/hex-event-action-dialog";
@@ -31,6 +31,18 @@ export function HexEventGuideDialog({game,hexId,eventId,controls,edit,onClose}:{
   const [noise,setNoise]=useState(0),[fear,setFear]=useState(0),[busy,setBusy]=useState(false),[error,setError]=useState("");
   const [summaryEdited,setSummaryEdited]=useState(false),[continuityEdited,setContinuityEdited]=useState(false);
   const [minutesEdited,setMinutesEdited]=useState(false),[noiseEdited,setNoiseEdited]=useState(false),[fearEdited,setFearEdited]=useState(false);
+  const initialMechanical=eventOutcomeSuggestion(guide,guide.approaches[0].id,"success").mechanical;
+  const [applyPersonal,setApplyPersonal]=useState(false),[effectIds,setEffectIds]=useState<string[]>([]);
+  const [hpMarks,setHpMarks]=useState(initialMechanical?.hpMarks??0),[useArmor,setUseArmor]=useState(false);
+  const [stress,setStress]=useState(initialMechanical?.stress??0),[hope,setHope]=useState(initialMechanical?.hope??0);
+  const [food,setFood]=useState(initialMechanical?.food??0),[water,setWater]=useState(initialMechanical?.water??0);
+  const [conditionName,setConditionName]=useState(initialMechanical?.condition?.name??""),[conditionEffect,setConditionEffect]=useState(initialMechanical?.condition?.effect??""),[conditionClear,setConditionClear]=useState(initialMechanical?.condition?.clear??"");
+  const [personalEdited,setPersonalEdited]=useState(false),[npcEdited,setNpcEdited]=useState(false);
+  const [applyNpc,setApplyNpc]=useState(false),[npcId,setNpcId]=useState(event?.actionLinks?.npcId??"");
+  const [disposition,setDisposition]=useState<NPC["disposition"]>(initialMechanical?.npcDisposition??"Neutro"),[commitment,setCommitment]=useState(initialMechanical?.commitment??"");
+  const personalEffects:EventPersonalEffect[]=applyPersonal?effectIds.map(survivorId=>({survivorId,hpMarks,armor:useArmor,stress,hope,food,water,...(conditionName.trim()?{condition:{name:conditionName.trim(),effect:conditionEffect.trim(),clear:conditionClear.trim()}}:{})})):[];
+  const npcEffect=applyNpc?{npcId,disposition,commitment:commitment.trim()}:undefined;
+  const mechanicalIssue=applyPersonal&&!effectIds.length?"Escolha quem recebe os efeitos pessoais.":applyPersonal&&conditionName.trim()&&(!conditionEffect.trim()||!conditionClear.trim())?"Descreva o efeito e como remover a condição.":applyNpc&&(!npcId||!commitment.trim())?"Escolha o PNJ e descreva o acordo ou ruptura.":applyPersonal&&(conditionName.length>80||conditionEffect.length>400||conditionClear.length>400)?"Use até 80 caracteres no nome e 400 no efeito e remoção da condição.":applyNpc&&commitment.length>600?"Resuma o compromisso do PNJ para até 600 caracteres.":"";
   const people=survivorsAtHex(game,hexId);
   const [ids,setIds]=useState(()=>people.filter(p=>!survivorTimedCommitment(game,p.id)).map(p=>p.id));
   const approach=approachId==="free"?{id:"free",label:"Abordagem livre",description:"Registre a intenção e o resultado da solução proposta pelo grupo.",minutes:0}:guide.approaches.find(a=>a.id===approachId)??guide.approaches[0];
@@ -45,14 +57,19 @@ export function HexEventGuideDialog({game,hexId,eventId,controls,edit,onClose}:{
     if(!continuityEdited)setContinuity(suggestion.continuity);
     if(!noiseEdited)setNoise(suggestion.noise);
     if(!fearEdited)setFear(0);
+    const m=suggestion.mechanical;
+    if(!personalEdited){setHpMarks(m?.hpMarks??0);setUseArmor(false);setStress(m?.stress??0);setHope(m?.hope??0);setFood(m?.food??0);setWater(m?.water??0);setConditionName(m?.condition?.name??"");setConditionEffect(m?.condition?.effect??"");setConditionClear(m?.condition?.clear??"");}
+    if(!npcEdited){setDisposition(m?.npcDisposition??"Neutro");setCommitment(m?.commitment??"");}
   }
   function chooseOutcome(value:EventOutcome){setOutcome(value);updateSuggestions(approachId,value);if(!minutesEdited&&value!=="withdrawn")setMinutes(approach.minutes+(eventOutcomeSuggestion(guide,approachId,value).extraMinutes??0));}
   function chooseApproach(id:string){setApproachId(id);updateSuggestions(id,outcome);setCloseEvent(false);if(!minutesEdited)setMinutes(id==="free"?0:guide.approaches.find(a=>a.id===id)!.minutes+(eventOutcomeSuggestion(guide,id,outcome).extraMinutes??0));}
+  function restoreMechanicalSuggestion(){const m=eventOutcomeSuggestion(guide,approachId,outcome).mechanical;setHpMarks(m?.hpMarks??0);setUseArmor(false);setStress(m?.stress??0);setHope(m?.hope??0);setFood(m?.food??0);setWater(m?.water??0);setConditionName(m?.condition?.name??"");setConditionEffect(m?.condition?.effect??"");setConditionClear(m?.condition?.clear??"");setDisposition(m?.npcDisposition??"Neutro");setCommitment(m?.commitment??"");setPersonalEdited(false);setNpcEdited(false);}
   function restoreTextSuggestion(){const suggestion=eventOutcomeSuggestion(guide,approachId,outcome);setSummary(suggestion.summary);setContinuity(suggestion.continuity);setSummaryEdited(false);setContinuityEdited(false);}
-  const blockReason=outdated?"O evento mudou. Confira a versão atual antes de confirmar.":(event?.resolutions?.length??0)>=20?"O histórico atingiu 20 etapas. Crie uma nova ocorrência para continuar.":!summary.trim()?"Descreva o que aconteceu.":summary.length>1600||continuity.length>1600?"Reduza os textos para até 1.600 caracteres por campo.":approachId==="free"&&!summaryEdited?"Descreva o resultado da abordagem livre.":chargedMinutes&&!ids.length?"Escolha quem dedica tempo à etapa.":chargedMinutes&&game.conflict?.active?"Durante um conflito, use seu fluxo de ações ou marque o tempo já contabilizado.":chargedMinutes&&game.minutes+chargedMinutes>=1440?"A duração ultrapassa o dia. Reduza o intervalo ou encerre o dia primeiro.":chargedMinutes&&ids.some(id=>!people.some(p=>p.id===id)||Boolean(survivorTimedCommitment(game,id)))?"Um participante mudou de local ou está ocupado. Revise a seleção.":"";
+  const effectIssue=mechanicalIssue||eventEffectsIssue(game,hexId,ids,personalEffects,npcEffect);
+  const blockReason=effectIssue?effectIssue:outdated?"O evento mudou. Confira a versão atual antes de confirmar.":(event?.resolutions?.length??0)>=20?"O histórico atingiu 20 etapas. Crie uma nova ocorrência para continuar.":!summary.trim()?"Descreva o que aconteceu.":summary.length>1600||continuity.length>1600?"Reduza os textos para até 1.600 caracteres por campo.":approachId==="free"&&!summaryEdited?"Descreva o resultado da abordagem livre.":chargedMinutes&&!ids.length?"Escolha quem dedica tempo à etapa.":chargedMinutes&&game.conflict?.active?"Durante um conflito, use seu fluxo de ações ou marque o tempo já contabilizado.":chargedMinutes&&game.minutes+chargedMinutes>=1440?"A duração ultrapassa o dia. Reduza o intervalo ou encerre o dia primeiro.":chargedMinutes&&ids.some(id=>!people.some(p=>p.id===id)||Boolean(survivorTimedCommitment(game,id)))?"Um participante mudou de local ou está ocupado. Revise a seleção.":"";
   async function confirm(){
     if(disabled||blockReason||!event)return;
-    const command={type:"resolve-event" as const,id:createId(),day:game.day,expectedMinute:game.minutes,expectedEvent,hexId,eventId,approachId,outcome,summary,continuity,participantIds:ids,minutes:chargedMinutes,noise,fear,closeEvent};
+    const command={type:"resolve-event" as const,id:createId(),day:game.day,expectedMinute:game.minutes,expectedEvent,hexId,eventId,approachId,outcome,summary,continuity,participantIds:ids,minutes:chargedMinutes,noise,fear,closeEvent,personalEffects,npcEffect};
     setBusy(true);setError("");
     try{
       if(controls)await controls.send(command);
@@ -86,7 +103,28 @@ export function HexEventGuideDialog({game,hexId,eventId,controls,edit,onClose}:{
             <Counter compact editable label="Tempo (min)" value={minutes} max={360} onChange={value=>{setMinutes(value);setMinutesEdited(true);}}/><Counter compact editable label="Barulho" value={noise} min={-5} max={5} onChange={value=>{setNoise(value);setNoiseEdited(true);}}/><Counter compact editable label="Medo" value={fear} min={-12} max={12} onChange={value=>{setFear(value);setFearEdited(true);}}/>
           </div><fieldset><legend>Quem dedica esse tempo?</legend><div className="event-guide-participants">{people.map(p=>{const commitment=survivorTimedCommitment(game,p.id);return <label key={p.id} title={commitment?.label}><input type="checkbox" checked={ids.includes(p.id)} disabled={disabled||Boolean(chargedMinutes&&commitment)} onChange={e=>setIds(e.target.checked?[...ids,p.id]:ids.filter(id=>id!==p.id))}/>{p.name}{commitment&&chargedMinutes?" · ocupado":""}</label>;})}{!people.length&&<p className="subtle">Nenhum sobrevivente presente neste hex.</p>}</div></fieldset></details>
           <div className="event-guide-preview"><CheckCircle2 size={17}/><div><b>{chargedMinutes>0&&hasMultipleSurvivorGroups(game)?`Conclusão prevista: ${displayTime(game.minutes+chargedMinutes)}`:"Aplicar ao confirmar"}</b><p>{chargedMinutes} min adicionais · Barulho {noise>=0?"+":""}{noise} · Medo {fear>=0?"+":""}{fear}</p><small>Barulho: {game.noise} → {Math.max(0,Math.min(5,game.noise+noise))} · Medo: {game.fear} → {Math.max(0,Math.min(12,game.fear+fear))}</small></div></div>
-          <p className="subtle text-xs">Este registro não movimenta pessoas nem entrega itens. Use os controles do mapa e do inventário para essas ações, com seus custos e condições.</p>
+          <details className="event-guide-effects" open><summary>Efeitos pessoais na ficha</summary>
+            <p className="subtle text-xs">Os valores sugeridos abaixo só são aplicados quando você marcar a opção e escolher quem sofreu o efeito. Anuncie os riscos antes da ação. Valores iguais serão aplicados a cada alvo selecionado.</p>
+            {(personalEdited||npcEdited)&&<Button size="sm" variant="outline" disabled={disabled} onClick={restoreMechanicalSuggestion}>Usar efeitos sugeridos deste desfecho</Button>}
+            <label><input type="checkbox" checked={applyPersonal} disabled={disabled} onChange={e=>setApplyPersonal(e.target.checked)}/> Aplicar efeitos pessoais nesta etapa</label>
+            <fieldset><legend>Quem recebe estes efeitos?</legend>{people.map(p=><label key={p.id}><input type="checkbox" checked={effectIds.includes(p.id)} disabled={disabled||!applyPersonal} onChange={e=>{setEffectIds(e.target.checked?[...effectIds,p.id]:effectIds.filter(id=>id!==p.id));if(e.target.checked&&!ids.includes(p.id))setIds([...ids,p.id]);}}/>{p.name}</label>)}</fieldset>
+            <div className="event-guide-counters"><Counter compact editable label="PV a marcar" value={hpMarks} max={3} onChange={v=>{setHpMarks(v);setPersonalEdited(true);}}/><Counter compact editable label="Estresse pessoal" value={stress} min={-6} max={6} onChange={v=>{setStress(v);setPersonalEdited(true);}}/><Counter compact editable label="Esperança" value={hope} min={-6} max={6} onChange={v=>{setHope(v);setPersonalEdited(true);}}/><Counter compact editable label="Comida solta" value={food} min={-10} max={10} onChange={v=>{setFood(v);setPersonalEdited(true);}}/><Counter compact editable label="Água solta" value={water} min={-10} max={10} onChange={v=>{setWater(v);setPersonalEdited(true);}}/></div>
+            <label><input type="checkbox" checked={useArmor} disabled={disabled||hpMarks===0} onChange={e=>{setUseArmor(e.target.checked);setPersonalEdited(true);}}/> Marcar 1 Armadura para reduzir o dano em 1 PV (se a proteção cobrir o perigo)</label>
+            <p className="subtle text-xs">PV são espaços a marcar, depois de definir a severidade do dano. Não rolar dano novamente. Porções soltas não alteram itens embalados nem registram alimentação diária.</p>
+            <Field label="Condição a adicionar (opcional)" value={conditionName} onChange={v=>{setConditionName(v);setPersonalEdited(true);}}/>
+            {conditionName.trim()&&<><Field label="Efeito da condição" multiline value={conditionEffect} onChange={v=>{setConditionEffect(v);setPersonalEdited(true);}}/><Field label="Como remover a condição" multiline value={conditionClear} onChange={v=>{setConditionClear(v);setPersonalEdited(true);}}/></>}
+            {personalEdited&&<p className="subtle text-xs">Seus efeitos editados serão preservados ao trocar o desfecho. Confira se ainda correspondem à ação.</p>}
+          </details>
+          <details className="event-guide-effects" open={Boolean(guide.npc)}><summary>Relação com um PNJ</summary>
+            {guide.npc&&<p><b>{guide.npc.name}</b> · {guide.npc.role}. Oferta: {guide.npc.offer}</p>}
+            <label><input type="checkbox" checked={applyNpc} disabled={disabled} onChange={e=>{setApplyNpc(e.target.checked);if(e.target.checked&&!npcId&&event?.actionLinks?.npcId)setNpcId(event.actionLinks.npcId);}}/> Registrar mudança de disposição e compromisso</label>
+            <Pick label="PNJ afetado" value={npcId||"__none"} options={[{value:"__none",label:"Escolha ou crie o PNJ nos elementos do evento"},...game.npcs.filter(n=>n.hex===hexId&&n.active&&!["Morto","Desaparecido"].includes(n.status)).map(n=>({value:n.id,label:`${n.name} · ${n.disposition}`}))]} onChange={v=>setNpcId(v==="__none"?"":v)} disabled={disabled||!applyNpc}/>
+            <Pick label="Nova disposição" value={disposition} options={["Hostil","Desconfiado","Neutro","Aliado","Leal"]} onChange={v=>{setDisposition(v as NPC["disposition"]);setNpcEdited(true);}} disabled={disabled||!applyNpc}/>
+            <Field label="Acordo, dívida ou ruptura (reservado)" multiline value={commitment} onChange={v=>{setCommitment(v);setNpcEdited(true);}}/>
+            <p className="subtle text-xs">O vínculo fica na ficha do PNJ com os participantes e o dia. Criar ou vincular um cadastro existente está nos elementos deste evento. Compartilhe acordos usando as notas públicas do PNJ.</p>
+          </details>
+          {(personalEffects.length>0||npcEffect)&&<div className="event-guide-preview"><div><b>Aplicação nas fichas ao concluir</b>{personalEffects.map(e=>{const p=people.find(p=>p.id===e.survivorId);if(!p)return null;return <p key={p.id}>{p.name}: PV marcados {p.hp} → {Math.min(survivorStats(p).hp,p.hp+Math.max(0,e.hpMarks-(e.armor?1:0)))} · Estresse {p.stress} → {Math.max(0,Math.min(6,p.stress+e.stress))} · Esperança {p.hope} → {Math.max(0,Math.min(6,p.hope+e.hope))} · Comida {p.food} → {p.food+e.food} · Água {p.water} → {p.water+e.water}{e.armor?" · Armadura +1":""}{e.condition?` · ${e.condition.name}`:""}</p>;})}{npcEffect&&<p>{game.npcs.find(n=>n.id===npcEffect.npcId)?.name??"PNJ não selecionado"}: {disposition} · {commitment}</p>}</div></div>}
+          <p className="subtle text-xs">Movimentos, itens físicos, consertos e descansos usam seus controles próprios. As condições ficam na aba Condições da ficha até o mestre registrar sua remoção.</p>
         </>:<p className="subtle">Consulte o desfecho registrado abaixo. Para uma nova ocorrência, reabra o evento no setor.</p>}
         {guide.application&&<p className="subtle text-xs">{guide.application}</p>}
         {event&&eventStatus(event)!=="archived"&&!scheduled&&<details className="event-guide-options"><summary>Elementos deste evento</summary><div className="event-guide-elements">{(Object.keys(hexEventActionLabels) as HexEventActionKind[]).map(type=><Button key={type} size="sm" variant="outline" disabled={disabled||eventActionUsed(game,hexId,event,type)} onClick={()=>setElementRequest({hexId,eventId,type,suggested:true})}>{hexEventActionLabels[type]}</Button>)}</div><p>Revise e confirme cada elemento; a etapa não cria itens, pessoas ou conflitos automaticamente.</p></details>}
@@ -95,7 +133,7 @@ export function HexEventGuideDialog({game,hexId,eventId,controls,edit,onClose}:{
         {error&&<p role="alert" className="event-guide-error">{error}</p>}
       </section>
     </div>
-    {Boolean(event?.resolutions?.length)&&<details className="event-guide-history" open={!canResolve}><summary>Histórico de desfechos ({event!.resolutions!.length})</summary>{[...event!.resolutions!].reverse().map(r=><article key={r.id}><b>{r.closeEvent===false?"Etapa · ":""}{eventOutcomeLabels[r.outcome]} · {r.status==="completed"?"Registrado":r.status==="scheduled"?"Em andamento":"Interrompido"}</b><small>Dia {r.day} · {displayTime(r.startMinute)} → {displayTime(r.endMinute)}</small><p>{r.summary}</p><p className="subtle">{r.continuity}</p><small>{r.minutes} min previstos · Barulho {r.appliedNoise??r.noise} · Medo {r.appliedFear??r.fear}</small></article>)}</details>}
+    {Boolean(event?.resolutions?.length)&&<details className="event-guide-history" open={!canResolve}><summary>Histórico de desfechos ({event!.resolutions!.length})</summary>{[...event!.resolutions!].reverse().map(r=><article key={r.id}><b>{r.closeEvent===false?"Etapa · ":""}{eventOutcomeLabels[r.outcome]} · {r.status==="completed"?"Registrado":r.status==="scheduled"?"Em andamento":"Interrompido"}</b><small>Dia {r.day} · {displayTime(r.startMinute)} → {displayTime(r.endMinute)}</small><p>{r.summary}</p><p className="subtle">{r.continuity}</p>{r.appliedEffects?.map((effect,index)=><p className="subtle" key={index}>{effect}</p>)}<small>{r.minutes} min previstos · Barulho {r.appliedNoise??r.noise} · Medo {r.appliedFear??r.fear}</small></article>)}</details>}
     <DialogFooter><Button variant="outline" disabled={busy} onClick={onClose}>Fechar</Button>{canResolve&&<Button className="whitespace-nowrap" disabled={disabled||Boolean(blockReason)} onClick={()=>void confirm()}>{chargedMinutes>0&&hasMultipleSurvivorGroups(game)?"Iniciar etapa":closeEvent?"Registrar e encerrar":"Registrar etapa"}</Button>}</DialogFooter>
   </DialogContent></Dialog>{elementRequest&&<HexEventActionDialog game={game} edit={edit} request={elementRequest} onClose={()=>{setElementRequest(null);}}/>}</>;
 }

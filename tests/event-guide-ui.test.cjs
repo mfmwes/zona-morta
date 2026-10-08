@@ -98,7 +98,7 @@ test('reconhecer desvio tem custo local e mostra condição do teste sem realiza
  const f=fixture({canAct:true,pending:false,send:async()=>{}}),before=structuredClone(f.game);
  f.find(n=>n.type==='button'&&text(n).startsWith('Outra saída / recuar')).props.onClick();
  assert.equal(f.find(n=>n.props?.label==='Tempo (min)').props.value,10);assert.match(text(f.find(n=>n.type==='p'&&text(n).includes('custo do mapa'))),/custo do mapa/);assert.deepEqual(f.game,before);
- f.find(n=>n.type==='button'&&text(n).startsWith('Intervir / negociar')).props.onClick();assert.ok(f.find(n=>n.type==='details'&&text(n).includes('Quando propor um teste')));assert.match(text(f.find(n=>n.type==='details'&&text(n).includes('Quando propor um teste'))),/forçar a grade travada/);
+ f.find(n=>n.type==='button'&&text(n).startsWith('Intervir / negociar')).props.onClick();assert.ok(f.find(n=>n.type==='details'&&text(n).includes('Quando propor um teste')));assert.match(text(f.find(n=>n.type==='details'&&text(n).includes('Quando propor um teste'))),/Limpar a trava e levantar a grade/);
 });
 
 test('etapa pode manter situação ativa e encerrar explicitamente, sem cobrar tempo já contado',async()=>{
@@ -126,4 +126,29 @@ test('mudança concorrente pode ser revisada explicitamente sem apagar o rascunh
  f.find(n=>n.type==='button'&&text(n).startsWith('Conferi a versão atual')).props.onClick();
  assert.equal(f.find(n=>n.props?.label==='O que aconteceu').props.value,'Relato da mesa');
  assert.equal(f.find(n=>n.type==='button'&&text(n)==='Registrar etapa').props.disabled,false);
+});
+
+test('efeitos sugeridos exigem alvos, entram no comando e preservam edições',async()=>{
+ let sent;const f=fixture({canAct:true,pending:false,send:async c=>{sent=c;}});
+ f.find(n=>n.type==='button'&&text(n).startsWith('Intervir / negociar')).props.onClick();f.find(n=>n.props?.label==='Desfecho escolhido').props.onChange('failure');
+ assert.equal(f.find(n=>n.props?.label==='PV a marcar').props.value,2);
+ const label=f.find(n=>n.type==='label'&&text(n).includes('Aplicar efeitos pessoais nesta etapa'));elements(label).find(n=>n.type==='input').props.onChange({target:{checked:true}});
+ assert.equal(f.find(n=>n.type==='button'&&text(n)==='Registrar etapa').props.disabled,true);assert.match(text(f.find(n=>n.props?.role==='status')),/quem recebe/);
+ const field=f.find(n=>n.type==='fieldset'&&text(n).includes('Quem recebe estes efeitos?'));elements(field).find(n=>n.type==='input').props.onChange({target:{checked:true}});
+ f.find(n=>n.props?.label==='PV a marcar').props.onChange(1);f.find(n=>n.props?.label==='Desfecho escolhido').props.onChange('complication');assert.equal(f.find(n=>n.props?.label==='PV a marcar').props.value,1);
+ await f.find(n=>n.type==='button'&&text(n)==='Registrar etapa').props.onClick();assert.equal(sent.personalEffects[0].hpMarks,1);assert.equal(sent.personalEffects[0].survivorId,f.game.survivors[0].id);
+});
+test('uma condição com nome exige efeito e remoção antes de confirmar',()=>{
+ const f=fixture({canAct:true,pending:false,send:async()=>{}});const label=f.find(n=>n.type==='label'&&text(n).includes('Aplicar efeitos pessoais nesta etapa'));elements(label).find(n=>n.type==='input').props.onChange({target:{checked:true}});
+ const field=f.find(n=>n.type==='fieldset'&&text(n).includes('Quem recebe estes efeitos?'));elements(field).find(n=>n.type==='input').props.onChange({target:{checked:true}});
+ f.find(n=>n.props?.label==='Condição a adicionar (opcional)').props.onChange('Restrito');assert.match(text(f.find(n=>n.props?.role==='status')),/como remover/);
+ f.find(n=>n.props?.label==='Efeito da condição').props.onChange('Não se desloca.');f.find(n=>n.props?.label==='Como remover a condição').props.onChange('Um aliado ergue a grade.');assert.equal(f.find(n=>n.type==='button'&&text(n)==='Registrar etapa').props.disabled,false);
+});
+test('registrar vínculo requer um PNJ e preserva compromisso revisado',async()=>{
+ let sent;const f=fixture({canAct:true,pending:false,send:async c=>{sent=c;}});
+ f.game.npcs.push({id:'lia',name:'Lia',hex:'0,0',active:true,status:'Bem',disposition:'Neutro'});
+ const label=f.find(n=>n.type==='label'&&text(n).includes('Registrar mudança de disposição'));elements(label).find(n=>n.type==='input').props.onChange({target:{checked:true}});assert.equal(f.find(n=>n.type==='button'&&text(n)==='Registrar etapa').props.disabled,true);
+ f.find(n=>n.props?.label==='PNJ afetado').props.onChange('lia');f.find(n=>n.props?.label==='Nova disposição').props.onChange('Aliado');f.find(n=>n.props?.label==='Acordo, dívida ou ruptura (reservado)').props.onChange('Uma entrega gratuita até amanhã.');
+ f.find(n=>n.props?.label==='Desfecho escolhido').props.onChange('complication');assert.equal(f.find(n=>n.props?.label==='Acordo, dívida ou ruptura (reservado)').props.value,'Uma entrega gratuita até amanhã.');
+ await f.find(n=>n.type==='button'&&text(n)==='Registrar etapa').props.onClick();assert.deepEqual(sent.npcEffect,{npcId:'lia',disposition:'Aliado',commitment:'Uma entrega gratuita até amanhã.'});
 });
