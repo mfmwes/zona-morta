@@ -13,6 +13,7 @@ import { adjacentHexes, parseHex } from "./world";
 import { advanceCampaignTime, advanceParticipantTime, completeSingleGroupActivity } from "./time";
 import { shelterTravelMinutes } from "./shelter-projects";
 import { parallelTimeLabel, participantTimePreview, survivorTimedCommitment } from "./activity";
+import { eventMovementIssue } from "./event-conditions";
 import { registerActivityHandler } from "./activity-handlers";
 import { scheduleActivity } from "./activity-timeline";
 import { eventTriggerReady } from "./hex-generators";
@@ -61,6 +62,8 @@ function revealAround(game: GameState, id: string) {
 }
 
 export function moveSurvivors(game: GameState, destination: string, survivorIds: string[], options: { advanceTime?: boolean; durationMinutes?: number } = {}) {
+  const conditionIssue=eventMovementIssue(game,survivorIds);
+  if(conditionIssue)return {ok:false,message:conditionIssue};
   const record = game.hexes[destination];
   if (!record || record.discovery === "desconhecido") return { ok: false, message: "" };
   const ids = [...new Set(survivorIds)];
@@ -200,6 +203,8 @@ export function performHexAction(game: GameState, id: string, action: HexQuickAc
 
 /** Agenda para equipes separadas; uma única equipe viaja com avanço direto. */
 export function scheduleSurvivorTravel(game: GameState, destination: string, ids: string[], operationId?: string) {
+  const conditionIssue=eventMovementIssue(game,ids);
+  if(conditionIssue)return {ok:false,message:conditionIssue};
   const destinationHex = game.hexes[destination];
   const sources = movementSources(game, destination);
   const source = sources.find(group => ids.length > 0 && ids.every(id => group.members.some(p => p.id === id)));

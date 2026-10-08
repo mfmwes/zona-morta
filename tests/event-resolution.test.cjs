@@ -140,7 +140,7 @@ test('efeitos aguardam conclusão, sobrevivem ao reload e cancelamento não cobr
 });
 test('estoque ou PNJ alterado durante a espera bloqueia conclusão inteira',()=>{
  const g=fixture(true);g.survivors[0].water=1;npc(g);resolveHexEvent(g,command(g,{personalEffects:[personal(g,{hpMarks:1,water:-1})],npcEffect:{npcId:'lia',disposition:'Aliado',commitment:'Uma entrega.'}}));g.survivors[0].water=0;
- const r=advanceToNextActivity(g);assert.match(r.issue,/porções/);assert.equal(g.survivors[0].hp,0);assert.equal(g.noise,0);assert.equal(g.npcs[0].disposition,'Neutro');assert.equal(g.hexes['0,0'].events[0].resolutions[0].status,'scheduled');
+ const r=advanceToNextActivity(g);assert.match(r.issue,/provisões/);assert.equal(g.survivors[0].hp,0);assert.equal(g.noise,0);assert.equal(g.npcs[0].disposition,'Neutro');assert.equal(g.hexes['0,0'].events[0].resolutions[0].status,'scheduled');
  g.survivors[0].water=1;g.npcs[0].hex='1,0';assert.match(advanceToNextActivity(g).issue,/PNJ/);assert.equal(g.survivors[0].water,1);assert.equal(g.survivors[0].hp,0);
 });
 test('condição exige remoção; repetir o nome atualiza causa sem acumular cópias',()=>{
@@ -148,7 +148,7 @@ test('condição exige remoção; repetir o nome atualiza causa sem acumular có
  g.survivors[0].eventConditions=[trapped];assert.equal(resolveHexEvent(g,command(g,{minutes:0,personalEffects:[personal(g,{condition:{...trapped,clear:'Soltar o apoio.'}})]})).ok,true);assert.equal(g.survivors[0].eventConditions.length,1);assert.equal(g.survivors[0].eventConditions[0].clear,'Soltar o apoio.');
 });
 test('cada intervenção concretiza ganho, custo e falha sem transferir perigo para observação',()=>{
- for(const g of eventGuides){const a=g.approaches.find(a=>a.id==='risk');assert.match(a.description,/Antes de agir, anuncie:/);assert.ok(g.outcomes.complication.summary.length>45);assert.ok(g.outcomes.failure.summary.length>50);const careful=eventOutcomeSuggestion(g,'careful','success');assert.equal(careful.mechanical,undefined);for(const o of Object.values(g.outcomes)){if(o.mechanical?.condition){assert.ok(o.mechanical.condition.effect.length>30);assert.ok(o.mechanical.condition.clear.length>30);}}}
+ for(const g of eventGuides){const a=g.approaches.find(a=>a.id==='risk');assert.ok(a.announcedCost.length>30);assert.ok(g.outcomes.complication.summary.length>45);assert.ok(g.outcomes.failure.summary.length>50);const careful=eventOutcomeSuggestion(g,'careful','success');assert.equal(careful.mechanical,undefined);for(const o of Object.values(g.outcomes)){if(o.mechanical?.condition){assert.ok(o.mechanical.condition.effect.length>30);assert.ok(o.mechanical.condition.clear.length>30);}}}
  assert.equal(eventOutcomeSuggestion(eventGuides[51],'risk','failure').mechanical.hpMarks,2);assert.equal(eventOutcomeSuggestion(eventGuides[37],'risk','success').mechanical.npcDisposition,'Aliado');assert.equal(eventOutcomeSuggestion(eventGuides[87],'risk','failure').noise,2);
 });
 

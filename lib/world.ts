@@ -1,4 +1,4 @@
-import { validEventResolutions } from "./event-resolution-types";
+import { validEventResolutions, eventClockSchema } from "./event-resolution-types";
 import type { GameState, HexState } from "./game";
 import { validEventActionLinks, validHexEventOrigin } from "./hex-event-links";
 import { validLocationPreparation } from "./hex-automation-validation";
@@ -104,6 +104,7 @@ export function validWorld(value: unknown): value is Record<string, HexState> {
     && typeof event.revealed === "boolean"
     && validEventActionLinks(event.actionLinks)
     && validEventResolutions(event.resolutions)
+    && (event.clock === undefined || eventClockSchema.safeParse(event.clock).success)
     && (event.searchBaseline === undefined || (Number.isSafeInteger(event.searchBaseline) && event.searchBaseline >= 0))
     && (event.triggerType === undefined || ["manual", "enter", "search", "noise", "night"].includes(event.triggerType))
     && (event.triggerValue === undefined || (Number.isInteger(event.triggerValue) && event.triggerValue >= 0 && event.triggerValue <= 1440))

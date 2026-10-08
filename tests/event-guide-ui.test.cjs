@@ -150,5 +150,33 @@ test('registrar vínculo requer um PNJ e preserva compromisso revisado',async()=
  const label=f.find(n=>n.type==='label'&&text(n).includes('Registrar mudança de disposição'));elements(label).find(n=>n.type==='input').props.onChange({target:{checked:true}});assert.equal(f.find(n=>n.type==='button'&&text(n)==='Registrar etapa').props.disabled,true);
  f.find(n=>n.props?.label==='PNJ afetado').props.onChange('lia');f.find(n=>n.props?.label==='Nova disposição').props.onChange('Aliado');f.find(n=>n.props?.label==='Acordo, dívida ou ruptura (reservado)').props.onChange('Uma entrega gratuita até amanhã.');
  f.find(n=>n.props?.label==='Desfecho escolhido').props.onChange('complication');assert.equal(f.find(n=>n.props?.label==='Acordo, dívida ou ruptura (reservado)').props.value,'Uma entrega gratuita até amanhã.');
- await f.find(n=>n.type==='button'&&text(n)==='Registrar etapa').props.onClick();assert.deepEqual(sent.npcEffect,{npcId:'lia',disposition:'Aliado',commitment:'Uma entrega gratuita até amanhã.'});
+ await f.find(n=>n.type==='button'&&text(n)==='Registrar etapa').props.onClick();assert.deepEqual(sent.npcEffect,{npcId:'lia',disposition:'Aliado',mode:'set',commitment:'Uma entrega gratuita até amanhã.'});
+});
+
+test('interface divide duas águas entre três alvos sem multiplicar o total',async()=>{
+ let sent;const f=fixture({canAct:true,pending:false,send:async c=>{sent=c;}});
+ f.event.generatorRoll=30;f.event.text=content.generators.eventos[29].text;
+ for(const name of ['Bia','Caio']) f.game.survivors.push({...structuredClone(f.game.survivors[0]),id:name,name});
+ f.find(n=>n.type==='button'&&text(n).startsWith('Intervir / negociar')).props.onClick();
+ const label=f.find(n=>n.type==='label'&&text(n).includes('Aplicar efeitos pessoais nesta etapa'));elements(label).find(n=>n.type==='input').props.onChange({target:{checked:true}});
+ for(let i=0;i<3;i++){const field=f.find(n=>n.type==='fieldset'&&text(n).includes('Quem recebe estes efeitos?'));elements(field).filter(n=>n.type==='input')[i].props.onChange({target:{checked:true}});}
+ assert.equal(f.find(n=>n.props?.label==='Água (total)').props.value,2);
+ await f.find(n=>n.type==='button'&&text(n)==='Registrar etapa').props.onClick();
+ assert.deepEqual(sent.personalEffects.map(e=>e.water),[1,1,0]);
+});
+test('interface separa cinco minutos de ação e dez minutos ganhos no prazo do portão',async()=>{
+ let sent;const f=fixture({canAct:true,pending:false,send:async c=>{sent=c;}});
+ f.event.generatorRoll=97;f.event.text=content.generators.eventos[96].text;
+ f.find(n=>n.type==='button'&&text(n).startsWith('Intervir / negociar')).props.onClick();
+ f.find(n=>n.props?.label==='Desfecho escolhido').props.onChange('complication');
+ assert.equal(f.find(n=>n.props?.label==='Tempo (min)').props.value,5);
+ assert.equal(f.find(n=>n.props?.label==='Tempo ganho no prazo (min)').props.value,10);
+ await f.find(n=>n.type==='button'&&text(n)==='Registrar etapa').props.onClick();
+ assert.equal(sent.minutes,5);assert.equal(sent.clock.initial.minutes,10);assert.equal(sent.clock.action,'extend');assert.equal(sent.clock.minutes,10);
+});
+test('interface inicia prazo anunciado sem cobrar tempo ou participantes',async()=>{
+ let sent;const f=fixture({canAct:true,pending:false,send:async c=>{sent=c;}});
+ f.event.generatorRoll=88;f.event.text=content.generators.eventos[87].text;
+ await f.find(n=>n.type==='button'&&text(n)==='Iniciar prazo anunciado sem avançar o tempo').props.onClick();
+ assert.equal(sent.minutes,0);assert.deepEqual(sent.participantIds,[]);assert.equal(sent.clock.initial.minutes,1);assert.equal(sent.clock.action,'keep');
 });

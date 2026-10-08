@@ -9,6 +9,7 @@ import {
   type StockHolder,
   type Survivor,
 } from "./game";
+import { expireEventClocks } from "./event-clocks";
 import { consumeProvisionPortionFromItems } from "./inventory";
 import { provisionBreakdown, provisionItemInfo } from "./provision-items";
 import { expirePhysicalFood, expirePortionLots, provisionDeadline, withdrawPortions } from "./provisions";
@@ -339,6 +340,7 @@ function advanceMorning(game: GameState) {
   settleScheduledWorkBeforeMorning(game);
   game.day += 1;
   game.minutes = 480;
+  expireEventClocks(game);
   resetParallelTime(game);
   game.noise = 0;
   game.scene = (game.scene ?? 1) + 1;

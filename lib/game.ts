@@ -59,6 +59,8 @@ export type HexEvent = {
   guidance?: string;
   /** Histórico reservado ao mestre, com efeitos aplicados uma única vez. */
   resolutions?: EventResolution[];
+  /** Prazo anunciado pelo mestre, reservado e persistente. */
+  clock?: import("./event-resolution-types").EventClock;
   generatorKind?: "eventos";
   generatorRoll?: number;
   generatorCategory?: string;
@@ -312,6 +314,7 @@ export type NpcStatus = "Bem" | "Ferido" | "Grave" | "Morto" | "Desaparecido";
 export type NpcDisposition = "Hostil" | "Desconfiado" | "Neutro" | "Aliado" | "Leal";
 /** Uma ficha leve de personagem da campanha; não substitui uma ficha de sobrevivente. */
 export type NPC = {
+  eventConditions?: import("./event-resolution-types").EventCondition[];
   id: string;
   eventOrigin?: HexEventOrigin;
   /** Absent in older saves means visible. Hidden NPCs stay in the GM campaign. */

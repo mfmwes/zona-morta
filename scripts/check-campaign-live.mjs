@@ -199,7 +199,18 @@ try {
   assert.equal(parallel.state.minutes,separated.minutes);assert.equal(parallel.state.hexes['0,0'].events[0].resolutions[1].status,'scheduled');
   const publicWaiting=await (await mf.dispatchFetch(origin+path,{headers:headers('player')})).json();assert.equal(publicWaiting.state.publicActivities[0].label,'Resolver evento');assert.equal(JSON.stringify(publicWaiting.state).includes('Senha privada do mestre'),false);
   const eventDone=await advance('runtime-event-next');assert.equal(eventDone.state.minutes,separated.minutes+10);
-  const persistedEvent=await (await mf.dispatchFetch(origin+path,{headers:headers('master')})).json();assert.equal(persistedEvent.state.hexes['0,0'].events[0].resolutions[1].status,'completed');
+  let persistedEvent=await (await mf.dispatchFetch(origin+path,{headers:headers('master')})).json();assert.equal(persistedEvent.state.hexes['0,0'].events[0].resolutions[1].status,'completed');
+
+  const clockState=structuredClone(persistedEvent.state);
+  clockState.hexes['0,0'].events.push({id:'runtime-alarm',text:require('../lib/game.ts').content.generators.eventos[87].text,trigger:'',revealed:true,status:'active',generatorRoll:88});
+  const clockPut=await mf.dispatchFetch(origin+path,{method:'PUT',headers:{...headers('master'),'Content-Type':'application/json'},body:JSON.stringify({revision:persistedEvent.revision,state:clockState})});assert.equal(clockPut.status,200,await clockPut.text());
+  const alarm=clockState.hexes['0,0'].events.at(-1);
+  const clockStarted=await masterCommand({type:'resolve-event',id:'runtime-clock-start',day:clockState.day,expectedMinute:clockState.minutes,expectedEvent:eventResolutionFingerprint(alarm),hexId:'0,0',eventId:alarm.id,approachId:'careful',outcome:'success',summary:'Prazo anunciado',continuity:'Circuito reservado do alarme',participantIds:[],minutes:0,noise:0,fear:0,closeEvent:false,clock:{initial:{label:'Alarme',consequence:'O alarme dispara.',minutes:1,noise:2},action:'keep'}});
+  assert.equal(clockStarted.state.minutes,clockState.minutes);
+  const publicClock=await (await mf.dispatchFetch(origin+path,{headers:headers('player')})).json();assert.equal(publicClock.state.hexes['0,0'].events.at(-1).clock,undefined);assert.equal(JSON.stringify(publicClock.state).includes('Circuito reservado'),false);
+  const clockExpired=await advance('runtime-clock-next');assert.equal(clockExpired.state.minutes,clockState.minutes+1);
+  persistedEvent=await (await mf.dispatchFetch(origin+path,{headers:headers('master')})).json();
+  assert.equal(persistedEvent.state.hexes['0,0'].events.at(-1).clock.status,'expired');assert.equal(persistedEvent.state.noise,Math.min(5,clockState.noise+2));
 
   const {createShelterProject,shelterBlueprintSlots}=require('../lib/shelter-projects.ts');
   const {createSceneBoardScene}=require('../lib/scene-board.ts');
@@ -233,7 +244,7 @@ try {
   await db.prepare('UPDATE campaign_players SET revoked_at=? WHERE owner_id=?').bind(now,state.campaignId).run();
   assert.equal((await mf.dispatchFetch(origin+path+'&since=3',{headers:headers('player')})).status,403);
   assert.equal(isolatedMessages.length,0);
-  console.log('Runtime passed: live updates, conflict closure, automatic searches, collection while paused and replay, inventory persistence, individual rest confirmation/replay, event guides and parallel outcomes/replay, shelter cancellation and scene deletion/replay, image show/close, campaign isolation, private projection and revoked access.');
+  console.log('Runtime passed: live updates, conflict closure, automatic searches, collection while paused and replay, inventory persistence, individual rest confirmation/replay, event guides and parallel outcomes/replay, persisted alarm deadline and private projection, shelter cancellation and scene deletion/replay, image show/close, campaign isolation, private projection and revoked access.');
 } finally {
   connections.forEach(c=>c.socket.close());
   isolatedConnections.forEach(socket=>socket.close());

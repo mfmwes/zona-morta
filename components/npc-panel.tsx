@@ -204,6 +204,7 @@ function PublicNpcDetails({ npc, game }: { npc: NPC; game: GameState }) {
     <div className="grid gap-3 text-sm"><p><b>{npc.role || "Pessoa da comunidade"}</b> · {npc.status} · {npc.disposition}</p>
       <p className="flex items-center gap-1"><MapPin size={15} /> {locationLabel(game, npc)}</p>{npc.description && <p>{npc.description}</p>}
       {npc.skills.length > 0 && <div><b>Capacidades:</b><NpcCapabilityChips skills={npc.skills} /></div>}{npc.duty && <p><b>Função no abrigo:</b> {npc.duty}</p>}
+      {npc.eventConditions?.map(c=><div className="character-rule-note" key={c.name}><b>{c.name}</b><p>{c.effect}</p><p>Remover: {c.clear}</p></div>)}
       {npc.publicNotes && <p className="character-rule-note">{npc.publicNotes}</p>}</div>
   </div>;
 }
@@ -232,6 +233,7 @@ function NpcForm({ game, draft, setDraft, hexOptions }: { game: GameState; draft
       </div>
     </details>
     <label className="field"><span className="field-label">Descrição</span><textarea value={draft.description} onChange={event => update("description", event.target.value)} placeholder="Aparência, vínculo e o que importa na ficção." /></label>
+    {draft.eventConditions?.map(c=><div className="list-card" key={c.name}><b>{c.name}</b><p>{c.effect}</p><p>Remover: {c.clear}</p><Button size="sm" variant="outline" onClick={()=>update("eventConditions",draft.eventConditions!.filter(row=>row.name!==c.name))}>Condição encerrada: remover</Button></div>)}
     <NpcCapabilities skills={draft.skills} onChange={value => update("skills", value)} />
       </TabsContent>
       <TabsContent value="vinculos" className="npc-form-section">
