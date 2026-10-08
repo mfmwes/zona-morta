@@ -39,3 +39,11 @@ No encerramento do dia, cada sobrevivente sem alimentação marca **+1 Estresse*
 Consumir durante o dia ou no encerramento evita a respectiva penalidade. Uma fonte alternativa ou dispensa declarada pelo mestre também atende essa necessidade. Alimentar-se depois não remove Estresse anterior; as formas habituais de recuperação continuam disponíveis, incluindo descanso quando escolhido. O consumo já registrado não é descontado de novo. Um pedido repetido de encerramento para um dia anterior é rejeitado.
 
 PNJs e moradores não possuem trilha de Estresse no modelo atual; suas faltas continuam registradas sem inventar PV ou Estresse para eles. A penalidade não é aplicada retroativamente a dias antigos.
+
+# Dados livres no chat
+
+O chat oferece d4, d6, d8, d10, d12, d20 e d100. Clicar adiciona um dado à fórmula; cliques repetidos aumentam a quantidade. A fórmula pode ser editada para combinar tamanhos e somar ou subtrair um modificador, por exemplo **2d6 + 1d8 + 3**. **Rolar** publica o resultado e conserva a fórmula para repetir; **Limpar** limpa apenas a seleção. Também é possível enviar **/r 2d6 + 3** ou **/roll d20** no campo de mensagem.
+
+O registro mostra autor, fórmula, valores individuais e total para todos os jogadores e mestre, em tempo real. Não altera Esperança, Medo, Estresse, PV, munição ou relógio e não pressupõe sucesso ou dano. A seleção do mestre acompanha “Falando como”; jogadores usam o próprio personagem. Prévia e convidados não rolam. Rolagens livres têm o mesmo histórico, exclusão pelo mestre e proteção contra repetição de salvamento do chat existente.
+
+São permitidos até vinte dados por rolagem e um modificador total entre −999 e +999. Fórmulas são analisadas sem executar código; multiplicação, divisão, dados negativos e tipos fora da lista são recusados. A API confere tipos, valores e total antes de guardar o registro do jogador.

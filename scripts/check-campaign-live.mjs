@@ -12,6 +12,7 @@ require.extensions['.ts'] = (module, filename) => module._compile(ts.transpileMo
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
 }).outputText, filename);
 const { defaultState, initialSurvivor, content } = require('../lib/game.ts');
+const { rollFreeDice,freeDiceLog } = require('../lib/free-dice.ts');
 const { applySessionCommand } = require('../lib/campaign-sessions.ts');
 const { closeDayWithPlan } = require('../lib/survival.ts');
 const { createConflictScene, endConflictScene } = require('../lib/conflict.ts');
@@ -248,6 +249,15 @@ try {
     const response=await mf.dispatchFetch(origin+checkpointPath,{method:'POST',headers:{...headers(role),'Content-Type':'application/json'},body:JSON.stringify(command)});
     const payload=await response.json();assert.equal(response.status,expected,JSON.stringify(payload));return payload;
   };
+  const diceBefore=await (await mf.dispatchFetch(origin+path,{headers:headers('player')})).json();
+  const diceText=freeDiceLog(rollFreeDice('2d6+1d8+3',()=>4));
+  const diceCommand={id:'free-dice-runtime',day:diceBefore.state.day,before:diceBefore.state.survivors[0],after:diceBefore.state.survivors[0],logs:[{kind:'rolagem',text:diceText}]};
+  connections.forEach(c=>{c.messages.length=0;});
+  const dicePatch=await mf.dispatchFetch(origin+path,{method:'PATCH',headers:{...headers('player'),'Content-Type':'application/json'},body:JSON.stringify(diceCommand)});const diceResult=await dicePatch.json();assert.equal(dicePatch.status,200,JSON.stringify(diceResult));
+  await until(()=>connections.every(c=>c.messages.some(m=>m.revision===diceResult.revision)),'Free rolls must notify both roles');
+  const diceMaster=await (await mf.dispatchFetch(origin+path,{headers:headers('master')})).json();assert.equal(diceMaster.state.log[0].text,diceText);assert.equal(diceMaster.state.log[0].actorId,actor.id);assert.deepEqual(diceMaster.state.survivors.find(p=>p.id===actor.id),diceBefore.state.survivors[0]);
+  const diceReplay=await mf.dispatchFetch(origin+path,{method:'PATCH',headers:{...headers('player'),'Content-Type':'application/json'},body:JSON.stringify(diceCommand)});assert.equal(diceReplay.status,200);assert.equal((await diceReplay.json()).revision,diceResult.revision);
+  const diceInvalid=await mf.dispatchFetch(origin+path,{method:'PATCH',headers:{...headers('player'),'Content-Type':'application/json'},body:JSON.stringify({...diceCommand,id:'invalid-free-roll',logs:[{kind:'rolagem',text:'falso'}]})});assert.equal(diceInvalid.status,409);
   const sessionBefore=await (await mf.dispatchFetch(origin+path,{headers:headers('master')})).json();
   const sessionState=structuredClone(sessionBefore.state);applySessionCommand(sessionState,{action:'start',name:'Hospital',summary:'',checkpoint:false});
   const sessionId=sessionState.sessions[0].id;
@@ -286,7 +296,7 @@ try {
   await db.prepare('UPDATE campaign_players SET revoked_at=? WHERE owner_id=?').bind(now,state.campaignId).run();
   assert.equal((await mf.dispatchFetch(origin+path+'&since=3',{headers:headers('player')})).status,403);
   assert.equal(isolatedMessages.length,0);
-  console.log('Runtime passed: live updates, conflict closure, automatic searches, collection while paused and replay, inventory persistence, individual rest confirmation/replay, event guides and parallel outcomes/replay, persisted alarm deadline and private projection, restoration checkpoints/CAS/privacy/limit/recovery and notifications, session persistence/private summaries/restoration, daily deprivation/player stress, shelter cancellation and scene deletion/replay, image show/close, campaign isolation, private projection and revoked access.');
+  console.log('Runtime passed: live updates, conflict closure, automatic searches, collection while paused and replay, inventory persistence, individual rest confirmation/replay, event guides and parallel outcomes/replay, persisted alarm deadline and private projection, restoration checkpoints/CAS/privacy/limit/recovery and notifications, session persistence/private summaries/restoration, daily deprivation/player stress, public free dice/formula validation/replay, shelter cancellation and scene deletion/replay, image show/close, campaign isolation, private projection and revoked access.');
 } finally {
   connections.forEach(c=>c.socket.close());
   isolatedConnections.forEach(socket=>socket.close());

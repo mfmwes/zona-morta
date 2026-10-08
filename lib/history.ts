@@ -2,7 +2,7 @@ import type { GameState } from "./game";
 
 export type HistoryScope = "events" | "chat";
 type LogEntry = GameState["log"][number];
-const chatKinds = new Set(["chat", "dados", "dano", "ameaça"]);
+const chatKinds = new Set(["chat", "dados", "dano", "ameaça", "rolagem"]);
 
 export function isChatLog(entry: Pick<LogEntry, "kind">) {
   return chatKinds.has(entry.kind);
