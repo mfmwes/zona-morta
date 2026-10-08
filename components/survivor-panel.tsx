@@ -177,6 +177,7 @@ function RestPlanner({ game, edit, selected, playerMode, playerPreview, restPeer
   }
   const disabled=busy||Boolean(game.conflict?.active||game.publicConflict?.active||game.publicPlayerActions?.policy.paused||game.playerActions?.policy.paused)||occupiedIds.has(selected.id)||Boolean(personalPlanning&&(!playerActions?.canAct||playerActions.pending));
   return <section id="character-rest-panel" className="character-surface character-rest-panel"><SectionHeading index="05" title={personalPlanning?"Seu descanso":"Descanso do grupo"} aside={<span className="character-micro">2 AÇÕES POR PESSOA</span>}/>
+    <RuleHelp topic="rest" />
     {request ? <>
       <p className="character-section-intro">Descanso <b>{request.kind==="short"?"curto · 1h":"longo · 6h"}</b> solicitado. Cada pessoa confirma suas duas ações na própria ficha.</p>
       <div className="character-chips">{request.invitedIds.map(id=><span key={id}>{peers.find(p=>p.id===id)?.name??(id===selected.id?selected.name:"Sobrevivente")} · {request.participantIds.includes(id)?"Confirmado":"Aguardando escolhas"}</span>)}</div>
@@ -666,6 +667,7 @@ export function SurvivorPanel({ initialSurvivorId, initialSection, game, edit, p
             </section>
             </div>
             <section className="character-surface"><SectionHeading index="03" title="Itens guardados" aside={<AddItemDialog game={game} edit={edit} ownerId={selected.id} />} />
+              <RuleHelp topic="inventory" />
               {selected.inventory.length > 0 && <div className="character-inventory-toolbar"><div className="field"><label htmlFor="inventory-search"><Search size={14} aria-hidden="true" /> Buscar no inventário</label><input id="inventory-search" type="search" placeholder="Nome, categoria ou estado" value={inventoryQuery} onChange={event => setInventoryQuery(event.target.value)} /></div><Pick label="Categoria" value={inventoryCategory} options={categoryOptions} onChange={setInventoryCategory} /></div>}
               {inventoryGroups.length === 0 && <p className="character-empty-list">{selected.inventory.length ? "Nenhum item com esse filtro." : "Nenhum item guardado. Registre um achado ou guarde algo do kit ativo."}{selected.inventory.length > 0 && <button type="button" className="character-text-link" onClick={() => { setInventoryQuery(""); setInventoryCategory("Todas"); }}>Limpar filtros</button>}</p>}
               {inventoryGroups.map(([category, items]) => <div className="character-inventory-group" key={category}><h4>{category}</h4>
@@ -702,6 +704,7 @@ export function SurvivorPanel({ initialSurvivorId, initialSection, game, edit, p
                 {!playerMode ? <>
                 <Dialog open={treatmentOpen} onOpenChange={value => { setTreatmentOpen(value); if (!value) setCleanWaterConfirmed(false); }}><DialogTrigger asChild><Button size="sm" disabled={selected.treatmentAttempted || (selected.exposureDeadline ?? 0) < absoluteMinutes(game) || !chosenMedicine}><Stethoscope size={16} /> Tentar limpar exposição</Button></DialogTrigger>
                   <DialogContent><DialogHeader><DialogTitle>Tratamento de Exposição · 30 min</DialogTitle><DialogDescription>Escolha 1 Medicamentos acessível, confirme água limpa e role Conhecimento contra 13. O procedimento consome 30 min e precisa terminar dentro da janela de Exposição. Uma tentativa por Exposição.{treatmentSupport.bonus ? ` Infraestrutura do abrigo: +${treatmentSupport.bonus} (${treatmentSupport.sources.join(" + ")}).` : ""}</DialogDescription></DialogHeader>
+                    <RuleHelp topic="treatment" />
                     <Pick label="Fonte do tratamento" value={chosenMedicine} options={medicineSources} onChange={setTreatmentSource} />
                     <label className="inventory-ready"><input type="checkbox" checked={cleanWaterConfirmed} onChange={event => setCleanWaterConfirmed(event.target.checked)} /><span>Há água limpa e condições de cuidar da ferida nesta cena.</span></label>
                     <DialogFooter><Button variant="outline" onClick={() => setTreatmentOpen(false)}>Cancelar</Button><Button disabled={!cleanWaterConfirmed || !chosenMedicine} onClick={treatExposure}>Confirmar e rolar</Button></DialogFooter></DialogContent>

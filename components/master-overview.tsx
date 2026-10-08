@@ -10,6 +10,7 @@ import { eventStatus, eventTriggerReady } from "@/lib/hex-generators";
 import { projectProgress } from "@/lib/shelter-projects";
 
 import { campaignAttention, type CampaignTarget } from "@/lib/campaign-attention";
+import { campaignPlaceLabel, campaignTargetHex, filterCampaignAttention } from "@/lib/campaign-search";
 import { CampaignSessions } from "@/components/campaign-sessions";
 import type { SessionCommand } from "@/lib/campaign-sessions";
 import { CampaignRecap } from "@/components/campaign-recap";
@@ -59,7 +60,13 @@ export function MasterOverview({ game, onNavigate, onOpen, masterActions, canMan
   const activeProjects = (game.shelter.projects ?? []).filter(project => project.state === "Em construção" || project.requiredRepairProgress || project.workShift || project.volunteerShifts?.length);
   const [showAll,setShowAll]=useState(false);
   const [showAllWork,setShowAllWork]=useState(false);
+  const [attentionQuery, setAttentionQuery] = useState("");
+  const [attentionType, setAttentionType] = useState("all");
+  const [attentionHex, setAttentionHex] = useState("all");
   const attention=campaignAttention(game);
+  const filteredAttention = filterCampaignAttention(game, attention, attentionQuery, attentionType, attentionHex);
+  const attentionPlaces = [...new Set([...attention.map(item => campaignTargetHex(game, item.target)).filter((hex): hex is string => Boolean(hex)), ...(attentionHex === "all" ? [] : [attentionHex])])];
+  const hasFilters = Boolean(attentionQuery.trim() || attentionType !== "all" || attentionHex !== "all");
   const actionState = playerActionState(game);
   const hasActionAttention = actionState.policy.paused || actionState.operations.some(op => op.day === game.day && op.attention);
 
@@ -103,13 +110,20 @@ export function MasterOverview({ game, onNavigate, onOpen, masterActions, canMan
       </section>
 
       <section className="master-overview-card master-overview-attention">
-        <header><div><AlertTriangle size={18} /><span><b>Precisa de atenção</b><small>Estados que podem exigir uma decisão do mestre.</small></span></div></header>
+        <header><div><AlertTriangle size={18} /><span><b>Precisa de atenção{attention.length ? ` · ${attention.length}` : ""}</b><small>Estados que podem exigir uma decisão do mestre.</small></span></div></header>
+        {(attention.length > 4 || hasFilters) && <div className="campaign-attention-filters">
+          <div className="field"><label htmlFor="attention-search">Buscar pendências</label><input id="attention-search" type="search" value={attentionQuery} placeholder="Pessoa, evento ou local" onChange={event => { setAttentionQuery(event.target.value); setShowAll(false); }} /></div>
+          <div className="campaign-filter-pair"><div className="field"><label htmlFor="attention-type">Tipo</label><select id="attention-type" value={attentionType} onChange={event => { setAttentionType(event.target.value); setShowAll(false); }}><option value="all">Todos</option><option value="sobreviventes">Sobreviventes</option><option value="comunidade">PNJs</option><option value="mapa">Eventos</option><option value="conflito">Conflito</option></select></div>
+          <div className="field"><label htmlFor="attention-place">Localização</label><select id="attention-place" value={attentionHex} onChange={event => { setAttentionHex(event.target.value); setShowAll(false); }}><option value="all">Todos os locais</option>{attentionPlaces.map(hex => <option key={hex} value={hex}>{campaignPlaceLabel(game, hex)}</option>)}</select></div></div>
+          {hasFilters && <div className="campaign-filter-status"><span role="status">{filteredAttention.length} de {attention.length} pendências</span><Button size="sm" variant="ghost" onClick={() => { setAttentionQuery(""); setAttentionType("all"); setAttentionHex("all"); setShowAll(false); }}>Limpar filtros</Button></div>}
+        </div>}
         <div className="master-overview-list">
-          {attention.length ? (showAll?attention:attention.slice(0,8)).map(item => <article key={item.id} className={`master-overview-attention-item is-${item.tone}`}>
+          {attention.length ? (showAll?filteredAttention:filteredAttention.slice(0,8)).map(item => <article key={item.id} className={`master-overview-attention-item is-${item.tone}`}>
             <span><b>{item.title}</b><small>{item.detail}</small></span>
             <Button size="sm" variant="outline" onClick={() => onOpen(item.target)}>Abrir registro</Button>
           </article>) : !hasActionAttention && <div className="master-overview-clear"><span>Sem pendências urgentes.</span><small>A mesa pode seguir a exploração normalmente.</small></div>}
-          {attention.length>8&&<Button variant="ghost" size="sm" onClick={()=>setShowAll(v=>!v)}>{showAll?"Mostrar menos":`Ver todas as ${attention.length} pendências`}</Button>}
+          {attention.length > 0 && !filteredAttention.length && <p className="master-overview-empty">Nenhuma pendência corresponde aos filtros. Limpe os filtros para ver todas.</p>}
+          {filteredAttention.length>8&&<Button variant="ghost" size="sm" onClick={()=>setShowAll(v=>!v)}>{showAll?"Mostrar menos":`Ver todas as ${filteredAttention.length} pendências`}</Button>}
           {masterActions && <MasterContextActions game={game} controls={masterActions} context={{kind:"overview"}} />}
         </div>
       </section>

@@ -46,15 +46,18 @@ export function Counter({ label, value, max = 999, min = 0, onChange, compact = 
   </div>;
 }
 
-export function Field({ label, value, onChange, placeholder, multiline = false, type = "text" }: {
+export function Field({ label, value, onChange, placeholder, multiline = false, type = "text", hint, error, disabled, maxLength }: {
   label: string; value: string; onChange: (value: string) => void;
   placeholder?: string; multiline?: boolean; type?: string;
+  hint?: string; error?: string; disabled?: boolean; maxLength?: number;
 }) {
   const id = useId();
+  const shared = { id, value, placeholder, disabled, maxLength, "aria-invalid": error ? true : undefined, "aria-describedby": hint || error ? `${id}-help` : undefined };
   return <div className="field">
     <label htmlFor={id}>{label}</label>
     {multiline
-      ? <textarea id={id} value={value} onChange={event => onChange(event.target.value)} placeholder={placeholder} />
-      : <input id={id} type={type} value={value} onChange={event => onChange(event.target.value)} placeholder={placeholder} />}
+      ? <textarea {...shared} onChange={event => onChange(event.target.value)} />
+      : <input {...shared} type={type} onChange={event => onChange(event.target.value)} />}
+    {(hint || error) && <p id={`${id}-help`} className={error ? "campaign-form-error" : "subtle text-xs"} role={error ? "alert" : undefined}>{error || hint}</p>}
   </div>;
 }
