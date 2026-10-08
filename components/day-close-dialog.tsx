@@ -1,4 +1,5 @@
 "use client";
+import { RuleHelp } from "@/components/rule-help";
 /* eslint-disable @next/next/no-img-element -- survivor portraits can be small uploaded data URLs. */
 
 import { useState } from "react";
@@ -220,7 +221,7 @@ export function DayCloseDialog({
         <DialogDescription>
           Revise quem já consumiu, de onde virá cada porção e quem ficará sem recurso. Confirmar avança a campanha para o próximo amanhecer às 08:00. Um descanso longo só é aplicado se você ativá-lo abaixo e todos tiverem escolhas registradas.
         </DialogDescription>
-      </DialogHeader>
+      </DialogHeader><RuleHelp topic="day"/>
 
       <div className="day-close-summary">
         <div><span>AGORA</span><b>Dia {game.day}</b><small>horário atual da campanha</small></div>

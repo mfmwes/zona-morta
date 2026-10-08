@@ -1,4 +1,5 @@
 "use client";
+import { RuleHelp } from "@/components/rule-help";
 import { useState } from "react";
 import { BookOpen, Clock3, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
@@ -94,7 +95,7 @@ export function HexEventGuideDialog({game,hexId,eventId,controls,edit,onClose}:{
     try{if(controls)await controls.send(c);else{let issue="";edit(d=>{const r=resolveHexEvent(d,c);if(!r.ok)issue=r.message;});if(issue)throw new Error(issue);}toast.success("Prazo iniciado no relógio da campanha");onClose();}catch(cause){setError(cause instanceof Error?cause.message:"Não foi possível iniciar o prazo.");}finally{setBusy(false);}
   }
   return <><Dialog open={!elementRequest} onOpenChange={open=>{if(!open&&!busy)onClose();}}><DialogContent className="hex-event-guide-dialog">
-    <DialogHeader><DialogTitle><BookOpen size={19}/> Conduzir evento · {guide.title}</DialogTitle><DialogDescription>Hex {hexId} · Guia reservado ao mestre. Registre cada etapa conforme a ação e os testes resolvidos; encerre quando a situação estiver concluída.</DialogDescription></DialogHeader>
+    <DialogHeader><DialogTitle><BookOpen size={19}/> Conduzir evento · {guide.title}</DialogTitle><DialogDescription>Hex {hexId} · Guia reservado ao mestre. Registre cada etapa conforme a ação e os testes resolvidos; encerre quando a situação estiver concluída.</DialogDescription></DialogHeader><RuleHelp topic="event"/>
     <div className="event-guide-scene"><p>{event?.text??"O evento foi removido."}</p><b>O que está em jogo</b><p>{guide.stakes}</p>{event?.guidance&&<p className="subtle">{event.guidance}</p>}</div>
     <div className="event-guide-columns">
       <section className="event-guide-approaches" aria-label="Abordagens e resolução sugerida"><h3>Como conduzir <span className="tag">{guide.format==="brief"?"Ocorrência breve":"Cena"}</span></h3><p className="subtle text-xs">{guide.format==="brief"?"Uma decisão pode bastar. ":""}Sugestões editáveis. Proponha teste somente quando houver risco e incerteza.</p>{guide.legacy&&<p className="subtle text-xs">Guia compatível com o texto já salvo neste evento.</p>}{guide.setup&&<details className="event-guide-options"><summary>Preparação sugerida para o mestre</summary><p>{guide.setup}</p></details>}

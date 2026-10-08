@@ -177,7 +177,7 @@ export async function readCampaign(campaignId: string) {
   return { revision: row.revision, state };
 }
 
-export async function writeCampaign(campaignId: string, state: GameState, expectedRevision: number) {
+export async function writeCampaign(campaignId: string, state: GameState, expectedRevision: number, checkpointSafety = false) {
   await ensureCampaignSchema();
   const now = new Date().toISOString();
   // A imagem apresentada à mesa é persistida separadamente. Nunca volte a
@@ -189,7 +189,17 @@ export async function writeCampaign(campaignId: string, state: GameState, expect
   delete persisted.publicShelterCommunity;
   const body = JSON.stringify(persisted);
   const db = database();
-  const result = expectedRevision === 0
+  const result = checkpointSafety && expectedRevision > 0
+    ? (await db.batch([
+        db.prepare(`INSERT INTO campaign_checkpoints(campaign_id,id,name,body,revision,created_at,safety)
+          SELECT owner_id,'before-restore','Antes da última restauração',body,revision,?,1
+          FROM campaign_states WHERE owner_id=? AND revision=?
+          ON CONFLICT(campaign_id,id) DO UPDATE SET body=excluded.body,revision=excluded.revision,created_at=excluded.created_at,name=excluded.name`)
+          .bind(now,campaignId,expectedRevision),
+        db.prepare("UPDATE campaign_states SET revision = revision + 1, body = ?, updated_at = ? WHERE owner_id = ? AND revision = ?")
+          .bind(body,now,campaignId,expectedRevision),
+      ]))[1]
+    : expectedRevision === 0
     ? await db.prepare(
         "INSERT OR IGNORE INTO campaign_states (owner_id, revision, body, updated_at) VALUES (?, 1, ?, ?)"
       ).bind(campaignId, body, now).run()

@@ -13,7 +13,7 @@ const { projectPlayerGame, playerEditPayload } = require('../lib/collaboration.t
 const { validWorld } = require('../lib/world.ts');
 const { validHexEventOrigin, validEventActionLinks } = require('../lib/hex-event-links.ts');
 // Exercita os validadores reais da rota sem inicializar banco ou autenticação.
-const routeAst = ts.createSourceFile('route.ts', fs.readFileSync(require('node:path').join(__dirname, '../app/api/campaign/route.ts'), 'utf8'), ts.ScriptTarget.Latest, true);
+const routeAst = ts.createSourceFile('route.ts', fs.readFileSync(require('node:path').join(__dirname, '../lib/campaign-validation.ts'), 'utf8'), ts.ScriptTarget.Latest, true);
 const routeValidators = routeAst.statements.filter(node => ts.isFunctionDeclaration(node)
   && ['validThreat', 'validConflict'].includes(node.name?.text)).map(node => node.getText(routeAst)).join('\n');
 const { validConflict } = require('node:vm').runInNewContext(ts.transpileModule(routeValidators, {

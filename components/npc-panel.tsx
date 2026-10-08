@@ -33,11 +33,11 @@ function locationLabel(game: GameState, npc: NPC) {
   return npc.accompaniesParty ? `${sector} · acompanha o grupo` : sector;
 }
 
-export function NpcPanel({ game, edit, playerPreview }: { game: GameState; edit: Edit; playerPreview: boolean }) {
+export function NpcPanel({ initialNpcId, game, edit, playerPreview }: { initialNpcId?:string; game: GameState; edit: Edit; playerPreview: boolean }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("Todos");
-  const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState<NPC>(() => blankNpc(game));
+  const [open, setOpen] = useState(Boolean(initialNpcId&&!playerPreview));
+  const [draft, setDraft] = useState<NPC>(() => structuredClone(!playerPreview&&initialNpcId?game.npcs.find(n=>n.id===initialNpcId)??blankNpc(game):blankNpc(game)));
   const [generatorOpen, setGeneratorOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [context, setContext] = useState<EncounterContext>("Abrigo");

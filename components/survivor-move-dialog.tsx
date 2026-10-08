@@ -1,4 +1,5 @@
 "use client";
+import { RuleHelp } from "@/components/rule-help";
 /* eslint-disable @next/next/no-img-element -- survivor portraits are existing small data URLs. */
 
 import { useMemo, useState } from "react";
@@ -87,7 +88,7 @@ export function SurvivorMoveDialog({
         <DialogDescription>
           Escolha quem fará a travessia. Selecionar apenas parte de uma equipe cria um grupo menor; sobreviventes que terminarem no mesmo hex passam a formar um grupo naquele local.
         </DialogDescription>
-      </DialogHeader>
+      </DialogHeader><RuleHelp topic="travel"/>
 
       {sources.length === 0 ? <p className="character-rule-note">
         Nenhum grupo está em um hex adjacente a este destino.
