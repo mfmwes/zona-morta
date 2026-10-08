@@ -1,4 +1,5 @@
 "use client";
+import { isCluePoint } from "@/lib/hex-event-links";
 import { hasMultipleSurvivorGroups } from "@/lib/game";
 
 import { timedActionParticipantIssue } from "@/lib/activity";
@@ -294,10 +295,10 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
               : searchable.length ? `${searched}/${searchable.length} áreas vasculhadas`
               : prep ? "Exploração narrativa" : "Ainda não preparado";
             return <article key={point.id} className="hex-point-card list-card text-sm">
-              <div className="hex-point-heading"><div><p className="dossier-title">{point.clueTargetHex ? "Pista" : point.kind === "comércio" ? "Comércio neste setor" : "Local neste setor"}</p><b>{point.name}</b></div>
+              <div className="hex-point-heading"><div><p className="dossier-title">{isCluePoint(point) ? "Pista" : point.kind === "comércio" ? "Comércio neste setor" : "Local neste setor"}</p><b>{point.name}</b></div>
                 {!playerPreview && <label className="flex items-center gap-2 text-xs whitespace-nowrap"><Switch size="sm" checked={point.revealed}
                   onCheckedChange={checked => edit(draft => { const found = draft.hexes[selected].points.find(p=>p.id===point.id); if(found) found.revealed=checked; })} /> Público</label>}</div>
-              {playerPreview && playerActions && game.publicPlayerActions?.hexId === selected && !point.clueTargetHex && (() => {
+              {playerPreview && playerActions && game.publicPlayerActions?.hexId === selected && !isCluePoint(point) && (() => {
                 const location = game.publicPlayerActions?.locations.find(row => row.hexId === selected && row.pointId === point.id);
                 const playerActionLabel = !location?.prepared ? "Explorar local"
                   : location.activeSearches ? "Retomar busca"
@@ -323,7 +324,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
                 <Route size={14} /> Destino da pista: {point.clueTargetHex} · {game.hexes[point.clueTargetHex]?.sector?.name ?? "setor ainda não revelado"}
               </Button>}
 
-              {!playerPreview && !point.clueTargetHex && <div className="hex-point-session-flow">
+              {!playerPreview && !isCluePoint(point) && <div className="hex-point-session-flow">
                 <div className="hex-point-session-state">
                   <span className={activeAttempts.length ? "is-active" : stockRemaining ? "has-stock" : ""}><Search size={14} /> {statusLabel}</span>
                   {deepAvailable > 0 && !activeAttempts.length && !stockRemaining && <small>{deepAvailable} cômodo(s) com busca profunda disponível</small>}
@@ -385,13 +386,13 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
                     onCheckedChange={checked => edit(draft => { const found = draft.hexes[selected].events.find(row=>row.id===event.id); if(found) found.revealed=checked; })} /> Público</label>}
                 </div>
                 {!playerPreview && <div className="flex flex-wrap gap-2 mt-3">
-                  {["pending", "active"].includes(status) && suggestedAction && <Button size="sm" variant="outline" disabled={eventActionUsed(game, selected, event, suggestedAction)} onClick={() => { setSheetOpen(false); setEventActionRequest({ hexId: selected, eventId: event.id, type: suggestedAction, suggested: true }); }}>Preparar elemento sugerido</Button>}
+                  {["pending", "active", "resolved"].includes(status) && suggestedAction && <Button size="sm" variant="outline" disabled={eventActionUsed(game, selected, event, suggestedAction)} onClick={() => { setSheetOpen(false); setEventActionRequest({ hexId: selected, eventId: event.id, type: suggestedAction, suggested: true }); }}>Preparar elemento sugerido</Button>}
                   {status === "pending" && <Button size="sm" variant={ready ? "default" : "outline"} onClick={() => updateEventStatus(event.id, "active")}><Play size={14} /> Ativar</Button>}
                   <Button size="sm" onClick={()=>{setSheetOpen(false);setGuideEventId(event.id);}}><CheckCircle2 size={14}/> {["pending","active"].includes(status)?"Conduzir evento":"Ver desfecho"}</Button>
                   {status === "resolved" && <Button size="sm" variant="outline" onClick={() => updateEventStatus(event.id, "active")}><Undo2 size={14} /> Reabrir</Button>}
                   <Button size="sm" variant="ghost" onClick={() => updateEventStatus(event.id, "archived")}><Archive size={14} /> Arquivar</Button>
                 </div>}
-                {!playerPreview && ["active", "pending"].includes(status) && <Collapsible className="mt-3">
+                {!playerPreview && ["active", "pending", "resolved"].includes(status) && <Collapsible className="mt-3">
                   <CollapsibleTrigger asChild><Button size="sm" variant="outline"><Plus size={14} /> Criar a partir deste evento <ChevronDown size={14} /></Button></CollapsibleTrigger>
                   <CollapsibleContent><p className="text-xs subtle mt-2">Registre um elemento neste setor. Cada ação abre um formulário para revisar antes de confirmar.</p>
                   <div className="flex flex-wrap gap-2 mt-2" role="group" aria-label="Ações do evento">

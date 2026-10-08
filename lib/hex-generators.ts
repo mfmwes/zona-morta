@@ -1,3 +1,4 @@
+import eventDefinitions from "./event-guide-definitions.json";
 import content from "./content.json";
 import type { GameState, HexEvent, Point } from "./game";
 import type { Terrain } from "./world";
@@ -188,10 +189,11 @@ function weightedPick<T extends { weight: number }>(rows: T[], random = Math.ran
   if (total <= 0) return rows[Math.floor(random() * rows.length)];
   let cursor = random() * total;
   for (const row of rows) {
-    cursor -= Math.max(0, row.weight);
+    if (row.weight <= 0) continue;
+    cursor -= row.weight;
     if (cursor <= 0) return row;
   }
-  return rows[rows.length - 1];
+  return [...rows].reverse().find(row => row.weight > 0) ?? rows[rows.length - 1];
 }
 
 export function splitGeneratorText(text: string) {
@@ -280,6 +282,7 @@ export function generateHexContent(game: GameState, hexId: string, kind: HexGene
   const terrain = hex.terrain ?? "urban";
   const weighted = rows.map(row => {
     const category = categoryFor(kind, row.roll);
+    if (kind === "eventos" && !eventContentCompatible(game, hexId, row.roll)) return { row, category, weight: 0 };
     let weight = terrainWeight(kind, category, terrain)
       * sectorCategoryBoost(kind, category, hex.sector?.name ?? "")
       * overlapBoost(row.text, tokens);
@@ -358,4 +361,18 @@ export function eventTriggerReady(game: GameState, hexId: string, event: HexEven
 
 export function pointGeneratorMetadata(point: Point) {
   return [point.generatorCategory, point.condition, point.risk].filter(Boolean);
+}
+
+/** Do not generate a built-environment event in an empty natural sector. Manual selection remains available. */
+export function eventContentCompatible(game: GameState, hexId: string, roll: number) {
+  const hex = game.hexes[hexId];
+  if (!hex) return false;
+  const guide = eventDefinitions.find(g => g.roll === roll);
+  const requiresStructure = guide?.requirements.includes("structure") || guide?.requirements.includes("power") || guide?.requirements.includes("communication");
+  const requiresVehicle = guide?.requirements.includes("vehicle");
+  if ((!requiresStructure && !requiresVehicle) || (hex.terrain ?? "urban") === "urban") return true;
+  const surroundings = [hex.sector?.name, ...hex.points.filter(p => !p.clueTargetHex && !p.clue).map(p => `${p.name} ${p.signal}`)].join(" ");
+  if (requiresVehicle && !/carro|veículo|veiculo|garagem|rodovia|estrada|estacionamento|oficina/i.test(surroundings)) return false;
+  if (!requiresStructure) return true;
+  return /casa|prédio|predio|galpão|galpao|oficina|posto|abrigo|depósito|deposito|hospital|escola|torre|cabana|estação|estacao|portaria|construção|construcao/i.test(surroundings);
 }

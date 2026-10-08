@@ -1,3 +1,4 @@
+import { isCluePoint } from "./hex-event-links";
 import definitions from "./loot-definitions.json";
 import { addLog, content, survivorStats, survivorsAtHex, type GameState, type Point } from "./game";
 import { createId } from "./id";
@@ -267,7 +268,7 @@ function buildLocationAreas(point: Point, scale: LocationScale) {
 
 /** Preparation is private and idempotent. Historical searches never grant stock. */
 export function prepareLocation(point: Point) {
-  if (point.preparation || point.clueTargetHex) return false;
+  if (point.preparation || isCluePoint(point)) return false;
   const scale = inferLocationScale(point);
   const areas = buildLocationAreas(point, scale);
   const seenAttempts = new Set<string>();
@@ -300,7 +301,7 @@ export function resizeLocationPreparation(point: Point, scale: LocationScale) {
 export function prepareHex(game: GameState, hexId: string) {
   const hex = game.hexes[hexId];
   if (!hex) return false;
-  if (!hex.points.some(p => !p.clueTargetHex) && hex.points.length < 120) {
+  if (!hex.points.some(p => !isCluePoint(p)) && hex.points.length < 120) {
     const generated = generateHexContent(game, hexId, "locais");
     hex.points.push({ id: createId(), name: generated.publicText.split(/[.;!?]/)[0].trim().slice(0, 120), kind: "local", signal: generated.publicText,
       access: generated.suggestedAccess ?? "", notes: generated.gmGuidance, revealed: false, searches: [],
@@ -308,7 +309,7 @@ export function prepareHex(game: GameState, hexId: string) {
       generatorKind: "locais", generatorRoll: generated.roll, generatorCategory: generated.categoryLabel });
   }
   for (const point of hex.points) {
-    if (point.clueTargetHex) continue;
+    if (isCluePoint(point)) continue;
     prepareLocationForExploration(game, hexId, point.id);
   }
   if (!hex.events.length) {
@@ -526,7 +527,7 @@ export function suggestVisibleStock(area: SearchArea, random = Math.random): Vis
 
 export function prepareLocationForExploration(game: GameState, hexId: string, pointId: string, random = Math.random): string | null {
   const point = pointAt(game, hexId, pointId);
-  if (!point || point.clueTargetHex) return "Este local não está disponível para exploração.";
+  if (!point || isCluePoint(point)) return "Este local não está disponível para exploração.";
   prepareLocation(point);
   const prep = point.preparation;
   if (!prep) return "Não foi possível preparar este local.";

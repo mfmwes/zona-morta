@@ -1,3 +1,4 @@
+import { isCluePoint } from "./hex-event-links";
 import "./event-resolution";
 import "./treatment";
 import { addLog, content as gameContent, survivorHex, survivorIsDown, survivorStats, type GameState } from "./game";
@@ -27,7 +28,7 @@ function active(game: GameState, op: TeamOperation) {
 }
 function areaPermission(game: GameState, hexId: string, pointId: string, areaId: string) {
   const hex = game.hexes[hexId];
-  const point = hex?.points.find(p => p.id === pointId && p.revealed && !p.clueTargetHex);
+  const point = hex?.points.find(p => p.id === pointId && p.revealed && !isCluePoint(p));
   const area = point?.preparation?.areas.find(a => a.id === areaId);
   if (hex?.discovery !== "explorado" || !area || area.searchable === false) return undefined;
   const specificItems = deepSearchCandidateKeys(area);
@@ -62,7 +63,7 @@ export function projectPlayerActions(game: GameState, actorId: string): PublicPl
   const policy = { paused, transfers, deposits, rest, tokens };
   const result: PublicPlayerActions = { policy, actorId, hexId, busy: playerTimedActionIssue(game, [actorId]), peers: game.survivors.map(p => ({ id: p.id, name: p.name, hex: survivorHex(game, p) })), locations: [], areas: [], stock: [], routes: [], operations: [], supplies: [], markers: state.markers.filter(m => { const scene = game.sceneBoard?.scenes.find(s => s.id === m.sceneId && s.id === game.sceneBoard?.activeSceneId && s.visibleToPlayers); return m.day === game.day && scene && knownPosition(scene, m.x, m.y); }) };
   for (const point of game.hexes[hexId]?.points ?? []) {
-    if (!point.revealed || point.clueTargetHex) continue;
+    if (!point.revealed || isCluePoint(point)) continue;
     const prep = point.preparation;
     const publicAreas = prep?.areas ?? [];
     const areaStates = publicAreas.map(area => ({ area, state: searchAreaSessionState(game, hexId, point.id, area) }));
@@ -184,7 +185,7 @@ function executeCommand(game: GameState, actorId: string, cmd: PlayerCommand, di
   }
   if (cmd.type === "prepare-search") {
     const point = game.hexes[cmd.hexId]?.points.find(p => p.id === cmd.pointId);
-    if (cmd.hexId !== hexId || game.hexes[hexId]?.discovery !== "explorado" || !point?.revealed || point.clueTargetHex) return "Este local ainda não está disponível para exploração.";
+    if (cmd.hexId !== hexId || game.hexes[hexId]?.discovery !== "explorado" || !point?.revealed || isCluePoint(point)) return "Este local ainda não está disponível para exploração.";
     return prepareLocationForExploration(game, cmd.hexId, cmd.pointId);
   }
   if (["search", "deep-search", "travel", "rest"].includes(cmd.type)) {

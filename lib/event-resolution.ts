@@ -14,7 +14,7 @@ function applyResolution(game: GameState, event: HexEvent, resolution: EventReso
   game.noise=Math.max(0,Math.min(5,game.noise+resolution.noise));
   game.fear=Math.max(0,Math.min(12,game.fear+resolution.fear));
   resolution.appliedNoise=game.noise-oldNoise;resolution.appliedFear=game.fear-oldFear;
-  resolution.status="completed";resolution.endMinute=game.minutes;event.status="resolved";
+  resolution.status="completed";resolution.endMinute=game.minutes;event.status=resolution.closeEvent===false?"active":"resolved";
   addLog(game,"evento",`${eventOutcomeLabels[resolution.outcome]} — ${resolution.eventText}\n${resolution.summary}\nContinuidade: ${resolution.continuity || "Sem mudança adicional."}\n${resolution.minutes} min · Barulho ${resolution.appliedNoise>=0?"+":""}${resolution.appliedNoise} · Medo ${resolution.appliedFear>=0?"+":""}${resolution.appliedFear}.`,resolution.participantIds[0],resolution.participantIds);
   if ((game.noise>=3 || resolution.appliedFear>0) && game.playerActions) game.playerActions.policy.paused=true;
 }
@@ -32,7 +32,7 @@ export function resolveHexEvent(game: GameState, command: EventResolutionCommand
   if(new Set(c.participantIds).size!==c.participantIds.length || c.participantIds.some(id=>!draft.survivors.some(p=>p.id===id&&survivorHex(draft,p)===c.hexId)))return {ok:false as const,message:"Escolha participantes presentes no hex do evento."};
   if(c.minutes>0 && !c.participantIds.length)return {ok:false as const,message:"Escolha quem dedica tempo a esta resolução."};
   const resolution:EventResolution={id:c.id,approachId:c.approachId,outcome:c.outcome,summary:c.summary,continuity:c.continuity,
-    participantIds:c.participantIds,minutes:c.minutes,noise:c.noise,fear:c.fear,day:draft.day,startMinute:draft.minutes,
+    closeEvent:c.closeEvent,participantIds:c.participantIds,minutes:c.minutes,noise:c.noise,fear:c.fear,day:draft.day,startMinute:draft.minutes,
     endMinute:draft.minutes+c.minutes,status:c.minutes?"scheduled":"completed",eventText:event.text};
   event.resolutions??=[];event.resolutions.push(resolution);
   let completed=true;

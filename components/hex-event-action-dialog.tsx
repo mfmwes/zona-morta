@@ -1,4 +1,5 @@
 "use client";
+import { isCluePoint } from "@/lib/hex-event-links";
 
 import { useRef, useState } from "react";
 import { toast } from "sonner";
@@ -32,7 +33,7 @@ export function HexEventActionDialog({ game, edit, request, onClose }: {
   const existing = action.type === "npc"
     ? (game.npcs ?? []).filter(npc => npc.hex === request.hexId).map(npc => ({ value: npc.id, label: npc.name }))
     : action.type === "threat" ? []
-      : (hex?.points ?? []).filter(point => action.type !== "clue" || point.clueTargetHex).map(point => ({ value: point.id, label: point.name }));
+      : (hex?.points ?? []).filter(point => action.type !== "clue" || isCluePoint(point)).map(point => ({ value: point.id, label: point.name }));
   const linking = action.type !== "threat" && Boolean(action.existingId);
   const library = action.type === "threat" ? threatLibrary(game.threats) : [];
   const template = action.type === "threat" ? library.find(row => row.id === action.templateId) : undefined;
@@ -99,9 +100,8 @@ export function HexEventActionDialog({ game, edit, request, onClose }: {
       {!linking && action.type === "clue" && <div className="grid gap-3">
         <Field label="Nome da pista" value={action.name} onChange={name => patch(action, { name })} />
         <Field label="Texto público da pista" multiline value={action.text} onChange={text => patch(action, { text })} />
-        <Pick label="Destino reservado da pista" value={action.targetHex} options={Object.entries(game.hexes)
-          .filter(([id]) => id !== request.hexId).map(([id, target]) => ({ value: id, label: `${id} · ${target.sector?.name ?? "setor ainda não revelado"}` }))}
-          onChange={targetHex => patch(action, { targetHex })} />
+        <Pick label="Destino reservado da pista" value={action.targetHex || "__none"} options={[{value:"__none",label:"Pista local / destino indefinido"}, ...Object.entries(game.hexes).map(([id, target]) => ({ value: id, label: `${id} · ${target.sector?.name ?? "setor ainda não revelado"}` }))]}
+          onChange={targetHex => patch(action, { targetHex: targetHex === "__none" ? "" : targetHex })} />
         <p className="text-xs subtle">A pista ficará nos locais e pistas deste setor. O destino continua reservado; escreva no texto público apenas o que os jogadores descobrem.</p>
         <Field label="Notas reservadas" multiline value={action.notes} onChange={notes => patch(action, { notes })} />
         <label className="flex items-center gap-2 text-sm"><Switch checked={action.revealed} onCheckedChange={revealed => patch(action, { revealed })} /> Mostrar esta pista aos jogadores</label>

@@ -87,6 +87,7 @@ export function validWorld(value: unknown): value is Record<string, HexState> {
     && typeof point.notes === "string" && point.notes.length <= 2400
     && typeof point.revealed === "boolean"
     && validLocationPreparation(point.preparation)
+    && (point.clue === undefined || typeof point.clue === "boolean")
     && validHexEventOrigin(point.eventOrigin)
     && (point.clueTargetHex === undefined || (typeof point.clueTargetHex === "string" && Boolean(parseHex(point.clueTargetHex))))
     && Array.isArray(point.searches) && point.searches.length <= 80

@@ -1,3 +1,4 @@
+import { isCluePoint } from "./hex-event-links";
 import { publicActivities } from "./activity-timeline";
 import { playerTimedActionIssue, projectPlayerActions } from "./player-actions";
 import { addLog, ammunitionTypes, survivorIsDown, survivorStats, type AmmunitionType, type GameState, type InventoryItem, type NPC, type Survivor } from "./game";
@@ -103,6 +104,7 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
       delete visiblePoint.generatorRoll;
       delete visiblePoint.generatorCategory;
       delete visiblePoint.condition;
+      if (isCluePoint(point)) visiblePoint.clue = true;
       delete visiblePoint.eventOrigin;
       delete visiblePoint.clueTargetHex;
       delete visiblePoint.preparation;

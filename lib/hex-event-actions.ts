@@ -5,7 +5,7 @@ import { createId } from "./id";
 import { normalizeNpcCapabilities } from "./npc-presentation";
 import { threatLibrary } from "./threats";
 import { generateNpcDrafts } from "./npc-generator";
-import { adjacentHexes } from "./world";
+import { isCluePoint } from "./hex-event-links";
 import { eventGuide } from "./event-guides";
 import { suggestedLootTable } from "./hex-generators";
 
@@ -67,7 +67,7 @@ export function suggestedEventActionKind(event: HexEvent): HexEventActionKind | 
 export function prepareSuggestedEventAction(game: GameState, hexId: string, event: HexEvent, type: HexEventActionKind) {
   const action = prepareEventAction(game, hexId, event, type);
   if (action.type === "point") action.lootTable = suggestedLootTable(event.text, "especial") ?? "";
-  if (action.type === "clue") action.targetHex = adjacentHexes(hexId).find(row => Boolean(game.hexes[row.id]))?.id ?? "";
+  // A destination is selected only after the clue actually identifies one.
   if (action.type === "npc") {
     let seed = [...event.id].reduce((sum, char) => (sum * 31 + char.charCodeAt(0)) >>> 0, 17);
     const random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
@@ -90,7 +90,7 @@ export function eventActionError(game: GameState, hexId: string, eventId: string
   const hex = game.hexes[hexId];
   const event = hex?.events.find(row => row.id === eventId);
   if (!event) return "O evento não existe mais neste hex.";
-  if (!["active", "pending"].includes(eventStatus(event))) return "Reabra o evento antes de preparar uma ação.";
+  if (!["active", "pending", "resolved"].includes(eventStatus(event))) return "Reabra o evento antes de preparar uma ação.";
   if (eventActionUsed(game, hexId, event, action.type)) return "Esta ação já foi registrada para o evento. Consulte o vínculo existente.";
   if (action.type === "threat") {
     if (!threatLibrary(game.threats).some(row => row.id === action.templateId)) return "Escolha uma ficha de ameaça disponível.";
@@ -107,7 +107,7 @@ export function eventActionError(game: GameState, hexId: string, eventId: string
   if (action.existingId) {
     if (action.type === "npc") return game.npcs?.some(row => row.id === action.existingId && row.hex === hexId) ? null : "O PNJ escolhido não está mais neste hex.";
     const point = hex.points.find(row => row.id === action.existingId);
-    if (!point || (action.type === "clue" && !point.clueTargetHex)) return "O ponto escolhido não está mais disponível.";
+    if (!point || (action.type === "clue" && !isCluePoint(point))) return "O ponto escolhido não está mais disponível.";
     return null;
   }
   if (!action.name.trim()) return action.type === "npc" ? "Informe o nome do PNJ." : "Informe o nome do ponto ou pista.";
@@ -120,7 +120,7 @@ export function eventActionError(game: GameState, hexId: string, eventId: string
     const name = normalizedName(action.name.trim().slice(0, 120));
     if (hex.points.some(row => normalizedName(row.name) === name)) return "Já existe um ponto com esse nome neste hex. Vincule o ponto existente ou escolha outro nome.";
     if (action.type === "clue") {
-      if (!game.hexes[action.targetHex] || action.targetHex === hexId) return "Escolha outro hex existente como destino da pista.";
+      if (action.targetHex && !game.hexes[action.targetHex]) return "Escolha um hex existente como destino da pista ou deixe o destino indefinido.";
       if (!action.text.trim()) return "Informe o texto público da pista.";
     } else if (action.lootTable && !content.lootTables.some(table => table.name === action.lootTable)) return "Escolha uma tabela de busca disponível.";
   }
@@ -171,7 +171,7 @@ export function applyEventAction(game: GameState, hexId: string, eventId: string
         kind: action.type === "point" ? action.kind : "local", signal: (action.type === "point" ? action.signal : action.text).trim().slice(0, 2000),
         access: action.type === "point" ? action.access.trim().slice(0, 1200) : "",
         notes: action.notes.trim().slice(0, 2400), revealed: action.revealed, searches: [],
-        ...(action.type === "clue" ? { clueTargetHex: action.targetHex } : {
+        ...(action.type === "clue" ? { clue: true, ...(action.targetHex ? { clueTargetHex: action.targetHex } : {}) } : {
           condition: action.condition.trim().slice(0, 240), risk: action.risk.trim().slice(0, 240), lootTable: action.lootTable,
         }) };
       hex.points.push(point);

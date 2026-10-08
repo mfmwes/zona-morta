@@ -6,7 +6,7 @@ const id = z.string().min(1).max(120);
 const minute = z.number().int().min(0).max(1439);
 const effects = { minutes: z.number().int().min(0).max(360), noise: z.number().int().min(-5).max(5), fear: z.number().int().min(-12).max(12) };
 const plan = { id, outcome: z.enum(["success", "complication", "failure", "withdrawn"]), approachId: id,
-  summary: z.string().trim().min(1).max(1600), continuity: z.string().trim().max(1600), participantIds: z.array(id).max(30), ...effects };
+  closeEvent: z.boolean().optional(), summary: z.string().trim().min(1).max(1600), continuity: z.string().trim().max(1600), participantIds: z.array(id).max(30), ...effects };
 export const eventResolutionCommandSchema = z.object({ type: z.literal("resolve-event"), day: z.number().int().min(1), expectedMinute: minute,
   expectedEvent: z.string().min(1).max(12000), hexId: z.string().regex(/^-?\d+,-?\d+$/), eventId: id, ...plan }).strict();
 export type EventResolutionCommand = z.infer<typeof eventResolutionCommandSchema>;
