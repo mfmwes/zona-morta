@@ -10,11 +10,15 @@ import { eventStatus, eventTriggerReady } from "@/lib/hex-generators";
 import { projectProgress } from "@/lib/shelter-projects";
 
 import { campaignAttention, type CampaignTarget } from "@/lib/campaign-attention";
+import { CampaignSessions } from "@/components/campaign-sessions";
+import type { SessionCommand } from "@/lib/campaign-sessions";
 import { CampaignRecap } from "@/components/campaign-recap";
 import { useState } from "react";
 
 type Props = {
   game: GameState;
+  canManageSession?: boolean;
+  onSessionAction?: (c: SessionCommand) => Promise<void>;
   masterActions?: MasterActionControls;
   onNavigate: (tab: string) => void;
   onOpen: (target: CampaignTarget) => void;
@@ -25,7 +29,7 @@ function hexLabel(game: GameState, hexId: string) {
 }
 
 
-export function MasterOverview({ game, onNavigate, onOpen, masterActions }: Props) {
+export function MasterOverview({ game, onNavigate, onOpen, masterActions, canManageSession, onSessionAction }: Props) {
   const groups = survivorPositionGroups(game);
   const occupied = game.survivors
     .map(person => ({ person, commitment: survivorTimedCommitment(game, person.id) }))
@@ -140,6 +144,7 @@ export function MasterOverview({ game, onNavigate, onOpen, masterActions }: Prop
         {occupied.length > 0 && <p className="master-overview-note"><Clock3 size={14} /> {occupied.length} sobrevivente{occupied.length === 1 ? "" : "s"} trabalhando agora.</p>}
       </section>
     </div>
+    {onSessionAction && <CampaignSessions game={game} canAct={Boolean(canManageSession)} onAction={onSessionAction}/>}
     <CampaignRecap game={game} onOpen={onOpen}/>
   </div>;
 }

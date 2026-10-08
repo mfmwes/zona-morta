@@ -32,6 +32,7 @@ import { TeamActionError } from "@/components/player-actions-panel";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { campaignTargetExists, type CampaignTarget } from "@/lib/campaign-attention";
 import { CampaignCheckpoints, type CheckpointAction } from "@/components/campaign-checkpoints";
+import { activeCampaignSession, applySessionCommand, type SessionCommand } from "@/lib/campaign-sessions";
 import { MasterOverview } from "@/components/master-overview";
 import { addLog, displayTime, survivorHex, type GameState, type Point, type Survivor, type TablePresentation } from "@/lib/game";
 import { createId } from "@/lib/id";
@@ -573,6 +574,20 @@ export default function CampaignApp() {
     }finally{teamActionInFlight.current=false;}
   }
 
+  async function sessionAction(command: SessionCommand) {
+    if (roleRef.current !== "mestre" || previewSession.current || !current.current || teamActionInFlight.current) throw new Error("Aguarde a ação atual.");
+    if (pending.current || sending.current) await flush();
+    if (pending.current || paused.current) throw new Error("Salve ou recarregue a campanha antes de continuar.");
+    const prepared = structuredClone(current.current);
+    applySessionCommand(prepared, command);
+    if (new TextEncoder().encode(JSON.stringify(prepared)).byteLength > 1_790_000) throw new Error("O resumo ultrapassa o limite da campanha. Exporte uma cópia antes de reduzir o histórico.");
+    if (command.checkpoint) {
+      const name = command.action === "start" ? command.name.trim() : activeCampaignSession(current.current)!.name;
+      await checkpointAction({ action: "create", id: crypto.randomUUID(), name: `${command.action === "start" ? "Início" : "Fim"} · ${name}`.slice(0,80) });
+    }
+    edit(draft => applySessionCommand(draft, command));
+  }
+
   async function importBackup(file: File) {
     if (roleRef.current !== "mestre" || previewSession.current) return;
     if (!window.confirm("Substituir o mapa e as fichas desta campanha pelos dados da cópia? Baixe uma cópia atual antes de continuar.")) return;
@@ -814,7 +829,7 @@ export default function CampaignApp() {
         {!playerPreview && (status === "erro" || status === "conflito") && <div role="alert" className="mb-5 rounded-md border border-[#d5aaa1] bg-[#fff2ed] px-4 py-3 text-sm text-[#803b35]">
           <b>As alterações ainda estão nesta tela.</b> {saveError} Baixe uma cópia antes de recarregar, se precisar.
         </div>}
-        {activeTab === "resumo" && role === "mestre" && !readOnlyPreview && <MasterOverview game={game} onNavigate={setTab} onOpen={openCampaignTarget} masterActions={masterActionControls} />}
+        {activeTab === "resumo" && role === "mestre" && !readOnlyPreview && <MasterOverview game={game} canManageSession={status === "salvo"} onSessionAction={sessionAction} onNavigate={setTab} onOpen={openCampaignTarget} masterActions={masterActionControls} />}
         {activeTab === "mapa" && <>
           {!readOnlyPreview && <div className="panel scene-control-panel mb-5">
             <section className="scene-control-section scene-pressure-section">
