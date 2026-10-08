@@ -688,6 +688,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
             </section>
           </TabsContent>
           <TabsContent value="condicoes" className="character-tab-content">
+            <section className="character-surface"><h3>Condições de eventos</h3>{!(selected.eventConditions ?? []).length && <p className="subtle">Nenhuma condição de evento ativa.</p>}{(selected.eventConditions ?? []).map(c=><div className="list-card" key={c.name}><b>{c.name}</b><p>{c.effect}</p><p className="subtle">Remover: {c.clear}</p>{!playerMode&&!playerPreview&&<Button size="sm" variant="outline" onClick={()=>change(selected.id,s=>{s.eventConditions=(s.eventConditions??[]).filter(row=>row.name!==c.name);})}>Condição encerrada: remover</Button>}</div>)}</section>
             <section className="character-surface"><SectionHeading index="01" title="Exposição e infecção" /><div className="character-condition-banner"><HeartPulse size={24} aria-hidden="true" /><div><b>{selected.infection}</b><p>{selected.infection === "Saudável" ? "Nenhuma exposição registrada." : "Acompanhe o estado e as escolhas de tratamento."}</p></div></div>
               {!playerPreview && <div className="character-condition-edit"><Pick label="Estado" value={selected.infection} options={infectionStates} onChange={value => change(selected.id, s => {
                 s.infection = value as Infection;

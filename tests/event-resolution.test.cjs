@@ -10,7 +10,7 @@ const {projectPlayerGame}=require('../lib/collaboration.ts');
 const {advanceToNextActivity}=require('../lib/time.ts');
 const {cancelActivity,publicActivities}=require('../lib/activity-timeline.ts');
 const {validActivities}=require('../lib/activity-timeline-validation.ts');
-const {suggestedEventActionKind}=require('../lib/hex-event-actions.ts');
+const {suggestedEventActionKind,prepareSuggestedEventAction,applyEventAction}=require('../lib/hex-event-actions.ts');
 function fixture(split=false){const g=defaultState(),a=content.archetypes[0];g.minutes=540;g.survivors=['Ana','Bia'].map(name=>initialSurvivor({name,origin:content.origins[1].name,past:'',archetype:a.name,specialty:a.specialties[0].name,freeExperience:'',techniques:[],attributes:{Força:1},primary:'',secondary:'',protection:'',personal:''}));g.survivors.forEach((p,i)=>{p.hex=split&&i===1?'1,0':'0,0';});for(const h of Object.values(g.hexes)){h.events=[];}g.hexes['0,0'].discovery='explorado';g.hexes['0,0'].events=[{id:'gate',text:content.generators.eventos[51].text,trigger:'Manual',status:'active',revealed:true,generatorRoll:52,guidance:'Segredo do mestre'}];return g;}
 function command(g,extra={}){const e=g.hexes['0,0'].events[0];return {type:'resolve-event',id:'resolution',day:g.day,expectedMinute:g.minutes,expectedEvent:eventResolutionFingerprint(e),hexId:'0,0',eventId:e.id,participantIds:[g.survivors[0].id],approachId:'risk',outcome:'complication',summary:'A grade abriu com ruído.',continuity:'Passagem aberta; vigia ouviu.',minutes:5,noise:1,fear:0,...extra};}
 test('100 guias próprios preservam tabela, alternativas, desfechos e continuidade',()=>{
@@ -104,6 +104,57 @@ test('todas as entradas têm situação, preparação, continuidade específica 
  for(const g of eventGuides){assert.ok(g.setup.length>50);assert.ok(g.ignored.length>25);assert.ok(g.returnVisit.length>25);assert.ok(g.observation.length>25);assert.ok(g.application.length>25);assert.ok(Array.isArray(g.requirements));
  for(const a of g.approaches){if(/Esperar/i.test(a.description))assert.ok(a.minutes>0);}
  assert.doesNotMatch(JSON.stringify(g),/Um custo anunciado limita|Se a intervenção encontrar resistência|Registre a condição adicional escolhida/);}
- const heavy=eventGuides[78];assert.match(heavy.outcomes.complication.summary,/plano/);assert.doesNotMatch(heavy.outcomes.complication.summary,/retirada funciona/);
+ const heavy=eventGuides[78];assert.match(heavy.outcomes.complication.summary,/liberar capacidade/);assert.doesNotMatch(heavy.outcomes.complication.summary,/retirada funciona/);
  assert.match(eventGuides[57].outcomes.complication.summary,/fonte é interrompida/);
+});
+
+function personal(g,extra={}){return {survivorId:g.survivors[0].id,hpMarks:0,armor:false,stress:0,hope:0,food:0,water:0,...extra};}
+function npc(g){const n={id:'lia',name:'Lia',role:'Mensageira',description:'',notes:'Contato reservado.',publicNotes:'',hex:'0,0',status:'Bem',infection:'Saudável',disposition:'Neutro',skills:[],active:true,visibleToPlayers:true};g.npcs.push(n);return n;}
+const trapped={name:'Restrito',effect:'Não pode sair do vão.',clear:'Um aliado ergue a grade com uma ação.'};
+test('dano, recursos, condição e vínculo são persistidos uma vez somente nos alvos',()=>{
+ const g=fixture(),p=g.survivors[0],other=structuredClone(g.survivors[1]);p.water=2;p.stress=5;p.hope=5;npc(g);
+ const c=command(g,{minutes:0,personalEffects:[personal(g,{hpMarks:2,stress:2,hope:2,water:-1,condition:trapped})],npcEffect:{npcId:'lia',disposition:'Aliado',commitment:'Lia deve uma entrega gratuita até amanhã.'}});
+ assert.equal(resolveHexEvent(g,c).ok,true);assert.equal(g.survivors[0].hp,2);assert.equal(g.survivors[0].stress,6);assert.equal(g.survivors[0].hope,6);assert.equal(g.survivors[0].water,1);assert.deepEqual(g.survivors[0].eventConditions,[trapped]);assert.deepEqual(g.survivors[1],other);
+ assert.equal(g.npcs[0].disposition,'Aliado');assert.match(g.npcs[0].notes,/Vínculo com Ana.*entrega gratuita/);assert.equal(validWorld(g.hexes),true);
+ const view=projectPlayerGame(g,p.id);assert.deepEqual(view.survivors[0].eventConditions,[trapped]);assert.equal(view.npcs[0].disposition,'Aliado');assert.equal(JSON.stringify(view).includes('entrega gratuita'),false);
+ const before=structuredClone(g);assert.equal(resolveHexEvent(g,c).ok,false);assert.deepEqual(g,before);
+});
+test('usar Armadura reduz um nível e registra delta real de PV',()=>{
+ const g=fixture();g.survivors[0].protection=content.protections[0].name;
+ // Use the actual armor catalog rather than a fabricated armor slot.
+ const {survivorStats}=require('../lib/game.ts');
+ if(!survivorStats(g.survivors[0]).armor){g.survivors[0].protection=content.protections.find(a=>a.armor>0).name;}
+ const c=command(g,{minutes:0,personalEffects:[personal(g,{hpMarks:2,armor:true})]});assert.equal(resolveHexEvent(g,c).ok,true);assert.equal(g.survivors[0].hp,1);assert.equal(g.survivors[0].armorMarked,1);assert.match(g.hexes['0,0'].events[0].resolutions[0].appliedEffects[0],/PV marcados \+1.*Armadura \+1/);
+});
+test('alvos repetidos, ausentes e custos inexistentes rejeitam todos os efeitos sem mutação',()=>{
+ const g=fixture(true);npc(g);const before=structuredClone(g);
+ for(const effects of [[personal(g),personal(g)],[personal(g,{water:-10})],[personal(g,{armor:true,hpMarks:2})],[personal(g,{survivorId:g.survivors[1].id})]]){assert.equal(resolveHexEvent(g,command(g,{personalEffects:effects})).ok,false);assert.deepEqual(g,before);}
+ assert.equal(resolveHexEvent(g,command(g,{personalEffects:[personal(g,{hpMarks:1})],npcEffect:{npcId:'missing',disposition:'Aliado',commitment:'Vigia por 1 hora.'}})).ok,false);assert.deepEqual(g,before);
+});
+test('efeitos aguardam conclusão, sobrevivem ao reload e cancelamento não cobra recursos',()=>{
+ let g=fixture(true);g.survivors[0].water=2;npc(g);const effects=[personal(g,{hpMarks:1,stress:1,water:-1,condition:trapped})];
+ assert.equal(resolveHexEvent(g,command(g,{personalEffects:effects,npcEffect:{npcId:'lia',disposition:'Aliado',commitment:'Um turno de vigia.'}})).completed,false);
+ assert.equal(g.survivors[0].hp,0);assert.equal(g.survivors[0].water,2);assert.equal(g.npcs[0].disposition,'Neutro');
+ g=JSON.parse(JSON.stringify(g));assert.equal(advanceToNextActivity(g).ok,true);assert.equal(g.survivors[0].hp,1);assert.equal(g.survivors[0].water,1);assert.equal(g.npcs[0].disposition,'Aliado');
+ const cancelled=fixture(true);cancelled.survivors[0].water=2;resolveHexEvent(cancelled,command(cancelled,{personalEffects:[personal(cancelled,{hpMarks:1,water:-1})]}));assert.equal(cancelActivity(cancelled,'resolution'),true);assert.equal(cancelled.survivors[0].hp,0);assert.equal(cancelled.survivors[0].water,2);
+});
+test('estoque ou PNJ alterado durante a espera bloqueia conclusão inteira',()=>{
+ const g=fixture(true);g.survivors[0].water=1;npc(g);resolveHexEvent(g,command(g,{personalEffects:[personal(g,{hpMarks:1,water:-1})],npcEffect:{npcId:'lia',disposition:'Aliado',commitment:'Uma entrega.'}}));g.survivors[0].water=0;
+ const r=advanceToNextActivity(g);assert.match(r.issue,/porções/);assert.equal(g.survivors[0].hp,0);assert.equal(g.noise,0);assert.equal(g.npcs[0].disposition,'Neutro');assert.equal(g.hexes['0,0'].events[0].resolutions[0].status,'scheduled');
+ g.survivors[0].water=1;g.npcs[0].hex='1,0';assert.match(advanceToNextActivity(g).issue,/PNJ/);assert.equal(g.survivors[0].water,1);assert.equal(g.survivors[0].hp,0);
+});
+test('condição exige remoção; repetir o nome atualiza causa sem acumular cópias',()=>{
+ const g=fixture();assert.equal(eventResolutionCommandSchema.safeParse(command(g,{personalEffects:[personal(g,{condition:{name:'Restrito',effect:'Preso',clear:''}})]})).success,false);
+ g.survivors[0].eventConditions=[trapped];assert.equal(resolveHexEvent(g,command(g,{minutes:0,personalEffects:[personal(g,{condition:{...trapped,clear:'Soltar o apoio.'}})]})).ok,true);assert.equal(g.survivors[0].eventConditions.length,1);assert.equal(g.survivors[0].eventConditions[0].clear,'Soltar o apoio.');
+});
+test('cada intervenção concretiza ganho, custo e falha sem transferir perigo para observação',()=>{
+ for(const g of eventGuides){const a=g.approaches.find(a=>a.id==='risk');assert.match(a.description,/Antes de agir, anuncie:/);assert.ok(g.outcomes.complication.summary.length>45);assert.ok(g.outcomes.failure.summary.length>50);const careful=eventOutcomeSuggestion(g,'careful','success');assert.equal(careful.mechanical,undefined);for(const o of Object.values(g.outcomes)){if(o.mechanical?.condition){assert.ok(o.mechanical.condition.effect.length>30);assert.ok(o.mechanical.condition.clear.length>30);}}}
+ assert.equal(eventOutcomeSuggestion(eventGuides[51],'risk','failure').mechanical.hpMarks,2);assert.equal(eventOutcomeSuggestion(eventGuides[37],'risk','success').mechanical.npcDisposition,'Aliado');assert.equal(eventOutcomeSuggestion(eventGuides[87],'risk','failure').noise,2);
+});
+
+test('socorrista criado pelo evento recebe papel e capacidade coerentes antes do vínculo',()=>{
+ const g=fixture();const e=g.hexes['0,0'].events[0];e.generatorRoll=26;e.text=content.generators.eventos[25].text;
+ const action=prepareSuggestedEventAction(g,'0,0',e,'npc');assert.equal(action.role,'Socorrista');assert.deepEqual(action.skills,['Medicina']);assert.match(action.notes,/Necessidade:.*recipiente/);
+ assert.equal(applyEventAction(g,'0,0',e.id,action).ok,true);const n=g.npcs.find(n=>n.id===e.actionLinks.npcId);assert.ok(n);assert.equal(n.visibleToPlayers,false);
+ const c=command(g,{minutes:0,npcEffect:{npcId:n.id,disposition:'Aliado',commitment:'Auxilia em um tratamento com os custos normais.'}});assert.equal(resolveHexEvent(g,c).ok,true);assert.equal(n.disposition,'Neutro');assert.equal(g.npcs.find(p=>p.id===n.id).disposition,'Aliado');
 });

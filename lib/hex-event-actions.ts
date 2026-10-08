@@ -74,8 +74,10 @@ export function prepareSuggestedEventAction(game: GameState, hexId: string, even
     const sector = game.hexes[hexId]?.sector?.name ?? "";
     const context = /hospital|saúde/i.test(sector) ? "Hospitalar" : /rural|horta|mata/i.test(sector) ? "Rural" : /industrial/i.test(sector) ? "Industrial" : "Outro";
     const person = generateNpcDrafts({ quantity: 1, context, tone: "Neutro", hex: hexId }, random)[0];
-    action.name = person.name; action.role = person.role; action.skills = person.skills;
-    action.notes = [action.notes, person.notes].filter(Boolean).join("\n");
+    const suggested=eventGuide(event).npc;
+    action.name = suggested?.name ?? person.name; action.role = suggested?.role ?? person.role; action.skills = suggested ? /socorrista/i.test(suggested.role) ? ["Medicina"] : /reparos/i.test(suggested.role) ? ["Mecânica"] : /vigia|sentinela|observadora/i.test(suggested.role) ? ["Vigilância"] : /mensageira|entregadora|rádio/i.test(suggested.role) ? ["Comunicação"] : [] : person.skills;
+    if(suggested)action.notes=[action.notes,`Necessidade: ${suggested.need}`,`Oferta: ${suggested.offer}`].filter(Boolean).join("\n");
+    if(!suggested)action.notes = [action.notes, person.notes].filter(Boolean).join("\n");
   }
   if (action.type === "threat") {
     const words = normalizedName(event.text).split(/\W+/).filter(word => word.length > 4);

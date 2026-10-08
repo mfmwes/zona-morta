@@ -180,7 +180,7 @@ try {
   const withEvent=structuredClone(eventLatest.state);
   withEvent.hexes['0,0'].events=[{id:'guided-event',text:'Porta bloqueada.',trigger:'',revealed:true,status:'active',generatorRoll:52}];
   const putEvent=await mf.dispatchFetch(origin+path,{method:'PUT',headers:{...headers('master'),'Content-Type':'application/json'},body:JSON.stringify({revision:eventLatest.revision,state:withEvent})});assert.equal(putEvent.status,200,await putEvent.text());
-  const resolve={type:'resolve-event',id:'runtime-event',day:withEvent.day,expectedMinute:withEvent.minutes,expectedEvent:eventResolutionFingerprint(withEvent.hexes['0,0'].events[0]),hexId:'0,0',eventId:'guided-event',approachId:'careful',outcome:'success',summary:'Passagem aberta',continuity:'Senha privada do mestre',participantIds:[actor.id],minutes:5,noise:1,fear:0};
+  const resolve={type:'resolve-event',id:'runtime-event',day:withEvent.day,expectedMinute:withEvent.minutes,expectedEvent:eventResolutionFingerprint(withEvent.hexes['0,0'].events[0]),hexId:'0,0',eventId:'guided-event',approachId:'careful',outcome:'success',summary:'Passagem aberta',continuity:'Senha privada do mestre',participantIds:[actor.id],minutes:5,noise:1,fear:0,personalEffects:[{survivorId:actor.id,hpMarks:1,armor:false,stress:1,hope:0,food:0,water:0,condition:{name:'Restrito',effect:'Preso sob a grade.',clear:'Um aliado ergue a grade.'}}]};
   const masterCommand=async command=>{
     const response=await mf.dispatchFetch(origin+actionPath,{method:'POST',headers:{...headers('master'),'Content-Type':'application/json'},body:JSON.stringify(command)});
     const payload=await response.json();assert.equal(response.status,200,JSON.stringify(payload));return payload;
@@ -190,6 +190,8 @@ try {
   const resolved=await masterCommand(resolve);assert.equal(resolved.state.minutes,withEvent.minutes+5);assert.equal(resolved.state.hexes['0,0'].events[0].resolutions[0].status,'completed');
   await until(()=>connections.every(c=>c.messages.some(m=>m.revision===resolved.revision)),'Event outcome must notify both roles');
   assert.equal((await masterCommand(resolve)).revision,resolved.revision);
+  assert.equal(resolved.state.survivors[0].hp,Math.min(require('../lib/game.ts').survivorStats(withEvent.survivors[0]).hp,withEvent.survivors[0].hp+1));
+  assert.equal(resolved.state.survivors[0].eventConditions[0].name,'Restrito');
   const publicOutcome=await (await mf.dispatchFetch(origin+path,{headers:headers('player')})).json();assert.equal(JSON.stringify(publicOutcome.state).includes('Senha privada do mestre'),false);
   const separated=structuredClone(resolved.state);separated.survivors[1].hex='1,0';separated.hexes['0,0'].events[0].status='active';
   const putSeparated=await mf.dispatchFetch(origin+path,{method:'PUT',headers:{...headers('master'),'Content-Type':'application/json'},body:JSON.stringify({revision:resolved.revision,state:separated})});assert.equal(putSeparated.status,200,await putSeparated.text());
