@@ -3,9 +3,9 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 for(const ext of ['.ts','.tsx'])require.extensions[ext]=(m,p)=>m._compile(ts.transpileModule(fs.readFileSync(p,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText,p);
 const resolve=Module._resolveFilename;Module._resolveFilename=function(name,parent,...args){return resolve.call(this,name.startsWith('@/')?path.join(__dirname,'..',name.slice(2)):name,parent,...args);};
 let host;const hooks={...React,useState(initial){const i=host.cursor++;if(!(i in host.slots))host.slots[i]=typeof initial==='function'?initial():initial;const h=host;return [h.slots[i],v=>h.slots[i]=typeof v==='function'?v(h.slots[i]):v];},useEffect(){host.cursor++;},useMemo(fn){host.cursor++;return fn();}};
-const names=['master-overview.tsx','campaign-recap.tsx','survivor-panel.tsx','npc-panel.tsx'];const load=Module._load;
+const names=['master-overview.tsx','campaign-recap.tsx','campaign-sessions.tsx','survivor-panel.tsx','npc-panel.tsx'];const load=Module._load;
 Module._load=function(name,parent,main){if(names.some(n=>parent?.filename.endsWith(n))){if(name==='react')return hooks;if(name==='sonner')return {toast:{success(){},error(){},info(){}}};if(name.startsWith('@/components/'))return new Proxy({},{get:(_,key)=>key==='Button'?'button':String(key)});}return load.call(this,name,parent,main);};
-const {MasterOverview}=require('../components/master-overview.tsx'),{CampaignRecap}=require('../components/campaign-recap.tsx'),{SurvivorPanel}=require('../components/survivor-panel.tsx'),{NpcPanel}=require('../components/npc-panel.tsx');Module._load=load;
+const {MasterOverview}=require('../components/master-overview.tsx'),{CampaignRecap}=require('../components/campaign-recap.tsx'),{CampaignSessions}=require('../components/campaign-sessions.tsx'),{SurvivorPanel}=require('../components/survivor-panel.tsx'),{NpcPanel}=require('../components/npc-panel.tsx');Module._load=load;
 const {defaultState,initialSurvivor,content}=require('../lib/game.ts');
 const text=n=>n==null||typeof n==='boolean'?'':Array.isArray(n)?n.map(text).join(''):typeof n==='object'?text(n.props?.children):String(n);
 function elements(n,tab){if(Array.isArray(n))return n.flatMap(v=>elements(v,tab));if(!n?.props)return [];if(n.type==='Dialog'&&n.props.open===false)return [];if(n.type==='Tabs')tab=n.props.value;if(n.type==='TabsContent'&&n.props.value!==tab)return [];return [n,...elements(n.props.children,tab)];}
@@ -30,4 +30,16 @@ test('retomada usa os vinte registros mais recentes e mantém cronologia e dia e
  const g=fixture();g.log=Array.from({length:25},(_,i)=>({id:'l'+i,day:g.day,time:'08:00',kind:'travessia',text:'Registro '+i}));g.log.push({id:'old',day:0,time:'08:00',kind:'travessia',text:'Dia anterior'});
  const v=view(CampaignRecap,{game:g,onOpen(){}});const rows=elements(v.render()).filter(n=>n.type==='li');assert.equal(rows.length,20);assert.match(text(rows[0]),/Registro 19$/);assert.match(text(rows.at(-1)),/Registro 0$/);assert.doesNotMatch(text(v.render()),/Registro 24/);
  v.find(n=>n.type==='select').props.onChange({target:{value:'0'}});assert.match(text(v.render()),/Dia anterior/);assert.doesNotMatch(text(v.render()),/Registro 0/);
+});
+
+test('sessões permitem escolher cópia, enviar resumo e bloquear ações durante salvamento',async()=>{
+ const g=fixture();let submitted;const v=view(CampaignSessions,{game:g,canAct:true,onAction:async c=>{submitted=c;}});
+ const input=v.find(n=>n.type==='input'&&n.props.maxLength===80);input.props.onChange({target:{value:'Hospital'}});
+ v.find(n=>n.type==='input'&&n.props.type==='checkbox').props.onChange({target:{checked:false}});
+ assert.equal(v.find(n=>n.type==='button').props.disabled,false);await v.find(n=>n.type==='button').props.onClick();await new Promise(r=>setImmediate(r));
+ assert.equal(submitted.action,'start');assert.equal(submitted.name,'Hospital');assert.equal(submitted.checkpoint,false);
+ const {applySessionCommand}=require('../lib/campaign-sessions.ts');applySessionCommand(g,submitted);
+ const end=view(CampaignSessions,{game:g,canAct:true,onAction:async c=>{submitted=c;}});end.find(n=>n.type==='textarea').props.onChange({target:{value:'Resgatar Joana na próxima sessão.'}});
+ await end.find(n=>n.type==='button').props.onClick();await new Promise(r=>setImmediate(r));assert.equal(submitted.action,'end');assert.equal(submitted.expectedSessionId,g.sessions[0].id);assert.match(submitted.summary,/Joana/);assert.equal(submitted.checkpoint,true);
+ const blocked=view(CampaignSessions,{game:g,canAct:false,onAction(){throw new Error('Não deve chamar');}});assert.equal(blocked.find(n=>n.type==='button').props.disabled,true);
 });

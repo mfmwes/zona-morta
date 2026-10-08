@@ -470,7 +470,11 @@ export function closeDayWithPlan(game: GameState, plan: DayClosePlan): DayCloseR
   }
 
   for (const deprivation of actualDeprivations) {
-    addLog(game, "privação", `${deprivation.name} encerrou o dia sem registrar ${deprivation.resource === "food" ? "alimentação" : "hidratação"}. Nenhuma consequência mecânica foi aplicada automaticamente.`, deprivation.survivorId);
+    const person = game.survivors.find(p => p.id === deprivation.survivorId);
+    const before = person?.stress ?? 0;
+    if (person) person.stress = Math.min(6, person.stress + 1);
+    const effect = person ? `+1 Estresse por privação (${before} → ${person.stress}/6).` : "PNJ sem trilha de Estresse; falta registrada para condução do mestre.";
+    addLog(game, "privação", `${deprivation.name} encerrou o dia sem registrar ${deprivation.resource === "food" ? "alimentação" : "hidratação"}. ${effect}`, deprivation.survivorId);
   }
   const residentFoodMissing = Math.max(0, plan.residentsFood - residentFood.consumed);
   const residentWaterMissing = Math.max(0, plan.residentsWater - residentWater.consumed);

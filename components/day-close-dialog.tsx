@@ -32,7 +32,7 @@ const sourceLabels: Record<DayProvisionSource, string> = {
   shared: "Reservas compartilhadas",
   personal: "Provisão pessoal",
   other: "Outra fonte / dispensado",
-  none: "Sem consumir · registrar privação",
+  none: "Sem consumir · privação",
 };
 
 function resourceName(resource: DailyResource) {
@@ -272,6 +272,7 @@ export function DayCloseDialog({
                 <span><b>{person.name}</b><small><MapPin size={12} /> Hex {survivorHex(game, person)} · {atStorage ? "junto às reservas" : "em campo"}</small></span>
               </header>
 
+              {(foodWarning || waterWarning) && <p className="day-close-inline-warning">Privação prevista: +{Number(Boolean(foodWarning)) + Number(Boolean(waterWarning))} Estresse · {person.stress} → {Math.min(6, person.stress + Number(Boolean(foodWarning)) + Number(Boolean(waterWarning)))}/6</p>}
               <div className="day-close-person-resources">
                 {(["food", "water"] as const).map(resource => {
                   const consumed = provisionConsumedToday(game, person, resource);
@@ -337,7 +338,7 @@ export function DayCloseDialog({
       </section>
 
             <p className="character-rule-note">
-        O sistema consome primeiro as provisões com maior risco de perda: unidades abertas e recursos que vencem antes. Se alguém ficar sem comida ou água, a privação será registrada no diário, mas nenhuma consequência mecânica nova será aplicada automaticamente.
+        O sistema usa primeiro provisões abertas ou próximas do vencimento. Cada sobrevivente marca +1 Estresse por não comer e +1 por não beber no dia: ambas as faltas somam +2, até o limite de 6 Estresse. Voltar a consumir não remove Estresse. PNJs e moradores, que não têm trilha de Estresse, mantêm o registro de faltas.
       </p>
 
       {game.activities?.some(a => a.day === game.day && a.status === "running") && <p className="day-close-warning">Há atividades em andamento. Conclua ou interrompa essas atividades na linha do tempo antes de encerrar o dia.</p>}

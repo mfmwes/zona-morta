@@ -12,6 +12,8 @@ require.extensions['.ts'] = (module, filename) => module._compile(ts.transpileMo
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
 }).outputText, filename);
 const { defaultState, initialSurvivor, content } = require('../lib/game.ts');
+const { applySessionCommand } = require('../lib/campaign-sessions.ts');
+const { closeDayWithPlan } = require('../lib/survival.ts');
 const { createConflictScene, endConflictScene } = require('../lib/conflict.ts');
 const { prepareLocation } = require('../lib/hex-automation.ts');
 const { assignCustomSector } = require('../lib/sectors.ts');
@@ -246,6 +248,13 @@ try {
     const response=await mf.dispatchFetch(origin+checkpointPath,{method:'POST',headers:{...headers(role),'Content-Type':'application/json'},body:JSON.stringify(command)});
     const payload=await response.json();assert.equal(response.status,expected,JSON.stringify(payload));return payload;
   };
+  const sessionBefore=await (await mf.dispatchFetch(origin+path,{headers:headers('master')})).json();
+  const sessionState=structuredClone(sessionBefore.state);applySessionCommand(sessionState,{action:'start',name:'Hospital',summary:'',checkpoint:false});
+  const sessionId=sessionState.sessions[0].id;
+  applySessionCommand(sessionState,{action:'end',name:'',summary:'Resgatar Joana.',checkpoint:false,expectedSessionId:sessionId});
+  const sessionPut=await mf.dispatchFetch(origin+path,{method:'PUT',headers:{...headers('master'),'Content-Type':'application/json'},body:JSON.stringify({revision:sessionBefore.revision,state:sessionState})});assert.equal(sessionPut.status,200,await sessionPut.text());
+  const sessionMaster=await (await mf.dispatchFetch(origin+path,{headers:headers('master')})).json();assert.equal(sessionMaster.state.sessions[0].summary,'Resgatar Joana.');
+  const sessionPlayer=await (await mf.dispatchFetch(origin+path,{headers:headers('player')})).json();assert.equal(sessionPlayer.state.sessions,undefined);
   const checkpointBefore=await (await mf.dispatchFetch(origin+path,{headers:headers('master')})).json();
   const pointCommand={action:'create',id:'runtime-point',name:'Antes da alteração',revision:checkpointBefore.revision};
   assert.equal((await mf.dispatchFetch(origin+checkpointPath,{headers:headers('player')})).status,403);
@@ -259,7 +268,7 @@ try {
   connections.forEach(c=>{c.messages.length=0;});
   const restoredPoint=await checkpointCall({action:'restore',id:'runtime-point',revision:pointLatest.revision});
   await until(()=>connections.every(c=>c.messages.some(m=>m.revision===restoredPoint.revision)),'Restoration must notify both roles');
-  const pointAfter=await (await mf.dispatchFetch(origin+path,{headers:headers('master')})).json();assert.equal(pointAfter.state.noise,checkpointBefore.state.noise);assert.equal(pointAfter.state.campaignId,'test-campaign');assert.ok(pointAfter.revision>pointLatest.revision);
+  const pointAfter=await (await mf.dispatchFetch(origin+path,{headers:headers('master')})).json();assert.equal(pointAfter.state.noise,checkpointBefore.state.noise);assert.equal(pointAfter.state.campaignId,'test-campaign');assert.ok(pointAfter.revision>pointLatest.revision);assert.equal(pointAfter.state.sessions[0].summary,'Resgatar Joana.');
   const safety=await db.prepare("SELECT body FROM campaign_checkpoints WHERE campaign_id=? AND id='before-restore'").bind('test-campaign').first();assert.equal(JSON.parse(safety.body).noise,changedForPoint.noise);
   for(let i=0;i<9;i++)await checkpointCall({action:'create',id:'limit-'+i,name:'Ponto '+i,revision:pointAfter.revision});
   await checkpointCall({action:'create',id:'over-limit',name:'Extra',revision:pointAfter.revision},'master',409);
@@ -269,10 +278,15 @@ try {
   const isolatedPoint=await mf.dispatchFetch(origin+'/api/campaign/checkpoints?campanha=isolated-campaign',{headers:headers('master')});assert.equal(isolatedPoint.status,403);
   assert.equal((await mf.dispatchFetch(origin+checkpointPath,{headers:headers('player')})).status,403);
 
+  const dailyBefore=await (await mf.dispatchFetch(origin+path,{headers:headers('master')})).json();
+  const dailyState=structuredClone(dailyBefore.state);dailyState.activities=[];const dailyActor=dailyState.survivors.find(p=>p.id===actor.id);dailyActor.stress=0;delete dailyActor.foodConsumedDay;delete dailyActor.waterConsumedDay;
+  const close=closeDayWithPlan(dailyState,{expectedDay:dailyState.day,residentsFood:0,residentsWater:0,survivors:dailyState.survivors.map(p=>({survivorId:p.id,food:p.id===actor.id?'none':'other',water:p.id===actor.id?'none':'other'})),npcs:(dailyState.npcs??[]).map(p=>({npcId:p.id,food:'other',water:'other'}))});assert.equal(close.ok,true);assert.equal(dailyActor.stress,2);
+  const dailyPut=await mf.dispatchFetch(origin+path,{method:'PUT',headers:{...headers('master'),'Content-Type':'application/json'},body:JSON.stringify({revision:dailyBefore.revision,state:dailyState})});assert.equal(dailyPut.status,200,await dailyPut.text());
+  const dailyPlayer=await (await mf.dispatchFetch(origin+path,{headers:headers('player')})).json();assert.equal(dailyPlayer.state.survivors[0].stress,2);assert.ok(dailyPlayer.state.log.some(e=>e.kind==='privação'&&/Estresse/.test(e.text)));
   await db.prepare('UPDATE campaign_players SET revoked_at=? WHERE owner_id=?').bind(now,state.campaignId).run();
   assert.equal((await mf.dispatchFetch(origin+path+'&since=3',{headers:headers('player')})).status,403);
   assert.equal(isolatedMessages.length,0);
-  console.log('Runtime passed: live updates, conflict closure, automatic searches, collection while paused and replay, inventory persistence, individual rest confirmation/replay, event guides and parallel outcomes/replay, persisted alarm deadline and private projection, restoration checkpoints/CAS/privacy/limit/recovery and notifications, shelter cancellation and scene deletion/replay, image show/close, campaign isolation, private projection and revoked access.');
+  console.log('Runtime passed: live updates, conflict closure, automatic searches, collection while paused and replay, inventory persistence, individual rest confirmation/replay, event guides and parallel outcomes/replay, persisted alarm deadline and private projection, restoration checkpoints/CAS/privacy/limit/recovery and notifications, session persistence/private summaries/restoration, daily deprivation/player stress, shelter cancellation and scene deletion/replay, image show/close, campaign isolation, private projection and revoked access.');
 } finally {
   connections.forEach(c=>c.socket.close());
   isolatedConnections.forEach(socket=>socket.close());

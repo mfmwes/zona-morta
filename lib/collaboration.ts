@@ -36,6 +36,7 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
   ];
   const visible = structuredClone(game);
   visible.publicPlayerActions = projectPlayerActions(game, survivorId);
+  delete visible.sessions;
   delete visible.playerActions;
   delete visible.presentation;
   delete visible.explorationPreferences;

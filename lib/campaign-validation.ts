@@ -1,3 +1,4 @@
+import { validCampaignSessions } from "./campaign-sessions";
 import { validActivities } from "@/lib/activity-timeline-validation";
 import { validPlayerActionState } from "@/lib/player-actions-types";
 import { validPortraitFrame } from "@/lib/portrait-frame";
@@ -148,6 +149,7 @@ export function validState(value: unknown): value is GameState {
   const shelter = state.shelter as Partial<GameState["shelter"]> | undefined;
   return Number.isInteger(state.day) && state.day! > 0 && state.day! < 100000
     && Number.isInteger(state.minutes) && state.minutes! >= 0 && state.minutes! < 1440
+    && validCampaignSessions(state.sessions)
     && validParallelTime(state.parallelTime, state)
     && validActivities(state.activities, state)
     && state.publicActivities === undefined

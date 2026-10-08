@@ -421,6 +421,7 @@ export type TablePresentation = {
 export type ParallelTimeState = { day: number; survivorMinutes: Record<string, number> };
 
 export type GameState = {
+  sessions?: import("./campaign-sessions").CampaignSession[];
   campaignId: string;
   playerActions?: PlayerActionState;
   publicPlayerActions?: PublicPlayerActions;

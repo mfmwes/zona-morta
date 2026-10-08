@@ -2792,3 +2792,35 @@ test('PV salva com dados legados inalterados e preserva edições paralelas em o
   const stale=structuredClone(game.survivors[0]);game.survivors[0].hp=2;
   assert.equal(collaboration.applyPlayerChange(game,actor,stale,{...stale,hp:3},0,[]),null);
 });
+
+test('privação soma comida e água, repete por dia e não é curada ao voltar a consumir', () => {
+  const g=campaign();g.shelter.residents=0;
+  const [a,b]=g.survivors;
+  const plan=()=>({expectedDay:g.day,residentsFood:0,residentsWater:0,survivors:[{survivorId:a.id,food:'none',water:'none'},{survivorId:b.id,food:'none',water:'other'}],npcs:[]});
+  assert.equal(survival.closeDayWithPlan(g,plan()).ok,true);
+  assert.equal(a.stress,2);assert.equal(b.stress,1);
+  assert.equal(survival.closeDayWithPlan(g,plan()).ok,true);
+  assert.equal(a.stress,4);assert.equal(b.stress,2);
+  a.food=1;a.water=1;b.food=1;
+  survival.consumeDailyProvision(g,a.id,'food');survival.consumeDailyProvision(g,a.id,'water');survival.consumeDailyProvision(g,b.id,'food');
+  const p=plan();p.survivors[1].water='other';
+  assert.equal(survival.closeDayWithPlan(g,p).ok,true);
+  assert.equal(a.stress,4);assert.equal(b.stress,2);
+  assert.equal(g.log.filter(e=>e.kind==='privação'&&e.actorId===a.id).length,4);
+  assert.equal(survival.closeDayWithPlan(g,p).ok,false);assert.equal(a.stress,4);
+});
+
+test('privação respeita seis espaços, não cria dano ou penalidade oculta em PNJs', () => {
+  const g=campaign();g.shelter.residents=0;const a=g.survivors[0];a.stress=5;
+  g.npcs=[{id:'npc-privado',name:'Joana',active:true,hex:'0,0',status:'Bem',infection:'Saudável',disposition:'Aliado',skills:[],notes:'',description:'',role:'Moradora'}];
+  const hp=a.hp;const p={expectedDay:g.day,residentsFood:0,residentsWater:0,survivors:g.survivors.map(s=>({survivorId:s.id,food:'none',water:'none'})),npcs:[{npcId:'npc-privado',food:'none',water:'none'}]};
+  assert.equal(survival.closeDayWithPlan(g,p).ok,true);assert.equal(a.stress,6);assert.equal(a.hp,hp);assert.equal(g.npcs[0].stress,undefined);
+  assert.ok(g.log.some(e=>e.kind==='privação'&&/6 → 6/.test(e.text)));
+});
+
+test('alimentação pessoal e compartilhada no encerramento evitam privação sem cobrança dupla', () => {
+ const g=campaign();g.shelter.residents=0;g.shelter.hex='0,0';g.shelter.food=1;g.shelter.water=1;
+ const [a,b]=g.survivors;a.food=1;a.water=1;survival.consumeDailyProvision(g,a.id,'food');
+ const p={expectedDay:g.day,residentsFood:0,residentsWater:0,survivors:[{survivorId:a.id,food:'personal',water:'personal'},{survivorId:b.id,food:'shared',water:'shared'}],npcs:[]};
+ assert.equal(survival.closeDayWithPlan(g,p).ok,true);assert.equal(a.stress,0);assert.equal(b.stress,0);assert.equal(a.food,0);assert.equal(g.shelter.food,0);assert.equal(g.shelter.water,0);
+});
