@@ -495,16 +495,9 @@
         "noise": 0
       },
       "failure": {
-        "summary": "Expor-se para chamar atenção deixa o interlocutor Vulnerável até voltar à cobertura.",
-        "continuity": "A falha muda a situação imediatamente. Expor-se para chamar atenção deixa o interlocutor Vulnerável até voltar à cobertura.",
-        "noise": 0,
-        "mechanical": {
-          "condition": {
-            "name": "Vulnerável",
-            "effect": "Rolagens contra este personagem têm vantagem enquanto ele permanecer exposto ao perigo descrito.",
-            "clear": "Alcançar a cobertura indicada ou remover a causa da exposição com uma ação plausível."
-          }
-        }
+        "summary": "O sinal não recebe resposta; a observadora muda de posição e o aviso sobre a próxima ameaça fica indisponível nesta visita. O grupo permanece na cobertura.",
+        "continuity": "A falha muda a situação imediatamente. O sinal não recebe resposta; a observadora muda de posição e o aviso sobre a próxima ameaça fica indisponível nesta visita. O grupo permanece na cobertura.",
+        "noise": 0
       },
       "withdrawn": {
         "summary": "Os sinais cessam quando o companheiro chega.",
@@ -517,7 +510,7 @@
       "Janela de observação. Um clarão se repete no alto de uma construção distante, sempre voltado para a mesma direção."
     ],
     "format": "brief",
-    "setup": "Uma pessoa usa um espelho para orientar um companheiro que retorna. Selecione uma construção existente e um ponto visível; não revele interiores ou ocupantes ocultos. Oferta e consequência definidas: A pessoa indica um ponto externo de encontro junto à construção. Responder ao espelho sem sair da cobertura; a observadora oferece aviso sobre a próxima entrada de uma ameaça na rua. Custo antes da decisão: Responder ao espelho sem sair da cobertura; a observadora oferece aviso sobre a próxima entrada de uma ameaça na rua. Custo: Ela pede que o grupo mantenha alguém vigiando por 10 minutos antes de dar o aviso. Se a ação falhar: Expor-se para chamar atenção deixa o interlocutor Vulnerável até voltar à cobertura.",
+    "setup": "Uma pessoa usa um espelho para orientar um companheiro que retorna. Selecione uma construção existente e um ponto visível; não revele interiores ou ocupantes ocultos. Oferta e consequência definidas: A pessoa indica um ponto externo de encontro junto à construção. Responder ao espelho sem sair da cobertura; a observadora oferece aviso sobre a próxima entrada de uma ameaça na rua. Custo antes da decisão: Responder ao espelho sem sair da cobertura; a observadora oferece aviso sobre a próxima entrada de uma ameaça na rua. Custo: Ela pede que o grupo mantenha alguém vigiando por 10 minutos antes de dar o aviso. Se a ação falhar: O sinal não recebe resposta; a observadora muda de posição e o aviso sobre a próxima ameaça fica indisponível nesta visita. O grupo permanece na cobertura.",
     "ignored": "Os sinais cessam quando o companheiro chega.",
     "returnVisit": "Uma marca no ponto de encontro permite procurar a pessoa depois.",
     "observation": "Observar localiza a construção e distingue um padrão intencional.",
@@ -2297,12 +2290,10 @@
         "noise": 0
       },
       "failure": {
-        "summary": "Cruzar a área aquecida causa queimadura: marcar 2 PV após decidir sobre Armadura; recuar para fora da linha.",
-        "continuity": "A falha muda a situação imediatamente. Cruzar a área aquecida causa queimadura: marcar 2 PV após decidir sobre Armadura; recuar para fora da linha.",
+        "summary": "O trabalhador não consegue interromper o aquecimento. A passagem continua interditada; esperar mais 5 minutos permite conferir uma nova pausa sem atravessar a linha perigosa.",
+        "continuity": "A falha muda a situação imediatamente. O trabalhador não consegue interromper o aquecimento. A passagem continua interditada; esperar mais 5 minutos permite conferir uma nova pausa sem atravessar a linha perigosa.",
         "noise": 0,
-        "mechanical": {
-          "hpMarks": 2
-        }
+        "extraMinutes": 5
       },
       "withdrawn": {
         "summary": "A fumaça cessa ao concluir o trabalho; a oficina continua no local.",
@@ -2315,7 +2306,7 @@
       "Linha no horizonte. Uma coluna fina de fumaça sobe atrás de uma construção e muda de intensidade em intervalos."
     ],
     "format": "brief",
-    "setup": "Uma oficina aquece peças numa área externa; não é incêndio confirmado. O responsável teme atrair saqueadores e pede que observadores se identifiquem. Oferta e consequência definidas: O responsável explica o trabalho e delimita a área aquecida. Avisar o trabalhador antes de cruzar a linha aquecida; ele desliga o equipamento por 10 minutos para passagem. Custo antes da decisão: Avisar o trabalhador antes de cruzar a linha aquecida; ele desliga o equipamento por 10 minutos para passagem. Custo: O trabalhador cobra ajuda para recolher o cabo por 15 minutos antes de desligar. Se a ação falhar: Cruzar a área aquecida causa queimadura: marcar 2 PV após decidir sobre Armadura; recuar para fora da linha.",
+    "setup": "Uma oficina aquece peças numa área externa; não é incêndio confirmado. O responsável teme atrair saqueadores e pede que observadores se identifiquem. Oferta e consequência definidas: O responsável explica o trabalho e delimita a área aquecida. Avisar o trabalhador antes de cruzar a linha aquecida; ele desliga o equipamento por 10 minutos para passagem. Custo antes da decisão: Avisar o trabalhador antes de cruzar a linha aquecida; ele desliga o equipamento por 10 minutos para passagem. Custo: O trabalhador cobra ajuda para recolher o cabo por 15 minutos antes de desligar. Se a ação falhar: O trabalhador não consegue interromper o aquecimento. A passagem continua interditada; esperar mais 5 minutos permite conferir uma nova pausa sem atravessar a linha perigosa.",
     "ignored": "A fumaça cessa ao concluir o trabalho; a oficina continua no local.",
     "returnVisit": "Procure marcas de uso e o responsável, sem interpretar ausência de fumaça como abandono.",
     "observation": "O ritmo e a ausência de propagação sugerem trabalho controlado, sem provar a origem.",
@@ -5851,8 +5842,8 @@
         }
       },
       "failure": {
-        "summary": "Tocar o cabo energizado causa descarga: marcar 2 PV após decidir sobre Armadura apropriada e ficar Vulnerável até um aliado afastar o cabo sem contato.",
-        "continuity": "A falha muda a situação imediatamente. Tocar o cabo energizado causa descarga: marcar 2 PV após decidir sobre Armadura apropriada e ficar Vulnerável até um aliado afastar o cabo sem contato.",
+        "summary": "O circuito conserva carga residual durante o isolamento e a ferramenta desliza: marcar 2 PV após decidir sobre Armadura apropriada e ficar Vulnerável até um aliado afastar o cabo sem contato.",
+        "continuity": "A falha muda a situação imediatamente. O circuito conserva carga residual durante o isolamento e a ferramenta desliza: marcar 2 PV após decidir sobre Armadura apropriada e ficar Vulnerável até um aliado afastar o cabo sem contato.",
         "noise": 0,
         "mechanical": {
           "hpMarks": 2,
@@ -5874,7 +5865,7 @@
       "Fiação baixa. Um cabo baixo oscila entre dois apoios; uma luz de manutenção ainda está acesa."
     ],
     "format": "scene",
-    "setup": "O cabo pertence a um circuito local. O ponto de desligamento pode ser localizado de fora. Não use ausência de faísca ou sucesso social para atestar segurança elétrica. Oferta e consequência definidas: O circuito é isolado e a condição verificada permite delimitar a passagem. Desligar o circuito antes de erguer a fiação com ferramenta isolada; liberar a faixa local. Custo antes da decisão: Desligar o circuito antes de erguer a fiação com ferramenta isolada; liberar a faixa local. Custo: Quem opera sofre descarga residual: marcar 1 PV após decidir sobre Armadura apropriada; a passagem é isolada. Se a ação falhar: Tocar o cabo energizado causa descarga: marcar 2 PV após decidir sobre Armadura apropriada e ficar Vulnerável até um aliado afastar o cabo sem contato.",
+    "setup": "O cabo pertence a um circuito local. O ponto de desligamento pode ser localizado de fora. Não use ausência de faísca ou sucesso social para atestar segurança elétrica. Oferta e consequência definidas: O circuito é isolado e a condição verificada permite delimitar a passagem. Desligar o circuito antes de erguer a fiação com ferramenta isolada; liberar a faixa local. Custo antes da decisão: Desligar o circuito antes de erguer a fiação com ferramenta isolada; liberar a faixa local. Custo: Quem opera sofre descarga residual: marcar 1 PV após decidir sobre Armadura apropriada; a passagem é isolada. Se a ação falhar: O circuito conserva carga residual durante o isolamento e a ferramenta desliza: marcar 2 PV após decidir sobre Armadura apropriada e ficar Vulnerável até um aliado afastar o cabo sem contato.",
     "ignored": "O cabo continua restringindo a passagem.",
     "returnVisit": "Procure o estado do controle e o responsável antes de retirar a sinalização.",
     "observation": "O cabo e a placa identificam o circuito e o acesso externo ao desligamento.",
@@ -9299,8 +9290,8 @@
         }
       },
       "failure": {
-        "summary": "Tocar o circuito energizado causa descarga: marcar 2 PV após decidir sobre Armadura apropriada; o painel fica inoperante.",
-        "continuity": "A falha muda a situação imediatamente. Tocar o circuito energizado causa descarga: marcar 2 PV após decidir sobre Armadura apropriada; o painel fica inoperante.",
+        "summary": "Ao substituir o fusível, a carga residual rompe o isolamento: marcar 2 PV após decidir sobre Armadura apropriada; o painel fica inoperante.",
+        "continuity": "A falha muda a situação imediatamente. Ao substituir o fusível, a carga residual rompe o isolamento: marcar 2 PV após decidir sobre Armadura apropriada; o painel fica inoperante.",
         "noise": 0,
         "mechanical": {
           "hpMarks": 2
@@ -9317,7 +9308,7 @@
       "Painel de energia. Um painel identifica dois circuitos; um alimenta a luz externa e outro permanece desligado."
     ],
     "format": "scene",
-    "setup": "O circuito desligado alimenta uma campainha de contato. Acionar não cria energia armazenada. Defina alimentação existente e efeito observável antes da escolha. Oferta e consequência definidas: O circuito responde e confirma quais pontos dependem dele. Desligar o circuito e substituir o fusível com peça compatível; manter a iluminação deste cômodo pelo restante da cena. Custo antes da decisão: Desligar o circuito e substituir o fusível com peça compatível; manter a iluminação deste cômodo pelo restante da cena. Custo: Quem segura a tampa marca 1 Estresse; a luz só funciona por 10 minutos antes de nova revisão. Se a ação falhar: Tocar o circuito energizado causa descarga: marcar 2 PV após decidir sobre Armadura apropriada; o painel fica inoperante.",
+    "setup": "O circuito desligado alimenta uma campainha de contato. Acionar não cria energia armazenada. Defina alimentação existente e efeito observável antes da escolha. Oferta e consequência definidas: O circuito responde e confirma quais pontos dependem dele. Desligar o circuito e substituir o fusível com peça compatível; manter a iluminação deste cômodo pelo restante da cena. Custo antes da decisão: Desligar o circuito e substituir o fusível com peça compatível; manter a iluminação deste cômodo pelo restante da cena. Custo: Quem segura a tampa marca 1 Estresse; a luz só funciona por 10 minutos antes de nova revisão. Se a ação falhar: Ao substituir o fusível, a carga residual rompe o isolamento: marcar 2 PV após decidir sobre Armadura apropriada; o painel fica inoperante.",
     "ignored": "O painel permanece no estado atual enquanto houver alimentação.",
     "returnVisit": "Confira alimentação e resposta; não trate acionamento antigo como energia disponível.",
     "observation": "As etiquetas distinguem iluminação e campainha, sem confirmar funcionamento.",
@@ -10207,18 +10198,9 @@
         "noise": 0
       },
       "failure": {
-        "summary": "Erguer sem capacidade faz o objeto cair: marcar 2 PV no operador após decidir sobre Armadura; ele fica Restrito até aliviarem o peso.",
-        "continuity": "A falha muda a situação imediatamente. Erguer sem capacidade faz o objeto cair: marcar 2 PV no operador após decidir sobre Armadura; ele fica Restrito até aliviarem o peso.",
-        "noise": 0,
-        "mechanical": {
-          "hpMarks": 2,
-          "condition": {
-            "name": "Restrito",
-            "effect": "Não pode sair do ponto de aprisionamento nem executar ações que exijam deslocamento enquanto estiver preso.",
-            "clear": "Uma ação plausível para soltar-se ou ajuda de um aliado. Só pedir teste quando houver risco ou pressão.",
-            "preventsMovement": true
-          }
-        }
+        "summary": "Uma cinta não suporta a preparação. O objeto permanece apoiado no local e não pode ser retirado até trocar a cinta; ninguém o ergue sem capacidade.",
+        "continuity": "A falha muda a situação imediatamente. Uma cinta não suporta a preparação. O objeto permanece apoiado no local e não pode ser retirado até trocar a cinta; ninguém o ergue sem capacidade.",
+        "noise": 0
       },
       "withdrawn": {
         "summary": "O objeto permanece sob a posse e no lugar estabelecidos.",
@@ -10231,7 +10213,7 @@
       "Objeto pesado visível. Um objeto pesado está visível junto a uma saída; o piso tem marcas de uma tentativa de arrasto."
     ],
     "format": "brief",
-    "setup": "Escolha um objeto existente e declare peso, posse e acesso. Um transporte compatível permite planejar; retirar é ação separada. Não trate teste de Força como cálculo de um plano. Oferta e consequência definidas: O plano define transporte e percurso; o objeto só é retirado quando a ação ocorrer. Preparar cintas, duas pessoas e percurso até a cobertura; liberar o objeto para retirada quando houver capacidade real. Custo antes da decisão: Cada carregador precisa deixar um objeto real na cobertura para liberar capacidade; registrar quais objetos e onde. Se a ação falhar: Erguer sem capacidade faz o objeto cair: marcar 2 PV no operador após decidir sobre Armadura; ele fica Restrito até aliviarem o peso.",
+    "setup": "Escolha um objeto existente e declare peso, posse e acesso. Um transporte compatível permite planejar; retirar é ação separada. Não trate teste de Força como cálculo de um plano. Oferta e consequência definidas: O plano define transporte e percurso; o objeto só é retirado quando a ação ocorrer. Preparar cintas, duas pessoas e percurso até a cobertura; liberar o objeto para retirada quando houver capacidade real. Custo antes da decisão: Cada carregador precisa deixar um objeto real na cobertura para liberar capacidade; registrar quais objetos e onde. Se a ação falhar: Uma cinta não suporta a preparação. O objeto permanece apoiado no local e não pode ser retirado até trocar a cinta; ninguém o ergue sem capacidade.",
     "ignored": "O objeto permanece sob a posse e no lugar estabelecidos.",
     "returnVisit": "Confira posição, autorização e disponibilidade do transporte antes de executar.",
     "observation": "As marcas e a medida do acesso mostram necessidades de transporte e espaço.",
@@ -10469,17 +10451,9 @@
         }
       },
       "failure": {
-        "summary": "Abrir dentro do alcance permite um agarrão: o operador fica Restrito até soltar-se com ação plausível ou ajuda; mordida exige uma nova ação anunciada.",
-        "continuity": "A falha muda a situação imediatamente. Abrir dentro do alcance permite um agarrão: o operador fica Restrito até soltar-se com ação plausível ou ajuda; mordida exige uma nova ação anunciada.",
-        "noise": 1,
-        "mechanical": {
-          "condition": {
-            "name": "Restrito",
-            "effect": "Não pode sair do ponto de aprisionamento nem executar ações que exijam deslocamento enquanto estiver preso.",
-            "clear": "Uma ação plausível para soltar-se ou ajuda de um aliado. Só pedir teste quando houver risco ou pressão.",
-            "preventsMovement": true
-          }
-        }
+        "summary": "A resposta não permite identificar o ocupante e a tranca não libera a abertura. A retirada fica pendente até obter confirmação por outra entrada; quem bate permanece fora do alcance.",
+        "continuity": "A falha muda a situação imediatamente. A resposta não permite identificar o ocupante e a tranca não libera a abertura. A retirada fica pendente até obter confirmação por outra entrada; quem bate permanece fora do alcance.",
+        "noise": 1
       },
       "withdrawn": {
         "summary": "A pressão continua conforme o estado da barreira e o prazo anunciado.",
@@ -10492,7 +10466,7 @@
       "Arranhões na porta. Arranhões recentes marcam a porta; um ruído se repete do outro lado na altura da maçaneta."
     ],
     "format": "brief",
-    "setup": "Um infectado já compatível com o local pressiona a porta sem alcançar o lado externo. Declare resistência da barreira e sinais; não cobre encontro adicional se este descreve um gatilho já aplicado. Oferta e consequência definidas: A resposta permite identificar o movimento e seu alcance local. Bater de fora do alcance e ouvir a resposta; se for uma pessoa, oferecer retirada pela abertura e ganhar um aliado que conhece a tranca. Custo antes da decisão: Bater de fora do alcance e ouvir a resposta; se for uma pessoa, oferecer retirada pela abertura e ganhar um aliado que conhece a tranca. Custo: A abertura deixa quem segura a porta Vulnerável até colocar a trava ou retornar à cobertura. Se a ação falhar: Abrir dentro do alcance permite um agarrão: o operador fica Restrito até soltar-se com ação plausível ou ajuda; mordida exige uma nova ação anunciada.",
+    "setup": "Um infectado já compatível com o local pressiona a porta sem alcançar o lado externo. Declare resistência da barreira e sinais; não cobre encontro adicional se este descreve um gatilho já aplicado. Oferta e consequência definidas: A resposta permite identificar o movimento e seu alcance local. Bater de fora do alcance e ouvir a resposta; se for uma pessoa, oferecer retirada pela abertura e ganhar um aliado que conhece a tranca. Custo antes da decisão: Bater de fora do alcance e ouvir a resposta; se for uma pessoa, oferecer retirada pela abertura e ganhar um aliado que conhece a tranca. Custo: A abertura deixa quem segura a porta Vulnerável até colocar a trava ou retornar à cobertura. Se a ação falhar: A resposta não permite identificar o ocupante e a tranca não libera a abertura. A retirada fica pendente até obter confirmação por outra entrada; quem bate permanece fora do alcance.",
     "ignored": "A pressão continua conforme o estado da barreira e o prazo anunciado.",
     "returnVisit": "Confira porta e movimento; o último alcance observado pode ter mudado.",
     "observation": "Os sinais localizam movimento e mostram que a porta ainda separa os lados.",
@@ -11106,8 +11080,8 @@
         }
       },
       "failure": {
-        "summary": "O infectado segura o braço do operador: ficar Restrito; um aliado pode puxá-lo, usando ação e teste somente sob risco.",
-        "continuity": "A falha muda a situação imediatamente. O infectado segura o braço do operador: ficar Restrito; um aliado pode puxá-lo, usando ação e teste somente sob risco.",
+        "summary": "A corrente arrebenta durante a travessia e o infectado alcança o operador: ficar Restrito; um aliado pode puxá-lo, usando ação e teste somente sob risco.",
+        "continuity": "A falha muda a situação imediatamente. A corrente arrebenta durante a travessia e o infectado alcança o operador: ficar Restrito; um aliado pode puxá-lo, usando ação e teste somente sob risco.",
         "noise": 0,
         "mechanical": {
           "condition": {
@@ -11129,7 +11103,7 @@
       "Infectado preso. Um infectado está preso por uma peça de metal; o braço ainda alcança parte da passagem."
     ],
     "format": "scene",
-    "setup": "Declare alcance e firmeza da retenção. Não há soltura automática nem ferimento por tabela. A faixa externa permite passagem somente com largura compatível com a carga. Oferta e consequência definidas: O grupo atravessa o trecho local fora do alcance. Amarrar a corrente fora do alcance do infectado e passar um de cada vez; manter distância segura durante a travessia. Custo antes da decisão: Amarrar a corrente fora do alcance do infectado e passar um de cada vez; manter distância segura durante a travessia. Custo: Quem prende a corrente marca 1 Estresse e deve deixar a corda até o fim da cena. Se a ação falhar: O infectado segura o braço do operador: ficar Restrito; um aliado pode puxá-lo, usando ação e teste somente sob risco.",
+    "setup": "Declare alcance e firmeza da retenção. Não há soltura automática nem ferimento por tabela. A faixa externa permite passagem somente com largura compatível com a carga. Oferta e consequência definidas: O grupo atravessa o trecho local fora do alcance. Amarrar a corrente fora do alcance do infectado e passar um de cada vez; manter distância segura durante a travessia. Custo antes da decisão: Amarrar a corrente fora do alcance do infectado e passar um de cada vez; manter distância segura durante a travessia. Custo: Quem prende a corrente marca 1 Estresse e deve deixar a corda até o fim da cena. Se a ação falhar: A corrente arrebenta durante a travessia e o infectado alcança o operador: ficar Restrito; um aliado pode puxá-lo, usando ação e teste somente sob risco.",
     "ignored": "O infectado permanece preso enquanto a retenção estabelecida resistir.",
     "returnVisit": "Reconfirme firmeza e alcance antes de usar a faixa externa.",
     "observation": "Observar delimita alcance e faixa disponível.",
@@ -12201,16 +12175,10 @@
         "extraMinutes": 15
       },
       "failure": {
-        "summary": "O observador é alcançado pelo movimento atraído: ficar Vulnerável até recuar à cobertura; o trecho deixa de estar livre.",
-        "continuity": "A falha muda a situação imediatamente. O observador é alcançado pelo movimento atraído: ficar Vulnerável até recuar à cobertura; o trecho deixa de estar livre.",
+        "summary": "O movimento atraído fecha o contorno observado. Não há janela segura para cruzar; o grupo precisa esperar mais 5 minutos para conferir outra pausa ou escolher uma rota diferente.",
+        "continuity": "A falha muda a situação imediatamente. O movimento atraído fecha o contorno observado. Não há janela segura para cruzar; o grupo precisa esperar mais 5 minutos para conferir outra pausa ou escolher uma rota diferente.",
         "noise": 0,
-        "mechanical": {
-          "condition": {
-            "name": "Vulnerável",
-            "effect": "Rolagens contra este personagem têm vantagem enquanto ele permanecer exposto ao perigo descrito.",
-            "clear": "Alcançar a cobertura indicada ou remover a causa da exposição com uma ação plausível."
-          }
-        }
+        "extraMinutes": 5
       },
       "withdrawn": {
         "summary": "O movimento segue o estímulo conforme a cena; o alarme pode cessar pela causa definida.",
@@ -12223,7 +12191,7 @@
       "Alarme distante. Um alarme distante atrai movimento para outra rua; a direção é perceptível entre os prédios."
     ],
     "format": "brief",
-    "setup": "O alarme já ocorreu por um gatilho. Use os infectados ou pessoas estabelecidos; não acrescente outro encontro. Esperar cinco minutos permite reavaliar o trecho livre. Oferta e consequência definidas: O trecho fora do foco fica confirmado para a posição atual. Observar o foco da sirene e escolher um contorno local fora de sua direção; confirmar uma janela de 5 minutos para cruzar. Custo antes da decisão: Observar o foco da sirene e escolher um contorno local fora de sua direção; confirmar uma janela de 5 minutos para cruzar. Custo: A travessia exige 15 minutos adicionais e quem fica observando marca 1 Estresse. Se a ação falhar: O observador é alcançado pelo movimento atraído: ficar Vulnerável até recuar à cobertura; o trecho deixa de estar livre.",
+    "setup": "O alarme já ocorreu por um gatilho. Use os infectados ou pessoas estabelecidos; não acrescente outro encontro. Esperar cinco minutos permite reavaliar o trecho livre. Oferta e consequência definidas: O trecho fora do foco fica confirmado para a posição atual. Observar o foco da sirene e escolher um contorno local fora de sua direção; confirmar uma janela de 5 minutos para cruzar. Custo antes da decisão: Observar o foco da sirene e escolher um contorno local fora de sua direção; confirmar uma janela de 5 minutos para cruzar. Custo: A travessia exige 15 minutos adicionais e quem fica observando marca 1 Estresse. Se a ação falhar: O movimento atraído fecha o contorno observado. Não há janela segura para cruzar; o grupo precisa esperar mais 5 minutos para conferir outra pausa ou escolher uma rota diferente.",
     "ignored": "O movimento segue o estímulo conforme a cena; o alarme pode cessar pela causa definida.",
     "returnVisit": "Confira som e posições atuais antes de usar a rota anotada.",
     "observation": "Observar confirma direção do som e parte do movimento, sem identificar toda a origem.",
@@ -13008,16 +12976,10 @@
         "extraMinutes": 5
       },
       "failure": {
-        "summary": "Seguir o eco ao terreno aberto deixa o observador Vulnerável até voltar à cobertura; a origem continua incerta.",
-        "continuity": "A falha muda a situação imediatamente. Seguir o eco ao terreno aberto deixa o observador Vulnerável até voltar à cobertura; a origem continua incerta.",
+        "summary": "As duas posições protegidas recebem ecos contraditórios. A origem continua incerta; reunir novamente os observadores exige mais 5 minutos antes de tentar outra orientação.",
+        "continuity": "A falha muda a situação imediatamente. As duas posições protegidas recebem ecos contraditórios. A origem continua incerta; reunir novamente os observadores exige mais 5 minutos antes de tentar outra orientação.",
         "noise": 0,
-        "mechanical": {
-          "condition": {
-            "name": "Vulnerável",
-            "effect": "Rolagens contra este personagem têm vantagem enquanto ele permanecer exposto ao perigo descrito.",
-            "clear": "Alcançar a cobertura indicada ou remover a causa da exposição com uma ação plausível."
-          }
-        }
+        "extraMinutes": 5
       },
       "withdrawn": {
         "summary": "O eco continua ou cessa conforme o movimento real da chapa.",
@@ -13030,7 +12992,7 @@
       "Barulho refletido. Um som reflete entre superfícies e parece vir de duas direções; a segunda repetição é mais fraca."
     ],
     "format": "brief",
-    "setup": "Uma chapa móvel produz o eco. Defina fonte existente e pontos de escuta. O grupo pode esperar cinco minutos por nova repetição; não confirme direção sem referência suficiente. Oferta e consequência definidas: A direção real e a chapa de origem são localizadas. Usar duas posições protegidas para localizar a chapa que reflete o som; obter vantagem uma vez ao orientar-se por esse som nesta cena. Custo antes da decisão: Usar duas posições protegidas para localizar a chapa que reflete o som; obter vantagem uma vez ao orientar-se por esse som nesta cena. Custo: O observador marca 1 Estresse e precisa de 10 minutos para repetir a escuta. Se a ação falhar: Seguir o eco ao terreno aberto deixa o observador Vulnerável até voltar à cobertura; a origem continua incerta.",
+    "setup": "Uma chapa móvel produz o eco. Defina fonte existente e pontos de escuta. O grupo pode esperar cinco minutos por nova repetição; não confirme direção sem referência suficiente. Oferta e consequência definidas: A direção real e a chapa de origem são localizadas. Usar duas posições protegidas para localizar a chapa que reflete o som; obter vantagem uma vez ao orientar-se por esse som nesta cena. Custo antes da decisão: Usar duas posições protegidas para localizar a chapa que reflete o som; obter vantagem uma vez ao orientar-se por esse som nesta cena. Custo: O observador marca 1 Estresse e precisa de 10 minutos para repetir a escuta. Se a ação falhar: As duas posições protegidas recebem ecos contraditórios. A origem continua incerta; reunir novamente os observadores exige mais 5 minutos antes de tentar outra orientação.",
     "ignored": "O eco continua ou cessa conforme o movimento real da chapa.",
     "returnVisit": "Confira novos sons e mudanças do ambiente antes de repetir a localização.",
     "observation": "Comparar reflexos delimita duas direções possíveis, sem localizar a fonte.",

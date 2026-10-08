@@ -119,3 +119,12 @@ test('dano anunciado nos cem desfechos corresponde ao efeito sugerido e não há
   if(m.condition)assert.ok(outcome.summary.toLocaleLowerCase('pt-BR').includes(m.condition.name==='Restrito'?'restrit':m.condition.name.toLocaleLowerCase('pt-BR')),label);
  }
 });
+
+test('falhar ao sinalizar da cobertura, esperar uma pausa ou preparar retirada não presume exposição ou levantamento inseguro',()=>{
+ const guides=require('../lib/event-guide-definitions.json');
+ for(const roll of [4,18,79,81,94,100]){
+  const fail=guides.find(g=>g.roll===roll).outcomes.failure;
+  assert.equal(fail.mechanical?.hpMarks??0,0,`Evento ${roll}`);
+  assert.equal(fail.mechanical?.condition,undefined,`Evento ${roll}`);
+ }
+});
