@@ -29,3 +29,21 @@ O navegador remoto recusou a conexão com o ambiente local (ERR_CONNECTION_REFUS
 1. Validar as telas em desktop e celular, temas claro/escuro e zoom de 200%, observando rolagem, sobreposição e acesso aos botões de confirmação.
 2. Testar uma sessão real com mestre e jogadores para medir quantas etapas são necessárias para localizar um evento, coletar um achado, preparar comida, descansar e retomar a sessão.
 3. Com evidência desses testes, ajustar os formulários extensos de mapa/cena; preservar as ferramentas atuais até identificar etapas ou controles que realmente atrapalhem.
+
+
+## Revisão da interface de conflito
+
+A captura mostrou cartões de ameaças esticados, grandes espaços vazios ao abrir habilidades, nomes cortados na rolagem interna e indicadores com rótulos ocultos em cartões estreitos.
+
+| Prioridade | Problema | Ajuste |
+| --- | --- | --- |
+| P1 | Abrir uma habilidade aumentava a altura dos cartões vizinhos e distribuía espaço entre os blocos. | Grade alinhada ao topo, cartões com altura natural e conteúdo alinhado ao início. |
+| P1 | Rolagem dentro da lista escondia o cabeçalho do grupo. | Lista acompanha a rolagem da página, sem altura máxima ou rolagem própria. |
+| P1 | Dificuldade e limiares ficavam sem rótulos; PV podiam ser confundidos com pontos restantes. | Indicadores em duas colunas com rótulos sempre visíveis, números maiores e indicação explícita de recursos marcados. Limiares também completos no nome acessível. |
+| P1 | Consultar habilidades afastava os botões de ação. | Atacar, Spotlight, derrotar/reativar e remover aparecem antes das seções de consulta. Condições atuais ficam visíveis mesmo com o editor recolhido. |
+| P1 | Pedido de Spotlight só aparecia na trilha e na lista acima da equipe. | Cartão do sobrevivente mostra “Pediu Spotlight” e a ação “Dar Spotlight”; concessão utiliza a mesma regra existente e remove o pedido. |
+| P2 | Botões pequenos e nomes truncados dificultavam a operação. | Ações e resumos com altura mínima de 44px, nomes com quebra de linha, foco visível nos resumos e identificação acessível ao remover condições. |
+
+Não muda regras de ataque, dano, condições, derrota, Spotlight, projeção privada ou isolamento da prévia. Os testes de componentes exercitam concessão do pedido, derrota por PV, filtros, reativação, prioridade das ações e descrições dos indicadores. A correção de layout ainda precisa de validação visual no navegador: o ambiente local não é acessível pelo navegador remoto.
+
+Validação desta etapa: 493 testes passaram; verificação de tipos, compilação e regressão HTTP/D1/WebSocket passaram. O lint terminou sem erros, mantendo os 41 avisos existentes.

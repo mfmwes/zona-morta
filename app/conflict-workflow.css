@@ -108,3 +108,134 @@
   .conflict-filter-buttons > button { flex: 1 1 auto; }
   .conflict-pending-summary li { display: grid; }
 }
+
+/* Cartões têm altura natural: consultar uma habilidade não estica os vizinhos. */
+.conflict-threat-groups {
+  max-height: none;
+  overflow: visible;
+  padding-right: 0;
+  align-content: start;
+}
+.conflict-threat-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  align-items: start;
+  gap: 12px;
+  padding: 12px;
+}
+.conflict-threat--compact {
+  align-self: start;
+  align-content: start;
+  grid-auto-rows: auto;
+  gap: 10px;
+  padding: 12px;
+}
+.conflict-threat--compact .conflict-threat-heading {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+.conflict-threat--compact .conflict-threat-tags {
+  grid-column: 2;
+  justify-content: flex-start;
+}
+.conflict-threat-identity b,
+.conflict-threat-group-heading b {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-size: .9rem;
+}
+.conflict-threat-identity small,
+.conflict-threat-group-heading small,
+.conflict-threat-group-count small,
+.conflict-threat-group-count em {
+  font-size: .7rem;
+}
+.conflict-threat--compact .conflict-threat-stats {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.conflict-threat--compact .conflict-threat-stats > span {
+  min-height: 60px;
+  padding: 8px;
+  align-content: start;
+}
+.conflict-threat--compact .conflict-threat-stats > span:nth-child(2) { border-right: 0; }
+.conflict-threat--compact .conflict-threat-stats > span:nth-child(-n+2) { border-bottom: 1px solid var(--border); }
+.conflict-threat--compact .conflict-stat small > span { display: inline; }
+.conflict-threat--compact .conflict-stat small,
+.conflict-threat--compact .conflict-resource small {
+  white-space: normal;
+  font-size: .72rem;
+  letter-spacing: 0;
+}
+.conflict-threat--compact .conflict-stat b,
+.conflict-threat--compact .conflict-resource b { font-size: .9rem; }
+.conflict-threat--compact .conflict-threat-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.conflict-threat--compact .conflict-threat-actions > button,
+.conflict-person--compact .conflict-person-actions > button {
+  min-height: 44px;
+  padding: 8px;
+  font-size: .78rem;
+}
+.conflict-threat--compact .conflict-threat-actions > button:last-child { grid-column: auto; }
+.conflict-threat--compact .conflict-threat-details {
+  align-self: start;
+  min-height: 0;
+}
+.conflict-threat--compact .conflict-threat-details > summary {
+  min-height: 44px;
+  padding: 8px;
+  color: var(--foreground);
+  font-size: .78rem;
+}
+.conflict-threat-details > summary:focus-visible,
+.conflict-condition-tags button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+.conflict-active-conditions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.conflict-active-conditions li,
+.conflict-request-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 7px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface-soft);
+  color: var(--foreground);
+  font-size: .75rem;
+  overflow-wrap: anywhere;
+}
+.conflict-person-copy .conflict-request-badge {
+  color: var(--foreground);
+  font-size: .75rem;
+}
+.conflict-person--compact .conflict-person-name { flex-wrap: wrap; }
+.conflict-person--compact .conflict-person-name > b {
+  flex-basis: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.conflict-person--compact .conflict-resource small { font-size: .7rem; white-space: normal; }
+.conflict-threat--compact .conflict-resource > span:first-child { flex-wrap: wrap; }
+.conflict-threat-detail-body .conflict-condition-editor input,
+.conflict-threat-detail-body .conflict-condition-editor > button { min-height: 44px; }
+.conflict-person--compact .conflict-person-actions { grid-column: 1 / -1; }
+.conflict-threat--compact .conflict-state-badge,
+.conflict-threat--compact .conflict-focus-badge { font-size: .7rem; }
+@container (max-width: 760px) {
+  .conflict-threat-grid { grid-template-columns: 1fr; padding: 8px; }
+}
+@media (max-width: 600px) {
+  .conflict-threat-grid { grid-template-columns: 1fr; padding: 8px; }
+  .conflict-condition-editor { grid-template-columns: 1fr; }
+  .conflict-condition-editor input { width: 100%; min-width: 0; }
+}

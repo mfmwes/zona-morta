@@ -4,9 +4,9 @@ for(const ext of ['.ts','.tsx'])require.extensions[ext]=(m,p)=>m._compile(ts.tra
 const resolve=Module._resolveFilename;Module._resolveFilename=function(name,parent,...args){return resolve.call(this,name.startsWith('@/')?path.join(__dirname,'..',name.slice(2)):name,parent,...args);};
 let host;
 const hooks={...React,useState(initial){const i=host.cursor++;if(!(i in host.slots))host.slots[i]=typeof initial==='function'?initial():initial;const h=host;return [h.slots[i],v=>h.slots[i]=typeof v==='function'?v(h.slots[i]):v];},useRef(initial){const i=host.cursor++;return host.slots[i]??(host.slots[i]={current:initial});},useMemo(fn){host.cursor++;return fn();},useEffect(fn,deps){const i=host.cursor++;if(!host.deps[i]||deps.some((d,j)=>d!==host.deps[i][j])){host.deps[i]=deps;host.effects.push(fn);}}};
-const names=['campaign-search.tsx','campaign-checkpoints.tsx','campaign-views.tsx'],load=Module._load;
+const names=['campaign-search.tsx','campaign-checkpoints.tsx','campaign-views.tsx','conflict-scene-manager.tsx'],load=Module._load;
 Module._load=function(name,parent,main){if(names.some(n=>parent?.filename.endsWith(n))){if(name==='react')return hooks;if(name==='sonner')return {toast:{success(){},error(){}}};if(name.startsWith('@/components/'))return new Proxy({},{get:(_,key)=>key==='Button'?'button':String(key)});}return load.call(this,name,parent,main);};
-const {CampaignSearch}=require('../components/campaign-search.tsx'),{CampaignCheckpoints}=require('../components/campaign-checkpoints.tsx'),{ShelterPanel}=require('../components/campaign-views.tsx');Module._load=load;
+const {CampaignSearch}=require('../components/campaign-search.tsx'),{CampaignCheckpoints}=require('../components/campaign-checkpoints.tsx'),{ShelterPanel}=require('../components/campaign-views.tsx');const {ConflictSceneManager}=require('../components/conflict-scene-manager.tsx');Module._load=load;
 const {defaultState}=require('../lib/game.ts');
 const text=n=>n==null||typeof n==='boolean'?'':Array.isArray(n)?n.map(text).join(''):typeof n==='object'?text(n.props?.children):String(n);
 function elements(n,tab){if(Array.isArray(n))return n.flatMap(v=>elements(v,tab));if(!n?.props)return [];if(n.type==='Tabs')tab=n.props.value;if(n.type==='TabsContent'&&n.props.value!==tab)return [];return [n,...elements(n.props.children,tab)];}
@@ -49,4 +49,31 @@ test('estoque compartilhado filtra itens reais, limpa a busca e preserva as rest
  v.find(n=>n.type==='Field'&&n.props.label==='Buscar itens compartilhados').props.onChange('agua');assert.equal(elements(v.render()).filter(n=>n.type==='ItemArt').length,1);assert.equal(v.find(n=>n.type==='ItemArt').props.name,'Água engarrafada');
  v.find(n=>n.type==='Pick'&&n.props.label==='Categoria').props.onChange('Ferramentas');assert.match(text(v.render()),/Nenhum item corresponde/);v.find(n=>n.type==='button'&&text(n)==='Limpar filtros').props.onClick();assert.equal(elements(v.render()).filter(n=>n.type==='ItemArt').length,2);assert.deepEqual(g,before);
  const preview=view(ShelterPanel,{game:g,edit(){},playerPreview:true});preview.find(n=>n.type==='Tabs').props.onValueChange('resources');assert.equal(preview.find(n=>n.type==='ItemActionsDialog'),undefined);assert.equal(preview.find(n=>n.type==='AddItemDialog'),undefined);assert.ok(preview.find(n=>n.type==='Field'&&n.props.label==='Buscar itens compartilhados'));
+});
+
+
+test('conflito mantém ações antes da consulta, condições visíveis e concede o pedido ao sobrevivente certo',()=>{
+ const {initialSurvivor,content}=require('../lib/game.ts');
+ const {createConflictScene,addThreatInstances}=require('../lib/conflict.ts');
+ const {threatLibrary}=require('../lib/threats.ts');
+ const g=defaultState();const person=initialSurvivor({name:'Solicitante',origin:content.origins[0].name,past:'',archetype:content.archetypes[0].name,specialty:content.archetypes[0].specialties[0].name,freeExperience:'',techniques:[],attributes:{},primary:'',secondary:'',protection:'',personal:''});
+ g.survivors=[person];g.conflict=createConflictScene({name:'Teste',sceneNumber:1,day:g.day,time:'08:00',survivorIds:[person.id]});
+ g.conflict.spotlightRequests=[person.id];
+ const template=threatLibrary(g.threats).find(t=>t.attack&&t.maxHp!==null);
+ const [threat]=addThreatInstances(g.conflict,template);threat.conditions=['Vulnerável'];
+ const v=view(ConflictSceneManager,{game:g,edit:fn=>fn(g)});
+ const card=v.find(n=>n.props['data-conflict-kind']==='threat');
+ const children=elements(card);
+ assert.ok(children.findIndex(n=>n.props.className==='conflict-threat-actions')<children.findIndex(n=>n.type==='details'));
+ assert.match(text(children.find(n=>n.type==='ul'&&n.props['aria-label']===`Condições de ${threat.name}`)),/Vulnerável/);
+ assert.match(text(v.find(n=>n.props['data-conflict-kind']==='survivor')),/Pediu Spotlight/);
+ v.find(n=>n.type==='button'&&n.props['aria-label']==='Dar Spotlight a Solicitante').props.onClick();
+ assert.deepEqual(g.conflict.spotlight,{kind:'survivor',id:person.id});assert.deepEqual(g.conflict.spotlightRequests,[]);
+ assert.doesNotMatch(text(v.find(n=>n.props['data-conflict-kind']==='survivor')),/Pediu Spotlight/);
+ const hp=elements(v.find(n=>n.props['data-conflict-kind']==='threat')).find(n=>n.type==='Counter'&&n.props.label==='PV marcados');hp.props.onChange(template.maxHp);
+ assert.equal(threat.defeated,true);assert.equal(v.find(n=>n.props['data-conflict-kind']==='threat'),undefined);
+ v.find(n=>n.type==='button'&&text(n).startsWith('Derrotadas ·')).props.onClick();
+ const defeated=v.find(n=>n.props['data-conflict-kind']==='threat');assert.ok(defeated);
+ assert.equal(elements(defeated).find(n=>n.type==='button'&&text(n).trim()==='Atacar').props.disabled,true);
+ elements(defeated).find(n=>n.type==='button'&&text(n).trim()==='Reativar').props.onClick();assert.equal(threat.defeated,false);
 });

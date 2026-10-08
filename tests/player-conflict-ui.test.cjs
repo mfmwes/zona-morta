@@ -66,3 +66,17 @@ test('chat da simulação mostra os mesmos controles e registros do jogador esco
     assert.doesNotMatch(html,/teste secreto de outro personagem|Escolher personagem que fala|chat em modo de leitura/);
   }
 });
+
+
+test('cartão do mestre descreve limiares e distingue recursos marcados',()=>{
+ const {ConflictSceneManager}=require('../components/conflict-scene-manager.tsx');
+ const {addThreatInstances}=require('../lib/conflict.ts');
+ const {threatLibrary}=require('../lib/threats.ts');
+ const game=setup(),template=threatLibrary(game.threats).find(t=>t.maxHp!==null);
+ addThreatInstances(game.conflict,template);
+ const before=structuredClone(game);
+ const html=renderToStaticMarkup(React.createElement(ConflictSceneManager,{game,edit(){throw new Error('Render não deve editar');}}));
+ assert.ok(html.includes(`aria-label="Limiares: ${template.majorThreshold??'—'} / ${template.severeThreshold??'—'}"`));
+ assert.match(html,/PV marcados/);assert.match(html,/Estresse marcado/);
+ assert.deepEqual(game,before);
+});
