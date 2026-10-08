@@ -1,0 +1,18 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- Load pure TypeScript campaign indexes in Node. */
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript'),Module=require('node:module'),path=require('node:path');
+require.extensions['.ts']=(m,p)=>m._compile(ts.transpileModule(fs.readFileSync(p,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,esModuleInterop:true}}).outputText,p);
+const resolve=Module._resolveFilename;Module._resolveFilename=function(name,parent,...args){return resolve.call(this,name.startsWith('@/')?path.join(__dirname,'..',name.slice(2)):name,parent,...args);};
+const {defaultState,initialSurvivor,content}=require('../lib/game.ts');
+const {campaignSearchEntries,filterCampaignSearch,filterCampaignAttention,matchesSearch}=require('../lib/campaign-search.ts');
+const {campaignAttention,campaignTargetExists}=require('../lib/campaign-attention.ts');
+function fixture(){const g=defaultState(),a=content.archetypes[0];g.survivors=[initialSurvivor({name:'João',origin:content.origins[1].name,past:'',archetype:a.name,specialty:a.specialties[0].name,freeExperience:'',techniques:[],attributes:{Instinto:1},primary:'',secondary:'',protection:'',personal:''})];g.survivors[0].hex='0,0';g.survivors[0].eventConditions=[{name:'Restrito',effect:'Preso',clear:'Ajudar'}];g.npcs=[{id:'lia',name:'Lia',hex:'1,0',role:'Médica',description:'',notes:'Segredo',skills:[],status:'Ferido',disposition:'Aliado',infection:'Saudável',active:true}];for(const h of Object.values(g.hexes))h.events=[];g.hexes['0,0'].sector={...g.hexes['0,0'].sector,name:'Estação'};g.hexes['0,0'].points=[{id:'hospital',name:'Hospital São José',kind:'comércio',signal:'Porta',access:'',notes:'',revealed:false,searches:[]}];g.hexes['0,0'].events=[{id:'secret',text:'Alarme da estação',status:'active',revealed:false,trigger:''}];return g;}
+test('busca ignora acentos, aceita várias palavras e envia atalhos válidos sem alterar a campanha',()=>{
+ const g=fixture(),before=structuredClone(g),rows=campaignSearchEntries(g,{role:'mestre',playerPreview:false});
+ assert.equal(filterCampaignSearch(rows,'jose hospital')[0].target.pointId,'hospital');assert.equal(filterCampaignSearch(rows,'joao 0,0')[0].target.survivorId,g.survivors[0].id);assert.equal(filterCampaignSearch(rows,'medica','npc')[0].target.npcId,'lia');
+ assert.equal(filterCampaignSearch(rows,'alarme estacao','event')[0].target.eventId,'secret');assert.equal(filterCampaignSearch(rows,'alarme','survivor').length,0);assert.equal(filterCampaignSearch(rows,'').length,0);assert.ok(rows.every(r=>campaignTargetExists(g,r.target)));assert.deepEqual(g,before);
+});
+test('índice privado fica vazio para jogador, convidado e prévia do mestre',()=>{const g=fixture();for(const access of [{role:'jogador',playerPreview:false},{role:'convidado',playerPreview:false},{role:'mestre',playerPreview:true}])assert.deepEqual(campaignSearchEntries(g,access),[]);});
+test('localização de pendências acompanha pessoas, não apenas a posição do grupo',()=>{
+ const g=fixture(),rows=campaignAttention(g);assert.equal(filterCampaignAttention(g,rows,'restrito','sobreviventes','0,0').length,1);assert.equal(filterCampaignAttention(g,rows,'','sobreviventes','1,0').length,0);assert.equal(filterCampaignAttention(g,rows,'lia','comunidade','1,0').length,1);assert.equal(filterCampaignAttention(g,rows,'alarme','mapa','0,0').length,1);
+});
+test('busca compartilhada combina nome, categoria e estado sem expressão regular',()=>{assert.ok(matchesSearch('agua pronta','Água filtrada','Provisões','Pronta'));assert.equal(matchesSearch('[','Água'),false);assert.ok(matchesSearch('','Água'));});

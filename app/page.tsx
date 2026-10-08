@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { startCampaignSync, type CampaignSyncNotice } from "@/lib/campaign-sync";
 import { currentTableRest } from "@/lib/table-rest";
 import { toast } from "sonner";
-import { BookOpen, Brain, Clock3, Download, Droplets, Ear, Eye, EyeOff, House, LayoutDashboard, LogOut, Layers, Map, MessageSquare, MoreHorizontal, Package, RotateCcw, Settings, ShieldAlert, Swords, Upload, Users, Utensils, Volume2 } from "lucide-react";
+import { BookOpen, Brain, Clock3, Download, Droplets, Ear, Eye, EyeOff, House, LayoutDashboard, LogOut, Layers, Map, MessageSquare, MoreHorizontal, Package, RotateCcw, Search, Settings, ShieldAlert, Swords, Upload, Users, Utensils, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -32,6 +32,7 @@ import { TeamActionError } from "@/components/player-actions-panel";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { campaignTargetExists, type CampaignTarget } from "@/lib/campaign-attention";
 import { CampaignCheckpoints, type CheckpointAction } from "@/components/campaign-checkpoints";
+import { CampaignSearch } from "@/components/campaign-search";
 import { activeCampaignSession, applySessionCommand, type SessionCommand } from "@/lib/campaign-sessions";
 import { MasterOverview } from "@/components/master-overview";
 import { addLog, displayTime, survivorHex, type GameState, type Point, type Survivor, type TablePresentation } from "@/lib/game";
@@ -78,6 +79,7 @@ export default function CampaignApp() {
 
   const [chatOpen, setChatOpen] = useState(true);
   const [checkpointsOpen,setCheckpointsOpen]=useState(false);
+  const [searchOpen,setSearchOpen]=useState(false);
   const [timeEditorOpen, setTimeEditorOpen] = useState(false);
   const [manualTime, setManualTime] = useState("");
   const [manualTimeRollbackConfirmed, setManualTimeRollbackConfirmed] = useState(false);
@@ -124,6 +126,17 @@ export default function CampaignApp() {
     if(!campaignTargetExists(current.current,target)){toast.info("Este registro mudou ou não está mais disponível.");return;}
     setFocus({key:createId(),target});setTab(target.tab);
   }, []);
+  const searchAllowed = role === "mestre" && !playerPreview && Boolean(liveGame) && !showLibrary && !needsAuth;
+  useEffect(() => {
+    if (!searchAllowed) return;
+    const openSearch = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "k" || event.altKey || document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
+      event.preventDefault();
+      setSearchOpen(true);
+    };
+    window.addEventListener("keydown", openSearch);
+    return () => window.removeEventListener("keydown", openSearch);
+  }, [searchAllowed]);
 
   function startPreview(actorId: string) {
     if (!current.current) return;
@@ -683,7 +696,9 @@ export default function CampaignApp() {
   } : null;
 
   return <PlayerSimulationContext.Provider value={simulation}><Tabs value={activeTab} onValueChange={setTab} className="w-full">
+    <a className="campaign-skip-link" href="#campaign-main">Ir para o conteúdo</a>
     {checkpointsOpen&&role==="mestre"&&!playerPreview&&<CampaignCheckpoints campaignId={game.campaignId} day={game.day} canAct={status==="salvo"} onAction={checkpointAction} onClose={()=>setCheckpointsOpen(false)}/>}
+    {searchOpen && masterExperience && <CampaignSearch game={game} role={role} playerPreview={playerPreview} onOpen={openCampaignTarget} onClose={() => setSearchOpen(false)} />}
     <TablePresentationViewer presentation={presentation} enabled={readOnlyPreview} />
     <SidebarProvider className={`app-shell ${chatOpen ? "chat-open" : "chat-closed"}`}>
     <Sidebar collapsible="none" className="rail">
@@ -743,6 +758,7 @@ export default function CampaignApp() {
             }}>
             {playerPreview ? <Eye size={16} /> : <EyeOff size={16} />}<span>{playerPreview ? "Prévia ativa" : "Prévia dos jogadores"}</span>
           </Button>}
+          {masterExperience && <Button size="sm" variant="outline" onClick={() => setSearchOpen(true)} title="Buscar na campanha (Ctrl/⌘ K)" aria-keyshortcuts="Control+k Meta+k"><Search size={16} aria-hidden="true" /><span>Buscar</span></Button>}
           <Button size="sm" variant={chatOpen ? "default" : "outline"} onClick={() => setChatOpen(value => !value)} aria-expanded={chatOpen} aria-controls="table-chat"><MessageSquare size={16} /><span className="topbar-options-label">Chat</span></Button>
           <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" variant="outline" aria-label="Abrir opções da campanha"><MoreHorizontal size={17} /><span className="topbar-options-label">Opções</span></Button></DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-52">
@@ -767,7 +783,7 @@ export default function CampaignApp() {
         <span className="flex items-center gap-2"><Eye size={18} /><b>Prévia dos jogadores</b> · Simulação local; ações aqui não alteram a campanha.</span>
         <Button size="sm" variant="outline" onClick={stopPreview}>Voltar ao mestre</Button>
       </div>}
-      <main className="page">
+      <main id="campaign-main" className="page" tabIndex={-1}>
         <ActivityTimeline game={game} controls={masterActionControls} canAct={status === "salvo"} />
         {readOnlyPreview && requestedRest && <div className="team-notice mb-4" role="status"><p>Descanso {requestedRest.kind === "short" ? "curto" : "longo"} solicitado · {requestedRest.participantIds.length}/{requestedRest.invitedIds.length} confirmados.{requestedRest.awaitingNight ? " Escolhas prontas para Encerrar dia." : requestedRest.participantIds.includes(viewedSurvivorId ?? "") ? " Suas escolhas estão confirmadas." : " Escolha suas duas ações na ficha."}</p>{!requestedRest.awaitingNight && <Button size="sm" variant="outline" onClick={() => { setTab("sobreviventes"); window.setTimeout(() => window.dispatchEvent(new CustomEvent("zona-morta:rest-focus")), 0); }}>Ver meu descanso</Button>}</div>}
         {!playerPreview && teamActionError && <div className="team-error mb-4" role="alert"><p>{teamActionError}</p><Button size="sm" variant="outline" disabled={status!=="salvo"} onClick={()=>{if(teamActionRetry.current) void executeTeamAction(teamActionRetry.current).catch(cause=>toast.error(cause instanceof Error?cause.message:"Falha ao reenviar."));}}>Reenviar ação pendente</Button></div>}

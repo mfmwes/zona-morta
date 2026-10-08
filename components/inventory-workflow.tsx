@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Counter, Field, Pick } from "@/components/game-controls";
 import { ItemArt } from "@/components/item-art";
+import { RuleHelp } from "@/components/rule-help";
 import { addLog, ammunitionCount, ammunitionItemType, ammunitionTypes, survivorHex, survivorStats, type AmmunitionType, type EquipmentSlot, type GameState, type InventoryItem } from "@/lib/game";
 import { createId } from "@/lib/id";
 import { addStack, atSharedStorage, batteryStateFor, batteryTargets, catalogForItem, catalogItemCanUse, catalogItemIsConsumable, catalogItems, catalogKey, compatibleSlots, conditions,
@@ -255,6 +256,7 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
         }))} onChange={setTargetId} />}
         {alreadyConsumed && <p className="inventory-hint inventory-warning">A necessidade diária deste recurso já foi registrada para {consumer?.name}. Consumir novamente gastará uma porção extra.</p>}</>}
       {mode === "prepare" && <div className="grid gap-2">
+        <RuleHelp topic="preparation" />
         <p className="inventory-hint">{provisionState.requiresVerification
           ? "A verificação agora respeita o método indicado no catálogo; água insegura pode exigir filtro, pastilhas ou fervura."
           : `Preparo: ${provision.preparation ?? "resolver em cena"}. Água, utensílios e fonte de calor são descontados/verificados quando exigidos.`}</p>

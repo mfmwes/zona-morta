@@ -4,21 +4,75 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field } from "@/components/game-controls";
 import { displayTime } from "@/lib/game";
+import { matchesSearch } from "@/lib/campaign-search";
 import { createId } from "@/lib/id";
 import type { CampaignCheckpoint } from "@/db/checkpoints";
-export type CheckpointAction={action:"create"|"restore"|"delete";id:string;name?:string};
-export function CampaignCheckpoints({campaignId,day,canAct,onAction,onClose}:{campaignId:string;day:number;canAct:boolean;onAction:(command:CheckpointAction)=>Promise<void>;onClose:()=>void}){
- const [rows,setRows]=useState<CampaignCheckpoint[]>([]),[name,setName]=useState(`Dia ${day}`),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[error,setError]=useState("");
- const [confirm,setConfirm]=useState<{kind:"restore"|"delete";point:CampaignCheckpoint}|null>(null);
- const api=`/api/campaign/checkpoints?campanha=${encodeURIComponent(campaignId)}`;
- async function refresh(){const r=await fetch(api,{cache:"no-store"});const data=await r.json() as {error?:string;checkpoints?:CampaignCheckpoint[]};if(!r.ok)throw new Error(data.error||"Não foi possível consultar os pontos.");setRows(data.checkpoints??[]);}
- useEffect(()=>{let alive=true;void fetch(api,{cache:"no-store"}).then(async r=>{const data=await r.json() as {error?:string;checkpoints?:CampaignCheckpoint[]};if(!r.ok)throw new Error(data.error||"Não foi possível consultar os pontos.");if(alive){setRows(data.checkpoints??[]);setLoading(false);}}).catch(e=>{if(alive){setError(e.message);setLoading(false);}});return()=>{alive=false;};},[api]);
- async function act(command:CheckpointAction){if(busy||!canAct)return;setBusy(true);setError("");try{await onAction(command);setConfirm(null);await refresh();}catch(e){setError(e instanceof Error?e.message:"Não foi possível concluir.");}finally{setBusy(false);}}
- const full=rows.filter(r=>!r.safety).length>=10;
- return <Dialog open onOpenChange={open=>{if(!open&&!busy)onClose();}}><DialogContent className="inventory-dialog"><DialogHeader><DialogTitle>Pontos de restauração</DialogTitle><DialogDescription>Guarde até 10 momentos desta campanha. Antes de restaurar, o estado atual é preservado em uma cópia automática.</DialogDescription></DialogHeader>
-  <div className="grid gap-3"><Field label="Nome do novo ponto" value={name} onChange={setName}/><Button disabled={busy||loading||!canAct||!name.trim()||name.trim().length>80||full} onClick={()=>void act({action:"create",id:createId(),name:name.trim()})}>{busy?"Aguarde…":"Guardar estado atual"}</Button>{full&&<p className="subtle text-sm">Limite de 10 pontos atingido. Exclua um ponto para guardar outro.</p>}{!canAct&&<p role="status">Aguarde o salvamento da campanha antes de continuar.</p>}
-  {error&&<p role="alert" className="inventory-danger">{error} <Button size="sm" variant="ghost" disabled={busy} onClick={()=>void refresh().then(()=>setError("")).catch(e=>setError(e.message))}>Atualizar lista</Button></p>}
-  {loading?<p>Consultando pontos…</p>:!rows.length?<p className="subtle">Nenhum ponto guardado nesta campanha.</p>:<div className="grid gap-3 max-h-72 overflow-y-auto">{rows.map(p=><article key={p.id} className="rounded border p-3"><b>{p.name}</b>{p.safety&&<span className="ml-2 text-xs subtle">cópia automática</span>}<p className="text-sm subtle">Dia {p.day} · {displayTime(p.minutes)} · {new Date(p.createdAt).toLocaleString("pt-BR")}</p><div className="flex gap-2 mt-2"><Button size="sm" variant="outline" disabled={busy||!canAct} onClick={()=>setConfirm({kind:"restore",point:p})}>Restaurar</Button><Button size="sm" variant="ghost" disabled={busy||!canAct} onClick={()=>setConfirm({kind:"delete",point:p})}>Excluir ponto</Button></div></article>)}</div>}
-  {confirm&&<section className="rounded border p-3" aria-label="Confirmar alteração"><b>{confirm.kind==="restore"?"Restaurar":"Excluir"} “{confirm.point.name}”?</b><p className="text-sm mt-2">{confirm.kind==="restore"?"O estado de jogo será substituído, incluindo mapa, fichas, reservas, cenas, atividades e diário. A cópia automática guardará o estado anterior. Contas e convites permanecem atuais.":"Este ponto será removido. O estado de jogo atual permanece como está."}</p><div className="flex gap-2 mt-3"><Button disabled={busy||!canAct} onClick={()=>void act({action:confirm.kind,id:confirm.point.id})}>{confirm.kind==="restore"?"Confirmar restauração":"Confirmar exclusão"}</Button><Button variant="outline" disabled={busy} onClick={()=>setConfirm(null)}>Cancelar</Button></div></section>}
-  </div></DialogContent></Dialog>;
+export type CheckpointAction = { action: "create" | "restore" | "delete"; id: string; name?: string };
+export function CampaignCheckpoints({ campaignId, day, canAct, onAction, onClose }: { campaignId: string; day: number; canAct: boolean; onAction: (command: CheckpointAction) => Promise<void>; onClose: () => void }) {
+  const [rows, setRows] = useState<CampaignCheckpoint[]>([]), [name, setName] = useState(`Dia ${day}`), [busy, setBusy] = useState(false), [loading, setLoading] = useState(true), [error, setError] = useState("");
+  const [query, setQuery] = useState("");
+  const [feedback, setFeedback] = useState("");
+  const [confirm, setConfirm] = useState<{ kind: "restore" | "delete"; point: CampaignCheckpoint } | null>(null);
+  const api = `/api/campaign/checkpoints?campanha=${encodeURIComponent(campaignId)}`;
+  async function refresh() {
+    setLoading(true); setError("");
+    try {
+      const r = await fetch(api, { cache: "no-store" });
+      const data = await r.json() as { error?: string; checkpoints?: CampaignCheckpoint[] };
+      if (!r.ok) throw new Error(data.error || "Não foi possível consultar os pontos.");
+      setRows(data.checkpoints ?? []);
+    } catch (e) { setError(e instanceof Error ? e.message : "Não foi possível atualizar a lista."); }
+    finally { setLoading(false); }
+  }
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetch(api, { cache: "no-store", signal: controller.signal }).then(async r => {
+      const data = await r.json() as { error?: string; checkpoints?: CampaignCheckpoint[] };
+      if (!r.ok) throw new Error(data.error || "Não foi possível consultar os pontos.");
+      if (!controller.signal.aborted) { setRows(data.checkpoints ?? []); setLoading(false); }
+    }).catch(e => { if (!controller.signal.aborted) { setError(e.message); setLoading(false); } });
+    return () => controller.abort();
+  }, [api]);
+  async function act(command: CheckpointAction) {
+    if (busy || loading || !canAct) return;
+    setBusy(true); setError(""); setFeedback("");
+    try {
+      await onAction(command); setConfirm(null);
+      setFeedback(command.action === "create" ? "Ponto guardado." : command.action === "restore" ? "Campanha restaurada. O estado anterior está na cópia automática." : "Ponto excluído.");
+      await refresh();
+    } catch (e) { setError(e instanceof Error ? e.message : "Não foi possível concluir. Tente novamente."); }
+    finally { setBusy(false); }
+  }
+  const manualCount = rows.filter(r => !r.safety).length;
+  const full = manualCount >= 10;
+  const visible = rows.filter(p => matchesSearch(query, p.name, `Dia ${p.day}`));
+  const locked = busy || loading || !canAct;
+  function pointRow(p: CampaignCheckpoint) {
+    const selected = confirm?.point.id === p.id;
+    return <article key={p.id} className={`campaign-checkpoint${selected ? " is-selected" : ""}`}>
+      <b>{p.name}</b><p className="text-sm subtle">Dia {p.day} · {displayTime(p.minutes)} · {new Date(p.createdAt).toLocaleString("pt-BR")}</p>
+      <div className="campaign-form-actions"><Button size="sm" variant="outline" disabled={locked} onClick={() => setConfirm({ kind: "restore", point: p })}>Restaurar</Button><Button size="sm" variant="ghost" disabled={locked} onClick={() => setConfirm({ kind: "delete", point: p })}>Excluir ponto</Button></div>
+      {selected ? <section className="campaign-checkpoint-confirm" aria-label={`Confirmar alteração de ${p.name}`}>
+        <b>{confirm.kind === "restore" ? "Restaurar" : "Excluir"} “{p.name}”?</b>
+        <p className="text-sm">{confirm.kind === "restore" ? "Mapa, fichas, reservas, cenas, atividades e diário serão substituídos. A cópia automática preservará o estado anterior. Contas e convites permanecem atuais." : "Este ponto será removido. O jogo atual permanece como está."}</p>
+        <div className="campaign-form-actions"><Button disabled={locked} onClick={() => void act({ action: confirm.kind, id: p.id })}>{busy ? "Aguarde…" : confirm.kind === "restore" ? "Confirmar restauração" : "Confirmar exclusão"}</Button><Button variant="outline" autoFocus disabled={busy} onClick={event => { event.currentTarget.closest("article")?.querySelector<HTMLButtonElement>("button")?.focus(); setConfirm(null); }}>Cancelar</Button></div>
+      </section> : null}
+    </article>;
+  }
+  return <Dialog open onOpenChange={open => { if (!open && !busy) onClose(); }}><DialogContent className="inventory-dialog" showCloseButton={!busy} onEscapeKeyDown={event => { if (busy) event.preventDefault(); }} onPointerDownOutside={event => { if (busy) event.preventDefault(); }}><DialogHeader><DialogTitle>Pontos de restauração</DialogTitle><DialogDescription>Guarde até 10 momentos. Antes de restaurar, o estado atual é preservado em uma cópia automática.</DialogDescription></DialogHeader>
+    <div className="grid gap-4" aria-busy={busy || loading}>
+      <form className="campaign-checkpoint-create" onSubmit={event => { event.preventDefault(); if (!locked && name.trim() && !full && name.trim().length <= 80 && !error) void act({ action: "create", id: createId(), name: name.trim() }); }}><Field label="Nome do novo ponto" value={name} onChange={setName} maxLength={80} disabled={busy} /><Button type="submit" disabled={locked || !name.trim() || name.trim().length > 80 || full || Boolean(error)}>{busy ? "Aguarde…" : "Guardar estado atual"}</Button></form>
+      {full && <p className="subtle text-sm">Limite atingido. Exclua um ponto para guardar outro.</p>}
+      {!canAct && <p className="subtle text-sm" role="status">Aguarde o salvamento da campanha para continuar.</p>}
+      {feedback && <p className="campaign-feedback" role="status">{feedback}</p>}
+      {error && <div className="campaign-form-error" role="alert"><p>{error}</p><Button size="sm" variant="outline" disabled={busy || loading} onClick={() => void refresh()}>Atualizar lista</Button></div>}
+      {loading && <p className="subtle" role="status">Consultando pontos…</p>}
+      {!loading && !error && !rows.length && <p className="campaign-empty">Nenhum ponto guardado. Use “Guardar estado atual” para criar o primeiro.</p>}
+      {rows.length > 0 && <><Field label="Buscar ponto" type="search" placeholder="Nome ou dia" value={query} onChange={value => { setQuery(value); setConfirm(null); }} disabled={busy} />
+        <div className="campaign-filter-status"><span className="campaign-list-count" role="status">{manualCount}/10 pontos guardados{query.trim() ? ` · ${visible.length} resultado(s)` : ""}</span>{query && <Button size="sm" variant="ghost" disabled={busy} onClick={() => setQuery("")}>Limpar busca</Button>}</div>
+        {visible.some(p => !p.safety) && <section aria-label="Pontos guardados"><h3 className="field-label mb-2">Pontos guardados</h3><div className="grid gap-2">{visible.filter(p => !p.safety).map(pointRow)}</div></section>}
+        {visible.some(p => p.safety) && <section aria-label="Cópia automática"><h3 className="field-label mb-2">Cópia automática · antes da última restauração</h3><div className="grid gap-2">{visible.filter(p => p.safety).map(pointRow)}</div><p className="subtle text-xs mt-2">Esta cópia não ocupa um dos 10 pontos.</p></section>}
+        {!visible.length && <p className="campaign-empty">Nenhum ponto corresponde à busca.</p>}
+      </>}
+    </div></DialogContent></Dialog>;
 }

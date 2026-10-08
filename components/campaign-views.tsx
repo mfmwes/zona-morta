@@ -25,6 +25,8 @@ import { atSharedStorage, batteryStateFor, catalogForItem } from "@/lib/inventor
 import { provisionBreakdown, provisionDisplay, provisionItemInfo, provisionShelfLabel } from "@/lib/provision-items";
 import { adjustProvisionCount } from "@/lib/provisions";
 import { createId } from "@/lib/id";
+import { matchesSearch } from "@/lib/campaign-search";
+import { RuleHelp } from "@/components/rule-help";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 
@@ -36,7 +38,13 @@ export function ShelterPanel({ initialProjectId, game, edit, playerPreview, play
   const [convertName, setConvertName] = useState("");
   const [convertRole, setConvertRole] = useState("");
   const [shelterSection, setShelterSection] = useState(initialProjectId?"construction":"overview");
+  const [inventoryQuery, setInventoryQuery] = useState("");
+  const [inventoryCategory, setInventoryCategory] = useState("all");
   const s = game.shelter;
+  const itemCategory = (item: NonNullable<typeof s.inventory>[number]) => catalogForItem(item)?.category ?? item.category ?? "Outros";
+  const inventoryCategories = [...new Set([...(s.inventory ?? []).map(itemCategory), ...(inventoryCategory === "all" ? [] : [inventoryCategory])])].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  const inventoryFiltered = (s.inventory ?? []).filter(item => (inventoryCategory === "all" || inventoryCategory === itemCategory(item)) && matchesSearch(inventoryQuery, item.name, itemCategory(item), item.condition ?? "", batteryStateFor(item) ?? ""));
+  const inventoryHasFilters = Boolean(inventoryQuery.trim() || inventoryCategory !== "all");
   const hasShelter = s.hex !== null;
   const sharedAccessible = atSharedStorage(game);
   const currentSector = game.hexes[game.partyHex]?.sector?.name ?? `Hex ${game.partyHex}`;
@@ -102,9 +110,14 @@ export function ShelterPanel({ initialProjectId, game, edit, playerPreview, play
       {sharedAccessible && !playerPreview && <AddItemDialog game={game} edit={edit} ownerId="shared" />}</div>
     <p className="intro-line mt-2">Objetos físicos continuam identificados aqui. Alimentos e bebidas prontos contribuem automaticamente para o total disponível sem desaparecer do inventário; itens pendentes de preparo/verificação aparecem separados.</p>
     {!sharedAccessible && <p className="character-rule-note">O grupo está fora do abrigo. Volte ao hex da base para mover os itens compartilhados.</p>}
+    {((s.inventory ?? []).length > 0 || inventoryHasFilters) && <div className="campaign-inventory-filters">
+      <div className="campaign-list-toolbar"><Field label="Buscar itens compartilhados" type="search" placeholder="Nome, categoria ou estado" value={inventoryQuery} onChange={setInventoryQuery} /><Pick label="Categoria" value={inventoryCategory} options={[{ value: "all", label: "Todas" }, ...inventoryCategories.map(category => ({ value: category, label: category }))]} onChange={setInventoryCategory} /></div>
+      <div className="campaign-filter-status"><span className="campaign-list-count" role="status">{inventoryFiltered.length} de {(s.inventory ?? []).length} itens</span>{inventoryHasFilters && <Button size="sm" variant="ghost" onClick={() => { setInventoryQuery(""); setInventoryCategory("all"); }}>Limpar filtros</Button>}</div>
+    </div>}
+    <RuleHelp topic="inventory" />
     <div className="shared-inventory-list">
       {(s.inventory ?? []).length === 0 ? <p className="character-empty-list">Nenhum objeto guardado no depósito.</p>
-        : (s.inventory ?? []).map(item => {
+        : !inventoryFiltered.length ? <p className="character-empty-list">Nenhum item corresponde aos filtros.</p> : inventoryFiltered.map(item => {
           const provisionState = provisionItemInfo(item);
           const row = <div className={`shared-inventory-row ${sharedAccessible && !playerPreview ? "inventory-context-target" : ""}`}><div className="shared-inventory-entry"><ItemArt name={item.name} category={catalogForItem(item)?.category ?? item.category} /><div><b>{item.name}</b><span>{provisionState.resource ? provisionDisplay(item) : ammunitionItemType(item) ? `${item.qty}× · até 4 unidades = 1 espaço de carga` : `${catalogForItem(item)?.category ?? item.category ?? "Outros"} · ${item.qty}× · carga ${item.load} cada · ${item.condition ?? "sem estado"}${batteryStateFor(item) ? ` · bateria ${batteryStateFor(item)?.toLowerCase()}` : ""}`}</span></div></div>
             {sharedAccessible && !playerPreview && <ItemActionsDialog game={game} edit={edit} ownerId="shared" item={item} allowCorrection />}</div>;
@@ -116,11 +129,13 @@ export function ShelterPanel({ initialProjectId, game, edit, playerPreview, play
     {(s.inventory ?? []).length > 0 && sharedAccessible && !playerPreview && <p className="roll-hint inventory-context-hint">No computador, clique com o botão direito em um item para usar ações rápidas.</p>}
 
     {hasShelter && !playerPreview && <><div className="divider" />
+      <details className="campaign-administrative"><summary>Correções administrativas · Segurança, Energia e Conforto</summary><p className="subtle text-sm">Ajuste apenas modificadores definidos pelo mestre. Obras e instalações continuam sendo calculadas automaticamente.</p>
       <div className="shelter-manual-grid">
         <Counter label="Ajuste manual · Segurança" value={s.manualAdjustments?.security ?? 0} min={-3} max={9} onChange={value => edit(d => { d.shelter.manualAdjustments ??= { security: 0, energy: 0, comfort: 0 }; d.shelter.manualAdjustments.security = value; d.shelter.security = (d.shelter.hex ? 1 : 0) + value; })} />
         <Counter label="Ajuste manual · Energia" value={s.manualAdjustments?.energy ?? 0} min={-3} max={9} onChange={value => edit(d => { d.shelter.manualAdjustments ??= { security: 0, energy: 0, comfort: 0 }; d.shelter.manualAdjustments.energy = value; d.shelter.energy = value; })} />
         <Counter label="Ajuste manual · Conforto" value={s.manualAdjustments?.comfort ?? 0} min={-3} max={9} onChange={value => edit(d => { d.shelter.manualAdjustments ??= { security: 0, energy: 0, comfort: 0 }; d.shelter.manualAdjustments.comfort = value; d.shelter.comfort = value; })} />
       </div>
+      </details>
       {refrigerationInstalled
         ? <div className={`inventory-ready mt-3 ${coldStorageActive ? "" : "is-warning"}`}>
             <span><b>Refrigeração estrutural: {coldStorageActive ? "ativa" : "inativa"}.</b> A instalação conserva automaticamente alimentos refrigeráveis enquanto estiver operacional e com energia suficiente.</span>
@@ -344,13 +359,13 @@ export function ReferencePanel() {
             <p className="mt-2">Esperança dominante concede 1 Esperança. Medo dominante concede 1 Medo ao mestre; sucesso com Medo preserva o objetivo, com uma complicação. Reações não geram recursos.</p></article>
           <article className="list-card leading-relaxed"><h2 className="section-title">Buscar algo específico</h2>
             <p className="mt-2">Pergunte <b>o que procuram, para quê e onde</b>. Mostre sinais, quantidade possível, tempo e risco antes da escolha. Objeto acessível à vista não exige busca. Setor comum: 30 minutos; área extensa: 1 hora. Role apenas se houver risco interessante.</p>
-            <p className="mt-2">Busca específica não recebe d12 extra. Um setor recebe uma busca completa; registre o que foi retirado.</p></article>
+            <p className="mt-2">Busca específica não recebe d12 extra. Registre as áreas internas e o que foi retirado; consultar ou coletar um achado não renova seu estoque. Confira na área se ainda há busca profunda disponível.</p></article>
           <article className="list-card leading-relaxed"><h2 className="section-title">Infestação e eventos</h2>
             <p className="mt-2">Infestação 0–5 mede pressão persistente. Fixe o nível após observar sinais; um d6 de movimento por hex e expedição só quando a posição incerta importar. Eventos B3 dependem de gatilho. Uma causa duradoura pode mudar o nível em 1 por incidente.</p></article>
           <article className="list-card leading-relaxed"><h2 className="section-title">Barulho</h2>
             <p className="mt-2">Régua 0–5 por cena. 1–2: sinais de atenção. 3–4: ameaça próxima investiga, com origem e tempo anunciados. 5: mostre uma saída; a ameaça chega se o grupo permanecer para outra ação exposta. Silêncio protegido por 10 minutos reduz 2 uma vez na cena.</p></article>
           <article className="list-card leading-relaxed"><h2 className="section-title">Munição e carga</h2>
-            <p className="mt-2">Uma carga compatível cobre os disparos de uma cena para uma pessoa. Risco de Barulho ocorre a cada ação de disparo. Capacidade pessoal básica 3 espaços; mochila urbana +2. Arma ativa, proteção vestida e até duas porções pessoais de cada recurso nos bolsos ocupam 0.</p></article>
+            <p className="mt-2">Uma unidade de munição compatível cobre os disparos de uma cena para uma pessoa. Risco de Barulho ocorre a cada ação de disparo. Capacidade pessoal básica 3 espaços; mochila urbana +2. Arma ativa, proteção vestida e até duas porções pessoais de cada recurso nos bolsos ocupam 0.</p></article>
           <article className="list-card leading-relaxed"><h2 className="section-title">Exposição</h2>
             <p className="mt-2">Somente Mordida anunciada contra alvo Restrito ou indefeso. A vítima escolhe reação Agilidade 12 ou marca Armadura que cubra o contato antes de rolar. Exposto tem 2 horas para uma tentativa com 1 Medicamentos, água limpa e Conhecimento 13. Depois, progride ao amanhecer.</p></article>
           <article className="list-card leading-relaxed"><h2 className="section-title">Travessia e retorno</h2>
@@ -361,9 +376,9 @@ export function ReferencePanel() {
             <p className="mt-2">Ao concluir, o mestre recebe 1d4 Medo. Após três descansos curtos seguidos, o próximo deve ser longo. Descanso interrompido não concede benefícios.</p></article>
           <article className="list-card leading-relaxed"><h2 className="section-title">Descanso longo</h2>
             <p className="mt-2">Requer refúgio seguro, vigia e água. Cada PJ escolhe duas ações: limpar todos os PV, todo Estresse ou toda Armadura; Preparar; trabalhar em projeto; ou executar uma ação de cenário. Projetos avançam um ponto por ação, com custos pagos ao iniciar.</p>
-            <p className="mt-2">Ao concluir, o mestre recebe Medo igual a 1d4 + número de PJs. O descanso longo consome 6 horas. Se atravessar o fim do dia, registre as escolhas e aplique o descanso durante Encerrar dia; ele continua sendo opcional e não é concedido automaticamente. Porções de Comida e Água são descontadas só ao usar Encerrar dia; a janela de Exposição continua correndo.</p></article>
+            <p className="mt-2">Ao concluir, o mestre recebe Medo igual a 1d4 + número de PJs. O descanso longo consome 6 horas. Se atravessar o fim do dia, registre as escolhas e aplique o descanso durante Encerrar dia; ele continua sendo opcional e não é concedido automaticamente. O fechamento completa o consumo diário que ainda não foi registrado; a janela de Exposição continua correndo.</p></article>
           <article className="list-card leading-relaxed"><h2 className="section-title">Carga e mochilas</h2>
-            <p className="mt-2">Base 3 espaços. Bolsa tiracolo +1, mochila urbana +2, de trilha +3, cargueira +4; uma bolsa vestida por pessoa. Duas porções pessoais de cada recurso cabem nos bolsos; cada grupo extra de até quatro porções ocupa 1. Uma carga reserva de munição ocupa 1.</p>
+            <p className="mt-2">Base 3 espaços. Bolsa tiracolo +1, mochila urbana +2, de trilha +3, cargueira +4; uma bolsa vestida por pessoa. Duas porções pessoais de cada recurso cabem nos bolsos; cada grupo extra de até quatro porções ocupa 1. Até quatro unidades de munição do mesmo tipo ocupam 1 espaço.</p>
             <p className="mt-2">Até dois espaços excedentes podem ir nas mãos, somando 1 hora por hex. Acima disso, faça outra viagem ou use carrinho/veículo.</p></article>
           <article className="list-card leading-relaxed"><h2 className="section-title">Infecção ao amanhecer</h2>
             <p className="mt-2">Depois das 2 horas sem limpeza, Exposto passa a Infectado no próximo amanhecer; depois Sintomático (−1 em Agilidade e Força); depois Terminal, com três cenas significativas restantes. Não há cura conhecida após a infecção se estabelecer nesta alfa.</p></article>
