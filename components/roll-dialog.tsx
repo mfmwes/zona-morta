@@ -1,4 +1,5 @@
 "use client";
+import { RuleHelp } from "@/components/rule-help";
 import { usePlayerSimulation } from "@/components/player-simulation";
 
 import { useRef, useState } from "react";
@@ -280,6 +281,7 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
   }}>
     {request?.search ? <><h4 className="font-bold">Resolver o acesso · dados de dualidade</h4><p className="text-sm subtle">Declare Experiências e modificadores antes de rolar.</p></> : <DialogHeader><p className="dossier-title">Dados de dualidade</p><DialogTitle>Rolagem de {kind === "attack" ? "ataque" : kind === "reaction" ? "reação" : "ação"}</DialogTitle>
       <DialogDescription>Defina a ação e seus riscos com o mestre. Declare Experiências e modificadores antes de rolar.</DialogDescription></DialogHeader>}
+    <RuleHelp topic="roll"/>
     {!request?.search && <div className="roll-modes" role="group" aria-label="Tipo de rolagem">
       {([ ["action", "Ação", Dice5], ["reaction", "Reação", Zap], ["attack", "Ataque", Swords] ] as const).map(([id, label, Icon]) =>
         <button type="button" key={id} aria-pressed={kind === id} onClick={() => { setKind(id); setDifficulty(id === "attack" ? "" : "12"); clearResult(); }}><Icon size={16} aria-hidden="true" />{label}</button>)}

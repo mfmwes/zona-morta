@@ -61,21 +61,22 @@ function travelDurationLabel(minutes: number) {
   return `${hours}h${String(rest).padStart(2, "0")}`;
 }
 
-export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerActions, masterActions }: {
+export function HexExplorer({ initialTarget, game, edit, playerPreview, teamPeers = [], playerActions, masterActions }: {
+  initialTarget?: {hexId:string;eventId?:string;pointId?:string;areaId?:string};
   game: GameState;
   edit: Edit;
   playerPreview: boolean;
   playerActions?: PlayerActionControls; masterActions?: MasterActionControls;
   teamPeers?: { id: string; name: string; hex?: string; portrait?: string }[];
 }) {
-  const [selectedId, setSelected] = useState(game.partyHex);
+  const [selectedId, setSelected] = useState(initialTarget?.hexId??game.partyHex);
   const selected = game.hexes[selectedId] ? selectedId : game.partyHex;
   const [signsDraft, setSignsDraft] = useState<{ key: string; source: string; value: string } | null>(null);
   const [notesDraft, setNotesDraft] = useState<{ key: string; source: string; value: string } | null>(null);
-  const [guideEventId,setGuideEventId]=useState<string|null>(null);
+  const [guideEventId,setGuideEventId]=useState<string|null>(initialTarget?.eventId??null);
   const [generatorRequest, setGeneratorRequest] = useState<HexGeneratorRequest | null>(null);
   const [eventActionRequest, setEventActionRequest] = useState<HexEventActionRequest | null>(null);
-  const [searchRequest, setSearchRequest] = useState<HexSearchRequest | null>(null);
+  const [searchRequest, setSearchRequest] = useState<HexSearchRequest | null>(initialTarget?.pointId?{hexId:initialTarget.hexId,pointId:initialTarget.pointId,areaId:initialTarget.areaId}:null);
   const [playerSearchRequest, setPlayerSearchRequest] = useState<PlayerHexSearchRequest | null>(null);
   const [gmOpen, setGmOpen] = useState(false);
   const [masterRevealState, setMasterRevealState] = useState<"avistado" | "explorado">("avistado");
@@ -84,7 +85,7 @@ export function HexExplorer({ game, edit, playerPreview, teamPeers = [], playerA
   const [compact, setCompact] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [expansionOpen, setExpansionOpen] = useState(false);
-  const [focusHex, setFocusHex] = useState(game.partyHex);
+  const [focusHex, setFocusHex] = useState(initialTarget?.hexId??game.partyHex);
   const [relocateOpen, setRelocateOpen] = useState(false);
   const [relocateDestination, setRelocateDestination] = useState<string | null>(null);
   const [moveOpen, setMoveOpen] = useState(false);

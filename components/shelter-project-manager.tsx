@@ -1,4 +1,5 @@
 "use client";
+import { RuleHelp } from "@/components/rule-help";
 
 import { useRef, useState } from "react";
 import {
@@ -112,11 +113,11 @@ function integrityGlyph(project: ShelterProject) {
   return `${"●".repeat(value)}${"○".repeat(Math.max(0, 3 - value))}`;
 }
 
-export function ShelterProjectsManager({ game, edit, playerPreview, playerSurvivorId, masterActions }: { game: GameState; edit: Edit; playerPreview: boolean; playerSurvivorId?: string | null; masterActions?: MasterActionControls }) {
+export function ShelterProjectsManager({ initialProjectId, game, edit, playerPreview, playerSurvivorId, masterActions }: { initialProjectId?:string; game: GameState; edit: Edit; playerPreview: boolean; playerSurvivorId?: string | null; masterActions?: MasterActionControls }) {
   const shelter = game.shelter;
   const recommendations = shelterRecommendations(game, shelter);
   const [filter, setFilter] = useState<CatalogFilter>("Recomendados");
-  const [selectedKey, setSelectedKey] = useState<string>(playerSurvivorId ? (shelter.projects?.[0]?.key ?? shelterProjectCatalog[0].key) : (recommendations[0]?.key ?? shelter.projects?.[0]?.key ?? shelterProjectCatalog[0].key));
+  const [selectedKey, setSelectedKey] = useState<string>(shelter.projects?.find(p=>p.id===initialProjectId)?.key ?? (playerSurvivorId ? (shelter.projects?.[0]?.key ?? shelterProjectCatalog[0].key) : (recommendations[0]?.key ?? shelter.projects?.[0]?.key ?? shelterProjectCatalog[0].key)));
   const [planningKey, setPlanningKey] = useState<string | null>(null);
   const [planningSlotId, setPlanningSlotId] = useState<string | null>(null);
   const [catalogOpen, setCatalogOpen] = useState(false);
@@ -480,7 +481,7 @@ export function ShelterProjectsManager({ game, edit, playerPreview, playerSurviv
     </button>;
   }
 
-  return <div className="construction-console">
+  return <div className="construction-console"><RuleHelp topic="shelter"/>
     <section className="construction-summary">
       <div className="construction-summary-stat"><Hammer size={18} /><span><small>Em andamento</small><b>{activeProjects.length}</b></span></div>
       <div className="construction-summary-stat"><Clock3 size={18} /><span><small>Turnos agendados</small><b>{scheduledProjects.length}</b></span></div>

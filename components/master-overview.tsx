@@ -4,30 +4,28 @@ import { AlertTriangle, Clock3, House, Map, Package, Search, ShieldAlert, Swords
 import { MasterContextActions, type MasterActionControls } from "@/components/player-actions-panel";
 import { playerActionState } from "@/lib/player-actions";
 import { Button } from "@/components/ui/button";
-import { absoluteMinutes, displayTime, survivorPositionGroups, type GameState } from "@/lib/game";
+import { displayTime, survivorPositionGroups, type GameState } from "@/lib/game";
 import { survivorTimedCommitment } from "@/lib/activity";
 import { eventStatus, eventTriggerReady } from "@/lib/hex-generators";
 import { projectProgress } from "@/lib/shelter-projects";
+
+import { campaignAttention, type CampaignTarget } from "@/lib/campaign-attention";
+import { CampaignRecap } from "@/components/campaign-recap";
+import { useState } from "react";
 
 type Props = {
   game: GameState;
   masterActions?: MasterActionControls;
   onNavigate: (tab: string) => void;
+  onOpen: (target: CampaignTarget) => void;
 };
 
 function hexLabel(game: GameState, hexId: string) {
   return game.hexes[hexId]?.sector?.name ?? `Hex ${hexId}`;
 }
 
-function minutesLabel(minutes: number) {
-  if (minutes <= 0) return "agora";
-  if (minutes < 60) return `${minutes} min`;
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  return rest ? `${hours}h ${rest}min` : `${hours}h`;
-}
 
-export function MasterOverview({ game, onNavigate, masterActions }: Props) {
+export function MasterOverview({ game, onNavigate, onOpen, masterActions }: Props) {
   const groups = survivorPositionGroups(game);
   const occupied = game.survivors
     .map(person => ({ person, commitment: survivorTimedCommitment(game, person.id) }))
@@ -40,6 +38,7 @@ export function MasterOverview({ game, onNavigate, masterActions }: Props) {
         const area = point.preparation?.areas.find(candidate => candidate.id === attempt.areaId);
         return {
           id: attempt.id,
+          pointId: point.id, areaId: attempt.areaId,
           hexId,
           point: point.name,
           area: area?.name ?? "Área",
@@ -53,40 +52,12 @@ export function MasterOverview({ game, onNavigate, masterActions }: Props) {
       .filter(event => eventStatus(event) === "pending" && eventTriggerReady(game, hexId, event))
       .map(event => ({ hexId, event })));
 
-  const activeProjects = (game.shelter.projects ?? []).filter(project => project.state === "Em construção");
-  const exposed = game.survivors.filter(person => person.infection === "Exposto");
-  const nowAbsolute = absoluteMinutes(game);
-
+  const activeProjects = (game.shelter.projects ?? []).filter(project => project.state === "Em construção" || project.requiredRepairProgress || project.workShift || project.volunteerShifts?.length);
+  const [showAll,setShowAll]=useState(false);
+  const [showAllWork,setShowAllWork]=useState(false);
+  const attention=campaignAttention(game);
   const actionState = playerActionState(game);
   const hasActionAttention = actionState.policy.paused || actionState.operations.some(op => op.day === game.day && op.attention);
-  const attention = [
-    ...(game.conflict?.active ? [{
-      id: "conflict",
-      tone: "danger",
-      title: "Conflito em andamento",
-      detail: game.conflict.name || "Há uma cena de conflito ativa.",
-      action: "conflito",
-      actionLabel: "Abrir conflito",
-    }] : []),
-    ...exposed.map(person => ({
-      id: `exposure-${person.id}`,
-      tone: "danger",
-      title: `${person.name} está Exposto`,
-      detail: person.exposureDeadline
-        ? `Janela de tratamento: ${minutesLabel(Math.max(0, person.exposureDeadline - nowAbsolute))} restantes.`
-        : "Verifique a janela de tratamento.",
-      action: "sobreviventes",
-      actionLabel: "Abrir ficha",
-    })),
-    ...readyEvents.slice(0, 4).map(({ hexId, event }) => ({
-      id: `event-${event.id}`,
-      tone: "warning",
-      title: "Evento pronto",
-      detail: `${hexLabel(game, hexId)} · ${event.text}`,
-      action: "mapa",
-      actionLabel: "Abrir mapa",
-    })),
-  ];
 
   return <div className="master-overview">
     <section className="master-overview-hero">
@@ -119,7 +90,7 @@ export function MasterOverview({ game, onNavigate, masterActions }: Props) {
             <div><Map size={16} /><span><b>{hexLabel(game, group.hex)}</b><small>Hex {group.hex}</small></span></div>
             <ul>{group.members.map(person => {
               const commitment = survivorTimedCommitment(game, person.id);
-              return <li key={person.id}><span>{person.name}</span>{commitment
+              return <li key={person.id}><button type="button" className="text-left hover:underline" onClick={()=>onOpen({tab:"sobreviventes",survivorId:person.id})}>{person.name}</button>{commitment
                 ? <small className="is-busy"><Clock3 size={12} /> {commitment.projectName} até {commitment.until}</small>
                 : <small>Livre para agir</small>}</li>;
             })}</ul>
@@ -130,10 +101,11 @@ export function MasterOverview({ game, onNavigate, masterActions }: Props) {
       <section className="master-overview-card master-overview-attention">
         <header><div><AlertTriangle size={18} /><span><b>Precisa de atenção</b><small>Estados que podem exigir uma decisão do mestre.</small></span></div></header>
         <div className="master-overview-list">
-          {attention.length ? attention.map(item => <article key={item.id} className={`master-overview-attention-item is-${item.tone}`}>
+          {attention.length ? (showAll?attention:attention.slice(0,8)).map(item => <article key={item.id} className={`master-overview-attention-item is-${item.tone}`}>
             <span><b>{item.title}</b><small>{item.detail}</small></span>
-            <Button size="sm" variant="outline" onClick={() => onNavigate(item.action)}>{item.actionLabel}</Button>
+            <Button size="sm" variant="outline" onClick={() => onOpen(item.target)}>Abrir registro</Button>
           </article>) : !hasActionAttention && <div className="master-overview-clear"><span>Sem pendências urgentes.</span><small>A mesa pode seguir a exploração normalmente.</small></div>}
+          {attention.length>8&&<Button variant="ghost" size="sm" onClick={()=>setShowAll(v=>!v)}>{showAll?"Mostrar menos":`Ver todas as ${attention.length} pendências`}</Button>}
           {masterActions && <MasterContextActions game={game} controls={masterActions} context={{kind:"overview"}} />}
         </div>
       </section>
@@ -141,15 +113,16 @@ export function MasterOverview({ game, onNavigate, masterActions }: Props) {
       <section className="master-overview-card">
         <header><div><Search size={18} /><span><b>Em andamento</b><small>Buscas e trabalhos que já foram iniciados.</small></span></div></header>
         <div className="master-overview-list">
-          {searches.slice(0, 5).map(search => <button type="button" className="master-overview-row" key={search.id} onClick={() => onNavigate("mapa")}>
+          {(showAllWork?searches:searches.slice(0, 5)).map(search => <button type="button" className="master-overview-row" key={search.id} onClick={() => onOpen({tab:"mapa",hexId:search.hexId,pointId:search.pointId,areaId:search.areaId})}>
             <Search size={15} /><span><b>{search.deep ? "Busca profunda" : "Busca"} · {search.point}</b><small>{search.area} · {hexLabel(game, search.hexId)} · {search.status === "pending" ? "aguarda teste" : "aguarda horário de conclusão"}</small></span>
           </button>)}
-          {activeProjects.slice(0, 5).map(project => {
+          {(showAllWork?activeProjects:activeProjects.slice(0, 5)).map(project => {
             const progress = projectProgress(project);
-            return <button type="button" className="master-overview-row" key={project.id} onClick={() => onNavigate("abrigo")}>
+            return <button type="button" className="master-overview-row" key={project.id} onClick={() => onOpen({tab:"abrigo",projectId:project.id})}>
               <Wrench size={15} /><span><b>{project.name}</b><small>{progress.repairing ? "Reparo" : "Construção"} · {progress.value}/{progress.required}</small></span>
             </button>;
           })}
+          {(searches.length>5||activeProjects.length>5)&&<Button variant="ghost" size="sm" onClick={()=>setShowAllWork(v=>!v)}>{showAllWork?"Mostrar menos":`Ver todas as ${searches.length+activeProjects.length} atividades`}</Button>}
           {!searches.length && !activeProjects.length && <p className="master-overview-empty">Nenhuma busca ou obra está aguardando resolução.</p>}
         </div>
       </section>
@@ -167,5 +140,6 @@ export function MasterOverview({ game, onNavigate, masterActions }: Props) {
         {occupied.length > 0 && <p className="master-overview-note"><Clock3 size={14} /> {occupied.length} sobrevivente{occupied.length === 1 ? "" : "s"} trabalhando agora.</p>}
       </section>
     </div>
+    <CampaignRecap game={game} onOpen={onOpen}/>
   </div>;
 }

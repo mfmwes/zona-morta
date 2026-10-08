@@ -241,10 +241,38 @@ try {
   assert.equal((await mf.dispatchFetch(origin+imagePath,{method:'DELETE',headers:headers('master')})).status,200);
   await until(()=>connections.every(c=>c.messages.length),'Presentation close notification missing');
   assert.ok(connections.every(c=>c.messages.every(message=>message.type==='changed'&&message.presentation===true&&message.revision===undefined)));
+  const checkpointPath='/api/campaign/checkpoints?campanha=test-campaign';
+  const checkpointCall=async(command,role='master',expected=200)=>{
+    const response=await mf.dispatchFetch(origin+checkpointPath,{method:'POST',headers:{...headers(role),'Content-Type':'application/json'},body:JSON.stringify(command)});
+    const payload=await response.json();assert.equal(response.status,expected,JSON.stringify(payload));return payload;
+  };
+  const checkpointBefore=await (await mf.dispatchFetch(origin+path,{headers:headers('master')})).json();
+  const pointCommand={action:'create',id:'runtime-point',name:'Antes da alteração',revision:checkpointBefore.revision};
+  assert.equal((await mf.dispatchFetch(origin+checkpointPath,{headers:headers('player')})).status,403);
+  await checkpointCall(pointCommand,'player',403);await checkpointCall(pointCommand);
+  const pointList=await (await mf.dispatchFetch(origin+checkpointPath,{headers:headers('master')})).json();
+  assert.equal(pointList.checkpoints[0].day,checkpointBefore.state.day);assert.equal(pointList.checkpoints[0].body,undefined);
+  const changedForPoint=structuredClone(checkpointBefore.state);changedForPoint.noise=(changedForPoint.noise+1)%6;
+  const pointPut=await mf.dispatchFetch(origin+path,{method:'PUT',headers:{...headers('master'),'Content-Type':'application/json'},body:JSON.stringify({revision:checkpointBefore.revision,state:changedForPoint})});assert.equal(pointPut.status,200,await pointPut.text());
+  const pointLatest=await (await mf.dispatchFetch(origin+path,{headers:headers('master')})).json();
+  await checkpointCall({action:'restore',id:'runtime-point',revision:checkpointBefore.revision},'master',409);
+  connections.forEach(c=>{c.messages.length=0;});
+  const restoredPoint=await checkpointCall({action:'restore',id:'runtime-point',revision:pointLatest.revision});
+  await until(()=>connections.every(c=>c.messages.some(m=>m.revision===restoredPoint.revision)),'Restoration must notify both roles');
+  const pointAfter=await (await mf.dispatchFetch(origin+path,{headers:headers('master')})).json();assert.equal(pointAfter.state.noise,checkpointBefore.state.noise);assert.equal(pointAfter.state.campaignId,'test-campaign');assert.ok(pointAfter.revision>pointLatest.revision);
+  const safety=await db.prepare("SELECT body FROM campaign_checkpoints WHERE campaign_id=? AND id='before-restore'").bind('test-campaign').first();assert.equal(JSON.parse(safety.body).noise,changedForPoint.noise);
+  for(let i=0;i<9;i++)await checkpointCall({action:'create',id:'limit-'+i,name:'Ponto '+i,revision:pointAfter.revision});
+  await checkpointCall({action:'create',id:'over-limit',name:'Extra',revision:pointAfter.revision},'master',409);
+  const undoPoint=await checkpointCall({action:'restore',id:'before-restore',revision:pointAfter.revision});
+  const undonePoint=await (await mf.dispatchFetch(origin+path,{headers:headers('master')})).json();assert.equal(undonePoint.state.noise,changedForPoint.noise);
+  await checkpointCall({action:'delete',id:'limit-0',revision:undoPoint.revision});
+  const isolatedPoint=await mf.dispatchFetch(origin+'/api/campaign/checkpoints?campanha=isolated-campaign',{headers:headers('master')});assert.equal(isolatedPoint.status,403);
+  assert.equal((await mf.dispatchFetch(origin+checkpointPath,{headers:headers('player')})).status,403);
+
   await db.prepare('UPDATE campaign_players SET revoked_at=? WHERE owner_id=?').bind(now,state.campaignId).run();
   assert.equal((await mf.dispatchFetch(origin+path+'&since=3',{headers:headers('player')})).status,403);
   assert.equal(isolatedMessages.length,0);
-  console.log('Runtime passed: live updates, conflict closure, automatic searches, collection while paused and replay, inventory persistence, individual rest confirmation/replay, event guides and parallel outcomes/replay, persisted alarm deadline and private projection, shelter cancellation and scene deletion/replay, image show/close, campaign isolation, private projection and revoked access.');
+  console.log('Runtime passed: live updates, conflict closure, automatic searches, collection while paused and replay, inventory persistence, individual rest confirmation/replay, event guides and parallel outcomes/replay, persisted alarm deadline and private projection, restoration checkpoints/CAS/privacy/limit/recovery and notifications, shelter cancellation and scene deletion/replay, image show/close, campaign isolation, private projection and revoked access.');
 } finally {
   connections.forEach(c=>c.socket.close());
   isolatedConnections.forEach(socket=>socket.close());

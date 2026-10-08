@@ -477,7 +477,7 @@ test('resolução privada de alvo existe sem enviar dificuldade ao cliente jogad
 });
 
 test('API limita imagens persistidas de PNJs e ameaças', () => {
-  const route = fs.readFileSync(require.resolve('../app/api/campaign/route.ts'), 'utf8');
+  const route = fs.readFileSync(require.resolve('../lib/campaign-validation.ts'), 'utf8');
   assert.match(route, /threat\.image\.length <= 12000/);
   assert.match(route, /npc\.portrait\.length <= 12000/);
 });

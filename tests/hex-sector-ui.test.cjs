@@ -56,7 +56,7 @@ function elements(node, tab = null, found = []) {
   if (node.type === 'TabsContent' && node.props.value !== tab) return found;
   found.push(node);elements(node.props.children, tab, found);return found;
 }
-function fixture(playerPreview = false) {
+function fixture(playerPreview = false, initialTarget) {
   let game = defaultState();
   const archetype = content.archetypes[0];
   const survivor = initialSurvivor({ name: 'Nina', origin: content.origins[1].name, past: '', archetype: archetype.name, specialty: archetype.specialties[0].name, freeExperience: '', techniques: [], attributes: { Instinto: 1 }, primary: '', secondary: '', protection: '', personal: '' });
@@ -67,7 +67,7 @@ function fixture(playerPreview = false) {
   game.hexes['0,0'].notes = 'Segredo reservado';game.hexes['0,0'].signs = 'Portões abertos';
   const instance = { slots: [], cursor: 0, dirty: false };
   let tree;
-  const render = () => { host = instance;host.cursor = 0;host.dirty = false;tree = HexExplorer({ game, playerPreview, edit: fn => { const next = structuredClone(game);fn(next);game = next; } });return tree; };
+  const render = () => { host = instance;host.cursor = 0;host.dirty = false;tree = HexExplorer({ initialTarget, game, playerPreview, edit: fn => { const next = structuredClone(game);fn(next);game = next; } });return tree; };
   const find = predicate => elements(render()).find(predicate);
   const button = label => find(node => node.type === 'button' && text(node).trim() === label);
   const click = label => { const control = button(label);assert.ok(control, label);assert.equal(Boolean(control.props.disabled), false);control.props.onClick();render(); };
@@ -147,4 +147,14 @@ test('mestre abre guia do evento e jogador não recebe o controle de desfecho', 
   guide.props.onClose();assert.ok(f.find(node => node.type === 'Tabs'));
   const player = fixture(true);player.state().hexes['0,0'].events = structuredClone(f.state().hexes['0,0'].events);
   assert.equal(player.button('Conduzir evento'),undefined);assert.equal(player.find(node=>node.type==='HexEventGuideDialog'),undefined);
+});
+
+
+test('atalho de evento abre seu guia no hex certo sem revelar ou preparar conteúdo',()=>{
+ const f=fixture(false,{hexId:'1,0',eventId:'event-target'});const before=structuredClone(f.state());
+ const guide=f.find(n=>n.type==='HexEventGuideDialog');assert.equal(guide.props.hexId,'1,0');assert.equal(guide.props.eventId,'event-target');assert.deepEqual(f.state(),before);
+});
+test('atalho de busca abre o local e a área solicitados sem gerar novos achados',()=>{
+ const f=fixture(false,{hexId:'1,0',pointId:'point-target',areaId:'area-target'});const before=structuredClone(f.state());
+ const search=f.find(n=>n.type==='HexSearchDialog');assert.equal(search.props.request.hexId,'1,0');assert.equal(search.props.request.pointId,'point-target');assert.equal(search.props.request.areaId,'area-target');assert.deepEqual(f.state(),before);
 });

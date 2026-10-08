@@ -28,14 +28,14 @@ import { createId } from "@/lib/id";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 
-export function ShelterPanel({ game, edit, playerPreview, playerSurvivorId, playerActions, masterActions }: { game: GameState; edit: Edit; playerPreview: boolean; playerSurvivorId?: string | null; playerActions?: PlayerActionControls; masterActions?: MasterActionControls }) {
+export function ShelterPanel({ initialProjectId, game, edit, playerPreview, playerSurvivorId, playerActions, masterActions }: { initialProjectId?:string; game: GameState; edit: Edit; playerPreview: boolean; playerSurvivorId?: string | null; playerActions?: PlayerActionControls; masterActions?: MasterActionControls }) {
   const [shelterNotes, setShelterNotes] = useState(game.shelter.notes);
   const [shelterName, setShelterName] = useState(game.shelter.name);
   const [cacheRecipient, setCacheRecipient] = useState("");
   const [convertOpen, setConvertOpen] = useState(false);
   const [convertName, setConvertName] = useState("");
   const [convertRole, setConvertRole] = useState("");
-  const [shelterSection, setShelterSection] = useState("overview");
+  const [shelterSection, setShelterSection] = useState(initialProjectId?"construction":"overview");
   const s = game.shelter;
   const hasShelter = s.hex !== null;
   const sharedAccessible = atSharedStorage(game);
@@ -272,7 +272,7 @@ export function ShelterPanel({ game, edit, playerPreview, playerSurvivorId, play
 
       <TabsContent value="construction" className="shelter-tab-content">
         <RuntimeErrorBoundary title="A seção Construção encontrou um problema">
-          <ShelterProjectsManager game={game} edit={edit} playerPreview={playerPreview} playerSurvivorId={playerSurvivorId} masterActions={masterActions} />
+          <ShelterProjectsManager initialProjectId={initialProjectId} game={game} edit={edit} playerPreview={playerPreview} playerSurvivorId={playerSurvivorId} masterActions={masterActions} />
         </RuntimeErrorBoundary>
       </TabsContent>
 

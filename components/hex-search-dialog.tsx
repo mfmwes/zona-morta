@@ -1,4 +1,5 @@
 "use client";
+import { RuleHelp } from "@/components/rule-help";
 import { hasMultipleSurvivorGroups } from "@/lib/game";
 import { useState } from "react";
 import { CheckCircle2, Clock3, Eye, EyeOff, RefreshCw, Search, ShieldAlert, Sparkles } from "lucide-react";
@@ -17,7 +18,7 @@ import { collectLocationStock, deepSearchLimit, deepSearchesUsed, finishPrepared
 import { RollForm } from "@/components/roll-dialog";
 import type { LocationScale, SearchArea } from "@/lib/hex-automation-types";
 import { parallelTimeLabel, participantTimePreview, survivorTimedCommitment } from "@/lib/activity";
-export type HexSearchRequest = { hexId: string; pointId: string; participantIds?: string[] };
+export type HexSearchRequest = { hexId: string; pointId: string; areaId?: string; participantIds?: string[] };
 export function HexSearchDialog({ game, edit, request, onClose }: { game: GameState; edit: (fn: (draft: GameState) => void) => void; request: HexSearchRequest; onClose: () => void }) {
   const hex = game.hexes[request.hexId];
   const point = hex?.points.find(row => row.id === request.pointId);
@@ -25,7 +26,7 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
   const people = survivorsAtHex(game, request.hexId);
   const commitmentById = new Map(people.map(person => [person.id, survivorTimedCommitment(game, person.id)]));
   const [tab, setTab] = useState<SearchTab>("explore");
-  const [areaId, setAreaId] = useState("");
+  const [areaId, setAreaId] = useState(request.areaId??"");
   const [mode, setMode] = useState<"open" | "specific">("open");
   const [objective, setObjective] = useState("");
   const parallel = hasMultipleSurvivorGroups(game);
@@ -153,7 +154,7 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
     }
   }
   return <Dialog open onOpenChange={open => { if (!open) onClose(); }}><DialogContent className="inventory-dialog hex-search-dialog search-session-dialog">
-    <DialogHeader><DialogTitle>Explorar {point?.name ?? "local removido"}</DialogTitle><DialogDescription>Hex {request.hexId} · {hex?.sector?.name ?? "Local"} · Exploração e distribuição do grupo.</DialogDescription></DialogHeader>
+    <DialogHeader><DialogTitle>Explorar {point?.name ?? "local removido"}</DialogTitle><DialogDescription>Hex {request.hexId} · {hex?.sector?.name ?? "Local"} · Exploração e distribuição do grupo.</DialogDescription></DialogHeader><RuleHelp topic="search"/>
     <SearchTabs value={tab} units={stockUnits} onChange={setTab} />
     <div className="search-session-body">
     {available && <p role="alert" className="text-sm text-red-700">{available}</p>}

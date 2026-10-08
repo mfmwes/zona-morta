@@ -30,6 +30,8 @@ import { TablePresentationControl, TablePresentationViewer } from "@/components/
 import { SceneBoard } from "@/components/scene-board";
 import { TeamActionError } from "@/components/player-actions-panel";
 import { ActivityTimeline } from "@/components/activity-timeline";
+import { campaignTargetExists, type CampaignTarget } from "@/lib/campaign-attention";
+import { CampaignCheckpoints, type CheckpointAction } from "@/components/campaign-checkpoints";
 import { MasterOverview } from "@/components/master-overview";
 import { addLog, displayTime, survivorHex, type GameState, type Point, type Survivor, type TablePresentation } from "@/lib/game";
 import { createId } from "@/lib/id";
@@ -71,7 +73,10 @@ export default function CampaignApp() {
   const [status, setStatus] = useState<SaveStatus>("salvo");
   const [saveError, setSaveError] = useState("");
   const [tab, setTab] = useState("resumo");
+  const [focus,setFocus]=useState<{key:string;target:CampaignTarget}|null>(null);
+
   const [chatOpen, setChatOpen] = useState(true);
+  const [checkpointsOpen,setCheckpointsOpen]=useState(false);
   const [timeEditorOpen, setTimeEditorOpen] = useState(false);
   const [manualTime, setManualTime] = useState("");
   const [manualTimeRollbackConfirmed, setManualTimeRollbackConfirmed] = useState(false);
@@ -113,6 +118,12 @@ export default function CampaignApp() {
     const session = previewSession.current;
     if (session) { setPreviewGame(session.view); setPreviewPeers(session.peers); }
   }, []);
+  const openCampaignTarget=useCallback((target:CampaignTarget)=>{
+    if(roleRef.current!=="mestre" || previewSession.current || !current.current)return;
+    if(!campaignTargetExists(current.current,target)){toast.info("Este registro mudou ou não está mais disponível.");return;}
+    setFocus({key:createId(),target});setTab(target.tab);
+  }, []);
+
   function startPreview(actorId: string) {
     if (!current.current) return;
     previewSession.current = new PlayerPreviewSession(current.current, actorId);
@@ -549,6 +560,19 @@ export default function CampaignApp() {
     await loadCampaign();
   }
 
+  async function checkpointAction(command:CheckpointAction){
+    if(roleRef.current!=="mestre" || previewSession.current || teamActionInFlight.current)throw new Error("Aguarde a ação atual antes de continuar.");
+    if(pending.current || sending.current)await flush();
+    if(pending.current || paused.current)throw new Error("Salve ou recarregue a campanha antes de continuar.");
+    teamActionInFlight.current=true;
+    try{
+      const response=await fetch(`/api/campaign/checkpoints?campanha=${encodeURIComponent(current.current!.campaignId)}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...command,revision:revision.current})});
+      const result=await response.json() as {error?:string};if(!response.ok)throw new Error(result.error||"Não foi possível concluir.");
+      if(command.action==="restore"){setFocus(null);await loadCampaign();setTab("resumo");toast.success("Ponto restaurado. O estado anterior foi preservado.");}
+      else toast.success(command.action==="create"?"Ponto guardado":"Ponto excluído");
+    }finally{teamActionInFlight.current=false;}
+  }
+
   async function importBackup(file: File) {
     if (roleRef.current !== "mestre" || previewSession.current) return;
     if (!window.confirm("Substituir o mapa e as fichas desta campanha pelos dados da cópia? Baixe uma cópia atual antes de continuar.")) return;
@@ -644,6 +668,7 @@ export default function CampaignApp() {
   } : null;
 
   return <PlayerSimulationContext.Provider value={simulation}><Tabs value={activeTab} onValueChange={setTab} className="w-full">
+    {checkpointsOpen&&role==="mestre"&&!playerPreview&&<CampaignCheckpoints campaignId={game.campaignId} day={game.day} canAct={status==="salvo"} onAction={checkpointAction} onClose={()=>setCheckpointsOpen(false)}/>}
     <TablePresentationViewer presentation={presentation} enabled={readOnlyPreview} />
     <SidebarProvider className={`app-shell ${chatOpen ? "chat-open" : "chat-closed"}`}>
     <Sidebar collapsible="none" className="rail">
@@ -707,6 +732,7 @@ export default function CampaignApp() {
           <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" variant="outline" aria-label="Abrir opções da campanha"><MoreHorizontal size={17} /><span className="topbar-options-label">Opções</span></Button></DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-52">
               <DropdownMenuItem onSelect={downloadBackup}><Download size={16} />Baixar cópia</DropdownMenuItem>
+              {role === "mestre" && !playerPreview && <DropdownMenuItem onSelect={() => setCheckpointsOpen(true)}><RotateCcw size={16}/>Pontos de restauração</DropdownMenuItem>}
               {role === "mestre" && !playerPreview && <DropdownMenuItem onSelect={() => importInput.current?.click()}><Upload size={16} />Importar cópia</DropdownMenuItem>}
               <DropdownMenuItem onSelect={() => window.location.assign("/")}><BookOpen size={16} />Meus dossiês</DropdownMenuItem>
               <DropdownMenuItem onSelect={() => void fetch("/api/auth", { method: "DELETE" }).then(() => window.location.assign("/"))}><LogOut size={16} />Sair</DropdownMenuItem>
@@ -788,7 +814,7 @@ export default function CampaignApp() {
         {!playerPreview && (status === "erro" || status === "conflito") && <div role="alert" className="mb-5 rounded-md border border-[#d5aaa1] bg-[#fff2ed] px-4 py-3 text-sm text-[#803b35]">
           <b>As alterações ainda estão nesta tela.</b> {saveError} Baixe uma cópia antes de recarregar, se precisar.
         </div>}
-        {activeTab === "resumo" && role === "mestre" && !readOnlyPreview && <MasterOverview game={game} onNavigate={setTab} masterActions={masterActionControls} />}
+        {activeTab === "resumo" && role === "mestre" && !readOnlyPreview && <MasterOverview game={game} onNavigate={setTab} onOpen={openCampaignTarget} masterActions={masterActionControls} />}
         {activeTab === "mapa" && <>
           {!readOnlyPreview && <div className="panel scene-control-panel mb-5">
             <section className="scene-control-section scene-pressure-section">
@@ -855,7 +881,7 @@ export default function CampaignApp() {
               <p className="scene-supplies-note">Comida e Água em porções (4 = 1 unidade); Peças em unidades. Sem abrigo, registre apenas o que o grupo consegue transportar.</p>
             </section>
           </div>}
-          <HexExplorer key={game.campaignId} game={communityView} edit={edit} playerPreview={readOnlyPreview} teamPeers={viewedPeers} playerActions={playerActionControls} masterActions={masterActionControls} />
+          <HexExplorer key={!readOnlyPreview&&focus?.target.tab==="mapa"?focus.key:game.campaignId} initialTarget={!readOnlyPreview&&focus?.target.tab==="mapa"?focus.target:undefined} game={communityView} edit={edit} playerPreview={readOnlyPreview} teamPeers={viewedPeers} playerActions={playerActionControls} masterActions={masterActionControls} />
           {!readOnlyPreview && <div className="panel panel-pad mt-5 flex flex-wrap items-center gap-3">
             <div className="mr-auto"><b>Relógio da expedição</b><p className="text-xs subtle">Ao anoitecer, registre o descanso na ficha, mesmo sem abrigo.</p></div>
             {[30,60,120].map(amount=><Button key={amount} size="sm" variant="outline" disabled={game.minutes+amount>=1440}
@@ -887,9 +913,9 @@ export default function CampaignApp() {
           </div>}
         </>}
         {activeTab === "cena" && <SceneBoard game={previewActionGame} edit={edit} playerPreview={readOnlyPreview} playerActions={playerActionControls} masterActions={masterActionControls} />}
-        {activeTab === "sobreviventes" && <SurvivorPanel key={playerPreview ? `preview:${viewedSurvivorId}` : "live"} game={game} edit={edit} playerPreview={readOnlyPreview} playerMode={readOnlyPreview} restPeers={viewedPeers} onOpenConflict={() => setTab("conflito")} playerActions={playerActionControls} masterActions={masterActionControls} />}
-        {activeTab === "comunidade" && <NpcPanel game={communityView} edit={edit} playerPreview={readOnlyPreview} />}
-        {activeTab === "abrigo" && <ShelterPanel game={communityView} edit={edit} playerPreview={readOnlyPreview} playerSurvivorId={readOnlyPreview ? viewedSurvivorId : null} playerActions={playerActionControls} masterActions={masterActionControls} />}
+        {activeTab === "sobreviventes" && <SurvivorPanel key={playerPreview ? `preview:${viewedSurvivorId}` : focus?.target.tab==="sobreviventes"?focus.key:"live"} initialSurvivorId={!readOnlyPreview&&focus?.target.tab==="sobreviventes"?focus.target.survivorId:undefined} initialSection={!readOnlyPreview&&focus?.target.tab==="sobreviventes"?focus.target.section:undefined} game={game} edit={edit} playerPreview={readOnlyPreview} playerMode={readOnlyPreview} restPeers={viewedPeers} onOpenConflict={() => setTab("conflito")} playerActions={playerActionControls} masterActions={masterActionControls} />}
+        {activeTab === "comunidade" && <NpcPanel key={focus?.target.tab==="comunidade"?focus.key:"comunidade"} initialNpcId={!readOnlyPreview&&focus?.target.tab==="comunidade"?focus.target.npcId:undefined} game={communityView} edit={edit} playerPreview={readOnlyPreview} />}
+        {activeTab === "abrigo" && <ShelterPanel key={focus?.target.tab==="abrigo"?focus.key:"abrigo"} initialProjectId={!readOnlyPreview&&focus?.target.tab==="abrigo"?focus.target.projectId:undefined} game={communityView} edit={edit} playerPreview={readOnlyPreview} playerSurvivorId={readOnlyPreview ? viewedSurvivorId : null} playerActions={playerActionControls} masterActions={masterActionControls} />}
         {activeTab === "conflito" && role === "mestre" && !playerPreview && <ConflictSceneManager game={game} edit={edit} />}
         {activeTab === "conflito" && readOnlyPreview && publicConflictActive && <PlayerConflictScene game={previewActionGame} selfId={viewedSurvivorId} preview={playerPreview} />}
         {activeTab === "ameacas" && role === "mestre" && !playerPreview && <section className="panel panel-pad"><ThreatManager game={game} edit={edit} /></section>}

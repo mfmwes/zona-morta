@@ -1,4 +1,5 @@
 "use client";
+import { RuleHelp } from "@/components/rule-help";
 
 import { currentTableRest, requestTableRest, confirmTableRest } from "@/lib/table-rest";
 
@@ -267,9 +268,9 @@ function deadlineLabel(deadline: number | null | undefined) {
   return `dia ${Math.floor(deadline / 1440) + 1}, ${String(Math.floor((deadline % 1440) / 60)).padStart(2, "0")}:${String(deadline % 60).padStart(2, "0")}`;
 }
 
-export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, restPeers = [], onOpenConflict, playerActions, masterActions }: { game: GameState; edit: Edit; playerPreview: boolean; playerMode?: boolean; restPeers?: RestPeer[]; onOpenConflict?: () => void; playerActions?: PlayerActionControls; masterActions?: MasterActionControls }) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("resumo");
+export function SurvivorPanel({ initialSurvivorId, initialSection, game, edit, playerPreview, playerMode = false, restPeers = [], onOpenConflict, playerActions, masterActions }: { initialSurvivorId?:string; initialSection?:string; game: GameState; edit: Edit; playerPreview: boolean; playerMode?: boolean; restPeers?: RestPeer[]; onOpenConflict?: () => void; playerActions?: PlayerActionControls; masterActions?: MasterActionControls }) {
+  const [selectedId, setSelectedId] = useState<string | null>(initialSurvivorId??null);
+  const [activeTab, setActiveTab] = useState(initialSection??"resumo");
   useEffect(() => {
     const openRest = () => {
       setActiveTab("resumo");
@@ -687,7 +688,7 @@ export function SurvivorPanel({ game, edit, playerPreview, playerMode = false, r
                 <p className="roll-hint inventory-count" role="status">{inventoryGroups.reduce((sum, [, items]) => sum + items.length, 0)} de {selected.inventory.length} registros · {selected.inventory.reduce((sum, item) => sum + item.qty, 0)} unidades no total</p></>}
             </section>
           </TabsContent>
-          <TabsContent value="condicoes" className="character-tab-content">
+          <TabsContent value="condicoes" className="character-tab-content"><RuleHelp topic="conditions"/>
             <section className="character-surface"><h3>Condições de eventos</h3>{!(selected.eventConditions ?? []).length && <p className="subtle">Nenhuma condição de evento ativa.</p>}{(selected.eventConditions ?? []).map(c=><div className="list-card" key={c.name}><b>{c.name}</b><p>{c.effect}</p><p className="subtle">Remover: {c.clear}</p>{!playerMode&&!playerPreview&&<Button size="sm" variant="outline" onClick={()=>change(selected.id,s=>{s.eventConditions=(s.eventConditions??[]).filter(row=>row.name!==c.name);})}>Condição encerrada: remover</Button>}</div>)}</section>
             <section className="character-surface"><SectionHeading index="01" title="Exposição e infecção" /><div className="character-condition-banner"><HeartPulse size={24} aria-hidden="true" /><div><b>{selected.infection}</b><p>{selected.infection === "Saudável" ? "Nenhuma exposição registrada." : "Acompanhe o estado e as escolhas de tratamento."}</p></div></div>
               {!playerPreview && <div className="character-condition-edit"><Pick label="Estado" value={selected.infection} options={infectionStates} onChange={value => change(selected.id, s => {

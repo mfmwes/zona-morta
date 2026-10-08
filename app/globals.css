@@ -3813,3 +3813,8 @@ html[data-theme="dark"] .shelter-detail-next { background:#173331; }
 .theme-label-light { display:none; }
 html[data-theme="dark"] .theme-label-light { display:inline; }
 html[data-theme="dark"] .theme-label-dark { display:none; }
+
+.rule-help { margin: .65rem 0; border: 1px solid var(--border); border-radius: .5rem; padding: .5rem .7rem; font-size: .85rem; }
+.rule-help summary { display: flex; align-items: center; gap: .4rem; cursor: pointer; font-weight: 600; }
+.rule-help summary:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+.rule-help ul { list-style: disc; padding-left: 1.2rem; margin-top: .6rem; display: grid; gap: .45rem; line-height: 1.5; }
