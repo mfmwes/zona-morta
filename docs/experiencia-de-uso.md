@@ -47,3 +47,11 @@ O chat oferece d4, d6, d8, d10, d12, d20 e d100. Clicar adiciona um dado à fór
 O registro mostra autor, fórmula, valores individuais e total para todos os jogadores e mestre, em tempo real. Não altera Esperança, Medo, Estresse, PV, munição ou relógio e não pressupõe sucesso ou dano. A seleção do mestre acompanha “Falando como”; jogadores usam o próprio personagem. Prévia e convidados não rolam. Rolagens livres têm o mesmo histórico, exclusão pelo mestre e proteção contra repetição de salvamento do chat existente.
 
 São permitidos até vinte dados por rolagem e um modificador total entre −999 e +999. Fórmulas são analisadas sem executar código; multiplicação, divisão, dados negativos e tipos fora da lista são recusados. A API confere tipos, valores e total antes de guardar o registro do jogador.
+
+# Revisar efeitos de eventos
+
+Os painéis **Efeitos nos sobreviventes** e **Relação com um PNJ** mostram se estão ativos e abrem a edição ao marcar sua aplicação. Desativar preserva o rascunho, mas não envia esses efeitos. Sugestões pessoais ficam visíveis em um resumo enquanto o painel está desativado.
+
+A seleção dos sobreviventes usa cartões com nome, retrato e indicação de seleção, além de selecionar todos e limpar. PV, Estresse e Esperança ficam no grupo “Por pessoa selecionada”; Comida e Água ficam em “Provisões do grupo”, com o total dividido pelos alvos. A prévia mostra valores antes e depois por pessoa, incluindo quem recebe zero porções na divisão. Condições continuam exigindo efeito e forma de remoção. Usar Armadura só aparece com dano; zerar os PV a marcar remove essa escolha.
+
+PNJs presentes aparecem em cartões. **Manter vínculo**, **Melhorar vínculo** e **Definir vínculo** conservam as regras existentes; a prévia mostra a disposição resultante, inclusive quando um vínculo mais forte é preservado. Sem cadastro, o atalho abre a criação ou vinculação do PNJ do evento. O acordo permanece reservado ao mestre. Os avisos indicam seleção ou descrição que falta antes de confirmar; a aplicação continua dependendo da confirmação ou conclusão da etapa agendada.

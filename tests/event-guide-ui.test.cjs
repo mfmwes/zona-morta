@@ -131,9 +131,9 @@ test('mudança concorrente pode ser revisada explicitamente sem apagar o rascunh
 test('efeitos sugeridos exigem alvos, entram no comando e preservam edições',async()=>{
  let sent;const f=fixture({canAct:true,pending:false,send:async c=>{sent=c;}});
  f.find(n=>n.type==='button'&&text(n).startsWith('Intervir / negociar')).props.onClick();f.find(n=>n.props?.label==='Desfecho escolhido').props.onChange('failure');
- assert.equal(f.find(n=>n.props?.label==='PV a marcar').props.value,2);
+ assert.equal(f.find(n=>n.props?.label==='PV a marcar'),undefined);
  const label=f.find(n=>n.type==='label'&&text(n).includes('Aplicar efeitos pessoais nesta etapa'));elements(label).find(n=>n.type==='input').props.onChange({target:{checked:true}});
- assert.equal(f.find(n=>n.type==='button'&&text(n)==='Registrar etapa').props.disabled,true);assert.match(text(f.find(n=>n.props?.role==='status')),/quem recebe/);
+ assert.equal(f.find(n=>n.type==='button'&&text(n)==='Registrar etapa').props.disabled,true);assert.match(text(f.find(n=>n.props?.role==='status')),/Selecione ao menos/);
  const field=f.find(n=>n.type==='fieldset'&&text(n).includes('Quem recebe estes efeitos?'));elements(field).find(n=>n.type==='input').props.onChange({target:{checked:true}});
  f.find(n=>n.props?.label==='PV a marcar').props.onChange(1);f.find(n=>n.props?.label==='Desfecho escolhido').props.onChange('complication');assert.equal(f.find(n=>n.props?.label==='PV a marcar').props.value,1);
  await f.find(n=>n.type==='button'&&text(n)==='Registrar etapa').props.onClick();assert.equal(sent.personalEffects[0].hpMarks,1);assert.equal(sent.personalEffects[0].survivorId,f.game.survivors[0].id);
@@ -148,7 +148,7 @@ test('registrar vínculo requer um PNJ e preserva compromisso revisado',async()=
  let sent;const f=fixture({canAct:true,pending:false,send:async c=>{sent=c;}});
  f.game.npcs.push({id:'lia',name:'Lia',hex:'0,0',active:true,status:'Bem',disposition:'Neutro'});
  const label=f.find(n=>n.type==='label'&&text(n).includes('Registrar mudança de disposição'));elements(label).find(n=>n.type==='input').props.onChange({target:{checked:true}});assert.equal(f.find(n=>n.type==='button'&&text(n)==='Registrar etapa').props.disabled,true);
- f.find(n=>n.props?.label==='PNJ afetado').props.onChange('lia');f.find(n=>n.props?.label==='Nova disposição').props.onChange('Aliado');f.find(n=>n.props?.label==='Acordo, dívida ou ruptura (reservado)').props.onChange('Uma entrega gratuita até amanhã.');
+ f.find(n=>n.props?.['aria-label']==='Selecionar PNJ Lia').props.onClick();f.find(n=>n.type==='button'&&text(n)==='Aliado').props.onClick();f.find(n=>n.props?.label==='Acordo, dívida ou ruptura (reservado)').props.onChange('Uma entrega gratuita até amanhã.');
  f.find(n=>n.props?.label==='Desfecho escolhido').props.onChange('complication');assert.equal(f.find(n=>n.props?.label==='Acordo, dívida ou ruptura (reservado)').props.value,'Uma entrega gratuita até amanhã.');
  await f.find(n=>n.type==='button'&&text(n)==='Registrar etapa').props.onClick();assert.deepEqual(sent.npcEffect,{npcId:'lia',disposition:'Aliado',mode:'set',commitment:'Uma entrega gratuita até amanhã.'});
 });
@@ -179,4 +179,34 @@ test('interface inicia prazo anunciado sem cobrar tempo ou participantes',async(
  f.event.generatorRoll=88;f.event.text=content.generators.eventos[87].text;
  await f.find(n=>n.type==='button'&&text(n)==='Iniciar prazo anunciado sem avançar o tempo').props.onClick();
  assert.equal(sent.minutes,0);assert.deepEqual(sent.participantIds,[]);assert.equal(sent.clock.initial.minutes,1);assert.equal(sent.clock.action,'keep');
+});
+
+test('painéis desativados ocultam edição e seleção de pessoas mantém a divisão de provisões visível',()=>{
+ const f=fixture({canAct:true,pending:false,send:async()=>{}});assert.equal(f.find(n=>n.props?.label==='PV a marcar'),undefined);
+ const toggle=f.find(n=>n.type==='label'&&text(n).includes('Aplicar efeitos pessoais nesta etapa'));elements(toggle).find(n=>n.type==='input').props.onChange({target:{checked:true}});
+ for(const name of ['Bia','Caio'])f.game.survivors.push({...structuredClone(f.game.survivors[0]),id:name,name});
+ f.find(n=>n.type==='button'&&text(n)==='Selecionar todos').props.onClick();f.find(n=>n.props?.label==='Água (total)').props.onChange(2);
+ const preview=f.find(n=>n.props?.['aria-label']==='Prévia das alterações nas fichas');const articles=elements(preview).filter(n=>n.type==='article');assert.equal(articles.length,3);assert.match(text(articles[0]),/Água12/);assert.match(text(articles[1]),/Água12/);assert.match(text(articles[2]),/Água11/);
+ f.find(n=>n.type==='button'&&text(n)==='Limpar seleção').props.onClick();assert.match(text(f.find(n=>n.props?.role==='status')),/Selecione ao menos/);assert.equal(f.find(n=>n.type==='button'&&text(n)==='Registrar etapa').props.disabled,true);
+});
+test('vínculo mostra resultado preservando Leal e modo manter não pede nova disposição',async()=>{
+ let sent;const f=fixture({canAct:true,pending:false,send:async c=>{sent=c;}});f.game.npcs.push({id:'lia',name:'Lia',hex:'0,0',active:true,status:'Bem',disposition:'Leal'});
+ const toggle=f.find(n=>n.type==='label'&&text(n).includes('Registrar mudança de disposição'));elements(toggle).find(n=>n.type==='input').props.onChange({target:{checked:true}});
+ f.find(n=>n.props?.['aria-label']==='Selecionar PNJ Lia').props.onClick();f.find(n=>n.type==='button'&&text(n).startsWith('Melhorar vínculo')).props.onClick();f.find(n=>n.type==='button'&&text(n)==='Aliado').props.onClick();
+ const transition=f.find(n=>n.props?.className==='event-npc-transition');assert.match(text(transition),/LealLeal/);assert.match(text(transition),/Nunca reduz/);
+ f.find(n=>n.type==='button'&&text(n).startsWith('Manter vínculo')).props.onClick();assert.equal(f.find(n=>n.type==='button'&&text(n)==='Aliado'),undefined);
+ f.find(n=>n.props?.label==='Acordo, dívida ou ruptura (reservado)').props.onChange('Lia oferece uma noite de abrigo.');await f.find(n=>n.type==='button'&&text(n)==='Registrar etapa').props.onClick();assert.equal(sent.npcEffect.mode,'keep');
+});
+test('sem PNJ cadastrado, há um atalho direto e os efeitos continuam opcionais',()=>{
+ const f=fixture({canAct:true,pending:false,send:async()=>{}});const before=structuredClone(f.game);const toggle=f.find(n=>n.type==='label'&&text(n).includes('Registrar mudança de disposição'));elements(toggle).find(n=>n.type==='input').props.onChange({target:{checked:true}});
+ assert.ok(f.find(n=>n.type==='p'&&text(n).includes('Nenhum PNJ ativo')));f.find(n=>n.type==='button'&&text(n)==='Criar ou vincular PNJ do evento').props.onClick();assert.equal(f.find(n=>n.type==='HexEventActionDialog').props.request.type,'npc');assert.deepEqual(f.game,before);
+});
+
+test('desativar preserva o rascunho e zerar dano remove a marcação de Armadura',async()=>{
+ let sent;const f=fixture({canAct:true,pending:false,send:async c=>{sent=c;}});const toggle=()=>f.find(n=>n.type==='label'&&text(n).includes('Aplicar efeitos pessoais nesta etapa'));
+ elements(toggle()).find(n=>n.type==='input').props.onChange({target:{checked:true}});f.find(n=>n.type==='button'&&text(n)==='Selecionar todos').props.onClick();f.find(n=>n.props?.label==='PV a marcar').props.onChange(1);
+ const armor=f.find(n=>n.type==='label'&&text(n).includes('Usar Armadura'));elements(armor).find(n=>n.type==='input').props.onChange({target:{checked:true}});
+ elements(toggle()).find(n=>n.type==='input').props.onChange({target:{checked:false}});assert.equal(f.find(n=>n.props?.label==='PV a marcar'),undefined);elements(toggle()).find(n=>n.type==='input').props.onChange({target:{checked:true}});assert.equal(f.find(n=>n.props?.label==='PV a marcar').props.value,1);
+ f.find(n=>n.props?.label==='PV a marcar').props.onChange(0);assert.equal(f.find(n=>n.type==='label'&&text(n).includes('Usar Armadura')),undefined);
+ await f.find(n=>n.type==='button'&&text(n)==='Registrar etapa').props.onClick();assert.equal(sent.personalEffects[0].armor,false);
 });
