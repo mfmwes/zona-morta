@@ -101,7 +101,7 @@ export function HexEventGuideDialog({game,hexId,eventId,controls,edit,onClose}:{
   }
   return <><Dialog open={!elementRequest} onOpenChange={open=>{if(!open&&!busy)onClose();}}><DialogContent className="hex-event-guide-dialog">
     <DialogHeader><DialogTitle><BookOpen size={19}/> Conduzir evento · {guide.title}</DialogTitle><DialogDescription>Hex {hexId} · Guia reservado ao mestre. Registre cada etapa conforme a ação e os testes resolvidos; encerre quando a situação estiver concluída.</DialogDescription></DialogHeader><RuleHelp topic="event"/>
-    <div className="event-guide-scene"><p>{event?.text??"O evento foi removido."}</p><b>O que está em jogo</b><p>{guide.stakes}</p>{event?.guidance&&<p className="subtle">{event.guidance}</p>}</div>
+    <div className="event-guide-scene"><b>Para narrar</b><p>{event?.text??"O evento foi removido."}</p><b>Decisão da cena</b><p>{guide.stakes}</p>{event?.guidance&&<p className="subtle">{event.guidance}</p>}</div>
     <div className="event-guide-columns">
       <section className="event-guide-approaches" aria-label="Abordagens e resolução sugerida"><h3>Como conduzir <span className="tag">{guide.format==="brief"?"Ocorrência breve":"Cena"}</span></h3><p className="subtle text-xs">{guide.format==="brief"?"Uma decisão pode bastar. ":""}Sugestões editáveis. Proponha teste somente quando houver risco e incerteza.</p>{guide.legacy&&<p className="subtle text-xs">Guia compatível com o texto já salvo neste evento.</p>}{guide.setup&&<details className="event-guide-options"><summary>Preparação sugerida para o mestre</summary><p>{guide.setup}</p></details>}
         {(guide.ignored||guide.returnVisit||guide.contextNote)&&<details className="event-guide-options"><summary>Se ignorarem, retornarem ou adaptarem o local</summary>{guide.ignored&&<p><b>Se ignorarem:</b> {guide.ignored}</p>}{guide.returnVisit&&<p><b>Na próxima visita:</b> {guide.returnVisit}</p>}{guide.contextNote&&<p><b>Compatibilidade:</b> {guide.contextNote}</p>}</details>}
@@ -109,7 +109,7 @@ export function HexEventGuideDialog({game,hexId,eventId,controls,edit,onClose}:{
           <b>{a.label}</b><span>{a.description}</span><small>{a.minutes?`${a.minutes} min sugeridos`:"Sem custo de tempo sugerido"}{a.test?` · Se necessário: ${a.test.trait}, Dificuldade ${a.test.difficulty}`:" · Sem teste se a abordagem bastar"}</small>
         </button>)}
         {approachId==="free"&&<p className="subtle text-xs">Atributo, dificuldade e custos dependem da ação descrita. Não há teste automático.</p>}
-        {approach.announcedCost&&<p className="character-rule-note"><b>Custo possível a anunciar:</b> {approach.announcedCost}</p>}
+        {approach.announcedCost&&<p className="character-rule-note"><b>Antes do teste, anuncie:</b> {approach.announcedCost}</p>}
         {approach.timeNote&&<p className="subtle text-xs">{approach.timeNote}</p>}
         {approach.test&&<details className="event-guide-options"><summary>Quando propor um teste nesta abordagem</summary><p>{approach.test.when}</p>{approach.test.alternative&&<p><b>Outra ação: {approach.test.alternative.trait}, Dificuldade {approach.test.alternative.difficulty}.</b> {approach.test.alternative.when}</p>}<p className="subtle">Atributo e dificuldade dependem da ação descrita e do risco anunciado. Estes valores são referências.</p></details>}
         <details className="event-guide-options"><summary>Possíveis desfechos desta abordagem</summary>{Object.keys(guide.outcomes).map(key=><p key={key}><b>{eventOutcomeLabels[key as EventOutcome]}:</b> {eventOutcomeSuggestion(guide,approachId,key as EventOutcome).summary}</p>)}</details>
@@ -177,7 +177,7 @@ export function HexEventGuideDialog({game,hexId,eventId,controls,edit,onClose}:{
           </section>}
           <p className="subtle text-xs">Movimentos, itens físicos, consertos e descansos usam seus controles próprios. As condições ficam na aba Condições da ficha até o mestre registrar sua remoção.</p>
         </>:<p className="subtle">Consulte o desfecho registrado abaixo. Para uma nova ocorrência, reabra o evento no setor.</p>}
-        {guide.application&&<p className="subtle text-xs">{guide.application}</p>}
+        {guide.application&&<details className="event-guide-options"><summary>Como aplicar este resultado no sistema</summary><p>{guide.application}</p></details>}
         {event&&eventStatus(event)!=="archived"&&!scheduled&&<details className="event-guide-options"><summary>Elementos deste evento</summary><div className="event-guide-elements">{(Object.keys(hexEventActionLabels) as HexEventActionKind[]).map(type=><Button key={type} size="sm" variant="outline" disabled={disabled||eventActionUsed(game,hexId,event,type)} onClick={()=>setElementRequest({hexId,eventId,type,suggested:true})}>{hexEventActionLabels[type]}</Button>)}</div><p>Revise e confirme cada elemento; a etapa não cria itens, pessoas ou conflitos automaticamente.</p></details>}
         {outdated&&<Button size="sm" variant="outline" disabled={disabled} onClick={()=>{if(event)setExpectedEvent(eventResolutionFingerprint(event));setError("");}}>Conferi a versão atual; manter meu rascunho</Button>}
         {blockReason&&canResolve&&<p role="status" className="event-guide-error">{blockReason}</p>}

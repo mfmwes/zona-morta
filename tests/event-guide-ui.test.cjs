@@ -47,6 +47,7 @@ const { HexEventGuideDialog } = require('../components/hex-event-guide-dialog.ts
 Module._load = load;
 const { defaultState, initialSurvivor, content } = require('../lib/game.ts');
 const { eventResolutionFingerprint } = require('../lib/event-resolution.ts');
+const { eventGuide } = require('../lib/event-guides.ts');
 const text = n => n == null || typeof n==='boolean' ? '' : Array.isArray(n) ? n.map(text).join('') : typeof n==='object' ? text(n.props?.children) : String(n);
 const elements = n => Array.isArray(n) ? n.flatMap(elements) : n && typeof n==='object' && n.props ? [n,...elements(n.props.children)] : [];
 function fixture(controls) {
@@ -72,7 +73,7 @@ test('guia envia desfecho revisado ao servidor, bloqueia repetição e não apli
 test('abordagem cuidadosa não penaliza automaticamente; recuo preserva tempo e erro mantém rascunho',async()=>{
  const f=fixture({canAct:true,pending:false,send:async()=>{throw new Error('O evento mudou');}});
  f.find(n=>n.props?.label==='Desfecho escolhido').props.onChange('failure');assert.equal(f.find(n=>n.props?.label==='Barulho').props.value,0);
- f.find(n=>n.type==='button'&&text(n).startsWith('Intervir / negociar')).props.onClick();
+ f.find(n=>n.type==='button'&&text(n).startsWith(eventGuide(f.event).approaches.find(a=>a.id==='risk').label)).props.onClick();
  f.find(n=>n.props?.label==='Desfecho escolhido').props.onChange('withdrawn');assert.equal(f.find(n=>n.props?.label==='Tempo (min)').props.value,5);
  f.find(n=>n.type==='button'&&text(n)==='Registrar etapa').props.onClick();await new Promise(resolve=>setImmediate(resolve));
  assert.match(text(f.find(n=>n.props?.role==='alert')),/O evento mudou/);assert.equal(f.closed(),0);
@@ -84,21 +85,21 @@ test('trocar abordagem atualiza somente sugestões e preserva relato e efeitos e
  const f=fixture({canAct:true,pending:false,send:async()=>{}});
  f.event.generatorRoll=63;f.event.text=content.generators.eventos[62].text;
  assert.match(f.find(n=>n.props?.label==='O que aconteceu').props.value,/reparo continuam por resolver/);
- f.find(n=>n.type==='button'&&text(n).startsWith('Intervir / negociar')).props.onClick();
+ f.find(n=>n.type==='button'&&text(n).startsWith(eventGuide(f.event).approaches.find(a=>a.id==='risk').label)).props.onClick();
  assert.match(f.find(n=>n.props?.label==='O que aconteceu').props.value,/perda é contida/);
  f.find(n=>n.props?.label==='O que aconteceu').props.onChange('O grupo só identificou a válvula');
  f.find(n=>n.props?.label==='O que permanece para próximas visitas').props.onChange('Falta uma ferramenta');
  f.find(n=>n.props?.label==='Tempo (min)').props.onChange(7);f.find(n=>n.props?.label==='Barulho').props.onChange(2);
  f.find(n=>n.props?.label==='Desfecho escolhido').props.onChange('withdrawn');
- f.find(n=>n.type==='button'&&text(n).startsWith('Observar / preparar')).props.onClick();
+ f.find(n=>n.type==='button'&&text(n).startsWith(eventGuide(f.event).approaches.find(a=>a.id==='careful').label)).props.onClick();
  assert.equal(f.find(n=>n.props?.label==='O que aconteceu').props.value,'O grupo só identificou a válvula');assert.equal(f.find(n=>n.props?.label==='O que permanece para próximas visitas').props.value,'Falta uma ferramenta');assert.equal(f.find(n=>n.props?.label==='Tempo (min)').props.value,7);assert.equal(f.find(n=>n.props?.label==='Barulho').props.value,2);
  f.find(n=>n.type==='button'&&text(n)==='Usar sugestão do desfecho').props.onClick();assert.notEqual(f.find(n=>n.props?.label==='O que aconteceu').props.value,'O grupo só identificou a válvula');assert.equal(f.find(n=>n.props?.label==='Tempo (min)').props.value,7);
 });
 test('reconhecer desvio tem custo local e mostra condição do teste sem realizar deslocamento',()=>{
  const f=fixture({canAct:true,pending:false,send:async()=>{}}),before=structuredClone(f.game);
- f.find(n=>n.type==='button'&&text(n).startsWith('Outra saída / recuar')).props.onClick();
- assert.equal(f.find(n=>n.props?.label==='Tempo (min)').props.value,10);assert.match(text(f.find(n=>n.type==='p'&&text(n).includes('custo do mapa'))),/custo do mapa/);assert.deepEqual(f.game,before);
- f.find(n=>n.type==='button'&&text(n).startsWith('Intervir / negociar')).props.onClick();assert.ok(f.find(n=>n.type==='details'&&text(n).includes('Quando propor um teste')));assert.match(text(f.find(n=>n.type==='details'&&text(n).includes('Quando propor um teste'))),/Limpar a trava e levantar a grade/);
+ f.find(n=>n.type==='button'&&text(n).startsWith(eventGuide(f.event).approaches.find(a=>a.id==='alternative').label)).props.onClick();
+ assert.equal(f.find(n=>n.props?.label==='Tempo (min)').props.value,2);assert.match(text(f.find(n=>n.type==='p'&&text(n).includes('custo do mapa'))),/custo do mapa/);assert.deepEqual(f.game,before);
+ f.find(n=>n.type==='button'&&text(n).startsWith(eventGuide(f.event).approaches.find(a=>a.id==='risk').label)).props.onClick();assert.ok(f.find(n=>n.type==='details'&&text(n).includes('Quando propor um teste')));assert.match(text(f.find(n=>n.type==='details'&&text(n).includes('Quando propor um teste'))),/Levantar a grade e instalar apoio/);
 });
 
 test('etapa pode manter situação ativa e encerrar explicitamente, sem cobrar tempo já contado',async()=>{
@@ -130,7 +131,7 @@ test('mudança concorrente pode ser revisada explicitamente sem apagar o rascunh
 
 test('efeitos sugeridos exigem alvos, entram no comando e preservam edições',async()=>{
  let sent;const f=fixture({canAct:true,pending:false,send:async c=>{sent=c;}});
- f.find(n=>n.type==='button'&&text(n).startsWith('Intervir / negociar')).props.onClick();f.find(n=>n.props?.label==='Desfecho escolhido').props.onChange('failure');
+ f.find(n=>n.type==='button'&&text(n).startsWith(eventGuide(f.event).approaches.find(a=>a.id==='risk').label)).props.onClick();f.find(n=>n.props?.label==='Desfecho escolhido').props.onChange('failure');
  assert.equal(f.find(n=>n.props?.label==='PV a marcar'),undefined);
  const label=f.find(n=>n.type==='label'&&text(n).includes('Aplicar efeitos pessoais nesta etapa'));elements(label).find(n=>n.type==='input').props.onChange({target:{checked:true}});
  assert.equal(f.find(n=>n.type==='button'&&text(n)==='Registrar etapa').props.disabled,true);assert.match(text(f.find(n=>n.props?.role==='status')),/Selecione ao menos/);
@@ -157,7 +158,7 @@ test('interface divide duas águas entre três alvos sem multiplicar o total',as
  let sent;const f=fixture({canAct:true,pending:false,send:async c=>{sent=c;}});
  f.event.generatorRoll=30;f.event.text=content.generators.eventos[29].text;
  for(const name of ['Bia','Caio']) f.game.survivors.push({...structuredClone(f.game.survivors[0]),id:name,name});
- f.find(n=>n.type==='button'&&text(n).startsWith('Intervir / negociar')).props.onClick();
+ f.find(n=>n.type==='button'&&text(n).startsWith(eventGuide(f.event).approaches.find(a=>a.id==='risk').label)).props.onClick();
  const label=f.find(n=>n.type==='label'&&text(n).includes('Aplicar efeitos pessoais nesta etapa'));elements(label).find(n=>n.type==='input').props.onChange({target:{checked:true}});
  for(let i=0;i<3;i++){const field=f.find(n=>n.type==='fieldset'&&text(n).includes('Quem recebe estes efeitos?'));elements(field).filter(n=>n.type==='input')[i].props.onChange({target:{checked:true}});}
  assert.equal(f.find(n=>n.props?.label==='Água (total)').props.value,2);
@@ -167,7 +168,7 @@ test('interface divide duas águas entre três alvos sem multiplicar o total',as
 test('interface separa cinco minutos de ação e dez minutos ganhos no prazo do portão',async()=>{
  let sent;const f=fixture({canAct:true,pending:false,send:async c=>{sent=c;}});
  f.event.generatorRoll=97;f.event.text=content.generators.eventos[96].text;
- f.find(n=>n.type==='button'&&text(n).startsWith('Intervir / negociar')).props.onClick();
+ f.find(n=>n.type==='button'&&text(n).startsWith(eventGuide(f.event).approaches.find(a=>a.id==='risk').label)).props.onClick();
  f.find(n=>n.props?.label==='Desfecho escolhido').props.onChange('complication');
  assert.equal(f.find(n=>n.props?.label==='Tempo (min)').props.value,5);
  assert.equal(f.find(n=>n.props?.label==='Tempo ganho no prazo (min)').props.value,10);
