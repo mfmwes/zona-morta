@@ -39,11 +39,13 @@ A captura mostrou cartões de ameaças esticados, grandes espaços vazios ao abr
 | --- | --- | --- |
 | P1 | Abrir uma habilidade aumentava a altura dos cartões vizinhos e distribuía espaço entre os blocos. | Grade alinhada ao topo, cartões com altura natural e conteúdo alinhado ao início. |
 | P1 | Rolagem dentro da lista escondia o cabeçalho do grupo. | Lista acompanha a rolagem da página, sem altura máxima ou rolagem própria. |
-| P1 | Dificuldade e limiares ficavam sem rótulos; PV podiam ser confundidos com pontos restantes. | Indicadores em duas colunas com rótulos sempre visíveis, números maiores e indicação explícita de recursos marcados. Limiares também completos no nome acessível. |
-| P1 | Consultar habilidades afastava os botões de ação. | Atacar, Spotlight, derrotar/reativar e remover aparecem antes das seções de consulta. Condições atuais ficam visíveis mesmo com o editor recolhido. |
+| P1 | Dificuldade e limiares ficavam sem rótulos; PV podiam ser confundidos com pontos restantes. | Quatro indicadores em uma linha com rótulos visíveis; recursos marcados identificados na descrição acessível e na ajuda do rótulo. Cartões muito estreitos usam duas colunas. Limiares completos no nome acessível. |
+| P1 | Consultar habilidades afastava os botões de ação. | Atacar, Spotlight, derrotar/reativar e remover permanecem visíveis numa linha de ações. Habilidades abrem num painel lateral, preservando a altura dos cartões. Condições atuais ficam visíveis mesmo com o editor recolhido. |
 | P1 | Pedido de Spotlight só aparecia na trilha e na lista acima da equipe. | Cartão do sobrevivente mostra “Pediu Spotlight” e a ação “Dar Spotlight”; concessão utiliza a mesma regra existente e remove o pedido. |
-| P2 | Botões pequenos e nomes truncados dificultavam a operação. | Ações e resumos com altura mínima de 44px, nomes com quebra de linha, foco visível nos resumos e identificação acessível ao remover condições. |
+| P2 | Botões pequenos e nomes truncados dificultavam a operação. | Ações com altura mínima de 44px; resumos compactos de 36px, ampliados para 44px em dispositivos de toque. Nomes com quebra de linha, foco visível e identificação acessível ao remover condições. |
 
-Não muda regras de ataque, dano, condições, derrota, Spotlight, projeção privada ou isolamento da prévia. Os testes de componentes exercitam concessão do pedido, derrota por PV, filtros, reativação, prioridade das ações e descrições dos indicadores. A correção de layout ainda precisa de validação visual no navegador: o ambiente local não é acessível pelo navegador remoto.
+Não muda regras de ataque, dano, condições, derrota, Spotlight, projeção privada ou isolamento da prévia. Os testes de componentes exercitam concessão do pedido, derrota por PV, filtros, reativação, presença das ações, consulta lateral e descrições dos indicadores. A correção de layout ainda precisa de validação visual no navegador: o ambiente local não é acessível pelo navegador remoto.
 
 Validação desta etapa: 493 testes passaram; verificação de tipos, compilação e regressão HTTP/D1/WebSocket passaram. O lint terminou sem erros, mantendo os 41 avisos existentes.
+
+Ajuste após a referência visual do usuário: cabeçalho com estado ao lado do nome, indicadores em uma linha, editor de condições recolhido, consulta de ataque/habilidades em painel lateral e ações compactas abaixo. O painel usa o Sheet existente, com foco contido, Escape, fechamento pelo fundo e retorno ao botão de consulta; o mestre pode consultar ameaças derrotadas.

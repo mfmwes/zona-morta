@@ -52,7 +52,7 @@ test('estoque compartilhado filtra itens reais, limpa a busca e preserva as rest
 });
 
 
-test('conflito mantém ações antes da consulta, condições visíveis e concede o pedido ao sobrevivente certo',()=>{
+test('conflito mantém ações compactas, consulta lateral e condições visíveis e concede o pedido ao sobrevivente certo',()=>{
  const {initialSurvivor,content}=require('../lib/game.ts');
  const {createConflictScene,addThreatInstances}=require('../lib/conflict.ts');
  const {threatLibrary}=require('../lib/threats.ts');
@@ -64,7 +64,11 @@ test('conflito mantém ações antes da consulta, condições visíveis e conced
  const v=view(ConflictSceneManager,{game:g,edit:fn=>fn(g)});
  const card=v.find(n=>n.props['data-conflict-kind']==='threat');
  const children=elements(card);
- assert.ok(children.findIndex(n=>n.props.className==='conflict-threat-actions')<children.findIndex(n=>n.type==='details'));
+ assert.ok(children.find(n=>n.props.className==='conflict-threat-actions'));
+ assert.ok(children.find(n=>n.type==='SheetTrigger'&&n.props.asChild));
+ assert.ok(children.find(n=>n.type==='SheetContent'&&n.props.className==='conflict-reference-sheet'));
+ assert.equal(children.filter(n=>n.type==='details').length,1);
+ assert.match(text(children.find(n=>n.type==='SheetTitle')),new RegExp(threat.name));
  assert.match(text(children.find(n=>n.type==='ul'&&n.props['aria-label']===`Condições de ${threat.name}`)),/Vulnerável/);
  assert.match(text(v.find(n=>n.props['data-conflict-kind']==='survivor')),/Pediu Spotlight/);
  v.find(n=>n.type==='button'&&n.props['aria-label']==='Dar Spotlight a Solicitante').props.onClick();
