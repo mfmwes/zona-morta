@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Counter, Field, Pick } from "@/components/game-controls";
 import { SpotlightRequestButton } from "@/components/spotlight-request-button";
 import { ConflictTrail } from "@/components/conflict-trail";
@@ -36,12 +37,12 @@ import { rollDie } from "@/lib/rolls";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 
-function ResourceMeter({ label, value, max, tone, icon }: { label: string; value: number; max: number | null; tone: "hp" | "stress" | "hope"; icon?: ReactNode }) {
-  if (max === null) return <span className={`conflict-resource conflict-resource--${tone}`}><span><small>{icon}{label}</small><b>—</b></span></span>;
+function ResourceMeter({ label, value, max, tone, icon, description = label }: { label: string; value: number; max: number | null; tone: "hp" | "stress" | "hope"; icon?: ReactNode; description?: string }) {
+  if (max === null) return <span className={`conflict-resource conflict-resource--${tone}`}><span><small title={description}>{icon}{label}</small><b>—</b></span></span>;
   const current = Math.max(0, Math.min(max, value));
   const percent = max > 0 ? Math.round((current / max) * 100) : 0;
-  return <span className={`conflict-resource conflict-resource--${tone}`} aria-label={`${label} ${current} de ${max}`}>
-    <span><small>{icon}{label}</small><b>{current}/{max}</b></span>
+  return <span className={`conflict-resource conflict-resource--${tone}`} aria-label={`${description} ${current} de ${max}`}>
+    <span><small title={description}>{icon}{label}</small><b>{current}/{max}</b></span>
     <span className="conflict-resource-track" aria-hidden="true"><span style={{ width: `${percent}%` }} /></span>
   </span>;
 }
@@ -594,11 +595,12 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
             if (!person) return <article key={id} className="conflict-person is-missing"><Users size={18} /><div><b>Sobrevivente indisponível</b><small>{id}</small></div><Button size="sm" variant="ghost" onClick={() => remove({ kind: "survivor", id }, "Sobrevivente indisponível")}><X size={15} /></Button></article>;
             const stats = survivorStats(person);
             const isFocused = conflict.spotlight?.kind === "survivor" && conflict.spotlight.id === person.id;
+            const hasRequestedSpotlight = conflict.spotlightRequests?.includes(person.id) ?? false;
             const hasPendingDamage = (conflict.damageRequests ?? []).some(request => request.status === "pending" && request.targetSurvivorId === person.id);
             return <article key={person.id} data-conflict-kind="survivor" data-conflict-id={person.id} className={`conflict-person conflict-person--compact${isFocused ? " is-focused" : ""}${hasPendingDamage ? " has-pending-damage" : ""}`}>
               <div className="conflict-avatar">{person.portrait ? <img src={person.portrait} alt="" /> : person.name.slice(0,2).toUpperCase()}</div>
               <div className="conflict-person-copy">
-                <div className="conflict-person-name"><b>{person.name}</b>{isFocused && <span className="conflict-focus-badge"><Crosshair size={11} /> Spotlight</span>}{hasPendingDamage && <span className="conflict-damage-pending-badge"><Activity size={10} /> Dano</span>}</div>
+                <div className="conflict-person-name"><b>{person.name}</b>{hasRequestedSpotlight && <span className="conflict-request-badge"><Crosshair size={12} /> Pediu Spotlight</span>}{isFocused && <span className="conflict-focus-badge"><Crosshair size={11} /> Spotlight</span>}{hasPendingDamage && <span className="conflict-damage-pending-badge"><Activity size={10} /> Dano</span>}</div>
                 <small>{person.archetype} · {person.specialty}</small>
                 <div className="conflict-survivor-resources">
                   <ResourceMeter icon={<HeartPulse size={10} />} label="PV" value={person.hp} max={stats.hp} tone="hp" />
@@ -607,7 +609,7 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
                 </div>
               </div>
               <div className="conflict-person-actions">
-                <Button size="sm" variant={isFocused ? "default" : "outline"} aria-label={isFocused ? `${person.name} está em Spotlight` : `Dar Spotlight a ${person.name}`} onClick={() => conflict.spotlightRequests?.includes(person.id) ? grantRequestedSpotlight(person.id) : focus({ kind: "survivor", id: person.id }, person.name)}><Crosshair size={14} /><span>{isFocused ? "Em foco" : "Spotlight"}</span></Button>
+                <Button size="sm" variant={isFocused ? "default" : "outline"} aria-label={isFocused ? `${person.name} está em Spotlight` : `Dar Spotlight a ${person.name}`} onClick={() => hasRequestedSpotlight ? grantRequestedSpotlight(person.id) : focus({ kind: "survivor", id: person.id }, person.name)}><Crosshair size={14} /><span>{isFocused ? "Em foco" : hasRequestedSpotlight ? "Dar Spotlight" : "Spotlight"}</span></Button>
                 <Button size="sm" variant="ghost" aria-label={`Remover ${person.name} do conflito`} onClick={() => remove({ kind: "survivor", id: person.id }, person.name)}><Trash2 size={14} /></Button>
               </div>
             </article>;
@@ -665,10 +667,14 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
 
                   <div className="conflict-threat-stats">
                     <ThreatStat icon={<Shield size={11} />} label="Dificuldade" value={template.difficulty} tone="difficulty" />
-                    <ThreatStat icon={<Gauge size={11} />} label="Limiares" value={<>{template.majorThreshold ?? "—"} <span className="conflict-threshold-divider">/</span> {template.severeThreshold ?? "—"}</>} tone="threshold" />
-                    <ResourceMeter icon={<HeartPulse size={10} />} label="PV" value={instance.hpMarked} max={template.maxHp} tone="hp" />
-                    <ResourceMeter icon={<Zap size={10} />} label="Estresse" value={instance.stressMarked} max={template.maxStress} tone="stress" />
+                    <ThreatStat icon={<Gauge size={11} />} label="Limiares" value={`${template.majorThreshold ?? "—"} / ${template.severeThreshold ?? "—"}`} tone="threshold" />
+                    <ResourceMeter icon={<HeartPulse size={10} />} label="PV" description="PV marcados" value={instance.hpMarked} max={template.maxHp} tone="hp" />
+                    <ResourceMeter icon={<Zap size={10} />} label="Estresse" description="Estresse marcado" value={instance.stressMarked} max={template.maxStress} tone="stress" />
                   </div>
+
+                  {instance.conditions.length > 0 && <ul className="conflict-active-conditions" aria-label={`Condições de ${instance.name}`}>
+                    {instance.conditions.map(condition => <li key={condition}><Tag size={12} aria-hidden="true" />{condition}</li>)}
+                  </ul>}
 
                   <details className="conflict-threat-details">
                     <summary><span><Tag size={12} /> Condições e recursos</span>{instance.conditions.length > 0 && <b>{instance.conditions.length}</b>}</summary>
@@ -686,7 +692,7 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
                       <div className="conflict-condition-block">
                         <span className="field-label">Condições públicas</span>
                         {instance.conditions.length > 0 && <div className="conflict-condition-tags">
-                          {instance.conditions.map(condition => <button type="button" key={condition} onClick={() => removeCondition(instance.id, condition)} title="Remover condição"><span>{condition}</span><X size={11} /></button>)}
+                          {instance.conditions.map(condition => <button type="button" key={condition} onClick={() => removeCondition(instance.id, condition)} title="Remover condição" aria-label={`Remover condição ${condition} de ${instance.name}`}><span>{condition}</span><X size={11} /></button>)}
                         </div>}
                         <div className="conflict-condition-editor">
                           <input value={conditionDrafts[instance.id] ?? ""} maxLength={100} onChange={event => setConditionDrafts(current => ({ ...current, [instance.id]: event.target.value }))} onKeyDown={event => {
@@ -698,14 +704,27 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
                     </div>
                   </details>
 
-                  <details className="conflict-threat-details conflict-ability-reference">
-                    <summary><span><Swords size={12} /> Ataque e habilidades</span><b>{template.features.length}</b></summary>
-                    <div className="conflict-threat-detail-body">
-                      {template.attack && <div><strong>{template.attack.name}</strong><p>ATQ {template.attack.bonus >= 0 ? "+" : ""}{template.attack.bonus} · {template.attack.range} · {template.attack.damage} {template.attack.damageType}</p></div>}
-                      {template.features.map(feature => <div key={feature.id}><strong>{feature.name}</strong><small>{feature.kind}</small><p>{feature.effect}</p></div>)}
-                      {!template.attack && !template.features.length && <p>Nenhum ataque ou habilidade registrado.</p>}
-                    </div>
-                  </details>
+                  <Sheet>
+                    <SheetTrigger asChild>
+                      <Button variant="ghost" className="conflict-reference-trigger" aria-label={`Consultar ataque e habilidades de ${instance.name}`}>
+                        <span><Swords size={12} /> Ataque e habilidades</span><span>{template.features.length}</span>
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent className="conflict-reference-sheet" showCloseButton={false}>
+                      <SheetHeader>
+                        <SheetClose asChild><Button variant="ghost" className="conflict-reference-close" aria-label="Fechar consulta de habilidades"><X size={16} /> Fechar</Button></SheetClose>
+                        <SheetTitle>{instance.name}</SheetTitle>
+                        <SheetDescription>Patamar {template.tier} · {template.role} · Ataque e habilidades</SheetDescription>
+                      </SheetHeader>
+                      <div className="conflict-ability-reference conflict-reference-content">
+                        <div className="conflict-threat-detail-body">
+                          {template.attack && <div><strong>{template.attack.name}</strong><p>ATQ {template.attack.bonus >= 0 ? "+" : ""}{template.attack.bonus} · {template.attack.range} · {template.attack.damage} {template.attack.damageType}</p></div>}
+                          {template.features.map(feature => <div key={feature.id}><strong>{feature.name}</strong><small>{feature.kind}</small><p>{feature.effect}</p></div>)}
+                          {!template.attack && !template.features.length && <p>Nenhum ataque ou habilidade registrado.</p>}
+                        </div>
+                      </div>
+                    </SheetContent>
+                  </Sheet>
                   <div className="conflict-threat-actions">
                     {template.attack && <Button className="conflict-threat-primary-action" size="sm" onClick={() => openThreatAction(instance.id)} disabled={instance.defeated}><Swords size={14} /> Atacar</Button>}
                     <Button size="sm" variant={isFocused ? "default" : "outline"} title={isFocused ? "Esta ameaça está no Spotlight" : "Dar Spotlight"} aria-label={isFocused ? `${instance.name} está no Spotlight` : `Dar Spotlight a ${instance.name}`} disabled={instance.defeated} onClick={() => focus({ kind: "threat", id: instance.id }, instance.name)}><Crosshair size={14} /><span>{isFocused ? "Em foco" : "Spotlight"}</span></Button>
