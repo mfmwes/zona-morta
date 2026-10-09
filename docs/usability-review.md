@@ -49,3 +49,14 @@ Não muda regras de ataque, dano, condições, derrota, Spotlight, projeção pr
 Validação desta etapa: 493 testes passaram; verificação de tipos, compilação e regressão HTTP/D1/WebSocket passaram. O lint terminou sem erros, mantendo os 41 avisos existentes.
 
 Ajuste após a referência visual do usuário: cabeçalho com estado ao lado do nome, indicadores em uma linha, editor de condições recolhido, consulta de ataque/habilidades em painel lateral e ações compactas abaixo. O painel usa o Sheet existente, com foco contido, Escape, fechamento pelo fundo e retorno ao botão de consulta; o mestre pode consultar ameaças derrotadas.
+
+
+## Navegação e controles em dispositivos móveis
+
+A captura do usuário mostra a barra inferior cortando os rótulos e o texto do controle de tema aparecendo por baixo do botão de imagem. A barra herdava a altura fixa do TabsList genérico, menor que os botões da navegação. A regra que mostrava o rótulo no tema escuro tinha precedência sobre a regra mobile que deveria escondê-lo; os dois controles flutuavam com posições independentes.
+
+Correção P1: navegação com altura natural, botões com altura própria e rótulos que podem quebrar linha; espaçamento inferior considera a área segura do dispositivo. Tema e apresentação passam a compartilhar o mesmo fluxo acima da navegação, com alvos de 44px e rótulos acessíveis. Apenas um controle de tema aparece na campanha mobile; o controle global continua disponível no acesso e fora da campanha. Entre 621 e 1000px os controles também compartilham uma faixa, preservando a navegação superior. Em desktop, a apresentação permanece na barra lateral e o tema no canto inferior.
+
+A página reserva espaço para a faixa completa; o viewport passa a declarar viewport-fit=cover sem bloquear zoom. Não muda as seções disponíveis, alternância de abas, preferência de tema, permissões da apresentação ou API de imagens.
+
+Validação: 493 testes passaram, verificação de tipos sem erros e lint com os 41 avisos existentes. A análise de layout foi feita sobre a captura e as regras/componentes reais. Não foi possível abrir a prévia local no navegador remoto; a validação visual no aparelho continua pendente, incluindo rótulos, rotação, zoom, área de gestos e abertura de Mais/Exibir imagem.

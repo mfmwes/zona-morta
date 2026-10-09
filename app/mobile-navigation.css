@@ -1,0 +1,116 @@
+/* Desktop mantém a navegação e a apresentação na barra lateral. */
+.campaign-navigation-dock { display: contents; }
+.campaign-utility-controls .theme-toggle--campaign { display: none; }
+.campaign-utility-controls:not(.has-presentation) { display: none; }
+@media (min-width: 1001px) {
+  .campaign-navigation-dock:has(.has-presentation) + .rail-foot { margin-top: 0; }
+}
+
+@media (min-width: 621px) and (max-width: 1000px) {
+  .app-shell .rail-nav[data-slot="tabs-list"] { height: auto; min-height: 44px; align-items: stretch; }
+  .app-shell .rail-nav > button { height: auto; }
+  .app-shell .campaign-utility-controls {
+    position: fixed;
+    z-index: 40;
+    left: max(15px, env(safe-area-inset-left, 0px));
+    bottom: max(15px, env(safe-area-inset-bottom, 0px));
+    display: flex;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    pointer-events: none;
+  }
+  .app-shell .campaign-utility-controls .theme-toggle--campaign,
+  .app-shell .campaign-utility-controls .table-presentation-trigger {
+    position: static;
+    display: inline-flex;
+    inset: auto;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    max-width: 44px;
+    padding: 8px;
+    justify-content: center;
+    pointer-events: auto;
+  }
+  .app-shell .campaign-utility-controls .theme-toggle span,
+  .app-shell .campaign-utility-controls .table-presentation-trigger > span,
+  .app-shell .campaign-utility-controls .table-presentation-trigger > i { display: none; }
+  html:has(.campaign-navigation-dock) .theme-toggle--global { display: none; }
+  .app-shell .page { padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
+}
+
+@media (max-width: 620px) {
+  /* Controles e navegação compartilham o fluxo: sem coordenadas concorrentes. */
+  .app-shell .campaign-navigation-dock {
+    position: fixed;
+    z-index: 40;
+    inset: auto 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    pointer-events: none;
+  }
+  .app-shell .rail-nav[data-slot="tabs-list"] {
+    position: static;
+    inset: auto;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-rows: minmax(56px, auto);
+    align-items: stretch;
+    width: 100%;
+    height: auto;
+    min-height: calc(76px + env(safe-area-inset-bottom, 0px));
+    padding: 8px max(6px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px));
+    border-radius: 0;
+    overflow: visible;
+    pointer-events: auto;
+  }
+  .app-shell .rail-nav > button {
+    height: auto;
+    min-height: 56px;
+    align-self: stretch;
+    padding: 6px 2px;
+    font-size: .7rem;
+    line-height: 1.2;
+  }
+  .app-shell .rail-nav > button > span {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .app-shell .campaign-utility-controls {
+    order: -1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding: 0 max(10px, env(safe-area-inset-right, 0px)) 0 max(10px, env(safe-area-inset-left, 0px));
+    pointer-events: none;
+  }
+  .app-shell .campaign-utility-controls .theme-toggle--campaign,
+  .app-shell .campaign-utility-controls .table-presentation-trigger {
+    position: static;
+    inset: auto;
+    z-index: auto;
+    display: inline-flex;
+    justify-content: center;
+    flex: 0 0 44px;
+    width: 44px;
+    min-width: 44px;
+    max-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    padding: 8px;
+    pointer-events: auto;
+  }
+  .app-shell .campaign-utility-controls .theme-toggle span,
+  .app-shell .campaign-utility-controls .table-presentation-trigger > span,
+  .app-shell .campaign-utility-controls .table-presentation-trigger > i { display: none; }
+  html:has(.campaign-navigation-dock) .theme-toggle--global { display: none; }
+  .app-shell .page { padding-bottom: calc(160px + env(safe-area-inset-bottom, 0px)); }
+  .app-shell .rail { padding: 0; }
+  .app-shell .rail > .flex.items-center { display: none; }
+}
