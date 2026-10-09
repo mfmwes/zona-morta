@@ -15,8 +15,10 @@ import { CampaignSessions } from "@/components/campaign-sessions";
 import type { SessionCommand } from "@/lib/campaign-sessions";
 import { CampaignRecap } from "@/components/campaign-recap";
 import { useState } from "react";
+import { MobileDisclosure } from "@/components/mobile-disclosure";
 
 type Props = {
+  mobile?: boolean;
   game: GameState;
   canManageSession?: boolean;
   onSessionAction?: (c: SessionCommand) => Promise<void>;
@@ -30,7 +32,7 @@ function hexLabel(game: GameState, hexId: string) {
 }
 
 
-export function MasterOverview({ game, onNavigate, onOpen, masterActions, canManageSession, onSessionAction }: Props) {
+export function MasterOverview({ mobile = false, game, onNavigate, onOpen, masterActions, canManageSession, onSessionAction }: Props) {
   const groups = survivorPositionGroups(game);
   const occupied = game.survivors
     .map(person => ({ person, commitment: survivorTimedCommitment(game, person.id) }))
@@ -158,7 +160,7 @@ export function MasterOverview({ game, onNavigate, onOpen, masterActions, canMan
         {occupied.length > 0 && <p className="master-overview-note"><Clock3 size={14} /> {occupied.length} sobrevivente{occupied.length === 1 ? "" : "s"} trabalhando agora.</p>}
       </section>
     </div>
-    {onSessionAction && <CampaignSessions game={game} canAct={Boolean(canManageSession)} onAction={onSessionAction}/>}
-    <CampaignRecap game={game} onOpen={onOpen}/>
+    {onSessionAction && <MobileDisclosure mobile={mobile} title="Sessão da mesa"><CampaignSessions game={game} canAct={Boolean(canManageSession)} onAction={onSessionAction}/></MobileDisclosure>}
+    <MobileDisclosure mobile={mobile} title="Retomar acontecimentos"><CampaignRecap game={game} onOpen={onOpen}/></MobileDisclosure>
   </div>;
 }

@@ -6,7 +6,7 @@ import { timedActionParticipantIssue } from "@/lib/activity";
 
 import { MasterContextActions, PlayerContextActions, type MasterActionControls, type PlayerActionControls } from "@/components/player-actions-panel";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Archive, CheckCircle2, ChevronDown, Compass, Dice5, Eye, Footprints, House, MapPin, Package, Play, Route, Search, Trash2, Undo2, Users, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -61,7 +61,8 @@ function travelDurationLabel(minutes: number) {
   return `${hours}h${String(rest).padStart(2, "0")}`;
 }
 
-export function HexExplorer({ initialTarget, game, edit, playerPreview, teamPeers = [], playerActions, masterActions }: {
+export function HexExplorer({ mobile = false, initialTarget, game, edit, playerPreview, teamPeers = [], playerActions, masterActions }: {
+  mobile?: boolean;
   initialTarget?: {hexId:string;eventId?:string;pointId?:string;areaId?:string};
   game: GameState;
   edit: Edit;
@@ -69,6 +70,7 @@ export function HexExplorer({ initialTarget, game, edit, playerPreview, teamPeer
   playerActions?: PlayerActionControls; masterActions?: MasterActionControls;
   teamPeers?: { id: string; name: string; hex?: string; portrait?: string }[];
 }) {
+  const mobileSelectionTrigger = useRef<HTMLButtonElement>(null);
   const [selectedId, setSelected] = useState(initialTarget?.hexId??game.partyHex);
   const selected = game.hexes[selectedId] ? selectedId : game.partyHex;
   const [signsDraft, setSignsDraft] = useState<{ key: string; source: string; value: string } | null>(null);
@@ -106,7 +108,7 @@ export function HexExplorer({ initialTarget, game, edit, playerPreview, teamPeer
       setSignsDraft(null); setNotesDraft(null);
       setGmOpen(false);
     }
-    if (openDetails && (compact || !playerPreview)) setSheetOpen(true);
+    if (openDetails && (mobile || compact || !playerPreview)) setSheetOpen(true);
   }
 
   const area = parseHex(selected)!;
@@ -655,7 +657,7 @@ export function HexExplorer({ initialTarget, game, edit, playerPreview, teamPeer
             </HexContextMenu>;
           })}
         </WorldMapViewport>
-        <div className="map-caption">
+        <div className="map-caption" hidden={mobile}>
           <span><i className="legend-swatch" style={{background:"#35686a"}} /> Explorado</span>
           <span><i className="legend-swatch legend-observed" /> Avistado</span>
           <span><i className="legend-swatch" style={{background:"#17282d"}} /> Desconhecido</span>
@@ -678,8 +680,9 @@ export function HexExplorer({ initialTarget, game, edit, playerPreview, teamPeer
           <span><b>{group.main ? "Principal" : group.members.length === 1 ? group.members[0].name : group.members.map(person => person.name.split(" ")[0]).join(" · ")}</b><small>Hex {group.hex} · {game.publicActivities?.some(a=>a.participantIds.some(id=>group.members.some(p=>p.id===id))) || game.activities?.some(a=>a.status==="running"&&a.participantIds.some(id=>group.members.some(p=>p.id===id))) ? "em atividade" : "disponível"}</small></span>
         </button>)}
       </div>
-      <p className="text-sm subtle mt-2">Clique ou toque nas pegadas/retratos para escolher o grupo ativo; os hexes adjacentes a ele ficam destacados. Clique em um hex para abrir os detalhes e, no computador, use o botão direito para ações rápidas.</p>
-      <p className="intro-line mt-4">O setor ganha nome e sinais quando é avistado. Um hex pode conter vários locais; suas áreas internas continuam em aberto até a exploração.</p>
+      <p hidden={mobile} className="text-sm subtle mt-2">Clique ou toque nas pegadas/retratos para escolher o grupo ativo; os hexes adjacentes a ele ficam destacados. Clique em um hex para abrir os detalhes e, no computador, use o botão direito para ações rápidas.</p>
+      {mobile && <><button ref={mobileSelectionTrigger} type="button" className="mobile-sector-selection" onClick={() => setSheetOpen(true)} aria-haspopup="dialog"><span><small>Hex {selected} · {record.discovery}</small><b>{visible ? sectorName : "Setor desconhecido"}</b></span><span>Detalhes →</span></button><details className="mobile-map-help"><summary>Como usar o mapa</summary><p>Toque em um setor para abrir locais e ações. Use as pegadas ou retratos para selecionar o grupo. Arraste para navegar e use os controles de zoom.</p></details></>}
+      <p hidden={mobile} className="intro-line mt-4">O setor ganha nome e sinais quando é avistado. Um hex pode conter vários locais; suas áreas internas continuam em aberto até a exploração.</p>
     </section>
 
     {expansionOpen && !playerPreview && <WorldExpansionDialog game={game} origin={selected} edit={edit} onClose={() => setExpansionOpen(false)}
@@ -715,17 +718,17 @@ export function HexExplorer({ initialTarget, game, edit, playerPreview, teamPeer
       onMoved={destination => { setActiveGroupHex(destination); setSelected(destination); setFocusHex(destination); }} />}
     {relocateDestination && <ShelterMoveDialog game={game} edit={edit} mode="relocate" destination={relocateDestination}
       open={relocateOpen} onOpenChange={setRelocateOpen} hideTrigger />}
-    {!playerPreview && !compact ? <Dialog open={sheetOpen} onOpenChange={setSheetOpen}>
+    {!playerPreview && !compact && !mobile ? <Dialog open={sheetOpen} onOpenChange={setSheetOpen}>
       <DialogContent showCloseButton={false} className="hex-sector-dialog">
         <DialogTitle className="sr-only">Setor do mapa · Hex {selected}</DialogTitle>
         <DialogDescription className="sr-only">Exploração, locais e ferramentas de gestão do setor selecionado.</DialogDescription>
         {detailPanel}
       </DialogContent>
-    </Dialog> : compact ? <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-      <SheetContent side="bottom" showCloseButton={false} className="max-h-[88dvh] overflow-y-auto rounded-t-xl p-0">
-        <SheetHeader className={playerPreview ? "sticky top-0 z-10 flex flex-row items-center justify-between border-b bg-background px-4 py-3" : "sr-only"}>
+    </Dialog> : compact || mobile ? <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+      <SheetContent onCloseAutoFocus={mobile ? event => { event.preventDefault(); mobileSelectionTrigger.current?.focus(); } : undefined} side="bottom" showCloseButton={false} className={`max-h-[88dvh] overflow-y-auto rounded-t-xl p-0${mobile ? " mobile-sector-sheet" : ""}`}>
+        <SheetHeader className={playerPreview || mobile ? "sticky top-0 z-10 flex flex-row items-center justify-between border-b bg-background px-4 py-3" : "sr-only"}>
           <div><SheetTitle>Hex {selected}</SheetTitle><SheetDescription className="sr-only">Detalhes do setor selecionado no mapa.</SheetDescription></div>
-          {playerPreview && <Button size="sm" variant="outline" onClick={() => setSheetOpen(false)}>Fechar</Button>}
+          {(playerPreview || mobile) && <Button size="sm" variant="outline" onClick={() => setSheetOpen(false)}>Voltar ao mapa</Button>}
         </SheetHeader>
         {detailPanel}
       </SheetContent>

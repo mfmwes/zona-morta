@@ -98,6 +98,8 @@ export function TableChat({
   survivorId,
   readOnly = false,
   onClose,
+  layout = "panel",
+  active = true,
 }: {
   game: GameState;
   edit: Edit;
@@ -105,6 +107,8 @@ export function TableChat({
   survivorId: string | null;
   readOnly?: boolean;
   onClose: () => void;
+  layout?: "panel" | "screen";
+  active?: boolean;
 }) {
   const [message, setMessage] = useState("");
   const [speakerId, setSpeakerId] = useState(role === "jogador" ? survivorId ?? "" : "master");
@@ -135,7 +139,7 @@ export function TableChat({
 
   useEffect(() => {
     const feed = feedRef.current;
-    if (!feed) return;
+    if (!feed || !active) return;
 
     const previousLatest = latestRowIdRef.current;
     const previousCount = rowCountRef.current;
@@ -160,7 +164,7 @@ export function TableChat({
       window.cancelAnimationFrame(frame);
       if (highlightTimer !== undefined) window.clearTimeout(highlightTimer);
     };
-  }, [latestRowId, rows.length]);
+  }, [latestRowId, rows.length, active]);
 
   const player = survivorId ? game.survivors.find(person => person.id === survivorId) : null;
   const currentSpeaker = role === "jogador"
@@ -213,7 +217,7 @@ export function TableChat({
     setRollOpen(true);
   }
 
-  return <aside className="table-chat" aria-label="Chat da mesa">
+  return <aside className={`table-chat${layout === "screen" ? " table-chat--screen" : ""}`} aria-label="Chat da mesa">
     <header className="table-chat-header">
       <div>
         <p>Zona Morta</p>

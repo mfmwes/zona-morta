@@ -17,7 +17,7 @@ const hooks = { ...React, useState(initial) {
   if (!(index in host.slots)) host.slots[index] = typeof initial === 'function' ? initial() : initial;
   const owner = host;
   return [owner.slots[index], value => { const next = typeof value === 'function' ? value(owner.slots[index]) : value; if (!Object.is(next, owner.slots[index])) { owner.slots[index] = next; owner.dirty = true; } }];
-}, useEffect() { host.cursor++; } };
+}, useRef(initial) { const index = host.cursor++; return host.slots[index] ?? (host.slots[index] = { current: initial }); }, useEffect() { host.cursor++; } };
 const stubs = {
   button: ['Button'], dialog: ['Dialog', 'DialogContent', 'DialogTitle', 'DialogDescription'],
   tabs: ['Tabs', 'TabsContent', 'TabsList', 'TabsTrigger'],
