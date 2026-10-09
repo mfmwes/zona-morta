@@ -2,6 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useMobileExperience } from "@/hooks/use-mobile-experience";
+import { MobileCampaignShell } from "@/components/mobile-campaign-shell";
+import { MobileDisclosure } from "@/components/mobile-disclosure";
+import { mobileReturnSection } from "@/lib/mobile-navigation";
 import { startCampaignSync, type CampaignSyncNotice } from "@/lib/campaign-sync";
 import { currentTableRest } from "@/lib/table-rest";
 import { toast } from "sonner";
@@ -65,6 +69,8 @@ type ModelTool = {
 type ModelContext = { registerTool: (tool: ModelTool, options: { signal: AbortSignal }) => void | Promise<void> };
 
 export default function CampaignApp() {
+  const mobile = useMobileExperience();
+  const [lastMobileSection, setLastMobileSection] = useState("resumo");
   const [liveGame, setGame] = useState<GameState | null>(null);
   const [presentation, setPresentation] = useState<TablePresentation | undefined>();
   const [loading, setLoading] = useState(true);
@@ -647,11 +653,12 @@ export default function CampaignApp() {
   const previewActionGame = game;
   const communityView = readOnlyPreview ? npcPlayerView(previewActionGame) : game;
   const publicConflictActive = readOnlyPreview && Boolean(previewActionGame.publicConflict?.active);
-  const activeTab = tab === "acoes" ? (role === "mestre" && !playerPreview ? "resumo" : "mapa") : readOnlyPreview && tab === "resumo"
+  const desktopTab = !mobile && ["chat", "mais"].includes(tab) ? mobileReturnSection(lastMobileSection, role === "mestre" && !playerPreview, publicConflictActive) : tab;
+  const activeTab = desktopTab === "acoes" ? (role === "mestre" && !playerPreview ? "resumo" : "mapa") : readOnlyPreview && ["resumo", "ameacas", "jogadores"].includes(desktopTab)
     ? "sobreviventes"
-    : tab === "conflito" && readOnlyPreview && !publicConflictActive
+    : desktopTab === "conflito" && readOnlyPreview && !publicConflictActive
       ? "sobreviventes"
-      : tab;
+      : desktopTab;
   const title = { resumo: "Visão geral", mapa: "Exploração", cena: "Cena visual", sobreviventes: "Sobreviventes", comunidade: "PNJs e comunidade", abrigo: "Abrigo e reservas",
     conflito: "Cena de conflito", ameacas: "Gerenciador de ameaças", referencias: "Arquivo de campo", jogadores: "Jogadores e acessos" }[activeTab] || "Campanha";
   const masterExperience = role === "mestre" && !playerPreview;
@@ -696,12 +703,233 @@ export default function CampaignApp() {
     target: (id: string, total: number, critical: boolean, damage: number) => previewSession.current!.target(id, total, critical, damage),
   } : null;
 
+
+  const campaignNotices = <>
+    {playerPreview && <MobileDisclosure mobile={mobile} title="Ajustar simulação local" summary={game.survivors[0]?.name}><div className="panel panel-pad mb-4">
+        <Pick label="Ver como este sobrevivente" value={viewedSurvivorId ?? ""} options={(liveGame?.survivors ?? []).map(person => ({value:person.id,label:person.name}))} onChange={startPreview} />
+        <p className="text-sm subtle mt-2">Simulação local: ações, rolagens e alterações não são salvas na campanha. Trocar de sobrevivente ou sair descarta a simulação.</p>
+        <Button size="sm" variant="outline" className="mt-2" onClick={() => viewedSurvivorId && startPreview(viewedSurvivorId)}>Reiniciar simulação</Button>
+      </div></MobileDisclosure>}
+      {playerPreview && role === "mestre" && <div className="player-preview-banner" role="status">
+        <span className="flex items-center gap-2"><Eye size={18} /><b>Prévia dos jogadores</b> · Simulação local; ações aqui não alteram a campanha.</span>
+        <Button size="sm" variant="outline" onClick={stopPreview}>Voltar ao mestre</Button>
+      </div>}
+</>;
+  const campaignContent = <>        <ActivityTimeline game={game} controls={masterActionControls} canAct={status === "salvo"} />
+        {readOnlyPreview && requestedRest && <div className="team-notice mb-4" role="status"><p>Descanso {requestedRest.kind === "short" ? "curto" : "longo"} solicitado · {requestedRest.participantIds.length}/{requestedRest.invitedIds.length} confirmados.{requestedRest.awaitingNight ? " Escolhas prontas para Encerrar dia." : requestedRest.participantIds.includes(viewedSurvivorId ?? "") ? " Suas escolhas estão confirmadas." : " Escolha suas duas ações na ficha."}</p>{!requestedRest.awaitingNight && <Button size="sm" variant="outline" onClick={() => { setTab("sobreviventes"); window.setTimeout(() => window.dispatchEvent(new CustomEvent("zona-morta:rest-focus")), 0); }}>Ver meu descanso</Button>}</div>}
+        {!playerPreview && teamActionError && <div className="team-error mb-4" role="alert"><p>{teamActionError}</p><Button size="sm" variant="outline" disabled={status!=="salvo"} onClick={()=>{if(teamActionRetry.current) void executeTeamAction(teamActionRetry.current).catch(cause=>toast.error(cause instanceof Error?cause.message:"Falha ao reenviar."));}}>Reenviar ação pendente</Button></div>}
+        <div className="campaign-page-heading flex flex-wrap items-start justify-between gap-4 mb-6">
+          <div><p className="eyebrow">Daggerheart / Zona Morta</p><h1 className="page-title mt-1">{title}</h1>
+            <p className="intro-line mt-2">{activeTab === "resumo" ? "Veja primeiro o que está acontecendo agora. Aprofunde apenas a ferramenta necessária para a próxima decisão." :
+              activeTab === "mapa" ? "Explore a partir do que o grupo avista. Registre apenas o que a ficção tornou real." :
+              activeTab === "cena" ? (readOnlyPreview ? "Acompanhe a cena visual apresentada pelo mestre." : "Monte ambientes com paredes, portas, objetos e tokens sem transformar a cena em um mapa tático rígido.") :
+              activeTab === "sobreviventes" ? (readOnlyPreview ? "Veja primeiro o que importa agora: condição, recursos e ações. Detalhes continuam disponíveis quando você precisar." : "Históricos, arquétipos e recursos prontos para jogar.") :
+              activeTab === "comunidade" ? "Acompanhe pessoas importantes, vínculos e a comunidade entre os hexes." :
+              activeTab === "abrigo" ? "Organize reservas e descanso. Estabeleça um abrigo quando o grupo encontrar um lugar." :
+              activeTab === "conflito" ? (readOnlyPreview ? "Acompanhe as informações públicas do conflito e quem está com o spotlight." : "Acompanhe participantes, ameaças e spotlight sem criar iniciativa ou ordem de turnos.") :
+              activeTab === "ameacas" ? "Crie, adapte e consulte as ameaças mecânicas usadas pelo mestre durante a campanha." :
+              activeTab === "jogadores" ? "Compartilhe a campanha e acompanhe quem entrou na mesa." :
+              "Consulte itens e procedimentos durante a sessão."}</p></div>
+          {!readOnlyPreview && activeTab === "mapa" &&
+            <MobileDisclosure mobile={mobile} title="Opções do mapa"><AlertDialog>
+              <AlertDialogTrigger asChild><Button variant="outline" size="sm"><RotateCcw /> Reiniciar cidade</Button></AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader><AlertDialogTitle>Reiniciar esta cidade?</AlertDialogTitle>
+                  <AlertDialogDescription>Isso reinicia o mapa, as reservas, o diário e o estado operacional desta campanha. Os sobreviventes são preservados e retornam ao hex inicial. Para manter esta cidade e começar outra, volte a Seus dossiês e crie uma nova campanha.</AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="grid gap-4 py-2">
+                  <Pick label="Setor de partida (hex 0,0)" value={startSectorId} onChange={setStartSectorId}
+                    options={[{ value: "random", label: "Sortear setor" }, ...[...sectorProfiles]
+                      .sort((a,b) => a.name.localeCompare(b.name, "pt-BR"))
+                      .map(sector => ({ value: sector.id, label: sector.name }))]} />
+                  <div><p className="field-label mb-2">Situação inicial</p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button type="button" size="sm" variant={!startWithShelter ? "default" : "outline"}
+                        aria-pressed={!startWithShelter} onClick={() => setStartWithShelter(false)}>Sem abrigo</Button>
+                      <Button type="button" size="sm" variant={startWithShelter ? "default" : "outline"}
+                        aria-pressed={startWithShelter} onClick={() => setStartWithShelter(true)}>Abrigo no setor de partida</Button>
+                    </div>
+                    <p className="text-sm subtle mt-2">Sem abrigo, o grupo começa no setor escolhido e pode montar uma base mais tarde. Os setores vizinhos continuam sorteados.</p>
+                  </div>
+                </div>
+                <AlertDialogFooter>
+                  <Button variant="outline" onClick={downloadBackup}><Download /> Baixar cópia</Button>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction variant="destructive" onClick={async () => {
+                    const preserved = current.current?.survivors.length ?? 0;
+                    try {
+                      await executeTeamAction({
+                        type: "reset-city",
+                        ...(startSectorId === "random" ? {} : { startSectorId }),
+                        withShelter: startWithShelter,
+                      });
+                      setTab("mapa"); setPlayerPreview(false);
+                      toast.success("Cidade reiniciada", { description: `Mapa, reservas e diário foram reiniciados no servidor. ${preserved} sobrevivente(s) foram preservados.` });
+                    } catch (cause) {
+                      toast.error(cause instanceof Error ? cause.message : "Não foi possível reiniciar a cidade.");
+                    }
+                  }}>Reiniciar cidade</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog></MobileDisclosure>}
+        </div>
+        {!playerPreview && (status === "erro" || status === "conflito") && <div role="alert" className="mb-5 rounded-md border border-[#d5aaa1] bg-[#fff2ed] px-4 py-3 text-sm text-[#803b35]">
+          <b>As alterações ainda estão nesta tela.</b> {saveError} Baixe uma cópia antes de recarregar, se precisar.
+        </div>}
+        {activeTab === "resumo" && role === "mestre" && !readOnlyPreview && <MasterOverview mobile={mobile} game={game} canManageSession={status === "salvo"} onSessionAction={sessionAction} onNavigate={setTab} onOpen={openCampaignTarget} masterActions={masterActionControls} />}
+        {activeTab === "mapa" && <>
+          {!readOnlyPreview && <MobileDisclosure mobile={mobile} title="Pressão e reservas" summary={`Barulho ${game.noise} · Medo ${game.fear}`}><div className="panel scene-control-panel mb-5">
+            <section className="scene-control-section scene-pressure-section">
+              <div className="scene-control-heading">
+                <div className="scene-control-title"><Volume2 size={20} /><b>Pressão da cena</b></div>
+                <div className="scene-control-actions">
+                  <Button size="sm" variant="outline" onClick={() => {
+                    edit(beginScene);
+                    toast.success("Nova cena iniciada", { description: "Barulho voltou a 0 e habilidades por cena foram renovadas." });
+                  }}>Nova cena</Button>
+                  <Button size="sm" variant="outline" onClick={() => {
+                    edit(beginExpedition);
+                    toast.success("Nova expedição iniciada", { description: "Habilidades por expedição foram renovadas." });
+                  }}>Nova expedição</Button>
+                </div>
+              </div>
+
+              <div className="scene-pressure-grid">
+                <div className="scene-meter scene-meter-noise">
+                  <div className="scene-meter-identity">
+                    <Ear size={28} aria-hidden="true" />
+                    <span><b>Barulho</b><small>0–5</small></span>
+                  </div>
+                  <div className="scene-meter-control">
+                    <Counter compact label="Barulho" value={game.noise} max={5} onChange={value=>edit(d=>{d.noise=value;})} />
+                  </div>
+                </div>
+                <div className="scene-meter scene-meter-fear">
+                  <div className="scene-meter-identity">
+                    <Brain size={28} aria-hidden="true" />
+                    <span><b>Medo</b><small>0–12</small></span>
+                  </div>
+                  <div className="scene-meter-control">
+                    <Counter compact tone="fear" label="Medo" value={game.fear} max={12} onChange={value=>edit(d=>{d.fear=value;})} />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section className="scene-control-section scene-supplies-section">
+              <div className="scene-control-heading">
+                <div className="scene-control-title"><Package size={20} /><b>{game.shelter.hex ? "Suprimentos do abrigo" : "Reservas do grupo"}</b></div>
+              </div>
+
+              <div className="scene-supplies-grid">
+                {([
+                  ["food","Comida",Utensils,"food"],
+                  ["water","Água",Droplets,"water"],
+                  ["parts","Peças",Settings,"parts"],
+                ] as const).map(([key,label,Icon,tone]) =>
+                  <div className={`scene-supply scene-supply-${tone}`} key={key}>
+                    <div className="scene-supply-identity">
+                      <Icon size={25} aria-hidden="true" />
+                      <b>{label}</b>
+                    </div>
+                    <div className="scene-supply-control">
+                      <Counter compact label={label} value={game.shelter[key]} max={key === "parts" ? 99 : 999}
+                        editable quickStep={key === "parts" ? undefined : 4}
+                        onChange={value=>edit(d=>{ if (key === "parts") d.shelter.parts = value;
+                          else adjustProvisionCount(d.shelter, key, value); })} />
+                    </div>
+                  </div>)}
+              </div>
+              <p className="scene-supplies-note">Comida e Água em porções (4 = 1 unidade); Peças em unidades. Sem abrigo, registre apenas o que o grupo consegue transportar.</p>
+            </section>
+          </div></MobileDisclosure>}
+          <HexExplorer mobile={mobile} key={!readOnlyPreview&&focus?.target.tab==="mapa"?focus.key:game.campaignId} initialTarget={!readOnlyPreview&&focus?.target.tab==="mapa"?focus.target:undefined} game={communityView} edit={edit} playerPreview={readOnlyPreview} teamPeers={viewedPeers} playerActions={playerActionControls} masterActions={masterActionControls} />
+          {!readOnlyPreview && <MobileDisclosure mobile={mobile} title="Relógio da expedição" summary={displayTime(game.minutes)}><div className="panel panel-pad mt-5 flex flex-wrap items-center gap-3">
+            <div className="mr-auto"><b>Relógio da expedição</b><p className="text-xs subtle">Ao anoitecer, registre o descanso na ficha, mesmo sem abrigo.</p></div>
+            {[30,60,120].map(amount=><Button key={amount} size="sm" variant="outline" disabled={game.minutes+amount>=1440}
+              onClick={() => {
+                let completedWork: { name: string; points: number; completed: boolean }[] = [];
+                let issue = "";
+                edit(d => {
+                  const result = advanceCampaignTime(d, amount, `Passaram ${amount} minutos na expedição.`);
+                  completedWork = result.completedWork;
+                  issue = result.issue ?? (result.ok ? "" : "Não foi possível avançar o relógio.");
+                });
+                if (issue) { toast.info("Avanço interrompido", {description:issue}); return; }
+                toast("Tempo avançado", {
+                  description: completedWork.length
+                    ? `+${amount < 60 ? `${amount} min` : `${amount / 60} h`} · ${completedWork.map(row => `${row.name} +${row.points}${row.completed ? " concluída" : ""}`).join(" · ")}`
+                    : `+${amount < 60 ? `${amount} min` : `${amount / 60} h`} na expedição.`,
+                });
+              }}>
+              +{amount<60?`${amount} min`:`${amount/60} h`}</Button>)}
+            <Dialog open={timeEditorOpen} onOpenChange={setTimeEditorOpen}>
+              <DialogTrigger asChild><Button size="sm" variant="outline" onClick={openTimeEditor}><Clock3 size={16} /> Ajustar horário</Button></DialogTrigger>
+              <DialogContent><DialogHeader><DialogTitle>Ajustar horário do dia</DialogTitle>
+                <DialogDescription>Use esta correção quando a ficção pedir outro horário. A alteração fica registrada no diário da campanha.</DialogDescription></DialogHeader>
+                <Field label="Horário" type="time" value={manualTime} onChange={value => { setManualTime(value); setManualTimeRollbackConfirmed(false); }} />
+                {manualTimeRollsBack && <label className="inventory-ready"><input type="checkbox" checked={manualTimeRollbackConfirmed} onChange={event => setManualTimeRollbackConfirmed(event.target.checked)} /><span><b>Confirmar correção para trás</b><small>Isso altera apenas o relógio. Buscas, obras concluídas, recursos produzidos, usos de habilidade e demais acontecimentos não serão desfeitos.</small></span></label>}
+                <DialogFooter><Button variant="outline" onClick={() => setTimeEditorOpen(false)}>Cancelar</Button><Button onClick={saveManualTime}>Salvar horário</Button></DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div></MobileDisclosure>}
+        </>}
+        {activeTab === "cena" && <SceneBoard game={previewActionGame} edit={edit} playerPreview={readOnlyPreview} playerActions={playerActionControls} masterActions={masterActionControls} />}
+        {activeTab === "sobreviventes" && <SurvivorPanel mobile={mobile} key={playerPreview ? `preview:${viewedSurvivorId}` : focus?.target.tab==="sobreviventes"?focus.key:"live"} initialSurvivorId={!readOnlyPreview&&focus?.target.tab==="sobreviventes"?focus.target.survivorId:undefined} initialSection={!readOnlyPreview&&focus?.target.tab==="sobreviventes"?focus.target.section:undefined} game={game} edit={edit} playerPreview={readOnlyPreview} playerMode={readOnlyPreview} restPeers={viewedPeers} onOpenConflict={() => setTab("conflito")} playerActions={playerActionControls} masterActions={masterActionControls} />}
+        {activeTab === "comunidade" && <NpcPanel key={focus?.target.tab==="comunidade"?focus.key:"comunidade"} initialNpcId={!readOnlyPreview&&focus?.target.tab==="comunidade"?focus.target.npcId:undefined} game={communityView} edit={edit} playerPreview={readOnlyPreview} />}
+        {activeTab === "abrigo" && <ShelterPanel key={focus?.target.tab==="abrigo"?focus.key:"abrigo"} initialProjectId={!readOnlyPreview&&focus?.target.tab==="abrigo"?focus.target.projectId:undefined} game={communityView} edit={edit} playerPreview={readOnlyPreview} playerSurvivorId={readOnlyPreview ? viewedSurvivorId : null} playerActions={playerActionControls} masterActions={masterActionControls} />}
+        {activeTab === "conflito" && role === "mestre" && !playerPreview && <ConflictSceneManager mobile={mobile} game={game} edit={edit} />}
+        {activeTab === "conflito" && readOnlyPreview && publicConflictActive && <PlayerConflictScene game={previewActionGame} selfId={viewedSurvivorId} preview={playerPreview} />}
+        {activeTab === "ameacas" && role === "mestre" && !playerPreview && <section className="panel panel-pad"><ThreatManager game={game} edit={edit} /></section>}
+        {activeTab === "referencias" && <ReferencePanel />}
+        {activeTab === "jogadores" && role === "mestre" && !playerPreview && <PlayersPanel game={game} ownerId={ownerId} />}
+        {activeTab === "mapa" && !readOnlyPreview && <MobileDisclosure mobile={mobile} title="Eventos recentes"><RecentEvents game={game} edit={edit} role={role} readOnly={playerPreview} /></MobileDisclosure>}
+</>;
+  const tableChat = <TableChat key={playerPreview ? `preview:${viewedSurvivorId}` : "live"} layout={mobile ? "screen" : "panel"} active={!mobile || activeTab === "chat"} game={game} edit={edit} role={readOnlyPreview ? "jogador" : role} survivorId={viewedSurvivorId} readOnly={false} onClose={() => mobile ? setTab(mobileReturnSection(lastMobileSection, masterExperience, publicConflictActive)) : setChatOpen(false)} />;
+  const mobilePendingDamage = readOnlyPreview ? game.publicConflict?.pendingDamage.length ?? 0 : game.conflict?.damageRequests?.filter(request => request.status === "pending").length ?? 0;
+  const spotlightRequests = masterExperience ? game.conflict?.spotlightRequests?.length ?? 0 : 0;
+  const conflictActive = masterExperience ? Boolean(game.conflict?.active) : publicConflictActive;
+  function goToDossiers() { window.location.assign("/"); }
+  function signOut() { void fetch("/api/auth", { method: "DELETE" }).then(() => window.location.assign("/")); }
+  const mobileTools = <>
+    <div className="mobile-tool-group">
+      <ThemeToggle placement="campaign" />
+      {masterExperience && <TablePresentationControl campaignId={ownerId} presentation={presentation} onPresentationChange={setPresentation} />}
+    </div>
+    <div className="mobile-tool-group">
+      {masterExperience && <DayCloseDialog game={game} edit={edit} variant="outline" />}
+      {role === "mestre" && <Button variant="outline" onClick={() => {
+        if (playerPreview) stopPreview();
+        else if (liveGame?.survivors[0]) startPreview(liveGame.survivors[0].id);
+        else toast.info("Crie um sobrevivente para abrir a prévia.");
+      }}><Eye size={17} />{playerPreview ? "Voltar ao mestre" : "Prévia dos jogadores"}</Button>}
+      {!playerPreview && status === "erro" && <Button onClick={retrySave}>Tentar salvar</Button>}
+      {!playerPreview && status === "conflito" && <Button variant="outline" onClick={() => {
+        if (window.confirm("Descarte as alterações desta tela e carregue a versão salva em outra janela?")) { setLoading(true); setLoadError(""); void loadCampaign(); }
+      }}>Recarregar versão salva</Button>}
+    </div>
+    <details className="mobile-disclosure"><summary>Cópias e restauração</summary><div className="mobile-tool-group">
+      <Button variant="outline" onClick={downloadBackup}><Download size={17} />Baixar cópia</Button>
+      {masterExperience && <><Button variant="outline" onClick={() => setCheckpointsOpen(true)}><RotateCcw size={17} />Pontos de restauração</Button><Button variant="outline" onClick={() => importInput.current?.click()}><Upload size={17} />Importar cópia</Button></>}
+    </div></details>
+    <div className="mobile-tool-group"><Button variant="outline" onClick={goToDossiers}><BookOpen size={17} />Meus dossiês</Button><Button variant="outline" onClick={signOut}><LogOut size={17} />Sair</Button></div>
+  </>;
   return <PlayerSimulationContext.Provider value={simulation}><Tabs value={activeTab} onValueChange={setTab} className="w-full">
     <a className="campaign-skip-link" href="#campaign-main">Ir para o conteúdo</a>
     {checkpointsOpen&&role==="mestre"&&!playerPreview&&<CampaignCheckpoints campaignId={game.campaignId} day={game.day} canAct={status==="salvo"} onAction={checkpointAction} onClose={()=>setCheckpointsOpen(false)}/>}
     {searchOpen && masterExperience && <CampaignSearch game={game} role={role} playerPreview={playerPreview} onOpen={openCampaignTarget} onClose={() => setSearchOpen(false)} />}
     <TablePresentationViewer presentation={presentation} enabled={readOnlyPreview} />
-    <SidebarProvider className={`app-shell ${chatOpen ? "chat-open" : "chat-closed"}`}>
+    {role === "mestre" && !playerPreview && <input ref={importInput} className="sr-only" type="file" accept="application/json,.json" aria-label="Importar cópia da campanha" onChange={event => {
+            const file = event.target.files?.[0]; if (file) void importBackup(file); event.target.value = "";
+          }} />}
+    {mobile ? <MobileCampaignShell master={masterExperience} day={game.day} time={displayTime(game.minutes)} title={activeTab === "sobreviventes" && readOnlyPreview ? "Meu sobrevivente" : title}
+      activeSection={activeTab} sections={nav} conflictActive={conflictActive} pendingDamage={mobilePendingDamage}
+      status={<span className={`mobile-save-status ${status}`} role="status" aria-label={playerPreview ? "Simulação local" : status === "salvo" ? "Salvo" : status === "salvando" ? "Salvando" : "Alterações não salvas"}>{playerPreview ? "Prévia" : status === "salvo" ? "Salvo" : status === "salvando" ? "Salvando" : "Não salvo"}</span>}
+      onNavigate={section => { if (!["chat", "mais"].includes(activeTab)) setLastMobileSection(activeTab); setTab(section); }}
+      onSearch={masterExperience ? () => setSearchOpen(true) : undefined}
+      scenePressure={readOnlyPreview ? { noise: game.noise, fear: game.fear } : undefined}
+      priority={conflictActive ? mobilePendingDamage ? `${mobilePendingDamage} dano(s) aguardando decisão` : spotlightRequests ? `${spotlightRequests} pedido(s) de Spotlight` : "Conflito ativo" : undefined}
+      notices={campaignNotices} tools={mobileTools} chat={tableChat}>{campaignContent}</MobileCampaignShell> : <SidebarProvider className={`app-shell ${chatOpen ? "chat-open" : "chat-closed"}`}>
     <Sidebar collapsible="none" className="rail">
       <div className="flex items-center gap-3 px-2">
         <div className="brand-mark">ZM</div><div><div className="text-[.93rem] font-extrabold tracking-wide">ZONA MORTA</div>
@@ -769,198 +997,20 @@ export default function CampaignApp() {
               <DropdownMenuItem onSelect={downloadBackup}><Download size={16} />Baixar cópia</DropdownMenuItem>
               {role === "mestre" && !playerPreview && <DropdownMenuItem onSelect={() => setCheckpointsOpen(true)}><RotateCcw size={16}/>Pontos de restauração</DropdownMenuItem>}
               {role === "mestre" && !playerPreview && <DropdownMenuItem onSelect={() => importInput.current?.click()}><Upload size={16} />Importar cópia</DropdownMenuItem>}
-              <DropdownMenuItem onSelect={() => window.location.assign("/")}><BookOpen size={16} />Meus dossiês</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => void fetch("/api/auth", { method: "DELETE" }).then(() => window.location.assign("/"))}><LogOut size={16} />Sair</DropdownMenuItem>
+              <DropdownMenuItem onSelect={goToDossiers}><BookOpen size={16} />Meus dossiês</DropdownMenuItem>
+              <DropdownMenuItem onSelect={signOut}><LogOut size={16} />Sair</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          {role === "mestre" && !playerPreview && <input ref={importInput} className="sr-only" type="file" accept="application/json,.json" aria-label="Importar cópia da campanha" onChange={event => {
-            const file = event.target.files?.[0]; if (file) void importBackup(file); event.target.value = "";
-          }} />}
+
         </div>
       </header>
-      {playerPreview && <div className="panel panel-pad mb-4">
-        <Pick label="Ver como este sobrevivente" value={viewedSurvivorId ?? ""} options={(liveGame?.survivors ?? []).map(person => ({value:person.id,label:person.name}))} onChange={startPreview} />
-        <p className="text-sm subtle mt-2">Simulação local: ações, rolagens e alterações não são salvas na campanha. Trocar de sobrevivente ou sair descarta a simulação.</p>
-        <Button size="sm" variant="outline" className="mt-2" onClick={() => viewedSurvivorId && startPreview(viewedSurvivorId)}>Reiniciar simulação</Button>
-      </div>}
-      {playerPreview && role === "mestre" && <div className="player-preview-banner" role="status">
-        <span className="flex items-center gap-2"><Eye size={18} /><b>Prévia dos jogadores</b> · Simulação local; ações aqui não alteram a campanha.</span>
-        <Button size="sm" variant="outline" onClick={stopPreview}>Voltar ao mestre</Button>
-      </div>}
+      {campaignNotices}
       <main id="campaign-main" className="page" tabIndex={-1}>
-        <ActivityTimeline game={game} controls={masterActionControls} canAct={status === "salvo"} />
-        {readOnlyPreview && requestedRest && <div className="team-notice mb-4" role="status"><p>Descanso {requestedRest.kind === "short" ? "curto" : "longo"} solicitado · {requestedRest.participantIds.length}/{requestedRest.invitedIds.length} confirmados.{requestedRest.awaitingNight ? " Escolhas prontas para Encerrar dia." : requestedRest.participantIds.includes(viewedSurvivorId ?? "") ? " Suas escolhas estão confirmadas." : " Escolha suas duas ações na ficha."}</p>{!requestedRest.awaitingNight && <Button size="sm" variant="outline" onClick={() => { setTab("sobreviventes"); window.setTimeout(() => window.dispatchEvent(new CustomEvent("zona-morta:rest-focus")), 0); }}>Ver meu descanso</Button>}</div>}
-        {!playerPreview && teamActionError && <div className="team-error mb-4" role="alert"><p>{teamActionError}</p><Button size="sm" variant="outline" disabled={status!=="salvo"} onClick={()=>{if(teamActionRetry.current) void executeTeamAction(teamActionRetry.current).catch(cause=>toast.error(cause instanceof Error?cause.message:"Falha ao reenviar."));}}>Reenviar ação pendente</Button></div>}
-        <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
-          <div><p className="eyebrow">Daggerheart / Zona Morta</p><h1 className="page-title mt-1">{title}</h1>
-            <p className="intro-line mt-2">{activeTab === "resumo" ? "Veja primeiro o que está acontecendo agora. Aprofunde apenas a ferramenta necessária para a próxima decisão." :
-              activeTab === "mapa" ? "Explore a partir do que o grupo avista. Registre apenas o que a ficção tornou real." :
-              activeTab === "cena" ? (readOnlyPreview ? "Acompanhe a cena visual apresentada pelo mestre." : "Monte ambientes com paredes, portas, objetos e tokens sem transformar a cena em um mapa tático rígido.") :
-              activeTab === "sobreviventes" ? (readOnlyPreview ? "Veja primeiro o que importa agora: condição, recursos e ações. Detalhes continuam disponíveis quando você precisar." : "Históricos, arquétipos e recursos prontos para jogar.") :
-              activeTab === "comunidade" ? "Acompanhe pessoas importantes, vínculos e a comunidade entre os hexes." :
-              activeTab === "abrigo" ? "Organize reservas e descanso. Estabeleça um abrigo quando o grupo encontrar um lugar." :
-              activeTab === "conflito" ? (readOnlyPreview ? "Acompanhe as informações públicas do conflito e quem está com o spotlight." : "Acompanhe participantes, ameaças e spotlight sem criar iniciativa ou ordem de turnos.") :
-              activeTab === "ameacas" ? "Crie, adapte e consulte as ameaças mecânicas usadas pelo mestre durante a campanha." :
-              activeTab === "jogadores" ? "Compartilhe a campanha e acompanhe quem entrou na mesa." :
-              "Consulte itens e procedimentos durante a sessão."}</p></div>
-          {!readOnlyPreview && activeTab === "mapa" &&
-            <AlertDialog>
-              <AlertDialogTrigger asChild><Button variant="outline" size="sm"><RotateCcw /> Reiniciar cidade</Button></AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader><AlertDialogTitle>Reiniciar esta cidade?</AlertDialogTitle>
-                  <AlertDialogDescription>Isso reinicia o mapa, as reservas, o diário e o estado operacional desta campanha. Os sobreviventes são preservados e retornam ao hex inicial. Para manter esta cidade e começar outra, volte a Seus dossiês e crie uma nova campanha.</AlertDialogDescription>
-                </AlertDialogHeader>
-                <div className="grid gap-4 py-2">
-                  <Pick label="Setor de partida (hex 0,0)" value={startSectorId} onChange={setStartSectorId}
-                    options={[{ value: "random", label: "Sortear setor" }, ...[...sectorProfiles]
-                      .sort((a,b) => a.name.localeCompare(b.name, "pt-BR"))
-                      .map(sector => ({ value: sector.id, label: sector.name }))]} />
-                  <div><p className="field-label mb-2">Situação inicial</p>
-                    <div className="flex flex-wrap gap-2">
-                      <Button type="button" size="sm" variant={!startWithShelter ? "default" : "outline"}
-                        aria-pressed={!startWithShelter} onClick={() => setStartWithShelter(false)}>Sem abrigo</Button>
-                      <Button type="button" size="sm" variant={startWithShelter ? "default" : "outline"}
-                        aria-pressed={startWithShelter} onClick={() => setStartWithShelter(true)}>Abrigo no setor de partida</Button>
-                    </div>
-                    <p className="text-sm subtle mt-2">Sem abrigo, o grupo começa no setor escolhido e pode montar uma base mais tarde. Os setores vizinhos continuam sorteados.</p>
-                  </div>
-                </div>
-                <AlertDialogFooter>
-                  <Button variant="outline" onClick={downloadBackup}><Download /> Baixar cópia</Button>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction variant="destructive" onClick={async () => {
-                    const preserved = current.current?.survivors.length ?? 0;
-                    try {
-                      await executeTeamAction({
-                        type: "reset-city",
-                        ...(startSectorId === "random" ? {} : { startSectorId }),
-                        withShelter: startWithShelter,
-                      });
-                      setTab("mapa"); setPlayerPreview(false);
-                      toast.success("Cidade reiniciada", { description: `Mapa, reservas e diário foram reiniciados no servidor. ${preserved} sobrevivente(s) foram preservados.` });
-                    } catch (cause) {
-                      toast.error(cause instanceof Error ? cause.message : "Não foi possível reiniciar a cidade.");
-                    }
-                  }}>Reiniciar cidade</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>}
-        </div>
-        {!playerPreview && (status === "erro" || status === "conflito") && <div role="alert" className="mb-5 rounded-md border border-[#d5aaa1] bg-[#fff2ed] px-4 py-3 text-sm text-[#803b35]">
-          <b>As alterações ainda estão nesta tela.</b> {saveError} Baixe uma cópia antes de recarregar, se precisar.
-        </div>}
-        {activeTab === "resumo" && role === "mestre" && !readOnlyPreview && <MasterOverview game={game} canManageSession={status === "salvo"} onSessionAction={sessionAction} onNavigate={setTab} onOpen={openCampaignTarget} masterActions={masterActionControls} />}
-        {activeTab === "mapa" && <>
-          {!readOnlyPreview && <div className="panel scene-control-panel mb-5">
-            <section className="scene-control-section scene-pressure-section">
-              <div className="scene-control-heading">
-                <div className="scene-control-title"><Volume2 size={20} /><b>Pressão da cena</b></div>
-                <div className="scene-control-actions">
-                  <Button size="sm" variant="outline" onClick={() => {
-                    edit(beginScene);
-                    toast.success("Nova cena iniciada", { description: "Barulho voltou a 0 e habilidades por cena foram renovadas." });
-                  }}>Nova cena</Button>
-                  <Button size="sm" variant="outline" onClick={() => {
-                    edit(beginExpedition);
-                    toast.success("Nova expedição iniciada", { description: "Habilidades por expedição foram renovadas." });
-                  }}>Nova expedição</Button>
-                </div>
-              </div>
-
-              <div className="scene-pressure-grid">
-                <div className="scene-meter scene-meter-noise">
-                  <div className="scene-meter-identity">
-                    <Ear size={28} aria-hidden="true" />
-                    <span><b>Barulho</b><small>0–5</small></span>
-                  </div>
-                  <div className="scene-meter-control">
-                    <Counter compact label="Barulho" value={game.noise} max={5} onChange={value=>edit(d=>{d.noise=value;})} />
-                  </div>
-                </div>
-                <div className="scene-meter scene-meter-fear">
-                  <div className="scene-meter-identity">
-                    <Brain size={28} aria-hidden="true" />
-                    <span><b>Medo</b><small>0–12</small></span>
-                  </div>
-                  <div className="scene-meter-control">
-                    <Counter compact tone="fear" label="Medo" value={game.fear} max={12} onChange={value=>edit(d=>{d.fear=value;})} />
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section className="scene-control-section scene-supplies-section">
-              <div className="scene-control-heading">
-                <div className="scene-control-title"><Package size={20} /><b>{game.shelter.hex ? "Suprimentos do abrigo" : "Reservas do grupo"}</b></div>
-              </div>
-
-              <div className="scene-supplies-grid">
-                {([
-                  ["food","Comida",Utensils,"food"],
-                  ["water","Água",Droplets,"water"],
-                  ["parts","Peças",Settings,"parts"],
-                ] as const).map(([key,label,Icon,tone]) =>
-                  <div className={`scene-supply scene-supply-${tone}`} key={key}>
-                    <div className="scene-supply-identity">
-                      <Icon size={25} aria-hidden="true" />
-                      <b>{label}</b>
-                    </div>
-                    <div className="scene-supply-control">
-                      <Counter compact label={label} value={game.shelter[key]} max={key === "parts" ? 99 : 999}
-                        editable quickStep={key === "parts" ? undefined : 4}
-                        onChange={value=>edit(d=>{ if (key === "parts") d.shelter.parts = value;
-                          else adjustProvisionCount(d.shelter, key, value); })} />
-                    </div>
-                  </div>)}
-              </div>
-              <p className="scene-supplies-note">Comida e Água em porções (4 = 1 unidade); Peças em unidades. Sem abrigo, registre apenas o que o grupo consegue transportar.</p>
-            </section>
-          </div>}
-          <HexExplorer key={!readOnlyPreview&&focus?.target.tab==="mapa"?focus.key:game.campaignId} initialTarget={!readOnlyPreview&&focus?.target.tab==="mapa"?focus.target:undefined} game={communityView} edit={edit} playerPreview={readOnlyPreview} teamPeers={viewedPeers} playerActions={playerActionControls} masterActions={masterActionControls} />
-          {!readOnlyPreview && <div className="panel panel-pad mt-5 flex flex-wrap items-center gap-3">
-            <div className="mr-auto"><b>Relógio da expedição</b><p className="text-xs subtle">Ao anoitecer, registre o descanso na ficha, mesmo sem abrigo.</p></div>
-            {[30,60,120].map(amount=><Button key={amount} size="sm" variant="outline" disabled={game.minutes+amount>=1440}
-              onClick={() => {
-                let completedWork: { name: string; points: number; completed: boolean }[] = [];
-                let issue = "";
-                edit(d => {
-                  const result = advanceCampaignTime(d, amount, `Passaram ${amount} minutos na expedição.`);
-                  completedWork = result.completedWork;
-                  issue = result.issue ?? (result.ok ? "" : "Não foi possível avançar o relógio.");
-                });
-                if (issue) { toast.info("Avanço interrompido", {description:issue}); return; }
-                toast("Tempo avançado", {
-                  description: completedWork.length
-                    ? `+${amount < 60 ? `${amount} min` : `${amount / 60} h`} · ${completedWork.map(row => `${row.name} +${row.points}${row.completed ? " concluída" : ""}`).join(" · ")}`
-                    : `+${amount < 60 ? `${amount} min` : `${amount / 60} h`} na expedição.`,
-                });
-              }}>
-              +{amount<60?`${amount} min`:`${amount/60} h`}</Button>)}
-            <Dialog open={timeEditorOpen} onOpenChange={setTimeEditorOpen}>
-              <DialogTrigger asChild><Button size="sm" variant="outline" onClick={openTimeEditor}><Clock3 size={16} /> Ajustar horário</Button></DialogTrigger>
-              <DialogContent><DialogHeader><DialogTitle>Ajustar horário do dia</DialogTitle>
-                <DialogDescription>Use esta correção quando a ficção pedir outro horário. A alteração fica registrada no diário da campanha.</DialogDescription></DialogHeader>
-                <Field label="Horário" type="time" value={manualTime} onChange={value => { setManualTime(value); setManualTimeRollbackConfirmed(false); }} />
-                {manualTimeRollsBack && <label className="inventory-ready"><input type="checkbox" checked={manualTimeRollbackConfirmed} onChange={event => setManualTimeRollbackConfirmed(event.target.checked)} /><span><b>Confirmar correção para trás</b><small>Isso altera apenas o relógio. Buscas, obras concluídas, recursos produzidos, usos de habilidade e demais acontecimentos não serão desfeitos.</small></span></label>}
-                <DialogFooter><Button variant="outline" onClick={() => setTimeEditorOpen(false)}>Cancelar</Button><Button onClick={saveManualTime}>Salvar horário</Button></DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>}
-        </>}
-        {activeTab === "cena" && <SceneBoard game={previewActionGame} edit={edit} playerPreview={readOnlyPreview} playerActions={playerActionControls} masterActions={masterActionControls} />}
-        {activeTab === "sobreviventes" && <SurvivorPanel key={playerPreview ? `preview:${viewedSurvivorId}` : focus?.target.tab==="sobreviventes"?focus.key:"live"} initialSurvivorId={!readOnlyPreview&&focus?.target.tab==="sobreviventes"?focus.target.survivorId:undefined} initialSection={!readOnlyPreview&&focus?.target.tab==="sobreviventes"?focus.target.section:undefined} game={game} edit={edit} playerPreview={readOnlyPreview} playerMode={readOnlyPreview} restPeers={viewedPeers} onOpenConflict={() => setTab("conflito")} playerActions={playerActionControls} masterActions={masterActionControls} />}
-        {activeTab === "comunidade" && <NpcPanel key={focus?.target.tab==="comunidade"?focus.key:"comunidade"} initialNpcId={!readOnlyPreview&&focus?.target.tab==="comunidade"?focus.target.npcId:undefined} game={communityView} edit={edit} playerPreview={readOnlyPreview} />}
-        {activeTab === "abrigo" && <ShelterPanel key={focus?.target.tab==="abrigo"?focus.key:"abrigo"} initialProjectId={!readOnlyPreview&&focus?.target.tab==="abrigo"?focus.target.projectId:undefined} game={communityView} edit={edit} playerPreview={readOnlyPreview} playerSurvivorId={readOnlyPreview ? viewedSurvivorId : null} playerActions={playerActionControls} masterActions={masterActionControls} />}
-        {activeTab === "conflito" && role === "mestre" && !playerPreview && <ConflictSceneManager game={game} edit={edit} />}
-        {activeTab === "conflito" && readOnlyPreview && publicConflictActive && <PlayerConflictScene game={previewActionGame} selfId={viewedSurvivorId} preview={playerPreview} />}
-        {activeTab === "ameacas" && role === "mestre" && !playerPreview && <section className="panel panel-pad"><ThreatManager game={game} edit={edit} /></section>}
-        {activeTab === "referencias" && <ReferencePanel />}
-        {activeTab === "jogadores" && role === "mestre" && <PlayersPanel game={game} ownerId={ownerId} />}
-        {activeTab === "mapa" && !readOnlyPreview && <RecentEvents game={game} edit={edit} role={role} readOnly={playerPreview} />}
+        {campaignContent}
       </main>
     </div>
     {chatOpen && <button type="button" className="table-chat-backdrop" aria-label="Fechar chat" onClick={() => setChatOpen(false)} />}
-    <div id="table-chat"><TableChat key={playerPreview ? `preview:${viewedSurvivorId}` : "live"} game={game} edit={edit} role={readOnlyPreview ? "jogador" : role} survivorId={viewedSurvivorId} readOnly={false} onClose={() => setChatOpen(false)} /></div>
-    </SidebarProvider>
+    <div id="table-chat">{tableChat}</div>
+    </SidebarProvider>}
   </Tabs></PlayerSimulationContext.Provider>;
 }

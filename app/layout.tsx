@@ -13,6 +13,7 @@ import "./activity-timeline.css";
 import "./event-guides.css";
 import "./campaign-usability.css";
 import "./mobile-navigation.css";
+import "./mobile-experience.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeToggle } from "@/components/theme-toggle";
 

@@ -225,10 +225,11 @@ export function PlayerConflictScene({ game, selfId = null, preview = false }: { 
   </div>;
 }
 
-export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Edit }) {
+export function ConflictSceneManager({ game, edit, mobile = false }: { game: GameState; edit: Edit; mobile?: boolean }) {
   const conflict = game.conflict;
   const library = threatLibrary(game.threats);
   const sectorName = game.hexes[game.partyHex]?.sector?.name ?? `Hex ${game.partyHex}`;
+  const [mobilePanel, setMobilePanel] = useState("ameacas");
   const [sceneName, setSceneName] = useState(`Conflito — ${sectorName}`);
   const [survivorChoice, setSurvivorToAdd] = useState("");
   const [threatChoice, setThreatToAdd] = useState("");
@@ -576,8 +577,9 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
       </li>)}</ul>
     </section>}
 
+    {mobile && <div className="mobile-segmented" role="group" aria-label="Participantes do conflito"><button type="button" aria-pressed={mobilePanel === "ameacas"} aria-controls="mobile-conflict-threats" onClick={() => setMobilePanel("ameacas")}>Ameaças · {activeThreats}</button><button type="button" aria-pressed={mobilePanel === "equipe"} aria-controls="mobile-conflict-team" onClick={() => setMobilePanel("equipe")}>Equipe · {conflict.survivorIds.length}</button></div>}
     <div className="conflict-workspace">
-      <section className="panel panel-pad conflict-participants conflict-team-panel">
+      <section id={mobile ? "mobile-conflict-team" : undefined} hidden={mobile && mobilePanel !== "equipe"} className="panel panel-pad conflict-participants conflict-team-panel">
         <div className="conflict-section-heading">
           <div className="conflict-heading-with-icon"><span className="conflict-heading-icon"><Users size={17} /></span><div><p className="dossier-title">Equipe</p><h3>Sobreviventes</h3></div></div>
           <span className="tag">{conflict.survivorIds.length}</span>
@@ -618,7 +620,7 @@ export function ConflictSceneManager({ game, edit }: { game: GameState; edit: Ed
         </div>
       </section>
 
-      <section className="panel panel-pad conflict-participants conflict-threat-panel">
+      <section id={mobile ? "mobile-conflict-threats" : undefined} hidden={mobile && mobilePanel !== "ameacas"} className="panel panel-pad conflict-participants conflict-threat-panel">
         <div className="conflict-section-heading">
           <div className="conflict-heading-with-icon"><span className="conflict-heading-icon is-pressure"><ShieldAlert size={17} /></span><div><p className="dossier-title">Pressão</p><h3>Ameaças em cena</h3></div></div>
           <div className="conflict-heading-counters"><span className="tag">{activeThreats} ativas</span>{defeatedThreats > 0 && <span className="tag is-muted">{defeatedThreats} derrotadas</span>}</div>
