@@ -2013,127 +2013,127 @@ Estas três tabelas têm **100 resultados cada**. Role **um d100 na tabela perti
 
 | d100 | Acontecimento, sinal e escolha |
 |---:|---|
-| 01 | **Rádio entrecortado.** Uma voz no rádio repete “entrega no portão azul antes do escuro”; o restante se perde na estática. |
-| 02 | **Bilhete recente.** Um bilhete na porta diz “voltamos ao meio-dia” e traz um desenho de três degraus. |
-| 03 | **Pintura nova.** Uma seta pintada recentemente aponta para um beco; a placa antiga indica a rua bloqueada. |
-| 04 | **Janela de observação.** Um clarão se repete no alto de uma construção distante, sempre voltado para a mesma direção. |
-| 05 | **Mapa rasgado.** Um fragmento de mapa mostra uma entrada de serviço e a anotação “acesso pela caixa-d’água”. |
-| 06 | **Telefone tocando.** Um telefone de mesa toca numa portaria; uma luz acesa no painel mostra que há energia. |
-| 07 | **Luz em sequência.** Dois flashes curtos se repetem atrás de uma janela; um terceiro surge quando alguém passa na rua. |
-| 08 | **Pegadas pequenas.** Pegadas pequenas vão de uma porta ao abrigo de uma varanda; há marcas de arrasto de uma caixa. |
-| 09 | **Marca de roda.** Um rastro de roda torta passa por pequenas manchas de óleo e termina atrás de um muro. |
-| 10 | **Aviso na água.** Um aviso junto ao reservatório diz “não usar: retorno de água suja” e traz assinatura e data. |
-| 11 | **Lista de nomes.** Uma lista de nomes na parede ganhou uma linha com endereço e a palavra “transferidos”. |
-| 12 | **Calendário alterado.** Um calendário mostra “entrega às 11h” sobre um horário riscado; o nome do responsável está ao lado. |
-| 13 | **Porta sinalizada.** Uma fita verde amarra a maçaneta; uma fita igual aparece num recipiente de ferramentas. |
-| 14 | **Arquivo aberto.** Uma pasta aberta registra “válvula presa” e um desenho de corredor com um ponto circulado. |
-| 15 | **Chave pendurada.** Uma chave com etiqueta numerada está pendurada ao lado de uma porta de armário vazia. |
-| 16 | **Mensagem em giz.** Uma mensagem em giz diz “seguir até a caixa vermelha”; a continuação está apagada. |
-| 17 | **Sinal sonoro distante.** Três batidas se repetem numa chapa distante; uma pausa longa separa cada sequência. |
-| 18 | **Linha no horizonte.** Uma coluna fina de fumaça sobe atrás de uma construção e muda de intensidade em intervalos. |
-| 19 | **Caixa postal usada.** Uma caixa postal contém uma carta datada de ontem e um envelope com marca de retorno. |
-| 20 | **Mapa de rotas.** Um mapa tem duas rotas assinaladas; só uma traz a data de inspeção e iniciais. |
+| 01 | **Rádio entrecortado.** Uma voz atravessa a estática: “Entrego as ferramentas no portão azul antes de escurecer. Alguém está ouvindo?” |
+| 02 | **Bilhete recente.** Um bilhete preso à porta diz “voltamos ao meio-dia”. Abaixo, três degraus desenhados identificam o ponto de encontro. |
+| 03 | **Pintura nova.** Uma seta de tinta fresca aponta para o beco. Na rua indicada pela placa antiga, uma barricada fecha a passagem. |
+| 04 | **Janela de observação.** Um clarão pisca no alto de uma construção. Entre os reflexos, aparece a silhueta de alguém segurando um espelho. |
+| 05 | **Mapa rasgado.** Um pedaço de mapa mostra uma porta de serviço sob a caixa-d’água. A anotação termina em “dobradiça presa”. |
+| 06 | **Telefone tocando.** O telefone da portaria toca. No painel aceso, uma etiqueta diz “posto vizinho”; a luz da bateria pisca. |
+| 07 | **Luz em sequência.** Dois flashes aparecem na janela. Quando uma pessoa atravessa a rua, a luz responde com um terceiro. |
+| 08 | **Pegadas pequenas.** Pegadas pequenas contornam a porta e seguem até uma varanda. Uma caixa arrastada deixou um sulco ao lado. |
+| 09 | **Marca de roda.** Uma roda torta deixou um rastro de óleo. Atrás do muro, alguém tenta impedir que uma bateria deslize do carrinho. |
+| 10 | **Aviso na água.** O aviso no reservatório está datado: “Não usar. Água suja voltou pelo cano”. Lama fresca cobre o registro de entrada. |
+| 11 | **Lista de nomes.** Na lista da parede, alguns nomes foram riscados. Uma linha nova traz um endereço e a palavra “transferidos”. |
+| 12 | **Calendário alterado.** No calendário, “entrega às 11h” cobre um horário riscado. Ao lado, o nome de Luzia e um pedido de confirmação. |
+| 13 | **Porta sinalizada.** Uma fita verde prende a maçaneta. As mesmas iniciais aparecem na fita de um recipiente de ferramentas próximo. |
+| 14 | **Arquivo aberto.** Na pasta aberta, “válvula presa” acompanha o desenho do corredor. Uma seta mostra a área de armazenamento abaixo do cano. |
+| 15 | **Chave pendurada.** Uma chave numerada balança num gancho. A etiqueta traz o mesmo número de um depósito próximo. |
+| 16 | **Mensagem em giz.** No muro, o giz diz “seguir até a caixa vermelha”. Depois dessas palavras, só restam riscos apagados. |
+| 17 | **Sinal sonoro distante.** Três batidas soam na chapa. Na pausa seguinte, uma voz pede: “A trava prendeu. Tem alguém com uma alavanca?” |
+| 18 | **Linha no horizonte.** Uma coluna fina de fumaça sobe atrás da construção. Ela diminui, para e volta enquanto alguém trabalha no pátio. |
+| 19 | **Caixa postal usada.** Na caixa postal, uma carta de ontem aguarda coleta. No envelope, uma seta marcada pede resposta pelo mesmo caminho. |
+| 20 | **Mapa de rotas.** Duas rotas foram traçadas no mapa. Uma tem data e iniciais; a outra passa por uma entrada sem marca de inspeção. |
 
 
 #### 21–40 | Pessoas e animais
 
 | d100 | Acontecimento, sinal e escolha |
 |---:|---|
-| 21 | **Pessoa à janela.** Uma pessoa afasta a cortina e pergunta baixinho se a rua ainda está livre. |
-| 22 | **Carregador solitário.** Uma pessoa carrega duas caixas e para ao ouvir a tampa de uma delas soltar. |
-| 23 | **Moradora com pressa.** Uma moradora chama pelo nome de uma vizinha e aponta água avançando na passagem baixa. |
-| 24 | **Criança chamando.** Uma criança chama da varanda: “Minha avó caiu. Você consegue chamar alguém?” |
-| 25 | **Vigia nervoso.** Um vigia tenta manter uma passagem silenciosa enquanto uma família pede para passar com um carrinho. |
-| 26 | **Socorrista improvisado.** Uma pessoa com luvas improvisadas pede um recipiente limpo pela fresta de uma porta. |
-| 27 | **Vendedor de trocas.** Um vendedor oferece copiar um registro de abastecimento em troca de levar um recado. |
-| 28 | **Pessoa perdida.** Uma pessoa compara uma fachada com uma fotografia e insiste que chegou à rua certa. |
-| 29 | **Motorista parado.** Um motorista parado pergunta pela saída antes de ligar o motor; o escapamento está solto. |
-| 30 | **Gente carregando água.** Duas pessoas carregam água em recipientes marcados e param para conferir uma tampa. |
-| 31 | **Alguém num telhado.** Alguém num telhado faz sinal de parada e aponta para uma cobertura ao lado. |
-| 32 | **Conversa atrás da porta.** Vozes atrás da porta mencionam a mochila de alguém do grupo e uma entrega não concluída. |
-| 33 | **Vizinho em conflito.** Dois moradores discordam sobre abrir um pátio usado como passagem entre ruas. |
-| 34 | **Animal preso.** Um animal preso à grade puxa uma correia; cada puxão faz o metal vibrar. |
-| 35 | **Cão farejando.** Um cão fareja o chão e volta sempre a uma sacola fechada junto a uma porta. |
-| 36 | **Gato de coleira.** Um gato de coleira passa por uma abertura e desaparece num prédio com uma tigela na entrada. |
-| 37 | **Pessoa com febre.** Uma pessoa febril pede água e mantém distância: “Não consigo continuar andando assim.” |
-| 38 | **Mensageira de bicicleta.** Uma mensageira de bicicleta pede uma rota para entregar um pedido de ajuda sem divulgar o endereço. |
-| 39 | **Morador repetindo aviso.** Um morador repete “não usem a escada” e aponta uma marca no corrimão. |
-| 40 | **Grupo atravessando.** Um pequeno grupo atravessa a rua carregando uma maca e pede espaço para passar. |
+| 21 | **Pessoa à janela.** Uma moradora abre uma fresta da cortina: “A rua está livre? Preciso sair por esta janela.” |
+| 22 | **Carregador solitário.** Uma pessoa para com duas caixas nos braços. A tampa escorrega e revela ferramentas sobre um saco de comida. |
+| 23 | **Moradora com pressa.** “Helena! Por aqui!”, chama a moradora. A água já cobre o primeiro degrau da passagem baixa. |
+| 24 | **Criança chamando.** Uma criança chama da varanda: “Minha avó caiu. Ela está falando comigo, mas não consegue levantar.” |
+| 25 | **Vigia nervoso.** Um vigia segura uma chapa para que não bata. Uma família espera com um carrinho e pergunta se pode passar. |
+| 26 | **Socorrista improvisado.** Pela fresta, uma pessoa de luvas improvisadas pede: “Uma vasilha limpa. Não posso misturar esta água com a usada.” |
+| 27 | **Vendedor de trocas.** O vendedor mostra uma folha com fontes de abastecimento: “Copio a rota se você entregar este recado por mim.” |
+| 28 | **Pessoa perdida.** Uma pessoa compara a fachada com uma foto antiga: “Era esta rua. A placa sumiu, mas aquela janela é igual.” |
+| 29 | **Motorista parado.** O motorista mantém o motor desligado: “Por onde saio? O escapamento soltou e não quero ficar manobrando aqui.” |
+| 30 | **Gente carregando água.** Duas pessoas pousam recipientes numerados no chão. “Estas duas porções ficam para quem nos ajudar até a cobertura.” |
+| 31 | **Alguém num telhado.** No telhado, uma pessoa faz sinal para parar e aponta uma cobertura. Uma escada curta termina num apoio remendado. |
+| 32 | **Conversa atrás da porta.** Atrás da porta, alguém cochicha: “Aquela mochila é da entrega?” Outra voz responde: “Pergunte pela marca da caixa.” |
+| 33 | **Vizinho em conflito.** No pátio, um morador segura a tranca e outro protesta: “Precisamos dessa passagem, mas não vou deixar aberta o dia todo.” |
+| 34 | **Animal preso.** Um cão puxa a correia enroscada na grade. O metal vibra, e ele rosna quando alguém alcança a coleira. |
+| 35 | **Cão farejando.** Um cão fareja a sacola junto à porta e rosna quando alguém toca nela. Seu tutor chama baixinho do interior. |
+| 36 | **Gato de coleira.** Um gato de coleira passa por um vão. Na entrada do prédio, uma tigela ainda molhada está ao lado de um nome escrito. |
+| 37 | **Pessoa com febre.** Uma pessoa febril se apoia no muro: “Estou sem água há horas. Pode me ajudar a chegar à sombra?” |
+| 38 | **Mensageira de bicicleta.** A ciclista segura um envelope com uma marca: “Conhecem um caminho até a esquina? Não vou mostrar onde eles dormem.” |
+| 39 | **Morador repetindo aviso.** “Não usem a escada”, repete o morador. Ele aponta uma marca no corrimão e diz: “Foi minha vizinha que avisou.” |
+| 40 | **Grupo atravessando.** Um grupo atravessa com uma maca. A líder aponta a cobertura: “Precisamos de mais uma pessoa naquele degrau.” |
 
 
 #### 41–60 | Ambiente e passagem
 
 | d100 | Acontecimento, sinal e escolha |
 |---:|---|
-| 41 | **Chuva repentina.** A chuva aumenta de repente; uma cobertura próxima está seca, mas a saída passa por um trecho molhado. |
-| 42 | **Rajada de vento.** Uma porta de metal bate a cada rajada; um cordão rompido balança na maçaneta. |
-| 43 | **Queda de telhas.** Estalos no telhado antecedem a queda de uma telha; o piso abaixo está coberto de fragmentos. |
-| 44 | **Poça recente.** Uma poça leva tinta da cor das caixas de um depósito até uma porta lateral. |
-| 45 | **Fiação baixa.** Um cabo baixo oscila entre dois apoios; uma luz de manutenção ainda está acesa. |
-| 46 | **Goteira de teto.** Uma goteira alcança um rádio e um livro de registros; só um pode ser retirado no primeiro alcance. |
-| 47 | **Poeira no ar.** Poeira sai pela fresta de um cômodo e uma tosse curta interrompe o ruído de arrasto. |
-| 48 | **Lama na via.** Uma faixa de lama ocupa a via e um carrinho deixou sulcos até um apoio firme. |
-| 49 | **Fumaça leve.** Uma fumaça fina sai de um acesso lateral; o cheiro de tecido queimado chega antes do calor. |
-| 50 | **Calor sob a porta.** O calor atravessa a porta fechada; uma voz do acesso lateral pergunta o que está acontecendo. |
-| 51 | **Estrutura rangendo.** Uma fissura se abre quando alguém pisa; um apoio de madeira está fora da faixa frágil. |
-| 52 | **Grade emperrada.** Uma grade emperrada abre alguns centímetros; o atrito risca o chão e uma alavanca está ao lado. |
-| 53 | **Portão automático.** Um portão automático tenta mover e para; um controle de desligamento está identificado do lado externo. |
-| 54 | **Alagamento subindo.** A água sobe por uma marca de parede; uma pessoa no interior ainda organiza caixas. |
-| 55 | **Luz falhando.** A luz de um corredor pisca; uma saída iluminada continua visível no fundo. |
-| 56 | **Vidraça partida.** Fragmentos de vidro cobrem uma passagem; um caminho mais estreito evita os maiores cacos. |
-| 57 | **Lona solta.** Uma lona se solta e revela um carrinho de reparos com nome e ponto de devolução. |
-| 58 | **Gás no ar.** Um odor forte vem de um registro externo; o acesso interno tem aviso de área isolada. |
-| 59 | **Trânsito bloqueado.** Um veículo bloqueia a via; seu responsável tenta reposicioná-lo sem alcançar o volante. |
-| 60 | **Chuva cessando.** A chuva cessa e revela uma trilha; uma estaca marca o último ponto firme. |
+| 41 | **Chuva repentina.** A chuva engrossa. A cobertura está seca, mas entre ela e o grupo a água começa a correr sobre o piso. |
+| 42 | **Rajada de vento.** A porta de metal bate com o vento. Um cordão rompido balança na maçaneta; a cunha caiu ao lado. |
+| 43 | **Queda de telhas.** Uma telha cai após dois estalos. Outras deslizam no beiral, acima da passagem coberta de fragmentos. |
+| 44 | **Poça recente.** Tinta dissolvida na poça forma um rastro até a porta lateral. A mesma cor marca caixas num apoio mais alto. |
+| 45 | **Fiação baixa.** O cabo baixo balança entre dois apoios. Uma lâmpada de manutenção continua acesa junto ao controle do circuito. |
+| 46 | **Goteira de teto.** A goteira alcança a mesa. Um rádio e um livro de registros estão ao alcance, mas só cabe retirar um por vez. |
+| 47 | **Poeira no ar.** Poeira passa pela fresta. Uma tosse interrompe o arrasto, e uma voz pede: “Segura a outra ponta do armário?” |
+| 48 | **Lama na via.** O carrinho deixou sulcos na lama até um piso firme. Na borda, o apoio afunda quando recebe peso. |
+| 49 | **Fumaça leve.** Fumaça fina sai do acesso lateral. Há cheiro de pano queimado e alguém chama do cômodo de armazenamento. |
+| 50 | **Calor sob a porta.** O calor atravessa a porta. Pela janela lateral, o ocupante pergunta: “Está saindo fumaça daí?” |
+| 51 | **Estrutura rangendo.** Uma fissura aumenta com o peso sobre o piso. Ao lado da faixa frágil, uma madeira pode servir de escora. |
+| 52 | **Grade emperrada.** A grade abre poucos centímetros e trava. No trilho, entulho risca o chão; uma alavanca está encostada ao lado. |
+| 53 | **Portão automático.** O portão se move, para e volta a fechar. Uma placa aponta o desligamento externo; o trilho está obstruído. |
+| 54 | **Alagamento subindo.** A água sobe pelas marcas da parede. Lá dentro, uma pessoa empilha caixas sem perceber o acesso desaparecendo. |
+| 55 | **Luz falhando.** A luz do corredor pisca. Um obstáculo baixo aparece entre os apagões; a saída do fundo continua iluminada. |
+| 56 | **Vidraça partida.** Vidro cobre a passagem. Um vão estreito evita os maiores cacos, mas a mochila mal cabe entre as bordas. |
+| 57 | **Lona solta.** A rajada levanta a lona de um carrinho. Na carga, o nome da equipe e o ponto de devolução estão legíveis. |
+| 58 | **Gás no ar.** O odor forte vem do registro externo. O acesso interno tem uma faixa de isolamento e uma placa de vazamento. |
+| 59 | **Trânsito bloqueado.** O veículo atravessa a via. Seu responsável aponta caixas empilhadas na cabine: “Não alcanço o volante desse jeito.” |
+| 60 | **Chuva cessando.** A chuva para e revela a trilha. Uma estaca marca o último apoio firme; adiante, a água ainda cobre as pegadas. |
 
 
 #### 61–80 | Objetos, recursos e acesso
 
 | d100 | Acontecimento, sinal e escolha |
 |---:|---|
-| 61 | **Garrafa esquecida.** Uma garrafa marcada com iniciais está ao lado de um banco; a tampa tem um cordão preso. |
-| 62 | **Ferramenta no caminho.** Uma ferramenta caída conserva uma etiqueta de empréstimo e barro recente no cabo. |
-| 63 | **Tanque pingando.** Um tanque pinga sobre uma bandeja; o rótulo identifica o conteúdo e o ponto de perda é visível. |
-| 64 | **Porta que antes abria.** Uma porta que estava aberta agora tem um apoio interno; alguém pergunta quem está do lado de fora. |
-| 65 | **Cadeira diante da janela.** Uma cadeira diante da janela tem um caderno com horários de passagem e marcas recentes de uso. |
-| 66 | **Saco rasgado.** Grãos caídos formam uma trilha entre um saco marcado e um aviso de distribuição. |
-| 67 | **Carrinho abandonado.** Um carrinho abandonado tem uma roda torta e um bilhete: “volto com a peça”. |
-| 68 | **Comida exposta.** Uma caixa de comida exposta tem embalagem úmida e data legível; parte ficou sob cobertura. |
-| 69 | **Caixa lacrada.** Uma caixa lacrada tem etiqueta “reparo de bomba”, nome e ordem de recolher hoje. |
-| 70 | **Chuva captada.** Um recipiente de chuva tem dois nomes e marcas de divisão; água nova se mistura ao restante. |
-| 71 | **Rádio acende.** Um rádio acende por bateria; o visor mostra uma frequência e uma barra quase vazia. |
-| 72 | **Painel de energia.** Um painel identifica dois circuitos; um alimenta a luz externa e outro permanece desligado. |
-| 73 | **Ferrolho novo.** Um ferrolho novo fecha uma porta; alguém de dentro pede um sinal antes de abrir. |
-| 74 | **Escada colocada.** Uma escada encostada dá vista sobre o muro; um degrau remendado range ao toque. |
-| 75 | **Sombra em galpão.** Um galpão oferece sombra e piso seco; marcas mostram duas entradas usadas recentemente. |
-| 76 | **Reservatório vazando.** Um reservatório perde água; uma lona usada para outra tarefa parece compatível com um remendo. |
-| 77 | **Cartaz de serviço.** Um cartaz anuncia conserto de recipientes e um horário; há uma tira nova cobrindo o endereço antigo. |
-| 78 | **Pequena troca possível.** Uma pessoa mostra um item e pede ajuda para levar uma carga até uma cobertura próxima. |
-| 79 | **Objeto pesado visível.** Um objeto pesado está visível junto a uma saída; o piso tem marcas de uma tentativa de arrasto. |
-| 80 | **Rota liberada.** Uma passagem abre por poucos minutos; moradores querem fechá-la após a última carga. |
+| 61 | **Garrafa esquecida.** Uma garrafa ficou ao lado do banco. As iniciais e o cordão na tampa coincidem com os recipientes de uma moradora próxima. |
+| 62 | **Ferramenta no caminho.** Uma ferramenta com etiqueta de empréstimo está no caminho. Barro fresco cobre o cabo e aponta para a oficina próxima. |
+| 63 | **Tanque pingando.** O tanque pinga na bandeja. O rótulo identifica o líquido, e cada gota sai da mesma junta afrouxada. |
+| 64 | **Porta que antes abria.** A porta antes aberta agora tem um apoio interno. Pela fresta, uma voz pergunta: “Quem veio? Sumiu uma caixa daqui.” |
+| 65 | **Cadeira diante da janela.** Na cadeira diante da janela, um caderno marca horários de passagem. A última linha ainda está incompleta. |
+| 66 | **Saco rasgado.** Grãos espalhados ligam um saco rasgado ao aviso de distribuição. Uma transportadora tenta impedir que a trilha aumente. |
+| 67 | **Carrinho abandonado.** O carrinho tem uma roda torta. No bilhete, a dona escreveu: “Volto com o pino. Por favor, deixem aqui.” |
+| 68 | **Comida exposta.** Na caixa de comida, a parte exposta está úmida. Sob a cobertura, duas embalagens fechadas ainda têm data legível. |
+| 69 | **Caixa lacrada.** Na caixa lacrada, a etiqueta diz “vedação da bomba”. Há nome, data de hoje e um pedido de recolhimento. |
+| 70 | **Chuva captada.** Dois nomes dividem o recipiente de chuva. Água nova escorre para dentro do lote que já estava ali. |
+| 71 | **Rádio acende.** O rádio acende e começa uma chamada gravada. O visor mostra a frequência e uma bateria quase vazia. |
+| 72 | **Painel de energia.** O painel identifica “luz interna” e “campainha”. O fusível da luz está rompido; o circuito da campainha permanece desligado. |
+| 73 | **Ferrolho novo.** Um ferrolho novo fecha a porta. A voz do outro lado pergunta: “Quem pediu para você vir? Qual é o sinal?” |
+| 74 | **Escada colocada.** A escada encostada permite enxergar além do muro. Um degrau remendado se move sob pressão leve. |
+| 75 | **Sombra em galpão.** O galpão tem piso seco e sombra. Uma pessoa usa a entrada lateral e observa o grupo pela abertura da frente. |
+| 76 | **Reservatório vazando.** O reservatório vaza. Uma lona ainda cobre uma carga seca, e dois moradores discutem se devem usá-la no remendo. |
+| 77 | **Cartaz de serviço.** O cartaz anuncia conserto de recipientes. Uma tira recente cobre o endereço antigo: “Agora no pátio ao lado. Traga a tampa.” |
+| 78 | **Pequena troca possível.** Uma pessoa abre o embrulho: duas porções de comida. “São suas se essa carga chegar seca àquela cobertura.” |
+| 79 | **Objeto pesado visível.** O objeto pesado ficou junto à saída. Marcas de arrasto terminam numa cinta rompida e num vão estreito. |
+| 80 | **Rota liberada.** Os moradores deixam a passagem aberta para uma última carga. O responsável avisa: “Em dez minutos, fechamos.” |
 
 
 #### 81–100 | Pressão e infectados
 
 | d100 | Acontecimento, sinal e escolha |
 |---:|---|
-| 81 | **Arranhões na porta.** Arranhões recentes marcam a porta; um ruído se repete do outro lado na altura da maçaneta. |
-| 82 | **Passos arrastados.** Um infectado cruza outra rua sem perceber o grupo; um veículo encobre parte de seu percurso. |
-| 83 | **Silêncio interrompido.** Uma batida regular interrompe o silêncio; a origem fica atrás de uma cobertura visível. |
-| 84 | **Corredor estreito ocupado.** Um vulto ocupa o corredor estreito; outra passagem já visível permite contornar. |
-| 85 | **Vultos atrás da grade.** Vultos se movem atrás de uma grade intacta; o lado externo oferece um contorno visível. |
-| 86 | **Infectado preso.** Um infectado está preso por uma peça de metal; o braço ainda alcança parte da passagem. |
-| 87 | **Passos seguindo som.** Um infectado muda de direção ao seguir um som; seu novo caminho cruza uma esquina próxima. |
-| 88 | **Alarme quase ativo.** Uma luz de alarme pisca num carro; o fio de um controle acessível está quase solto. |
-| 89 | **Pássaros levantam voo.** Pássaros levantam voo de uma árvore; galhos baixos continuam mexendo depois do primeiro susto. |
-| 90 | **Porta golpeada.** Uma porta recebe golpes; um apoio curto pode impedir que a trava salte. |
-| 91 | **Vidro de dentro para fora.** Vidro espalhado de dentro para fora acompanha um objeto preso à borda da janela. |
-| 92 | **Figura imóvel.** Uma figura imóvel ocupa um banco; há espaço para observar e chamar à distância. |
-| 93 | **Rastro de arrasto.** Um rastro de arrasto entra num recinto; uma tira de tecido fica na entrada. |
-| 94 | **Alarme distante.** Um alarme distante atrai movimento para outra rua; a direção é perceptível entre os prédios. |
-| 95 | **Sombra na escada.** Um infectado conhecido ocupa a escada que estava livre; um patamar oferece cobertura. |
-| 96 | **Ruído sob o piso.** Um ruído vem debaixo do piso; uma abertura lateral permite observar sem pisar na área suspeita. |
-| 97 | **Portão cedendo.** Um portão de chapa se deforma; a corrente estica e os apoios laterais estão desgastados. |
-| 98 | **Concentração na esquina.** Uma concentração de infectados ocupa a esquina; um contorno visível passa atrás de uma cobertura. |
-| 99 | **Saída quase fechada.** Uma pessoa fecha uma barreira e avisa: “Vou fechar em um minuto; preciso proteger o interior.” |
-| 100 (00) | **Barulho refletido.** Um som reflete entre superfícies e parece vir de duas direções; a segunda repetição é mais fraca. |
+| 81 | **Arranhões na porta.** Algo arranha a porta na altura da maçaneta. A cada arranhão, o trinco mexe, mas a folha continua fechada. |
+| 82 | **Passos arrastados.** O infectado cruza a rua sem olhar para o grupo. Um veículo encobre o trecho que ele ainda precisa percorrer. |
+| 83 | **Silêncio interrompido.** Uma batida ritmada vem de trás da cobertura. Entre duas batidas, alguém ajusta um tubo atravessado no caminho. |
+| 84 | **Corredor estreito ocupado.** Um vulto avança devagar no corredor. Ao chamar, o grupo ouve: “Cuidado, a tábua está solta embaixo.” |
+| 85 | **Vultos atrás da grade.** Vultos pressionam a grade. Do lado externo, uma faixa de passagem contorna o alcance dos braços. |
+| 86 | **Infectado preso.** Uma peça de metal prende o infectado. O braço alcança parte da passagem; a corrente estica quando ele tenta avançar. |
+| 87 | **Passos seguindo som.** O infectado muda de direção ao ouvir um som. Seu novo percurso cruza a esquina pela qual o grupo pretendia passar. |
+| 88 | **Alarme quase ativo.** No carro, a luz do alarme acelera os pulsos. O fio do controle está à vista e quase solto: falta um minuto para disparar. |
+| 89 | **Pássaros levantam voo.** Os pássaros levantam voo, mas os galhos continuam mexendo. Uma ponta de carga comprida aparece sob a árvore. |
+| 90 | **Porta golpeada.** Os golpes fazem a trava da porta saltar no encaixe. Um apoio curto está no lado protegido, ao alcance do grupo. |
+| 91 | **Vidro de dentro para fora.** O vidro caiu para fora. Um fragmento de tecido marcado ficou preso na janela, perto de uma mancha de sangue. |
+| 92 | **Figura imóvel.** A figura no banco não se move. Uma mochila está entre seus braços; da cobertura, é possível chamá-la sem se aproximar. |
+| 93 | **Rastro de arrasto.** O rastro de arrasto entra no recinto. A tira de tecido na soleira combina com a amarração de uma maca à vista. |
+| 94 | **Alarme distante.** A sirene distante muda o movimento da rua. Entre as construções, uma faixa fica vazia quando os vultos seguem o som. |
+| 95 | **Sombra na escada.** O infectado que o grupo já viu ocupa a escada. No patamar, a porta lateral ainda separa seu alcance de um contorno. |
+| 96 | **Ruído sob o piso.** Um ruído bate sob o piso. Pela abertura lateral, uma peça solta golpeia o cano cada vez que a tábua vibra. |
+| 97 | **Portão cedendo.** O portão de chapa deforma a corrente. Os apoios laterais rangem; sem reforço, a corrente solta em dez minutos. |
+| 98 | **Concentração na esquina.** Os infectados ocupam a esquina. O contorno atrás da cobertura é estreito, e o último vulto ainda observa sua entrada. |
+| 99 | **Saída quase fechada.** A pessoa fecha a barreira: “Mais um minuto. Quem ficou do outro lado precisa vir agora.” |
+| 100 (00) | **Barulho refletido.** O som retorna de duas direções. A segunda repetição é mais fraca e coincide com o movimento de uma chapa. |

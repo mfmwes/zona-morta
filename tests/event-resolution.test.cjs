@@ -19,7 +19,7 @@ test('100 guias próprios preservam tabela, alternativas, desfechos e continuida
  assert.equal(new Set(eventGuides.map(g=>g.stakes)).size,100);assert.equal(new Set(eventGuides.map(g=>g.outcomes.success.summary)).size,100);
  assert.equal(eventGuide({text:'Grade emperrada. Texto personalizado'}).roll,undefined);assert.equal(eventGuide({text:'Evento personalizado',guidance:'Um risco próprio'}).stakes,'Um risco próprio');
  assert.equal(suggestedEventActionKind({text:content.generators.eventos[93].text,generatorRoll:94,generatorCategory:'Ameaça'}),null);
- assert.match(eventGuides[36].stakes,/não confirma Exposição/);assert.match(eventGuides[84].outcomes.withdrawn.continuity,/intacta/);
+ assert.match(eventGuides[36].setup,/não confirma a causa da febre/);assert.match(eventGuides[84].outcomes.withdrawn.continuity,/grade, alcance e posição/);
 });
 test('equipe única confirma, cobra duração, guarda desfecho e aplica limites reais',()=>{
  const g=fixture();g.noise=5;g.fear=11;const c=command(g,{fear:3});assert.equal(resolveHexEvent(g,c).completed,true);
@@ -64,8 +64,8 @@ test('observar ou planejar não concede reparo, retirada ou identificação que 
  const child=eventGuides[23];assert.match(eventOutcomeSuggestion(child,'careful','success').summary,/localizar a avó por sua resposta/);
  const exit=eventGuides[98];assert.match(exit.approaches[2].description,/trecho já acessível/);
 });
-test('120 versões anteriores conservam fatos salvos; todas as versões novas têm preparação própria',()=>{
- assert.equal(legacyEventGuides.length,120);
+test('220 versões anteriores conservam fatos salvos; todas as versões novas têm preparação própria',()=>{
+ assert.equal(legacyEventGuides.length,220);
  const {splitGeneratorText}=require('../lib/hex-generators.ts');
  for(const old of legacyEventGuides){
   const event={text:splitGeneratorText(old.sourceTexts[0]).publicText,generatorRoll:old.roll};const before=structuredClone(event);

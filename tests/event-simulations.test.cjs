@@ -88,6 +88,35 @@ test('socorrista e escada: custos descritos correspondem à água, Estresse e du
  const g=fixture(26);resolve(g,command(g,26,'risk','complication'));assert.equal(g.minutes,555);assert.equal(g.survivors[0].water,3);assert.equal(g.survivors[0].stress,1);
  const ladder=fixture(74);resolve(ladder,command(ladder,74,'risk','complication'));assert.equal(ladder.minutes,550);assert.equal(ladder.survivors[0].stress,1);
 });
+test('pessoa febril: ajudar com custo entrega a água real, sem registrar hidratação do voluntário',()=>{
+ const g=fixture(37);resolve(g,command(g,37,'risk','complication'));
+ assert.equal(g.survivors[0].water,3);assert.equal(g.survivors[0].stress,1);
+ assert.equal(g.survivors[0].waterConsumedDay,undefined);assert.equal(g.survivors[1].water,4);
+ assert.equal(g.npcs[0].disposition,'Neutro');
+});
+test('patrulha, coleta e ecos: esperas são cobradas antes do pagamento ou da informação',()=>{
+ for(const [roll,minute,food,water] of [[22,545,5,4],[65,560,4,4],[61,547,4,5],[66,555,5,4],[100,550,4,4]]){
+  const g=fixture(roll);resolve(g,command(g,roll,'risk','complication'));
+  assert.equal(g.minutes,minute,`Evento ${roll}`);assert.equal(g.survivors[0].food,food);assert.equal(g.survivors[0].water,water);
+ }
+});
+test('sinais evidentes são gratuitos; ler aviso e conversar não entregam recursos nem aplicam perigos',()=>{
+ for(const roll of [1,21,30,35,37,41,45,47,51,53,58,66,81]){
+  const g=fixture(roll),before=structuredClone(g.survivors);resolve(g,command(g,roll,'careful','success'));
+  assert.equal(g.minutes,540,`Evento ${roll}`);assert.deepEqual(g.survivors,before);
+  assert.equal(event(g).status,'active');assert.equal(event(g).resolutions[0].personalEffects?.length??0,0);
+ }
+});
+test('revisão mantém as consequências completas da versão anterior sem converter uma ocorrência salva',()=>{
+ const {legacyEventGuides,eventGuide}=require('../lib/event-guides.ts');
+ const {splitGeneratorText}=require('../lib/hex-generators.ts');
+ for(const roll of [31,37,51,81,100]){
+  const old=legacyEventGuides.findLast(g=>g.roll===roll),e={generatorRoll:roll,text:splitGeneratorText(old.sourceTexts[0]).publicText};
+  const before=structuredClone(e),loaded=eventGuide(e);
+  assert.equal(loaded.legacy,true);assert.deepEqual(loaded.approaches,old.approaches);assert.deepEqual(loaded.outcomes,old.outcomes);assert.deepEqual(e,before);
+  assert.notDeepEqual(loaded.sourceTexts,eventGuides[roll-1].sourceTexts);
+ }
+});
 test('portão: ganhar dez minutos prorroga o prazo, mas a ação continua custando cinco',()=>{
  const g=fixture(97),start=absoluteMinutes(g);resolve(g,command(g,97,'risk','complication'));assert.equal(g.minutes,545);assert.equal(event(g).clock.dueAbsoluteMinute,start+20);assert.equal(event(g).clock.status,'active');assert.equal(nextActivityMinute(g),560);
  assert.equal(advanceToNextActivity(g).ok,true);assert.equal(g.minutes,560);assert.equal(event(g).clock.status,'expired');const noise=g.noise;advanceCampaignTime(g,1);assert.equal(g.noise,noise);
