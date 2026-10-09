@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { startCampaignSync, type CampaignSyncNotice } from "@/lib/campaign-sync";
 import { currentTableRest } from "@/lib/table-rest";
 import { toast } from "sonner";
@@ -708,16 +709,19 @@ export default function CampaignApp() {
       </div>
       <div className="px-3"><span className="smallcaps text-[#81d0cb]">Dossiê de campanha</span>
         <p className="text-sm text-[#a9c0bc] mt-1">Cidade em descoberta · mapa aberto</p></div>
+      <div className="campaign-navigation-dock">
       <TabsList aria-label="Seções da campanha" className="rail-nav bg-transparent h-auto w-full p-0">
         {nav.map((item,index) => <TabsTrigger value={item.value} key={item.value} className={index >= 4 ? "rail-nav-extra" : undefined} aria-current={activeTab===item.value ? "page" : undefined}>
-          <item.icon size={17} />{item.label}</TabsTrigger>)}
+          <item.icon size={17} /><span>{item.label}</span></TabsTrigger>)}
         <DropdownMenu><DropdownMenuTrigger asChild><button type="button" className="rail-more" aria-label="Mais seções" aria-current={nav.slice(4).some(item => item.value === activeTab) ? "page" : undefined}><MoreHorizontal size={19} /><span>Mais</span></button></DropdownMenuTrigger>
           <DropdownMenuContent align="end" side="top" className="min-w-48">{nav.slice(4).map(item => <DropdownMenuItem key={item.value} onSelect={() => setTab(item.value)}><item.icon size={16} />{item.label}</DropdownMenuItem>)}</DropdownMenuContent>
         </DropdownMenu>
       </TabsList>
-      {role === "mestre" && !playerPreview && <div className="rail-presentation-slot">
-        <TablePresentationControl campaignId={ownerId} presentation={presentation} onPresentationChange={setPresentation} />
-      </div>}
+      <div className={`rail-presentation-slot campaign-utility-controls${role === "mestre" && !playerPreview ? " has-presentation" : ""}`} aria-label="Ferramentas da campanha" role="group">
+        <ThemeToggle placement="campaign" />
+        {role === "mestre" && !playerPreview && <TablePresentationControl campaignId={ownerId} presentation={presentation} onPresentationChange={setPresentation} />}
+      </div>
+      </div>
       <div className="rail-foot"><b>Dia {game.day}</b> · {displayTime(game.minutes)}
         <p>Um hex pode guardar muitos lugares, pistas e acontecimentos.</p></div>
     </Sidebar>

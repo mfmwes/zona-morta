@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "./visual-system.css";
 import "./hex-discovered-points.css";
@@ -12,6 +12,7 @@ import "./search-session.css";
 import "./activity-timeline.css";
 import "./event-guides.css";
 import "./campaign-usability.css";
+import "./mobile-navigation.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -22,6 +23,12 @@ export const metadata: Metadata = {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
