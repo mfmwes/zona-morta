@@ -106,6 +106,9 @@ test('altura do shell acompanha o teclado sem limitar zoom e remove o estado ao 
 });
 
 test('ficha mobile usa as regras reais para alimentação, recursos e rolagens; detalhes continuam acessíveis', () => {
+  const empty = view(SurvivorPanel, { mobile: true, game: defaultState(), edit() {}, playerPreview: false });
+  assert.equal(empty.find(node => node.type === 'MobileDisclosure' && node.props.title === 'Criar primeiro sobrevivente').props.open, true);
+  assert.ok(empty.find(node => node.type === 'CharacterWizard'));
   const { game, person } = fixture(); person.food = 2; person.water = 2;
   const v = view(SurvivorPanel, { mobile: true, game, edit: fn => fn(game), playerPreview: true, playerMode: true });
   const overview = v.find(node => node.type === 'MobileSurvivorOverview'); assert.ok(overview);

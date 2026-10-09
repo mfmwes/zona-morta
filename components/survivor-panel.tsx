@@ -443,7 +443,7 @@ export function SurvivorPanel({ mobile = false, initialSurvivorId, initialSectio
     edit(draft => { if (consumeDailyProvision(draft, selected.id, resource)) toast.success(resource === "food" ? "Comida solta de hoje registrada." : "Água solta de hoje registrada."); });
   }
   return <div className={`character-sheet${mobile ? " character-sheet--mobile" : ""}`}>
-    <MobileDisclosure mobile={mobile} title={playerMode ? "Ver equipe" : `Escolher sobrevivente · ${rosterCount}`} summary={selected?.name}><div className="character-roster" aria-label="Sobreviventes da campanha" title={playerMode ? "A equipe mostra a situação pública de todos os sobreviventes. Sua própria ficha continua sendo a única editável." : "No computador, clique com o botão direito em um sobrevivente para ações rápidas."}>
+    <MobileDisclosure mobile={mobile} open={rosterCount === 0} title={playerMode ? "Ver equipe" : rosterCount ? `Escolher sobrevivente · ${rosterCount}` : "Criar primeiro sobrevivente"} summary={selected?.name}><div className="character-roster" aria-label="Sobreviventes da campanha" title={playerMode ? "A equipe mostra a situação pública de todos os sobreviventes. Sua própria ficha continua sendo a única editável." : "No computador, clique com o botão direito em um sobrevivente para ações rápidas."}>
       <div className="character-roster-label"><span>Equipe</span><b>{rosterCount.toString().padStart(2, "0")}</b></div>
       <div className="character-roster-scroll">
         {playerMode ? teamPeers.map(peer => {
