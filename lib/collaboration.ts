@@ -1,8 +1,9 @@
+import { validInventoryItem, validSurvivorField } from './state-field-validation';
 import { readFreeDiceLog } from "./free-dice";
 import { isCluePoint } from "./hex-event-links";
 import { publicActivities } from "./activity-timeline";
 import { playerTimedActionIssue, projectPlayerActions } from "./player-actions";
-import { addLog, ammunitionTypes, survivorIsDown, survivorStats, type AmmunitionType, type GameState, type InventoryItem, type NPC, type Survivor } from "./game";
+import { addLog, ammunitionTypes, survivorIsDown, survivorStats, type AmmunitionType, type GameState, type NPC, type Survivor } from "./game";
 import { publicConflictScene } from "./conflict";
 import { shelterCommunity } from "./shelter-residents";
 import { publicNpcs } from "./npc-presentation";
@@ -134,33 +135,6 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
 const editable = ["portrait", "primary", "secondary", "protection", "outfit", "personal", "bag", "transport", "pocket1", "pocket2", "equippedItems", "kitCondition",
   "hp", "armorMarked", "stress", "hope", "food", "water", "foodConsumedDay", "waterConsumedDay", "provisionLots",
   "ammo", "ammoType", "ammoSpentScene", "ammoSpentType", "ammoSpentTypes", "inventory", "notes", "abilityUses", "restPlan"] as const;
-const allowedItemKeys = new Set(["id", "name", "load", "qty", "condition", "catalogKey", "category", "armorMarked", "foundDay",
-  "provisionResource", "portionsPerUnit", "portionsRemaining", "prepared", "verified", "opened", "expiresDay", "battery", "storedResource", "storedAmount", "cartDeployed", "cartItems", "ammunitionType", "committedAmmo"]);
-function validInventoryItem(item: InventoryItem, nested = false): boolean {
-  return Boolean(item && typeof item.id === "string" && typeof item.name === "string"
-    && Object.keys(item).every(key => allowedItemKeys.has(key))
-    && item.name.length <= 100 && Number.isInteger(item.qty) && item.qty >= 1 && item.qty <= 99
-    && Number.isInteger(item.load) && item.load >= 0 && item.load <= 9
-    && (item.provisionResource === undefined || ["food", "water"].includes(item.provisionResource))
-    && (item.portionsPerUnit === undefined || (Number.isInteger(item.portionsPerUnit) && item.portionsPerUnit >= 1 && item.portionsPerUnit <= 99))
-    && (item.portionsRemaining === undefined || (Number.isInteger(item.portionsRemaining) && item.portionsRemaining >= 1
-      && item.portionsRemaining <= (item.portionsPerUnit ?? 99) && item.qty === 1))
-    && (item.prepared === undefined || typeof item.prepared === "boolean")
-    && (item.verified === undefined || typeof item.verified === "boolean")
-    && (item.opened === undefined || typeof item.opened === "boolean")
-    && (item.expiresDay === undefined || (Number.isInteger(item.expiresDay) && item.expiresDay >= 1 && item.expiresDay <= 9999))
-    && (item.battery === undefined || ["Carregada", "Descarregada"].includes(item.battery))
-    && (item.ammunitionType === undefined || ammunitionTypes.includes(item.ammunitionType))
-    && (item.committedAmmo === undefined || (Number.isInteger(item.committedAmmo) && item.committedAmmo >= 1 && item.committedAmmo <= item.qty))
-    && (item.storedResource === undefined || ["water", "fuel"].includes(item.storedResource))
-    && (item.storedAmount === undefined || (Number.isInteger(item.storedAmount) && item.storedAmount >= 1 && item.storedAmount <= 4))
-    && (item.storedResource !== "fuel" || (item.storedAmount ?? 0) <= 1)
-    && ((item.storedResource === undefined) === (item.storedAmount === undefined))
-    && (item.cartDeployed === undefined || (!nested && item.name === "Carrinho dobrável" && typeof item.cartDeployed === "boolean"))
-    && (item.cartItems === undefined || (!nested && item.name === "Carrinho dobrável" && Array.isArray(item.cartItems)
-      && item.cartItems.length <= 40 && item.cartItems.every(child => validInventoryItem(child, true)))));
-}
-
 export type PlayerLog = { kind: string; text: string };
 export type ShelterWorkAction = { type: "join" | "leave" | "schedule" | "cancel"; projectId: string };
 
@@ -210,6 +184,7 @@ function validRestPlan(plan: Survivor["restPlan"], survivors: Survivor[], actor:
   const actorHex = actor.hex ?? partyHex;
   return Boolean(plan && (plan.kind === "short" || plan.kind === "long") && Array.isArray(plan.choices) && plan.choices.length === 2
     && plan.choices.every(choice => {
+      if (!choice || typeof choice !== "object") return false;
       const target = survivors.find(person => person.id === choice.targetId);
       return Boolean(choice && Object.keys(choice).every(key => key === "action" || key === "targetId")
         && typeof choice.action === "string" && restActions.has(choice.action) && validActions.has(choice.action)
@@ -266,6 +241,7 @@ export function applyPlayerChange(game: GameState, survivorId: string, before: S
     else delete merged[key];
   }
   after = merged;
+  if (edited.some(key => !validSurvivorField(key, after[key]))) return null;
   if (!Number.isInteger(fearDelta) || fearDelta < 0 || fearDelta > 1
     || !Number.isInteger(noiseDelta) || noiseDelta < 0 || noiseDelta > 5 || game.noise + noiseDelta > 5
     || !Array.isArray(logs) || logs.length > 3

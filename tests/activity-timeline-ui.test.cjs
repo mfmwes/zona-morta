@@ -11,7 +11,7 @@ Module._resolveFilename=function(name,parent,...args){return originalResolve.cal
 let state=false;
 const originalLoad=Module._load;
 Module._load=function(name,parent,main){
-  if(parent?.filename.endsWith('/components/activity-timeline.tsx')){
+  if(parent?.filename === path.join(__dirname, '..', 'components', 'activity-timeline.tsx')){
     if(name==='react')return {useState:()=>[state,value=>{state=value;}]};
     if(name==='@/components/ui/button')return {Button:'button'};
     if(name==='sonner')return {toast:{error(){},success(){},info(){}}};
