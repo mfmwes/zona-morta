@@ -1,3 +1,4 @@
+import { record, validSurvivor, validStockHolder, validLogEntry } from './state-field-validation';
 import { validCampaignSessions } from "./campaign-sessions";
 import { validActivities } from "@/lib/activity-timeline-validation";
 import { validPlayerActionState } from "@/lib/player-actions-types";
@@ -175,6 +176,8 @@ export function validState(value: unknown): value is GameState {
     && state.publicShelterCommunity === undefined
     && state.publicConflict === undefined
     && validPresentation(state.presentation)
+    && state.survivors.every(validSurvivor)
+    && new Set(state.survivors.map(s => s.id)).size === state.survivors.length
     && state.survivors.every(s => Number.isInteger(s.armorMarked) && s.armorMarked >= 0 && s.armorMarked <= 20
       && (s.hex === undefined || (typeof s.hex === "string" && Boolean(state.hexes?.[s.hex])))
       && (s.home === undefined || (typeof s.home === "string" && Boolean(state.hexes?.[s.home])))
@@ -184,7 +187,10 @@ export function validState(value: unknown): value is GameState {
       && (s.ammoSpentType === undefined || typeof s.ammoSpentType === "string")
       && (s.ammoSpentTypes === undefined || (Array.isArray(s.ammoSpentTypes) && s.ammoSpentTypes.length <= ammunitionTypes.length
         && s.ammoSpentTypes.every(type => ammunitionTypes.includes(type as AmmunitionType)))))
-    && Boolean(shelter && typeof shelter === "object")
+    && validStockHolder(shelter)
+    && record(shelter) && typeof shelter.name === "string" && typeof shelter.notes === "string"
+    && (["capacity", "residents", "medications", "pistolAmmo", "fuel", "parts", "security", "energy", "comfort"] as const).every(key => Number.isSafeInteger(shelter[key]) && Number(shelter[key]) >= 0)
+    && (state.formerShelters === undefined || (Array.isArray(state.formerShelters) && state.formerShelters.length <= 1000 && state.formerShelters.every(validStockHolder)))
     && (shelter?.ammoStocks === undefined || (typeof shelter.ammoStocks === "object" && shelter.ammoStocks !== null
       && Object.entries(shelter.ammoStocks).every(([key, value]) =>
         ammunitionTypes.includes(key as AmmunitionType)
@@ -198,5 +204,5 @@ export function validState(value: unknown): value is GameState {
         && Array.isArray(project.requiredCapabilities) && Array.isArray(project.effects))))
     && (shelter?.posts === undefined || (Array.isArray(shelter.posts) && shelter.posts.length <= 20
       && shelter.posts.every(post => post && typeof post.key === "string" && (post.helperIds === undefined || Array.isArray(post.helperIds)))))
-    && Array.isArray(state.log) && state.log.length <= 200;
+    && Array.isArray(state.log) && state.log.length <= 200 && state.log.every(validLogEntry);
 }
