@@ -14,8 +14,11 @@ import "./event-guides.css";
 import "./campaign-usability.css";
 import "./mobile-navigation.css";
 import "./mobile-experience.css";
+import "./appearance-fonts.css";
+import "./appearance.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { appearanceBootstrapScript } from "@/lib/appearance";
 
 export const metadata: Metadata = {
   title: "Zona Morta | Aplicativo de campanha",
@@ -39,7 +42,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <head><script dangerouslySetInnerHTML={{ __html: "try { const theme = localStorage.getItem('zona-morta-theme'); if (theme === 'dark' || theme === 'light') document.documentElement.dataset.theme = theme; } catch {}" }} /></head>
+      <head><script dangerouslySetInnerHTML={{ __html: appearanceBootstrapScript }} /></head>
       <body className="antialiased"><ThemeToggle />{children}<Toaster position="bottom-right" richColors closeButton /></body>
     </html>
   );
