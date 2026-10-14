@@ -370,7 +370,7 @@ export function conditionRollGuidance(condition: SurvivorCondition) {
   return conditionDefinitions[condition.kind].effect;
 }
 
-export function useConditionDuringRoll(game: GameState, survivorId: string, conditionId: string, input: {
+export function applyConditionDuringRoll(game: GameState, survivorId: string, conditionId: string, input: {
   forced?: boolean;
   failedWithFear?: boolean;
   stressAlreadyPaid?: boolean;
