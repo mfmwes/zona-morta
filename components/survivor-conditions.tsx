@@ -161,7 +161,7 @@ function DetailActions({ survivor, condition, edit, editable, onClose }: {
         <Button size="sm" variant="outline" onClick={() => mutate(draft => { resolveExposureRoll(draft, survivor.id, condition.id, "failure-hope"); })}><CircleMinus size={15} aria-hidden="true" />Falha com Esperança</Button>
         <Button size="sm" variant="outline" onClick={() => mutate(draft => { resolveExposureRoll(draft, survivor.id, condition.id, "failure-fear"); })}><TriangleAlert size={15} aria-hidden="true" />Falha com Medo</Button>
         <Button size="sm" variant="outline" onClick={() => mutate(draft => { reduceExposure(draft, survivor.id, condition.id); })}><HeartPulse size={15} aria-hidden="true" />Recuperou 1 nível</Button>
-        {level >= 3 && <Button size="sm" variant="destructive" onClick={() => mutate(draft => { severeExposureTrigger(draft, survivor.id, condition.id); })}>Gatilho grave · +1 PV</Button>}
+        {level >= 3 && <Button size="sm" variant="destructive" className="survivor-condition-danger-action" onClick={() => mutate(draft => { severeExposureTrigger(draft, survivor.id, condition.id); })}>Gatilho grave · +1 PV</Button>}
       </div>
       <small>Use estes controles apenas quando a rolagem foi feita fora da ferramenta acima. A rolagem de exposição integrada já resolve a condição automaticamente.</small>
     </div>;
@@ -171,7 +171,7 @@ function DetailActions({ survivor, condition, edit, editable, onClose }: {
     return <div className="survivor-condition-actions">
       <h3 className="survivor-condition-action-title"><ShieldCheck size={16} aria-hidden="true" />Resolver Sangramento</h3>
       <div>
-        <Button size="sm" variant="destructive" onClick={() => mutate(draft => { bleedingTrigger(draft, survivor.id, "fim da cena/atividade sem estabilização"); })}>Cobrar gatilho · +1 PV</Button>
+        <Button size="sm" variant="destructive" className="survivor-condition-danger-action" onClick={() => mutate(draft => { bleedingTrigger(draft, survivor.id, "fim da cena/atividade sem estabilização"); })}>Cobrar gatilho · +1 PV</Button>
         <Button size="sm" variant="outline" onClick={() => { mutate(draft => { removeSurvivorCondition(draft, survivor.id, condition.id, "estabilizado com primeiros socorros"); }); onClose(); }}>Estabilizar</Button>
       </div>
     </div>;
@@ -216,7 +216,7 @@ function ConditionDetailDialog({ game, survivor, condition, edit, editable, open
           <div className="survivor-condition-hero-text">
             <DialogTitle>{detail.label}</DialogTitle>
             <DialogDescription>{detail.category} · condição ativa · {survivor.name}</DialogDescription>
-            {(condition.kind === "cold" || condition.kind === "heat") && <ConditionProgress condition={condition} />}
+            <ConditionProgress condition={condition} />
           </div>
         </div>
       </DialogHeader>
