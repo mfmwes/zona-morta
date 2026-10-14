@@ -28,11 +28,11 @@ Module._load = function(name, parent, main) {
   }
   return load.call(this, name, parent, main);
 };
-const { SurvivorConditionPanel } = require('../components/survivor-conditions.tsx');
+const { SurvivorConditionPanel, ConditionEffect } = require('../components/survivor-conditions.tsx');
 const { SurvivorPanel } = require('../components/survivor-panel.tsx');
 Module._load = load;
 const { defaultState, initialSurvivor, content } = require('../lib/game.ts');
-const { applySurvivorCondition } = require('../lib/survivor-conditions.ts');
+const { applySurvivorCondition, conditionDefinitions } = require('../lib/survivor-conditions.ts');
 const text = node => node == null || typeof node === 'boolean' ? '' : Array.isArray(node) ? node.map(text).join('') : typeof node === 'object' ? text(node.props?.children) : String(node);
 function nodes(node, tab, dialogOpen = true) {
   if (Array.isArray(node)) return node.flatMap(child => nodes(child, tab, dialogOpen));
@@ -112,4 +112,40 @@ test('Exposto abre o acompanhamento; tratamento e edição manual ficam reservad
   const player = view(SurvivorPanel, { game, edit() {}, initialSection: 'condicoes', playerMode: true, playerPreview: false })();
   assert.equal(player.some(node => node.type === 'Counter' && node.props.label === 'Cenas significativas restantes'), false);
   assert.ok(player.some(node => text(node).includes('Cenas significativas restantes: 2')));
+});
+
+test('detalhe de Frio e Calor separa níveis sem alterar texto ou intensidade da regra', () => {
+  for (const kind of ['cold', 'heat']) {
+    const { game, survivor } = fixture();
+    applySurvivorCondition(game, survivor.id, kind, { level: 2 });
+    const condition = survivor.conditions.find(entry => entry.kind === kind);
+    assert.ok(condition);
+    const effect = conditionDefinitions[kind].effect;
+    const elements = nodes(ConditionEffect({ condition, effect }));
+    const rows = elements.filter(node => node.props.className?.includes('survivor-condition-effect-row'));
+    const matches = [...effect.matchAll(/Nível\s+([123])(\+)?:\s*/g)];
+    assert.equal(rows.length, 3);
+    assert.equal(rows.length, matches.length);
+    for (const [index, match] of matches.entries()) {
+      const next = matches[index + 1]?.index ?? effect.length;
+      const description = effect.slice(match.index + match[0].length, next).trim();
+      const levelLabel = `Nível ${match[1]}${match[2] ?? ''}`;
+      const spans = nodes(rows[index]).filter(node => node.type === 'span');
+      const paragraphs = nodes(rows[index]).filter(node => node.type === 'p');
+      assert.equal(text(spans[0]), levelLabel);
+      assert.equal(text(paragraphs[0]), description);
+      assert.equal(rows[index].props.className.includes('is-reached'), Number(match[1]) <= 2);
+    }
+  }
+});
+
+test('efeito de todas as condições sem níveis mantém integralmente as frases originais', () => {
+  for (const kind of ['restrained', 'vulnerable', 'hidden', 'wet', 'bleeding', 'injury', 'fracture']) {
+    const condition = { id: kind, kind };
+    const effect = conditionDefinitions[kind].effect;
+    const element = ConditionEffect({ condition, effect });
+    const paragraphs = nodes(element).filter(node => node.type === 'p');
+    assert.ok(paragraphs.length > 0, kind);
+    assert.equal(paragraphs.map(text).join(' '), effect, kind);
+  }
 });
