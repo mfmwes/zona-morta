@@ -15,7 +15,7 @@ import { applyAttackResources, attackResourceState } from "@/lib/combat-resource
 import { publicConflictScene, resolveThreatAttack, type ThreatAttackResolution } from "@/lib/conflict";
 import { parseWeaponDamage, resolveActionRoll, resolveAttackHit, resolveRollResources, resolveWeaponDamage, rollDie, type ActionOutcome, type Edge, type RollKind } from "@/lib/rolls";
 import { rollSearchAccess, searchMentors } from "@/lib/hex-automation";
-import { conditionCanDisadvantageRoll, conditionLabel, conditionRollGuidance, removeSurvivorCondition, twoHandedFractureIssue, useConditionDuringRoll } from "@/lib/survivor-conditions";
+import { conditionCanDisadvantageRoll, conditionLabel, conditionRollGuidance, removeSurvivorCondition, twoHandedFractureIssue, applyConditionDuringRoll } from "@/lib/survivor-conditions";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 export type RollRequest = { survivorId?: string; kind?: RollKind; trait?: string; weapon?: "primary" | "secondary" | "unarmed"; experience?: "origin" | "free"; targetThreatId?: string; search?: { hexId: string; pointId: string; attemptId: string; difficulty: number } };
@@ -207,7 +207,7 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
         const attempt = draft.hexes[search.hexId]?.points.find(point => point.id === search.pointId)?.preparation?.attempts.find(row => row.id === search.attemptId);
         const failedWithFear = attempt?.outcome?.success === false && attempt.outcome.with === "Fear";
         for (const condition of selectedRollConditions) {
-          useConditionDuringRoll(draft, person, condition.id, {
+          applyConditionDuringRoll(draft, person, condition.id, {
             forced: forcedConditionIds.includes(condition.id),
             failedWithFear,
             stressAlreadyPaid: forcedConditionIds.includes(condition.id),
@@ -287,7 +287,7 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
         if (kind === "attack" && spent && !spent.ok) return;
         const failedWithFear = resolvedOutcome.success === false && resolvedOutcome.with === "Fear";
         for (const condition of selectedRollConditions) {
-          useConditionDuringRoll(draft, person, condition.id, {
+          applyConditionDuringRoll(draft, person, condition.id, {
             forced: forcedConditionIds.includes(condition.id),
             failedWithFear,
             stressAlreadyPaid: forcedConditionIds.includes(condition.id),
