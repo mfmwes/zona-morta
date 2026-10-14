@@ -5,6 +5,7 @@ import {
   Activity, Droplets, EyeOff, HeartPulse, Lock, Snowflake, Sun, TriangleAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { PlayerActionControls } from "@/components/player-actions-panel";
 import { RollDialog } from "@/components/roll-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -87,8 +88,8 @@ function ConditionBadge({ condition, onOpen }: { condition: SurvivorCondition; o
   </Tooltip>;
 }
 
-function ExposureRollControl({ game, survivor, condition, edit }: {
-  game: GameState; survivor: Survivor; condition: SurvivorCondition; edit: Edit;
+function ExposureRollControl({ game, survivor, condition, edit, playerActions }: {
+  game: GameState; survivor: Survivor; condition: SurvivorCondition; edit: Edit; playerActions?: PlayerActionControls;
 }) {
   const [open, setOpen] = useState(false);
   if (condition.kind !== "cold" && condition.kind !== "heat") return null;
@@ -100,7 +101,7 @@ function ExposureRollControl({ game, survivor, condition, edit }: {
       ? `Fontes: ${sources.join(", ")}. A rolagem aplica +d6 automaticamente e não acumula múltiplas Vantagens.`
       : "Força é a sugestão padrão; o atributo pode mudar se a ficção justificar."}</small>
     <div><Button size="sm" onClick={() => setOpen(true)}>Rolar exposição</Button></div>
-    <RollDialog game={game} edit={edit}
+    <RollDialog game={game} edit={edit} playerActions={playerActions}
       request={{ survivorId: survivor.id, kind: "action", trait: "Força", exposure: { conditionId: condition.id } }}
       open={open} onOpenChange={setOpen} />
   </div>;
@@ -161,9 +162,9 @@ function DetailActions({ survivor, condition, edit, editable, onClose }: {
   return null;
 }
 
-function ConditionDetailDialog({ game, survivor, condition, edit, editable, open, onOpenChange }: {
+function ConditionDetailDialog({ game, survivor, condition, edit, editable, open, onOpenChange, playerActions }: {
   game: GameState; survivor: Survivor; condition: SurvivorCondition | null; edit: Edit; editable: boolean;
-  open: boolean; onOpenChange: (open: boolean) => void;
+  open: boolean; onOpenChange: (open: boolean) => void; playerActions?: PlayerActionControls;
 }) {
   if (!condition) return null;
   const detail = conditionDetails(condition);
@@ -189,7 +190,7 @@ function ConditionDetailDialog({ game, survivor, condition, edit, editable, open
         {condition.exposureAdvantageSource && <div><span>PRÓXIMO TESTE DE EXPOSIÇÃO</span><p>Vantagem preparada por <b>{condition.exposureAdvantageSource}</b>. O apoio é consumido ao resolver o próximo teste de exposição.</p></div>}
         {condition.recoveryAdvantageSource && <div><span>PRÓXIMA RECUPERAÇÃO</span><p>Vantagem preparada por <b>{condition.recoveryAdvantageSource}</b>. O apoio é consumido quando a condição for reduzida.</p></div>}
       </div>
-      <ExposureRollControl game={game} survivor={survivor} condition={condition} edit={edit} />
+      <ExposureRollControl game={game} survivor={survivor} condition={condition} edit={edit} playerActions={playerActions} />
       <DetailActions survivor={survivor} condition={condition} edit={edit} editable={editable} onClose={() => onOpenChange(false)} />
       <DialogFooter>
         {editable && !["cold","heat","bleeding"].includes(condition.kind) && <Button variant="destructive" onClick={() => {
@@ -202,8 +203,8 @@ function ConditionDetailDialog({ game, survivor, condition, edit, editable, open
   </Dialog>;
 }
 
-export function SurvivorConditionBadges({ game, survivor, edit, editable = false, empty = false }: {
-  game: GameState; survivor: Survivor; edit: Edit; editable?: boolean; empty?: boolean;
+export function SurvivorConditionBadges({ game, survivor, edit, editable = false, empty = false, playerActions }: {
+  game: GameState; survivor: Survivor; edit: Edit; editable?: boolean; empty?: boolean; playerActions?: PlayerActionControls;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const conditions = survivor.conditions ?? [];
@@ -219,8 +220,8 @@ export function SurvivorConditionBadges({ game, survivor, edit, editable = false
   </TooltipProvider>;
 }
 
-export function SurvivorConditionPanel({ game, survivor, edit, editable }: {
-  game: GameState; survivor: Survivor; edit: Edit; editable: boolean;
+export function SurvivorConditionPanel({ game, survivor, edit, editable, playerActions }: {
+  game: GameState; survivor: Survivor; edit: Edit; editable: boolean; playerActions?: PlayerActionControls;
 }) {
   const [addOpen, setAddOpen] = useState(false);
   const [kind, setKind] = useState<SurvivorConditionKind>("cold");
