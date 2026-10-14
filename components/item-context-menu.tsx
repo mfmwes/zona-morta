@@ -37,6 +37,8 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { itemActionOptions, performItemAction, type ItemAction } from "@/lib/item-actions";
+import type { PlayerActionControls } from "@/components/player-actions-panel";
+import { createId } from "@/lib/id";
 import { atSharedStorage, catalogItemIsConsumable, slotLabels } from "@/lib/inventory";
 import { provisionDisplay } from "@/lib/provision-items";
 import { provisionConsumedToday, type DailyResource } from "@/lib/survival";
@@ -55,6 +57,7 @@ export function ItemContextMenu({
   item,
   selfOnly = false,
   children,
+  playerActions,
 }: {
   game: GameState;
   edit: Edit;
@@ -62,6 +65,7 @@ export function ItemContextMenu({
   item: InventoryItem;
   selfOnly?: boolean;
   children: ReactNode;
+  playerActions?: PlayerActionControls;
 }) {
   const [discardCount, setDiscardCount] = useState<number | null>(null);
   const options = itemActionOptions(game, ownerId, item, selfOnly);
@@ -71,7 +75,16 @@ export function ItemContextMenu({
   const ownerAlreadyConsumed = Boolean(owner && options.provision.resource
     && provisionConsumedToday(game, owner, options.provision.resource as DailyResource));
 
-  function run(action: ItemAction) {
+  async function run(action: ItemAction) {
+    if (action.type === "consume" && playerActions && selfOnly && ownerId === playerActions.actorId) {
+      try {
+        await playerActions.send({ type: "item-action", id: createId(), day: game.day, itemId: item.id, action: { type: "consume" } });
+        toast.success(`${item.name}: consumo registrado.`);
+      } catch (cause) {
+        toast.error(cause instanceof Error ? cause.message : "Não foi possível registrar o consumo.");
+      }
+      return;
+    }
     const outcome: { value: ReturnType<typeof performItemAction> | null } = { value: null };
     edit(draft => { outcome.value = performItemAction(draft, ownerId, item.id, action); });
     if (!outcome.value?.ok) {
