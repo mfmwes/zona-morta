@@ -120,10 +120,10 @@ test('jogador continua sem permissão para editar conditions diretamente',()=>{
   const before=projectPlayerGame(f.game,f.actorId);
   const after=structuredClone(before);
   after.survivors[0].conditions[0].exposureAdvantageSource='forjado pelo cliente';
-  const payload=playerEditPayload(before,after);
-  assert.ok(payload);
-  const forged=applyPlayerChange(f.game,f.actorId,payload.before,payload.after,
-    payload.fearDelta,payload.logs,payload.noiseDelta,payload.shelterWorkActions);
+  assert.equal(playerEditPayload(before,after),null);
+
+  // Defesa em profundidade: mesmo um payload fabricado manualmente continua rejeitado no servidor.
+  const forged=applyPlayerChange(f.game,f.actorId,before.survivors[0],after.survivors[0],0,[],0,[]);
   assert.equal(forged,null);
 });
 

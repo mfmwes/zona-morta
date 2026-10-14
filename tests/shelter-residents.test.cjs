@@ -64,8 +64,7 @@ test('resumo público omite NPCs ocultos e fichas privadas de outros jogadores',
 });
 test('jogador não altera vínculo nem resumo de moradores, mas continua podendo editar sua ficha',()=>{
  const game=campaign();game.survivors[0].home='0,0';const before=projectPlayerGame(game,game.survivors[0].id);const after=structuredClone(before);
- after.survivors[0].home='1,0';const payload=playerEditPayload(before,after);assert.ok(payload);
- assert.equal(applyPlayerChange(game,game.survivors[0].id,payload.before,payload.after,0,[],0,[]),null);
+ after.survivors[0].home='1,0';const payload=playerEditPayload(before,after);assert.equal(payload,null);
  const altered=structuredClone(before);altered.publicShelterCommunity.residents=[];assert.equal(playerEditPayload(before,altered),null);
  const legal=structuredClone(before);legal.survivors[0].notes='Nota livre';const valid=playerEditPayload(before,legal);
  assert.ok(applyPlayerChange(game,game.survivors[0].id,valid.before,valid.after,0,[],0,[]));

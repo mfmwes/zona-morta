@@ -246,7 +246,14 @@ export function playerEditPayload(before: GameState, after: GameState) {
   const logs = after.log.filter(entry => !before.log.some(prior => prior.id === entry.id))
     .map(entry => ({ kind: entry.kind, text: entry.text }));
   if (logs.length > 3) return null;
-  return { before: before.survivors[0], after: after.survivors[0], fearDelta, noiseDelta, logs, shelterWorkActions };
+  const beforeSurvivor = before.survivors[0];
+  const afterSurvivor = after.survivors[0];
+  const survivorKeys = new Set([...Object.keys(beforeSurvivor), ...Object.keys(afterSurvivor)] as (keyof Survivor)[]);
+  const editedSurvivorFields = [...survivorKeys].filter(key => JSON.stringify(beforeSurvivor[key]) !== JSON.stringify(afterSurvivor[key]));
+  // Efeitos controlados pelo servidor (como conditions e extraWaterConsumedDay)
+  // nunca devem ser enviados pela sincronização direta da ficha.
+  if (editedSurvivorFields.some(key => !editable.includes(key as typeof editable[number]))) return null;
+  return { before: beforeSurvivor, after: afterSurvivor, fearDelta, noiseDelta, logs, shelterWorkActions };
 }
 
 export function applyPlayerChange(game: GameState, survivorId: string, before: Survivor, after: Survivor,
