@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
-  Activity, ChevronRight, Droplets, EyeOff, HeartPulse, Lock, Snowflake, Sun, TriangleAlert,
+  Activity, ArrowRight, BookOpenText, ChevronRight, CircleMinus, Clock3, Dices, Droplets, EyeOff, HeartPulse, Lock, ShieldCheck, Snowflake, Sun, TriangleAlert, Wrench, Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { PlayerActionControls } from "@/components/player-actions-panel";
@@ -89,23 +89,61 @@ function ConditionBadge({ condition, onOpen }: { condition: SurvivorCondition; o
   </Tooltip>;
 }
 
+function ConditionInfoCard({ title, icon: Icon, children }: {
+  title: string; icon: typeof Activity; children: ReactNode;
+}) {
+  return <section className="survivor-condition-info-card" aria-label={title}>
+    <div className="survivor-condition-info-icon"><Icon size={18} aria-hidden="true" /></div>
+    <div className="survivor-condition-info-body">
+      <h3>{title}</h3>
+      {children}
+    </div>
+  </section>;
+}
+
+/** Preserve rule wording: only divide the text into readable, labeled sections. */
+export function ConditionEffect({ condition, effect }: { condition: SurvivorCondition; effect: string }) {
+  const levels = condition.kind === "heat" || condition.kind === "cold"
+    ? [...effect.matchAll(/Nível\s+([123])(\+)?:\s*/g)]
+    : [];
+  if (levels.length) return <div className="survivor-condition-effect-levels">
+    {levels.map((match, index) => {
+      const start = (match.index ?? 0) + match[0].length;
+      const end = levels[index + 1]?.index ?? effect.length;
+      const reached = Number(match[1]) <= (condition.level ?? 1);
+      return <div key={match.index} className={`survivor-condition-effect-row ${reached ? "is-reached" : ""}`}>
+        <span className="survivor-condition-effect-level">{`Nível ${match[1]}${match[2] ?? ""}`}</span>
+        <p>{effect.slice(start, end).trim()}</p>
+      </div>;
+    })}
+  </div>;
+  return <div className="survivor-condition-effect-prose">
+    {effect.split(/(?<=[.!?])\s+(?=[A-ZÁÉÍÓÚ])/u).map((sentence, index) => <p key={index}>{sentence}</p>)}
+  </div>;
+}
+
 function ExposureRollControl({ game, survivor, condition, edit, playerActions }: {
   game: GameState; survivor: Survivor; condition: SurvivorCondition; edit: Edit; playerActions?: PlayerActionControls;
 }) {
   const [open, setOpen] = useState(false);
   if (condition.kind !== "cold" && condition.kind !== "heat") return null;
   const sources = exposureAdvantageSources(survivor, condition.id);
-  return <div className={`exposure-support-card ${sources.length ? "is-active" : ""}`}>
-    <span>Teste de exposição</span>
-    <b>{sources.length ? "Vantagem automática disponível" : "Sem apoio automático"}</b>
-    <small>{sources.length
+  return <section className={`exposure-support-card ${sources.length ? "is-active" : ""}`} aria-label="Teste de exposição">
+    <div className="exposure-support-heading"><Dices size={19} aria-hidden="true" /><h3>Teste de exposição</h3></div>
+    <div className={`exposure-support-status ${sources.length ? "has-advantage" : ""}`}>
+      {sources.length ? <Zap size={16} aria-hidden="true" /> : <CircleMinus size={16} aria-hidden="true" />}
+      <strong>{sources.length ? "Vantagem automática disponível" : "Sem apoio automático"}</strong>
+    </div>
+    <p>{sources.length
       ? `Fontes: ${sources.join(", ")}. A rolagem aplica +d6 automaticamente e não acumula múltiplas Vantagens.`
-      : "Força é a sugestão padrão; o atributo pode mudar se a ficção justificar."}</small>
-    <div><Button size="sm" onClick={() => setOpen(true)}>Rolar exposição</Button></div>
+      : "Força é a sugestão padrão; o atributo pode mudar se a ficção justificar."}</p>
+    <Button className="exposure-support-roll" onClick={() => setOpen(true)}>
+      <Dices size={19} aria-hidden="true" /> Rolar exposição <ArrowRight size={18} aria-hidden="true" />
+    </Button>
     <RollDialog game={game} edit={edit} playerActions={playerActions}
       request={{ survivorId: survivor.id, kind: "action", trait: "Força", exposure: { conditionId: condition.id } }}
       open={open} onOpenChange={setOpen} />
-  </div>;
+  </section>;
 }
 
 function DetailActions({ survivor, condition, edit, editable, onClose }: {
@@ -118,11 +156,11 @@ function DetailActions({ survivor, condition, edit, editable, onClose }: {
   if (condition.kind === "cold" || condition.kind === "heat") {
     const level = condition.level ?? 1;
     return <div className="survivor-condition-actions">
-      <p className="survivor-condition-action-title">Resolver manualmente</p>
+      <h3 className="survivor-condition-action-title"><ShieldCheck size={16} aria-hidden="true" />Resolver manualmente</h3>
       <div>
-        <Button size="sm" variant="outline" onClick={() => mutate(draft => { resolveExposureRoll(draft, survivor.id, condition.id, "failure-hope"); })}>Falha com Esperança</Button>
-        <Button size="sm" variant="outline" onClick={() => mutate(draft => { resolveExposureRoll(draft, survivor.id, condition.id, "failure-fear"); })}>Falha com Medo</Button>
-        <Button size="sm" variant="outline" onClick={() => mutate(draft => { reduceExposure(draft, survivor.id, condition.id); })}>Recuperou 1 nível</Button>
+        <Button size="sm" variant="outline" onClick={() => mutate(draft => { resolveExposureRoll(draft, survivor.id, condition.id, "failure-hope"); })}><CircleMinus size={15} aria-hidden="true" />Falha com Esperança</Button>
+        <Button size="sm" variant="outline" onClick={() => mutate(draft => { resolveExposureRoll(draft, survivor.id, condition.id, "failure-fear"); })}><TriangleAlert size={15} aria-hidden="true" />Falha com Medo</Button>
+        <Button size="sm" variant="outline" onClick={() => mutate(draft => { reduceExposure(draft, survivor.id, condition.id); })}><HeartPulse size={15} aria-hidden="true" />Recuperou 1 nível</Button>
         {level >= 3 && <Button size="sm" variant="destructive" onClick={() => mutate(draft => { severeExposureTrigger(draft, survivor.id, condition.id); })}>Gatilho grave · +1 PV</Button>}
       </div>
       <small>Use estes controles apenas quando a rolagem foi feita fora da ferramenta acima. A rolagem de exposição integrada já resolve a condição automaticamente.</small>
@@ -131,7 +169,7 @@ function DetailActions({ survivor, condition, edit, editable, onClose }: {
 
   if (condition.kind === "bleeding") {
     return <div className="survivor-condition-actions">
-      <p className="survivor-condition-action-title">Resolver Sangramento</p>
+      <h3 className="survivor-condition-action-title"><ShieldCheck size={16} aria-hidden="true" />Resolver Sangramento</h3>
       <div>
         <Button size="sm" variant="destructive" onClick={() => mutate(draft => { bleedingTrigger(draft, survivor.id, "fim da cena/atividade sem estabilização"); })}>Cobrar gatilho · +1 PV</Button>
         <Button size="sm" variant="outline" onClick={() => { mutate(draft => { removeSurvivorCondition(draft, survivor.id, condition.id, "estabilizado com primeiros socorros"); }); onClose(); }}>Estabilizar</Button>
@@ -141,7 +179,7 @@ function DetailActions({ survivor, condition, edit, editable, onClose }: {
 
   if (condition.kind === "injury") {
     return <div className="survivor-condition-actions">
-      <p className="survivor-condition-action-title">Tratamento da Lesão</p>
+      <h3 className="survivor-condition-action-title"><ShieldCheck size={16} aria-hidden="true" />Tratamento da Lesão</h3>
       <div>
         <Button size="sm" variant="outline" onClick={() => mutate(draft => { setInjuryTreated(draft, survivor.id, condition.id, !condition.treated); })}>{condition.treated ? "Desfazer tratamento" : "Marcar tratada"}</Button>
         <Button size="sm" variant="outline" onClick={() => mutate(draft => { setInjuryAggravated(draft, survivor.id, condition.id, !condition.aggravated); })}>{condition.aggravated ? "Reduzir para Lesão" : "Marcar agravada"}</Button>
@@ -152,7 +190,7 @@ function DetailActions({ survivor, condition, edit, editable, onClose }: {
 
   if (condition.kind === "fracture") {
     return <div className="survivor-condition-actions">
-      <p className="survivor-condition-action-title">Tratamento da Fratura</p>
+      <h3 className="survivor-condition-action-title"><ShieldCheck size={16} aria-hidden="true" />Tratamento da Fratura</h3>
       <div>
         <Button size="sm" variant="outline" onClick={() => mutate(draft => { setFractureImmobilized(draft, survivor.id, condition.id, !condition.immobilized); })}>{condition.immobilized ? "Remover imobilização" : "Imobilizar"}</Button>
       </div>
@@ -171,29 +209,36 @@ function ConditionDetailDialog({ game, survivor, condition, edit, editable, open
   const detail = conditionDetails(condition);
   const equippedSupport = equippedConditionSupport(survivor, condition.kind);
   return <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent className="survivor-condition-dialog">
-      <DialogHeader>
-        <div className={`survivor-condition-dialog-icon tone-${detail.tone}`}><ConditionIcon condition={condition} size={21} /></div>
-        <DialogTitle>{detail.label}</DialogTitle>
-        <DialogDescription>{detail.category} · condição ativa de {survivor.name}</DialogDescription>
+    <DialogContent className={`survivor-condition-dialog tone-${detail.tone}`}>
+      <DialogHeader className="survivor-condition-hero">
+        <div className="survivor-condition-hero-content">
+          <div className={`survivor-condition-dialog-icon tone-${detail.tone}`}><ConditionIcon condition={condition} size={26} /></div>
+          <div className="survivor-condition-hero-text">
+            <DialogTitle>{detail.label}</DialogTitle>
+            <DialogDescription>{detail.category} · condição ativa · {survivor.name}</DialogDescription>
+            {(condition.kind === "cold" || condition.kind === "heat") && <ConditionProgress condition={condition} />}
+          </div>
+        </div>
       </DialogHeader>
       <div className="survivor-condition-detail">
-        <div><span>EFEITO</span><p>{detail.effect}</p></div>
-        <div><span>COMO REMOVER</span><p>{detail.clear}</p></div>
-        {condition.source && <div><span>ORIGEM</span><p>{condition.source}</p></div>}
-        {condition.kind === "wet" && condition.wetExposureSource && <div><span>FONTE DA ÁGUA</span><p>{wetExposureSourceLabels[condition.wetExposureSource]}</p></div>}
-        {(condition.kind === "injury" || condition.kind === "fracture") && <div><span>RECUPERAÇÃO</span><p>{condition.kind === "fracture"
+        <ConditionInfoCard title="Efeito" icon={BookOpenText}>
+          <ConditionEffect condition={condition} effect={detail.effect} />
+        </ConditionInfoCard>
+        <ConditionInfoCard title="Como remover" icon={Wrench}><p>{detail.clear}</p></ConditionInfoCard>
+        {condition.source && <ConditionInfoCard title="Origem" icon={BookOpenText}><p>{condition.source}</p></ConditionInfoCard>}
+        {condition.kind === "wet" && condition.wetExposureSource && <ConditionInfoCard title="Fonte da água" icon={Droplets}><p>{wetExposureSourceLabels[condition.wetExposureSource]}</p></ConditionInfoCard>}
+        {(condition.kind === "injury" || condition.kind === "fracture") && <ConditionInfoCard title="Recuperação" icon={HeartPulse}><p>{condition.kind === "fracture"
           ? `${condition.recovery ?? 0}/4 descansos longos ${condition.immobilized ? "com a fratura imobilizada" : "— imobilize antes de iniciar a recuperação"}.`
           : condition.treated
             ? `${condition.recovery ?? 0}/${condition.aggravated ? 2 : 1} descansos longos após tratamento.`
-            : "Ainda precisa de tratamento antes de progredir com descansos longos."}</p></div>}
-        {equippedSupport.length > 0 && <div><span>EQUIPAMENTO ATIVO</span><p>{equippedSupport.map(effect => `${effect.item}: ${effect.summary}`).join(" ")}</p></div>}
-        {condition.exposureAdvantageSource && <div><span>PRÓXIMO TESTE DE EXPOSIÇÃO</span><p>Vantagem preparada por <b>{condition.exposureAdvantageSource}</b>. O apoio é consumido ao resolver o próximo teste de exposição.</p></div>}
-        {condition.recoveryAdvantageSource && <div><span>PRÓXIMA RECUPERAÇÃO</span><p>Vantagem preparada por <b>{condition.recoveryAdvantageSource}</b>. O apoio é consumido quando a condição for reduzida.</p></div>}
+            : "Ainda precisa de tratamento antes de progredir com descansos longos."}</p></ConditionInfoCard>}
+        {equippedSupport.length > 0 && <ConditionInfoCard title="Equipamento ativo" icon={ShieldCheck}><p>{equippedSupport.map(effect => `${effect.item}: ${effect.summary}`).join(" ")}</p></ConditionInfoCard>}
+        {condition.exposureAdvantageSource && <ConditionInfoCard title="Próximo teste de exposição" icon={Clock3}><p>Vantagem preparada por <b>{condition.exposureAdvantageSource}</b>. O apoio é consumido ao resolver o próximo teste de exposição.</p></ConditionInfoCard>}
+        {condition.recoveryAdvantageSource && <ConditionInfoCard title="Próxima recuperação" icon={Clock3}><p>Vantagem preparada por <b>{condition.recoveryAdvantageSource}</b>. O apoio é consumido quando a condição for reduzida.</p></ConditionInfoCard>}
       </div>
       <ExposureRollControl game={game} survivor={survivor} condition={condition} edit={edit} playerActions={playerActions} />
       <DetailActions survivor={survivor} condition={condition} edit={edit} editable={editable} onClose={() => onOpenChange(false)} />
-      <DialogFooter>
+      <DialogFooter className="survivor-condition-dialog-footer">
         {editable && !["cold","heat","bleeding"].includes(condition.kind) && <Button variant="destructive" onClick={() => {
           edit(draft => { removeSurvivorCondition(draft, survivor.id, condition.id); });
           onOpenChange(false);
