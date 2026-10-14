@@ -17,6 +17,7 @@ import { shelterColdStorageActive, shelterMetrics } from "./shelter-projects";
 import { settleScheduledWorkBeforeMorning } from "./time";
 import { expireLocationFood } from "./hex-automation";
 import { resetParallelTime } from "./activity";
+import { dailyExtraWater } from "./survivor-conditions";
 
 export type DailyResource = "food" | "water";
 export type DayProvisionSource = "already" | "shared" | "personal" | "other" | "none";
@@ -68,20 +69,50 @@ function dayKey(resource: DailyResource): "foodConsumedDay" | "waterConsumedDay"
 function resourceLabel(resource: DailyResource) {
   return resource === "food" ? "Comida" : "Água";
 }
-export function provisionConsumedToday(game: GameState, person: Survivor, resource: DailyResource) {
-  return person[dayKey(resource)] === game.day;
+export function requiredDailyProvision(person: Survivor, resource: DailyResource) {
+  return resource === "water" ? 1 + dailyExtraWater(person) : 1;
 }
+
+export function consumedDailyProvisionPortions(game: GameState, person: Survivor, resource: DailyResource) {
+  if (resource === "food") return person.foodConsumedDay === game.day ? 1 : 0;
+  return (person.waterConsumedDay === game.day ? 1 : 0)
+    + (person.extraWaterConsumedDay === game.day ? 1 : 0);
+}
+
+export function remainingDailyProvisionPortions(game: GameState, person: Survivor, resource: DailyResource) {
+  return Math.max(0, requiredDailyProvision(person, resource) - consumedDailyProvisionPortions(game, person, resource));
+}
+
+export function provisionConsumedToday(game: GameState, person: Survivor, resource: DailyResource) {
+  return remainingDailyProvisionPortions(game, person, resource) === 0;
+}
+
+export function markDailyProvisionConsumed(game: GameState, person: Survivor, resource: DailyResource, quantity = 1) {
+  let remaining = Math.max(0, Math.trunc(quantity));
+  if (resource === "food") {
+    if (remaining > 0 && person.foodConsumedDay !== game.day) { person.foodConsumedDay = game.day; remaining -= 1; }
+    return quantity - remaining;
+  }
+  if (remaining > 0 && person.waterConsumedDay !== game.day) { person.waterConsumedDay = game.day; remaining -= 1; }
+  if (remaining > 0 && requiredDailyProvision(person, "water") > 1 && person.extraWaterConsumedDay !== game.day) {
+    person.extraWaterConsumedDay = game.day; remaining -= 1;
+  }
+  return quantity - remaining;
+}
+
 function npcConsumedToday(game: GameState, npc: NPC, resource: DailyResource) {
   return npc[dayKey(resource)] === game.day;
 }
 
 export function consumeDailyProvision(game: GameState, survivorId: string, resource: DailyResource) {
   const survivor = game.survivors.find(s => s.id === survivorId);
-  const key = dayKey(resource);
-  if (!survivor || survivor[resource] < 1 || survivor[key] === game.day) return false;
+  const remaining = survivor ? remainingDailyProvisionPortions(game, survivor, resource) : 0;
+  if (!survivor || survivor[resource] < 1 || remaining < 1) return false;
   withdrawPortions(survivor, resource, 1);
-  survivor[key] = game.day;
-  addLog(game, "provisões", `${survivor.name} consumiu 1 porção pessoal de ${resourceLabel(resource)} no dia ${game.day}.`, survivor.id);
+  markDailyProvisionConsumed(game, survivor, resource, 1);
+  const consumed = consumedDailyProvisionPortions(game, survivor, resource);
+  const required = requiredDailyProvision(survivor, resource);
+  addLog(game, "provisões", `${survivor.name} consumiu 1 porção pessoal de ${resourceLabel(resource)} no dia ${game.day} (${consumed}/${required} da necessidade diária).`, survivor.id);
   return true;
 }
 
