@@ -187,11 +187,33 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
   async function rollAction(keepOpen = false) {
     if (request?.search) {
       if (rollingRef.current) return;
+      if (forcedStressCost > 0 && (survivor?.stress ?? 0) + forcedStressCost > 6) {
+        setRollError(`Estresse insuficiente para forçar ${forcedStressCost} condição(ões) nesta ação.`);
+        return;
+      }
       rollingRef.current = true;
       let error: string | null = null;
       const search = request.search;
-      edit(draft => { error = rollSearchAccess(draft, search.hexId, search.pointId, search.attemptId,
-        { actorId: person, trait, edge, experiences, other: Math.trunc(Number(extra) || 0), mentorId: mentorId || undefined }); });
+      edit(draft => {
+        const actor = draft.survivors.find(candidate => candidate.id === person);
+        const beforeStress = actor?.stress ?? 0;
+        if (actor && forcedStressCost) actor.stress = Math.min(6, actor.stress + forcedStressCost);
+        error = rollSearchAccess(draft, search.hexId, search.pointId, search.attemptId,
+          { actorId: person, trait, edge: effectiveEdge, experiences, other: Math.trunc(Number(extra) || 0), mentorId: mentorId || undefined });
+        if (error) {
+          if (actor) actor.stress = beforeStress;
+          return;
+        }
+        const attempt = draft.hexes[search.hexId]?.points.find(point => point.id === search.pointId)?.preparation?.attempts.find(row => row.id === search.attemptId);
+        const failedWithFear = attempt?.outcome?.success === false && attempt.outcome.with === "Fear";
+        for (const condition of selectedRollConditions) {
+          useConditionDuringRoll(draft, person, condition.id, {
+            forced: forcedConditionIds.includes(condition.id),
+            failedWithFear,
+            stressAlreadyPaid: forcedConditionIds.includes(condition.id),
+          });
+        }
+      });
       rollingRef.current = false;
       if (error) setRollError(error); else onCompleted();
       return;
@@ -212,7 +234,7 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
       const used = experienceOptions.filter(option => experiences.includes(option.id)).map(option => option.name);
       const result = resolveActionRoll({
         hopeDie: rollDie(12), fearDie: rollDie(12), trait: traitBonus, experience: used.length * 2,
-        other: other + equipmentBonus, symptom, edge, edgeDie: edge === "none" ? null : rollDie(6), difficulty: target,
+        other: other + equipmentBonus, symptom, edge: effectiveEdge, edgeDie: effectiveEdge === "none" ? null : rollDie(6), difficulty: target,
       });
       const damage = kind === "attack" ? calculateDamage(result.critical) : null;
       const sceneResolution = kind === "attack" && damage && targetThreatId
@@ -221,18 +243,22 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
       const resolvedOutcome = sceneResolution ? { ...result, success: sceneResolution.hit, difficulty: null } : result;
       const record: RollRecord = { outcome: resolvedOutcome, kind, trait: rollTrait, traitBonus, weaponName: weapon?.name ?? null, actorId: person, experiences: used, symptom, other, equipment: equipmentBonus };
       const lead = `${survivor?.name ?? "Rolagem livre"}: ${kind === "attack" ? `ataque com ${weapon?.name}` : kind === "reaction" ? "reação" : "ação"} (${traitLabel(rollTrait)})`;
-      const edgeLabel = result.edgeDie ? ` ${edge === "advantage" ? "+" : "−"} d6(${result.edgeDie})` : "";
+      const edgeLabel = result.edgeDie ? ` ${result.edge === "advantage" ? "+" : "−"} d6(${result.edgeDie})` : "";
       const targetLabel = sceneResolution
         ? `Alvo: ${sceneResolution.targetName}. Resultado contra o alvo: ${sceneResolution.hit ? "ACERTO" : "FALHA"}`
         : target === null ? kind === "attack" ? "Defesa a definir" : "Dificuldade a definir" : `${kind === "attack" ? "Defesa" : "Dificuldade"} ${target}`;
       const experienceLabel = used.length ? ` · Experiências: ${used.join(" e ")} (−${used.length} Esperança)` : "";
       const fixedBonus = traitBonus + used.length * 2 + other + symptom + equipmentBonus;
-      const text = `${lead}: Esperança ${result.hopeDie} + Medo ${result.fearDie} ${fixedBonus >= 0 ? "+" : "−"} ${Math.abs(fixedBonus)}${edgeLabel} = ${result.total}; ${targetLabel}. ${outcomeLabel(record)}${experienceLabel}${equipmentBonus ? ` · ${equipmentBonus} por equipamento` : ""}${symptom ? " · −1 por sintomas" : ""}${kind === "reaction" ? " · reação sem ganho de Esperança/Medo" : ""}.`;
+      const conditionLabelText = selectedRollConditions.length
+        ? ` · Condições: ${selectedRollConditions.map(condition => `${conditionLabel(condition)}${forcedConditionIds.includes(condition.id) ? " (forçada)" : ""}`).join(", ")}`
+        : "";
+      const text = `${lead}: Esperança ${result.hopeDie} + Medo ${result.fearDie} ${fixedBonus >= 0 ? "+" : "−"} ${Math.abs(fixedBonus)}${edgeLabel} = ${result.total}; ${targetLabel}. ${outcomeLabel(record)}${experienceLabel}${equipmentBonus ? ` · ${equipmentBonus} por equipamento` : ""}${symptom ? " · −1 por sintomas" : ""}${conditionLabelText}${kind === "reaction" ? " · reação sem ganho de Esperança/Medo" : ""}.`;
       const beforeHope = survivor?.hope ?? null;
       const beforeStress = survivor?.stress ?? null;
       const beforeFear = game.fear;
+      const stressAfterForcing = beforeStress === null ? null : Math.min(6, beforeStress + forcedStressCost);
       const resourcePreview = resolveRollResources({
-        hope: beforeHope, stress: beforeStress, fear: beforeFear,
+        hope: beforeHope, stress: stressAfterForcing, fear: beforeFear,
         experienceCost: used.length, reaction: kind === "reaction", outcome: result,
       });
       const attackNoise = kind === "attack" ? attackResources.noise : 0;
@@ -259,6 +285,14 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
           ? applyAttackResources(draft, actor.id, weapon.name, "noise" in weapon ? weapon.noise : 0)
           : null;
         if (kind === "attack" && spent && !spent.ok) return;
+        const failedWithFear = resolvedOutcome.success === false && resolvedOutcome.with === "Fear";
+        for (const condition of selectedRollConditions) {
+          useConditionDuringRoll(draft, person, condition.id, {
+            forced: forcedConditionIds.includes(condition.id),
+            failedWithFear,
+            stressAlreadyPaid: forcedConditionIds.includes(condition.id),
+          });
+        }
         if (damage) addLog(draft, "dano", damageLog(damage, damageStatus), actor?.id);
         addLog(draft, "dados", text +
           (spendsAmmo ? ` · 1 unidade de Munição de ${ammoNeeded} comprometida até a próxima cena.` : ammoNeeded ? ` · Munição de ${ammoNeeded} já comprometida nesta cena.` : "") +
