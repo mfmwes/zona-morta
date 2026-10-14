@@ -158,15 +158,15 @@ test('descansos longos removem Molhado e progridem apenas Lesão tratada e Fratu
 
   conditions.processLongRestConditions(game,[survivor.id]);
   assert.equal(conditions.hasCondition(survivor,'wet'),false);
-  assert.equal(survivor.conditions.some(row=>row.id===injury.id),false);
+  assert.equal((survivor.conditions ?? []).some(row=>row.id===injury.id),false);
   assert.equal(aggravated.recovery,1);
   assert.equal(fracture.recovery,1);
 
   conditions.processLongRestConditions(game,[survivor.id]);
-  assert.equal(survivor.conditions.some(row=>row.id===aggravated.id),false);
+  assert.equal((survivor.conditions ?? []).some(row=>row.id===aggravated.id),false);
   conditions.processLongRestConditions(game,[survivor.id]);
   conditions.processLongRestConditions(game,[survivor.id]);
-  assert.equal(survivor.conditions.some(row=>row.id===fracture.id),false);
+  assert.equal((survivor.conditions ?? []).some(row=>row.id===fracture.id),false);
 });
 
 test('Vulnerável e Escondido alteram ataques recebidos e se anulam juntos',()=>{
