@@ -338,7 +338,8 @@ export function dailyExtraWater(person: Survivor | undefined) {
 }
 
 export function conditionCanDisadvantageRoll(condition: SurvivorCondition) {
-  return ["cold", "heat", "injury", "fracture"].includes(condition.kind);
+  if (condition.kind === "heat") return (condition.level ?? 1) >= 2;
+  return ["cold", "injury", "fracture"].includes(condition.kind);
 }
 
 export function conditionRollGuidance(condition: SurvivorCondition) {
@@ -359,13 +360,16 @@ export function conditionRollGuidance(condition: SurvivorCondition) {
 export function useConditionDuringRoll(game: GameState, survivorId: string, conditionId: string, input: {
   forced?: boolean;
   failedWithFear?: boolean;
+  stressAlreadyPaid?: boolean;
 }) {
   const person = game.survivors.find(candidate => candidate.id === survivorId);
   const condition = person?.conditions?.find(entry => entry.id === conditionId);
   if (!person || !condition) return false;
   if (input.forced && (condition.kind === "injury" || condition.kind === "fracture")) {
-    if (person.stress >= 6) return false;
-    person.stress += 1;
+    if (!input.stressAlreadyPaid) {
+      if (person.stress >= 6) return false;
+      person.stress += 1;
+    }
     if (condition.kind === "injury" && input.failedWithFear && !condition.aggravated) {
       condition.aggravated = true;
       condition.recovery = 0;
