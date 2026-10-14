@@ -5236,6 +5236,7 @@ html[data-theme="dark"] .mobile-condition-note { color:#dfb778; }
 }
 .condition-item-badge.condition-cold { --condition-item-accent:#4f7897; }
 .condition-item-badge.condition-heat { --condition-item-accent:#ad6235; }
+.condition-item-badge.condition-wet { --condition-item-accent:#51795e; }
 .condition-item-badge.condition-bleeding { --condition-item-accent:#a84e48; }
 .condition-item-badge.condition-injury { --condition-item-accent:#9a6b28; }
 .condition-item-badge.condition-fracture { --condition-item-accent:#815c49; }
@@ -5269,4 +5270,29 @@ html[data-theme="dark"] .condition-item-badge {
     padding:5px 8px;
   }
   .condition-item-action .inventory-preview { padding:10px; }
+}
+
+
+.exposure-support-card {
+  display:grid;
+  gap:5px;
+  padding:9px 10px;
+  border:1px solid color-mix(in srgb,#5a7c76 48%,var(--border));
+  border-radius:8px;
+  background:color-mix(in srgb,#5a7c76 8%,var(--card));
+}
+.exposure-support-card > span {
+  color:var(--muted-foreground);
+  font:800 .65rem/1 var(--font-mono);
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.exposure-support-card b { font-size:.78rem; }
+.exposure-support-card small { color:var(--muted-foreground);font-size:.7rem;line-height:1.35; }
+.exposure-support-card.is-active {
+  border-color:color-mix(in srgb,#6b8f77 70%,var(--border));
+  background:color-mix(in srgb,#6b8f77 12%,var(--card));
+}
+html[data-theme="dark"] .exposure-support-card {
+  background:color-mix(in srgb,#77a394 10%,var(--card));
 }

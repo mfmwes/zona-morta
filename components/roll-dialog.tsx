@@ -15,10 +15,10 @@ import { applyAttackResources, attackResourceState } from "@/lib/combat-resource
 import { publicConflictScene, resolveThreatAttack, type ThreatAttackResolution } from "@/lib/conflict";
 import { parseWeaponDamage, resolveActionRoll, resolveAttackHit, resolveRollResources, resolveWeaponDamage, rollDie, type ActionOutcome, type Edge, type RollKind } from "@/lib/rolls";
 import { rollSearchAccess, searchMentors } from "@/lib/hex-automation";
-import { conditionCanDisadvantageRoll, conditionLabel, conditionRollGuidance, removeSurvivorCondition, twoHandedFractureIssue, applyConditionDuringRoll } from "@/lib/survivor-conditions";
+import { conditionCanDisadvantageRoll, conditionLabel, conditionRollGuidance, exposureAdvantageSources, removeSurvivorCondition, resolveExposureRoll, twoHandedFractureIssue, applyConditionDuringRoll } from "@/lib/survivor-conditions";
 
 type Edit = (fn: (draft: GameState) => void) => void;
-export type RollRequest = { survivorId?: string; kind?: RollKind; trait?: string; weapon?: "primary" | "secondary" | "unarmed"; experience?: "origin" | "free"; targetThreatId?: string; search?: { hexId: string; pointId: string; attemptId: string; difficulty: number } };
+export type RollRequest = { survivorId?: string; kind?: RollKind; trait?: string; weapon?: "primary" | "secondary" | "unarmed"; experience?: "origin" | "free"; targetThreatId?: string; search?: { hexId: string; pointId: string; attemptId: string; difficulty: number }; exposure?: { conditionId: string } };
 type RollRecord = { outcome: ActionOutcome; kind: RollKind; trait: string; traitBonus: number; weaponName: string | null; actorId: string; experiences: string[]; symptom: number; other: number; equipment: number };
 type DamageRecord = ReturnType<typeof resolveWeaponDamage> & { weaponName: string; formula: string; critical: boolean; equipment: number };
 
@@ -39,7 +39,7 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
   const [trait, setTrait] = useState(request?.trait ?? "Agilidade");
   const [weaponSlot, setWeaponSlot] = useState<"primary" | "secondary" | "unarmed">(initialWeaponSlot);
   const [unarmedTrait, setUnarmedTrait] = useState<"Força" | "Finesse">("Força");
-  const [difficulty, setDifficulty] = useState(request?.search ? String(request.search.difficulty) : request?.kind === "attack" || request?.survivorId ? "" : "12");
+  const [difficulty, setDifficulty] = useState(request?.search ? String(request.search.difficulty) : request?.exposure ? "" : request?.kind === "attack" || request?.survivorId ? "" : "12");
   const [targetThreatId, setTargetThreatId] = useState(request?.targetThreatId ?? "");
   const [extra, setExtra] = useState("0");
   const [edge, setEdge] = useState<Edge>("none");
@@ -57,16 +57,22 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
   const [rollError, setRollError] = useState("");
   const rollingRef = useRef(false);
   const survivor = game.survivors.find(s => s.id === person);
-  const rollConditions = (survivor?.conditions ?? []).filter(conditionCanDisadvantageRoll);
+  const exposureCondition = request?.exposure
+    ? survivor?.conditions?.find(condition => condition.id === request.exposure!.conditionId && (condition.kind === "cold" || condition.kind === "heat"))
+    : undefined;
+  const exposureSources = exposureCondition ? exposureAdvantageSources(survivor, exposureCondition.id) : [];
+  const exposureAdvantage = exposureSources.length > 0;
+  const rollConditions = (survivor?.conditions ?? []).filter(conditionCanDisadvantageRoll)
+    .filter(condition => !request?.exposure || condition.id !== request.exposure.conditionId);
   const selectedRollConditions = rollConditions.filter(condition => appliedConditionIds.includes(condition.id));
   const forcedRollConditions = selectedRollConditions.filter(condition => forcedConditionIds.includes(condition.id)
     && (condition.kind === "injury" || condition.kind === "fracture"));
   const forcedStressCost = forcedRollConditions.length;
   const conditionDisadvantage = selectedRollConditions.some(condition =>
     !(condition.kind === "injury" && !condition.aggravated && forcedConditionIds.includes(condition.id)));
-  const effectiveEdge: Edge = conditionDisadvantage
-    ? edge === "advantage" ? "none" : "disadvantage"
-    : edge;
+  const hasAdvantage = edge === "advantage" || exposureAdvantage;
+  const hasDisadvantage = edge === "disadvantage" || conditionDisadvantage;
+  const effectiveEdge: Edge = hasAdvantage === hasDisadvantage ? "none" : hasAdvantage ? "advantage" : "disadvantage";
   const mentors = request?.search ? searchMentors(game, request.search.hexId, request.search.pointId, request.search.attemptId, person) : [];
   const origin = survivor ? content.origins.find(o => o.name === survivor.origin) : null;
   const experienceOptions = survivor ? [
@@ -104,7 +110,9 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
   const target = targetThreatId ? selectedMasterThreat?.templateSnapshot.difficulty ?? null : manualTarget;
   const targetValid = targetThreatId
     ? !targetSelectionMissing
-    : manualTarget === null || (Number.isInteger(manualTarget) && manualTarget >= 1 && manualTarget <= 99);
+    : request?.exposure
+      ? manualTarget !== null && Number.isInteger(manualTarget) && manualTarget >= 1 && manualTarget <= 99
+      : manualTarget === null || (Number.isInteger(manualTarget) && manualTarget >= 1 && manualTarget <= 99);
   const experienceCost = experiences.length;
   const handConflict = kind === "attack" && weaponSlot === "secondary" && getPrimary(survivor?.primary ?? "")?.hands === "Duas";
   const armFracture = survivor?.conditions?.find(condition => condition.kind === "fracture"
@@ -112,10 +120,14 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
   const forcingArmFracture = Boolean(armFracture && forcedConditionIds.includes(armFracture.id) && appliedConditionIds.includes(armFracture.id));
   const twoHandedIssue = kind === "attack" && weapon && "hands" in weapon && weapon.hands === "Duas" && !forcingArmFracture
     ? twoHandedFractureIssue(survivor) : "";
-  const rollIssue = targetSelectionMissing
+  const rollIssue = request?.exposure && !exposureCondition
+    ? "A condição de exposição não está mais ativa."
+    : targetSelectionMissing
     ? "O alvo selecionado não está mais disponível nesta Cena de Conflito."
     : !targetValid
-      ? `Informe ${kind === "attack" ? "uma defesa" : "uma dificuldade"} inteira entre 1 e 99 ou deixe o campo vazio.`
+      ? request?.exposure
+        ? "Informe a dificuldade da exposição entre 1 e 99."
+        : `Informe ${kind === "attack" ? "uma defesa" : "uma dificuldade"} inteira entre 1 e 99 ou deixe o campo vazio.`
     : experienceCost > (survivor?.hope ?? 0)
       ? "Esperança insuficiente para as Experiências declaradas."
       : forcedStressCost > 0 && (survivor?.stress ?? 0) + forcedStressCost > 6
@@ -242,7 +254,9 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
         : null;
       const resolvedOutcome = sceneResolution ? { ...result, success: sceneResolution.hit, difficulty: null } : result;
       const record: RollRecord = { outcome: resolvedOutcome, kind, trait: rollTrait, traitBonus, weaponName: weapon?.name ?? null, actorId: person, experiences: used, symptom, other, equipment: equipmentBonus };
-      const lead = `${survivor?.name ?? "Rolagem livre"}: ${kind === "attack" ? `ataque com ${weapon?.name}` : kind === "reaction" ? "reação" : "ação"} (${traitLabel(rollTrait)})`;
+      const lead = request?.exposure && exposureCondition
+        ? `${survivor?.name ?? "Sobrevivente"}: exposição a ${conditionLabel(exposureCondition)} (${traitLabel(rollTrait)})`
+        : `${survivor?.name ?? "Rolagem livre"}: ${kind === "attack" ? `ataque com ${weapon?.name}` : kind === "reaction" ? "reação" : "ação"} (${traitLabel(rollTrait)})`;
       const edgeLabel = result.edgeDie ? ` ${result.edge === "advantage" ? "+" : "−"} d6(${result.edgeDie})` : "";
       const targetLabel = sceneResolution
         ? `Alvo: ${sceneResolution.targetName}. Resultado contra o alvo: ${sceneResolution.hit ? "ACERTO" : "FALHA"}`
@@ -252,7 +266,10 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
       const conditionLabelText = selectedRollConditions.length
         ? ` · Condições: ${selectedRollConditions.map(condition => `${conditionLabel(condition)}${forcedConditionIds.includes(condition.id) ? " (forçada)" : ""}`).join(", ")}`
         : "";
-      const text = `${lead}: Esperança ${result.hopeDie} + Medo ${result.fearDie} ${fixedBonus >= 0 ? "+" : "−"} ${Math.abs(fixedBonus)}${edgeLabel} = ${result.total}; ${targetLabel}. ${outcomeLabel(record)}${experienceLabel}${equipmentBonus ? ` · ${equipmentBonus} por equipamento` : ""}${symptom ? " · −1 por sintomas" : ""}${conditionLabelText}${kind === "reaction" ? " · reação sem ganho de Esperança/Medo" : ""}.`;
+      const exposureLabelText = request?.exposure
+        ? exposureSources.length ? ` · Apoio de exposição: ${exposureSources.join(", ")}` : " · Sem apoio de equipamento na exposição"
+        : "";
+      const text = `${lead}: Esperança ${result.hopeDie} + Medo ${result.fearDie} ${fixedBonus >= 0 ? "+" : "−"} ${Math.abs(fixedBonus)}${edgeLabel} = ${result.total}; ${targetLabel}. ${outcomeLabel(record)}${experienceLabel}${equipmentBonus ? ` · ${equipmentBonus} por equipamento` : ""}${symptom ? " · −1 por sintomas" : ""}${conditionLabelText}${exposureLabelText}${kind === "reaction" ? " · reação sem ganho de Esperança/Medo" : ""}.`;
       const beforeHope = survivor?.hope ?? null;
       const beforeStress = survivor?.stress ?? null;
       const beforeFear = game.fear;
@@ -292,6 +309,11 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
             failedWithFear,
             stressAlreadyPaid: forcedConditionIds.includes(condition.id),
           });
+        }
+        if (request?.exposure && resolvedOutcome.success !== null) {
+          const exposureOutcome = `${resolvedOutcome.success ? "success" : "failure"}-${resolvedOutcome.with === "Hope" ? "hope" : "fear"}` as
+            "success-hope" | "success-fear" | "failure-hope" | "failure-fear";
+          resolveExposureRoll(draft, person, request.exposure.conditionId, exposureOutcome);
         }
         if (kind === "attack" && actor) {
           const hidden = actor.conditions?.find(condition => condition.kind === "hidden");
@@ -339,10 +361,13 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
     event.preventDefault();
     rollAction(false);
   }}>
-    {request?.search ? <><h4 className="font-bold">Resolver o acesso · dados de dualidade</h4><p className="text-sm subtle">Declare Experiências e modificadores antes de rolar.</p></> : <DialogHeader><p className="dossier-title">Dados de dualidade</p><DialogTitle>Rolagem de {kind === "attack" ? "ataque" : kind === "reaction" ? "reação" : "ação"}</DialogTitle>
+    {request?.search ? <><h4 className="font-bold">Resolver o acesso · dados de dualidade</h4><p className="text-sm subtle">Declare Experiências e modificadores antes de rolar.</p></>
+      : request?.exposure && exposureCondition ? <DialogHeader><p className="dossier-title">Teste de exposição</p><DialogTitle>{conditionLabel(exposureCondition)}</DialogTitle>
+        <DialogDescription>Força é a sugestão padrão, mas outro atributo pode ser escolhido se a ficção justificar. Informe a dificuldade definida pelo mestre.</DialogDescription></DialogHeader>
+      : <DialogHeader><p className="dossier-title">Dados de dualidade</p><DialogTitle>Rolagem de {kind === "attack" ? "ataque" : kind === "reaction" ? "reação" : "ação"}</DialogTitle>
       <DialogDescription>Defina a ação e seus riscos com o mestre. Declare Experiências e modificadores antes de rolar.</DialogDescription></DialogHeader>}
     <RuleHelp topic="roll"/>
-    {!request?.search && <div className="roll-modes" role="group" aria-label="Tipo de rolagem">
+    {!request?.search && !request?.exposure && <div className="roll-modes" role="group" aria-label="Tipo de rolagem">
       {([ ["action", "Ação", Dice5], ["reaction", "Reação", Zap], ["attack", "Ataque", Swords] ] as const).map(([id, label, Icon]) =>
         <button type="button" key={id} aria-pressed={kind === id} onClick={() => { setKind(id); setDifficulty(id === "attack" ? "" : "12"); setAppliedConditionIds([]); setForcedConditionIds([]); clearResult(); }}><Icon size={16} aria-hidden="true" />{label}</button>)}
     </div>}
@@ -362,7 +387,7 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
         options={[{ value: "Força", label: traitLabel("Força") }, { value: "Finesse", label: traitLabel("Finesse") }]}
         onChange={value => { setUnarmedTrait(value as "Força" | "Finesse"); clearResult(); }} disabled={!survivor} />}
       {kind === "attack" && targetOptions.length > 0 && <Pick label="Alvo da Cena de Conflito" value={targetThreatId} options={targetOptions} onChange={value => { setTargetThreatId(value); setDifficulty(""); clearResult(); }} placeholder="Sem alvo definido" />}
-      {request?.search ? <p className="text-sm">Dificuldade combinada: {request.search.difficulty}</p> : (kind !== "attack" || !targetThreatId) && <Field label={kind === "attack" ? "Defesa manual (opcional)" : "Dificuldade (opcional)"} value={difficulty} onChange={value => { setDifficulty(value); if (kind === "attack") setConfirmedHit(false); else clearResult(); }} type="number" placeholder="Mestre decide" />}
+      {request?.search ? <p className="text-sm">Dificuldade combinada: {request.search.difficulty}</p> : (kind !== "attack" || !targetThreatId) && <Field label={request?.exposure ? "Dificuldade da exposição" : kind === "attack" ? "Defesa manual (opcional)" : "Dificuldade (opcional)"} value={difficulty} onChange={value => { setDifficulty(value); if (kind === "attack") setConfirmedHit(false); else clearResult(); }} type="number" placeholder={request?.exposure ? "Obrigatória" : "Mestre decide"} />}
       {kind === "attack" && targetThreatId && <div className="roll-target-locked">
         <span>Alvo selecionado</span>
         <strong>{selectedTargetName ?? "Alvo indisponível"}</strong>
@@ -373,7 +398,12 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
       </div>}
     </div>
     {kind === "attack" && <div className="roll-weapon-note"><Crosshair size={17} aria-hidden="true" /><span>{weapon ? `${weapon.name} · ${traitLabel(rollTrait)} ${survivor && survivor.attributes[rollTrait] >= 0 ? "+" : ""}${survivor?.attributes[rollTrait] ?? 0} · ${weapon.range} · ${weapon.damage}${weaponSlot === "unarmed" ? " · dano físico" : ""}` : "Escolha um sobrevivente e uma forma de ataque."}</span></div>}
-    {equipmentBonus !== 0 && <p className="roll-hint">{survivor?.protection}: {equipmentBonus} em {traitLabel(rollTrait)}, já incluído nesta rolagem.</p>}
+    {request?.exposure && exposureCondition && <div className={`exposure-support-card ${exposureAdvantage ? "is-active" : ""}`} role="status">
+      <span>Apoio na exposição</span>
+      <b>{exposureAdvantage ? "Vantagem +d6 aplicada automaticamente" : "Sem Vantagem automática"}</b>
+      <small>{exposureSources.length ? `Fontes: ${exposureSources.join(", ")}. Múltiplas fontes não acumulam dados adicionais.` : "Nenhum equipamento ou item preparado está ajudando neste teste."}</small>
+    </div>}
+        {equipmentBonus !== 0 && <p className="roll-hint">{survivor?.protection}: {equipmentBonus} em {traitLabel(rollTrait)}, já incluído nesta rolagem.</p>}
     {kind === "attack" && weaponSlot === "primary" && Boolean(modifiers?.primaryDamage) && <p className="roll-hint">Faca pequena: +1 ao dano desta arma, incluído automaticamente.</p>}
     {ammoWarning && <p className="inventory-hint inventory-danger" role="status">{ammoWarning} Disparos seguintes da mesma categoria nesta cena não comprometem outra unidade.</p>}
     {handConflict && <p className="inventory-hint inventory-danger" role="alert">A arma principal ocupa as duas mãos. Guarde-a no inventário para usar a secundária.</p>}
@@ -421,7 +451,7 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
       </div>
       <div className="roll-condition-result" role="status">
         <span>Efeito final das condições</span>
-        <b>{conditionDisadvantage ? edge === "advantage" ? "Vantagem e Desvantagem se anulam → rolagem normal" : "Desvantagem −d6" : effectiveEdge === "advantage" ? "Vantagem +d6" : effectiveEdge === "disadvantage" ? "Desvantagem −d6" : "Sem ajuste adicional"}</b>
+        <b>{effectiveEdge === "advantage" ? "Vantagem +d6" : effectiveEdge === "disadvantage" ? "Desvantagem −d6" : (hasAdvantage && hasDisadvantage) ? "Vantagem e Desvantagem se anulam → rolagem normal" : "Sem ajuste adicional"}</b>
         {forcedStressCost > 0 && <small>Custo declarado antes da rolagem: +{forcedStressCost} Estresse.</small>}
       </div>
     </fieldset>}
@@ -431,7 +461,7 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
         <button type="button" key={value} aria-pressed={edge === value} onClick={() => { setEdge(value); clearResult(); }}>{label}</button>)}
     </div></div>
     {kind === "reaction" && <p className="roll-hint">Reações não geram Esperança ou Medo. Um crítico não recupera Estresse.</p>}
-    {!targetValid && <p className="text-sm text-red-700" role="alert">{targetSelectionMissing ? "O alvo selecionado não está mais disponível." : <>Informe {kind === "attack" ? "uma defesa" : "uma dificuldade"} inteira entre 1 e 99 ou deixe o campo vazio.</>}</p>}
+    {!targetValid && <p className="text-sm text-red-700" role="alert">{targetSelectionMissing ? "O alvo selecionado não está mais disponível." : request?.exposure ? "Informe a dificuldade da exposição entre 1 e 99." : <>Informe {kind === "attack" ? "uma defesa" : "uma dificuldade"} inteira entre 1 e 99 ou deixe o campo vazio.</>}</p>}
     {rollError && <p className="roll-error" role="alert">{rollError}</p>}
     <div className="roll-actions"><Button disabled={!canRoll} aria-busy={isRolling} onClick={event => rollAction(event.shiftKey)}><Dice5 size={17} /> {isRolling ? "Rolando…" : <>Rolar {kind === "attack" ? "ataque + dano" : kind === "reaction" ? "reação" : "Esperança/Medo"}{experienceCost ? ` · ${experienceCost} Esperança` : ""}{kind === "attack" && attackResources.spendsAmmo ? " · 1 munição" : ""}</>}</Button>
       {survivor && <span>Esperança atual: <b>{survivor.hope}/6</b></span>}

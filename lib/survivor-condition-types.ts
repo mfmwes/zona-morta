@@ -12,6 +12,12 @@ export const bodyRegions = [
 
 export type BodyRegion = typeof bodyRegions[number];
 
+export const wetExposureSources = [
+  "common-rain", "heavy-rain", "heavy-splash", "shallow-water", "immersion", "other",
+] as const;
+
+export type WetExposureSource = typeof wetExposureSources[number];
+
 export type SurvivorCondition = {
   id: string;
   kind: SurvivorConditionKind;
@@ -29,6 +35,8 @@ export type SurvivorCondition = {
   recovery?: number;
   /** O primeiro agravamento de Frio enquanto Molhado recebe +1 nível adicional. */
   wetColdBoostUsed?: boolean;
+  /** Origem estruturada da exposição que causou Molhado. */
+  wetExposureSource?: WetExposureSource;
   /** Vantagem preparada por um item para o próximo teste de exposição. */
   exposureAdvantageSource?: string;
   /** Vantagem preparada por um item para a próxima recuperação da condição. */

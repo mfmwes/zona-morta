@@ -1,19 +1,21 @@
 import { survivorHex, type GameState, type Survivor } from "./game";
-import type { SurvivorConditionKind } from "./survivor-condition-types";
+import type { BodyRegion, SurvivorConditionKind, WetExposureSource } from "./survivor-condition-types";
 
-export type ConditionItemInteraction = "resist" | "recover" | "stabilize" | "treat" | "immobilize";
+export type ConditionItemInteraction = "resist" | "recover" | "prevent" | "dry" | "stabilize" | "treat" | "immobilize";
 
 export type ConditionItemEffect = {
   id: string;
   item: string;
-  condition: Extract<SurvivorConditionKind, "cold" | "heat" | "bleeding" | "injury" | "fracture">;
+  condition: Extract<SurvivorConditionKind, "cold" | "heat" | "wet" | "bleeding" | "injury" | "fracture">;
   interaction: ConditionItemInteraction;
   label: string;
   summary: string;
-  action?: "cold-recovery-aid" | "cold-reduce" | "heat-exposure-aid" | "bleeding-stabilize" | "injury-treat" | "fracture-immobilize";
+  action?: "cold-reduce" | "heat-exposure-aid" | "wet-dry" | "bleeding-stabilize" | "injury-treat" | "fracture-immobilize";
   consumable?: boolean;
   requires?: string;
   passiveWhenEquipped?: "protection" | "outfit";
+  preventsWetSources?: WetExposureSource[];
+  bodyRegions?: BodyRegion[];
 };
 
 export const conditionItemEffects: ConditionItemEffect[] = [
@@ -41,9 +43,9 @@ export const conditionItemEffects: ConditionItemEffect[] = [
     condition: "cold",
     interaction: "recover",
     label: "Frio · Recuperação",
-    summary: "Em abrigo plausível, prepara Vantagem para a próxima recuperação de Frio durante descanso.",
-    action: "cold-recovery-aid",
-    requires: "Abrigo plausível e uso durante descanso.",
+    summary: "Em abrigo plausível durante descanso, reduz Frio em 1 nível. Em Frio 3, é insuficiente sozinho.",
+    action: "cold-reduce",
+    requires: "Abrigo plausível durante descanso. Frio 3 exige uma fonte de calor ou proteção mais adequada.",
   },
   {
     id: "sleeping-bag-cold",
@@ -85,6 +87,46 @@ export const conditionItemEffects: ConditionItemEffect[] = [
     summary: "Ao consumir uma porção durante Calor, além de hidratar concede Vantagem no próximo teste de exposição ao Calor.",
   },
   {
+    id: "waterproof-jacket-wet",
+    item: "Jaqueta impermeável grossa",
+    condition: "wet",
+    interaction: "prevent",
+    label: "Molhado · Proteção forte",
+    summary: "Enquanto equipada e íntegra, impede Molhado por chuva comum, chuva forte e respingos fortes. Não impede imersão.",
+    passiveWhenEquipped: "protection",
+    preventsWetSources: ["common-rain", "heavy-rain", "heavy-splash"],
+  },
+  {
+    id: "raincoat-wet",
+    item: "Capa de chuva leve",
+    condition: "wet",
+    interaction: "prevent",
+    label: "Molhado · Protege da chuva",
+    summary: "Enquanto vestida e íntegra, impede Molhado por chuva comum. Não impede chuva forte, inundação ou imersão.",
+    passiveWhenEquipped: "outfit",
+    preventsWetSources: ["common-rain"],
+  },
+  {
+    id: "waterproof-boots-wet",
+    item: "Botas impermeáveis",
+    condition: "wet",
+    interaction: "prevent",
+    label: "Molhado · Água rasa",
+    summary: "Enquanto vestidas, lama ou água rasa apenas nos pés não são suficientes para aplicar Molhado.",
+    passiveWhenEquipped: "outfit",
+    preventsWetSources: ["shallow-water"],
+  },
+  {
+    id: "dry-clothes-wet",
+    item: "Roupa seca sobressalente",
+    condition: "wet",
+    interaction: "dry",
+    label: "Molhado · Secar",
+    summary: "Em local seco e protegido, remove Molhado ao trocar de roupa. O conjunto fica Molhado até ser seco novamente.",
+    action: "wet-dry",
+    requires: "Local seco e protegido.",
+  },
+  {
     id: "compression-bleeding",
     item: "Curativo compressivo",
     condition: "bleeding",
@@ -101,6 +143,26 @@ export const conditionItemEffects: ConditionItemEffect[] = [
     interaction: "stabilize",
     label: "Sangramento · Estabiliza",
     summary: "Material adequado para estabilizar Sangramento. A unidade é consumida.",
+    action: "bleeding-stabilize",
+    consumable: true,
+  },
+  {
+    id: "treatment-bag-bleeding",
+    item: "Bolsa de tratamento lacrada",
+    condition: "bleeding",
+    interaction: "stabilize",
+    label: "Sangramento · Estabiliza",
+    summary: "Pode estabilizar Sangramento. A bolsa é consumida.",
+    action: "bleeding-stabilize",
+    consumable: true,
+  },
+  {
+    id: "clinical-box-bleeding",
+    item: "Caixa clínica completa",
+    condition: "bleeding",
+    interaction: "stabilize",
+    label: "Sangramento · Tratamento completo",
+    summary: "Estabiliza Sangramento, consome o conteúdo clínico e deixa um Kit médico de campo reutilizável.",
     action: "bleeding-stabilize",
     consumable: true,
   },
@@ -135,6 +197,17 @@ export const conditionItemEffects: ConditionItemEffect[] = [
     consumable: true,
   },
   {
+    id: "splint-injury",
+    item: "Tala e faixa",
+    condition: "injury",
+    interaction: "treat",
+    label: "Lesão · Imobiliza membro",
+    summary: "Trata uma Lesão de braço ou perna por imobilização. A tala fica comprometida no paciente.",
+    action: "injury-treat",
+    consumable: true,
+    bodyRegions: ["left-arm", "right-arm", "left-leg", "right-leg"],
+  },
+  {
     id: "splint-fracture",
     item: "Tala e faixa",
     condition: "fracture",
@@ -164,6 +237,8 @@ export function conditionInteractionLabel(interaction: ConditionItemInteraction)
   return ({
     resist: "Resistência",
     recover: "Recuperação",
+    prevent: "Prevenção",
+    dry: "Secagem",
     stabilize: "Estabilização",
     treat: "Tratamento",
     immobilize: "Imobilização",
@@ -193,6 +268,7 @@ export function conditionItemUseTargets(game: GameState, ownerId: string, itemNa
     for (const person of candidates) {
       for (const condition of person.conditions ?? []) {
         if (condition.kind !== effect.condition) continue;
+        if (effect.bodyRegions?.length && (!condition.bodyRegion || !effect.bodyRegions.includes(condition.bodyRegion))) continue;
         if (condition.kind === "injury" && condition.treated) continue;
         if (condition.kind === "fracture" && condition.immobilized) continue;
         result.push({
@@ -206,4 +282,19 @@ export function conditionItemUseTargets(game: GameState, ownerId: string, itemNa
     }
   }
   return result;
+}
+
+
+export const wetExposureSourceLabels: Record<WetExposureSource, string> = {
+  "common-rain": "Chuva comum",
+  "heavy-rain": "Chuva forte ou tempestade",
+  "heavy-splash": "Respingos fortes",
+  "shallow-water": "Lama ou água rasa nos pés",
+  immersion: "Imersão, inundação ou submersão",
+  other: "Outra fonte",
+};
+
+export function wetProtectionFor(person: Survivor | undefined, source: WetExposureSource) {
+  if (!person) return null;
+  return equippedConditionSupport(person, "wet").find(effect => effect.preventsWetSources?.includes(source)) ?? null;
 }

@@ -4022,7 +4022,7 @@
         },
         {
           "label": "Efeito",
-          "value": "Mantém a roupa sob ela seca se estiver íntegra"
+          "value": "Enquanto equipada e íntegra, impede Molhado por chuva comum, chuva forte e respingos fortes. Não impede imersão ou submersão."
         },
         {
           "label": "Carga guardada",
@@ -4124,7 +4124,7 @@
       "fields": [
         {
           "label": "Uso concreto",
-          "value": "Permite trocar roupas molhadas antes de descanso. Conjunto dobrado ocupa 1 espaço."
+          "value": "Em local seco e protegido, remove Molhado ao trocar de roupa. O conjunto fica Molhado até ser seco novamente. Conjunto dobrado ocupa 1 espaço."
         },
         {
           "label": "Carga guardada",
@@ -4166,7 +4166,7 @@
       "fields": [
         {
           "label": "Uso concreto",
-          "value": "Protege mapas e roupa de chuva comum. Não veda água contaminada."
+          "value": "Enquanto vestida e íntegra, impede Molhado por chuva comum. Não impede chuva forte, inundação ou imersão."
         },
         {
           "label": "Carga guardada",
@@ -4180,7 +4180,7 @@
       "fields": [
         {
           "label": "Uso concreto",
-          "value": "Permitem atravessar lama e água rasa sem encharcar os pés."
+          "value": "Enquanto vestidas, lama ou água rasa apenas nos pés não são suficientes para aplicar Molhado."
         },
         {
           "label": "Carga guardada",
@@ -4796,7 +4796,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Em abrigo plausível, prepara Vantagem para a próxima recuperação de Frio durante descanso. Não torna a rua segura."
+          "value": "Em abrigo plausível durante descanso, reduz Frio em 1 nível. Em Frio 3, é insuficiente sozinho e não substitui fonte de calor ou proteção adequada."
         },
         {
           "label": "Carga guardada",
@@ -5872,7 +5872,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Consumível: pode tratar uma Lesão diretamente ou servir como material com Kit médico de campo. Também equivale a 1 unidade de Medicamentos nas reservas."
+          "value": "Consumível: pode tratar uma Lesão ou estabilizar Sangramento; também serve como material com Kit médico de campo. Equivale a 1 unidade de Medicamentos nas reservas."
         },
         {
           "label": "Carga",
@@ -5886,7 +5886,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Consumível no tratamento: trata uma Lesão e deixa um Kit médico de campo reutilizável. Também pode virar 1 unidade de Medicamentos nas reservas."
+          "value": "Consumível no tratamento: trata uma Lesão ou estabiliza Sangramento e deixa um Kit médico de campo reutilizável. Também pode virar 1 unidade de Medicamentos nas reservas."
         },
         {
           "label": "Carga",
@@ -5984,7 +5984,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Imobiliza uma Fratura. O conjunto fica comprometido no paciente e sai do inventário; a recuperação passa a avançar em Descansos Longos."
+          "value": "Imobiliza uma Fratura ou trata por imobilização uma Lesão de braço/perna. O conjunto fica comprometido no paciente e sai do inventário."
         },
         {
           "label": "Carga",

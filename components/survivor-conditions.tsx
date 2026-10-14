@@ -5,18 +5,20 @@ import {
   Activity, Droplets, EyeOff, HeartPulse, Lock, Snowflake, Sun, TriangleAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { RollDialog } from "@/components/roll-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Field, Pick } from "@/components/game-controls";
 import type { GameState, Survivor } from "@/lib/game";
-import type { BodyRegion, SurvivorCondition, SurvivorConditionKind } from "@/lib/survivor-condition-types";
-import { equippedConditionSupport } from "@/lib/condition-item-effects";
+import type { BodyRegion, SurvivorCondition, SurvivorConditionKind, WetExposureSource } from "@/lib/survivor-condition-types";
+import { equippedConditionSupport, wetExposureSourceLabels } from "@/lib/condition-item-effects";
 import {
   applySurvivorCondition,
   bleedingTrigger,
   bodyRegionLabels,
   conditionDefinitions,
   conditionDetails,
+  exposureAdvantageSources,
   reduceExposure,
   removeSurvivorCondition,
   resolveExposureRoll,
@@ -85,6 +87,25 @@ function ConditionBadge({ condition, onOpen }: { condition: SurvivorCondition; o
   </Tooltip>;
 }
 
+function ExposureRollControl({ game, survivor, condition, edit }: {
+  game: GameState; survivor: Survivor; condition: SurvivorCondition; edit: Edit;
+}) {
+  const [open, setOpen] = useState(false);
+  if (condition.kind !== "cold" && condition.kind !== "heat") return null;
+  const sources = exposureAdvantageSources(survivor, condition.id);
+  return <div className={`exposure-support-card ${sources.length ? "is-active" : ""}`}>
+    <span>Teste de exposição</span>
+    <b>{sources.length ? "Vantagem automática disponível" : "Sem apoio automático"}</b>
+    <small>{sources.length
+      ? `Fontes: ${sources.join(", ")}. A rolagem aplica +d6 automaticamente e não acumula múltiplas Vantagens.`
+      : "Força é a sugestão padrão; o atributo pode mudar se a ficção justificar."}</small>
+    <div><Button size="sm" onClick={() => setOpen(true)}>Rolar exposição</Button></div>
+    <RollDialog game={game} edit={edit}
+      request={{ survivorId: survivor.id, kind: "action", trait: "Força", exposure: { conditionId: condition.id } }}
+      open={open} onOpenChange={setOpen} />
+  </div>;
+}
+
 function DetailActions({ survivor, condition, edit, editable, onClose }: {
   survivor: Survivor; condition: SurvivorCondition; edit: Edit; editable: boolean; onClose: () => void;
 }) {
@@ -95,14 +116,14 @@ function DetailActions({ survivor, condition, edit, editable, onClose }: {
   if (condition.kind === "cold" || condition.kind === "heat") {
     const level = condition.level ?? 1;
     return <div className="survivor-condition-actions">
-      <p className="survivor-condition-action-title">Resolver exposição</p>
+      <p className="survivor-condition-action-title">Resolver manualmente</p>
       <div>
         <Button size="sm" variant="outline" onClick={() => mutate(draft => { resolveExposureRoll(draft, survivor.id, condition.id, "failure-hope"); })}>Falha com Esperança</Button>
         <Button size="sm" variant="outline" onClick={() => mutate(draft => { resolveExposureRoll(draft, survivor.id, condition.id, "failure-fear"); })}>Falha com Medo</Button>
         <Button size="sm" variant="outline" onClick={() => mutate(draft => { reduceExposure(draft, survivor.id, condition.id); })}>Recuperou 1 nível</Button>
         {level >= 3 && <Button size="sm" variant="destructive" onClick={() => mutate(draft => { severeExposureTrigger(draft, survivor.id, condition.id); })}>Gatilho grave · +1 PV</Button>}
       </div>
-      <small>Sucessos mantêm o nível atual. Use os botões de falha apenas quando houver um teste de exposição.</small>
+      <small>Use estes controles apenas quando a rolagem foi feita fora da ferramenta acima. A rolagem de exposição integrada já resolve a condição automaticamente.</small>
     </div>;
   }
 
@@ -158,6 +179,7 @@ function ConditionDetailDialog({ game, survivor, condition, edit, editable, open
         <div><span>EFEITO</span><p>{detail.effect}</p></div>
         <div><span>COMO REMOVER</span><p>{detail.clear}</p></div>
         {condition.source && <div><span>ORIGEM</span><p>{condition.source}</p></div>}
+        {condition.kind === "wet" && condition.wetExposureSource && <div><span>FONTE DA ÁGUA</span><p>{wetExposureSourceLabels[condition.wetExposureSource]}</p></div>}
         {(condition.kind === "injury" || condition.kind === "fracture") && <div><span>RECUPERAÇÃO</span><p>{condition.kind === "fracture"
           ? `${condition.recovery ?? 0}/4 descansos longos ${condition.immobilized ? "com a fratura imobilizada" : "— imobilize antes de iniciar a recuperação"}.`
           : condition.treated
@@ -167,6 +189,7 @@ function ConditionDetailDialog({ game, survivor, condition, edit, editable, open
         {condition.exposureAdvantageSource && <div><span>PRÓXIMO TESTE DE EXPOSIÇÃO</span><p>Vantagem preparada por <b>{condition.exposureAdvantageSource}</b>. O apoio é consumido ao resolver o próximo teste de exposição.</p></div>}
         {condition.recoveryAdvantageSource && <div><span>PRÓXIMA RECUPERAÇÃO</span><p>Vantagem preparada por <b>{condition.recoveryAdvantageSource}</b>. O apoio é consumido quando a condição for reduzida.</p></div>}
       </div>
+      <ExposureRollControl game={game} survivor={survivor} condition={condition} edit={edit} />
       <DetailActions survivor={survivor} condition={condition} edit={edit} editable={editable} onClose={() => onOpenChange(false)} />
       <DialogFooter>
         {editable && !["cold","heat","bleeding"].includes(condition.kind) && <Button variant="destructive" onClick={() => {
@@ -204,6 +227,8 @@ export function SurvivorConditionPanel({ game, survivor, edit, editable }: {
   const [bodyRegion, setBodyRegion] = useState<BodyRegion>("left-arm");
   const [level, setLevel] = useState("1");
   const [source, setSource] = useState("");
+  const [wetSource, setWetSource] = useState<WetExposureSource>("common-rain");
+  const [applyFeedback, setApplyFeedback] = useState("");
   const definition = conditionDefinitions[kind];
   const availableKinds = useMemo(() => Object.entries(conditionDefinitions).map(([value, item]) => ({
     value: value as SurvivorConditionKind,
@@ -215,9 +240,14 @@ export function SurvivorConditionPanel({ game, survivor, edit, editable }: {
     edit(draft => { result = applySurvivorCondition(draft, survivor.id, kind, {
       ...(definition.levels ? { level: Number(level) as 1 | 2 | 3 } : {}),
       ...(definition.bodyRegion ? { bodyRegion } : {}),
+      ...(kind === "wet" ? { wetExposureSource: wetSource } : {}),
       ...(source.trim() ? { source: source.trim() } : {}),
     }); });
-    if (result?.ok) { setAddOpen(false); setSource(""); }
+    if (result?.ok) {
+      setAddOpen(false); setSource(""); setApplyFeedback("");
+    } else if (result?.message) {
+      setApplyFeedback(result.message);
+    }
   }
 
   return <section className="character-surface survivor-condition-panel">
@@ -227,11 +257,15 @@ export function SurvivorConditionPanel({ game, survivor, edit, editable }: {
         <DialogTrigger asChild><Button size="sm"><HeartPulse size={16} /> Aplicar condição</Button></DialogTrigger>
         <DialogContent>
           <DialogHeader><DialogTitle>Aplicar condição</DialogTitle><DialogDescription>Escolha a condição e registre apenas o que a ficção já estabeleceu.</DialogDescription></DialogHeader>
-          <Pick label="Condição" value={kind} options={availableKinds} onChange={value => setKind(value as SurvivorConditionKind)} />
+          <Pick label="Condição" value={kind} options={availableKinds} onChange={value => { setKind(value as SurvivorConditionKind); setApplyFeedback(""); }} />
           {definition.levels && <Pick label="Intensidade inicial" value={level} options={[{value:"1",label:"Nível 1"},{value:"2",label:"Nível 2"},{value:"3",label:"Nível 3"}]} onChange={setLevel} />}
           {definition.bodyRegion && <Pick label="Região afetada" value={bodyRegion} options={Object.entries(bodyRegionLabels).map(([value,label])=>({value,label}))} onChange={value => setBodyRegion(value as BodyRegion)} />}
+          {kind === "wet" && <Pick label="Fonte da água" value={wetSource}
+            options={Object.entries(wetExposureSourceLabels).map(([value,label]) => ({ value, label }))}
+            onChange={value => { setWetSource(value as WetExposureSource); setApplyFeedback(""); }} />}
           <Field label="Origem · opcional" value={source} onChange={setSource} placeholder="Ex.: queda da escada, tempestade, mordida..." />
           <div className="survivor-condition-add-preview"><b>{definition.label}</b><p>{definition.effect}</p><small>Remover: {definition.clear}</small></div>
+          {applyFeedback && <p className="inventory-hint" role="status">{applyFeedback}</p>}
           <DialogFooter><Button variant="outline" onClick={()=>setAddOpen(false)}>Cancelar</Button><Button onClick={apply}>Aplicar</Button></DialogFooter>
         </DialogContent>
       </Dialog>}

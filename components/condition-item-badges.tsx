@@ -8,6 +8,7 @@ import type { SurvivorConditionKind } from "@/lib/survivor-condition-types";
 const icons: Partial<Record<SurvivorConditionKind, typeof Snowflake>> = {
   cold: Snowflake,
   heat: ThermometerSun,
+  wet: Droplets,
   bleeding: HeartPulse,
   injury: HeartPulse,
   fracture: Bone,
