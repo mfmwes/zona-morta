@@ -1,4 +1,4 @@
-import type { Survivor } from "./game";
+import { survivorHex, type GameState, type Survivor } from "./game";
 import type { SurvivorConditionKind } from "./survivor-condition-types";
 
 export type ConditionItemInteraction = "resist" | "recover" | "stabilize" | "treat" | "immobilize";
@@ -168,4 +168,42 @@ export function conditionInteractionLabel(interaction: ConditionItemInteraction)
     treat: "Tratamento",
     immobilize: "Imobilização",
   } as const)[interaction];
+}
+
+
+export type ConditionItemUseTarget = {
+  id: string;
+  effect: ConditionItemEffect;
+  survivorId: string;
+  survivorName: string;
+  conditionId: string;
+};
+
+export function conditionItemUseTargets(game: GameState, ownerId: string, itemName: string, selfOnly = false): ConditionItemUseTarget[] {
+  const effects = actionableConditionItemEffects(itemName);
+  if (!effects.length) return [];
+  const owner = game.survivors.find(person => person.id === ownerId);
+  const storageHex = game.shelter.hex ?? game.partyHex;
+  const candidates = ownerId === "shared"
+    ? game.survivors.filter(person => survivorHex(game, person) === storageHex)
+    : game.survivors.filter(person => person.id === ownerId
+      || (!selfOnly && owner && survivorHex(game, person) === survivorHex(game, owner)));
+  const result: ConditionItemUseTarget[] = [];
+  for (const effect of effects) {
+    for (const person of candidates) {
+      for (const condition of person.conditions ?? []) {
+        if (condition.kind !== effect.condition) continue;
+        if (condition.kind === "injury" && condition.treated) continue;
+        if (condition.kind === "fracture" && condition.immobilized) continue;
+        result.push({
+          id: `${effect.id}::${person.id}::${condition.id}`,
+          effect,
+          survivorId: person.id,
+          survivorName: person.name,
+          conditionId: condition.id,
+        });
+      }
+    }
+  }
+  return result;
 }
