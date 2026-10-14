@@ -5872,7 +5872,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Consumível: pode tratar uma Lesão diretamente ou servir como material com Kit médico de campo. Também equivale a 1 Medicamentos nas reservas."
+          "value": "Consumível: pode tratar uma Lesão diretamente ou servir como material com Kit médico de campo. Também equivale a 1 unidade de Medicamentos nas reservas."
         },
         {
           "label": "Carga",
@@ -5886,7 +5886,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Consumível no tratamento: trata uma Lesão e deixa um Kit médico de campo reutilizável. Também pode virar 1 Medicamentos nas reservas."
+          "value": "Consumível no tratamento: trata uma Lesão e deixa um Kit médico de campo reutilizável. Também pode virar 1 unidade de Medicamentos nas reservas."
         },
         {
           "label": "Carga",
