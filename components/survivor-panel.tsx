@@ -511,10 +511,10 @@ export function SurvivorPanel({ mobile = false, initialSurvivorId, initialSectio
         <div className="character-hero-status">
           <div className="character-hero-condition-block">
             {down && <span className="character-condition fallen"><HeartPulse size={15} aria-hidden="true" /> CAÍDO · {selected.hp}/{stats.hp} PV</span>}
-            <span className={selected.infection === "Saudável" ? "character-condition healthy" : "character-condition at-risk"}><Activity size={15} aria-hidden="true" /> {selected.infection}</span>
-            {selected.infection === "Exposto" && <span className="character-condition-detail">{selected.treatmentAttempted ? "Tratamento já tentado" : <>Tratamento até <b>{deadlineLabel(selected.exposureDeadline)}</b></>}</span>}
+            {activeTab !== "condicoes" && <span className={selected.infection === "Saudável" ? "character-condition healthy" : "character-condition at-risk"}><Activity size={15} aria-hidden="true" /> {selected.infection}</span>}
+            {activeTab !== "condicoes" && selected.infection === "Exposto" && <span className="character-condition-detail">{selected.treatmentAttempted ? "Tratamento já tentado" : <>Tratamento até <b>{deadlineLabel(selected.exposureDeadline)}</b></>}</span>}
           </div>
-          <SurvivorConditionBadges game={game} survivor={selected} edit={edit} editable={!playerMode && !playerPreview} playerActions={playerActions} />
+          {activeTab !== "condicoes" && <SurvivorConditionBadges game={game} survivor={selected} edit={edit} editable={!playerMode && !playerPreview} playerActions={playerActions} />}
           <span className="character-hero-code">REGISTRO {selected.id.slice(0, 6).toUpperCase()}</span>
         </div>
       </header>
@@ -720,19 +720,14 @@ export function SurvivorPanel({ mobile = false, initialSurvivorId, initialSectio
                 <p className="roll-hint inventory-count" role="status">{inventoryGroups.reduce((sum, [, items]) => sum + items.length, 0)} de {selected.inventory.length} registros · {selected.inventory.reduce((sum, item) => sum + item.qty, 0)} unidades no total</p></>}
             </section>
           </TabsContent>
-          <TabsContent value="condicoes" {...(mobile ? { "aria-label": "Condições", "aria-labelledby": undefined } : {})} className="character-tab-content"><RuleHelp topic="conditions"/>
+          <TabsContent value="condicoes" {...(mobile ? { "aria-label": "Condições", "aria-labelledby": undefined } : {})} className="character-tab-content">
             <SurvivorConditionPanel game={game} survivor={selected} edit={edit} editable={!playerMode && !playerPreview} playerActions={playerActions} />
-            <section className="character-surface"><h3>Condições de eventos</h3>{!(selected.eventConditions ?? []).length && <p className="subtle">Nenhuma condição de evento ativa.</p>}{(selected.eventConditions ?? []).map(c=><div className="list-card" key={c.name}><b>{c.name}</b><p>{c.effect}</p><p className="subtle">Remover: {c.clear}</p>{!playerMode&&!playerPreview&&<Button size="sm" variant="outline" onClick={()=>change(selected.id,s=>{s.eventConditions=(s.eventConditions??[]).filter(row=>row.name!==c.name);})}>Condição encerrada: remover</Button>}</div>)}</section>
-            <section className="character-surface"><SectionHeading index="01" title="Exposição e infecção" /><div className="character-condition-banner"><HeartPulse size={24} aria-hidden="true" /><div><b>{selected.infection}</b><p>{selected.infection === "Saudável" ? "Nenhuma exposição registrada." : "Acompanhe o estado e as escolhas de tratamento."}</p></div></div>
-              {!playerPreview && <div className="character-condition-edit"><Pick label="Estado" value={selected.infection} options={infectionStates} onChange={value => change(selected.id, s => {
-                s.infection = value as Infection;
-                if (value === "Exposto") { s.exposureDeadline = absoluteMinutes(game) + 120; s.treatmentAttempted = false; }
-                else s.exposureDeadline = null;
-                if (value === "Terminal") s.terminalScenes = 3;
-              })} /></div>}
-              <p className="character-rule-note">Mordida anunciada contra alvo Restrito ou indefeso pode causar Exposição. Ataques comuns não causam. A limpeza exige 1 Medicamentos, água limpa, <b>30 min</b> e uma tentativa concluída em até 2 horas.</p>
-              {selected.infection === "Exposto" && <div className="character-treatment"><b>Janela: até {deadlineLabel(selected.exposureDeadline)}</b><span>{selected.treatmentAttempted ? "Tentativa já usada" : "Uma tentativa possível"} · {medicineSources.length} fonte(s) de Medicamentos acessível(is)</span>
-                {!playerMode ? <>
+            {Boolean(selected.eventConditions?.length) && <section className="character-surface survivor-event-panel"><h3>Condições de eventos</h3>{(selected.eventConditions ?? []).map(c=><details className="survivor-event-condition" key={c.name}><summary>{c.name}</summary><div><p>{c.effect}</p><p className="subtle"><b>Como remover:</b> {c.clear}</p>{!playerMode&&!playerPreview&&<Button size="sm" variant="outline" onClick={()=>change(selected.id,s=>{s.eventConditions=(s.eventConditions??[]).filter(row=>row.name!==c.name);})}>Encerrar condição</Button>}</div></details>)}</section>}
+            <details key={`${selected.id}-${selected.infection}`} className={`character-surface survivor-infection-panel ${selected.infection === "Saudável" ? "is-clear" : "is-active"}`} open={selected.infection !== "Saudável"}>
+              <summary><HeartPulse size={20} aria-hidden="true" /><span><b>Exposição e infecção</b><small>{selected.infection === "Saudável" ? "Sem exposição registrada" : selected.infection}</small></span><span className="survivor-infection-disclosure" aria-hidden="true" /></summary>
+              <div className="survivor-infection-content">
+              {selected.infection === "Exposto" && <div className="character-treatment"><b>Tratar até {deadlineLabel(selected.exposureDeadline)}</b><span>{selected.treatmentAttempted ? "A tentativa desta exposição já foi utilizada." : (selected.exposureDeadline ?? 0) < absoluteMinutes(game) ? "A janela de tratamento terminou." : !chosenMedicine ? "É preciso ter 1 Medicamentos acessível para iniciar." : "Uma tentativa · 1 Medicamentos, água limpa e 30 min."}</span>
+                {!playerMode && !playerPreview ? <>
                 <Dialog open={treatmentOpen} onOpenChange={value => { setTreatmentOpen(value); if (!value) setCleanWaterConfirmed(false); }}><DialogTrigger asChild><Button size="sm" disabled={selected.treatmentAttempted || (selected.exposureDeadline ?? 0) < absoluteMinutes(game) || !chosenMedicine}><Stethoscope size={16} /> Tentar limpar exposição</Button></DialogTrigger>
                   <DialogContent><DialogHeader><DialogTitle>Tratamento de Exposição · 30 min</DialogTitle><DialogDescription>Escolha 1 Medicamentos acessível, confirme água limpa e role Conhecimento contra 13. O procedimento consome 30 min e precisa terminar dentro da janela de Exposição. Uma tentativa por Exposição.{treatmentSupport.bonus ? ` Infraestrutura do abrigo: +${treatmentSupport.bonus} (${treatmentSupport.sources.join(" + ")}).` : ""}</DialogDescription></DialogHeader>
                     <RuleHelp topic="treatment" />
@@ -741,10 +736,18 @@ export function SurvivorPanel({ mobile = false, initialSurvivorId, initialSectio
                     <DialogFooter><Button variant="outline" onClick={() => setTreatmentOpen(false)}>Cancelar</Button><Button disabled={!cleanWaterConfirmed || !chosenMedicine} onClick={treatExposure}>Confirmar e rolar</Button></DialogFooter></DialogContent>
                 </Dialog></> : <p className="text-sm subtle">Peça ao mestre para registrar a tentativa de tratamento e o resultado da infecção.</p>}
               </div>}
-              {selected.infection === "Terminal" && !playerPreview && <div className="character-terminal"><Counter compact label="Cenas significativas restantes" value={selected.terminalScenes} max={3} onChange={value => change(selected.id, s => { s.terminalScenes = value; })} /></div>}
-              {selected.infection === "Terminal" && playerPreview && <p className="character-terminal">Cenas significativas restantes: <b>{selected.terminalScenes}</b></p>}
-            </section>
-            <section className="character-surface"><SectionHeading index="02" title="Estado de combate" /><div className="character-combat-metrics"><div><Heart size={17} aria-hidden="true" /><span>PV marcados</span><b>{selected.hp}/{stats.hp}</b></div><div><Zap size={17} aria-hidden="true" /><span>Estresse marcado</span><b>{selected.stress}/6</b></div><div><Shield size={17} aria-hidden="true" /><span>Armadura marcada</span><b>{selected.armorMarked ?? 0}/{stats.armor}</b></div></div><p className="character-rule-note">Ajuste os recursos no painel lateral. Em telas menores, toque em Combate na barra de consulta rápida.</p></section>
+              {selected.infection === "Terminal" && !playerMode && !playerPreview && <div className="character-terminal"><Counter compact label="Cenas significativas restantes" value={selected.terminalScenes} max={3} onChange={value => change(selected.id, s => { s.terminalScenes = value; })} /></div>}
+              {selected.infection === "Terminal" && (playerMode || playerPreview) && <p className="character-terminal">Cenas significativas restantes: <b>{selected.terminalScenes}</b></p>}
+              {!playerMode && !playerPreview && <div className="character-condition-edit"><Pick label="Alterar estado de infecção" value={selected.infection} options={infectionStates} onChange={value => change(selected.id, s => {
+                s.infection = value as Infection;
+                if (value === "Exposto") { s.exposureDeadline = absoluteMinutes(game) + 120; s.treatmentAttempted = false; }
+                else s.exposureDeadline = null;
+                if (value === "Terminal") s.terminalScenes = 3;
+              })} /></div>}
+              <details className="survivor-infection-help"><summary>Quando há exposição e como tratar</summary><p>Mordida anunciada contra alvo Restrito ou indefeso pode causar Exposição. Ataques comuns não causam. A limpeza exige 1 Medicamentos, água limpa, <b>30 min</b> e uma tentativa concluída em até 2 horas.</p></details>
+              </div>
+            </details>
+            {mobile && <Button variant="outline" className="survivor-conditions-combat" onClick={() => setActiveTab("combate")}><Shield size={16} /> Abrir combate e defesas</Button>}
           </TabsContent>
           <TabsContent value="historia" {...(mobile ? { "aria-label": "História", "aria-labelledby": undefined } : {})} className="character-tab-content">
             <section className="character-surface"><SectionHeading index="01" title="Antes e depois" /><div className="character-story-grid"><div><span>ORIGEM</span><b>{selected.origin}</b><p>{origin?.past}</p></div><div><span>ATUAÇÃO</span><b>{selected.archetype} · {selected.specialty}</b><p>Trilhas: {archetype?.tracks.join(" e ")}</p></div></div>
