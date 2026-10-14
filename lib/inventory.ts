@@ -404,6 +404,20 @@ export function transferItem(game: GameState, from: string, to: string, itemId: 
   if (item.qty === 0) source.splice(source.indexOf(item), 1);
   return true;
 }
+export function setOneInventoryItemCondition(game: GameState, ownerId: string, itemId: string, condition: string) {
+  if (ownerId === "shared" && !atSharedStorage(game)) return false;
+  const items = container(game, ownerId);
+  const item = items?.find(entry => entry.id === itemId);
+  if (!items || !item || item.qty < 1) return false;
+  if (item.qty === 1) {
+    item.condition = condition;
+    return true;
+  }
+  item.qty -= 1;
+  addStack(items, { ...item, id: createId(), qty: 1, condition });
+  return true;
+}
+
 export function discardItem(game: GameState, from: string, itemId: string, quantity: number) {
   if (!Number.isInteger(quantity) || quantity < 1 || (from === "shared" && !atSharedStorage(game))) return false;
   const source = container(game, from);
