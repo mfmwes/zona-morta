@@ -16,7 +16,6 @@ import {
   bodyRegionLabels,
   conditionDefinitions,
   conditionDetails,
-  conditionLabel,
   reduceExposure,
   removeSurvivorCondition,
   resolveExposureRoll,
@@ -85,8 +84,8 @@ function ConditionBadge({ condition, onOpen }: { condition: SurvivorCondition; o
   </Tooltip>;
 }
 
-function DetailActions({ game, survivor, condition, edit, editable, onClose }: {
-  game: GameState; survivor: Survivor; condition: SurvivorCondition; edit: Edit; editable: boolean; onClose: () => void;
+function DetailActions({ survivor, condition, edit, editable, onClose }: {
+  survivor: Survivor; condition: SurvivorCondition; edit: Edit; editable: boolean; onClose: () => void;
 }) {
   if (!editable) return null;
 
@@ -163,7 +162,7 @@ function ConditionDetailDialog({ game, survivor, condition, edit, editable, open
             ? `${condition.recovery ?? 0}/${condition.aggravated ? 2 : 1} descansos longos após tratamento.`
             : "Ainda precisa de tratamento antes de progredir com descansos longos."}</p></div>}
       </div>
-      <DetailActions game={game} survivor={survivor} condition={condition} edit={edit} editable={editable} onClose={() => onOpenChange(false)} />
+      <DetailActions survivor={survivor} condition={condition} edit={edit} editable={editable} onClose={() => onOpenChange(false)} />
       <DialogFooter>
         {editable && !["cold","heat","bleeding"].includes(condition.kind) && <Button variant="destructive" onClick={() => {
           edit(draft => { removeSurvivorCondition(draft, survivor.id, condition.id); });
