@@ -15,7 +15,7 @@ import { applyAttackResources, attackResourceState } from "@/lib/combat-resource
 import { publicConflictScene, resolveThreatAttack, type ThreatAttackResolution } from "@/lib/conflict";
 import { parseWeaponDamage, resolveActionRoll, resolveAttackHit, resolveRollResources, resolveWeaponDamage, rollDie, type ActionOutcome, type Edge, type RollKind } from "@/lib/rolls";
 import { rollSearchAccess, searchMentors } from "@/lib/hex-automation";
-import { conditionCanDisadvantageRoll, conditionLabel, conditionRollGuidance, twoHandedFractureIssue, useConditionDuringRoll } from "@/lib/survivor-conditions";
+import { conditionCanDisadvantageRoll, conditionLabel, conditionRollGuidance, removeSurvivorCondition, twoHandedFractureIssue, useConditionDuringRoll } from "@/lib/survivor-conditions";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 export type RollRequest = { survivorId?: string; kind?: RollKind; trait?: string; weapon?: "primary" | "secondary" | "unarmed"; experience?: "origin" | "free"; targetThreatId?: string; search?: { hexId: string; pointId: string; attemptId: string; difficulty: number } };
@@ -292,6 +292,10 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
             failedWithFear,
             stressAlreadyPaid: forcedConditionIds.includes(condition.id),
           });
+        }
+        if (kind === "attack" && actor) {
+          const hidden = actor.conditions?.find(condition => condition.kind === "hidden");
+          if (hidden) removeSurvivorCondition(draft, actor.id, hidden.id, "encerrado ao revelar a posição com um ataque");
         }
         if (damage) addLog(draft, "dano", damageLog(damage, damageStatus), actor?.id);
         addLog(draft, "dados", text +
