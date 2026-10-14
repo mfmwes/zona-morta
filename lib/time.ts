@@ -5,6 +5,7 @@ import { runningActivities } from "./activity-timeline";
 import { resolveActivityEffect } from "./activity-handlers";
 import { rollDie } from "./rolls";
 import { ensureParallelTime, participantTimePreview, resetParallelTime, syncAllParticipantsToCurrentTime, type ParticipantTimePreview } from "./activity";
+import { bleedingTrigger } from "./survivor-conditions";
 
 export type AdvanceTimeResult = {
   ok: boolean;
@@ -35,6 +36,9 @@ function resolveScheduledActivity(game: GameState, id: string, die = rollDie): s
   if (activity.participantIds.some(id => (draft.survivors.find(p => p.id === id)?.hex ?? draft.partyHex) !== activity.hexId)) return "Os participantes mudaram de hex. Interrompa a atividade para continuar.";
   const effect = resolveActivityEffect(draft, activity, die);
   if (!effect.ok) return effect.message;
+  for (const survivorId of activity.participantIds) {
+    bleedingTrigger(draft, survivorId, `fim de ${activity.label} sem estabilização`);
+  }
   const result = effect.message;
   const saved = draft.activities!.find(a => a.id === id)!;
   delete saved.issue;
