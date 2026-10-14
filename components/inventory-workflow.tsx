@@ -101,7 +101,7 @@ export function AddItemDialog({ game, edit, ownerId }: { game: GameState; edit: 
 
 export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection = false, selfOnly = false }: { game: GameState; edit: Edit; ownerId: string; item: InventoryItem; allowCorrection?: boolean; selfOnly?: boolean }) {
   const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<"transfer" | "equip" | "consume" | "prepare" | "medication" | "stock" | "use" | "condition" | "recharge" | "fill-water" | "fill-fuel" | "empty-container" | "cart" | "discard" | "edit">("transfer");
+  const [mode, setMode] = useState<"transfer" | "equip" | "consume" | "prepare" | "medication" | "stock" | "use" | "condition" | "dry-clothes" | "recharge" | "fill-water" | "fill-fuel" | "empty-container" | "cart" | "discard" | "edit">("transfer");
   const [targetId, setTargetId] = useState("");
   const [conditionUseId, setConditionUseId] = useState("");
   const [slot, setSlot] = useState<EquipmentSlot>("primary");
@@ -161,7 +161,7 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
     if (!value) { close(); return; }
     setConditionDraft(item.condition || "Íntegro"); setQtyDraft(item.qty); setLoadDraft(item.load);
     setConditionUseId(conditionUses.find(option => option.available)?.id ?? conditionUses[0]?.id ?? "");
-    setMode(item.name === "Carrinho dobrável" ? "cart" : conditionUses.length ? "condition" : containerOptions?.canUnloadAtStorage ? "empty-container" : fillWaterMax > 0 ? "fill-water" : fillFuelMax > 0 ? "fill-fuel"
+    setMode(item.name === "Carrinho dobrável" ? "cart" : actionOptions.canDryClothes ? "dry-clothes" : conditionUses.length ? "condition" : containerOptions?.canUnloadAtStorage ? "empty-container" : fillWaterMax > 0 ? "fill-water" : fillFuelMax > 0 ? "fill-fuel"
       : rechargeTargets.length ? "recharge" : slots.length ? "equip" : provisionState.resource
       ? (provisionState.ready ? "consume" : (provisionState.requiresPreparation || provisionState.requiresVerification) ? "prepare" : "edit")
       : targets.length ? "transfer" : "edit");
@@ -203,6 +203,8 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
                     conditionId: selectedConditionUse.conditionId,
                     effectId: selectedConditionUse.effect.id,
                   })
+                : mode === "dry-clothes"
+                  ? performItemAction(draft, ownerId, item.id, { type: "dry-clothes" })
                 : mode === "recharge" && rechargeTargetId
                   ? performItemAction(draft, ownerId, item.id, { type: "recharge", targetId: rechargeTargetId })
                 : mode === "fill-water"
@@ -245,6 +247,7 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
         {!selfOnly && countsAsMedication(item) && (ownerId === "shared" ? atSharedStorage(game) : atSharedStorage(game, ownerId)) && <button type="button" aria-pressed={mode === "medication"} onClick={() => setMode("medication")}>Medicamentos</button>}
         {!selfOnly && stockResource && (ownerId === "shared" ? atSharedStorage(game) : atSharedStorage(game, ownerId)) && <button type="button" aria-pressed={mode === "stock"} onClick={() => setMode("stock")}>Guardar nas reservas</button>}
         {conditionUses.length > 0 && <button type="button" aria-pressed={mode === "condition"} onClick={() => setMode("condition")}>Condição</button>}
+        {actionOptions.canDryClothes && <button type="button" aria-pressed={mode === "dry-clothes"} onClick={() => setMode("dry-clothes")}>Secar roupa</button>}
         {canUse && <button type="button" aria-pressed={mode === "use"} onClick={() => setMode("use")}>Usar</button>}
         {rechargeTargets.length > 0 && <button type="button" aria-pressed={mode === "recharge"} onClick={() => setMode("recharge")}>Recarregar</button>}
         {fillWaterMax > 0 && <button type="button" aria-pressed={mode === "fill-water"} onClick={() => { setAmount(fillWaterMax); setMode("fill-water"); }}>Encher Água</button>}
@@ -291,7 +294,11 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
         </div>
         {selectedConditionUse.effect.consumable && <p className="inventory-hint">Este uso consome/compromete 1 unidade do item.</p>}
       </div>}
-      {mode === "use" && <p className="inventory-hint">{catalogItemIsConsumable(item)
+      {mode === "dry-clothes" && <div className="condition-item-action">
+        <div className="inventory-preview"><span><b>Secar Roupa seca sobressalente</b><small>Use esta ação quando houver tempo e um local seco/protegido. O conjunto volta a poder remover Molhado.</small></span></div>
+        <p className="inventory-hint">A roupa não é consumida; apenas muda de <b>Molhada</b> para <b>Íntegro</b>.</p>
+      </div>}
+            {mode === "use" && <p className="inventory-hint">{catalogItemIsConsumable(item)
         ? "Consumível: desconta a unidade ao confirmar. O efeito indicado no catálogo é aplicado em cena."
         : "Uso reutilizável: o item permanece no inventário. Efeitos mecânicos explícitos, como Barulho do apito, são registrados automaticamente."}</p>}
       {mode === "recharge" && rechargeTargetId && <><Pick label="Aparelho" value={rechargeTargetId}
@@ -320,7 +327,7 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
       {mode === "medication" && <p className="inventory-hint">Cada unidade vira 1 Medicamentos nas reservas compartilhadas. Bolsa e estojo de antissepsia são consumidos; Caixa clínica completa deixa um Kit médico de campo reutilizável.</p>}
       {mode === "stock" && <p className="inventory-hint">Cada unidade física vira uma unidade nas reservas compartilhadas. O objeto sai do inventário para evitar contagem dupla.</p>}
       {mode === "discard" && <p className="inventory-hint inventory-danger">{confirmDiscard ? "Confirmar: as unidades serão retiradas da ficha e o descarte aparecerá no registro." : "Deixar para trás retira o item sem criar uma reserva nova no mapa."}</p>}
-      {!["equip", "edit", "consume", "condition", "recharge", "fill-water", "fill-fuel", "empty-container"].includes(mode) && !(mode === "cart" && item.name === "Carrinho dobrável") && !(mode === "use" && !catalogItemIsConsumable(item)) &&
+      {!["equip", "edit", "consume", "condition", "dry-clothes", "recharge", "fill-water", "fill-fuel", "empty-container"].includes(mode) && !(mode === "cart" && item.name === "Carrinho dobrável") && !(mode === "use" && !catalogItemIsConsumable(item)) &&
         <Counter label="Unidades" value={count} min={1} max={Math.max(1, ammoType ? movableUnits : item.qty)} onChange={setAmount} compact />}
       {mode === "transfer" && destination && <p className="roll-hint">{count}× {item.name} → {ownerName(game, destination)}. Permanecem {item.qty - count} na origem.</p>}
       <DialogFooter><Button variant="outline" onClick={close}>Cancelar</Button>
@@ -330,6 +337,7 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
           || (mode === "medication" && game.shelter.medications + count > 99)
           || (mode === "stock" && (!stockResource || game.shelter[stockResource] + count > 99))
           || (mode === "condition" && (!selectedConditionUse || !selectedConditionUse.available))
+          || (mode === "dry-clothes" && !actionOptions.canDryClothes)
           || (mode === "recharge" && !rechargeTargetId)
           || (mode === "fill-water" && fillWaterMax < 1)
           || (mode === "fill-fuel" && fillFuelMax < 1)
@@ -339,7 +347,7 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
           {mode === "edit" ? "Salvar alterações" : mode === "transfer" ? "Transferir" : mode === "equip" ? "Equipar"
             : mode === "consume" ? "Consumir 1 porção" : mode === "prepare" ? (provisionState.requiresVerification ? "Confirmar verificação" : "Confirmar preparo")
             : mode === "cart" ? item.name === "Carrinho dobrável" ? (item.cartDeployed ? "Dobrar carrinho" : "Abrir carrinho") : "Colocar no carrinho"
-            : mode === "medication" ? "Registrar Medicamentos" : mode === "stock" ? "Guardar nas reservas" : mode === "condition" ? "Aplicar à condição" : mode === "use" ? "Usar" : mode === "recharge" ? "Recarregar" : mode === "fill-water" ? "Encher galão" : mode === "fill-fuel" ? "Guardar combustível" : mode === "empty-container" ? "Guardar conteúdo" : confirmDiscard ? "Confirmar descarte" : "Deixar para trás"}</Button></DialogFooter>
+            : mode === "medication" ? "Registrar Medicamentos" : mode === "stock" ? "Guardar nas reservas" : mode === "condition" ? "Aplicar à condição" : mode === "dry-clothes" ? "Marcar como seca" : mode === "use" ? "Usar" : mode === "recharge" ? "Recarregar" : mode === "fill-water" ? "Encher galão" : mode === "fill-fuel" ? "Guardar combustível" : mode === "empty-container" ? "Guardar conteúdo" : confirmDiscard ? "Confirmar descarte" : "Deixar para trás"}</Button></DialogFooter>
     </DialogContent>
   </Dialog>;
 }
