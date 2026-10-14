@@ -34,7 +34,7 @@ import {
 } from "@/lib/conflict";
 import { threatLibrary } from "@/lib/threats";
 import { rollDie } from "@/lib/rolls";
-import { incomingAttackConditionEdge } from "@/lib/survivor-conditions";
+import { bleedingTrigger, incomingAttackConditionEdge } from "@/lib/survivor-conditions";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 
@@ -463,6 +463,7 @@ export function ConflictSceneManager({ game, edit, mobile = false }: { game: Gam
       if (!scene || !scene.active) return;
       const defeated = scene.threats.filter(threat => threat.defeated).length;
       const focuses = scene.spotlightHistory.length;
+      for (const survivorId of scene.survivorIds) bleedingTrigger(draft, survivorId, "fim da cena de conflito sem estabilização");
       endConflictScene(scene, draft.day, displayTime(draft.minutes));
       addLog(draft, "conflito", `Conflito encerrado: ${scene.name}. ${defeated} ameaça(s) derrotada(s), ${focuses} mudança(s) de spotlight.`);
     });
