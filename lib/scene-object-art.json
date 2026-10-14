@@ -1,0 +1,713 @@
+{
+  "table": {
+    "src": "/scene-art/home-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      44,
+      81,
+      224,
+      182
+    ]
+  },
+  "dining-table": {
+    "src": "/scene-art/home-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      312,
+      80,
+      341,
+      186
+    ]
+  },
+  "coffee-table": {
+    "src": "/scene-art/home-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      703,
+      105,
+      255,
+      157
+    ]
+  },
+  "chair": {
+    "src": "/scene-art/home-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      1033,
+      51,
+      166,
+      226
+    ]
+  },
+  "armchair": {
+    "src": "/scene-art/home-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      48,
+      354,
+      218,
+      224
+    ]
+  },
+  "sofa": {
+    "src": "/scene-art/home-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      296,
+      373,
+      378,
+      195
+    ]
+  },
+  "cabinet": {
+    "src": "/scene-art/home-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      701,
+      383,
+      248,
+      189
+    ]
+  },
+  "wardrobe": {
+    "src": "/scene-art/home-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      975,
+      336,
+      249,
+      251
+    ]
+  },
+  "shelf": {
+    "src": "/scene-art/home-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      47,
+      635,
+      228,
+      234
+    ]
+  },
+  "bed": {
+    "src": "/scene-art/home-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      358,
+      604,
+      190,
+      319
+    ]
+  },
+  "bunkbed": {
+    "src": "/scene-art/home-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      624,
+      626,
+      306,
+      279
+    ]
+  },
+  "nightstand": {
+    "src": "/scene-art/home-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      1012,
+      679,
+      172,
+      197
+    ]
+  },
+  "fridge": {
+    "src": "/scene-art/home-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      74,
+      922,
+      172,
+      277
+    ]
+  },
+  "stove": {
+    "src": "/scene-art/home-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      354,
+      948,
+      201,
+      246
+    ]
+  },
+  "washer": {
+    "src": "/scene-art/home-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      672,
+      951,
+      192,
+      243
+    ]
+  },
+  "television": {
+    "src": "/scene-art/home-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      925,
+      1048,
+      305,
+      85
+    ]
+  },
+  "sink": {
+    "src": "/scene-art/work-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      53,
+      78,
+      224,
+      203
+    ]
+  },
+  "toilet": {
+    "src": "/scene-art/work-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      370,
+      52,
+      178,
+      272
+    ]
+  },
+  "shower": {
+    "src": "/scene-art/work-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      655,
+      43,
+      248,
+      273
+    ]
+  },
+  "bathtub": {
+    "src": "/scene-art/work-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      1009,
+      20,
+      179,
+      304
+    ]
+  },
+  "desk": {
+    "src": "/scene-art/work-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      35,
+      395,
+      299,
+      195
+    ]
+  },
+  "office-chair": {
+    "src": "/scene-art/work-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      384,
+      360,
+      194,
+      261
+    ]
+  },
+  "computer": {
+    "src": "/scene-art/work-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      656,
+      395,
+      258,
+      182
+    ]
+  },
+  "filing-cabinet": {
+    "src": "/scene-art/work-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      1031,
+      344,
+      133,
+      284
+    ]
+  },
+  "counter": {
+    "src": "/scene-art/work-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      18,
+      695,
+      367,
+      178
+    ]
+  },
+  "checkout": {
+    "src": "/scene-art/work-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      402,
+      656,
+      234,
+      222
+    ]
+  },
+  "store-shelf": {
+    "src": "/scene-art/work-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      677,
+      635,
+      229,
+      253
+    ]
+  },
+  "freezer": {
+    "src": "/scene-art/work-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      972,
+      679,
+      259,
+      202
+    ]
+  },
+  "vending": {
+    "src": "/scene-art/work-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      56,
+      899,
+      206,
+      312
+    ]
+  },
+  "workbench": {
+    "src": "/scene-art/work-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      325,
+      933,
+      313,
+      271
+    ]
+  },
+  "tool-cabinet": {
+    "src": "/scene-art/work-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      699,
+      950,
+      230,
+      254
+    ]
+  },
+  "locker": {
+    "src": "/scene-art/work-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      1008,
+      904,
+      184,
+      311
+    ]
+  },
+  "hospital-bed": {
+    "src": "/scene-art/survival-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      55,
+      10,
+      226,
+      363
+    ]
+  },
+  "stretcher": {
+    "src": "/scene-art/survival-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      396,
+      12,
+      142,
+      341
+    ]
+  },
+  "wheelchair": {
+    "src": "/scene-art/survival-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      676,
+      32,
+      211,
+      298
+    ]
+  },
+  "surgery-table": {
+    "src": "/scene-art/survival-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      1018,
+      10,
+      164,
+      367
+    ]
+  },
+  "privacy-screen": {
+    "src": "/scene-art/survival-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      35,
+      387,
+      267,
+      275
+    ]
+  },
+  "iv-stand": {
+    "src": "/scene-art/survival-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      401,
+      371,
+      134,
+      296
+    ]
+  },
+  "med-crate": {
+    "src": "/scene-art/survival-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      656,
+      423,
+      260,
+      207
+    ]
+  },
+  "crate": {
+    "src": "/scene-art/survival-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      994,
+      403,
+      226,
+      246
+    ]
+  },
+  "barricade": {
+    "src": "/scene-art/survival-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      21,
+      681,
+      301,
+      243
+    ]
+  },
+  "debris": {
+    "src": "/scene-art/survival-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      361,
+      672,
+      261,
+      264
+    ]
+  },
+  "generator": {
+    "src": "/scene-art/survival-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      671,
+      699,
+      259,
+      234
+    ]
+  },
+  "barrel": {
+    "src": "/scene-art/survival-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      1005,
+      686,
+      211,
+      248
+    ]
+  },
+  "pallet": {
+    "src": "/scene-art/survival-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      38,
+      942,
+      277,
+      275
+    ]
+  },
+  "body": {
+    "src": "/scene-art/survival-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      335,
+      922,
+      311,
+      317
+    ]
+  },
+  "sandbags": {
+    "src": "/scene-art/survival-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      638,
+      1008,
+      315,
+      171
+    ]
+  },
+  "campfire": {
+    "src": "/scene-art/survival-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      980,
+      959,
+      260,
+      257
+    ]
+  },
+  "tent": {
+    "src": "/scene-art/street-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      31,
+      35,
+      281,
+      274
+    ]
+  },
+  "water-tank": {
+    "src": "/scene-art/street-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      365,
+      35,
+      237,
+      269
+    ]
+  },
+  "trash-bin": {
+    "src": "/scene-art/street-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      699,
+      33,
+      167,
+      258
+    ]
+  },
+  "car": {
+    "src": "/scene-art/street-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      1024,
+      7,
+      161,
+      311
+    ],
+    "rotate": 90
+  },
+  "pickup": {
+    "src": "/scene-art/street-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      72,
+      317,
+      191,
+      349
+    ],
+    "rotate": 90
+  },
+  "van": {
+    "src": "/scene-art/street-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      388,
+      316,
+      190,
+      364
+    ],
+    "rotate": 90
+  },
+  "ambulance": {
+    "src": "/scene-art/street-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      687,
+      316,
+      192,
+      371
+    ],
+    "rotate": 90
+  },
+  "bus": {
+    "src": "/scene-art/street-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      1011,
+      320,
+      186,
+      371
+    ],
+    "rotate": 90
+  },
+  "motorcycle": {
+    "src": "/scene-art/street-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      93,
+      675,
+      149,
+      303
+    ],
+    "rotate": 90
+  },
+  "bicycle": {
+    "src": "/scene-art/street-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      400,
+      682,
+      162,
+      284
+    ],
+    "rotate": 90
+  },
+  "dumpster": {
+    "src": "/scene-art/street-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      634,
+      712,
+      295,
+      239
+    ]
+  },
+  "traffic-cone": {
+    "src": "/scene-art/street-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      1018,
+      718,
+      158,
+      205
+    ]
+  },
+  "road-barrier": {
+    "src": "/scene-art/street-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      39,
+      1011,
+      265,
+      192
+    ]
+  },
+  "streetlight": {
+    "src": "/scene-art/street-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      358,
+      956,
+      251,
+      257
+    ]
+  },
+  "rug": {
+    "src": "/scene-art/street-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      628,
+      992,
+      306,
+      210
+    ]
+  },
+  "stairs": {
+    "src": "/scene-art/street-v1.webp",
+    "width": 1254,
+    "height": 1254,
+    "region": [
+      964,
+      977,
+      259,
+      241
+    ]
+  }
+}

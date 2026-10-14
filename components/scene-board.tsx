@@ -11,6 +11,8 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field } from "@/components/game-controls";
 import { Button } from "@/components/ui/button";
+import { SceneObjectArt } from "@/components/scene-object-art";
+import { sceneObjectArtFor } from "@/lib/scene-object-art";
 import { survivorIsDown, type GameState } from "@/lib/game";
 import { removalFingerprint } from "@/lib/master-removals";
 import { createId } from "@/lib/id";
@@ -174,6 +176,8 @@ function safeBoard(game: GameState): SceneBoardState {
 }
 
 function ObjectVisual({ variant, compact = false }: { variant?: string; compact?: boolean }) {
+  const art = sceneObjectArtFor(variant);
+  if (art) return <SceneObjectArt art={art} compact={compact} />;
   return <span className={"scene-object-visual visual-" + (variant ?? "generic") + (compact ? " is-compact" : "")} aria-hidden="true">
     <i className="visual-a" /><i className="visual-b" /><i className="visual-c" /><i className="visual-d" />
   </span>;
