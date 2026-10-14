@@ -163,3 +163,69 @@ test('modal de condições usa apresentação desktop compacta com escape para t
   assert.match(component, /Falha com Medo/);
   assert.match(component, /Recuperou 1 nível/);
 });
+
+test('seletor visual de aplicar condição oferece nove cartões com ícones e seleção única', () => {
+  const { game, survivor } = fixture();
+  const render = view(SurvivorConditionPanel, { game, survivor, edit() {}, editable: true });
+  let elements = render();
+  const modal = elements.find(node => node.type === 'Dialog' && node.props.open === false);
+  assert.ok(modal);
+  modal.props.onOpenChange(true);
+  elements = render();
+  const cards = elements.filter(node => node.type === 'button' && node.props.className?.includes('survivor-condition-choice-card'));
+  assert.equal(cards.length, Object.keys(conditionDefinitions).length);
+  assert.equal(cards.filter(node => node.props['aria-pressed']).length, 1);
+  assert.ok(cards.every(node => nodes(node).some(child => typeof child.type === 'function' || child.type === 'Sun' || child.type === 'Snowflake' || child.props?.className === 'survivor-condition-choice-icon')));
+  const heat = cards.find(node => node.props['aria-label'] === 'Calor · Ambiental');
+  assert.ok(heat);
+  heat.props.onClick();
+  elements = render();
+  const selected = elements.filter(node => node.type === 'button' && node.props.className?.includes('survivor-condition-choice-card') && node.props['aria-pressed']);
+  assert.equal(selected.length, 1);
+  assert.equal(selected[0].props['aria-label'], 'Calor · Ambiental');
+  assert.equal(elements.find(node => node.type === 'Pick' && node.props.label === 'Intensidade inicial').props.value, '1');
+  assert.ok(elements.find(node => node.type === 'Field' && node.props.label === 'Origem · opcional'));
+  assert.match(text(elements.find(node => node.type === 'section' && node.props['aria-label'] === 'Prévia da condição')), /Calor.*Efeito.*Nível 1.*Como remover/);
+});
+
+test('aplicação pelo seletor visual preserva intensidade e origem e exibe campos contextuais', () => {
+  const { game, survivor } = fixture();
+  const render = view(SurvivorConditionPanel, {
+    game, survivor, editable: true,
+    edit(mutate) { mutate(game); },
+  });
+  render().find(node => node.type === 'Dialog' && node.props.open === false).props.onOpenChange(true);
+  function choose(label) {
+    render().find(node => node.type === 'button' && node.props['aria-label'] === label).props.onClick();
+  }
+  choose('Lesão · Físico');
+  assert.ok(render().some(node => node.type === 'Pick' && node.props.label === 'Região afetada'));
+  assert.equal(render().some(node => node.type === 'Pick' && node.props.label === 'Intensidade inicial'), false);
+  choose('Molhado · Ambiental');
+  assert.ok(render().some(node => node.type === 'Pick' && node.props.label === 'Fonte da água'));
+  choose('Calor · Ambiental');
+  let elements = render();
+  assert.equal(elements.some(node => node.type === 'Pick' && node.props.label === 'Fonte da água'), false);
+  elements.find(node => node.type === 'Pick' && node.props.label === 'Intensidade inicial').props.onChange('2');
+  elements.find(node => node.type === 'Field' && node.props.label === 'Origem · opcional').props.onChange('caminhada sob o sol');
+  elements = render();
+  const submit = elements.find(node => node.type === 'button' && node.props.onClick && text(node) === 'Aplicar condição');
+  assert.ok(submit);
+  submit.props.onClick();
+  const applied = survivor.conditions.find(condition => condition.kind === 'heat');
+  assert.equal(applied?.level, 2);
+  assert.equal(applied?.source, 'caminhada sob o sol');
+  assert.equal(render().find(node => node.type === 'Dialog').props.open, false);
+});
+
+test('modal aplicar condição é responsivo, compacto e oferece estados selecionado e foco', () => {
+  const css = fs.readFileSync(path.join(__dirname, '../app/condition-screen.css'), 'utf8');
+  assert.match(css, /\.survivor-condition-add-dialog\s*\{/);
+  assert.match(css, /\.survivor-condition-choice-grid\s*\{/);
+  assert.match(css, /grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+  assert.match(css, /\.survivor-condition-choice-card\.is-selected/);
+  assert.match(css, /\.survivor-condition-choice-card:focus-visible/);
+  assert.match(css, /\.survivor-condition-add-fields/);
+  assert.match(css, /max-height:calc\(100dvh - 20px\)/);
+  assert.match(css, /@media\(max-width:620px\)/);
+});
