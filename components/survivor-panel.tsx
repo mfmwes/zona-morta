@@ -43,7 +43,7 @@ import { shelterTreatmentBonus } from "@/lib/shelter-projects";
 import { scheduleExposureTreatment } from "@/lib/treatment";
 import { participantTimePreview, survivorTimedCommitment } from "@/lib/activity";
 import { SurvivorConditionBadges, SurvivorConditionPanel } from "@/components/survivor-conditions";
-import { provisionConsumedToday, remainingDailyProvisionPortions, requiredDailyProvision } from "@/lib/survival";
+import { consumeDailyProvision, provisionConsumedToday, remainingDailyProvisionPortions, requiredDailyProvision } from "@/lib/survival";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 const infectionStates: Infection[] = ["Saudável", "Exposto", "Infectado", "Sintomático", "Terminal"];
