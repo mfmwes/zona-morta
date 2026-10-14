@@ -239,9 +239,9 @@ export function SurvivorConditionPanel({ game, survivor, edit, editable }: {
         if (!rows.length) return null;
         return <div key={group}><span>{group}</span>{rows.map(condition => {
           const detail = conditionDetails(condition);
-          return <button type="button" key={condition.id} className={`survivor-condition-row tone-${detail.tone}`}>
+          return <div key={condition.id} className={`survivor-condition-row tone-${detail.tone}`}>
             <ConditionIcon condition={condition} /><span><b>{detail.label}</b><small>{detail.summary}</small></span><ConditionProgress condition={condition} />
-          </button>;
+          </div>;
         })}</div>;
       })}
     </div>}
