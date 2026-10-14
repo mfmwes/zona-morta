@@ -14,6 +14,8 @@ import {
   inspectDayClosePlan,
   fieldNpcs,
   provisionConsumedToday,
+  remainingDailyProvisionPortions,
+  requiredDailyProvision,
   type DailyResource,
   type DayClosePlan,
   type DayCloseResult,
@@ -131,14 +133,15 @@ export function DayCloseDialog({
     if (provisionConsumedToday(game, person, resource))
       return [{ value: "already", label: sourceLabels.already }];
 
+    const needed = remainingDailyProvisionPortions(game, person, resource);
     const personal = provisionBreakdown(person, resource).total;
     const shared = provisionBreakdown(game.shelter, resource).total;
     const atStorage = survivorHex(game, person) === storageHex;
     const options: { value: string; label: string }[] = [];
     if (atStorage && shared > 0)
-      options.push({ value: "shared", label: `${sourceLabels.shared} · ${shared} disponível(is)` });
+      options.push({ value: "shared", label: `${sourceLabels.shared} · ${shared} disponível(is) · precisa ${needed}` });
     if (personal > 0)
-      options.push({ value: "personal", label: `${sourceLabels.personal} · ${personal} disponível(is)` });
+      options.push({ value: "personal", label: `${sourceLabels.personal} · ${personal} disponível(is) · precisa ${needed}` });
     options.push({ value: "other", label: sourceLabels.other });
     options.push({ value: "none", label: sourceLabels.none });
     return options;
@@ -278,11 +281,14 @@ export function DayCloseDialog({
                   const consumed = provisionConsumedToday(game, person, resource);
                   const warning = warningFor(person, resource);
                   const personal = provisionBreakdown(person, resource).total;
+                  const required = requiredDailyProvision(person, resource);
+                  const remainingNeed = remainingDailyProvisionPortions(game, person, resource);
                   return <div className="day-close-resource-row" key={resource}>
                     <span className="day-close-resource-label">
                       {resource === "food" ? <Utensils size={15} /> : <Droplets size={15} />}
                       <b>{resourceName(resource)}</b>
-                      {consumed && <small className="is-ok"><CheckCircle2 size={12} /> já registrado</small>}
+                      {consumed && <small className="is-ok"><CheckCircle2 size={12} /> necessidade completa</small>}
+                      {!consumed && required > 1 && <small className="is-warning">Calor · faltam {remainingNeed}/{required}</small>}
                       {!consumed && personal > 0 && <small>{personal} pessoal(is)</small>}
                     </span>
                     {consumed

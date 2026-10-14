@@ -15,6 +15,7 @@ import { applyAttackResources, attackResourceState } from "@/lib/combat-resource
 import { publicConflictScene, resolveThreatAttack, type ThreatAttackResolution } from "@/lib/conflict";
 import { parseWeaponDamage, resolveActionRoll, resolveAttackHit, resolveRollResources, resolveWeaponDamage, rollDie, type ActionOutcome, type Edge, type RollKind } from "@/lib/rolls";
 import { rollSearchAccess, searchMentors } from "@/lib/hex-automation";
+import { conditionCanDisadvantageRoll, conditionLabel, conditionRollGuidance, removeSurvivorCondition, twoHandedFractureIssue, applyConditionDuringRoll } from "@/lib/survivor-conditions";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 export type RollRequest = { survivorId?: string; kind?: RollKind; trait?: string; weapon?: "primary" | "secondary" | "unarmed"; experience?: "origin" | "free"; targetThreatId?: string; search?: { hexId: string; pointId: string; attemptId: string; difficulty: number } };
@@ -42,6 +43,8 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
   const [targetThreatId, setTargetThreatId] = useState(request?.targetThreatId ?? "");
   const [extra, setExtra] = useState("0");
   const [edge, setEdge] = useState<Edge>("none");
+  const [appliedConditionIds, setAppliedConditionIds] = useState<string[]>([]);
+  const [forcedConditionIds, setForcedConditionIds] = useState<string[]>([]);
   const [experiences, setExperiences] = useState<Array<"origin" | "free">>(request?.experience ? [request.experience] : []);
   const [damageExtra, setDamageExtra] = useState("0");
   const [confirmedHit, setConfirmedHit] = useState(false);
@@ -54,6 +57,16 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
   const [rollError, setRollError] = useState("");
   const rollingRef = useRef(false);
   const survivor = game.survivors.find(s => s.id === person);
+  const rollConditions = (survivor?.conditions ?? []).filter(conditionCanDisadvantageRoll);
+  const selectedRollConditions = rollConditions.filter(condition => appliedConditionIds.includes(condition.id));
+  const forcedRollConditions = selectedRollConditions.filter(condition => forcedConditionIds.includes(condition.id)
+    && (condition.kind === "injury" || condition.kind === "fracture"));
+  const forcedStressCost = forcedRollConditions.length;
+  const conditionDisadvantage = selectedRollConditions.some(condition =>
+    !(condition.kind === "injury" && !condition.aggravated && forcedConditionIds.includes(condition.id)));
+  const effectiveEdge: Edge = conditionDisadvantage
+    ? edge === "advantage" ? "none" : "disadvantage"
+    : edge;
   const mentors = request?.search ? searchMentors(game, request.search.hexId, request.search.pointId, request.search.attemptId, person) : [];
   const origin = survivor ? content.origins.find(o => o.name === survivor.origin) : null;
   const experienceOptions = survivor ? [
@@ -94,12 +107,21 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
     : manualTarget === null || (Number.isInteger(manualTarget) && manualTarget >= 1 && manualTarget <= 99);
   const experienceCost = experiences.length;
   const handConflict = kind === "attack" && weaponSlot === "secondary" && getPrimary(survivor?.primary ?? "")?.hands === "Duas";
+  const armFracture = survivor?.conditions?.find(condition => condition.kind === "fracture"
+    && (condition.bodyRegion === "left-arm" || condition.bodyRegion === "right-arm"));
+  const forcingArmFracture = Boolean(armFracture && forcedConditionIds.includes(armFracture.id) && appliedConditionIds.includes(armFracture.id));
+  const twoHandedIssue = kind === "attack" && weapon && "hands" in weapon && weapon.hands === "Duas" && !forcingArmFracture
+    ? twoHandedFractureIssue(survivor) : "";
   const rollIssue = targetSelectionMissing
     ? "O alvo selecionado não está mais disponível nesta Cena de Conflito."
     : !targetValid
       ? `Informe ${kind === "attack" ? "uma defesa" : "uma dificuldade"} inteira entre 1 e 99 ou deixe o campo vazio.`
     : experienceCost > (survivor?.hope ?? 0)
       ? "Esperança insuficiente para as Experiências declaradas."
+      : forcedStressCost > 0 && (survivor?.stress ?? 0) + forcedStressCost > 6
+        ? `Estresse insuficiente para forçar ${forcedStressCost} condição(ões) nesta ação.`
+      : twoHandedIssue
+        ? `${twoHandedIssue} Marque a Fratura como relevante e escolha Forçar para uma tentativa de emergência.`
       : kind === "attack" && !weapon
         ? "Selecione um sobrevivente e uma forma de ataque."
         : kind === "attack" && weapon && !parseWeaponDamage(weapon.damage)
@@ -165,11 +187,33 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
   async function rollAction(keepOpen = false) {
     if (request?.search) {
       if (rollingRef.current) return;
+      if (forcedStressCost > 0 && (survivor?.stress ?? 0) + forcedStressCost > 6) {
+        setRollError(`Estresse insuficiente para forçar ${forcedStressCost} condição(ões) nesta ação.`);
+        return;
+      }
       rollingRef.current = true;
       let error: string | null = null;
       const search = request.search;
-      edit(draft => { error = rollSearchAccess(draft, search.hexId, search.pointId, search.attemptId,
-        { actorId: person, trait, edge, experiences, other: Math.trunc(Number(extra) || 0), mentorId: mentorId || undefined }); });
+      edit(draft => {
+        const actor = draft.survivors.find(candidate => candidate.id === person);
+        const beforeStress = actor?.stress ?? 0;
+        if (actor && forcedStressCost) actor.stress = Math.min(6, actor.stress + forcedStressCost);
+        error = rollSearchAccess(draft, search.hexId, search.pointId, search.attemptId,
+          { actorId: person, trait, edge: effectiveEdge, experiences, other: Math.trunc(Number(extra) || 0), mentorId: mentorId || undefined });
+        if (error) {
+          if (actor) actor.stress = beforeStress;
+          return;
+        }
+        const attempt = draft.hexes[search.hexId]?.points.find(point => point.id === search.pointId)?.preparation?.attempts.find(row => row.id === search.attemptId);
+        const failedWithFear = attempt?.outcome?.success === false && attempt.outcome.with === "Fear";
+        for (const condition of selectedRollConditions) {
+          applyConditionDuringRoll(draft, person, condition.id, {
+            forced: forcedConditionIds.includes(condition.id),
+            failedWithFear,
+            stressAlreadyPaid: forcedConditionIds.includes(condition.id),
+          });
+        }
+      });
       rollingRef.current = false;
       if (error) setRollError(error); else onCompleted();
       return;
@@ -190,7 +234,7 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
       const used = experienceOptions.filter(option => experiences.includes(option.id)).map(option => option.name);
       const result = resolveActionRoll({
         hopeDie: rollDie(12), fearDie: rollDie(12), trait: traitBonus, experience: used.length * 2,
-        other: other + equipmentBonus, symptom, edge, edgeDie: edge === "none" ? null : rollDie(6), difficulty: target,
+        other: other + equipmentBonus, symptom, edge: effectiveEdge, edgeDie: effectiveEdge === "none" ? null : rollDie(6), difficulty: target,
       });
       const damage = kind === "attack" ? calculateDamage(result.critical) : null;
       const sceneResolution = kind === "attack" && damage && targetThreatId
@@ -199,18 +243,22 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
       const resolvedOutcome = sceneResolution ? { ...result, success: sceneResolution.hit, difficulty: null } : result;
       const record: RollRecord = { outcome: resolvedOutcome, kind, trait: rollTrait, traitBonus, weaponName: weapon?.name ?? null, actorId: person, experiences: used, symptom, other, equipment: equipmentBonus };
       const lead = `${survivor?.name ?? "Rolagem livre"}: ${kind === "attack" ? `ataque com ${weapon?.name}` : kind === "reaction" ? "reação" : "ação"} (${traitLabel(rollTrait)})`;
-      const edgeLabel = result.edgeDie ? ` ${edge === "advantage" ? "+" : "−"} d6(${result.edgeDie})` : "";
+      const edgeLabel = result.edgeDie ? ` ${result.edge === "advantage" ? "+" : "−"} d6(${result.edgeDie})` : "";
       const targetLabel = sceneResolution
         ? `Alvo: ${sceneResolution.targetName}. Resultado contra o alvo: ${sceneResolution.hit ? "ACERTO" : "FALHA"}`
         : target === null ? kind === "attack" ? "Defesa a definir" : "Dificuldade a definir" : `${kind === "attack" ? "Defesa" : "Dificuldade"} ${target}`;
       const experienceLabel = used.length ? ` · Experiências: ${used.join(" e ")} (−${used.length} Esperança)` : "";
       const fixedBonus = traitBonus + used.length * 2 + other + symptom + equipmentBonus;
-      const text = `${lead}: Esperança ${result.hopeDie} + Medo ${result.fearDie} ${fixedBonus >= 0 ? "+" : "−"} ${Math.abs(fixedBonus)}${edgeLabel} = ${result.total}; ${targetLabel}. ${outcomeLabel(record)}${experienceLabel}${equipmentBonus ? ` · ${equipmentBonus} por equipamento` : ""}${symptom ? " · −1 por sintomas" : ""}${kind === "reaction" ? " · reação sem ganho de Esperança/Medo" : ""}.`;
+      const conditionLabelText = selectedRollConditions.length
+        ? ` · Condições: ${selectedRollConditions.map(condition => `${conditionLabel(condition)}${forcedConditionIds.includes(condition.id) ? " (forçada)" : ""}`).join(", ")}`
+        : "";
+      const text = `${lead}: Esperança ${result.hopeDie} + Medo ${result.fearDie} ${fixedBonus >= 0 ? "+" : "−"} ${Math.abs(fixedBonus)}${edgeLabel} = ${result.total}; ${targetLabel}. ${outcomeLabel(record)}${experienceLabel}${equipmentBonus ? ` · ${equipmentBonus} por equipamento` : ""}${symptom ? " · −1 por sintomas" : ""}${conditionLabelText}${kind === "reaction" ? " · reação sem ganho de Esperança/Medo" : ""}.`;
       const beforeHope = survivor?.hope ?? null;
       const beforeStress = survivor?.stress ?? null;
       const beforeFear = game.fear;
+      const stressAfterForcing = beforeStress === null ? null : Math.min(6, beforeStress + forcedStressCost);
       const resourcePreview = resolveRollResources({
-        hope: beforeHope, stress: beforeStress, fear: beforeFear,
+        hope: beforeHope, stress: stressAfterForcing, fear: beforeFear,
         experienceCost: used.length, reaction: kind === "reaction", outcome: result,
       });
       const attackNoise = kind === "attack" ? attackResources.noise : 0;
@@ -237,6 +285,18 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
           ? applyAttackResources(draft, actor.id, weapon.name, "noise" in weapon ? weapon.noise : 0)
           : null;
         if (kind === "attack" && spent && !spent.ok) return;
+        const failedWithFear = resolvedOutcome.success === false && resolvedOutcome.with === "Fear";
+        for (const condition of selectedRollConditions) {
+          applyConditionDuringRoll(draft, person, condition.id, {
+            forced: forcedConditionIds.includes(condition.id),
+            failedWithFear,
+            stressAlreadyPaid: forcedConditionIds.includes(condition.id),
+          });
+        }
+        if (kind === "attack" && actor) {
+          const hidden = actor.conditions?.find(condition => condition.kind === "hidden");
+          if (hidden) removeSurvivorCondition(draft, actor.id, hidden.id, "encerrado ao revelar a posição com um ataque");
+        }
         if (damage) addLog(draft, "dano", damageLog(damage, damageStatus), actor?.id);
         addLog(draft, "dados", text +
           (spendsAmmo ? ` · 1 unidade de Munição de ${ammoNeeded} comprometida até a próxima cena.` : ammoNeeded ? ` · Munição de ${ammoNeeded} já comprometida nesta cena.` : "") +
@@ -284,12 +344,13 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
     <RuleHelp topic="roll"/>
     {!request?.search && <div className="roll-modes" role="group" aria-label="Tipo de rolagem">
       {([ ["action", "Ação", Dice5], ["reaction", "Reação", Zap], ["attack", "Ataque", Swords] ] as const).map(([id, label, Icon]) =>
-        <button type="button" key={id} aria-pressed={kind === id} onClick={() => { setKind(id); setDifficulty(id === "attack" ? "" : "12"); clearResult(); }}><Icon size={16} aria-hidden="true" />{label}</button>)}
+        <button type="button" key={id} aria-pressed={kind === id} onClick={() => { setKind(id); setDifficulty(id === "attack" ? "" : "12"); setAppliedConditionIds([]); setForcedConditionIds([]); clearResult(); }}><Icon size={16} aria-hidden="true" />{label}</button>)}
     </div>}
     <div className="grid gap-3 sm:grid-cols-2">
       {request?.survivorId ? <div className="roll-locked"><span>Sobrevivente</span><strong>{survivor?.name ?? "Não encontrado"}</strong></div> : <Pick label="Sobrevivente" value={person} options={game.survivors.map(s => ({ value: s.id, label: s.name }))} onChange={value => {
         const next = game.survivors.find(s => s.id === value);
-        setPerson(value); setExperiences([]); setWeaponSlot(next?.primary ? "primary" : next?.secondary ? "secondary" : "unarmed"); clearResult();
+        setPerson(value); setExperiences([]); setAppliedConditionIds([]); setForcedConditionIds([]);
+        setWeaponSlot(next?.primary ? "primary" : next?.secondary ? "secondary" : "unarmed"); clearResult();
       }} placeholder="Rolagem livre" />}
       {kind === "attack" ? <Pick label="Forma de ataque" value={weaponSlot} options={[
         ...(survivor?.primary ? [{ value: "primary", label: survivor.primary }] : []),
@@ -338,8 +399,34 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
       </label>) : <p className="text-sm subtle">Escolha um sobrevivente para utilizar Experiências.</p>}
       {experienceCost > 0 && <p className="roll-cost">Custo declarado: {experienceCost} Esperança · disponível antes da rolagem: {survivor?.hope ?? 0}</p>}
     </fieldset>
-    {Boolean(survivor?.eventConditions?.length)&&<details className="roll-hint" open><summary>Condições ativas deste personagem</summary>{survivor!.eventConditions!.map(c=><p key={c.name}><b>{c.name}:</b> {c.effect} <span>Remover: {c.clear}</span></p>)}<p>Confira com o mestre quais condições se aplicam e selecione vantagem/desvantagem abaixo. Condições que impedem a ação devem ser resolvidas antes de rolar.</p></details>}
-    <div className="roll-edge"><span>Condição da rolagem</span><div role="group" aria-label="Vantagem ou desvantagem">
+    {rollConditions.length > 0 && <fieldset className="roll-condition-effects">
+      <legend>Condições nesta ação <small>marque apenas as que realmente interferem</small></legend>
+      <div className="roll-condition-effect-list">
+        {rollConditions.map(condition => {
+          const selected = appliedConditionIds.includes(condition.id);
+          const forced = forcedConditionIds.includes(condition.id);
+          const canForce = (condition.kind === "injury" && !condition.aggravated) || condition.kind === "fracture";
+          return <div key={condition.id} className={`roll-condition-effect ${selected ? "is-active" : ""}`}>
+            <label><Checkbox checked={selected} onCheckedChange={checked => {
+              setAppliedConditionIds(current => checked ? [...new Set([...current, condition.id])] : current.filter(id => id !== condition.id));
+              if (!checked) setForcedConditionIds(current => current.filter(id => id !== condition.id));
+              clearResult();
+            }} /><span><b>{conditionLabel(condition)}</b><small>{conditionRollGuidance(condition)}</small></span></label>
+            {selected && canForce && <label className="roll-condition-force"><Checkbox checked={forced} disabled={!forced && (survivor?.stress ?? 0) + forcedStressCost >= 6} onCheckedChange={checked => {
+              setForcedConditionIds(current => checked ? [...new Set([...current, condition.id])] : current.filter(id => id !== condition.id));
+              clearResult();
+            }} /><span>{condition.kind === "injury" ? "Forçar a Lesão · +1 Estresse · ignora a Desvantagem desta Lesão" : "Forçar em emergência · +1 Estresse · a Desvantagem permanece"}</span></label>}
+          </div>;
+        })}
+      </div>
+      <div className="roll-condition-result" role="status">
+        <span>Efeito final das condições</span>
+        <b>{conditionDisadvantage ? edge === "advantage" ? "Vantagem e Desvantagem se anulam → rolagem normal" : "Desvantagem −d6" : effectiveEdge === "advantage" ? "Vantagem +d6" : effectiveEdge === "disadvantage" ? "Desvantagem −d6" : "Sem ajuste adicional"}</b>
+        {forcedStressCost > 0 && <small>Custo declarado antes da rolagem: +{forcedStressCost} Estresse.</small>}
+      </div>
+    </fieldset>}
+    {Boolean(survivor?.eventConditions?.length)&&<details className="roll-hint"><summary>Outras condições narrativas</summary>{survivor!.eventConditions!.map(c=><p key={c.name}><b>{c.name}:</b> {c.effect} <span>Remover: {c.clear}</span></p>)}<p>Condições de eventos continuam sendo avaliadas pela ficção; use o ajuste situacional abaixo quando necessário.</p></details>}
+    <div className="roll-edge"><span>Ajuste situacional da rolagem</span><div role="group" aria-label="Vantagem ou desvantagem">
       {([ ["none", "Normal"], ["advantage", "Vantagem +d6"], ["disadvantage", "Desvantagem −d6"] ] as const).map(([value, label]) =>
         <button type="button" key={value} aria-pressed={edge === value} onClick={() => { setEdge(value); clearResult(); }}>{label}</button>)}
     </div></div>

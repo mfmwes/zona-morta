@@ -1,5 +1,6 @@
 import { survivorHex, type GameState } from "./game";
 import type { EventCondition } from "./event-resolution-types";
+import { conditionLabel, survivorMovementCondition } from "./survivor-conditions";
 
 export function movementCondition(conditions: EventCondition[] | undefined) {
   return conditions?.find(c => c.preventsMovement === true
@@ -9,6 +10,8 @@ export function movementCondition(conditions: EventCondition[] | undefined) {
 export function eventMovementIssue(game: GameState, ids: string[]) {
   const members = game.survivors.filter(p => ids.includes(p.id));
   for (const p of members) {
+    const survivorCondition = survivorMovementCondition(p);
+    if (survivorCondition) return `${p.name} está ${conditionLabel(survivorCondition)}: liberte-se antes de viajar.`;
     const condition = movementCondition(p.eventConditions);
     if (condition) return `${p.name} está ${condition.name}: ${condition.clear} Encerre a condição na ficha antes de viajar.`;
   }

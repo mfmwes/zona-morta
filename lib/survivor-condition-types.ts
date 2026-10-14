@@ -1,0 +1,35 @@
+export const survivorConditionKinds = [
+  "restrained", "vulnerable", "hidden",
+  "cold", "heat", "wet",
+  "bleeding", "injury", "fracture",
+] as const;
+
+export type SurvivorConditionKind = typeof survivorConditionKinds[number];
+
+export const bodyRegions = [
+  "head", "torso", "left-arm", "right-arm", "left-leg", "right-leg",
+] as const;
+
+export type BodyRegion = typeof bodyRegions[number];
+
+export type SurvivorCondition = {
+  id: string;
+  kind: SurvivorConditionKind;
+  /** Frio e Calor usam intensidade 1–3. */
+  level?: 1 | 2 | 3;
+  /** Lesões e Fraturas podem apontar uma região corporal. */
+  bodyRegion?: BodyRegion;
+  /** Lesão agravada não pode ignorar Desvantagem pagando Estresse. */
+  aggravated?: boolean;
+  /** Fratura imobilizada deixa de causar dano automático ao ser forçada. */
+  immobilized?: boolean;
+  /** Tratamento é necessário para a recuperação de Lesão. */
+  treated?: boolean;
+  /** Segmentos de recuperação: Lesão usa 1/2; Fratura usa 4. */
+  recovery?: number;
+  /** O primeiro agravamento de Frio enquanto Molhado recebe +1 nível adicional. */
+  wetColdBoostUsed?: boolean;
+  source?: string;
+  appliedDay?: number;
+  appliedMinute?: number;
+};

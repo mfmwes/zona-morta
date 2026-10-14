@@ -8,6 +8,7 @@ import { registerActivityHandler } from "./activity-handlers";
 import { scheduleActivity } from "./activity-timeline";
 import { advanceParticipantTime, completeSingleGroupActivity } from "./time";
 import { participantTimePreview, timedActionParticipantIssue } from "./activity";
+import { processLongRestConditions } from "./survivor-conditions";
 
 export type AbilityCost = "free" | "hope1" | "hope3" | "stress1" | "armor1";
 export type AbilityPeriod = "scene" | "day" | "expedition" | "shortRest" | "longRest" | "rest" | "place" | "patient" | null;
@@ -233,6 +234,7 @@ export function resolveGroupRest(game: GameState, kind: RestKind, selections: Re
   game.fear += actualFear;
   addLog(game, "descanso", `Descanso ${kind === "short" ? "curto" : "longo"}: Medo +${actualFear}${kind === "long" ? ` (d4 ${fearDie} + ${participants.length} PJ${participants.length === 1 ? "" : "s"}` : ` (d4 ${fearDie}`}${comfortReduction ? ` − ${comfortReduction} Conforto do abrigo` : ""}).`);
   registerRest(game, kind, participants.map(p => p.id));
+  if (kind === "long") processLongRestConditions(game, participants.map(p => p.id));
   return { ok: true as const, fear: actualFear, summaries, minutes: options.advanceTime === false ? 0 : restDurationMinutes[kind] };
 }
 

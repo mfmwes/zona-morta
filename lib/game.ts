@@ -11,6 +11,7 @@ import type { ConflictScene, PublicConflictScene } from "./conflict";
 import type { Terrain, Passage } from "./world";
 import type { SceneBoardState } from "./scene-board";
 import type { LocationPreparation } from "./hex-automation-types";
+import type { SurvivorCondition } from "./survivor-condition-types";
 
 export { content };
 
@@ -348,6 +349,8 @@ export type NPC = {
 };
 
 export type Survivor = {
+  /** Estados e condições persistentes do sobrevivente: táticos, ambientais e físicos. */
+  conditions?: SurvivorCondition[];
   /** Condições com efeito e remoção anunciados pelo mestre. */
   eventConditions?: import("./event-resolution-types").EventCondition[];
   id: string;
@@ -394,6 +397,8 @@ export type Survivor = {
   water: number;
   foodConsumedDay?: number;
   waterConsumedDay?: number;
+  /** Segunda porção diária exigida por Calor; separada para preservar saves antigos. */
+  extraWaterConsumedDay?: number;
   provisionLots?: ProvisionLot[];
   /** Contador legado. Novas campanhas armazenam munição como itens físicos no inventário. */
   ammo: number;

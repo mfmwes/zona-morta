@@ -34,6 +34,7 @@ import {
 } from "@/lib/conflict";
 import { threatLibrary } from "@/lib/threats";
 import { rollDie } from "@/lib/rolls";
+import { bleedingTrigger, incomingAttackConditionEdge } from "@/lib/survivor-conditions";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 
@@ -238,7 +239,8 @@ export function ConflictSceneManager({ game, edit, mobile = false }: { game: Gam
   const [actingThreatId, setActingThreatId] = useState<string | null>(null);
   const [targetChoice, setThreatTargetId] = useState("");
   const [threatActionResult, setThreatActionResult] = useState<{
-    d20: number; total: number; evasion: number; hit: boolean; damage: number;
+    d20: number; edge: "none" | "advantage" | "disadvantage"; edgeDie: number | null; edgeLabels: string[];
+    total: number; evasion: number; hit: boolean; damage: number;
     tier: ReturnType<typeof resolveSurvivorDamageTier>; targetName: string; attackName: string;
   } | null>(null);
   const [threatQuery, setThreatQuery] = useState("");
@@ -418,8 +420,11 @@ export function ConflictSceneManager({ game, edit, mobile = false }: { game: Gam
     if (!target) return;
     const attack = actingThreat.templateSnapshot.attack;
     const stats = survivorStats(target);
+    const tactical = incomingAttackConditionEdge(target);
     const d20 = rollDie(20);
-    const total = d20 + attack.bonus;
+    const edgeDie = tactical.edge === "none" ? null : rollDie(6);
+    const edgeValue = edgeDie === null ? 0 : tactical.edge === "advantage" ? edgeDie : -edgeDie;
+    const total = d20 + attack.bonus + edgeValue;
     const hit = total >= stats.evasion;
     let damage = 0;
     const parsed = parseThreatDamageFormula(attack.damage);
@@ -429,7 +434,7 @@ export function ConflictSceneManager({ game, edit, mobile = false }: { game: Gam
       damage = Math.max(0, damage);
     }
     const tier = resolveSurvivorDamageTier(stats.major, stats.severe, damage);
-    const result = { d20, total, evasion: stats.evasion, hit, damage, tier, targetName: target.name, attackName: attack.name };
+    const result = { d20, edge: tactical.edge, edgeDie, edgeLabels: tactical.labels, total, evasion: stats.evasion, hit, damage, tier, targetName: target.name, attackName: attack.name };
     setThreatActionResult(result);
     edit(draft => {
       const scene = draft.conflict;
@@ -445,7 +450,9 @@ export function ConflictSceneManager({ game, edit, mobile = false }: { game: Gam
         day: draft.day,
         time: displayTime(draft.minutes),
       }) : null;
-      addLog(draft, "ameaça", `${actingThreat.name}: ${attack.name} contra ${target.name} — d20 ${d20} ${attack.bonus >= 0 ? "+" : "−"} ${Math.abs(attack.bonus)} = ${total} vs Evasão ${stats.evasion}: ${hit ? "ACERTO" : "FALHA"}.${hit ? ` Dano ${damage} ${attack.damageType} → ${tier.label.toUpperCase()} (${tier.hpMarks} PV).${request ? " Aguardando decisão do alvo: PV ou Armadura." : ""}` : ""}`);
+      const edgeText = tactical.edge === "none" || edgeDie === null ? "" : ` ${tactical.edge === "advantage" ? "+" : "−"} d6(${edgeDie})`;
+      const conditionText = tactical.labels.length ? ` · ${tactical.labels.join(" + ")}` : "";
+      addLog(draft, "ameaça", `${actingThreat.name}: ${attack.name} contra ${target.name} — d20 ${d20} ${attack.bonus >= 0 ? "+" : "−"} ${Math.abs(attack.bonus)}${edgeText} = ${total} vs Evasão ${stats.evasion}: ${hit ? "ACERTO" : "FALHA"}${conditionText}.${hit ? ` Dano ${damage} ${attack.damageType} → ${tier.label.toUpperCase()} (${tier.hpMarks} PV).${request ? " Aguardando decisão do alvo: PV ou Armadura." : ""}` : ""}`);
     });
   }
 
@@ -456,6 +463,7 @@ export function ConflictSceneManager({ game, edit, mobile = false }: { game: Gam
       if (!scene || !scene.active) return;
       const defeated = scene.threats.filter(threat => threat.defeated).length;
       const focuses = scene.spotlightHistory.length;
+      for (const survivorId of scene.survivorIds) bleedingTrigger(draft, survivorId, "fim da cena de conflito sem estabilização");
       endConflictScene(scene, draft.day, displayTime(draft.minutes));
       addLog(draft, "conflito", `Conflito encerrado: ${scene.name}. ${defeated} ameaça(s) derrotada(s), ${focuses} mudança(s) de spotlight.`);
     });
@@ -790,9 +798,11 @@ export function ConflictSceneManager({ game, edit, mobile = false }: { game: Gam
         <Pick label="Alvo" value={threatTargetId} options={threatTargets} onChange={value => { setThreatTargetId(value); setThreatActionResult(null); }} placeholder="Nenhum sobrevivente na cena" disabled={!threatTargets.length} />
         {threatActionResult && <div className={`threat-action-result ${threatActionResult.hit ? "is-hit" : "is-miss"}`}>
           <div><span>d20</span><strong>{threatActionResult.d20}</strong></div>
+          {threatActionResult.edgeDie !== null && <div><span>{threatActionResult.edge === "advantage" ? "Vantagem" : "Desvantagem"}</span><strong>{threatActionResult.edge === "advantage" ? "+" : "−"}{threatActionResult.edgeDie}</strong></div>}
           <div><span>Total</span><strong>{threatActionResult.total}</strong></div>
           <div><span>Evasão</span><strong>{threatActionResult.evasion}</strong></div>
           <div><span>Resultado</span><strong>{threatActionResult.hit ? "ACERTO" : "FALHA"}</strong></div>
+          {threatActionResult.edgeLabels.length > 0 && <p className="threat-action-condition-note"><b>{threatActionResult.edgeLabels.join(" + ")}</b> ajustou a rolagem contra o alvo{threatActionResult.edge === "none" ? " · Vantagem e Desvantagem se anularam." : "."}</p>}
           {threatActionResult.hit && <p><b>{threatActionResult.damage} de dano</b> · {threatActionResult.tier.label} → <b>{threatActionResult.tier.hpMarks} PV</b>. O alvo ainda pode usar Armadura conforme as regras.</p>}
         </div>}
         <DialogFooter>

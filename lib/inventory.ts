@@ -4,6 +4,7 @@ import { createId } from "./id";
 import { transferPortionLots, withdrawPortions } from "./provisions";
 import { groupedProvisionPortions, hydrateProvisionItem, physicalProvisionPortions, provisionItemInfo, type ProvisionResource } from "./provision-items";
 import { projectOperational } from "./shelter-projects";
+import { dailyExtraWater } from "./survivor-conditions";
 
 type CatalogEntry = (typeof content.catalog)[number];
 export const inventoryCategories = [...new Set(content.catalog
@@ -638,8 +639,13 @@ export function consumeProvisionItem(game: GameState, ownerId: string, itemId: s
   const consumer = consumerId ? game.survivors.find(person => person.id === consumerId)
     : game.survivors.find(person => person.id === ownerId);
   if (consumer) {
-    const dayKey = result.resource === "food" ? "foodConsumedDay" : "waterConsumedDay";
-    if (consumer[dayKey] !== game.day) consumer[dayKey] = game.day;
+    if (result.resource === "food") {
+      if (consumer.foodConsumedDay !== game.day) consumer.foodConsumedDay = game.day;
+    } else if (consumer.waterConsumedDay !== game.day) {
+      consumer.waterConsumedDay = game.day;
+    } else if (dailyExtraWater(consumer) > 0 && consumer.extraWaterConsumedDay !== game.day) {
+      consumer.extraWaterConsumedDay = game.day;
+    }
   }
   return {
     ...result,

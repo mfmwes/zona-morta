@@ -14,6 +14,7 @@ import { advanceCampaignTime, advanceParticipantTime, completeSingleGroupActivit
 import { shelterTravelMinutes } from "./shelter-projects";
 import { parallelTimeLabel, participantTimePreview, survivorTimedCommitment } from "./activity";
 import { eventMovementIssue } from "./event-conditions";
+import { groupTravelMultiplier } from "./survivor-conditions";
 import { registerActivityHandler } from "./activity-handlers";
 import { scheduleActivity } from "./activity-timeline";
 import { eventTriggerReady } from "./hex-generators";
@@ -210,7 +211,9 @@ export function scheduleSurvivorTravel(game: GameState, destination: string, ids
   const source = sources.find(group => ids.length > 0 && ids.every(id => group.members.some(p => p.id === id)));
   if (!destinationHex || destinationHex.discovery === "desconhecido" || !source)
     return { ok: false, message: "Escolha sobreviventes no mesmo hex adjacente e um destino revelado." };
-  const minutes = shelterTravelMinutes(game, source.hex, destination, destinationHex.routeHours * 60);
+  const baseMinutes = shelterTravelMinutes(game, source.hex, destination, destinationHex.routeHours * 60);
+  const multiplier = groupTravelMultiplier(game, ids);
+  const minutes = Math.ceil(baseMinutes * multiplier);
   const result = scheduleActivity(game, { type: "travel", destination }, ids, minutes,
     `Viagem para ${destinationHex.sector?.name ?? `Hex ${destination}`}`, { operationId });
   if (!result.ok) return result;
