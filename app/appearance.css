@@ -1,88 +1,111 @@
-/* Optional visual styles. With no data-visual-style, the original CSS is untouched.
-   Geometry, artwork, map semantics and gameplay resource colors stay in their original stylesheets. */
-html[data-visual-style="fiel"],
-html[data-visual-style="leitura"],
-html[data-visual-style="tecnico"] {
-  --style-background: #e9eee9;
-  --style-paper: #fafcf7;
-  --style-soft: #e4ede6;
-  --style-ink: #1b383a;
-  --style-muted: #506c66;
-  --style-line: #b9ccc2;
-  --style-primary: #286e6a;
-  --style-on-primary: #fff;
-  --style-input: #789a8b;
-  --style-warm: #a27640;
-  --style-hero-start: #163f43;
-  --style-hero-end: #315d57;
-  --style-quick: #1c3d40;
-  --style-quick-soft: #2d5554;
-  --style-quick-line: #5b7d75;
+/* Optional themes only. Removing data-visual-style restores the original cascade. */
+html[data-visual-style="fiel"] {
+  --font-sans: "Segoe UI", "Trebuchet MS", Arial, sans-serif;
+  --font-mono: Consolas, "Liberation Mono", monospace;
+  --style-background: #e6ece8;
+  --style-paper: #fcfdf9;
+  --style-soft: #edf3ef;
+  --style-ink: #183b39;
+  --style-muted: #4c6862;
+  --style-line: #bccdc4;
+  --style-input: #718b80;
+  --style-primary: #185e56;
+  --style-on-primary: #ffffff;
+  --style-warm: #895516;
+  --style-highlight: #efbe75;
+  --style-hero-start: #102f30;
+  --style-hero-end: #24534d;
+  --style-quick: #153a38;
+  --style-quick-soft: #28524c;
+  --style-quick-line: #64897a;
+  --style-on-dark: #f6faf5;
+  --style-dark-muted: #c2d8cf;
+  --style-radius: 9px;
+  --style-shadow: 0 3px 15px #102f3010;
 }
 html[data-visual-style="leitura"] {
   --font-sans: "Source Sans 3", "Segoe UI", sans-serif;
-  --style-background: #e8efec;
-  --style-paper: #f8fbf8;
-  --style-soft: #e1ece6;
-  --style-ink: #173a3d;
-  --style-muted: #45655e;
-  --style-line: #b3c8be;
-  --style-primary: #276a65;
-  --style-warm: #9c7138;
-  --style-hero-start: #1e494a;
-  --style-hero-end: #355f59;
+  --font-mono: Consolas, "Liberation Mono", monospace;
+  --style-background: #eee7dd;
+  --style-paper: #fffcf5;
+  --style-soft: #f4ede5;
+  --style-ink: #372f36;
+  --style-muted: #6a5964;
+  --style-line: #cfc0bb;
+  --style-input: #917d86;
+  --style-primary: #75435c;
+  --style-on-primary: #ffffff;
+  --style-warm: #87572b;
+  --style-highlight: #efc29c;
+  --style-hero-start: #3e293b;
+  --style-hero-end: #644355;
+  --style-quick: #452f40;
+  --style-quick-soft: #614858;
+  --style-quick-line: #a78998;
+  --style-on-dark: #fff9f1;
+  --style-dark-muted: #ebd6df;
+  --style-radius: 14px;
+  --style-shadow: 0 4px 18px #432b3710;
 }
 html[data-visual-style="tecnico"] {
   --font-sans: "IBM Plex Sans", "Segoe UI", sans-serif;
   --font-mono: "IBM Plex Mono", Consolas, monospace;
-  --style-background: #e5edf0;
-  --style-paper: #f7fbfc;
-  --style-soft: #e1ebed;
-  --style-ink: #183b43;
-  --style-muted: #496771;
-  --style-line: #b8cbd0;
-  --style-primary: #286777;
-  --style-input: #7a98a3;
-  --style-warm: #9b713a;
-  --style-hero-start: #153d46;
-  --style-hero-end: #31545f;
-  --style-quick: #173d45;
-  --style-quick-soft: #28545d;
-  --style-quick-line: #60818a;
+  --style-background: #e3eaf2;
+  --style-paper: #f9fcff;
+  --style-soft: #eaf1f9;
+  --style-ink: #1c304b;
+  --style-muted: #4d627b;
+  --style-line: #b8c8dc;
+  --style-input: #7188a2;
+  --style-primary: #2458a0;
+  --style-on-primary: #ffffff;
+  --style-warm: #285f80;
+  --style-highlight: #86dfed;
+  --style-hero-start: #10233f;
+  --style-hero-end: #224369;
+  --style-quick: #142e4a;
+  --style-quick-soft: #284969;
+  --style-quick-line: #6489af;
+  --style-on-dark: #f2f8ff;
+  --style-dark-muted: #c1d7ee;
+  --style-radius: 4px;
+  --style-shadow: 0 2px 0 #19375215;
 }
 html[data-visual-style="fiel"][data-theme="dark"] {
-  --style-background: #121c1d;
-  --style-paper: #1d2a2b;
-  --style-soft: #293c3a;
-  --style-ink: #e7efe9;
-  --style-muted: #b0c1bc;
-  --style-line: #405753;
-  --style-primary: #a5d4c6;
-  --style-warm: #d1ab73;
+  --style-background: #101d1b;
+  --style-paper: #1b2c28;
+  --style-soft: #263c35;
+  --style-ink: #eaf4ec;
+  --style-muted: #b3c9bc;
+  --style-line: #486258;
+  --style-input: #789989;
+  --style-primary: #9bd7bd;
+  --style-on-primary: #102e25;
+  --style-warm: #e8be83;
 }
 html[data-visual-style="leitura"][data-theme="dark"] {
-  --style-background: #131e20;
-  --style-paper: #223134;
-  --style-soft: #2b4141;
-  --style-ink: #edf3ef;
-  --style-muted: #bdd0c9;
-  --style-line: #486563;
-  --style-primary: #add8cf;
-  --style-warm: #d6b37d;
+  --style-background: #221d23;
+  --style-paper: #302731;
+  --style-soft: #3f3340;
+  --style-ink: #f6eee8;
+  --style-muted: #d2bccb;
+  --style-line: #685462;
+  --style-input: #a28b9a;
+  --style-primary: #e9b3cd;
+  --style-on-primary: #3d2034;
+  --style-warm: #eac09a;
 }
 html[data-visual-style="tecnico"][data-theme="dark"] {
-  --style-background: #101a20;
-  --style-paper: #1a2932;
-  --style-soft: #223943;
-  --style-ink: #e8f0f1;
-  --style-muted: #b4c8ce;
-  --style-line: #46616c;
-  --style-primary: #aad7d9;
-  --style-warm: #d3a771;
-}
-html:is([data-visual-style="fiel"], [data-visual-style="leitura"], [data-visual-style="tecnico"])[data-theme="dark"] {
-  --style-on-primary: #142c2c;
-  --style-input: #72958a;
+  --style-background: #101b2a;
+  --style-paper: #192b41;
+  --style-soft: #233b56;
+  --style-ink: #edf5ff;
+  --style-muted: #b9cde5;
+  --style-line: #466586;
+  --style-input: #789bc1;
+  --style-primary: #97c8ff;
+  --style-on-primary: #122d4c;
+  --style-warm: #86dfed;
 }
 
 html:is([data-visual-style="fiel"], [data-visual-style="leitura"], [data-visual-style="tecnico"]) {
@@ -92,59 +115,259 @@ html:is([data-visual-style="fiel"], [data-visual-style="leitura"], [data-visual-
   --card-foreground: var(--style-ink);
   --popover: var(--style-paper);
   --popover-foreground: var(--style-ink);
+  --primary: var(--style-primary);
+  --primary-foreground: var(--style-on-primary);
   --secondary: var(--style-soft);
   --secondary-foreground: var(--style-ink);
   --muted: var(--style-soft);
   --muted-foreground: var(--style-muted);
+  --accent: color-mix(in srgb, var(--style-primary) 12%, var(--style-paper));
+  --accent-foreground: var(--style-ink);
+  --border: var(--style-line);
+  --input: var(--style-input);
+  --ring: var(--style-primary);
+  --radius: var(--style-radius);
   --surface-soft: var(--style-soft);
   --surface-raised: var(--style-paper);
   --ink-soft: var(--style-muted);
-  --border: var(--style-line);
-  --input: var(--style-input);
-  --primary: var(--style-primary);
-  --primary-foreground: var(--style-on-primary);
-  --accent: var(--style-soft);
-  --accent-foreground: var(--style-ink);
   --accent-warm: var(--style-warm);
-  --ring: var(--style-primary);
+  --shadow-panel: var(--style-shadow);
+  --sidebar: var(--style-quick);
+  --sidebar-foreground: var(--style-on-dark);
+  --sidebar-primary: var(--style-highlight);
+  --sidebar-primary-foreground: var(--style-hero-start);
+  --sidebar-accent: var(--style-quick-soft);
+  --sidebar-accent-foreground: var(--style-on-dark);
+  --sidebar-border: var(--style-quick-line);
+  --sidebar-ring: var(--style-highlight);
+  --style-danger-surface: #fbece9;
+  --style-danger-ink: #96382d;
+  --style-success-surface: #e4f3eb;
+  --style-success-ink: #235f46;
+  --style-warning-surface: #fff2d5;
+  --style-warning-ink: #78520f;
+  --destructive: #ad3e32;
+  --hope: #f4c542;
+  --hope-ink: #725300;
+  --hope-surface: #fff2c7;
+  --fear: #70409f;
+  --fear-ink: #522477;
+  --fear-surface: #eee5f7;
 
-  body { background: var(--background); font-family: var(--font-sans); }
-  .rail { background: linear-gradient(170deg, var(--style-hero-start), var(--style-quick)); }
-  .topbar { background: color-mix(in srgb, var(--card) 94%, transparent); }
-  .library-shell { background: var(--background); }
-  .library-hero { background: linear-gradient(105deg, var(--style-hero-start), var(--style-hero-end)); }
-  .field input, .field textarea, .field select, .field-input,
-  .library-create .field-input { background: var(--surface-raised); color: var(--foreground); }
-  .field label, .field-label, .reference-detail dt { color: var(--foreground); }
-  .intro-line, .subtle, .reference-item-excerpt, .reference-pagination { color: var(--muted-foreground); }
-  .metric, .reference-tabs { background: var(--surface-soft); border-color: var(--border); }
-  .list-card, .reference-item { background: var(--surface-raised); border-color: var(--border); }
-  .reference-category { background: var(--surface-soft); border-color: var(--border); color: var(--foreground); }
-  .reference-category[aria-pressed="true"], .reference-tabs [data-state="active"] { background: var(--primary); border-color: var(--primary); color: var(--primary-foreground); }
+  body { background: var(--background); color: var(--foreground); font-family: var(--font-sans); }
+  ::selection { background: var(--primary); color: var(--primary-foreground); }
+  :is(button, input, select, textarea) { font-family: inherit; }
+  /* Keep paired foreground/background colors in sync instead of fading through unreadable mixtures. */
+  button { transition-property: box-shadow, transform, opacity, border-color; }
+  :is(input, textarea)::placeholder { color: var(--muted-foreground); opacity: 1; }
+  :is(input[type="checkbox"], input[type="radio"]) { accent-color: var(--primary); }
+  :is(button, a, input, textarea, select, [tabindex]):focus-visible { outline-color: var(--ring); }
+  :is(.field input, .field textarea, .field select, .field-input, .players-link-row input, .number-control input, [data-slot="input"], [data-slot="textarea"], [data-slot="select-trigger"]) {
+    background: var(--card); color: var(--foreground); border-color: var(--input);
+  }
+  /* These two legacy rules already carry !important in the base night styles. */
+  .character-wizard-dialog [data-slot="select-trigger"], .character-wizard-dialog .wizard-kit-note {
+    background: var(--card) !important; color: var(--foreground);
+  }
+  :is(.field label, .field-label, .reference-detail dt, .character-section-heading h3, .character-equipment h4, .character-item-name, .rest-planner-row > b, .scene-control-title, .scene-meter-identity b, .scene-supply-identity b) { color: var(--foreground); }
+  :is(.subtle, .intro-line, .reference-item-excerpt, .reference-pagination, .players-person span, .character-section-intro, .character-micro, .character-surface > p, .character-surface .character-status-line + p, .character-equipment p, .character-info-row span, .character-kit-line span, .character-experience span, .character-ability-preview, .character-ability-detail p, .character-provision-grid small, .character-defense-card small, .character-roll-history p, .wizard-kit-preview small, .scene-supplies-note, .scene-meter-identity small, .roll-breakdown, .roll-hint, .roll-actions > span) { color: var(--muted-foreground); }
+  :is(.eyebrow, .dossier-title, .character-text-link, .character-info-row svg, .character-kit-line svg, .reference-item-arrow, .character-experience-list b, .character-experience-list svg, .character-attribute > svg, .character-summary-attribute > svg) { color: var(--primary); }
 
-  /* The sheet uses its original grids, spacing, tabs and catalogue atlases. */
-  .character-hero { background: linear-gradient(116deg, var(--style-hero-start), var(--style-hero-end)); }
-  .character-hero::after { background: linear-gradient(90deg, #a5d4c6, var(--accent-warm) 47%, #a5d4c6); }
-  .character-identity h2, .character-section-heading h3 { font-weight: 600; }
-  .character-section-heading h3 { color: var(--foreground); }
-  .character-quick { background: linear-gradient(160deg, var(--style-quick), var(--style-hero-start)); border-color: var(--style-quick-line); }
-  .character-quick-stat, .character-quick-attack { background: var(--style-quick-soft); border-color: var(--style-quick-line); }
-  .character-quick-heading, .character-resource { border-color: var(--style-quick-line); }
-  .character-resource-top > span, .character-resource-top strong { font-weight: 600; }
-  .character-active-weapon { background: var(--secondary); border-color: var(--border); border-left-color: var(--primary); }
+  /* Reading surfaces, including nested cards and dialogs. */
+  :is(.panel, .character-surface, .list-card, .reference-item, .library-card, .npc-card, .rest-planner-action, .character-story-grid > div, .wizard-ability-preview, .players-row, .shelter-project-card, .shelter-post-card, .roll-modes, .roll-experience, .roll-result, .roll-damage-panel, .next-step-card) {
+    background: var(--card); border-color: var(--border); color: var(--foreground); border-radius: var(--style-radius);
+  }
+  :is(.panel, .character-surface, .list-card, .reference-item, .library-card) { box-shadow: var(--shadow-panel); }
+  :is(.metric, .reference-tabs, .reference-category, .character-tabs-scroll, .character-attribute, .character-summary-attribute, .character-defense-card, .character-provision-grid > span, .character-rule-note, .character-feature-callout, .character-roll-history > div, .character-rest-readonly, .rest-planner-row, .wizard-kit-preview > div, .character-empty-list, .character-ability-icon, .character-ability-meta span, .character-technique-preview > span, .character-chips span, .character-equipment-icon, .players-avatar, .roll-edge button, .roll-dice .total, .number-control, .number-control button) {
+    background: var(--secondary); border-color: var(--border); color: var(--foreground);
+  }
+  .character-ability { background: var(--card); border-color: var(--border) !important; color: var(--foreground); }
+  .character-ability.character-ability--used {
+    --used-surface: var(--secondary);
+    --used-hover: var(--accent);
+    --used-border: var(--input);
+    --used-title: var(--foreground);
+    --used-copy: var(--muted-foreground);
+    --used-tag: var(--card);
+    --used-tag-ink: var(--muted-foreground);
+    background: var(--used-surface); border-color: var(--used-border) !important;
+  }
+  :is(.character-ability-trigger, .character-ability-title, .character-info-row b, .character-kit-line b, .character-attribute span, .character-summary-attribute small, .character-defense-card > span, .character-defense-card > strong, .character-provision-grid b, .character-combat-metrics b) { color: var(--foreground); }
+  :is(.character-attribute strong, .character-summary-attribute strong, .character-ability-icon, .character-equipment-icon, .players-avatar) { color: var(--primary); }
+  :is(.character-section-heading, .character-info-row, .character-kit-line, .character-experience, .character-equipment, .character-ability-detail, .character-specialties-footer, .character-proficiency, .reference-detail dl > div, .scene-supplies-section, .scene-meter + .scene-meter, .scene-supplies-note) { border-color: var(--border); }
+  .character-section-heading > div > span { background: var(--accent); color: var(--primary); border-color: var(--border); }
+  .character-combat-metrics > div { background: var(--secondary); color: var(--primary); }
+  .character-combat-metrics span, .character-roll-history span, .rest-planner-action-title { color: var(--muted-foreground); }
+  .character-rest-status { color: var(--primary); }
+
+  /* Selected, hovered and keyboard states use the same foreground/background pair. */
+  :is(.reference-category, .character-tab, .character-attribute, .character-summary-attribute, .character-experience-list button, .reference-item, .library-card, .npc-card, .number-control button, .roll-edge button):hover {
+    background: var(--accent); border-color: var(--primary); color: var(--accent-foreground);
+  }
+  .character-tab { color: var(--muted-foreground); transition: box-shadow .18s ease; }
+  .character-ability-trigger:hover { background: var(--secondary); color: var(--foreground); }
+  :is(.character-tab[data-state="active"], .reference-category[aria-pressed="true"], .reference-tabs [data-state="active"]) {
+    background: var(--primary); border-color: var(--primary); color: var(--primary-foreground); box-shadow: inset 0 -3px var(--style-highlight);
+  }
+  .character-text-link:hover { color: var(--foreground); }
+  .roll-modes button { color: var(--muted-foreground); }
+  .roll-experience b { color: var(--primary); }
+  .roll-experiences legend small { color: var(--muted-foreground); }
+  .roll-modes button[aria-pressed="true"], .roll-edge button[aria-pressed="true"] { background: var(--primary); color: var(--primary-foreground); border-color: var(--primary); }
+  .list-card { border-left-color: var(--primary); }
+  .character-attribute, .character-summary-attribute { border-left-color: var(--primary); }
+  .character-active-weapon { background: var(--accent); border-color: var(--border); border-left-color: var(--primary); }
   .character-active-weapon > div > span, .character-active-weapon > div > strong { color: var(--foreground); }
   .character-active-weapon small { color: var(--muted-foreground); }
-  .character-info-row, .character-kit-line { border-color: var(--border); }
-  .character-info-row span { color: var(--muted-foreground); }
-  .character-experience { border-color: var(--border); }
-  .character-experience span { color: var(--muted-foreground); }
-  .character-info-row b { color: var(--foreground); font-weight: 600; }
-  .character-summary-tests .character-summary-attribute { background: var(--secondary); border-color: var(--border); border-left-color: var(--primary); }
-  .character-summary-tests .character-summary-attribute small { color: var(--foreground); font-weight: 500; }
-  .character-summary-tests .character-summary-attribute strong { color: var(--primary); font-weight: 600; }
-  .character-text-link { color: var(--primary); font-weight: 600; }
-  .character-micro { color: var(--muted-foreground); }
+
+  /* Dark anchor areas stay dark in both modes; never inherit the light-mode ink. */
+  :is(.rail, .character-hero, .library-hero, .character-quick, .character-hope-feature) {
+    background: linear-gradient(120deg, var(--style-hero-start), var(--style-hero-end)); color: var(--style-on-dark); border-color: var(--style-quick-line);
+  }
+  :is(.character-hero, .library-hero, .character-quick, .character-hope-feature) { border-radius: var(--style-radius); }
+  .character-hero::after, .auth-card::before { background: linear-gradient(90deg, var(--style-highlight), var(--style-quick-line)); }
+  :is(.character-hero .character-serial, .character-hero-code, .character-identity-meta, .library-hero .intro-line, .rail-foot, .character-quick-heading, .character-quick-heading small, .character-quick-stat > span small, .character-quick-attack > span, .character-quick-attack small, .character-quick-mobile small, .character-quick-mobile-weapon span, .character-hope-feature p, .character-hope-feature-top, .character-hope-feature-foot) { color: var(--style-dark-muted); }
+  :is(.character-hero .character-serial span, .library-hero .eyebrow, .character-quick-stat > svg, .character-quick-mobile svg) { color: var(--style-highlight); }
+  .character-identity h2 { color: var(--style-on-dark); }
+  .character-quick-stat, .character-quick-attack { background: var(--style-quick-soft); border-color: var(--style-quick-line); color: var(--style-on-dark); }
+  .character-quick-stat > strong { color: var(--style-on-dark); }
+  :is(.character-quick-heading, .character-resource, .character-quick-attack > div, .rail-foot, .character-quick-mobile > span, .character-quick-mobile > button, .character-quick-mobile .character-quick-mobile-weapon) { border-color: var(--style-quick-line); }
+  .character-quick-mobile > span, .character-quick-mobile > button, .character-quick-mobile .character-quick-mobile-weapon { color: var(--style-on-dark); }
+  .character-quick-rolls button, .library-hero button, .theme-toggle, .brand-mark {
+    background: var(--style-quick-soft); color: var(--style-on-dark); border-color: var(--style-quick-line);
+  }
+  .character-quick-rolls button:hover, .character-quick-mobile > button:hover, .library-hero button:hover, .theme-toggle:hover { background: var(--style-hero-end); color: var(--style-on-dark); }
+  .character-quick-rolls button:last-child, .character-quick-rolls button:last-child:hover {
+    background: var(--style-highlight); color: var(--style-hero-start); border-color: var(--style-highlight);
+  }
+  .rail-nav button { color: var(--style-dark-muted); }
+  .rail-nav button:hover, .rail-nav button[aria-current="page"], .rail-nav button[data-state="active"] {
+    background: var(--style-quick-soft); color: var(--style-on-dark); border-color: var(--style-quick-line);
+    box-shadow: inset 3px 0 var(--style-highlight);
+  }
+  .topbar { background: color-mix(in srgb, var(--card) 96%, transparent); }
+  .library-shell { background: var(--background); }
+  .auth-shell { background: linear-gradient(135deg, var(--style-hero-start), var(--style-hero-end)); }
+  .auth-emblem { background: var(--style-quick); color: var(--style-highlight); }
+
+  /* Semantic messages retain their meanings across all palettes. */
+  .tag, .save-status { background: var(--accent); color: var(--foreground); border-color: var(--border); }
+  .tag-danger, .save-status.error, .character-condition-banner { background: var(--style-danger-surface); color: var(--style-danger-ink); border-color: var(--style-danger-ink); }
+  .character-condition-banner p, .character-alert, .campaign-form-error { color: var(--style-danger-ink); }
+  .character-rest-preview-note { background: var(--style-warning-surface); color: var(--style-warning-ink); }
+  .character-hope-teaser, .character-hope-teaser:hover { background: var(--hope-surface); color: var(--hope-ink); border-color: var(--hope-ink); }
+  .character-hope-teaser strong { background: var(--hope-surface); color: var(--hope-ink); border: 1px solid var(--hope-ink); }
+  .character-thresholds { background: var(--style-warning-surface); border-color: var(--style-warning-ink); }
+  .character-thresholds-title { color: var(--style-warning-ink); }
+  .character-thresholds-track { background: var(--style-success-surface); border-color: var(--border); }
+  .character-thresholds-track > span + span { border-color: var(--border); }
+  .character-threshold-light { background: var(--style-success-surface); color: var(--style-success-ink); }
+  .character-threshold-major { background: var(--style-warning-surface); color: var(--style-warning-ink); }
+  .character-threshold-severe { background: var(--style-danger-surface); color: var(--style-danger-ink); }
+  .character-quick-defenses .character-thresholds { background: var(--style-quick-soft); border-color: var(--style-quick-line); }
+  .character-quick-defenses .character-thresholds-title { color: var(--style-highlight); }
+  .character-quick-defenses .character-thresholds-track { background: var(--style-success-surface); border-color: var(--style-quick-line); }
+  .character-quick-defenses .character-threshold-light { color: var(--style-success-ink); }
+  .character-quick-defenses .character-threshold-major { background: var(--style-warning-surface); color: var(--style-warning-ink); }
+  .character-quick-defenses .character-threshold-severe { background: var(--style-danger-surface); color: var(--style-danger-ink); }
+  /* Counter controls must not turn Hope/Fear into the decorative theme accent. */
+  .counter--fear .number-control output { color: var(--fear-ink); }
+  .character-roster { background: var(--card); border-color: var(--border); box-shadow: var(--shadow-panel); }
+  .character-roster-label { border-color: var(--border); color: var(--muted-foreground); }
+  .character-roster-label b, .character-roster-person { color: var(--foreground); }
+  .character-roster-person small, .character-roster-person .character-roster-state { color: var(--muted-foreground); }
+  .character-roster-person .character-roster-state.at-risk { color: var(--style-danger-ink); }
+  .character-roster-person:hover, .character-roster-person[aria-current="true"] { background: var(--accent); border-color: var(--primary); box-shadow: inset 3px 0 var(--primary); }
+  .character-roster-avatar { background: var(--style-quick); color: var(--style-on-dark); }
+  .character-roster-peer { background: var(--secondary); border-color: var(--border); }
+  .character-portrait { background: var(--style-quick-soft); border-color: var(--style-quick-line); color: var(--style-on-dark); }
+  .character-stepper button { background: var(--style-quick-soft); color: var(--style-on-dark); border-color: var(--style-quick-line); }
+  .character-stepper button:hover:not(:disabled) { background: var(--style-hero-end); }
+  .character-pips span:not(.filled) { background: var(--style-quick); border-color: var(--style-quick-line); }
+  .character-resource-top small { color: var(--style-dark-muted); }
+  .character-portrait { font-family: var(--font-sans); box-shadow: 0 0 0 4px var(--style-hero-start), 0 7px 15px #0003; }
+  .character-summary-attribute small { white-space: normal; overflow-wrap: anywhere; text-overflow: clip; line-height: 1.3; }
+  .character-load-details dl { background: var(--secondary); border-color: var(--border); }
+  .character-load-details dt, .character-story-grid p { color: var(--muted-foreground); }
+  .character-load-details dd { color: var(--foreground); }
+  .character-story-grid span, .character-backstory span { color: var(--primary); }
+  .character-load-details, .character-load-details summary, .inventory-reference summary { color: var(--muted-foreground); }
+  .master-overview-clear { background: var(--secondary); border-color: var(--border); color: var(--foreground); }
+  .master-overview-clear span, .master-overview-clear p { color: var(--muted-foreground); }
+  .master-overview-hero, .master-overview-card { background: var(--card); border-color: var(--border); color: var(--foreground); border-radius: var(--style-radius); }
+  .master-overview-hero-metrics > span, .master-overview-group, .master-overview-group li, .master-overview-attention-item, .master-overview-row, .master-overview-resource-grid > span, .map-active-group {
+    background: var(--secondary); border-color: var(--border); color: var(--foreground);
+  }
+  .master-overview :is(h2, b), .map-active-group b { color: var(--foreground); }
+  .master-overview :is(small, .master-overview-empty), .master-overview-hero p:last-child, .master-overview-note, .map-active-group small, .map-active-group em { color: var(--muted-foreground); }
+  .master-overview-card > header svg, .master-overview-group > div svg, .master-overview-row > svg { color: var(--primary); }
+  .master-overview-row:hover { background: var(--accent); border-color: var(--primary); }
+  .master-overview-hero-metrics .is-danger, .master-overview-attention-item.is-danger { background: var(--style-danger-surface); border-color: var(--style-danger-ink); }
+  .master-overview-hero-metrics .is-danger b { color: var(--style-danger-ink); }
+  .master-overview-hero-metrics .is-warning, .master-overview-attention-item.is-warning { background: var(--style-warning-surface); border-color: var(--style-warning-ink); }
+  .master-overview-group li small.is-busy { color: var(--style-warning-ink); }
+  .map-active-group-icon { background: var(--accent); color: var(--primary); }
+  .table-chat-input textarea::placeholder { color: var(--muted-foreground); }
+  .mobile-sheet-tabs [data-state="active"] { background: var(--primary); color: var(--primary-foreground); }
+  .mobile-resource-dialog .character-resource { background: var(--style-quick); color: var(--style-on-dark); border-radius: var(--style-radius); }
+  .mobile-action-card, .mobile-daily-card, .mobile-vitals > button, .mobile-disclosure { border-radius: var(--style-radius); }
+  .rail .dossier-title { color: var(--style-highlight); }
+  .save-status.ok { color: var(--foreground); }
+  .rail .table-presentation-trigger { background: var(--style-quick-soft); border-color: var(--style-quick-line); color: var(--style-on-dark); }
+  [data-slot="button"][data-variant="destructive"] { background: var(--destructive); color: #fff; }
+  .text-destructive, .mobile-save-status.erro, .mobile-save-status.conflito { color: var(--style-danger-ink); }
+  .character-portrait-upload, .character-portrait-actions button { background: var(--style-quick); color: var(--style-on-dark); border-color: var(--style-quick-line); }
+  .table-chat, .table-chat-speaker, .table-chat-rollbar, .table-chat-input { background: var(--secondary); color: var(--foreground); border-color: var(--border); }
+  .table-chat-header, .table-chat-roll, .table-chat-free-dice { background: var(--card); color: var(--foreground); border-color: var(--border); }
+  :is(.table-chat-header h2, .table-chat-empty b, .table-chat-meta b, .table-chat-content, .table-chat-roll-title) { color: var(--foreground); }
+  :is(.table-chat-header p, .table-chat-empty, .table-chat-speaker label, .table-chat-meta, .table-chat-roll-author, .table-chat-free-dice label) { color: var(--muted-foreground); }
+  .table-chat-header-actions > span, .table-chat-avatar { background: var(--accent); color: var(--primary); border-color: var(--border); }
+  .table-chat :is(input, textarea, select) { background: var(--card); color: var(--foreground); border-color: var(--input); }
+  .table-chat-rollbar button, .table-chat-dice-types button { background: var(--card); color: var(--foreground); border-color: var(--input); }
+  .topbar-context > .text-\[\#c4cfcb\] { color: var(--muted-foreground); }
+  .appearance-swatch--fiel i:first-child { background: #185e56; }
+  .appearance-swatch--fiel i:nth-child(2) { background: #fcfdf9; }
+  .appearance-swatch--fiel i:nth-child(3) { background: #efbe75; }
+  .appearance-swatch--leitura i:first-child { background: #75435c; }
+  .appearance-swatch--leitura i:nth-child(2) { background: #fffcf5; }
+  .appearance-swatch--leitura i:nth-child(3) { background: #efc29c; }
+  .appearance-swatch--tecnico i:first-child { background: #2458a0; }
+  .appearance-swatch--tecnico i:nth-child(2) { background: #f9fcff; }
+  .appearance-swatch--tecnico i:nth-child(3) { background: #86dfed; }
 }
+
+html:is([data-visual-style="fiel"], [data-visual-style="leitura"], [data-visual-style="tecnico"])[data-theme="dark"] {
+  --style-danger-surface: #442925;
+  --style-danger-ink: #ffc3b8;
+  --style-success-surface: #233e32;
+  --style-success-ink: #b0e9c8;
+  --style-warning-surface: #433820;
+  --style-warning-ink: #f5d79a;
+  --hope-ink: #ffe29a;
+  --hope-surface: #433810;
+  --fear-ink: #ddc2ff;
+  --fear-surface: #352444;
+}
+
+/* Each optional theme has a distinct shape and typographic rhythm. */
+html[data-visual-style="leitura"] {
+  .character-identity h2, .page-title { font-weight: 650; letter-spacing: -.025em; }
+  .character-section-heading h3 { font-weight: 650; letter-spacing: 0; }
+  .character-surface :is(p, dd), .reference-detail dd { line-height: 1.7; }
+  .character-hero::before { opacity: .1; }
+  .character-ability-title, .reference-item-copy strong { font-size: 1rem; line-height: 1.4; }
+}
+html[data-visual-style="tecnico"] {
+  body { font-synthesis: none; }
+  .character-identity h2, .page-title, .character-section-heading h3 { font-weight: 600; letter-spacing: -.025em; }
+  .character-serial, .dossier-title, .eyebrow { font-weight: 600; letter-spacing: .09em; }
+  .character-section-heading { border-bottom: 2px solid var(--border); }
+  .character-hero::before { opacity: .4; background-image: linear-gradient(var(--style-quick-line) 1px, transparent 1px), linear-gradient(90deg, var(--style-quick-line) 1px, transparent 1px); background-size: 28px 28px; }
+  /* Plex is supplied up to 700; avoid synthetic 800/900 weights and cramped numerals. */
+  :is(.smallcaps, .dossier-title, .character-resource-top strong, .character-provision-grid b, .character-attribute strong, .character-summary-attribute strong, .character-combat-metrics b, .character-defense-card > strong, .character-thresholds-track strong, .character-thresholds-track small, .character-quick-stat > strong, .character-ability-meta span) { font-weight: 600; }
+  .character-tab { font-weight: 500; }
+}
+
 
 /* Appearance controls share the existing day/night control's locations. */
 .theme-controls { position: fixed; z-index: 90; left: 15px; bottom: 15px; display: flex; gap: 6px; }
