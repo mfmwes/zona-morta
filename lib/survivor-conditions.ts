@@ -327,6 +327,19 @@ export function survivorMovementCondition(person: Survivor | undefined) {
   return findCondition(person, "restrained");
 }
 
+export function incomingAttackConditionEdge(person: Survivor | undefined): {
+  edge: "none" | "advantage" | "disadvantage";
+  labels: string[];
+} {
+  const vulnerable = findCondition(person, "vulnerable");
+  const hidden = findCondition(person, "hidden");
+  const labels = [vulnerable ? "Vulnerável" : "", hidden ? "Escondido" : ""].filter(Boolean);
+  if (vulnerable && hidden) return { edge: "none", labels };
+  if (vulnerable) return { edge: "advantage", labels };
+  if (hidden) return { edge: "disadvantage", labels };
+  return { edge: "none", labels };
+}
+
 export function twoHandedFractureIssue(person: Survivor | undefined) {
   const fracture = survivorConditions(person).find(condition => condition.kind === "fracture"
     && (condition.bodyRegion === "left-arm" || condition.bodyRegion === "right-arm"));
