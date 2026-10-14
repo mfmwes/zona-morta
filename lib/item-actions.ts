@@ -1,5 +1,8 @@
 import { addLog, content, survivorHex, type EquipmentSlot, type GameState, type InventoryItem } from "./game";
 import {
+  accessibleFuel,
+  accessibleNamedQuantity,
+  accessibleReadyWater,
   addStack,
   activeCart,
   atSharedStorage,
@@ -8,6 +11,8 @@ import {
   catalogItemCanUse,
   catalogItemIsConsumable,
   compatibleSlots,
+  consumeAccessibleFuel,
+  consumeAccessibleReadyWater,
   consumeProvisionItem,
   countsAsMedication,
   discardItem,
@@ -20,12 +25,24 @@ import {
   itemFromCatalog,
   prepareProvisionItem,
   removeFromCart,
+  removeNamedUnits,
   reusableContainerOptions,
   setBatteryState,
   storeInCart,
   transferItem,
 } from "./inventory";
 import { provisionItemInfo } from "./provision-items";
+import { conditionItemUseTargets } from "./condition-item-effects";
+import {
+  findCondition,
+  reduceExposure,
+  removeSurvivorCondition,
+  setExposureAdvantage,
+  setFractureImmobilized,
+  setInjuryTreated,
+  setRecoveryAdvantage,
+} from "./survivor-conditions";
+import { markDailyProvisionConsumed } from "./survival";
 
 export type ItemAction =
   | { type: "transfer"; targetId: string; quantity: number }
@@ -33,6 +50,7 @@ export type ItemAction =
   | { type: "consume"; consumerId?: string }
   | { type: "prepare"; quantity: number }
   | { type: "use"; quantity: number }
+  | { type: "condition-use"; targetId: string; conditionId: string; effectId: string }
   | { type: "recharge"; targetId: string }
   | { type: "fill-container"; resource: "water" | "fuel"; quantity: number }
   | { type: "empty-container" }
@@ -50,6 +68,27 @@ export function inventoryOwnerName(game: GameState, id: string) {
   return id === "shared"
     ? (game.shelter.hex ? "Depósito do abrigo" : "Reservas do grupo")
     : game.survivors.find(person => person.id === id)?.name ?? "Sobrevivente";
+}
+
+function conditionUseAvailability(game: GameState, ownerId: string, item: InventoryItem, effectId: string) {
+  if (effectId === "stove-cold") {
+    return accessibleFuel(game, ownerId) > 0
+      ? { available: true, reason: "Combustível disponível." }
+      : { available: false, reason: "Precisa de 1 unidade de Combustível acessível." };
+  }
+  if (effectId === "rehydration-heat") {
+    return accessibleReadyWater(game, ownerId, item.id) > 0
+      ? { available: true, reason: "Água limpa disponível." }
+      : { available: false, reason: "Precisa de 1 porção de Água limpa acessível." };
+  }
+  if (effectId === "medical-kit-injury") {
+    const gauze = accessibleNamedQuantity(game, ownerId, "Gaze e ataduras");
+    const bag = accessibleNamedQuantity(game, ownerId, "Bolsa de tratamento lacrada");
+    return gauze + bag > 0
+      ? { available: true, reason: gauze > 0 ? "Usará 1 Gaze e ataduras." : "Usará 1 Bolsa de tratamento lacrada." }
+      : { available: false, reason: "Precisa de Gaze e ataduras ou Bolsa de tratamento lacrada." };
+  }
+  return { available: true, reason: "" };
 }
 
 function stockResourceFor(item: InventoryItem): StockResource | undefined {
@@ -85,6 +124,10 @@ export function itemActionOptions(game: GameState, ownerId: string, item: Invent
     : [];
   const containerOptions = reusableContainerOptions(game, ownerId, item);
   const canUse = catalogItemCanUse(item) && item.name !== "Kit de pilhas";
+  const conditionUses = conditionItemUseTargets(game, ownerId, item.name, selfOnly).map(option => ({
+    ...option,
+    ...conditionUseAvailability(game, ownerId, item, option.effect.id),
+  }));
   const stockResource = stockResourceFor(item);
   const cartContents = item.name === "Carrinho dobrável" ? item.cartItems ?? [] : [];
   const cartLoad = item.name === "Carrinho dobrável"
@@ -98,6 +141,7 @@ export function itemActionOptions(game: GameState, ownerId: string, item: Invent
     rechargeTargets,
     containerOptions,
     canUse,
+    conditionUses,
     canDeployCart: Boolean(owner && item.name === "Carrinho dobrável" && !item.cartDeployed && !cart),
     canFoldCart: Boolean(owner && item.name === "Carrinho dobrável" && item.cartDeployed && cartContents.length === 0),
     cartFoldBlocked: Boolean(owner && item.name === "Carrinho dobrável" && item.cartDeployed && cartContents.length > 0),
@@ -161,6 +205,11 @@ export function performItemAction(game: GameState, ownerId: string, itemId: stri
         (consumed.remainingInOpenedUnit > 0
           ? ` Restam ${consumed.remainingInOpenedUnit} porção(ões) na unidade aberta.`
           : "");
+      if (consumer && item.name === "Bebida isotônica lacrada") {
+        const heat = findCondition(consumer, "heat");
+        if (heat && setExposureAdvantage(game, consumer.id, heat.id, item.name))
+          message += " Vantagem preparada para o próximo teste de exposição ao Calor.";
+      }
     }
   } else if (action.type === "prepare") {
     const count = Math.max(1, Math.min(item.qty, Math.trunc(action.quantity)));
@@ -172,7 +221,55 @@ export function performItemAction(game: GameState, ownerId: string, itemId: stri
         " e permanece como item físico no inventário." +
         (prepared.requirements?.length ? ` Requisitos usados: ${prepared.requirements.join(", ")}.` : "");
     }
-  } else if (action.type === "use") {
+  } else if (action.type === "condition-use") {
+    const option = conditionItemUseTargets(game, ownerId, item.name, false)
+      .find(candidate => candidate.effect.id === action.effectId
+        && candidate.survivorId === action.targetId && candidate.conditionId === action.conditionId);
+    const target = game.survivors.find(candidate => candidate.id === action.targetId);
+    const condition = target?.conditions?.find(candidate => candidate.id === action.conditionId);
+    if (option && target && condition) {
+      const availability = conditionUseAvailability(game, ownerId, item, option.effect.id);
+      if (!availability.available) return { ok: false, message: availability.reason };
+      let applied = false;
+      if (option.effect.action === "cold-recovery-aid") {
+        applied = setRecoveryAdvantage(game, target.id, condition.id, item.name);
+      } else if (option.effect.action === "cold-reduce") {
+        if (item.name === "Fogareiro" && !consumeAccessibleFuel(game, ownerId, 1)) return { ok: false, message: "Combustível indisponível." };
+        applied = reduceExposure(game, target.id, condition.id);
+      } else if (option.effect.action === "heat-exposure-aid") {
+        if (!consumeAccessibleReadyWater(game, ownerId, 1, item.id)) return { ok: false, message: "Água limpa indisponível." };
+        if (!discardItem(game, ownerId, item.id, 1)) return { ok: false, message: "Não foi possível consumir o sachê." };
+        markDailyProvisionConsumed(game, target, "water", 1);
+        applied = setExposureAdvantage(game, target.id, condition.id, item.name);
+      } else if (option.effect.action === "bleeding-stabilize") {
+        if (!discardItem(game, ownerId, item.id, 1)) return { ok: false, message: "Não foi possível consumir o material de cuidado." };
+        applied = removeSurvivorCondition(game, target.id, condition.id, `estabilizado com ${item.name}`);
+      } else if (option.effect.action === "injury-treat") {
+        if (item.name === "Kit médico de campo") {
+          const material = accessibleNamedQuantity(game, ownerId, "Gaze e ataduras") > 0
+            ? "Gaze e ataduras" : "Bolsa de tratamento lacrada";
+          if (!removeNamedUnits(game, ownerId, material, 1)) return { ok: false, message: "Material de cuidado indisponível." };
+        } else if (item.name === "Caixa clínica completa") {
+          if (!discardItem(game, ownerId, item.id, 1)) return { ok: false, message: "Não foi possível usar a caixa clínica." };
+          const kit = content.catalog.find(entry => entry.category === "Medicamentos e cuidado" && entry.name === "Kit médico de campo");
+          if (kit) addStack(source, itemFromCatalog(kit, 1, "Íntegro", game.day));
+        } else if (option.effect.consumable && !discardItem(game, ownerId, item.id, 1)) {
+          return { ok: false, message: "Não foi possível consumir o material de tratamento." };
+        }
+        applied = setInjuryTreated(game, target.id, condition.id, true);
+      } else if (option.effect.action === "fracture-immobilize") {
+        if (!discardItem(game, ownerId, item.id, 1)) return { ok: false, message: "Não foi possível comprometer a Tala e faixa." };
+        applied = setFractureImmobilized(game, target.id, condition.id, true);
+      }
+      if (applied) {
+        message = `${owner} usou ${item.name} em ${target.name}: ${option.effect.label}.`;
+        if (option.effect.action === "cold-reduce" && item.name === "Fogareiro") message += " Combustível −1.";
+        if (option.effect.action === "heat-exposure-aid") message += " Água −1; Vantagem preparada para a próxima exposição ao Calor.";
+        if (option.effect.action === "injury-treat" && item.name === "Kit médico de campo") message += " O kit permanece; 1 material de cuidado foi consumido.";
+        if (option.effect.action === "fracture-immobilize") message += " A tala ficou comprometida no paciente.";
+      }
+    }
+    } else if (action.type === "use") {
     const consumable = catalogItemIsConsumable(item);
     const count = consumable ? Math.max(1, Math.min(item.qty, Math.trunc(action.quantity))) : 1;
     const used = consumable ? discardItem(game, ownerId, item.id, count) : catalogItemCanUse(item);
