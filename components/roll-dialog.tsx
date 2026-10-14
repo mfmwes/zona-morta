@@ -15,6 +15,7 @@ import { applyAttackResources, attackResourceState } from "@/lib/combat-resource
 import { publicConflictScene, resolveThreatAttack, type ThreatAttackResolution } from "@/lib/conflict";
 import { parseWeaponDamage, resolveActionRoll, resolveAttackHit, resolveRollResources, resolveWeaponDamage, rollDie, type ActionOutcome, type Edge, type RollKind } from "@/lib/rolls";
 import { rollSearchAccess, searchMentors } from "@/lib/hex-automation";
+import { conditionCanDisadvantageRoll, conditionLabel, conditionRollGuidance, twoHandedFractureIssue, useConditionDuringRoll } from "@/lib/survivor-conditions";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 export type RollRequest = { survivorId?: string; kind?: RollKind; trait?: string; weapon?: "primary" | "secondary" | "unarmed"; experience?: "origin" | "free"; targetThreatId?: string; search?: { hexId: string; pointId: string; attemptId: string; difficulty: number } };
@@ -42,6 +43,8 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
   const [targetThreatId, setTargetThreatId] = useState(request?.targetThreatId ?? "");
   const [extra, setExtra] = useState("0");
   const [edge, setEdge] = useState<Edge>("none");
+  const [appliedConditionIds, setAppliedConditionIds] = useState<string[]>([]);
+  const [forcedConditionIds, setForcedConditionIds] = useState<string[]>([]);
   const [experiences, setExperiences] = useState<Array<"origin" | "free">>(request?.experience ? [request.experience] : []);
   const [damageExtra, setDamageExtra] = useState("0");
   const [confirmedHit, setConfirmedHit] = useState(false);
@@ -54,6 +57,16 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
   const [rollError, setRollError] = useState("");
   const rollingRef = useRef(false);
   const survivor = game.survivors.find(s => s.id === person);
+  const rollConditions = (survivor?.conditions ?? []).filter(conditionCanDisadvantageRoll);
+  const selectedRollConditions = rollConditions.filter(condition => appliedConditionIds.includes(condition.id));
+  const forcedRollConditions = selectedRollConditions.filter(condition => forcedConditionIds.includes(condition.id)
+    && (condition.kind === "injury" || condition.kind === "fracture"));
+  const forcedStressCost = forcedRollConditions.length;
+  const conditionDisadvantage = selectedRollConditions.some(condition =>
+    !(condition.kind === "injury" && !condition.aggravated && forcedConditionIds.includes(condition.id)));
+  const effectiveEdge: Edge = conditionDisadvantage
+    ? edge === "advantage" ? "none" : "disadvantage"
+    : edge;
   const mentors = request?.search ? searchMentors(game, request.search.hexId, request.search.pointId, request.search.attemptId, person) : [];
   const origin = survivor ? content.origins.find(o => o.name === survivor.origin) : null;
   const experienceOptions = survivor ? [
@@ -94,12 +107,21 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
     : manualTarget === null || (Number.isInteger(manualTarget) && manualTarget >= 1 && manualTarget <= 99);
   const experienceCost = experiences.length;
   const handConflict = kind === "attack" && weaponSlot === "secondary" && getPrimary(survivor?.primary ?? "")?.hands === "Duas";
+  const armFracture = survivor?.conditions?.find(condition => condition.kind === "fracture"
+    && (condition.bodyRegion === "left-arm" || condition.bodyRegion === "right-arm"));
+  const forcingArmFracture = Boolean(armFracture && forcedConditionIds.includes(armFracture.id) && appliedConditionIds.includes(armFracture.id));
+  const twoHandedIssue = kind === "attack" && weapon && "hands" in weapon && weapon.hands === "Duas" && !forcingArmFracture
+    ? twoHandedFractureIssue(survivor) : "";
   const rollIssue = targetSelectionMissing
     ? "O alvo selecionado não está mais disponível nesta Cena de Conflito."
     : !targetValid
       ? `Informe ${kind === "attack" ? "uma defesa" : "uma dificuldade"} inteira entre 1 e 99 ou deixe o campo vazio.`
     : experienceCost > (survivor?.hope ?? 0)
       ? "Esperança insuficiente para as Experiências declaradas."
+      : forcedStressCost > 0 && (survivor?.stress ?? 0) + forcedStressCost > 6
+        ? `Estresse insuficiente para forçar ${forcedStressCost} condição(ões) nesta ação.`
+      : twoHandedIssue
+        ? `${twoHandedIssue} Marque a Fratura como relevante e escolha Forçar para uma tentativa de emergência.`
       : kind === "attack" && !weapon
         ? "Selecione um sobrevivente e uma forma de ataque."
         : kind === "attack" && weapon && !parseWeaponDamage(weapon.damage)
