@@ -340,12 +340,13 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
     <RuleHelp topic="roll"/>
     {!request?.search && <div className="roll-modes" role="group" aria-label="Tipo de rolagem">
       {([ ["action", "Ação", Dice5], ["reaction", "Reação", Zap], ["attack", "Ataque", Swords] ] as const).map(([id, label, Icon]) =>
-        <button type="button" key={id} aria-pressed={kind === id} onClick={() => { setKind(id); setDifficulty(id === "attack" ? "" : "12"); clearResult(); }}><Icon size={16} aria-hidden="true" />{label}</button>)}
+        <button type="button" key={id} aria-pressed={kind === id} onClick={() => { setKind(id); setDifficulty(id === "attack" ? "" : "12"); setAppliedConditionIds([]); setForcedConditionIds([]); clearResult(); }}><Icon size={16} aria-hidden="true" />{label}</button>)}
     </div>}
     <div className="grid gap-3 sm:grid-cols-2">
       {request?.survivorId ? <div className="roll-locked"><span>Sobrevivente</span><strong>{survivor?.name ?? "Não encontrado"}</strong></div> : <Pick label="Sobrevivente" value={person} options={game.survivors.map(s => ({ value: s.id, label: s.name }))} onChange={value => {
         const next = game.survivors.find(s => s.id === value);
-        setPerson(value); setExperiences([]); setWeaponSlot(next?.primary ? "primary" : next?.secondary ? "secondary" : "unarmed"); clearResult();
+        setPerson(value); setExperiences([]); setAppliedConditionIds([]); setForcedConditionIds([]);
+        setWeaponSlot(next?.primary ? "primary" : next?.secondary ? "secondary" : "unarmed"); clearResult();
       }} placeholder="Rolagem livre" />}
       {kind === "attack" ? <Pick label="Forma de ataque" value={weaponSlot} options={[
         ...(survivor?.primary ? [{ value: "primary", label: survivor.primary }] : []),
@@ -394,8 +395,34 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
       </label>) : <p className="text-sm subtle">Escolha um sobrevivente para utilizar Experiências.</p>}
       {experienceCost > 0 && <p className="roll-cost">Custo declarado: {experienceCost} Esperança · disponível antes da rolagem: {survivor?.hope ?? 0}</p>}
     </fieldset>
-    {Boolean(survivor?.eventConditions?.length)&&<details className="roll-hint" open><summary>Condições ativas deste personagem</summary>{survivor!.eventConditions!.map(c=><p key={c.name}><b>{c.name}:</b> {c.effect} <span>Remover: {c.clear}</span></p>)}<p>Confira com o mestre quais condições se aplicam e selecione vantagem/desvantagem abaixo. Condições que impedem a ação devem ser resolvidas antes de rolar.</p></details>}
-    <div className="roll-edge"><span>Condição da rolagem</span><div role="group" aria-label="Vantagem ou desvantagem">
+    {rollConditions.length > 0 && <fieldset className="roll-condition-effects">
+      <legend>Condições nesta ação <small>marque apenas as que realmente interferem</small></legend>
+      <div className="roll-condition-effect-list">
+        {rollConditions.map(condition => {
+          const selected = appliedConditionIds.includes(condition.id);
+          const forced = forcedConditionIds.includes(condition.id);
+          const canForce = (condition.kind === "injury" && !condition.aggravated) || condition.kind === "fracture";
+          return <div key={condition.id} className={`roll-condition-effect ${selected ? "is-active" : ""}`}>
+            <label><Checkbox checked={selected} onCheckedChange={checked => {
+              setAppliedConditionIds(current => checked ? [...new Set([...current, condition.id])] : current.filter(id => id !== condition.id));
+              if (!checked) setForcedConditionIds(current => current.filter(id => id !== condition.id));
+              clearResult();
+            }} /><span><b>{conditionLabel(condition)}</b><small>{conditionRollGuidance(condition)}</small></span></label>
+            {selected && canForce && <label className="roll-condition-force"><Checkbox checked={forced} disabled={!forced && (survivor?.stress ?? 0) + forcedStressCost >= 6} onCheckedChange={checked => {
+              setForcedConditionIds(current => checked ? [...new Set([...current, condition.id])] : current.filter(id => id !== condition.id));
+              clearResult();
+            }} /><span>{condition.kind === "injury" ? "Forçar a Lesão · +1 Estresse · ignora a Desvantagem desta Lesão" : "Forçar em emergência · +1 Estresse · a Desvantagem permanece"}</span></label>}
+          </div>;
+        })}
+      </div>
+      <div className="roll-condition-result" role="status">
+        <span>Efeito final das condições</span>
+        <b>{conditionDisadvantage ? edge === "advantage" ? "Vantagem e Desvantagem se anulam → rolagem normal" : "Desvantagem −d6" : effectiveEdge === "advantage" ? "Vantagem +d6" : effectiveEdge === "disadvantage" ? "Desvantagem −d6" : "Sem ajuste adicional"}</b>
+        {forcedStressCost > 0 && <small>Custo declarado antes da rolagem: +{forcedStressCost} Estresse.</small>}
+      </div>
+    </fieldset>}
+    {Boolean(survivor?.eventConditions?.length)&&<details className="roll-hint"><summary>Outras condições narrativas</summary>{survivor!.eventConditions!.map(c=><p key={c.name}><b>{c.name}:</b> {c.effect} <span>Remover: {c.clear}</span></p>)}<p>Condições de eventos continuam sendo avaliadas pela ficção; use o ajuste situacional abaixo quando necessário.</p></details>}
+    <div className="roll-edge"><span>Ajuste situacional da rolagem</span><div role="group" aria-label="Vantagem ou desvantagem">
       {([ ["none", "Normal"], ["advantage", "Vantagem +d6"], ["disadvantage", "Desvantagem −d6"] ] as const).map(([value, label]) =>
         <button type="button" key={value} aria-pressed={edge === value} onClick={() => { setEdge(value); clearResult(); }}>{label}</button>)}
     </div></div>
