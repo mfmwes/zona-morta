@@ -1,6 +1,7 @@
 "use client";
 import { RuleHelp } from "@/components/rule-help";
 import { usePlayerSimulation } from "@/components/player-simulation";
+import type { PlayerActionControls } from "@/components/player-actions-panel";
 
 import { useRef, useState } from "react";
 import { Crosshair, Dice5, Sparkles, Swords, Zap } from "lucide-react";
@@ -8,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Field, Pick } from "@/components/game-controls";
+import { createId } from "@/lib/id";
 import { traitLabel, dualityLabel } from "@/lib/terminology";
 import { addLog, content, traits, type GameState } from "@/lib/game";
 import { equipmentModifiers, getPrimary, getSecondary, unarmedAttack } from "@/lib/equipment";
@@ -28,7 +30,7 @@ function outcomeLabel(roll: RollRecord) {
   return `${roll.outcome.success ? "Sucesso" : "Falha"} com ${dualityLabel(roll.outcome.with)}`;
 }
 
-export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets = false }: { game: GameState; edit: Edit; request?: RollRequest; onCompleted: () => void; hideThreatSecrets?: boolean }) {
+export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets = false, playerActions }: { game: GameState; edit: Edit; request?: RollRequest; onCompleted: () => void; hideThreatSecrets?: boolean; playerActions?: PlayerActionControls }) {
   const simulation = usePlayerSimulation();
   const requestedSurvivor = request?.survivorId ? game.survivors.find(s => s.id === request.survivorId) : null;
   const initialWeaponSlot: "primary" | "secondary" | "unarmed" = request?.weapon
@@ -233,6 +235,33 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
     if (rollingRef.current) return;
     if (!canRoll) {
       if (rollIssue) setRollError(rollIssue);
+      return;
+    }
+    if (request?.exposure && playerActions) {
+      rollingRef.current = true;
+      setIsRolling(true);
+      setRollError("");
+      try {
+        await playerActions.send({
+          type: "roll-exposure",
+          id: createId(),
+          day: game.day,
+          conditionId: request.exposure.conditionId,
+          trait: rollTrait,
+          difficulty: target,
+          experiences,
+          edge,
+          other: Math.max(-99, Math.min(99, Math.trunc(Number(extra) || 0))),
+          conditionIds: selectedRollConditions.map(condition => condition.id),
+          forcedConditionIds: forcedConditionIds.filter(id => selectedRollConditions.some(condition => condition.id === id)),
+        });
+        window.dispatchEvent(new CustomEvent("zona-morta:roll-completed"));
+        onCompleted();
+      } catch (error) {
+        setRollError(error instanceof Error ? error.message : "Não foi possível concluir a rolagem de exposição.");
+        rollingRef.current = false;
+        setIsRolling(false);
+      }
       return;
     }
     rollingRef.current = true;
@@ -486,8 +515,8 @@ export function RollForm({ game, edit, request, onCompleted, hideThreatSecrets =
   </div>;
 }
 
-export function RollDialog({ game, edit, request, open, onOpenChange, hideThreatSecrets = false }: {
-  game: GameState; edit: Edit; request?: RollRequest; open?: boolean; onOpenChange?: (open: boolean) => void; hideThreatSecrets?: boolean;
+export function RollDialog({ game, edit, request, open, onOpenChange, hideThreatSecrets = false, playerActions }: {
+  game: GameState; edit: Edit; request?: RollRequest; open?: boolean; onOpenChange?: (open: boolean) => void; hideThreatSecrets?: boolean; playerActions?: PlayerActionControls;
 }) {
   const [localOpen, setLocalOpen] = useState(false);
   const visible = open ?? localOpen;
@@ -497,6 +526,6 @@ export function RollDialog({ game, edit, request, open, onOpenChange, hideThreat
   }
   return <Dialog open={visible} onOpenChange={changeOpen}>
     {open === undefined && <DialogTrigger asChild><Button size="sm"><Dice5 /> Rolar dados</Button></DialogTrigger>}
-    {visible && <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[650px]"><RollForm game={game} edit={edit} request={request} hideThreatSecrets={hideThreatSecrets} onCompleted={() => changeOpen(false)} /></DialogContent>}
+    {visible && <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[650px]"><RollForm game={game} edit={edit} request={request} hideThreatSecrets={hideThreatSecrets} playerActions={playerActions} onCompleted={() => changeOpen(false)} /></DialogContent>}
   </Dialog>;
 }
