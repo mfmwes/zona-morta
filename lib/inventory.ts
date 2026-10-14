@@ -93,7 +93,7 @@ function accessContainers(game: GameState, ownerId: string) {
   const shared = ownerId !== "shared" && atSharedStorage(game, ownerId) ? game.shelter.inventory ?? [] : [];
   return shared === primary ? [primary] : [primary, shared];
 }
-function accessibleNamedQuantity(game: GameState, ownerId: string, name: string) {
+export function accessibleNamedQuantity(game: GameState, ownerId: string, name: string) {
   return accessContainers(game, ownerId).reduce((sum, items) => sum + items.filter(item => item.name === name).reduce((n, item) => n + item.qty, 0), 0);
 }
 function operationalFacility(game: GameState, ...keys: string[]) {
@@ -178,7 +178,7 @@ export function provisionPreparationCheck(game: GameState, ownerId: string, item
   return { ok: true, message: details.length ? `Requisitos disponíveis: ${details.join(", ")}.` : "Sem requisito material adicional.", details, waterCost, tabletCost, fuelCost };
 }
 
-function removeNamedUnits(game: GameState, ownerId: string, name: string, quantity: number) {
+export function removeNamedUnits(game: GameState, ownerId: string, name: string, quantity: number) {
   let remaining = quantity;
   for (const items of accessContainers(game, ownerId)) {
     for (const item of [...items]) {
@@ -219,10 +219,39 @@ function payPreparationCosts(game: GameState, ownerId: string, check: Preparatio
   return true;
 }
 
-function accessibleFuel(game: GameState, ownerId: string) {
+export function accessibleFuel(game: GameState, ownerId: string) {
   const physical = accessibleNamedQuantity(game, ownerId, "Combustível (1 unidade)");
   const shared = ownerId === "shared" || atSharedStorage(game, ownerId) ? game.shelter.fuel : 0;
   return physical + shared;
+}
+
+export function consumeAccessibleFuel(game: GameState, ownerId: string, quantity = 1) {
+  let remaining = Math.max(0, Math.trunc(quantity));
+  if (remaining < 1) return true;
+  const physical = Math.min(remaining, accessibleNamedQuantity(game, ownerId, "Combustível (1 unidade)"));
+  if (physical > 0) {
+    if (!removeNamedUnits(game, ownerId, "Combustível (1 unidade)", physical)) return false;
+    remaining -= physical;
+  }
+  if (remaining > 0 && (ownerId === "shared" || atSharedStorage(game, ownerId)) && game.shelter.fuel >= remaining) {
+    game.shelter.fuel -= remaining;
+    remaining = 0;
+  }
+  return remaining === 0;
+}
+
+export function accessibleReadyWater(game: GameState, ownerId: string, excludeItemId?: string) {
+  return availableWater(game, ownerId, excludeItemId);
+}
+
+export function consumeAccessibleReadyWater(game: GameState, ownerId: string, quantity = 1, excludeItemId?: string) {
+  let remaining = Math.max(0, Math.trunc(quantity));
+  if (remaining < 1) return true;
+  const holder = ownerHolder(game, ownerId);
+  if (holder) remaining = consumeHolderWater(holder, remaining, excludeItemId);
+  if (ownerId !== "shared" && remaining > 0 && atSharedStorage(game, ownerId))
+    remaining = consumeHolderWater(game.shelter, remaining, excludeItemId);
+  return remaining === 0;
 }
 
 export function reusableContainerOptions(game: GameState, ownerId: string, item: InventoryItem) {
