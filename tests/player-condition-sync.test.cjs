@@ -11,7 +11,7 @@ const { defaultState, initialSurvivor, content: gameContent } = require('../lib/
 const { itemFromCatalog } = require('../lib/inventory.ts');
 const { applyPlayerAction } = require('../lib/player-actions.ts');
 const { applySurvivorCondition } = require('../lib/survivor-conditions.ts');
-const { projectPlayerGame, playerEditPayload } = require('../lib/collaboration.ts');
+const { projectPlayerGame, playerEditPayload, applyPlayerChange } = require('../lib/collaboration.ts');
 
 let serial=0;
 function fixture() {
@@ -120,7 +120,11 @@ test('jogador continua sem permissão para editar conditions diretamente',()=>{
   const before=projectPlayerGame(f.game,f.actorId);
   const after=structuredClone(before);
   after.survivors[0].conditions[0].exposureAdvantageSource='forjado pelo cliente';
-  assert.equal(playerEditPayload(before,after),null);
+  const payload=playerEditPayload(before,after);
+  assert.ok(payload);
+  const forged=applyPlayerChange(f.game,f.actorId,payload.before,payload.after,
+    payload.fearDelta,payload.logs,payload.noiseDelta,payload.shelterWorkActions);
+  assert.equal(forged,null);
 });
 
 test('interface envia consumo sensível e exposição pelos comandos controlados do servidor',()=>{
