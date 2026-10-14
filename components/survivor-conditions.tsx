@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
-  Activity, ArrowRight, BookOpenText, ChevronRight, CircleMinus, Clock3, Dices, Droplets, EyeOff, HeartPulse, Lock, ShieldCheck, Snowflake, Sun, TriangleAlert, Wrench, Zap,
+  Activity, ArrowRight, BookOpenText, Check, ChevronRight, CircleMinus, Clock3, Dices, Droplets, EyeOff, HeartPulse, Lock, ShieldCheck, Snowflake, Sun, TriangleAlert, Wrench, Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { PlayerActionControls } from "@/components/player-actions-panel";
@@ -45,6 +45,7 @@ const icons: Record<SurvivorConditionKind, typeof Activity> = {
 };
 
 const groups = ["Tático", "Ambiental", "Físico"] as const;
+const applyGroups = ["Ambiental", "Físico", "Tático"] as const;
 
 function ConditionIcon({ condition, size = 15 }: { condition: SurvivorCondition; size?: number }) {
   const Icon = icons[condition.kind];
@@ -279,10 +280,6 @@ export function SurvivorConditionPanel({ game, survivor, edit, editable, playerA
   const [wetSource, setWetSource] = useState<WetExposureSource>("common-rain");
   const [applyFeedback, setApplyFeedback] = useState("");
   const definition = conditionDefinitions[kind];
-  const availableKinds = useMemo(() => Object.entries(conditionDefinitions).map(([value, item]) => ({
-    value: value as SurvivorConditionKind,
-    label: `${item.category} · ${item.label}`,
-  })), []);
 
   function apply() {
     let result: ReturnType<typeof applySurvivorCondition> | undefined;
@@ -304,18 +301,57 @@ export function SurvivorConditionPanel({ game, survivor, edit, editable, playerA
       <div><h3>Condições ativas{conditions.length > 0 && <span className="survivor-condition-count">{conditions.length}</span>}</h3><p>{conditions.length ? "Abra uma condição para ver efeitos e cuidados." : "Nenhuma condição ativa."}</p></div>
       {editable && <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogTrigger asChild><Button size="sm"><HeartPulse size={16} /> Aplicar condição</Button></DialogTrigger>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Aplicar condição</DialogTitle><DialogDescription>Escolha a condição e registre apenas o que a ficção já estabeleceu.</DialogDescription></DialogHeader>
-          <Pick label="Condição" value={kind} options={availableKinds} onChange={value => { setKind(value as SurvivorConditionKind); setApplyFeedback(""); }} />
-          {definition.levels && <Pick label="Intensidade inicial" value={level} options={[{value:"1",label:"Nível 1"},{value:"2",label:"Nível 2"},{value:"3",label:"Nível 3"}]} onChange={setLevel} />}
-          {definition.bodyRegion && <Pick label="Região afetada" value={bodyRegion} options={Object.entries(bodyRegionLabels).map(([value,label])=>({value,label}))} onChange={value => setBodyRegion(value as BodyRegion)} />}
-          {kind === "wet" && <Pick label="Fonte da água" value={wetSource}
-            options={Object.entries(wetExposureSourceLabels).map(([value,label]) => ({ value, label }))}
-            onChange={value => { setWetSource(value as WetExposureSource); setApplyFeedback(""); }} />}
-          <Field label="Origem · opcional" value={source} onChange={setSource} placeholder="Ex.: queda da escada, tempestade, mordida..." />
-          <div className="survivor-condition-add-preview"><b>{definition.label}</b><p>{definition.effect}</p><small>Remover: {definition.clear}</small></div>
+        <DialogContent className={`survivor-condition-add-dialog tone-${definition.tone}`}>
+          <DialogHeader className="survivor-condition-add-header">
+            <div className="survivor-condition-add-header-icon"><HeartPulse size={21} aria-hidden="true" /></div>
+            <div>
+              <DialogTitle>Aplicar condição</DialogTitle>
+              <DialogDescription>Selecione um estado e registre o que aconteceu na história.</DialogDescription>
+            </div>
+          </DialogHeader>
+          <fieldset className="survivor-condition-choice">
+            <legend>Condição</legend>
+            {applyGroups.map(group => <div className="survivor-condition-choice-group" key={group}>
+              <p>{group}</p>
+              <div className="survivor-condition-choice-grid" role="group" aria-label={`Condições: ${group}`}>
+                {Object.entries(conditionDefinitions).filter(([, item]) => item.category === group).map(([value, item]) => {
+                  const choice = value as SurvivorConditionKind;
+                  const Icon = icons[choice];
+                  const selected = choice === kind;
+                  return <button key={value} type="button"
+                    className={`survivor-condition-choice-card tone-${item.tone}${selected ? " is-selected" : ""}`}
+                    aria-pressed={selected}
+                    aria-label={`${item.label} · ${group}`}
+                    onClick={() => { setKind(choice); setApplyFeedback(""); }}>
+                    <span className="survivor-condition-choice-icon"><Icon size={20} aria-hidden="true" /></span>
+                    <span className="survivor-condition-choice-name">{item.label}</span>
+                    {selected && <Check size={15} className="survivor-condition-choice-check" aria-hidden="true" />}
+                  </button>;
+                })}
+              </div>
+            </div>)}
+          </fieldset>
+          <div className="survivor-condition-add-fields">
+            {definition.levels && <Pick label="Intensidade inicial" value={level} options={[{value:"1",label:"Nível 1"},{value:"2",label:"Nível 2"},{value:"3",label:"Nível 3"}]} onChange={setLevel} />}
+            {definition.bodyRegion && <Pick label="Região afetada" value={bodyRegion} options={Object.entries(bodyRegionLabels).map(([value,label])=>({value,label}))} onChange={value => setBodyRegion(value as BodyRegion)} />}
+            {kind === "wet" && <Pick label="Fonte da água" value={wetSource}
+              options={Object.entries(wetExposureSourceLabels).map(([value,label]) => ({ value, label }))}
+              onChange={value => { setWetSource(value as WetExposureSource); setApplyFeedback(""); }} />}
+            <Field label="Origem · opcional" value={source} onChange={setSource} placeholder="Ex.: queda da escada, tempestade, mordida..." />
+          </div>
+          <section className="survivor-condition-add-preview" aria-label="Prévia da condição">
+            <div className="survivor-condition-add-preview-heading">
+              <span className="survivor-condition-add-preview-icon"><ConditionIcon condition={{ id: "preview", kind }} size={19} /></span>
+              <span><b>{definition.label}</b><small>{definition.category} · efeitos e cuidados</small></span>
+            </div>
+            <p><strong>Efeito</strong> {definition.effect}</p>
+            <p><strong>Como remover</strong> {definition.clear}</p>
+          </section>
           {applyFeedback && <p className="inventory-hint" role="status">{applyFeedback}</p>}
-          <DialogFooter><Button variant="outline" onClick={()=>setAddOpen(false)}>Cancelar</Button><Button onClick={apply}>Aplicar</Button></DialogFooter>
+          <DialogFooter className="survivor-condition-add-footer">
+            <Button variant="outline" onClick={() => setAddOpen(false)}>Cancelar</Button>
+            <Button onClick={apply}><Check size={16} aria-hidden="true" />Aplicar condição</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>}
     </div>
