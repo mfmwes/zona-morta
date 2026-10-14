@@ -4976,3 +4976,232 @@ html[data-theme="dark"] .player-noise-scale i { background:#3b5350; }
 html[data-theme="dark"] .player-noise-scale .is-filled { background:currentColor; }
 html[data-theme="dark"] .player-fear-scale { background:#42384e; }
 @media (max-width:620px) { .player-scene-pressure { padding:4px 7px; gap:9px; } .player-pressure-value { min-width:84px; } }
+
+
+/* Survivor states and conditions — compact in the dossier, readable on hover/tap. */
+.survivor-condition-badges {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:6px;
+}
+.character-hero-status .survivor-condition-badges {
+  justify-content:flex-end;
+  max-width:420px;
+}
+.survivor-condition-badge {
+  --condition-accent:#587c77;
+  --condition-bg:color-mix(in srgb,var(--card) 86%,#dcece8);
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  min-height:32px;
+  padding:5px 9px;
+  border:1px solid color-mix(in srgb,var(--condition-accent) 62%,var(--border));
+  border-radius:999px;
+  background:var(--condition-bg);
+  color:var(--foreground);
+  font:700 .73rem/1.15 var(--font-sans);
+  cursor:pointer;
+  transition:border-color .15s ease,background .15s ease,transform .15s ease;
+}
+.survivor-condition-badge:hover,
+.survivor-condition-badge:focus-visible {
+  border-color:var(--condition-accent);
+  background:color-mix(in srgb,var(--condition-bg) 84%,var(--condition-accent));
+  outline:none;
+}
+.survivor-condition-badge:focus-visible { box-shadow:0 0 0 3px color-mix(in srgb,var(--condition-accent) 20%,transparent); }
+.survivor-condition-badge.tone-danger,
+.survivor-condition-row.tone-danger,
+.survivor-condition-dialog-icon.tone-danger { --condition-accent:#a84e48; --condition-bg:#f6e7e3; }
+.survivor-condition-badge.tone-warning,
+.survivor-condition-row.tone-warning,
+.survivor-condition-dialog-icon.tone-warning { --condition-accent:#9a6b28; --condition-bg:#f4eddb; }
+.survivor-condition-badge.tone-cold,
+.survivor-condition-row.tone-cold,
+.survivor-condition-dialog-icon.tone-cold { --condition-accent:#4f7897; --condition-bg:#e4edf3; }
+.survivor-condition-badge.tone-heat,
+.survivor-condition-row.tone-heat,
+.survivor-condition-dialog-icon.tone-heat { --condition-accent:#ad6235; --condition-bg:#f5e8df; }
+.survivor-condition-badge.tone-nature,
+.survivor-condition-row.tone-nature,
+.survivor-condition-dialog-icon.tone-nature { --condition-accent:#51795e; --condition-bg:#e6eee7; }
+.survivor-condition-badge.tone-neutral,
+.survivor-condition-row.tone-neutral,
+.survivor-condition-dialog-icon.tone-neutral { --condition-accent:#587c77; --condition-bg:#e3ece9; }
+
+.survivor-condition-level { display:inline-flex; gap:2px; margin-left:2px; }
+.survivor-condition-level i {
+  width:5px;height:5px;border-radius:50%;
+  border:1px solid currentColor;opacity:.38;
+}
+.survivor-condition-level i.filled { background:currentColor;opacity:.95; }
+.survivor-condition-empty { color:var(--muted-foreground);font-size:.8rem; }
+
+.survivor-condition-tooltip {
+  display:grid;
+  gap:3px;
+  max-width:310px;
+  padding:9px 11px;
+  line-height:1.35;
+}
+.survivor-condition-tooltip b { font-size:.78rem; }
+.survivor-condition-tooltip span { font-size:.74rem; }
+.survivor-condition-tooltip small { opacity:.75;font-size:.68rem; }
+
+.survivor-condition-panel { display:grid;gap:14px; }
+.survivor-condition-panel-heading {
+  display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
+}
+.survivor-condition-panel-heading h3 { margin:2px 0 0;font-size:1rem; }
+.survivor-condition-panel-heading p { margin:4px 0 0;color:var(--muted-foreground);font-size:.78rem; }
+.survivor-condition-groups { display:grid;gap:12px; }
+.survivor-condition-groups > div { display:grid;gap:6px; }
+.survivor-condition-groups > div > span {
+  color:var(--muted-foreground);
+  font:800 .65rem/1 var(--font-mono);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+}
+.survivor-condition-row {
+  --condition-accent:#587c77;
+  --condition-bg:var(--muted);
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  align-items:center;
+  gap:10px;
+  padding:9px 10px;
+  border:1px solid color-mix(in srgb,var(--condition-accent) 42%,var(--border));
+  border-left:3px solid var(--condition-accent);
+  border-radius:8px;
+  background:color-mix(in srgb,var(--condition-bg) 55%,var(--card));
+}
+.survivor-condition-row > svg { color:var(--condition-accent); }
+.survivor-condition-row > span { display:grid;gap:2px;min-width:0; }
+.survivor-condition-row b { font-size:.8rem;color:var(--foreground); }
+.survivor-condition-row small { font-size:.72rem;line-height:1.35;color:var(--muted-foreground); }
+
+.survivor-condition-dialog [data-slot="dialog-header"] {
+  display:grid;grid-template-columns:auto 1fr;column-gap:10px;
+}
+.survivor-condition-dialog [data-slot="dialog-header"] > [data-slot="dialog-description"] { grid-column:2; }
+.survivor-condition-dialog-icon {
+  --condition-accent:#587c77;--condition-bg:var(--muted);
+  grid-row:1 / span 2;
+  display:grid;place-items:center;
+  width:42px;height:42px;border-radius:10px;
+  border:1px solid color-mix(in srgb,var(--condition-accent) 60%,var(--border));
+  background:var(--condition-bg);color:var(--condition-accent);
+}
+.survivor-condition-detail { display:grid;gap:10px; }
+.survivor-condition-detail > div {
+  padding:10px 11px;border:1px solid var(--border);border-radius:8px;background:var(--muted);
+}
+.survivor-condition-detail span,
+.survivor-condition-action-title {
+  display:block;margin:0 0 5px;color:var(--muted-foreground);
+  font:800 .65rem/1 var(--font-mono);letter-spacing:.09em;
+}
+.survivor-condition-detail p { margin:0;font-size:.8rem;line-height:1.5; }
+.survivor-condition-actions {
+  display:grid;gap:7px;padding-top:10px;border-top:1px solid var(--border);
+}
+.survivor-condition-actions > div { display:flex;flex-wrap:wrap;gap:7px; }
+.survivor-condition-actions small { color:var(--muted-foreground);font-size:.72rem;line-height:1.4; }
+.survivor-condition-add-preview {
+  padding:10px 11px;border:1px solid var(--border);border-radius:8px;background:var(--muted);
+}
+.survivor-condition-add-preview { display:grid;gap:4px; }
+.survivor-condition-add-preview p,.survivor-condition-add-preview small { margin:0;font-size:.75rem;line-height:1.4; }
+.survivor-condition-add-preview small { color:var(--muted-foreground); }
+
+.roll-condition-effects {
+  display:grid;gap:9px;
+  margin:2px 0;
+  padding:11px;
+  border:1px solid var(--border);
+  border-radius:9px;
+  background:color-mix(in srgb,var(--card) 88%,var(--muted));
+}
+.roll-condition-effects legend {
+  padding:0 5px;font-weight:800;font-size:.8rem;color:var(--foreground);
+}
+.roll-condition-effects legend small { font-weight:500;color:var(--muted-foreground); }
+.roll-condition-effect-list { display:grid;gap:7px; }
+.roll-condition-effect {
+  display:grid;gap:7px;
+  padding:9px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:var(--card);
+}
+.roll-condition-effect.is-active {
+  border-color:color-mix(in srgb,#8a6d3b 58%,var(--border));
+  background:color-mix(in srgb,#f1e8d0 38%,var(--card));
+}
+.roll-condition-effect > label {
+  display:flex;align-items:flex-start;gap:9px;cursor:pointer;
+}
+.roll-condition-effect > label > span { display:grid;gap:2px;min-width:0; }
+.roll-condition-effect b { font-size:.78rem; }
+.roll-condition-effect small { color:var(--muted-foreground);font-size:.71rem;line-height:1.35; }
+.roll-condition-force {
+  margin-left:28px;
+  padding:6px 8px;
+  border-radius:6px;
+  background:color-mix(in srgb,#b07139 10%,var(--muted));
+  font-size:.72rem;
+}
+.roll-condition-result {
+  display:grid;grid-template-columns:auto 1fr;gap:3px 10px;align-items:baseline;
+  padding:8px 9px;border-radius:7px;background:var(--muted);
+}
+.roll-condition-result span { font-size:.7rem;color:var(--muted-foreground); }
+.roll-condition-result b { font-size:.77rem; }
+.roll-condition-result small { grid-column:1/-1;color:#8a5d2d;font-size:.7rem; }
+.mobile-condition-note {
+  display:flex;align-items:center;gap:6px;
+  color:#915e2e;font-weight:700;
+}
+
+html[data-theme="dark"] .survivor-condition-badge,
+html[data-theme="dark"] .survivor-condition-row,
+html[data-theme="dark"] .survivor-condition-dialog-icon {
+  --condition-bg:#243331;
+}
+html[data-theme="dark"] .survivor-condition-badge.tone-danger,
+html[data-theme="dark"] .survivor-condition-row.tone-danger,
+html[data-theme="dark"] .survivor-condition-dialog-icon.tone-danger { --condition-accent:#e09a90;--condition-bg:#382826; }
+html[data-theme="dark"] .survivor-condition-badge.tone-warning,
+html[data-theme="dark"] .survivor-condition-row.tone-warning,
+html[data-theme="dark"] .survivor-condition-dialog-icon.tone-warning { --condition-accent:#ddbd77;--condition-bg:#353025; }
+html[data-theme="dark"] .survivor-condition-badge.tone-cold,
+html[data-theme="dark"] .survivor-condition-row.tone-cold,
+html[data-theme="dark"] .survivor-condition-dialog-icon.tone-cold { --condition-accent:#9fc8df;--condition-bg:#24313a; }
+html[data-theme="dark"] .survivor-condition-badge.tone-heat,
+html[data-theme="dark"] .survivor-condition-row.tone-heat,
+html[data-theme="dark"] .survivor-condition-dialog-icon.tone-heat { --condition-accent:#e5aa82;--condition-bg:#392d27; }
+html[data-theme="dark"] .survivor-condition-badge.tone-nature,
+html[data-theme="dark"] .survivor-condition-row.tone-nature,
+html[data-theme="dark"] .survivor-condition-dialog-icon.tone-nature { --condition-accent:#9bc8a7;--condition-bg:#26352c; }
+html[data-theme="dark"] .survivor-condition-badge.tone-neutral,
+html[data-theme="dark"] .survivor-condition-row.tone-neutral,
+html[data-theme="dark"] .survivor-condition-dialog-icon.tone-neutral { --condition-accent:#9acbc1;--condition-bg:#263533; }
+html[data-theme="dark"] .roll-condition-effect.is-active {
+  border-color:#7b6944;background:#302d24;
+}
+html[data-theme="dark"] .roll-condition-force { background:#352e24;color:#dcc79d; }
+html[data-theme="dark"] .roll-condition-result small,
+html[data-theme="dark"] .mobile-condition-note { color:#dfb778; }
+
+@media (max-width:640px) {
+  .character-hero-status .survivor-condition-badges { justify-content:flex-start;max-width:none; }
+  .survivor-condition-badge { min-height:36px;padding:7px 10px; }
+  .survivor-condition-panel-heading { flex-direction:column; }
+  .survivor-condition-panel-heading > button { width:100%; }
+  .survivor-condition-actions > div { display:grid;grid-template-columns:1fr; }
+  .survivor-condition-actions button { width:100%; }
+  .roll-condition-result { grid-template-columns:1fr; }
+  .roll-condition-result small { grid-column:auto; }
+}
