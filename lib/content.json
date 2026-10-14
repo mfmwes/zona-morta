@@ -4000,7 +4000,7 @@
         },
         {
           "label": "Efeito",
-          "value": "Ajuda a suportar frio sem proteção adicional de PV"
+          "value": "Vantagem em testes de exposição ao Frio enquanto equipado. Não remove Frio existente sozinho."
         },
         {
           "label": "Carga guardada",
@@ -4152,7 +4152,7 @@
       "fields": [
         {
           "label": "Uso concreto",
-          "value": "Torna plausível descansar ou viajar no frio sem roupa molhada."
+          "value": "Enquanto vestida e seca, concede Vantagem em testes de exposição ao Frio e conta como proteção adequada em frio comum."
         },
         {
           "label": "Carga guardada",
@@ -4796,7 +4796,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Ajuda a estabelecer um lugar de descanso plausível. Não torna a rua segura."
+          "value": "Em abrigo plausível, prepara Vantagem para a próxima recuperação de Frio durante descanso. Não torna a rua segura."
         },
         {
           "label": "Carga guardada",
@@ -4810,7 +4810,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Protege do frio durante descanso em abrigo protegido."
+          "value": "Em local protegido e seco, permite reduzir Frio em 1 nível durante descanso."
         },
         {
           "label": "Carga guardada",
@@ -4866,7 +4866,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Prepara comida se houver combustível adequado e local ventilado."
+          "value": "Com 1 unidade de Combustível e local ventilado/seguro, funciona como fonte de calor e pode reduzir Frio em 1 nível."
         },
         {
           "label": "Carga guardada",
@@ -5110,7 +5110,7 @@
         },
         {
           "label": "Água em jogo",
-          "value": "1 porção"
+          "value": "1 porção. Se consumida durante Calor, prepara Vantagem no próximo teste de exposição ao Calor."
         },
         {
           "label": "Carga",
@@ -5858,7 +5858,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Ferramenta reutilizável para cuidados básicos. Não é 1 Medicamentos."
+          "value": "Ferramenta reutilizável: trata Lesão quando houver Gaze e ataduras ou Bolsa de tratamento lacrada. O material é consumido; o kit permanece."
         },
         {
           "label": "Carga",
@@ -5872,7 +5872,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "1 unidade de Medicamentos. Recurso para Exposição ou procedimento complexo."
+          "value": "Consumível: pode tratar uma Lesão diretamente ou servir como material com Kit médico de campo. Também equivale a 1 Medicamentos nas reservas."
         },
         {
           "label": "Carga",
@@ -5886,7 +5886,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "1 unidade de Medicamentos e material para procedimentos básicos. Gastar a unidade deixa o estojo."
+          "value": "Consumível no tratamento: trata uma Lesão e deixa um Kit médico de campo reutilizável. Também pode virar 1 Medicamentos nas reservas."
         },
         {
           "label": "Carga",
@@ -5914,7 +5914,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Material adequado para uma ação de cuidado. Não limpa PV sozinho."
+          "value": "Consumível: estabiliza Sangramento e remove a condição. Não recupera PV."
         },
         {
           "label": "Carga",
@@ -5970,7 +5970,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Material de cuidado para ferimento visível. Não altera limiares ou PV sozinho."
+          "value": "Consumível: estabiliza Sangramento e remove a condição. Não recupera PV."
         },
         {
           "label": "Carga",
@@ -5984,7 +5984,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Permite imobilizar membro ferido em cena. A recuperação segue o SRD."
+          "value": "Imobiliza uma Fratura. O conjunto fica comprometido no paciente e sai do inventário; a recuperação passa a avançar em Descansos Longos."
         },
         {
           "label": "Carga",
@@ -6110,7 +6110,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Acompanham água limpa e repouso. Não contam como porção de Água."
+          "value": "Consumível: com 1 porção de Água limpa, concede Vantagem no próximo teste de exposição ao Calor. A Água usada conta para a hidratação diária."
         },
         {
           "label": "Carga",
