@@ -114,28 +114,27 @@ test('Exposto abre o acompanhamento; tratamento e edição manual ficam reservad
   assert.ok(player.some(node => text(node).includes('Cenas significativas restantes: 2')));
 });
 
-test('detalhe de Frio e Calor separa níveis sem alterar texto ou intensidade da regra', () => {
+test('detalhe de Frio e Calor apresenta texto compacto por nível, sem alterar a regra', () => {
   for (const kind of ['cold', 'heat']) {
     const { game, survivor } = fixture();
     applySurvivorCondition(game, survivor.id, kind, { level: 2 });
     const condition = survivor.conditions.find(entry => entry.kind === kind);
     assert.ok(condition);
     const effect = conditionDefinitions[kind].effect;
-    const elements = nodes(ConditionEffect({ condition, effect }));
-    const rows = elements.filter(node => node.props.className?.includes('survivor-condition-effect-row'));
-    const matches = [...effect.matchAll(/Nível\s+([123])(\+)?:\s*/g)];
-    assert.equal(rows.length, 3);
-    assert.equal(rows.length, matches.length);
-    for (const [index, match] of matches.entries()) {
-      const next = matches[index + 1]?.index ?? effect.length;
-      const description = effect.slice(match.index + match[0].length, next).trim();
-      const levelLabel = `Nível ${match[1]}${match[2] ?? ''}`;
-      const spans = nodes(rows[index]).filter(node => node.type === 'span');
-      const paragraphs = nodes(rows[index]).filter(node => node.type === 'p');
-      assert.equal(text(spans[0]), levelLabel);
-      assert.equal(text(paragraphs[0]), description);
-      assert.equal(rows[index].props.className.includes('is-reached'), Number(match[1]) <= 2);
+    const element = ConditionEffect({ condition, effect });
+    const fragments = nodes(element).filter(node => node.type === 'span' && node.props.className === 'survivor-condition-effect-fragment');
+    const labels = [...effect.matchAll(/Nível\s+([123])(\+)?:\s*/g)];
+    assert.equal(element.props.className, 'survivor-condition-effect-compact');
+    assert.equal(fragments.length, 3);
+    for (const [index, label] of labels.entries()) {
+      const strong = nodes(fragments[index]).find(node => node.type === 'strong');
+      const until = labels[index + 1]?.index ?? effect.length;
+      const description = effect.slice(label.index + label[0].length, until).trim();
+      assert.equal(text(strong), `Nível ${label[1]}${label[2] ?? ''}:`);
+      assert.equal(strong.props.className === 'is-reached', Number(label[1]) <= 2);
+      assert.ok(text(fragments[index]).includes(description));
     }
+    assert.equal(text(element), effect);
   }
 });
 
@@ -148,4 +147,19 @@ test('efeito de todas as condições sem níveis mantém integralmente as frases
     assert.ok(paragraphs.length > 0, kind);
     assert.equal(paragraphs.map(text).join(' '), effect, kind);
   }
+});
+
+test('modal de condições usa apresentação desktop compacta com escape para telas pequenas', () => {
+  const css = fs.readFileSync(path.join(__dirname, '../app/condition-screen.css'), 'utf8');
+  const component = fs.readFileSync(path.join(__dirname, '../components/survivor-conditions.tsx'), 'utf8');
+  assert.match(css, /width:min\(790px,calc\(100vw - 28px\)\)/);
+  assert.match(css, /max-height:calc\(100dvh - 20px\)/);
+  assert.match(css, /overflow-y:auto/);
+  assert.match(css, /\.survivor-condition-effect-fragment\s*\{\s*display:inline/);
+  assert.match(css, /@media\(max-width:620px\)/);
+  assert.doesNotMatch(component, /survivor-condition-effect-row/);
+  assert.match(component, /Rolar exposição/);
+  assert.match(component, /Falha com Esperança/);
+  assert.match(component, /Falha com Medo/);
+  assert.match(component, /Recuperou 1 nível/);
 });

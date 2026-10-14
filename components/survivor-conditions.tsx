@@ -102,24 +102,23 @@ function ConditionInfoCard({ title, icon: Icon, children }: {
 }
 
 /** Preserve rule wording: only divide the text into readable, labeled sections. */
+/** Show complete rule text, emphasizing levels without turning each one into a tall row. */
 export function ConditionEffect({ condition, effect }: { condition: SurvivorCondition; effect: string }) {
   const levels = condition.kind === "heat" || condition.kind === "cold"
     ? [...effect.matchAll(/Nível\s+([123])(\+)?:\s*/g)]
     : [];
-  if (levels.length) return <div className="survivor-condition-effect-levels">
+  if (levels.length) return <p className="survivor-condition-effect-compact">
     {levels.map((match, index) => {
       const start = (match.index ?? 0) + match[0].length;
       const end = levels[index + 1]?.index ?? effect.length;
       const reached = Number(match[1]) <= (condition.level ?? 1);
-      return <div key={match.index} className={`survivor-condition-effect-row ${reached ? "is-reached" : ""}`}>
-        <span className="survivor-condition-effect-level">{`Nível ${match[1]}${match[2] ?? ""}`}</span>
-        <p>{effect.slice(start, end).trim()}</p>
-      </div>;
+      return <span key={match.index} className="survivor-condition-effect-fragment">
+        <strong className={reached ? "is-reached" : undefined}>{`Nível ${match[1]}${match[2] ?? ""}:`}</strong>{" "}
+        {effect.slice(start, end).trim()}{index < levels.length - 1 ? " " : null}
+      </span>;
     })}
-  </div>;
-  return <div className="survivor-condition-effect-prose">
-    {effect.split(/(?<=[.!?])\s+(?=[A-ZÁÉÍÓÚ])/u).map((sentence, index) => <p key={index}>{sentence}</p>)}
-  </div>;
+  </p>;
+  return <p className="survivor-condition-effect-compact">{effect}</p>;
 }
 
 function ExposureRollControl({ game, survivor, condition, edit, playerActions }: {
@@ -215,7 +214,7 @@ function ConditionDetailDialog({ game, survivor, condition, edit, editable, open
           <div className={`survivor-condition-dialog-icon tone-${detail.tone}`}><ConditionIcon condition={condition} size={26} /></div>
           <div className="survivor-condition-hero-text">
             <DialogTitle>{detail.label}</DialogTitle>
-            <DialogDescription>{detail.category} · condição ativa · {survivor.name}</DialogDescription>
+            <DialogDescription>{detail.category} · condição ativa</DialogDescription>
             <ConditionProgress condition={condition} />
           </div>
         </div>
