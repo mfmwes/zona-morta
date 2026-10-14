@@ -319,9 +319,9 @@ test('interface mostra marcadores e ação específica de condição no inventá
   assert.match(inventory,/ConditionItemBadges/);
   assert.match(inventory,/selectedConditionUse/);
   assert.match(inventory,/Secar roupa/);
-  assert.match(conditionsUi,/EQUIPAMENTO ATIVO/);
+  assert.match(conditionsUi,/title="Equipamento ativo"/);
   assert.match(conditionsUi,/Fonte da água/);
   assert.match(conditionsUi,/Rolar exposição/);
-  assert.match(conditionsUi,/PRÓXIMO TESTE DE EXPOSIÇÃO/);
+  assert.match(conditionsUi,/title="Próximo teste de exposição"/);
   assert.match(css,/Catalog items that interact with survivor conditions/);
 });
