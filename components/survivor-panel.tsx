@@ -36,13 +36,14 @@ import { absoluteMinutes, addLog, ammunitionCount, ammunitionItemType, ammunitio
 import { activeCart, atSharedStorage, batteryStateFor, cartStoredLoad, catalogForItem, countsAsMedication, stowSlot } from "@/lib/inventory";
 import { provisionBreakdown, provisionDisplay, provisionItemInfo } from "@/lib/provision-items";
 import { equipmentModifiers, getPrimary, getProtection, getSecondary, unarmedAttack, weaponAmmoType } from "@/lib/equipment";
-import { consumeDailyProvision } from "@/lib/survival";
 import { adjustProvisionCount } from "@/lib/provisions";
 import { abilityCosts, abilityPeriod, costLabels, periodLabels, recordAbilityUse, restActionLabels, restActionsFor, type AbilityCost, type RestAction, type RestChoice, type RestKind } from "@/lib/abilities";
 import { abilityUseOptions, abilityUseState } from "@/lib/ability-presentation";
 import { shelterTreatmentBonus } from "@/lib/shelter-projects";
 import { scheduleExposureTreatment } from "@/lib/treatment";
 import { participantTimePreview, survivorTimedCommitment } from "@/lib/activity";
+import { SurvivorConditionBadges, SurvivorConditionPanel } from "@/components/survivor-conditions";
+import { consumedDailyProvisionPortions, provisionConsumedToday, remainingDailyProvisionPortions, requiredDailyProvision } from "@/lib/survival";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 const infectionStates: Infection[] = ["Saudável", "Exposto", "Infectado", "Sintomático", "Terminal"];
@@ -504,6 +505,7 @@ export function SurvivorPanel({ mobile = false, initialSurvivorId, initialSectio
             <span className={selected.infection === "Saudável" ? "character-condition healthy" : "character-condition at-risk"}><Activity size={15} aria-hidden="true" /> {selected.infection}</span>
             {selected.infection === "Exposto" && <span className="character-condition-detail">{selected.treatmentAttempted ? "Tratamento já tentado" : <>Tratamento até <b>{deadlineLabel(selected.exposureDeadline)}</b></>}</span>}
           </div>
+          <SurvivorConditionBadges game={game} survivor={selected} edit={edit} editable={!playerMode && !playerPreview} />
           <span className="character-hero-code">REGISTRO {selected.id.slice(0, 6).toUpperCase()}</span>
         </div>
       </header>
@@ -710,6 +712,7 @@ export function SurvivorPanel({ mobile = false, initialSurvivorId, initialSectio
             </section>
           </TabsContent>
           <TabsContent value="condicoes" {...(mobile ? { "aria-label": "Condições", "aria-labelledby": undefined } : {})} className="character-tab-content"><RuleHelp topic="conditions"/>
+            <SurvivorConditionPanel game={game} survivor={selected} edit={edit} editable={!playerMode && !playerPreview} />
             <section className="character-surface"><h3>Condições de eventos</h3>{!(selected.eventConditions ?? []).length && <p className="subtle">Nenhuma condição de evento ativa.</p>}{(selected.eventConditions ?? []).map(c=><div className="list-card" key={c.name}><b>{c.name}</b><p>{c.effect}</p><p className="subtle">Remover: {c.clear}</p>{!playerMode&&!playerPreview&&<Button size="sm" variant="outline" onClick={()=>change(selected.id,s=>{s.eventConditions=(s.eventConditions??[]).filter(row=>row.name!==c.name);})}>Condição encerrada: remover</Button>}</div>)}</section>
             <section className="character-surface"><SectionHeading index="01" title="Exposição e infecção" /><div className="character-condition-banner"><HeartPulse size={24} aria-hidden="true" /><div><b>{selected.infection}</b><p>{selected.infection === "Saudável" ? "Nenhuma exposição registrada." : "Acompanhe o estado e as escolhas de tratamento."}</p></div></div>
               {!playerPreview && <div className="character-condition-edit"><Pick label="Estado" value={selected.infection} options={infectionStates} onChange={value => change(selected.id, s => {
