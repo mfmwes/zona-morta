@@ -1,6 +1,7 @@
 import { addLog, survivorStats, type GameState, type Survivor } from "./game";
 import { createId } from "./id";
-import type { BodyRegion, SurvivorCondition, SurvivorConditionKind } from "./survivor-condition-types";
+import { equippedConditionSupport, wetProtectionFor } from "./condition-item-effects";
+import type { BodyRegion, SurvivorCondition, SurvivorConditionKind, WetExposureSource } from "./survivor-condition-types";
 
 export type ConditionCategory = "Tático" | "Ambiental" | "Físico";
 export type ConditionTone = "neutral" | "danger" | "warning" | "cold" | "heat" | "nature";
@@ -151,11 +152,19 @@ export function applySurvivorCondition(game: GameState, survivorId: string, kind
   level?: 1 | 2 | 3;
   bodyRegion?: BodyRegion;
   source?: string;
+  wetExposureSource?: WetExposureSource;
 } = {}) {
   const person = game.survivors.find(candidate => candidate.id === survivorId);
   const definition = conditionDefinitions[kind];
   if (!person) return { ok: false as const, message: "Sobrevivente não encontrado." };
   if (definition.bodyRegion && !options.bodyRegion) return { ok: false as const, message: "Escolha a região corporal." };
+  if (kind === "wet" && options.wetExposureSource) {
+    const protection = wetProtectionFor(person, options.wetExposureSource);
+    if (protection) {
+      addLog(game, "condição", `${person.name}: Molhado evitado por ${protection.item}.`, person.id);
+      return { ok: false as const, prevented: true as const, message: `${protection.item} impediu Molhado nesta exposição.` };
+    }
+  }
   person.conditions ??= [];
   const same = person.conditions.find(condition => condition.kind === kind
     && (!definition.bodyRegion || condition.bodyRegion === options.bodyRegion));
@@ -173,6 +182,7 @@ export function applySurvivorCondition(game: GameState, survivorId: string, kind
     ...(definition.levels ? { level: options.level ?? 1 } : {}),
     ...(definition.bodyRegion ? { bodyRegion: options.bodyRegion } : {}),
     ...(kind === "injury" || kind === "fracture" ? { recovery: 0 } : {}),
+    ...(kind === "wet" && options.wetExposureSource ? { wetExposureSource: options.wetExposureSource } : {}),
     ...(options.source?.trim() ? { source: options.source.trim() } : {}),
     appliedDay: game.day,
     appliedMinute: game.minutes,
@@ -371,6 +381,16 @@ export function twoHandedFractureIssue(person: Survivor | undefined) {
 
 export function dailyExtraWater(person: Survivor | undefined) {
   return hasCondition(person, "heat") ? 1 : 0;
+}
+
+export function exposureAdvantageSources(person: Survivor | undefined, conditionId: string) {
+  const condition = person?.conditions?.find(entry => entry.id === conditionId && (entry.kind === "cold" || entry.kind === "heat"));
+  if (!person || !condition) return [];
+  const sources = [
+    ...(condition.exposureAdvantageSource ? [condition.exposureAdvantageSource] : []),
+    ...equippedConditionSupport(person, condition.kind).map(effect => effect.item),
+  ];
+  return [...new Set(sources)];
 }
 
 export function conditionCanDisadvantageRoll(condition: SurvivorCondition) {
