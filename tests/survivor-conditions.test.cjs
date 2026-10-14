@@ -118,7 +118,7 @@ test('Lesão pode ser forçada por Estresse, agrava em Falha com Medo e Lesão a
   const injury=apply(game,survivor,'injury',{bodyRegion:'right-arm'});
   assert.equal(conditions.conditionCanDisadvantageRoll(injury),true);
   const before=survivor.stress;
-  assert.equal(conditions.useConditionDuringRoll(game,survivor.id,injury.id,{forced:true,failedWithFear:true}),true);
+  assert.equal(conditions.applyConditionDuringRoll(game,survivor.id,injury.id,{forced:true,failedWithFear:true}),true);
   assert.equal(survivor.stress,before+1);
   assert.equal(injury.aggravated,true);
   assert.match(conditions.conditionRollGuidance(injury),/não pode ser forçada/i);
@@ -127,10 +127,10 @@ test('Lesão pode ser forçada por Estresse, agrava em Falha com Medo e Lesão a
 test('Fratura relevante em Falha com Medo marca PV se não imobilizada; imobilização impede esse dano',()=>{
   const survivor=person(), game=gameWith(survivor);
   const fracture=apply(game,survivor,'fracture',{bodyRegion:'left-arm'});
-  conditions.useConditionDuringRoll(game,survivor.id,fracture.id,{failedWithFear:true});
+  conditions.applyConditionDuringRoll(game,survivor.id,fracture.id,{failedWithFear:true});
   assert.equal(survivor.hp,1);
   assert.equal(conditions.setFractureImmobilized(game,survivor.id,fracture.id,true),true);
-  conditions.useConditionDuringRoll(game,survivor.id,fracture.id,{failedWithFear:true});
+  conditions.applyConditionDuringRoll(game,survivor.id,fracture.id,{failedWithFear:true});
   assert.equal(survivor.hp,1);
   assert.match(conditions.twoHandedFractureIssue(survivor),/duas mãos/);
 });
