@@ -374,9 +374,9 @@ export function useConditionDuringRoll(game: GameState, survivorId: string, cond
       condition.aggravated = true;
       condition.recovery = 0;
     }
-    if (condition.kind === "fracture" && input.failedWithFear && !condition.immobilized) {
-      person.hp = Math.min(survivorStats(person).hp, person.hp + 1);
-    }
+  }
+  if (condition.kind === "fracture" && input.failedWithFear && !condition.immobilized) {
+    person.hp = Math.min(survivorStats(person).hp, person.hp + 1);
   } else if (input.failedWithFear && ((condition.kind === "cold" && (condition.level ?? 1) >= 2)
     || (condition.kind === "heat" && (condition.level ?? 1) >= 2))) {
     person.stress = Math.min(6, person.stress + 1);
