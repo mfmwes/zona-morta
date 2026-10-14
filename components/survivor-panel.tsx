@@ -43,7 +43,7 @@ import { shelterTreatmentBonus } from "@/lib/shelter-projects";
 import { scheduleExposureTreatment } from "@/lib/treatment";
 import { participantTimePreview, survivorTimedCommitment } from "@/lib/activity";
 import { SurvivorConditionBadges, SurvivorConditionPanel } from "@/components/survivor-conditions";
-import { consumedDailyProvisionPortions, provisionConsumedToday, remainingDailyProvisionPortions, requiredDailyProvision } from "@/lib/survival";
+import { provisionConsumedToday, remainingDailyProvisionPortions, requiredDailyProvision } from "@/lib/survival";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 const infectionStates: Infection[] = ["Saudável", "Exposto", "Infectado", "Sintomático", "Terminal"];
@@ -666,12 +666,16 @@ export function SurvivorPanel({ mobile = false, initialSurvivorId, initialSectio
                 <div className="metric"><span className="smallcaps subtle">Munição física</span><strong>{totalAmmoUnits}</strong><p className="text-xs subtle mt-2">{ammunitionTypes.filter(type => ammunitionCount(selected.inventory, type) > 0).map(type => `${type}: ${ammunitionCount(selected.inventory, type)}`).join(" · ") || "Nenhuma unidade no inventário"}</p></div>
               </div>
               {(selected.provisionLots ?? []).length > 0 && <p className="character-rule-note">Perecíveis: {selected.provisionLots!.map(lot => `${lot.qty} porção(ões) de ${lot.resource === "food" ? "comida" : "água"} (${lot.label}) · vence no amanhecer do dia ${lot.expiresDay}`).join("; ")}.</p>}
-              <div className="character-consume-actions"><Button size="sm" variant="outline" disabled={selected.food < 1 || selected.foodConsumedDay === game.day} onClick={() => edit(draft => {
+              <div className="character-consume-actions"><Button size="sm" variant="outline" disabled={selected.food < 1 || provisionConsumedToday(game, selected, "food")} onClick={() => edit(draft => {
                 if (consumeDailyProvision(draft, selected.id, "food")) toast.success("Comida solta de hoje registrada.");
-              })}><Utensils size={15} /> {selected.foodConsumedDay === game.day ? "Comida de hoje registrada" : "Comer 1 porção solta"}</Button>
-                <Button size="sm" variant="outline" disabled={selected.water < 1 || selected.waterConsumedDay === game.day} onClick={() => edit(draft => {
-                  if (consumeDailyProvision(draft, selected.id, "water")) toast.success("Água solta de hoje registrada.");
-                })}><Droplets size={15} /> {selected.waterConsumedDay === game.day ? "Água de hoje registrada" : "Beber 1 porção solta"}</Button></div>
+              })}><Utensils size={15} /> {provisionConsumedToday(game, selected, "food") ? "Comida de hoje registrada" : "Comer 1 porção solta"}</Button>
+                <Button size="sm" variant="outline" disabled={selected.water < 1 || provisionConsumedToday(game, selected, "water")} onClick={() => edit(draft => {
+                  if (consumeDailyProvision(draft, selected.id, "water")) toast.success(provisionConsumedToday(draft, draft.survivors.find(person => person.id === selected.id)!, "water") ? "Hidratação diária completa." : "1 porção de Água registrada; o Calor ainda exige outra.");
+                })}><Droplets size={15} /> {provisionConsumedToday(game, selected, "water")
+                  ? "Água de hoje registrada"
+                  : requiredDailyProvision(selected, "water") > 1
+                    ? `Beber 1 porção · faltam ${remainingDailyProvisionPortions(game, selected, "water")}/${requiredDailyProvision(selected, "water")}`
+                    : "Beber 1 porção solta"}</Button></div>
               <p className="roll-hint">Para registrar alimentação/hidratação do dia, use <b>Comer/Beber</b> ou <b>Ações → Consumir</b> no item. Alterar o contador manualmente corrige o estoque, mas não registra que o personagem consumiu.</p>
               <div className="character-provision-actions">{!playerMode && !playerPreview && <ProvisionTransferDialog key={selected.id} game={game} edit={edit} survivorId={selected.id} />}</div>
             </section>
