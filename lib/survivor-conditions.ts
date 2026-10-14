@@ -199,8 +199,10 @@ export function resolveExposureRoll(game: GameState, survivorId: string, conditi
   const person = game.survivors.find(candidate => candidate.id === survivorId);
   const condition = person?.conditions?.find(entry => entry.id === conditionId && (entry.kind === "cold" || entry.kind === "heat"));
   if (!person || !condition) return { ok: false as const, message: "Exposição não encontrada." };
+  const assistedBy = condition.exposureAdvantageSource;
+  delete condition.exposureAdvantageSource;
   if (outcome === "success-hope" || outcome === "success-fear") {
-    addLog(game, "condição", `${person.name} resistiu à exposição de ${conditionDefinitions[condition.kind].label.toLocaleLowerCase("pt-BR")}; intensidade mantida em ${condition.level ?? 1}.`, person.id);
+    addLog(game, "condição", `${person.name} resistiu à exposição de ${conditionDefinitions[condition.kind].label.toLocaleLowerCase("pt-BR")}; intensidade mantida em ${condition.level ?? 1}.${assistedBy ? ` Vantagem preparada por ${assistedBy} foi consumida.` : ""}`, person.id);
     return { ok: true as const, level: condition.level ?? 1 };
   }
   let increase = 1;
@@ -214,7 +216,7 @@ export function resolveExposureRoll(game: GameState, survivorId: string, conditi
   const before = condition.level ?? 1;
   condition.level = Math.min(3, before + increase) as 1 | 2 | 3;
   if (outcome === "failure-fear") person.stress = Math.min(6, person.stress + 1);
-  addLog(game, "condição", `${person.name}: ${conditionDefinitions[condition.kind].label} ${before} → ${condition.level}${increase === 2 ? " por estar Molhado" : ""}${outcome === "failure-fear" ? " · +1 Estresse" : ""}.`, person.id);
+  addLog(game, "condição", `${person.name}: ${conditionDefinitions[condition.kind].label} ${before} → ${condition.level}${increase === 2 ? " por estar Molhado" : ""}${outcome === "failure-fear" ? " · +1 Estresse" : ""}.${assistedBy ? ` Vantagem preparada por ${assistedBy} foi consumida.` : ""}`, person.id);
   return { ok: true as const, level: condition.level };
 }
 
@@ -222,10 +224,31 @@ export function reduceExposure(game: GameState, survivorId: string, conditionId:
   const person = game.survivors.find(candidate => candidate.id === survivorId);
   const condition = person?.conditions?.find(entry => entry.id === conditionId && (entry.kind === "cold" || entry.kind === "heat"));
   if (!person || !condition) return false;
+  const assistedBy = condition.recoveryAdvantageSource;
+  delete condition.recoveryAdvantageSource;
   const before = condition.level ?? 1;
-  if (before <= 1) return removeSurvivorCondition(game, survivorId, condition.id, "removida após recuperação");
+  if (before <= 1) return removeSurvivorCondition(game, survivorId, condition.id,
+    assistedBy ? `removida após recuperação assistida por ${assistedBy}` : "removida após recuperação");
   condition.level = (before - 1) as 1 | 2;
-  addLog(game, "condição", `${person.name}: ${conditionDefinitions[condition.kind].label} ${before} → ${condition.level} após recuperação.`, person.id);
+  addLog(game, "condição", `${person.name}: ${conditionDefinitions[condition.kind].label} ${before} → ${condition.level} após recuperação${assistedBy ? ` assistida por ${assistedBy}` : ""}.`, person.id);
+  return true;
+}
+
+export function setExposureAdvantage(game: GameState, survivorId: string, conditionId: string, source: string) {
+  const person = game.survivors.find(candidate => candidate.id === survivorId);
+  const condition = person?.conditions?.find(entry => entry.id === conditionId && (entry.kind === "cold" || entry.kind === "heat"));
+  if (!person || !condition) return false;
+  condition.exposureAdvantageSource = source;
+  addLog(game, "condição", `${person.name}: Vantagem preparada para a próxima exposição de ${conditionDefinitions[condition.kind].label} por ${source}.`, person.id);
+  return true;
+}
+
+export function setRecoveryAdvantage(game: GameState, survivorId: string, conditionId: string, source: string) {
+  const person = game.survivors.find(candidate => candidate.id === survivorId);
+  const condition = person?.conditions?.find(entry => entry.id === conditionId && (entry.kind === "cold" || entry.kind === "heat"));
+  if (!person || !condition) return false;
+  condition.recoveryAdvantageSource = source;
+  addLog(game, "condição", `${person.name}: Vantagem preparada para a próxima recuperação de ${conditionDefinitions[condition.kind].label} por ${source}.`, person.id);
   return true;
 }
 
