@@ -294,31 +294,34 @@ export function inspectDayClosePlan(game: GameState, plan: DayClosePlan): DayClo
     food: provisionBreakdown(person, "food").total,
     water: provisionBreakdown(person, "water").total,
   }]));
-  function takePersonal(carrierId: string | undefined, hex: string, resource: DailyResource) {
+  function takePersonal(carrierId: string | undefined, hex: string, resource: DailyResource, quantity = 1) {
     const carrier = carrierId ? game.survivors.find(person => person.id === carrierId) : undefined;
     const remainingPersonal = carrier ? personalRemaining.get(carrier.id) : undefined;
-    if (!carrier || survivorHex(game, carrier) !== hex || !remainingPersonal || remainingPersonal[resource] < 1) return false;
-    remainingPersonal[resource] -= 1;
-    return true;
+    const needed = Math.max(0, Math.trunc(quantity));
+    if (!carrier || survivorHex(game, carrier) !== hex || !remainingPersonal) return false;
+    const taken = Math.min(remainingPersonal[resource], needed);
+    remainingPersonal[resource] -= taken;
+    return taken === needed;
   }
   for (const person of game.survivors) {
     const entry = planEntry(plan, person.id);
     for (const resource of ["food", "water"] as const) {
-      if (provisionConsumedToday(game, person, resource)) continue;
+      const needed = remainingDailyProvisionPortions(game, person, resource);
+      if (needed === 0) continue;
       const source = entry?.[resource] ?? "none";
       if (source === "other") continue;
       if (source === "personal") {
-        if (!takePersonal(person.id, survivorHex(game, person), resource))
+        if (!takePersonal(person.id, survivorHex(game, person), resource, needed))
           deprivations.push({ survivorId: person.id, name: person.name, resource, reason: "unavailable" });
         continue;
       }
       if (source === "shared") {
         if (survivorHex(game, person) !== storageHex) {
           deprivations.push({ survivorId: person.id, name: person.name, resource, reason: "remote" });
-        } else if (remaining[resource] > 0) {
-          remaining[resource] -= 1;
         } else {
-          deprivations.push({ survivorId: person.id, name: person.name, resource, reason: "unavailable" });
+          const taken = Math.min(remaining[resource], needed);
+          remaining[resource] -= taken;
+          if (taken < needed) deprivations.push({ survivorId: person.id, name: person.name, resource, reason: "unavailable" });
         }
         continue;
       }
@@ -346,13 +349,13 @@ export function inspectDayClosePlan(game: GameState, plan: DayClosePlan): DayClo
     }
   }
 
-  const sharedDemand = (resource: DailyResource) => plan.survivors.filter(entry => {
-    if (entry[resource] !== "shared") return false;
+  const sharedDemand = (resource: DailyResource) => plan.survivors.reduce((sum, entry) => {
+    if (entry[resource] !== "shared") return sum;
     const person = game.survivors.find(candidate => candidate.id === entry.survivorId);
-    return Boolean(person
-      && survivorHex(game, person) === storageHex
-      && !provisionConsumedToday(game, person, resource));
-  }).length;
+    return person && survivorHex(game, person) === storageHex
+      ? sum + remainingDailyProvisionPortions(game, person, resource)
+      : sum;
+  }, 0);
   const npcSharedDemand = (resource: DailyResource) => (game.npcs ?? []).filter(npc => {
     const entry = npcPlanEntry(plan, npc.id);
     return npc.active && npc.status !== "Morto" && npc.status !== "Desaparecido" && npc.hex === storageHex
