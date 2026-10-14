@@ -3,9 +3,9 @@ export const visualStyleStorageKey = "zona-morta-visual-style";
 
 export const visualStyles = [
   { id: "current", label: "Visual atual", description: "A aparência original do Zona Morta." },
-  { id: "fiel", label: "Refino fiel", description: "Petróleo e âmbar, com contrastes mais equilibrados." },
-  { id: "leitura", label: "Leitura confortável", description: "Tons suaves e a fonte Source Sans 3." },
-  { id: "tecnico", label: "Dossiê técnico", description: "Petróleo azulado e as fontes IBM Plex." },
+  { id: "fiel", label: "Refino fiel", description: "Petróleo profundo, âmbar e detalhes de campo." },
+  { id: "leitura", label: "Leitura confortável", description: "Papel quente, ameixa e a fonte Source Sans 3." },
+  { id: "tecnico", label: "Dossiê técnico", description: "Azul de arquivo, ciano e as fontes IBM Plex." },
 ] as const;
 
 export type VisualStyle = typeof visualStyles[number]["id"];
