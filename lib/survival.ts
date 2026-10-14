@@ -191,7 +191,7 @@ export function fieldNpcs(game: GameState): NPC[] {
 function recordLegacyNpcProvision(game: GameState, resource: DailyResource, portionsSupplied: number) {
   const storageHex = game.shelter.hex ?? game.partyHex;
   let remaining = Math.max(0, portionsSupplied - game.shelter.residents
-    - survivorsAtHex(game, storageHex).filter(person => !provisionConsumedToday(game, person, resource)).length);
+    - survivorsAtHex(game, storageHex).reduce((sum, person) => sum + remainingDailyProvisionPortions(game, person, resource), 0));
   for (const npc of sharedReserveNpcs(game)) {
     const key = dayKey(resource);
     if (npc[key] === game.day) continue;
@@ -205,9 +205,9 @@ export function eveningNeeds(game: GameState) {
   const present = survivorsAtHex(game, storageHex);
   const npcs = sharedReserveNpcs(game);
   return {
-    food: game.shelter.residents + present.filter(s => !provisionConsumedToday(game, s, "food")).length
+    food: game.shelter.residents + present.reduce((sum, person) => sum + remainingDailyProvisionPortions(game, person, "food"), 0)
       + npcs.filter(npc => !npcConsumedToday(game, npc, "food")).length,
-    water: game.shelter.residents + present.filter(s => !provisionConsumedToday(game, s, "water")).length
+    water: game.shelter.residents + present.reduce((sum, person) => sum + remainingDailyProvisionPortions(game, person, "water"), 0)
       + npcs.filter(npc => !npcConsumedToday(game, npc, "water")).length,
   };
 }
@@ -220,12 +220,19 @@ export function defaultDayClosePlan(game: GameState): DayClosePlan {
   const storageHex = game.shelter.hex ?? game.partyHex;
 
   function sourceFor(person: Survivor, resource: DailyResource): DayProvisionSource {
-    if (provisionConsumedToday(game, person, resource)) return "already";
-    if (survivorHex(game, person) === storageHex && sharedRemaining[resource] > 0) {
-      sharedRemaining[resource] -= 1;
+    const needed = remainingDailyProvisionPortions(game, person, resource);
+    if (needed === 0) return "already";
+    const personal = provisionBreakdown(person, resource).total;
+    if (survivorHex(game, person) === storageHex && sharedRemaining[resource] >= needed) {
+      sharedRemaining[resource] -= needed;
       return "shared";
     }
-    if (provisionBreakdown(person, resource).total > 0) return "personal";
+    if (personal >= needed) return "personal";
+    if (survivorHex(game, person) === storageHex && sharedRemaining[resource] > 0) {
+      sharedRemaining[resource] = Math.max(0, sharedRemaining[resource] - needed);
+      return "shared";
+    }
+    if (personal > 0) return "personal";
     return "none";
   }
 
