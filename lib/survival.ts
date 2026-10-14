@@ -426,24 +426,21 @@ export function closeDayWithPlan(game: GameState, plan: DayClosePlan): DayCloseR
   for (const person of game.survivors) {
     const entry = planEntry(plan, person.id);
     for (const resource of ["food", "water"] as const) {
-      const key = dayKey(resource);
-      if (person[key] === game.day) continue;
+      const needed = remainingDailyProvisionPortions(game, person, resource);
+      if (needed === 0) continue;
       const source = entry?.[resource] ?? "none";
 
       if (source === "other") {
-        person[key] = game.day;
-        addLog(game, "provisões", `${person.name}: ${resourceLabel(resource)} registrada por outra fonte/dispensa do mestre.`, person.id);
+        markDailyProvisionConsumed(game, person, resource, needed);
+        addLog(game, "provisões", `${person.name}: ${needed} porção(ões) de ${resourceLabel(resource)} registrada(s) por outra fonte/dispensa do mestre.`, person.id);
         continue;
       }
 
       if (source === "personal") {
-        const result = consumeBestProvision(person, resource);
-        if (result.consumed) {
-          person[key] = game.day;
-          addLog(game, "provisões", `${person.name} consumiu 1 porção pessoal de ${resourceLabel(resource)}${result.label ? ` (${result.label})` : ""}.`, person.id);
-          continue;
-        }
-        actualDeprivations.push({ survivorId: person.id, name: person.name, resource, reason: "unavailable" });
+        const result = consumeMany(person, resource, needed);
+        if (result.consumed) markDailyProvisionConsumed(game, person, resource, result.consumed);
+        if (result.consumed) addLog(game, "provisões", `${person.name} consumiu ${result.consumed}/${needed} porção(ões) pessoais de ${resourceLabel(resource)}${result.labels.length ? ` (${result.labels.join(", ")})` : ""}.`, person.id);
+        if (result.consumed < needed) actualDeprivations.push({ survivorId: person.id, name: person.name, resource, reason: "unavailable" });
         continue;
       }
 
@@ -452,19 +449,14 @@ export function closeDayWithPlan(game: GameState, plan: DayClosePlan): DayCloseR
           actualDeprivations.push({ survivorId: person.id, name: person.name, resource, reason: "remote" });
           continue;
         }
-        const result = consumeBestProvision(game.shelter, resource);
-        if (result.consumed) {
-          person[key] = game.day;
-          addLog(game, "provisões", `${person.name} consumiu 1 porção de ${resourceLabel(resource)} das reservas compartilhadas${result.label ? ` (${result.label})` : ""}.`, person.id);
-          continue;
-        }
-        actualDeprivations.push({ survivorId: person.id, name: person.name, resource, reason: "unavailable" });
+        const result = consumeMany(game.shelter, resource, needed);
+        if (result.consumed) markDailyProvisionConsumed(game, person, resource, result.consumed);
+        if (result.consumed) addLog(game, "provisões", `${person.name} consumiu ${result.consumed}/${needed} porção(ões) de ${resourceLabel(resource)} das reservas compartilhadas${result.labels.length ? ` (${result.labels.join(", ")})` : ""}.`, person.id);
+        if (result.consumed < needed) actualDeprivations.push({ survivorId: person.id, name: person.name, resource, reason: "unavailable" });
         continue;
       }
 
-      // "already" is only valid while the marker still says the resource was
-      // consumed. If the state changed before confirmation, it becomes a clear
-      // deprivation instead of silently spending another portion.
+      // "already" só é válido quando toda a necessidade atual já foi registrada.
       actualDeprivations.push({ survivorId: person.id, name: person.name, resource, reason: "none" });
     }
   }
