@@ -2,11 +2,12 @@
 
 import { useMemo, useState } from "react";
 import {
-  Activity, Droplets, EyeOff, HeartPulse, Lock, Snowflake, Sun, TriangleAlert,
+  Activity, ChevronRight, Droplets, EyeOff, HeartPulse, Lock, Snowflake, Sun, TriangleAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { PlayerActionControls } from "@/components/player-actions-panel";
 import { RollDialog } from "@/components/roll-dialog";
+import { RuleHelp } from "@/components/rule-help";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Field, Pick } from "@/components/game-controls";
@@ -216,7 +217,7 @@ export function SurvivorConditionBadges({ game, survivor, edit, editable = false
       {!conditions.length && empty && <span className="survivor-condition-empty">Nenhuma condição ativa.</span>}
     </div>
     <ConditionDetailDialog game={game} survivor={survivor} condition={selected} edit={edit} editable={editable}
-      open={Boolean(selected)} onOpenChange={value => { if (!value) setSelectedId(null); }} />
+      playerActions={playerActions} open={Boolean(selected)} onOpenChange={value => { if (!value) setSelectedId(null); }} />
   </TooltipProvider>;
 }
 
@@ -224,6 +225,9 @@ export function SurvivorConditionPanel({ game, survivor, edit, editable, playerA
   game: GameState; survivor: Survivor; edit: Edit; editable: boolean; playerActions?: PlayerActionControls;
 }) {
   const [addOpen, setAddOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const conditions = survivor.conditions ?? [];
+  const selected = conditions.find(condition => condition.id === selectedId) ?? null;
   const [kind, setKind] = useState<SurvivorConditionKind>("cold");
   const [bodyRegion, setBodyRegion] = useState<BodyRegion>("left-arm");
   const [level, setLevel] = useState("1");
@@ -253,7 +257,7 @@ export function SurvivorConditionPanel({ game, survivor, edit, editable, playerA
 
   return <section className="character-surface survivor-condition-panel">
     <div className="survivor-condition-panel-heading">
-      <div><span className="dossier-title">ESTADOS E CONDIÇÕES</span><h3>Condições ativas</h3><p>Os marcadores permanecem na ficha até a regra de remoção ser cumprida.</p></div>
+      <div><h3>Condições ativas{conditions.length > 0 && <span className="survivor-condition-count">{conditions.length}</span>}</h3><p>{conditions.length ? "Abra uma condição para ver efeitos e cuidados." : "Nenhuma condição ativa."}</p></div>
       {editable && <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogTrigger asChild><Button size="sm"><HeartPulse size={16} /> Aplicar condição</Button></DialogTrigger>
         <DialogContent>
@@ -271,19 +275,22 @@ export function SurvivorConditionPanel({ game, survivor, edit, editable, playerA
         </DialogContent>
       </Dialog>}
     </div>
-    <SurvivorConditionBadges game={game} survivor={survivor} edit={edit} editable={editable} empty />
-    {(survivor.conditions ?? []).length > 0 && <div className="survivor-condition-groups">
+    {conditions.length > 0 && <div className="survivor-condition-groups">
       {groups.map(group => {
-        const rows = (survivor.conditions ?? []).filter(condition => conditionDefinitions[condition.kind].category === group);
+        const rows = conditions.filter(condition => conditionDefinitions[condition.kind].category === group);
         if (!rows.length) return null;
         return <div key={group}><span>{group}</span>{rows.map(condition => {
           const detail = conditionDetails(condition);
-          return <div key={condition.id} className={`survivor-condition-row tone-${detail.tone}`}>
-            <ConditionIcon condition={condition} /><span><b>{detail.label}</b><small>{detail.summary}</small></span><ConditionProgress condition={condition} />
-          </div>;
+          return <button key={condition.id} type="button" className={`survivor-condition-row survivor-condition-open tone-${detail.tone}`}
+            aria-label={`${detail.label}. Ver efeitos e cuidados.`} aria-haspopup="dialog" onClick={() => setSelectedId(condition.id)}>
+            <ConditionIcon condition={condition} /><span><b>{detail.label}</b><small>{detail.summary}</small></span>
+            <ConditionProgress condition={condition} /><ChevronRight size={17} className="survivor-condition-arrow" aria-hidden="true" />
+          </button>;
         })}</div>;
       })}
     </div>}
-    <p className="character-rule-note">Vantagem e Desvantagem de múltiplas condições não acumulam dados adicionais. Quando uma condição depende do contexto da ação, declare sua relevância na rolagem.</p>
+    <RuleHelp topic="conditions" />
+    <ConditionDetailDialog game={game} survivor={survivor} condition={selected} edit={edit} editable={editable}
+      playerActions={playerActions} open={Boolean(selected)} onOpenChange={value => { if (!value) setSelectedId(null); }} />
   </section>;
 }
