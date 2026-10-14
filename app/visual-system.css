@@ -5205,3 +5205,68 @@ html[data-theme="dark"] .mobile-condition-note { color:#dfb778; }
   .roll-condition-result { grid-template-columns:1fr; }
   .roll-condition-result small { grid-column:auto; }
 }
+
+
+/* Catalog items that interact with survivor conditions. */
+.condition-item-badges {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:5px;
+  margin:6px 0 2px;
+}
+.condition-item-badges.compact { margin:4px 0 0; }
+.condition-item-badge {
+  --condition-item-accent:#587c77;
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  min-height:25px;
+  padding:4px 7px;
+  border:1px solid color-mix(in srgb,var(--condition-item-accent) 48%,var(--border));
+  border-radius:999px;
+  background:color-mix(in srgb,var(--condition-item-accent) 8%,var(--card));
+  color:var(--foreground);
+  font:700 .66rem/1.1 var(--font-sans);
+}
+.condition-item-badges.compact .condition-item-badge {
+  min-height:22px;
+  padding:3px 6px;
+  font-size:.62rem;
+}
+.condition-item-badge.condition-cold { --condition-item-accent:#4f7897; }
+.condition-item-badge.condition-heat { --condition-item-accent:#ad6235; }
+.condition-item-badge.condition-bleeding { --condition-item-accent:#a84e48; }
+.condition-item-badge.condition-injury { --condition-item-accent:#9a6b28; }
+.condition-item-badge.condition-fracture { --condition-item-accent:#815c49; }
+.condition-item-tooltip {
+  display:grid;
+  gap:3px;
+  max-width:320px;
+  line-height:1.35;
+}
+.condition-item-tooltip b { font-size:.76rem; }
+.condition-item-tooltip span { font-size:.72rem; }
+.condition-item-tooltip small { color:var(--muted-foreground);font-size:.66rem; }
+.condition-item-action {
+  display:grid;
+  gap:10px;
+}
+.condition-item-action .inventory-preview {
+  align-items:flex-start;
+}
+.condition-item-action .inventory-preview > span {
+  display:grid;
+  gap:3px;
+}
+html[data-theme="dark"] .condition-item-badge {
+  background:color-mix(in srgb,var(--condition-item-accent) 14%,var(--card));
+}
+
+@media (max-width:640px) {
+  .condition-item-badge {
+    min-height:30px;
+    padding:5px 8px;
+  }
+  .condition-item-action .inventory-preview { padding:10px; }
+}
