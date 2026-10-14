@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Counter, Field, Pick } from "@/components/game-controls";
 import { ItemArt } from "@/components/item-art";
 import { ConditionItemBadges } from "@/components/condition-item-badges";
+import type { PlayerActionControls } from "@/components/player-actions-panel";
 import { RuleHelp } from "@/components/rule-help";
 import { addLog, ammunitionCount, ammunitionItemType, ammunitionTypes, survivorHex, survivorStats, type AmmunitionType, type EquipmentSlot, type GameState, type InventoryItem } from "@/lib/game";
 import { createId } from "@/lib/id";
@@ -99,7 +100,7 @@ export function AddItemDialog({ game, edit, ownerId }: { game: GameState; edit: 
   </Dialog>;
 }
 
-export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection = false, selfOnly = false }: { game: GameState; edit: Edit; ownerId: string; item: InventoryItem; allowCorrection?: boolean; selfOnly?: boolean }) {
+export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection = false, selfOnly = false, playerActions }: { game: GameState; edit: Edit; ownerId: string; item: InventoryItem; allowCorrection?: boolean; selfOnly?: boolean; playerActions?: PlayerActionControls }) {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"transfer" | "equip" | "consume" | "prepare" | "medication" | "stock" | "use" | "condition" | "dry-clothes" | "recharge" | "fill-water" | "fill-fuel" | "empty-container" | "cart" | "discard" | "edit">("transfer");
   const [targetId, setTargetId] = useState("");
@@ -107,6 +108,7 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
   const [slot, setSlot] = useState<EquipmentSlot>("primary");
   const [amount, setAmount] = useState(1);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [serverBusy, setServerBusy] = useState(false);
   const [conditionDraft, setConditionDraft] = useState(item.condition || "Íntegro");
   const [qtyDraft, setQtyDraft] = useState(item.qty);
   const [loadDraft, setLoadDraft] = useState(item.load);
@@ -168,8 +170,31 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
     setOpen(true);
   }
 
-  function perform() {
+  async function perform() {
     if (mode === "discard" && !confirmDiscard) { setConfirmDiscard(true); return; }
+    const serverAction = playerActions && selfOnly && ownerId === playerActions.actorId
+      ? mode === "consume"
+        ? { type: "consume" as const }
+        : mode === "condition" && selectedConditionUse
+          ? { type: "condition-use" as const, conditionId: selectedConditionUse.conditionId, effectId: selectedConditionUse.effect.id }
+          : mode === "dry-clothes"
+            ? { type: "dry-clothes" as const }
+            : null
+      : null;
+    if (serverAction) {
+      if (serverBusy || !playerActions?.canAct || playerActions.pending) return;
+      setServerBusy(true);
+      try {
+        await playerActions.send({ type: "item-action", id: createId(), day: game.day, itemId: item.id, action: serverAction });
+        toast.success(mode === "consume" ? `${item.name}: consumo registrado.`
+          : mode === "condition" ? "Efeito aplicado à condição."
+          : "Roupa marcada como seca.");
+        close();
+      } catch (cause) {
+        toast.error(cause instanceof Error ? cause.message : "Não foi possível registrar a ação do item.");
+      } finally { setServerBusy(false); }
+      return;
+    }
     let message = "";
     edit(draft => {
       if (mode === "edit") {
@@ -331,7 +356,7 @@ export function ItemActionsDialog({ game, edit, ownerId, item, allowCorrection =
         <Counter label="Unidades" value={count} min={1} max={Math.max(1, ammoType ? movableUnits : item.qty)} onChange={setAmount} compact />}
       {mode === "transfer" && destination && <p className="roll-hint">{count}× {item.name} → {ownerName(game, destination)}. Permanecem {item.qty - count} na origem.</p>}
       <DialogFooter><Button variant="outline" onClick={close}>Cancelar</Button>
-        <Button variant={mode === "discard" ? "destructive" : "default"} disabled={(mode === "transfer" && !destination) || (mode === "equip" && !selectedSlot)
+        <Button variant={mode === "discard" ? "destructive" : "default"} disabled={serverBusy || (Boolean(playerActions && selfOnly && ["consume","condition","dry-clothes"].includes(mode)) && (!playerActions?.canAct || playerActions.pending)) || (mode === "transfer" && !destination) || (mode === "equip" && !selectedSlot)
           || (mode === "consume" && (!provisionState.ready || (ownerId === "shared" && !consumerId)))
           || (mode === "prepare" && (!(provisionState.requiresPreparation || provisionState.requiresVerification) || preparationCheck?.ok === false))
           || (mode === "medication" && game.shelter.medications + count > 99)

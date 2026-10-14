@@ -5,12 +5,16 @@ import { addLog, content as gameContent, survivorHex, survivorIsDown, survivorSt
 import { collectLocationStock, deepSearchCandidateKeys, finishPreparedSearch, pendingPlayerSearchOperation, prepareLocationForExploration, quickSearchOptions, rollSearchAccess, searchAreaSessionState, searchAreaState, searchMentors, schedulePreparedDeepSearch, schedulePreparedSearch, warehouseWorkers } from "./hex-automation";
 import { scheduleSurvivorTravel } from "./hex-actions";
 import { atSharedStorage, catalogKey, transferItem, transferProvisions } from "./inventory";
+import { performItemAction } from "./item-actions";
 import { survivorTimedCommitment } from "./activity";
 import { scheduleGroupRest, restActionsFor, type RestChoice } from "./abilities";
 import { eventTriggerReady } from "./hex-generators";
 import { projectPlayerSceneBoard, type SceneBoardScene } from "./scene-board";
 import { shelterTravelMinutes } from "./shelter-projects";
-import { rollDie } from "./rolls";
+import { equipmentModifiers } from "./equipment";
+import { resolveActionRoll, resolveRollResources, rollDie, type Edge } from "./rolls";
+import { consumeDailyProvision } from "./survival";
+import { applyConditionDuringRoll, conditionCanDisadvantageRoll, conditionLabel, exposureAdvantageSources, resolveExposureRoll } from "./survivor-conditions";
 import { confirmTableRest, requestTableRest } from "./table-rest";
 import { defaultPlayerPolicy, playerCommandSchema, playerPolicySchema, type PlayerActionState, type PlayerCommand, type PublicPlayerActions, type TeamOperation } from "./player-actions-types";
 
@@ -169,8 +173,9 @@ function executeCommand(game: GameState, actorId: string, cmd: PlayerCommand, di
   const policy = state.policy;
   const actor = game.survivors.find(p => p.id === actorId)!;
   const hexId = survivorHex(game, actor);
-  // Coletar estoque já liberado não inicia uma atividade nem avança tempo ou risco.
-  if (policy.paused && !["collect", "leave", "request", "clear-marker"].includes(cmd.type)) return "As ações da equipe estão pausadas pelo mestre.";
+  // Coleta e cuidados pessoais continuam disponíveis quando a exploração da equipe está pausada.
+  if (policy.paused && !["collect", "leave", "request", "clear-marker", "item-action", "consume-loose", "roll-exposure"].includes(cmd.type))
+    return "As ações da equipe estão pausadas pelo mestre.";
   if (["collect", "offer", "deposit", "withdraw"].includes(cmd.type) && game.activities?.some(a => a.status === "running" && a.participantIds.includes(actorId)))
     return "Conclua a atividade em andamento antes de recolher ou transferir itens.";
   const op = "operationId" in cmd ? state.operations.find(o => o.id === cmd.operationId) : undefined;
@@ -178,6 +183,92 @@ function executeCommand(game: GameState, actorId: string, cmd: PlayerCommand, di
   if (cmd.type === "confirm-rest") return confirmTableRest(game, actorId, cmd.operationId, cmd.choices, die);
   if (cmd.type === "request-rest") return requestTableRest(game, cmd.kind, actorId, cmd.participantIds);
   if (op?.individualChoices && cmd.type !== "request") return "Use as escolhas de descanso na sua própria ficha.";
+  if (cmd.type === "item-action") {
+    const item = actor.inventory.find(entry => entry.id === cmd.itemId);
+    if (!item) return "Este item não está mais no seu inventário.";
+    const action = cmd.action.type === "consume"
+      ? { type: "consume" as const, consumerId: actorId }
+      : cmd.action.type === "dry-clothes"
+        ? { type: "dry-clothes" as const }
+        : { type: "condition-use" as const, targetId: actorId, conditionId: cmd.action.conditionId, effectId: cmd.action.effectId };
+    const result = performItemAction(game, actorId, item.id, action);
+    return result.ok ? null : result.message;
+  }
+  if (cmd.type === "consume-loose") {
+    return consumeDailyProvision(game, actorId, cmd.resource)
+      ? null
+      : `Não há ${cmd.resource === "food" ? "Comida" : "Água"} disponível ou a necessidade diária já foi atendida.`;
+  }
+  if (cmd.type === "roll-exposure") {
+    const condition = actor.conditions?.find(entry => entry.id === cmd.conditionId && (entry.kind === "cold" || entry.kind === "heat"));
+    if (!condition) return "A condição de exposição não está mais ativa.";
+    const experienceIds = [...new Set(cmd.experiences)];
+    if (experienceIds.length !== cmd.experiences.length || experienceIds.length > actor.hope)
+      return "Esperança insuficiente para as Experiências declaradas.";
+    const selectedIds = [...new Set(cmd.conditionIds ?? [])];
+    const selected = selectedIds.map(id => actor.conditions?.find(entry => entry.id === id)).filter(Boolean);
+    if (selected.length !== selectedIds.length || selected.some(entry => !entry || entry.id === condition.id || !conditionCanDisadvantageRoll(entry)))
+      return "Uma das condições declaradas não pode afetar este teste.";
+    const forcedIds = [...new Set(cmd.forcedConditionIds ?? [])];
+    if (forcedIds.some(id => !selectedIds.includes(id))) return "Só é possível forçar uma condição declarada como relevante.";
+    for (const id of forcedIds) {
+      const current = selected.find(entry => entry?.id === id);
+      if (!current || (current.kind !== "injury" && current.kind !== "fracture") || (current.kind === "injury" && current.aggravated))
+        return "Esta condição não pode ser forçada.";
+    }
+    if (actor.stress + forcedIds.length > 6) return "Estresse insuficiente para forçar as condições declaradas.";
+
+    const sources = exposureAdvantageSources(actor, condition.id);
+    const situationalEdge: Edge = cmd.edge ?? "none";
+    const conditionDisadvantage = selected.some(entry =>
+      !(entry!.kind === "injury" && !entry!.aggravated && forcedIds.includes(entry!.id)));
+    const hasAdvantage = situationalEdge === "advantage" || sources.length > 0;
+    const hasDisadvantage = situationalEdge === "disadvantage" || conditionDisadvantage;
+    const effectiveEdge: Edge = hasAdvantage === hasDisadvantage ? "none" : hasAdvantage ? "advantage" : "disadvantage";
+
+    const origin = gameContent.origins.find(entry => entry.name === actor.origin);
+    const experienceNames = experienceIds.map(id => id === "origin" ? (origin?.experience || actor.origin) : actor.freeExperience);
+    const modifiers = equipmentModifiers(actor);
+    const equipmentBonus = modifiers.traits[cmd.trait] ?? 0;
+    const traitBonus = actor.attributes[cmd.trait] ?? 0;
+    const symptom = actor.infection === "Sintomático" && ["Agilidade", "Força"].includes(cmd.trait) ? -1 : 0;
+    const other = Math.max(-99, Math.min(99, cmd.other ?? 0));
+    const result = resolveActionRoll({
+      hopeDie: die(12), fearDie: die(12), trait: traitBonus, experience: experienceNames.length * 2,
+      other: other + equipmentBonus, symptom, edge: effectiveEdge,
+      edgeDie: effectiveEdge === "none" ? null : die(6), difficulty: cmd.difficulty,
+    });
+    const stressAfterForcing = Math.min(6, actor.stress + forcedIds.length);
+    const resources = resolveRollResources({
+      hope: actor.hope, stress: stressAfterForcing, fear: game.fear,
+      experienceCost: experienceNames.length, reaction: false, outcome: result,
+    });
+    actor.hope = resources.hope!;
+    actor.stress = resources.stress!;
+    game.fear = resources.fear;
+
+    const failedWithFear = result.success === false && result.with === "Fear";
+    for (const current of selected) if (current) {
+      applyConditionDuringRoll(game, actorId, current.id, {
+        forced: forcedIds.includes(current.id),
+        failedWithFear,
+        stressAlreadyPaid: forcedIds.includes(current.id),
+      });
+    }
+    const exposureOutcome = `${result.success ? "success" : "failure"}-${result.with === "Hope" ? "hope" : "fear"}` as
+      "success-hope" | "success-fear" | "failure-hope" | "failure-fear";
+    resolveExposureRoll(game, actorId, condition.id, exposureOutcome);
+
+    const fixedBonus = traitBonus + experienceNames.length * 2 + other + symptom + equipmentBonus;
+    const edgeLabel = result.edgeDie ? ` ${result.edge === "advantage" ? "+" : "−"} d6(${result.edgeDie})` : "";
+    const outcomeLabel = result.critical ? "Sucesso crítico" : `${result.success ? "Sucesso" : "Falha"} com ${result.with === "Hope" ? "Esperança" : "Medo"}`;
+    const experienceLabel = experienceNames.length ? ` · Experiências: ${experienceNames.join(" e ")} (−${experienceNames.length} Esperança)` : "";
+    const conditionText = selected.length ? ` · Condições: ${selected.map(entry => `${conditionLabel(entry!)}${forcedIds.includes(entry!.id) ? " (forçada)" : ""}`).join(", ")}` : "";
+    const supportText = sources.length ? ` · Apoio de exposição: ${sources.join(", ")}` : " · Sem apoio de equipamento na exposição";
+    addLog(game, "dados", `${actor.name}: exposição a ${conditionLabel(condition)} (${cmd.trait}) — Esperança ${result.hopeDie} + Medo ${result.fearDie} ${fixedBonus >= 0 ? "+" : "−"} ${Math.abs(fixedBonus)}${edgeLabel} = ${result.total}; Dificuldade ${cmd.difficulty}. ${outcomeLabel}${experienceLabel}${equipmentBonus ? ` · ${equipmentBonus} por equipamento` : ""}${symptom ? " · −1 por sintomas" : ""}${conditionText}${supportText}.`, actorId);
+    return null;
+  }
+
   if (cmd.type === "request") {
     if (state.operations.filter(o => active(game, o) && o.type === "exception" && o.initiatorId === actorId).length >= 3) return "Você já tem três pedidos aguardando o mestre.";
     state.operations.push({ id: cmd.id, type: "exception", initiatorId: actorId, day: game.day, scene: game.scene ?? 1, hexId, status: "forming", participantIds: [actorId], invitedIds: [], purpose: cmd.text, attention: "Pedido de avaliação narrativa" });
@@ -386,7 +477,8 @@ export function applyPlayerAction(game: GameState, actorId: string, input: unkno
     const focus = draft.playerActions!.operations.find(op => op.id === cmd.id)?.objectiveLabel
       ?? (area ? quickSearchOptions(area).find(option => option.id === cmd.objective)?.label : undefined) ?? cmd.objective;
     addLog(draft, "equipe", `${draft.survivors.find(p => p.id === actorId)!.name} propôs ${cmd.type === "deep-search" ? `busca profunda de ${focus}` : cmd.objective === "open" ? "busca geral" : `busca específica de ${focus}`} em ${point?.name} / ${area?.name} (Hex ${cmd.hexId}). Finalidade: ${cmd.purpose}.`, actorId);
-  } else if (cmd.type !== "prepare-search" && cmd.type !== "collect" && !((cmd.type === "execute" || cmd.type === "roll-access") && searchOperation?.status === "done"))
+  } else if (!["prepare-search", "collect", "item-action", "consume-loose", "roll-exposure"].includes(cmd.type)
+    && !((cmd.type === "execute" || cmd.type === "roll-access") && searchOperation?.status === "done"))
     addLog(draft, "equipe", `${draft.survivors.find(p => p.id === actorId)!.name}: ${cmd.type === "roll-access" ? "acesso à busca resolvido" : cmd.type === "execute" ? "atividade iniciada" : cmd.type === "join" ? "participação confirmada" : cmd.type === "leave" ? "participação cancelada" : "ação da equipe registrada"}.`, actorId);
   return { ok: true, state: draft, replay: false };
 }

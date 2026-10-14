@@ -31,6 +31,14 @@ export type PlayerActionState = {
   markers: { actorId: string; sceneId: string; day: number; x: number; y: number; label: string }[];
 };
 const quantity = z.number().int().min(1).max(99);
+const trait = z.enum(["Agilidade", "Força", "Finesse", "Instinto", "Presença", "Conhecimento"]);
+const experience = z.enum(["origin", "free"]);
+const edge = z.enum(["none", "advantage", "disadvantage"]);
+const personalItemAction = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("consume") }).strict(),
+  z.object({ type: z.literal("condition-use"), conditionId: id, effectId: id }).strict(),
+  z.object({ type: z.literal("dry-clothes") }).strict(),
+]);
 const base = { id, day: z.number().int().min(1).max(9999) };
 export const playerCommandSchema = z.discriminatedUnion("type", [
   z.object({ ...base, type: z.literal("prepare-search"), hexId: id, pointId: id }).strict(),
@@ -46,7 +54,12 @@ export const playerCommandSchema = z.discriminatedUnion("type", [
   z.object({ ...base, type: z.literal("join"), operationId: id }).strict(),
   z.object({ ...base, type: z.literal("leave"), operationId: id }).strict(),
   z.object({ ...base, type: z.literal("execute"), operationId: id, warehouseWorkerId: id.optional() }).strict(),
-  z.object({ ...base, type: z.literal("roll-access"), operationId: id, trait: z.enum(["Agilidade", "Força", "Finesse", "Instinto", "Presença", "Conhecimento"]), experiences: z.array(z.enum(["origin", "free"])).max(2), edge: z.enum(["none", "advantage", "disadvantage"]).optional(), mentorId: id.optional() }).strict(),
+  z.object({ ...base, type: z.literal("roll-access"), operationId: id, trait, experiences: z.array(experience).max(2), edge: edge.optional(), mentorId: id.optional() }).strict(),
+  z.object({ ...base, type: z.literal("item-action"), itemId: id, action: personalItemAction }).strict(),
+  z.object({ ...base, type: z.literal("consume-loose"), resource: z.enum(["food", "water"]) }).strict(),
+  z.object({ ...base, type: z.literal("roll-exposure"), conditionId: id, trait, difficulty: z.number().int().min(1).max(99),
+    experiences: z.array(experience).max(2), edge: edge.optional(), other: z.number().int().min(-99).max(99).optional(),
+    conditionIds: z.array(id).max(10).optional(), forcedConditionIds: z.array(id).max(10).optional() }).strict(),
   z.object({ ...base, type: z.literal("collect"), hexId: id, pointId: id, stockId: id, quantity, cartId: id.optional() }).strict(),
   z.object({ ...base, type: z.literal("request"), text: z.string().trim().min(1).max(500) }).strict(),
   z.object({ ...base, type: z.literal("token"), sceneId: id, objectId: id, x: z.number().int(), y: z.number().int(), beforeX: z.number().int(), beforeY: z.number().int() }).strict(),

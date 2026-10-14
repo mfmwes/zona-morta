@@ -439,8 +439,17 @@ export function SurvivorPanel({ mobile = false, initialSurvivorId, initialSectio
     const definition = { hp: {label:"PV marcados",icon:Heart,max:stats.hp,tone:"health"}, stress:{label:"Estresse",icon:Zap,max:6,tone:"stress"}, hope:{label:"Esperança",icon:Sparkles,max:6,tone:"hope"}, armorMarked:{label:"Armadura marcada",icon:Shield,max:stats.armor,tone:"armor"} }[resource];
     return <ResourceControl {...definition} current={selected[resource] ?? 0} onChange={value => change(selected.id, person => { person[resource] = value; })} />;
   }
-  function consumeLooseProvision(resource: "food" | "water") {
+  async function consumeLooseProvision(resource: "food" | "water") {
     if (!selected) return;
+    if ((playerMode || playerPreview) && playerActions) {
+      try {
+        await playerActions.send({ type: "consume-loose", id: createId(), day: game.day, resource });
+        toast.success(resource === "food" ? "Comida solta de hoje registrada." : "Água solta de hoje registrada.");
+      } catch (cause) {
+        toast.error(cause instanceof Error ? cause.message : "Não foi possível registrar o consumo.");
+      }
+      return;
+    }
     edit(draft => { if (consumeDailyProvision(draft, selected.id, resource)) toast.success(resource === "food" ? "Comida solta de hoje registrada." : "Água solta de hoje registrada."); });
   }
   return <div className={`character-sheet${mobile ? " character-sheet--mobile" : ""}`}>
@@ -505,7 +514,7 @@ export function SurvivorPanel({ mobile = false, initialSurvivorId, initialSectio
             <span className={selected.infection === "Saudável" ? "character-condition healthy" : "character-condition at-risk"}><Activity size={15} aria-hidden="true" /> {selected.infection}</span>
             {selected.infection === "Exposto" && <span className="character-condition-detail">{selected.treatmentAttempted ? "Tratamento já tentado" : <>Tratamento até <b>{deadlineLabel(selected.exposureDeadline)}</b></>}</span>}
           </div>
-          <SurvivorConditionBadges game={game} survivor={selected} edit={edit} editable={!playerMode && !playerPreview} />
+          <SurvivorConditionBadges game={game} survivor={selected} edit={edit} editable={!playerMode && !playerPreview} playerActions={playerActions} />
           <span className="character-hero-code">REGISTRO {selected.id.slice(0, 6).toUpperCase()}</span>
         </div>
       </header>
@@ -666,12 +675,8 @@ export function SurvivorPanel({ mobile = false, initialSurvivorId, initialSectio
                 <div className="metric"><span className="smallcaps subtle">Munição física</span><strong>{totalAmmoUnits}</strong><p className="text-xs subtle mt-2">{ammunitionTypes.filter(type => ammunitionCount(selected.inventory, type) > 0).map(type => `${type}: ${ammunitionCount(selected.inventory, type)}`).join(" · ") || "Nenhuma unidade no inventário"}</p></div>
               </div>
               {(selected.provisionLots ?? []).length > 0 && <p className="character-rule-note">Perecíveis: {selected.provisionLots!.map(lot => `${lot.qty} porção(ões) de ${lot.resource === "food" ? "comida" : "água"} (${lot.label}) · vence no amanhecer do dia ${lot.expiresDay}`).join("; ")}.</p>}
-              <div className="character-consume-actions"><Button size="sm" variant="outline" disabled={selected.food < 1 || provisionConsumedToday(game, selected, "food")} onClick={() => edit(draft => {
-                if (consumeDailyProvision(draft, selected.id, "food")) toast.success("Comida solta de hoje registrada.");
-              })}><Utensils size={15} /> {provisionConsumedToday(game, selected, "food") ? "Comida de hoje registrada" : "Comer 1 porção solta"}</Button>
-                <Button size="sm" variant="outline" disabled={selected.water < 1 || provisionConsumedToday(game, selected, "water")} onClick={() => edit(draft => {
-                  if (consumeDailyProvision(draft, selected.id, "water")) toast.success(provisionConsumedToday(draft, draft.survivors.find(person => person.id === selected.id)!, "water") ? "Hidratação diária completa." : "1 porção de Água registrada; o Calor ainda exige outra.");
-                })}><Droplets size={15} /> {provisionConsumedToday(game, selected, "water")
+              <div className="character-consume-actions"><Button size="sm" variant="outline" disabled={selected.food < 1 || provisionConsumedToday(game, selected, "food") || Boolean((playerMode || playerPreview) && (!playerActions?.canAct || playerActions.pending))} onClick={() => void consumeLooseProvision("food")}><Utensils size={15} /> {provisionConsumedToday(game, selected, "food") ? "Comida de hoje registrada" : "Comer 1 porção solta"}</Button>
+                <Button size="sm" variant="outline" disabled={selected.water < 1 || provisionConsumedToday(game, selected, "water") || Boolean((playerMode || playerPreview) && (!playerActions?.canAct || playerActions.pending))} onClick={() => void consumeLooseProvision("water")}><Droplets size={15} /> {provisionConsumedToday(game, selected, "water")
                   ? "Água de hoje registrada"
                   : requiredDailyProvision(selected, "water") > 1
                     ? `Beber 1 porção · faltam ${remainingDailyProvisionPortions(game, selected, "water")}/${requiredDailyProvision(selected, "water")}`
@@ -697,11 +702,11 @@ export function SurvivorPanel({ mobile = false, initialSurvivorId, initialSectio
               {inventoryGroups.length === 0 && <p className="character-empty-list">{selected.inventory.length ? "Nenhum item com esse filtro." : "Nenhum item guardado. Registre um achado ou guarde algo do kit ativo."}{selected.inventory.length > 0 && <button type="button" className="character-text-link" onClick={() => { setInventoryQuery(""); setInventoryCategory("Todas"); }}>Limpar filtros</button>}</p>}
               {inventoryGroups.map(([category, items]) => <div className="character-inventory-group" key={category}><h4>{category}</h4>
                 <Accordion type="multiple">{items.map(item => { const catalog = catalogForItem(item); const provisionState = provisionItemInfo(item); return <AccordionItem value={item.id} key={item.id} className="character-item">
-                  <ItemContextMenu game={game} edit={edit} ownerId={selected.id} item={item} selfOnly={playerMode || playerPreview}>
+                  <ItemContextMenu game={game} edit={edit} ownerId={selected.id} item={item} selfOnly={playerMode || playerPreview} playerActions={playerActions}>
                     <div className="character-item-row inventory-context-target"><AccordionTrigger className="character-item-trigger"><ItemArt name={item.name} category={category} /><span className="character-item-name">{item.name}<small>{provisionState.resource ? provisionDisplay(item) : ammunitionItemType(item)
   ? `${Math.ceil(item.qty / 4)} espaço(s) por este stack${item.committedAmmo ? ` · ${item.committedAmmo} comprometida(s) nesta cena` : ""}`
   : `${item.condition || "Estado não registrado"} · ${item.load * item.qty} espaço(s)${batteryStateFor(item) ? ` · bateria ${batteryStateFor(item)?.toLowerCase()}` : ""}`}</small></span><span className="character-item-meta">×{item.qty}</span></AccordionTrigger>
-                      <ItemActionsDialog game={game} edit={edit} ownerId={selected.id} item={item} allowCorrection={!playerPreview} selfOnly={playerMode || playerPreview} /></div>
+                      <ItemActionsDialog game={game} edit={edit} ownerId={selected.id} item={item} allowCorrection={!playerPreview} selfOnly={playerMode || playerPreview} playerActions={playerActions} /></div>
                   </ItemContextMenu>
                   <AccordionContent className="character-item-detail"><div className="character-chips"><span>{category}</span><span>Estado: {item.condition || "Sem registro"}</span>{provisionState.resource ? <><span>{provisionState.remaining} porção(ões) restantes</span><span>{provisionState.status}</span>{item.opened && <span>Aberto</span>}{item.expiresDay && <span>Vence no dia {item.expiresDay}</span>}</>
   : ammunitionItemType(item) ? <><span>Tipo: {ammunitionItemType(item)}</span><span>Até 4 unidades = 1 espaço</span>{item.committedAmmo ? <span>{item.committedAmmo} unidade(s) bloqueada(s) até a próxima cena</span> : null}</>
@@ -716,7 +721,7 @@ export function SurvivorPanel({ mobile = false, initialSurvivorId, initialSectio
             </section>
           </TabsContent>
           <TabsContent value="condicoes" {...(mobile ? { "aria-label": "Condições", "aria-labelledby": undefined } : {})} className="character-tab-content"><RuleHelp topic="conditions"/>
-            <SurvivorConditionPanel game={game} survivor={selected} edit={edit} editable={!playerMode && !playerPreview} />
+            <SurvivorConditionPanel game={game} survivor={selected} edit={edit} editable={!playerMode && !playerPreview} playerActions={playerActions} />
             <section className="character-surface"><h3>Condições de eventos</h3>{!(selected.eventConditions ?? []).length && <p className="subtle">Nenhuma condição de evento ativa.</p>}{(selected.eventConditions ?? []).map(c=><div className="list-card" key={c.name}><b>{c.name}</b><p>{c.effect}</p><p className="subtle">Remover: {c.clear}</p>{!playerMode&&!playerPreview&&<Button size="sm" variant="outline" onClick={()=>change(selected.id,s=>{s.eventConditions=(s.eventConditions??[]).filter(row=>row.name!==c.name);})}>Condição encerrada: remover</Button>}</div>)}</section>
             <section className="character-surface"><SectionHeading index="01" title="Exposição e infecção" /><div className="character-condition-banner"><HeartPulse size={24} aria-hidden="true" /><div><b>{selected.infection}</b><p>{selected.infection === "Saudável" ? "Nenhuma exposição registrada." : "Acompanhe o estado e as escolhas de tratamento."}</p></div></div>
               {!playerPreview && <div className="character-condition-edit"><Pick label="Estado" value={selected.infection} options={infectionStates} onChange={value => change(selected.id, s => {
