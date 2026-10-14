@@ -397,6 +397,8 @@ export type Survivor = {
   water: number;
   foodConsumedDay?: number;
   waterConsumedDay?: number;
+  /** Segunda porção diária exigida por Calor; separada para preservar saves antigos. */
+  extraWaterConsumedDay?: number;
   provisionLots?: ProvisionLot[];
   /** Contador legado. Novas campanhas armazenam munição como itens físicos no inventário. */
   ammo: number;
