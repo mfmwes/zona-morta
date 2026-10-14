@@ -49,19 +49,21 @@
 }
 
 
-/* Detail modal — visual hierarchy inspired by the survivor dossier, in every condition. */
+/* Compact condition dossier: keep all standard desktop actions visible without scrolling. */
 .survivor-condition-dialog {
   --condition-accent:#5b817c;
-  width:min(620px,calc(100vw - 24px));
-  max-width:620px;
-  gap:16px;
-  padding:22px;
-  border:1px solid color-mix(in srgb,var(--condition-accent) 30%,var(--border));
-  border-radius:18px;
+  width:min(790px,calc(100vw - 28px));
+  max-width:790px;
+  max-height:calc(100dvh - 20px);
+  gap:9px;
+  padding:16px 18px;
+  border:1px solid color-mix(in srgb,var(--condition-accent) 32%,var(--border));
+  border-radius:17px;
   background:var(--card);
   color:var(--foreground);
-  box-shadow:0 24px 72px #0005,0 1px 0 color-mix(in srgb,var(--foreground) 8%,transparent) inset;
   overflow-x:hidden;
+  overflow-y:auto; /* Safety for short screens, large text and unusually long condition histories. */
+  box-shadow:0 24px 72px #0006,0 1px 0 color-mix(in srgb,var(--foreground) 8%,transparent) inset;
 }
 .survivor-condition-dialog.tone-danger { --condition-accent:#b15a52; }
 .survivor-condition-dialog.tone-warning { --condition-accent:#a77b3c; }
@@ -76,9 +78,9 @@ html[data-theme="dark"] .survivor-condition-dialog.tone-heat { --condition-accen
 html[data-theme="dark"] .survivor-condition-dialog.tone-nature { --condition-accent:#9bc8a7; }
 html[data-theme="dark"] .survivor-condition-dialog.tone-neutral { --condition-accent:#9acbc1; }
 .survivor-condition-dialog > [data-slot="dialog-close"] {
-  top:14px;right:14px;
-  width:40px;height:40px;border:1px solid var(--border);
-  border-radius:11px;background:color-mix(in srgb,var(--card) 88%,var(--muted));
+  top:12px;right:12px;
+  width:36px;height:36px;border:1px solid var(--border);
+  border-radius:10px;background:color-mix(in srgb,var(--card) 88%,var(--muted));
   color:var(--foreground);opacity:.85;
 }
 .survivor-condition-dialog > [data-slot="dialog-close"]:hover { opacity:1;background:var(--muted); }
@@ -86,148 +88,148 @@ html[data-theme="dark"] .survivor-condition-dialog.tone-neutral { --condition-ac
 .survivor-condition-dialog .survivor-condition-hero {
   position:relative;isolation:isolate;
   display:block;
-  margin:-22px -22px 0;
-  padding:25px 66px 23px 24px;
-  border-bottom:1px solid color-mix(in srgb,var(--condition-accent) 24%,var(--border));
+  margin:-16px -18px 0;
+  padding:17px 56px 17px 20px;
+  border-bottom:1px solid color-mix(in srgb,var(--condition-accent) 25%,var(--border));
   background:
-    radial-gradient(ellipse at 82% 18%,color-mix(in srgb,var(--condition-accent) 21%,transparent),transparent 54%),
-    linear-gradient(115deg,color-mix(in srgb,var(--muted) 64%,var(--card)),var(--card));
+    radial-gradient(ellipse at 83% 35%,color-mix(in srgb,var(--condition-accent) 20%,transparent),transparent 45%),
+    linear-gradient(115deg,color-mix(in srgb,var(--muted) 60%,var(--card)),var(--card));
   text-align:left;
 }
-.survivor-condition-hero-content { display:flex;align-items:center;gap:17px;min-width:0; }
-.survivor-condition-dialog .survivor-condition-dialog-icon {
-  flex:none;grid-row:auto;width:62px;height:62px;border-radius:16px;
-  border-color:color-mix(in srgb,var(--condition-accent) 65%,var(--border));
-  box-shadow:0 0 24px color-mix(in srgb,var(--condition-accent) 9%,transparent);
+.survivor-condition-dialog .survivor-condition-hero::after {
+  content:"";position:absolute;right:68px;top:11px;
+  width:65px;height:65px;border-radius:50%;
+  background:radial-gradient(circle,color-mix(in srgb,var(--condition-accent) 34%,transparent),transparent 72%);
+  opacity:.6;pointer-events:none;z-index:0;
 }
-.survivor-condition-hero-text { display:grid;gap:6px;min-width:0; }
+.survivor-condition-hero-content { position:relative;z-index:1;display:flex;align-items:center;gap:13px;min-width:0; }
+.survivor-condition-dialog .survivor-condition-dialog-icon {
+  flex:none;grid-row:auto;width:54px;height:54px;border-radius:13px;
+  border-color:color-mix(in srgb,var(--condition-accent) 60%,var(--border));
+  box-shadow:0 0 16px color-mix(in srgb,var(--condition-accent) 12%,transparent);
+}
+.survivor-condition-hero-text { display:grid;gap:4px;min-width:0; }
 .survivor-condition-hero-text [data-slot="dialog-title"] {
-  font:750 clamp(1.35rem,2vw,1.75rem)/1.13 var(--font-sans);
+  font:750 clamp(1.35rem,2vw,1.7rem)/1.13 var(--font-sans);
   letter-spacing:-.025em;
 }
-.survivor-condition-hero-text [data-slot="dialog-description"] {
-  font-size:.84rem;line-height:1.45;color:var(--muted-foreground);
-}
-.survivor-condition-hero-text .survivor-condition-level { color:var(--condition-accent);margin:3px 0 0;gap:5px; }
-.survivor-condition-hero-text .survivor-condition-level i { width:7px;height:7px; }
-.survivor-condition-dialog .survivor-condition-detail { display:grid;gap:11px; }
+.survivor-condition-hero-text [data-slot="dialog-description"] { font-size:.82rem;line-height:1.35;color:var(--muted-foreground); }
+.survivor-condition-hero-text .survivor-condition-level { color:var(--condition-accent);margin:2px 0 0;gap:5px; }
+.survivor-condition-hero-text .survivor-condition-level i { width:6px;height:6px; }
+.survivor-condition-dialog .survivor-condition-detail { display:grid;gap:8px; }
 .survivor-condition-dialog .survivor-condition-info-card {
-  display:grid;grid-template-columns:38px minmax(0,1fr);gap:13px;
-  align-items:start;padding:17px;
-  border:1px solid color-mix(in srgb,var(--foreground) 10%,var(--border));
-  border-radius:12px;
-  background:color-mix(in srgb,var(--muted) 36%,var(--card));
+  display:grid;grid-template-columns:32px minmax(0,1fr);gap:11px;align-items:start;
+  padding:11px 13px;border:1px solid color-mix(in srgb,var(--foreground) 11%,var(--border));
+  border-radius:10px;background:color-mix(in srgb,var(--muted) 33%,var(--card));
 }
 .survivor-condition-info-icon {
-  display:grid;place-items:center;width:38px;height:38px;
-  border:1px solid color-mix(in srgb,var(--condition-accent) 22%,var(--border));
-  border-radius:10px;background:color-mix(in srgb,var(--condition-accent) 9%,var(--card));
+  display:grid;place-items:center;width:32px;height:32px;
+  border:1px solid color-mix(in srgb,var(--condition-accent) 23%,var(--border));
+  border-radius:9px;background:color-mix(in srgb,var(--condition-accent) 9%,var(--card));
   color:var(--condition-accent);
 }
 .survivor-condition-info-body { min-width:0; }
 .survivor-condition-dialog .survivor-condition-info-body h3,
 .survivor-condition-dialog .exposure-support-heading h3 {
-  margin:1px 0 10px;
+  margin:0 0 5px;
   color:var(--muted-foreground);
-  font:800 .69rem/1.3 var(--font-mono);
-  text-transform:uppercase;letter-spacing:.105em;
+  font:800 .66rem/1.35 var(--font-mono);
+  text-transform:uppercase;letter-spacing:.095em;
 }
 .survivor-condition-dialog .survivor-condition-info-body p {
-  margin:0;font-size:.875rem;line-height:1.65;
-  color:var(--foreground);overflow-wrap:anywhere;
+  margin:0;font-size:.85rem;line-height:1.52;color:var(--foreground);overflow-wrap:anywhere;
 }
-.survivor-condition-dialog .survivor-condition-info-body b { font-weight:700; }
-.survivor-condition-effect-levels,.survivor-condition-effect-prose { display:grid;gap:12px; }
-.survivor-condition-dialog .survivor-condition-effect-row {
-  display:grid;grid-template-columns:88px minmax(0,1fr);align-items:start;gap:12px;
+.survivor-condition-dialog .survivor-condition-info-body b { font-weight:750; }
+.survivor-condition-dialog .survivor-condition-effect-compact { display:block; }
+.survivor-condition-dialog .survivor-condition-effect-fragment { display:inline; }
+.survivor-condition-dialog .survivor-condition-effect-fragment strong {
+  color:var(--foreground);font-weight:800;white-space:nowrap;
 }
-.survivor-condition-dialog .survivor-condition-effect-row + .survivor-condition-effect-row {
-  padding-top:12px;border-top:1px solid color-mix(in srgb,var(--border) 80%,transparent);
+.survivor-condition-dialog .survivor-condition-effect-fragment strong.is-reached { color:var(--condition-accent); }
+/* Secondary metadata becomes two columns only when there are many sections. */
+@media(min-width:700px) {
+  .survivor-condition-dialog .survivor-condition-detail:has(> :nth-child(4)) { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .survivor-condition-dialog .survivor-condition-detail:has(> :nth-child(4)) > :first-child { grid-column:1/-1; }
 }
-.survivor-condition-dialog .survivor-condition-effect-level {
-  display:inline-flex;align-items:center;justify-content:center;
-  width:max-content;min-width:76px;max-width:100%;margin:1px 0 0;padding:5px 8px;
-  border:1px solid var(--border);border-radius:7px;
-  color:var(--muted-foreground);background:var(--card);
-  font:700 .69rem/1.3 var(--font-mono);letter-spacing:0;
-}
-.survivor-condition-dialog .survivor-condition-effect-row.is-reached .survivor-condition-effect-level {
-  color:var(--condition-accent);
-  border-color:color-mix(in srgb,var(--condition-accent) 44%,var(--border));
-  background:color-mix(in srgb,var(--condition-accent) 9%,var(--card));
-}
-.survivor-condition-effect-prose p + p { margin-top:9px; }
 .survivor-condition-dialog .exposure-support-card {
-  display:grid;gap:12px;padding:18px 19px;
+  display:grid;gap:8px;padding:12px 14px;
   border:1px solid color-mix(in srgb,#60a58c 55%,var(--border));
-  border-radius:13px;
-  background:linear-gradient(135deg,color-mix(in srgb,#609b87 14%,var(--card)),color-mix(in srgb,#60a58c 5%,var(--card)));
+  border-radius:11px;
+  background:linear-gradient(120deg,color-mix(in srgb,#609b87 15%,var(--card)),color-mix(in srgb,#60a58c 5%,var(--card)));
 }
-.survivor-condition-dialog .exposure-support-heading { display:flex;align-items:center;gap:11px;color:#408873; }
+.survivor-condition-dialog .exposure-support-heading { display:flex;align-items:center;gap:9px;color:#408873; }
 html[data-theme="dark"] .survivor-condition-dialog .exposure-support-heading { color:#8fcebb; }
 .survivor-condition-dialog .exposure-support-heading h3 { margin:0;color:inherit; }
 .survivor-condition-dialog .exposure-support-status {
-  display:inline-flex;align-items:center;gap:8px;justify-self:start;max-width:100%;
-  border:1px solid var(--border);border-radius:999px;padding:7px 10px;
+  display:inline-flex;align-items:center;gap:7px;justify-self:start;max-width:100%;
+  border:1px solid var(--border);border-radius:999px;padding:5px 9px;
   background:var(--card);color:var(--muted-foreground);
 }
 .survivor-condition-dialog .exposure-support-status.has-advantage {
   border-color:color-mix(in srgb,#368773 55%,var(--border));
   background:color-mix(in srgb,#438f7a 15%,var(--card));color:var(--foreground);
 }
-.survivor-condition-dialog .exposure-support-status strong { font-size:.82rem;line-height:1.35; }
-.survivor-condition-dialog .exposure-support-card p {
-  margin:0;color:var(--muted-foreground);font-size:.81rem;line-height:1.55;
-}
+.survivor-condition-dialog .exposure-support-status strong { font-size:.79rem;line-height:1.3; }
+.survivor-condition-dialog .exposure-support-card p { margin:0;color:var(--muted-foreground);font-size:.78rem;line-height:1.42; }
 .survivor-condition-dialog .exposure-support-roll {
-  display:flex;align-items:center;justify-content:flex-start;gap:11px;
-  width:100%;min-height:49px;padding:12px 15px;border-radius:10px;
-  background:#79cbb5;color:#12342e;font-weight:800;font-size:.95rem;
-  border:1px solid #469981;box-shadow:0 3px 12px #0002;
+  display:flex;align-items:center;justify-content:flex-start;gap:10px;
+  width:100%;min-height:43px;padding:9px 13px;border-radius:9px;
+  background:#79cbb5;color:#12342e;font-weight:800;font-size:.9rem;
+  border:1px solid #469981;box-shadow:0 3px 10px #0002;
 }
 .survivor-condition-dialog .exposure-support-roll:hover { background:#92d8c5;color:#12342e; }
 .survivor-condition-dialog .exposure-support-roll:focus-visible { outline:3px solid var(--ring);outline-offset:2px; }
 .survivor-condition-dialog .exposure-support-roll svg:last-child { margin-left:auto; }
 .survivor-condition-dialog .survivor-condition-actions {
-  display:grid;gap:13px;padding:17px 2px 0;border-top:1px solid var(--border);
+  display:grid;gap:8px;padding:10px 2px 0;border-top:1px solid var(--border);
 }
 .survivor-condition-dialog .survivor-condition-action-title {
-  display:flex;align-items:center;gap:8px;margin:0;
-  font:800 .7rem/1.4 var(--font-mono);text-transform:uppercase;letter-spacing:.085em;
+  display:flex;align-items:center;gap:7px;margin:0;
+  font:800 .67rem/1.35 var(--font-mono);text-transform:uppercase;letter-spacing:.085em;
 }
-.survivor-condition-dialog .survivor-condition-actions > div { display:flex;flex-wrap:wrap;gap:8px; }
+.survivor-condition-dialog .survivor-condition-actions > div { display:flex;flex-wrap:wrap;gap:7px; }
 .survivor-condition-dialog .survivor-condition-actions button {
-  display:inline-flex;align-items:center;justify-content:center;gap:8px;
-  min-height:41px;white-space:normal;text-align:center;
-  padding:9px 12px;border-radius:10px;
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  min-height:36px;white-space:normal;text-align:center;
+  padding:7px 10px;border-radius:9px;font-size:.77rem;
   color:var(--foreground);border-color:var(--border);background:var(--card);
 }
-.survivor-condition-dialog .survivor-condition-actions button:hover {
-  border-color:var(--condition-accent);background:var(--muted);
+.survivor-condition-dialog .survivor-condition-actions button:hover { border-color:var(--condition-accent);background:var(--muted); }
+.survivor-condition-dialog .survivor-condition-actions button.survivor-condition-danger-action {
+  color:var(--destructive);
+  border-color:color-mix(in srgb,var(--destructive) 55%,var(--border));
+  background:color-mix(in srgb,var(--destructive) 8%,var(--card));
 }
-.survivor-condition-dialog .survivor-condition-actions button.survivor-condition-danger-action { color:var(--destructive);border-color:color-mix(in srgb,var(--destructive) 55%,var(--border));background:color-mix(in srgb,var(--destructive) 8%,var(--card)); }
 .survivor-condition-dialog .survivor-condition-actions small {
-  max-width:64ch;color:var(--muted-foreground);font-size:.76rem;line-height:1.55;
+  max-width:100%;color:var(--muted-foreground);font-size:.73rem;line-height:1.4;
 }
 .survivor-condition-dialog .survivor-condition-dialog-footer {
   display:flex;flex-direction:row;justify-content:flex-end;flex-wrap:wrap;
-  gap:9px;margin-top:2px;padding-top:15px;border-top:1px solid var(--border);
+  gap:7px;margin-top:0;padding-top:9px;border-top:1px solid var(--border);
 }
-.survivor-condition-dialog .survivor-condition-dialog-footer button {
-  min-height:40px;border-radius:10px;
-}
+.survivor-condition-dialog .survivor-condition-dialog-footer button { min-height:36px;border-radius:9px; }
 @media(max-width:620px) {
-  .survivor-condition-dialog { width:calc(100vw - 16px);max-width:calc(100vw - 16px);padding:15px;gap:13px;border-radius:13px; }
-  .survivor-condition-dialog .survivor-condition-hero { margin:-15px -15px 0;padding:19px 49px 18px 15px; }
-  .survivor-condition-hero-content { gap:12px; }
-  .survivor-condition-dialog .survivor-condition-dialog-icon { width:47px;height:47px;border-radius:12px; }
-  .survivor-condition-dialog .survivor-condition-info-card { padding:13px;grid-template-columns:30px minmax(0,1fr);gap:10px; }
-  .survivor-condition-info-icon { width:30px;height:30px;border-radius:8px; }
-  .survivor-condition-dialog .survivor-condition-effect-row { grid-template-columns:minmax(0,1fr);gap:7px; }
-  .survivor-condition-dialog .exposure-support-card { padding:14px; }
+  .survivor-condition-dialog {
+    width:calc(100vw - 16px);max-width:calc(100vw - 16px);
+    padding:13px;gap:9px;border-radius:13px;
+    max-height:calc(100dvh - 12px);
+  }
+  .survivor-condition-dialog .survivor-condition-hero { margin:-13px -13px 0;padding:14px 47px 14px 13px; }
+  .survivor-condition-hero-content { gap:11px; }
+  .survivor-condition-dialog .survivor-condition-dialog-icon { width:45px;height:45px;border-radius:11px; }
+  .survivor-condition-dialog .survivor-condition-info-card { padding:10px;grid-template-columns:29px minmax(0,1fr);gap:9px; }
+  .survivor-condition-info-icon { width:29px;height:29px;border-radius:8px; }
+  .survivor-condition-dialog .exposure-support-card { padding:11px; }
   .survivor-condition-dialog .survivor-condition-actions > div { display:grid;grid-template-columns:1fr; }
   .survivor-condition-dialog .survivor-condition-actions button { width:100%;min-height:44px; }
-  .survivor-condition-dialog .survivor-condition-dialog-footer button { flex:1; }
+  .survivor-condition-dialog .survivor-condition-dialog-footer button { flex:1;min-height:44px; }
+}
+@media(max-height:700px) and (min-width:621px) {
+  .survivor-condition-dialog { padding-top:12px;padding-bottom:12px;gap:7px; }
+  .survivor-condition-dialog .survivor-condition-hero { margin-top:-12px;padding-top:12px;padding-bottom:12px; }
+  .survivor-condition-dialog .survivor-condition-info-card { padding-top:9px;padding-bottom:9px; }
+  .survivor-condition-dialog .exposure-support-card { gap:6px;padding-top:10px;padding-bottom:10px; }
+  .survivor-condition-dialog .survivor-condition-actions { gap:6px;padding-top:7px; }
 }
 @media(prefers-reduced-motion:reduce) {
   .survivor-condition-dialog * { scroll-behavior:auto; }
