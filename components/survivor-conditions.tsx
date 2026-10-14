@@ -10,6 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Field, Pick } from "@/components/game-controls";
 import type { GameState, Survivor } from "@/lib/game";
 import type { BodyRegion, SurvivorCondition, SurvivorConditionKind } from "@/lib/survivor-condition-types";
+import { equippedConditionSupport } from "@/lib/condition-item-effects";
 import {
   applySurvivorCondition,
   bleedingTrigger,
@@ -145,6 +146,7 @@ function ConditionDetailDialog({ game, survivor, condition, edit, editable, open
 }) {
   if (!condition) return null;
   const detail = conditionDetails(condition);
+  const equippedSupport = equippedConditionSupport(survivor, condition.kind);
   return <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent className="survivor-condition-dialog">
       <DialogHeader>
@@ -161,6 +163,9 @@ function ConditionDetailDialog({ game, survivor, condition, edit, editable, open
           : condition.treated
             ? `${condition.recovery ?? 0}/${condition.aggravated ? 2 : 1} descansos longos após tratamento.`
             : "Ainda precisa de tratamento antes de progredir com descansos longos."}</p></div>}
+        {equippedSupport.length > 0 && <div><span>EQUIPAMENTO ATIVO</span><p>{equippedSupport.map(effect => `${effect.item}: ${effect.summary}`).join(" ")}</p></div>}
+        {condition.exposureAdvantageSource && <div><span>PRÓXIMO TESTE DE EXPOSIÇÃO</span><p>Vantagem preparada por <b>{condition.exposureAdvantageSource}</b>. O apoio é consumido ao resolver o próximo teste de exposição.</p></div>}
+        {condition.recoveryAdvantageSource && <div><span>PRÓXIMA RECUPERAÇÃO</span><p>Vantagem preparada por <b>{condition.recoveryAdvantageSource}</b>. O apoio é consumido quando a condição for reduzida.</p></div>}
       </div>
       <DetailActions survivor={survivor} condition={condition} edit={edit} editable={editable} onClose={() => onOpenChange(false)} />
       <DialogFooter>
