@@ -29,6 +29,10 @@ export type SurvivorCondition = {
   recovery?: number;
   /** O primeiro agravamento de Frio enquanto Molhado recebe +1 nível adicional. */
   wetColdBoostUsed?: boolean;
+  /** Vantagem preparada por um item para o próximo teste de exposição. */
+  exposureAdvantageSource?: string;
+  /** Vantagem preparada por um item para a próxima recuperação da condição. */
+  recoveryAdvantageSource?: string;
   source?: string;
   appliedDay?: number;
   appliedMinute?: number;
