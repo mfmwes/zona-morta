@@ -260,6 +260,9 @@ html[data-theme="dark"] .scene-fog-overlay.is-master{opacity:.68}
 .scene-palette .scene-piece-grid button:hover{transform:translateY(-1px);box-shadow:0 3px 7px rgba(20,35,36,.09)}
 .scene-palette .scene-piece-grid button>span:last-child{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;font-size:.63rem;line-height:1.15}
 .scene-palette .scene-object-visual.is-compact{align-self:center;width:42px;height:32px;min-width:42px;min-height:32px}
+/* Real object artwork shares the existing thumbnail and placed-piece bounds. */
+.scene-object-visual.scene-object-art{background:transparent;border:0;border-radius:0;box-shadow:none;clip-path:none;transform:none}
+.scene-object-art svg{display:block;width:100%;height:100%;overflow:hidden;pointer-events:none}
 .scene-library-empty{margin:4px 0;padding:14px 9px;border:1px dashed var(--border);border-radius:7px;color:var(--ink-soft);font-size:.7rem;text-align:center}
 .scene-library-scroll .scene-token-section{padding-top:9px}
 .scene-library-scroll .scene-library-person{min-height:44px!important;background:var(--surface-soft)}
