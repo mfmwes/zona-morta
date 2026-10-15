@@ -84,7 +84,7 @@ export default function CampaignApp() {
   const [tab, setTab] = useState("resumo");
   const [focus,setFocus]=useState<{key:string;target:CampaignTarget}|null>(null);
 
-  const [chatOpen, setChatOpen] = useState(true);
+  const [chatOpen, setChatOpen] = useState(false);
   const [checkpointsOpen,setCheckpointsOpen]=useState(false);
   const [searchOpen,setSearchOpen]=useState(false);
   const [timeEditorOpen, setTimeEditorOpen] = useState(false);
