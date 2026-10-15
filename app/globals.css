@@ -1641,13 +1641,16 @@ html[data-theme="dark"] .former-shelter-projects{ border-color:#79a89b; backgrou
 }
 .shelter-notes-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:end; }
 .shelter-notes-row .field textarea { min-height:64px; }
-.shelter-resource-grid { display:grid; grid-template-columns:repeat(5,minmax(150px,1fr)); gap:9px; }
+.shelter-resource-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr)); gap:9px; }
 .shelter-resource-card { padding:12px; }
 .shelter-ammo-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:9px; }
 .shelter-manual-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
 .shelter-resident-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:9px; }
 .shelter-resident-grid .list-card + .list-card { margin-top:0; }
-.shelter-routine-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; align-items:start; }
+.shelter-routine-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr)); gap:14px; align-items:start; }
+.shelter-routine-grid > * { min-width:0; }
+.shelter-routine-grid .team-inline-actions { display:grid; grid-template-columns:minmax(0,1fr); }
+.shelter-routine-grid .team-card button { max-width:100%; min-height:40px; height:auto; white-space:normal; }
 
 @media (max-width:1180px) {
   .shelter-status-strip { grid-template-columns:repeat(4,minmax(0,1fr)); }
