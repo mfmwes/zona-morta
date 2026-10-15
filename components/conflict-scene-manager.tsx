@@ -11,6 +11,8 @@ import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTi
 import { Counter, Field, Pick } from "@/components/game-controls";
 import { SpotlightRequestButton } from "@/components/spotlight-request-button";
 import { ConflictTrail } from "@/components/conflict-trail";
+import { PublicConditionBadges, SurvivorConditionPanel } from "@/components/survivor-conditions";
+import type { PlayerActionControls } from "@/components/player-actions-panel";
 import { addLog, displayTime, survivorIsDown, survivorStats, survivorsAtHex, type GameState } from "@/lib/game";
 import {
   addThreatCondition,
@@ -78,7 +80,7 @@ function publicParticipantLabel(conflict: PublicConflictScene, ref: ConflictPart
   return conflict.threats.find(threat => threat.id === ref.id)?.name ?? null;
 }
 
-export function PlayerConflictScene({ game, selfId = null, preview = false }: { game: GameState; selfId?: string | null; preview?: boolean }) {
+export function PlayerConflictScene({ game, edit, playerActions, selfId = null, preview = false }: { game: GameState; edit: Edit; playerActions?: PlayerActionControls; selfId?: string | null; preview?: boolean }) {
   const simulation = usePlayerSimulation();
   const [resolvingDamage, setResolvingDamage] = useState<string | null>(null);
   const [damageError, setDamageError] = useState("");
@@ -195,6 +197,10 @@ export function PlayerConflictScene({ game, selfId = null, preview = false }: { 
                 <small>Sobrevivente</small>
               </div>
               {isFocused && <span className="conflict-focus-badge"><Crosshair size={11} /> Spotlight</span>}
+              <div className="conflict-condition-slot">
+                {isSelf && self ? <SurvivorConditionPanel compact game={game} survivor={self} edit={edit} editable={false} playerActions={playerActions} />
+                  : person.conditions && <PublicConditionBadges conditions={person.conditions} ownerName={person.name} />}
+              </div>
             </article>;
           })}
           {!conflict.survivors.length && <p className="conflict-inline-empty">Nenhum sobrevivente público nesta cena.</p>}
@@ -547,7 +553,7 @@ export function ConflictSceneManager({ game, edit, mobile = false }: { game: Gam
       <ConflictTrail
         survivors={conflict.survivorIds.flatMap(id => {
           const person = game.survivors.find(row => row.id === id);
-          return person ? [{ id: person.id, name: person.name, ...(person.portrait ? { portrait: person.portrait } : {}), requested: Boolean(conflict.spotlightRequests?.includes(person.id)) }] : [];
+          return person ? [{ id: person.id, name: person.name, ...(person.portrait ? { portrait: person.portrait } : {}), conditions: person.conditions, requested: Boolean(conflict.spotlightRequests?.includes(person.id)) }] : [];
         })}
         threats={conflict.threats.map(threat => ({
           id: threat.id,
@@ -618,6 +624,7 @@ export function ConflictSceneManager({ game, edit, mobile = false }: { game: Gam
                   <ResourceMeter icon={<Activity size={10} />} label="Esperança" value={person.hope} max={6} tone="hope" />
                 </div>
               </div>
+              <SurvivorConditionPanel compact game={game} survivor={person} edit={edit} editable />
               <div className="conflict-person-actions">
                 <Button size="sm" variant={isFocused ? "default" : "outline"} aria-label={isFocused ? `${person.name} está em Spotlight` : `Dar Spotlight a ${person.name}`} onClick={() => hasRequestedSpotlight ? grantRequestedSpotlight(person.id) : focus({ kind: "survivor", id: person.id }, person.name)}><Crosshair size={14} /><span>{isFocused ? "Em foco" : hasRequestedSpotlight ? "Dar Spotlight" : "Spotlight"}</span></Button>
                 <Button size="sm" variant="ghost" aria-label={`Remover ${person.name} do conflito`} onClick={() => remove({ kind: "survivor", id: person.id }, person.name)}><Trash2 size={14} /></Button>

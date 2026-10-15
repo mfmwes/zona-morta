@@ -902,7 +902,7 @@ export default function CampaignApp() {
         {activeTab === "comunidade" && <NpcPanel key={focus?.target.tab==="comunidade"?focus.key:"comunidade"} initialNpcId={!readOnlyPreview&&focus?.target.tab==="comunidade"?focus.target.npcId:undefined} game={communityView} edit={edit} playerPreview={readOnlyPreview} />}
         {activeTab === "abrigo" && <ShelterPanel key={focus?.target.tab==="abrigo"?focus.key:"abrigo"} initialProjectId={!readOnlyPreview&&focus?.target.tab==="abrigo"?focus.target.projectId:undefined} game={communityView} edit={edit} playerPreview={readOnlyPreview} playerSurvivorId={readOnlyPreview ? viewedSurvivorId : null} playerActions={playerActionControls} masterActions={masterActionControls} />}
         {activeTab === "conflito" && role === "mestre" && !playerPreview && <ConflictSceneManager mobile={mobile} game={game} edit={edit} />}
-        {activeTab === "conflito" && readOnlyPreview && publicConflictActive && <PlayerConflictScene game={previewActionGame} selfId={viewedSurvivorId} preview={playerPreview} />}
+        {activeTab === "conflito" && readOnlyPreview && publicConflictActive && <PlayerConflictScene game={previewActionGame} edit={edit} playerActions={playerActionControls} selfId={viewedSurvivorId} preview={playerPreview} />}
         {activeTab === "ameacas" && role === "mestre" && !playerPreview && <section className="panel panel-pad"><ThreatManager game={game} edit={edit} /></section>}
         {activeTab === "referencias" && <ReferencePanel />}
         {activeTab === "jogadores" && role === "mestre" && !playerPreview && <PlayersPanel game={game} ownerId={ownerId} />}

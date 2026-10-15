@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { Crosshair, Skull, Target } from "lucide-react";
+import { Crosshair, HeartPulse, Skull, Target } from "lucide-react";
 import type { ConflictParticipantRef, PublicConflictThreat, PublicConflictSurvivor } from "@/lib/conflict";
+import { conditionLabel } from "@/lib/survivor-conditions";
 
 type Props = {
   survivors: Array<PublicConflictSurvivor & { requested?: boolean }>;
@@ -71,17 +72,20 @@ export function ConflictTrail({
             const isSelf = person.id === selfId;
             const isSpotlight = spotlight?.kind === "survivor" && spotlight.id === person.id;
             const interactive = mode === "master" && Boolean(onParticipantSpotlight);
-            const title = `${person.name}${isSelf ? " · você" : ""}${isSpotlight ? " · Spotlight" : ""}${person.requested ? " · quer o Spotlight" : ""}`;
+            const conditionNames = (person.conditions ?? []).map(conditionLabel);
+            const conditionNote = conditionNames.length ? ` · Condições: ${conditionNames.join(", ")}` : "";
+            const title = `${person.name}${isSelf ? " · você" : ""}${isSpotlight ? " · Spotlight" : ""}${person.requested ? " · quer o Spotlight" : ""}${conditionNote}`;
             const body = <>
               <span className="conflict-trail-node-core">
                 {person.portrait ? <img src={person.portrait} alt="" /> : <span className="conflict-trail-initials">{initials(person.name)}</span>}
                 {isSpotlight && <span className="conflict-trail-spotlight-mark"><Crosshair size={11} /></span>}
                 {person.requested && !isSpotlight && <span className="conflict-trail-request-dot" aria-hidden="true" />}
+                {conditionNames.length > 0 && <span className="conflict-trail-condition-count" aria-hidden="true"><HeartPulse size={9} />{conditionNames.length}</span>}
               </span>
               <span className="conflict-trail-node-label">{isSelf ? "VOCÊ" : person.name.split(/\s+/)[0]}</span>
             </>;
             return interactive
-              ? <button type="button" key={person.id} data-trail-key={`survivor:${person.id}`} className={`conflict-trail-node is-survivor${isSelf ? " is-self" : ""}${isSpotlight ? " is-spotlight" : ""}${person.requested ? " has-request" : ""}`} onClick={() => onParticipantSpotlight?.({ kind: "survivor", id: person.id }, person.name)} title={title} aria-label={`Dar Spotlight a ${person.name}${person.requested ? ", que pediu o Spotlight" : ""}`}>{body}</button>
+              ? <button type="button" key={person.id} data-trail-key={`survivor:${person.id}`} className={`conflict-trail-node is-survivor${isSelf ? " is-self" : ""}${isSpotlight ? " is-spotlight" : ""}${person.requested ? " has-request" : ""}`} onClick={() => onParticipantSpotlight?.({ kind: "survivor", id: person.id }, person.name)} title={title} aria-label={`Dar Spotlight a ${person.name}${person.requested ? ", que pediu o Spotlight" : ""}${conditionNote}`}>{body}</button>
               : <span tabIndex={0} key={person.id} data-trail-key={`survivor:${person.id}`} className={`conflict-trail-node is-survivor${isSelf ? " is-self" : ""}${isSpotlight ? " is-spotlight" : ""}${person.requested ? " has-request" : ""}`} title={title} aria-label={title}>{body}</span>;
           })}
         </div>
@@ -100,13 +104,14 @@ export function ConflictTrail({
                 {threat.defeated ? <Skull size={17} /> : <span className="conflict-trail-initials">{threatShortLabel(threat)}</span>}
                 {isSpotlight && <span className="conflict-trail-spotlight-mark"><Crosshair size={11} /></span>}
                 {isTarget && <span className="conflict-trail-target-mark"><Target size={11} /></span>}
+                {threat.conditions.length > 0 && <span className="conflict-trail-condition-count" aria-hidden="true"><HeartPulse size={9} />{threat.conditions.length}</span>}
               </span>
               <span className="conflict-trail-node-label">{threatShortLabel(threat)}</span>
             </>;
             const className = `conflict-trail-node is-threat${isSpotlight ? " is-spotlight" : ""}${isTarget ? " is-target" : ""}${threat.defeated ? " is-defeated" : ""}`;
             const ariaLabel = mode === "master"
-              ? `${threat.name}. ${threat.defeated ? "Derrotada." : "Clique para dar Spotlight."}`
-              : `${threat.name}. ${threat.defeated ? "Derrotada e indisponível como alvo." : isTarget ? "Alvo selecionado." : interactive ? "Clique para selecionar como alvo." : "Ameaça em cena."}`;
+              ? `${threat.name}. ${threat.defeated ? "Derrotada." : "Clique para dar Spotlight."}${threat.conditions.length ? ` Condições: ${threat.conditions.join(", ")}.` : ""}`
+              : `${threat.name}. ${threat.defeated ? "Derrotada e indisponível como alvo." : isTarget ? "Alvo selecionado." : interactive ? "Clique para selecionar como alvo." : "Ameaça em cena."}${threat.conditions.length ? ` Condições: ${threat.conditions.join(", ")}.` : ""}`;
             return interactive
               ? <button type="button" key={threat.id} data-trail-key={`threat:${threat.id}`} className={className} onClick={() => {
                   if (mode === "master") onParticipantSpotlight?.({ kind: "threat", id: threat.id }, threat.name);

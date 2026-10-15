@@ -1,5 +1,6 @@
 import { createId } from "./id";
 import { instantiateThreat, type ThreatInstance, type ThreatTemplate } from "./threats";
+import type { SurvivorCondition } from "./survivor-condition-types";
 
 export type ConflictParticipantKind = "survivor" | "threat";
 
@@ -56,10 +57,14 @@ export type ConflictScene = {
   notes: string;
 };
 
+export type PublicConflictCondition = Pick<SurvivorCondition,
+  "id" | "kind" | "level" | "bodyRegion" | "aggravated" | "immobilized" | "treated" | "recovery">;
+
 export type PublicConflictSurvivor = {
   id: string;
   name: string;
   portrait?: string;
+  conditions?: PublicConflictCondition[];
 };
 
 export type PublicConflictThreat = {
@@ -89,14 +94,26 @@ export type PublicConflictScene = {
 
 export function publicConflictScene(
   scene: ConflictScene,
-  survivors: Array<{ id: string; name: string; portrait?: string }>,
+  survivors: Array<{ id: string; name: string; portrait?: string; conditions?: SurvivorCondition[] }>,
   viewerSurvivorId?: string | null,
 ): PublicConflictScene | undefined {
   if (!scene.active) return undefined;
   const survivorById = new Map(survivors.map(person => [person.id, person]));
   const publicSurvivors = scene.survivorIds.flatMap(id => {
     const person = survivorById.get(id);
-    return person ? [{ id: person.id, name: person.name, ...(person.portrait ? { portrait: person.portrait } : {}) }] : [];
+    return person ? [{
+      id: person.id, name: person.name, ...(person.portrait ? { portrait: person.portrait } : {}),
+      // Only rule state is public. Sources, item support and application history stay on the owner's sheet.
+      conditions: (person.conditions ?? []).map(condition => ({
+        id: condition.id, kind: condition.kind,
+        ...(condition.level !== undefined ? { level: condition.level } : {}),
+        ...(condition.bodyRegion !== undefined ? { bodyRegion: condition.bodyRegion } : {}),
+        ...(condition.aggravated !== undefined ? { aggravated: condition.aggravated } : {}),
+        ...(condition.immobilized !== undefined ? { immobilized: condition.immobilized } : {}),
+        ...(condition.treated !== undefined ? { treated: condition.treated } : {}),
+        ...(condition.recovery !== undefined ? { recovery: condition.recovery } : {}),
+      })),
+    }] : [];
   });
   const publicThreats = scene.threats.map(threat => ({
     id: threat.id,

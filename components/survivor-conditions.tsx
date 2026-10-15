@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Field, Pick } from "@/components/game-controls";
 import type { GameState, Survivor } from "@/lib/game";
+import type { PublicConflictCondition } from "@/lib/conflict";
 import type { BodyRegion, SurvivorCondition, SurvivorConditionKind, WetExposureSource } from "@/lib/survivor-condition-types";
 import { equippedConditionSupport, wetExposureSourceLabels } from "@/lib/condition-item-effects";
 import {
@@ -210,37 +211,71 @@ function DetailActions({ survivor, condition, edit, editable, onClose }: {
   return null;
 }
 
-function ConditionDetailDialog({ game, survivor, condition, edit, editable, open, onOpenChange, playerActions }: {
+function ConditionDialogHeader({ condition, ownerName }: { condition: SurvivorCondition; ownerName?: string }) {
+  const detail = conditionDetails(condition);
+  return <DialogHeader className="survivor-condition-hero">
+    <div className="survivor-condition-hero-content">
+      <div className={`survivor-condition-dialog-icon tone-${detail.tone}`}><ConditionIcon condition={condition} size={26} /></div>
+      <div className="survivor-condition-hero-text">
+        <DialogTitle>{detail.label}</DialogTitle>
+        <DialogDescription>{detail.category} · {ownerName ?? "condição ativa"}</DialogDescription>
+        <ConditionProgress condition={condition} />
+      </div>
+    </div>
+  </DialogHeader>;
+}
+
+function ConditionRuleCards({ condition }: { condition: SurvivorCondition }) {
+  const detail = conditionDetails(condition);
+  return <>
+    <ConditionInfoCard title="Efeito" icon={BookOpenText}><ConditionEffect condition={condition} effect={detail.effect} /></ConditionInfoCard>
+    <ConditionInfoCard title="Como remover" icon={Wrench}><p>{detail.clear}</p></ConditionInfoCard>
+    {(condition.kind === "injury" || condition.kind === "fracture") && <ConditionInfoCard title="Recuperação" icon={HeartPulse}><p>{condition.kind === "fracture"
+      ? `${condition.recovery ?? 0}/4 descansos longos ${condition.immobilized ? "com a fratura imobilizada" : "— imobilize antes de iniciar a recuperação"}.`
+      : condition.treated
+        ? `${condition.recovery ?? 0}/${condition.aggravated ? 2 : 1} descansos longos após tratamento.`
+        : "Ainda precisa de tratamento antes de progredir com descansos longos."}</p></ConditionInfoCard>}
+  </>;
+}
+
+/** Public teammates can consult rules, but never receive equipment, sources or editable controls. */
+export function PublicConditionBadges({ conditions, ownerName }: { conditions: PublicConflictCondition[]; ownerName: string }) {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selected = conditions.find(condition => condition.id === selectedId);
+  const detail = selected ? conditionDetails(selected) : null;
+  return <TooltipProvider delayDuration={220}>
+    <section className="survivor-condition-panel survivor-condition-panel--compact" aria-label={`Condições de ${ownerName}`}>
+      <div className="survivor-condition-panel-heading"><h3>Condições{conditions.length > 0 && <span className="survivor-condition-count">{conditions.length}</span>}</h3></div>
+      <div className="survivor-condition-badges" aria-label="Condições ativas">
+        {conditions.map(condition => <ConditionBadge key={condition.id} condition={condition} onOpen={() => setSelectedId(condition.id)} />)}
+        {!conditions.length && <span className="survivor-condition-empty">Nenhuma condição ativa.</span>}
+      </div>
+    </section>
+    <Dialog open={Boolean(selected)} onOpenChange={open => { if (!open) setSelectedId(null); }}>
+      {selected && detail && <DialogContent className={`survivor-condition-dialog tone-${detail.tone}`}>
+        <ConditionDialogHeader condition={selected} ownerName={ownerName} />
+        <div className="survivor-condition-detail"><ConditionRuleCards condition={selected} /></div>
+        <DialogFooter className="survivor-condition-dialog-footer"><Button variant="outline" onClick={() => setSelectedId(null)}>Fechar</Button></DialogFooter>
+      </DialogContent>}
+    </Dialog>
+  </TooltipProvider>;
+}
+
+function ConditionDetailDialog({ game, survivor, condition, edit, editable, open, onOpenChange, playerActions, ownerName }: {
   game: GameState; survivor: Survivor; condition: SurvivorCondition | null; edit: Edit; editable: boolean;
   open: boolean; onOpenChange: (open: boolean) => void; playerActions?: PlayerActionControls;
+  ownerName?: string;
 }) {
   if (!condition) return null;
   const detail = conditionDetails(condition);
   const equippedSupport = equippedConditionSupport(survivor, condition.kind);
   return <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent className={`survivor-condition-dialog tone-${detail.tone}`}>
-      <DialogHeader className="survivor-condition-hero">
-        <div className="survivor-condition-hero-content">
-          <div className={`survivor-condition-dialog-icon tone-${detail.tone}`}><ConditionIcon condition={condition} size={26} /></div>
-          <div className="survivor-condition-hero-text">
-            <DialogTitle>{detail.label}</DialogTitle>
-            <DialogDescription>{detail.category} · condição ativa</DialogDescription>
-            <ConditionProgress condition={condition} />
-          </div>
-        </div>
-      </DialogHeader>
+      <ConditionDialogHeader condition={condition} ownerName={ownerName} />
       <div className="survivor-condition-detail">
-        <ConditionInfoCard title="Efeito" icon={BookOpenText}>
-          <ConditionEffect condition={condition} effect={detail.effect} />
-        </ConditionInfoCard>
-        <ConditionInfoCard title="Como remover" icon={Wrench}><p>{detail.clear}</p></ConditionInfoCard>
+        <ConditionRuleCards condition={condition} />
         {condition.source && <ConditionInfoCard title="Origem" icon={BookOpenText}><p>{condition.source}</p></ConditionInfoCard>}
         {condition.kind === "wet" && condition.wetExposureSource && <ConditionInfoCard title="Fonte da água" icon={Droplets}><p>{wetExposureSourceLabels[condition.wetExposureSource]}</p></ConditionInfoCard>}
-        {(condition.kind === "injury" || condition.kind === "fracture") && <ConditionInfoCard title="Recuperação" icon={HeartPulse}><p>{condition.kind === "fracture"
-          ? `${condition.recovery ?? 0}/4 descansos longos ${condition.immobilized ? "com a fratura imobilizada" : "— imobilize antes de iniciar a recuperação"}.`
-          : condition.treated
-            ? `${condition.recovery ?? 0}/${condition.aggravated ? 2 : 1} descansos longos após tratamento.`
-            : "Ainda precisa de tratamento antes de progredir com descansos longos."}</p></ConditionInfoCard>}
         {equippedSupport.length > 0 && <ConditionInfoCard title="Equipamento ativo" icon={ShieldCheck}><p>{equippedSupport.map(effect => `${effect.item}: ${effect.summary}`).join(" ")}</p></ConditionInfoCard>}
         {condition.exposureAdvantageSource && <ConditionInfoCard title="Próximo teste de exposição" icon={Clock3}><p>Vantagem preparada por <b>{condition.exposureAdvantageSource}</b>. O apoio é consumido ao resolver o próximo teste de exposição.</p></ConditionInfoCard>}
         {condition.recoveryAdvantageSource && <ConditionInfoCard title="Próxima recuperação" icon={Clock3}><p>Vantagem preparada por <b>{condition.recoveryAdvantageSource}</b>. O apoio é consumido quando a condição for reduzida.</p></ConditionInfoCard>}
@@ -275,8 +310,8 @@ export function SurvivorConditionBadges({ game, survivor, edit, editable = false
   </TooltipProvider>;
 }
 
-export function SurvivorConditionPanel({ game, survivor, edit, editable, playerActions }: {
-  game: GameState; survivor: Survivor; edit: Edit; editable: boolean; playerActions?: PlayerActionControls;
+export function SurvivorConditionPanel({ game, survivor, edit, editable, playerActions, compact = false }: {
+  game: GameState; survivor: Survivor; edit: Edit; editable: boolean; playerActions?: PlayerActionControls; compact?: boolean;
 }) {
   const [addOpen, setAddOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -305,16 +340,16 @@ export function SurvivorConditionPanel({ game, survivor, edit, editable, playerA
     }
   }
 
-  return <section className="character-surface survivor-condition-panel">
+  return <section className={"survivor-condition-panel" + (compact ? " survivor-condition-panel--compact" : " character-surface")} aria-label={compact ? `Condições de ${survivor.name}` : undefined}>
     <div className="survivor-condition-panel-heading">
-      <div><h3>Condições ativas{conditions.length > 0 && <span className="survivor-condition-count">{conditions.length}</span>}</h3><p>{conditions.length ? "Abra uma condição para ver efeitos e cuidados." : "Nenhuma condição ativa."}</p></div>
+      <div><h3>{compact ? "Condições" : "Condições ativas"}{conditions.length > 0 && <span className="survivor-condition-count">{conditions.length}</span>}</h3>{!compact && <p>{conditions.length ? "Abra uma condição para ver efeitos e cuidados." : "Nenhuma condição ativa."}</p>}</div>
       {editable && <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogTrigger asChild><Button size="sm"><HeartPulse size={16} /> Aplicar condição</Button></DialogTrigger>
+        <DialogTrigger asChild><Button size="sm" aria-label={compact ? `Aplicar condição a ${survivor.name}` : undefined}><HeartPulse size={16} /> Aplicar condição</Button></DialogTrigger>
         <DialogContent className={`survivor-condition-add-dialog tone-${definition.tone}`}>
           <DialogHeader className="survivor-condition-add-header">
             <div className="survivor-condition-add-header-icon"><HeartPulse size={21} aria-hidden="true" /></div>
             <div>
-              <DialogTitle>Aplicar condição</DialogTitle>
+              <DialogTitle>Aplicar condição{compact ? ` · ${survivor.name}` : ""}</DialogTitle>
               <DialogDescription>Selecione um estado e registre o que aconteceu na história.</DialogDescription>
             </div>
           </DialogHeader>
@@ -366,7 +401,10 @@ export function SurvivorConditionPanel({ game, survivor, edit, editable, playerA
         </DialogContent>
       </Dialog>}
     </div>
-    {conditions.length > 0 && <div className="survivor-condition-groups">
+    {compact ? <TooltipProvider delayDuration={220}><div className="survivor-condition-badges" aria-label="Condições ativas">
+      {conditions.map(condition => <ConditionBadge key={condition.id} condition={condition} onOpen={() => setSelectedId(condition.id)} />)}
+      {!conditions.length && <span className="survivor-condition-empty">Nenhuma condição ativa.</span>}
+    </div></TooltipProvider> : conditions.length > 0 && <div className="survivor-condition-groups">
       {groups.map(group => {
         const rows = conditions.filter(condition => conditionDefinitions[condition.kind].category === group);
         if (!rows.length) return null;
@@ -380,8 +418,8 @@ export function SurvivorConditionPanel({ game, survivor, edit, editable, playerA
         })}</div>;
       })}
     </div>}
-    <RuleHelp topic="conditions" />
+    {!compact && <RuleHelp topic="conditions" />}
     <ConditionDetailDialog game={game} survivor={survivor} condition={selected} edit={edit} editable={editable}
-      playerActions={playerActions} open={Boolean(selected)} onOpenChange={value => { if (!value) setSelectedId(null); }} />
+      playerActions={playerActions} ownerName={compact ? survivor.name : undefined} open={Boolean(selected)} onOpenChange={value => { if (!value) setSelectedId(null); }} />
   </section>;
 }

@@ -28,12 +28,12 @@ Module._load = function(name, parent, main) {
   }
   return load.call(this, name, parent, main);
 };
-const { SurvivorConditionPanel, ConditionEffect } = require('../components/survivor-conditions.tsx');
+const { SurvivorConditionPanel, PublicConditionBadges, ConditionEffect } = require('../components/survivor-conditions.tsx');
 const { SurvivorPanel } = require('../components/survivor-panel.tsx');
 Module._load = load;
 const { defaultState, initialSurvivor, content } = require('../lib/game.ts');
 const { applySurvivorCondition, conditionDefinitions } = require('../lib/survivor-conditions.ts');
-const expandRule = node => typeof node?.type === 'function' && ['ConditionEffect', 'EffectRuleText'].includes(node.type.name) ? node.type(node.props) : node;
+const expandRule = node => typeof node?.type === 'function' && ['ConditionEffect', 'EffectRuleText', 'ConditionRuleCards', 'ConditionInfoCard', 'ConditionDialogHeader'].includes(node.type.name) ? node.type(node.props) : node;
 const text = node => {
   node = expandRule(node);
   return node == null || typeof node === 'boolean' ? '' : Array.isArray(node) ? node.map(text).join('') : typeof node === 'object' ? text(node.props?.children) : String(node);
@@ -237,4 +237,45 @@ test('modal aplicar condição é responsivo, compacto e oferece estados selecio
   assert.match(css, /\.survivor-condition-add-fields/);
   assert.match(css, /max-height:calc\(100dvh - 20px\)/);
   assert.match(css, /@media\(max-width:620px\)/);
+});
+
+test('painel compacto do conflito aplica na mesma ficha e abre os controles existentes do mestre', () => {
+  const { game, survivor } = fixture();
+  const render = view(SurvivorConditionPanel, { game, survivor, compact: true, editable: true, edit: fn => fn(game) });
+  assert.ok(render().some(node => node.props['aria-label'] === `Condições de ${survivor.name}`));
+  assert.ok(render().some(node => node.type === 'button' && node.props['aria-label'] === `Aplicar condição a ${survivor.name}`));
+  render().find(node => node.type === 'Dialog').props.onOpenChange(true);
+  render().find(node => node.type === 'button' && node.props['aria-label'] === 'Calor · Ambiental').props.onClick();
+  render().find(node => node.type === 'button' && text(node) === 'Aplicar condição').props.onClick();
+  assert.equal(survivor.conditions[0].kind, 'heat');
+  render().find(node => node.type?.name === 'ConditionBadge').props.onOpen();
+  const detail = render().find(node => node.type?.name === 'ConditionDetailDialog');
+  assert.equal(detail.props.condition.id, survivor.conditions[0].id);
+  assert.equal(detail.props.ownerName, survivor.name);
+  assert.equal(detail.props.editable, true);
+});
+
+test('painel próprio do jogador consulta sem aplicação manual e encaminha a exposição autorizada', () => {
+  const { game, survivor } = fixture();
+  applySurvivorCondition(game, survivor.id, 'cold');
+  const playerActions = { actorId: survivor.id, canAct: true, pending: false, send() {} };
+  const render = view(SurvivorConditionPanel, { game, survivor, compact: true, editable: false, playerActions, edit() {} });
+  assert.equal(render().some(node => node.type === 'button' && /Aplicar condição/.test(text(node))), false);
+  render().find(node => node.type?.name === 'ConditionBadge').props.onOpen();
+  const detail = render().find(node => node.type?.name === 'ConditionDetailDialog');
+  assert.equal(detail.props.editable, false);
+  assert.equal(detail.props.playerActions, playerActions);
+  assert.equal(detail.props.survivor.id, survivor.id);
+});
+
+test('consulta de outro participante só mostra regra e recuperação, sem origem ou ações', () => {
+  const condition = { id: 'cold', kind: 'cold', level: 2, source: 'origem privada', exposureAdvantageSource: 'item privado' };
+  const render = view(PublicConditionBadges, { conditions: [condition], ownerName: 'Bia' });
+  render().find(node => node.type?.name === 'ConditionBadge').props.onOpen();
+  const rows = render();
+  assert.match(rows.map(text).join(' '), /Bia/);
+  assert.doesNotMatch(rows.map(text).join(' '), /origem privada|item privado|Rolar exposição|Resolver manualmente|Aplicar condição/);
+  assert.equal(rows.some(node => node.type?.name === 'ExposureRollControl'), false);
+  assert.equal(rows.some(node => node.type?.name === 'DetailActions'), false);
+  assert.ok(rows.some(node => node.type === 'ol' && node.props['aria-label'] === 'Efeitos por nível'));
 });
