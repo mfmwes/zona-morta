@@ -2,10 +2,10 @@
 
 import { MasterContextActions, PlayerContextActions, type MasterActionControls, type PlayerActionControls } from "@/components/player-actions-panel";
 
-import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
+import { useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
 import {
-  Copy, Eye, EyeOff, Hand, Layers, Lock, Minus, MousePointer2, Plus, RotateCcw, RotateCw,
-  Search, Square, Trash2, Type, Unlock, User, ZoomIn, ZoomOut,
+  Copy, Eye, EyeOff, Hand, Layers, Lock, MousePointer2, Plus, RotateCcw, RotateCw,
+  Search, Square, Tags, Trash2, Type, Unlock, User, ZoomIn, ZoomOut,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -13,6 +13,7 @@ import { Field } from "@/components/game-controls";
 import { Button } from "@/components/ui/button";
 import { SceneObjectArt } from "@/components/scene-object-art";
 import { sceneObjectArtFor } from "@/lib/scene-object-art";
+import { sceneShortcut, sceneToolShortcuts, type SceneTool } from "@/lib/scene-shortcuts";
 import { survivorIsDown, type GameState } from "@/lib/game";
 import { removalFingerprint } from "@/lib/master-removals";
 import { createId } from "@/lib/id";
@@ -42,7 +43,7 @@ import {
 } from "@/lib/scene-board";
 
 type Edit = (fn: (draft: GameState) => void) => void;
-type Tool = "select" | "pan" | "wall" | "door" | "window" | "reveal" | "conceal";
+type Tool = SceneTool;
 type Drag = {
   pointerId: number;
   clientX: number;
@@ -282,6 +283,7 @@ export function SceneBoard({ game, edit, playerPreview, playerActions, masterAct
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [tool, setTool] = useState<Tool>("select");
   const [multiSelect, setMultiSelect] = useState(false);
+  const [showLabels, setShowLabels] = useState(true);
   const [libraryMode, setLibraryMode] = useState<"objects" | "tokens">("objects");
   const [libraryCategory, setLibraryCategory] = useState("all");
   const [libraryQuery, setLibraryQuery] = useState("");
@@ -299,6 +301,7 @@ export function SceneBoard({ game, edit, playerPreview, playerActions, masterAct
   const wallDraftRef = useRef<WallDraft | null>(null);
   const fogDraftRef = useRef<FogDraft | null>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
+  const workspaceRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
 
   const scene = board.scenes.find(entry => entry.id === chosenScene)
@@ -695,6 +698,41 @@ export function SceneBoard({ game, edit, playerPreview, playerActions, masterAct
     patchSelected(object => { object.locked = shouldLock; });
   }
 
+  function handleShortcut(event: ReactKeyboardEvent<HTMLElement>) {
+    if (!scene || event.defaultPrevented) return;
+    const target = event.target instanceof Element ? event.target : null;
+    const shortcut = sceneShortcut({ key: event.key, ctrlKey: event.ctrlKey, metaKey: event.metaKey,
+      altKey: event.altKey, shiftKey: event.shiftKey, repeat: event.repeat, isComposing: event.nativeEvent.isComposing }, {
+      readonly,
+      preparing: workspaceMode === "prepare",
+      fogEnabled: Boolean(scene.fogEnabled),
+      blocked: createOpen || Boolean(deletionTarget) || Boolean(target?.closest(
+        'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="dialog"], [role="alertdialog"], [role="combobox"], [role="menu"]',
+      )),
+      interacting: Boolean(dragRef.current || panRef.current || wallDraftRef.current || fogDraftRef.current),
+    });
+    if (!shortcut) return;
+    event.preventDefault();
+    event.stopPropagation();
+    switch (shortcut.action) {
+      case "tool": setTool(shortcut.tool); break;
+      case "room": add("zone", "Sala / área", "room"); break;
+      case "labels": setShowLabels(value => !value); break;
+      case "grid": patchScene(target => { target.showGrid = !target.showGrid; }); break;
+      case "multi": setMultiSelect(value => !value); break;
+      case "center": centerScene(); break;
+      case "zoom": changeZoom(zoom + shortcut.delta); break;
+      case "rotate": rotateSelected(shortcut.delta); break;
+      case "cancel":
+        dragRef.current = null; setDrag(null);
+        panRef.current = null; setPan(null);
+        wallDraftRef.current = null; setWallDraft(null);
+        fogDraftRef.current = null; setFogDraft(null);
+        setSelectedIds([]); setTool("select");
+        break;
+    }
+  }
+
   async function confirmSceneDeletion() {
     if (readonly || !deletionTarget || !masterActions?.canAct || masterActions.pending || deletionLock.current) return;
     deletionLock.current = true;
@@ -752,7 +790,7 @@ export function SceneBoard({ game, edit, playerPreview, playerActions, masterAct
   const preview = wallDraft ? wallGeometry(wallDraft.start, wallDraft.end, walls, snapEnabled) : null;
   const fogPreview = fogDraft ? fogAreaFromPoints(scene, fogDraft.start, fogDraft.end) : null;
 
-  return <section className="scene-board-root">
+  return <section ref={workspaceRef} className="scene-board-root" tabIndex={0} aria-label="Editor de cena visual" onKeyDown={handleShortcut}>
 
     <header className="panel panel-pad scene-board-header">
       <div><p className="dossier-title">Cena visual</p><div className="scene-board-title"><h2 className="section-title">{scene.name}</h2>
@@ -764,7 +802,7 @@ export function SceneBoard({ game, edit, playerPreview, playerActions, masterAct
         <Button size="sm" variant="outline" aria-label="Diminuir zoom" onClick={() => changeZoom(zoom - .1)}><ZoomOut size={15} /></Button>
         <span className="scene-zoom">{Math.round(zoom * 100)}%</span>
         <Button size="sm" variant="outline" aria-label="Aumentar zoom" onClick={() => changeZoom(zoom + .1)}><ZoomIn size={15} /></Button>
-        <Button size="sm" variant="outline" onClick={centerScene}>Centralizar</Button>
+        <Button size="sm" variant="outline" title="Centralizar (F)" onClick={centerScene}>Centralizar</Button>
         {!readonly && <>
           {live ? <Button size="sm" variant="outline" onClick={hide}><EyeOff size={15} /> Ocultar da mesa</Button>
             : <Button size="sm" onClick={present}><Eye size={15} /> Apresentar</Button>}
@@ -782,7 +820,7 @@ export function SceneBoard({ game, edit, playerPreview, playerActions, masterAct
         <p role="status">{live ? "A mesa vê esta cena. Mudanças nos elementos visíveis aparecem para os jogadores." : board.activeSceneId ? `Você está preparando esta cena. A mesa vê: ${board.scenes.find(entry => entry.id === board.activeSceneId)?.name ?? "outra cena"}.` : "Esta cena está privada. Use Apresentar para mostrá-la à mesa."}</p>
       </div>
       <details className="panel scene-display-settings"><summary>Grade e visibilidade</summary><div className="scene-board-actions">
-        <Button size="sm" variant="outline" onClick={() => patchScene(target => { target.showGrid = !target.showGrid; })}>{scene.showGrid ? "Ocultar grade" : "Mostrar grade"}</Button>
+        <Button size="sm" variant="outline" title="Alternar grade (G)" onClick={() => patchScene(target => { target.showGrid = !target.showGrid; })}>{scene.showGrid ? "Ocultar grade" : "Mostrar grade"} <kbd>G</kbd></Button>
           <Button size="sm" variant={snapEnabled ? "default" : "outline"} onClick={() => patchScene(target => { target.snapToGrid = target.snapToGrid === false; })}>Encaixe {snapEnabled ? "ligado" : "desligado"}</Button>
           <Button size="sm" variant={scene.fogEnabled ? "default" : "outline"} onClick={toggleFog}>{scene.fogEnabled ? <EyeOff size={15} /> : <Eye size={15} />} Névoa {scene.fogEnabled ? "ativa" : "desligada"}</Button>
           {scene.fogEnabled && <><Button size="sm" variant="outline" onClick={() => patchScene(revealAllSceneFog)}>Revelar tudo</Button>
@@ -791,20 +829,35 @@ export function SceneBoard({ game, edit, playerPreview, playerActions, masterAct
     </>}
 
     {!readonly && <div className="panel scene-toolstrip" role="toolbar" aria-label="Ferramentas da cena">
-      <button type="button" className={tool === "select" ? "is-active" : ""} aria-pressed={tool === "select"} onClick={() => setTool("select")}><MousePointer2 size={16} /><span>Selecionar</span></button>
-      <button type="button" className={tool === "pan" ? "is-active" : ""} aria-pressed={tool === "pan"} onClick={() => setTool("pan")}><Hand size={16} /><span>Mover câmera</span></button>
-      {workspaceMode === "prepare" && <><button type="button" className={tool === "wall" ? "is-active" : ""} aria-pressed={tool === "wall"} onClick={() => setTool("wall")}><Minus size={17} /><span>Desenhar parede</span></button>
-      <button type="button" className={tool === "door" ? "is-active" : ""} aria-pressed={tool === "door"} onClick={() => setTool("door")}><Square size={15} /><span>Porta na parede</span></button>
-      <button type="button" className={tool === "window" ? "is-active" : ""} aria-pressed={tool === "window"} onClick={() => setTool("window")}><Square size={15} /><span>Janela na parede</span></button>
-      </>}
-      <button type="button" disabled={!scene.fogEnabled} className={tool === "reveal" ? "is-active" : ""} aria-pressed={tool === "reveal"} onClick={() => setTool("reveal")}><Eye size={15} /><span>Revelar área</span></button>
-      <button type="button" disabled={!scene.fogEnabled} className={tool === "conceal" ? "is-active" : ""} aria-pressed={tool === "conceal"} onClick={() => setTool("conceal")}><EyeOff size={15} /><span>Ocultar área</span></button>
+      {sceneToolShortcuts.filter(entry => !entry.construction || workspaceMode === "prepare").map(entry => <button type="button" key={entry.tool}
+        disabled={entry.fog && !scene.fogEnabled} className={(tool === entry.tool ? "is-active" : "") + (entry.construction ? " scene-construction-tool" : "")}
+        title={entry.label + " (" + entry.key + ")"} aria-keyshortcuts={entry.key} aria-pressed={tool === entry.tool} onClick={() => setTool(entry.tool)}>
+        {entry.construction ? <ObjectVisual variant={entry.tool} compact /> : entry.tool === "select" ? <MousePointer2 size={16} /> : entry.tool === "pan" ? <Hand size={16} /> : entry.tool === "reveal" ? <Eye size={15} /> : <EyeOff size={15} />}
+        <span>{entry.label}</span><kbd>{entry.key}</kbd>
+      </button>)}
+      <button type="button" title="Ocultar/exibir legendas nesta tela (L)" aria-keyshortcuts="L" aria-pressed={showLabels} className={showLabels ? "is-active" : ""} onClick={() => setShowLabels(value => !value)}>
+        <Tags size={15} /><span>Legendas</span><kbd>L</kbd>
+      </button>
       {workspaceMode === "session" && <button type="button" aria-pressed={libraryOpen} className={libraryOpen ? "is-active" : ""} onClick={() => { setLibraryMode("tokens"); setLibraryOpen(value => !value); }}><User size={15} /><span>Adicionar personagens</span></button>}
       <span className="scene-toolstrip-spacer" />
-      <button type="button" className={multiSelect ? "is-active" : ""} aria-pressed={multiSelect} onClick={() => setMultiSelect(value => !value)}>
-        <Layers size={15} /><span>Múltipla</span>{selectedIds.length > 0 && <b>{selectedIds.length}</b>}
+      <button type="button" title="Seleção múltipla (M)" aria-keyshortcuts="M" className={multiSelect ? "is-active" : ""} aria-pressed={multiSelect} onClick={() => setMultiSelect(value => !value)}>
+        <Layers size={15} /><span>Múltipla</span><kbd>M</kbd>{selectedIds.length > 0 && <b>{selectedIds.length}</b>}
       </button>
     </div>}
+
+    {!readonly && <details className="scene-shortcut-help"><summary>Atalhos do teclado</summary>
+      <p>Clique na cena ou use Tab para focar o editor. Os atalhos ficam suspensos em campos de texto e diálogos.</p>
+      <dl>{sceneToolShortcuts.filter(entry => (!entry.construction || workspaceMode === "prepare") && (!entry.fog || scene.fogEnabled)).map(entry => <div key={entry.tool}><dt><kbd>{entry.key}</kbd></dt><dd>{entry.label}</dd></div>)}
+        {workspaceMode === "prepare" && <div><dt><kbd>S</kbd></dt><dd>Criar sala / área</dd></div>}
+        <div><dt><kbd>R</kbd> / <kbd>Shift R</kbd></dt><dd>Girar peça selecionada ±15°</dd></div>
+        <div><dt><kbd>L</kbd></dt><dd>Ocultar / exibir legendas nesta tela</dd></div>
+        <div><dt><kbd>G</kbd></dt><dd>Ocultar / exibir grade</dd></div>
+        <div><dt><kbd>M</kbd></dt><dd>Seleção múltipla</dd></div>
+        <div><dt><kbd>F</kbd></dt><dd>Centralizar cena</dd></div>
+        <div><dt><kbd>+</kbd> / <kbd>−</kbd></dt><dd>Ajustar zoom</dd></div>
+        <div><dt><kbd>Esc</kbd></dt><dd>Cancelar gesto e voltar a selecionar</dd></div>
+      </dl>
+    </details>}
 
     <div className={"scene-board-layout scene-workflow-layout" + (readonly ? " is-readonly" : "") + (showLibrary ? " has-library" : "") + (showInspector ? " has-inspector" : "")}>
       {showLibrary && <aside className="panel scene-palette">
@@ -830,7 +883,7 @@ export function SceneBoard({ game, edit, playerPreview, playerActions, masterAct
             {visibleLibraryGroups.map(group => <section className="scene-library-group" key={group.id}>
               <div className="scene-library-group-heading"><b>{group.label}</b><span>{group.pieces.length}</span></div>
               <div className="scene-piece-grid">{group.pieces.map(piece => <button type="button" key={piece.label}
-                title={"Adicionar " + piece.label} onClick={() => add(piece.kind, piece.label, piece.variant)}>
+                title={"Adicionar " + piece.label + (piece.kind === "zone" ? " (S)" : "")} aria-keyshortcuts={piece.kind === "zone" ? "S" : undefined} onClick={() => add(piece.kind, piece.label, piece.variant)}>
                 {piece.kind === "text" ? <Type size={17} /> : <ObjectVisual variant={piece.variant} compact />}<span>{piece.label}</span></button>)}</div>
             </section>)}
             {visibleLibraryGroups.length === 0 && <p className="scene-library-empty">Nenhum objeto encontrado para “{libraryQuery.trim()}”.</p>}
@@ -862,7 +915,8 @@ export function SceneBoard({ game, edit, playerPreview, playerActions, masterAct
 
       <div className="panel scene-workspace">
         <div ref={viewportRef}
-          className={"scene-viewport tool-" + tool + (pan ? " is-panning" : "")}
+          className={"scene-viewport tool-" + tool + (pan ? " is-panning" : "") + (!showLabels ? " hides-labels" : "")}
+          onPointerDownCapture={() => workspaceRef.current?.focus({ preventScroll: true })}
           onWheel={wheelZoom}
           onPointerDown={startPan}
           onPointerMove={movePan}
@@ -890,6 +944,7 @@ export function SceneBoard({ game, edit, playerPreview, playerActions, masterAct
                 const shown = moving ? { ...object, x: object.x + (drag?.dx ?? 0), y: object.y + (drag?.dy ?? 0) } : object;
                 const tokenView = shown.kind === "token" ? tokenPresentation(game, shown) : null;
                 return <button type="button" key={object.id}
+                  aria-label={tokenView?.label ?? shown.label}
                   className={"scene-object scene-" + shown.kind + (shown.variant ? " scene-" + shown.variant : "")
                     + (selectedIds.includes(object.id) ? " is-selected" : "") + (!shown.visibleToPlayers && !readonly ? " is-hidden" : "")
                     + (shown.locked ? " is-locked" : "") + (shown.parentWallId ? " is-attached" : "")
@@ -940,8 +995,8 @@ export function SceneBoard({ game, edit, playerPreview, playerActions, masterAct
           {selected?.kind === "door" && <Button variant="outline" onClick={() => toggleDoor(selected.id)}><Square size={15} /> Porta {(selected.doorState ?? "closed") === "closed" ? "fechada · abrir" : "aberta · fechar"}</Button>}
           {selected?.kind === "zone" && scene.fogEnabled && <div className="scene-inspector-buttons"><Button size="sm" variant="outline" onClick={() => patchScene(target => { revealSceneFogArea(target, { x: selected.x, y: selected.y, width: selected.width, height: selected.height }); })}><Eye size={14} /> Revelar sala</Button>
             <Button size="sm" variant="outline" onClick={() => patchScene(target => { coverSceneFogArea(target, { x: selected.x, y: selected.y, width: selected.width, height: selected.height }); })}><EyeOff size={14} /> Ocultar sala</Button></div>}
-          {selected && <div className="scene-inspector-buttons"><Button size="sm" variant="outline" disabled={Boolean(selected.locked)} onClick={() => rotateSelected(-15)}><RotateCcw size={14} /> −15°</Button>
-            <Button size="sm" variant="outline" disabled={Boolean(selected.locked)} onClick={() => rotateSelected(15)}><RotateCw size={14} /> +15°</Button></div>}
+          {selected && <div className="scene-inspector-buttons"><Button size="sm" variant="outline" title="Girar −15° (Shift R)" aria-keyshortcuts="Shift+R" disabled={Boolean(selected.locked)} onClick={() => rotateSelected(-15)}><RotateCcw size={14} /> −15° <kbd>⇧R</kbd></Button>
+            <Button size="sm" variant="outline" title="Girar +15° (R)" aria-keyshortcuts="R" disabled={Boolean(selected.locked)} onClick={() => rotateSelected(15)}><RotateCw size={14} /> +15° <kbd>R</kbd></Button></div>}
           <Button variant="outline" onClick={toggleLock}>
             {selectedObjects.every(object => object.locked) ? <Unlock size={15} /> : <Lock size={15} />}
             {selectedObjects.every(object => object.locked) ? "Desbloquear seleção" : "Bloquear seleção"}

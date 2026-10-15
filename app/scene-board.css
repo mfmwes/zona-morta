@@ -385,3 +385,53 @@ html[data-theme="dark"] .scene-library-head{background:var(--card)}
 .visual-streetlight .visual-a{left:47%;top:9%;bottom:7%;width:4px;background:#4c5653}
 .visual-streetlight .visual-b{left:47%;top:8%;width:37%;height:4px;background:#4c5653}
 .visual-streetlight .visual-c{right:8%;top:2%;width:22%;height:26%;border-radius:50%;background:#d3c69a;border:2px solid #59615e}
+
+/* Construction materials share the library's warm, worn top-down finish. */
+.scene-zone{
+ border:2px solid #8a806c;border-radius:3px;
+ background-color:#c7beab;
+ background-image:repeating-linear-gradient(0deg,transparent 0 39px,#786f5d26 39px 40px),repeating-linear-gradient(90deg,transparent 0 39px,#786f5d26 39px 40px),linear-gradient(135deg,#e1d9c67a,#9c927e33);
+ box-shadow:inset 0 0 0 5px #eee7d33d,inset 0 0 22px #544a3933,0 2px 5px #28251e26;
+}
+.scene-zone>span{background:#e9e1cfeb;color:#494337;border:1px solid #9b907763;box-shadow:0 1px 3px #28251e1a}
+.scene-wall{background:#817b6d;border:1px solid #514e45;border-radius:2px;box-shadow:0 3px 5px #29261e45,inset 0 1px #e2d9bd80}
+.scene-wall-line{
+ background-color:#9a9382;
+ background-image:repeating-linear-gradient(90deg,transparent 0 43px,#514d405c 43px 45px),linear-gradient(0deg,#4a463d55,transparent 35%,#e6ddbd4d 80%,#e6ddbd80);
+ box-shadow:inset 0 2px #e3dcc04d,inset 0 -2px #504a3c59;
+}
+.scene-door{border-bottom:3px solid #54412e;background:#443e3459;box-shadow:inset 3px 0 #d1bd94,inset -3px 0 #d1bd94}
+.scene-door .scene-door-leaf{
+ bottom:3px;height:8px;border:1px solid #57412d;border-radius:1px;
+ background:repeating-linear-gradient(0deg,#a07a50 0 2px,#b48e6033 2px 3px),linear-gradient(90deg,#80603f,#c0a077 48%,#8b6742);
+ box-shadow:inset 0 1px #ddc6a280,0 2px 3px #28201859;
+}
+.scene-door-leaf:after{content:"";position:absolute;right:7%;top:1px;width:4px;height:4px;border-radius:50%;background:#dbc58c;box-shadow:0 0 0 1px #5b4b30}
+.scene-door-open{background:transparent;border-bottom-color:#85785e}
+.scene-window-line{
+ height:100%;border:3px solid #746e5f;border-radius:1px;
+ background:repeating-linear-gradient(90deg,transparent 0 28px,#e2d9bfcc 28px 31px),linear-gradient(160deg,#6d989c,#d2e1db 48%,#93b6b6 52%,#64888e);
+ box-shadow:inset 0 0 0 1px #3e636880,0 2px 4px #29261e4d;
+}
+.scene-door small,.scene-window small{background:#ece4d2ed;border:1px solid #9b907763;color:#494337}
+.scene-object-visual.visual-room{background:repeating-linear-gradient(0deg,transparent 0 9px,#786f5d33 9px 10px),repeating-linear-gradient(90deg,#d0c7b3 0 9px,#8a806c55 9px 10px);border:3px solid #8a806c;box-shadow:inset 0 0 5px #544a3940,0 2px 3px #0003}
+.scene-object-visual.visual-wall{height:14px;min-height:14px;background:repeating-linear-gradient(90deg,#a29a86 0 13px,#655e4d 13px 14px);border:2px solid #665f51;border-radius:2px;box-shadow:inset 0 2px #dbd1b666,0 3px 4px #0004}
+.scene-object-visual.visual-door{background:repeating-linear-gradient(0deg,#a07a50 0 4px,#896541 4px 5px);border:3px solid #66503a;box-shadow:inset 0 0 0 2px #c4a477,0 2px 3px #0004}
+.visual-door .visual-a{right:12%;top:44%;width:4px;height:4px;border-radius:50%;background:#e0cc96;box-shadow:0 0 0 1px #66503a}
+.scene-object-visual.visual-window{background:repeating-linear-gradient(90deg,transparent 0 11px,#dbd4c0 11px 14px),linear-gradient(140deg,#688f96,#cadbd5 48%,#88afb1 52%,#567d84);border:3px solid #807765;border-radius:2px;box-shadow:inset 0 0 0 1px #3d6468,0 2px 3px #0004}
+.scene-toolstrip .scene-construction-tool{background:var(--surface-soft);border-color:var(--border)}
+.scene-toolstrip .scene-construction-tool .scene-object-visual{flex:0 0 34px;width:34px;height:22px;min-width:34px;min-height:14px;margin:0}
+.scene-toolstrip .scene-construction-tool .visual-wall{height:12px;min-height:12px}
+.scene-board-root:focus-visible{outline:2px solid var(--ring);outline-offset:4px;border-radius:8px}
+.scene-board-root kbd{display:inline-flex;align-items:center;justify-content:center;min-width:18px;padding:2px 4px;border:1px solid var(--border);border-bottom-width:2px;border-radius:4px;background:var(--card);color:var(--ink-soft);font:600 .6rem/1.2 var(--font-mono,monospace);white-space:nowrap}
+.scene-toolstrip button:focus-visible,.scene-piece-grid button:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+.scene-toolstrip button.is-active kbd{color:inherit;border-color:currentColor}
+.scene-shortcut-help{padding:0 12px;color:var(--ink-soft);font-size:.72rem}
+.scene-shortcut-help summary{width:fit-content;padding:4px 0;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.scene-shortcut-help p{margin:8px 0;line-height:1.5}
+.scene-shortcut-help dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px 18px;margin:10px 0}
+.scene-shortcut-help dl>div{display:flex;align-items:center;gap:8px}
+.scene-shortcut-help dt{min-width:72px}.scene-shortcut-help dd{margin:0}
+/* Hide names only; text annotations and game-state badges remain readable. */
+.scene-viewport.hides-labels .scene-object>small,
+.scene-viewport.hides-labels .scene-zone>span{display:none}
