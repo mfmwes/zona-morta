@@ -49,7 +49,7 @@
 }
 
 
-/* Compact condition dossier: keep all standard desktop actions visible without scrolling. */
+/* Condition dossier with readable rules and compact controls. */
 .survivor-condition-dialog {
   --condition-accent:#5b817c;
   width:min(790px,calc(100vw - 28px));
@@ -137,15 +137,9 @@ html[data-theme="dark"] .survivor-condition-dialog.tone-neutral { --condition-ac
   text-transform:uppercase;letter-spacing:.095em;
 }
 .survivor-condition-dialog .survivor-condition-info-body p {
-  margin:0;font-size:.85rem;line-height:1.52;color:var(--foreground);overflow-wrap:anywhere;
+  margin:0;font:400 .9rem/1.65 var(--font-sans);letter-spacing:normal;color:var(--foreground);overflow-wrap:break-word;
 }
 .survivor-condition-dialog .survivor-condition-info-body b { font-weight:750; }
-.survivor-condition-dialog .survivor-condition-effect-compact { display:block; }
-.survivor-condition-dialog .survivor-condition-effect-fragment { display:inline; }
-.survivor-condition-dialog .survivor-condition-effect-fragment strong {
-  color:var(--foreground);font-weight:800;white-space:nowrap;
-}
-.survivor-condition-dialog .survivor-condition-effect-fragment strong.is-reached { color:var(--condition-accent); }
 /* Secondary metadata becomes two columns only when there are many sections. */
 @media(min-width:700px) {
   .survivor-condition-dialog .survivor-condition-detail:has(> :nth-child(4)) { grid-template-columns:repeat(2,minmax(0,1fr)); }
@@ -346,8 +340,9 @@ html[data-theme="dark"] .survivor-condition-choice-card.tone-neutral { --choice-
 .survivor-condition-add-fields > :only-child { grid-column:1/-1; }
 .survivor-condition-add-fields > * { min-width:0; }
 .survivor-condition-add-dialog .survivor-condition-add-preview {
-  display:grid;gap:7px;min-width:0;
-  margin:0;padding:10px 12px;
+  --condition-accent:var(--add-condition-accent);
+  display:grid;gap:12px;min-width:0;
+  margin:0;padding:12px 14px;
   border:1px solid color-mix(in srgb,var(--add-condition-accent) 34%,var(--border));
   border-radius:11px;
   background:color-mix(in srgb,var(--add-condition-accent) 7%,var(--card));
@@ -368,12 +363,38 @@ html[data-theme="dark"] .survivor-condition-choice-card.tone-neutral { --choice-
   color:var(--muted-foreground);font-size:.69rem;
 }
 .survivor-condition-add-dialog .survivor-condition-add-preview p {
-  margin:0;color:var(--foreground);font-size:.76rem;line-height:1.42;
-  overflow-wrap:anywhere;
+  margin:0;color:var(--foreground);font:400 .9rem/1.65 var(--font-sans);
+  letter-spacing:normal;overflow-wrap:break-word;
 }
-.survivor-condition-add-dialog .survivor-condition-add-preview p strong {
-  color:var(--add-condition-accent);font-size:.71rem;
-  margin-right:5px;
+.survivor-condition-preview-rule { display:grid;gap:7px;min-width:0; }
+.survivor-condition-preview-rule + .survivor-condition-preview-rule { border-top:1px solid var(--border);padding-top:10px; }
+.survivor-condition-preview-rule h4 {
+  margin:0;color:var(--muted-foreground);font:700 .68rem/1.4 var(--font-mono);
+  text-transform:uppercase;letter-spacing:.07em;
+}
+/* Shared typography prevents metadata styles from leaking into rule prose. */
+.survivor-condition-effect { display:grid;gap:7px;min-width:0;text-align:left; }
+.survivor-condition-effect-levels { display:grid;gap:0;list-style:none;margin:0;padding:0; }
+.survivor-condition-effect-level-row {
+  display:grid;grid-template-columns:72px minmax(0,1fr);align-items:start;gap:10px;
+  padding:8px 0;min-width:0;
+}
+.survivor-condition-effect-level-row:first-child { padding-top:0; }
+.survivor-condition-effect-level-row:last-child { padding-bottom:0; }
+.survivor-condition-effect-level-row + .survivor-condition-effect-level-row { border-top:1px solid var(--border); }
+.survivor-condition-effect .survivor-condition-effect-level {
+  display:block;margin:2px 0 0;padding:3px 5px;border:1px solid var(--border);border-radius:5px;
+  background:var(--card);color:var(--foreground);font:650 .75rem/1.4 var(--font-sans);
+  letter-spacing:normal;white-space:nowrap;text-align:center;
+}
+.survivor-condition-effect .survivor-condition-effect-level.is-reached {
+  background:color-mix(in srgb,var(--condition-accent) 12%,var(--card));
+  border-color:color-mix(in srgb,var(--condition-accent) 55%,var(--border));
+}
+.survivor-condition-effect .survivor-condition-mechanic { color:inherit;font:650 1em/normal var(--font-sans);letter-spacing:normal; }
+@media(max-width:420px) {
+  .survivor-condition-effect-level-row { grid-template-columns:minmax(0,1fr);gap:5px; }
+  .survivor-condition-effect .survivor-condition-effect-level { justify-self:start;min-width:68px;margin-top:0; }
 }
 .survivor-condition-add-dialog .survivor-condition-add-footer {
   display:flex;flex-direction:row;justify-content:flex-end;

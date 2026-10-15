@@ -102,24 +102,33 @@ function ConditionInfoCard({ title, icon: Icon, children }: {
   </section>;
 }
 
-/** Preserve rule wording: only divide the text into readable, labeled sections. */
-/** Show complete rule text, emphasizing levels without turning each one into a tall row. */
+function EffectRuleText({ text }: { text: string }) {
+  return text.split(/(Falha com Medo|Desvantagem|Vantagem|\d+ (?:PV|Estresse|níveis|porção adicional de Água)|50%)/g).map((part, index) =>
+    index % 2 ? <strong key={index} className="survivor-condition-mechanic">{part}</strong> : part,
+  );
+}
+
+/** Shared by the active condition and application preview; preserve every rule sentence. */
 export function ConditionEffect({ condition, effect }: { condition: SurvivorCondition; effect: string }) {
   const levels = condition.kind === "heat" || condition.kind === "cold"
     ? [...effect.matchAll(/Nível\s+([123])(\+)?:\s*/g)]
     : [];
-  if (levels.length) return <p className="survivor-condition-effect-compact">
-    {levels.map((match, index) => {
-      const start = (match.index ?? 0) + match[0].length;
-      const end = levels[index + 1]?.index ?? effect.length;
-      const reached = Number(match[1]) <= (condition.level ?? 1);
-      return <span key={match.index} className="survivor-condition-effect-fragment">
-        <strong className={reached ? "is-reached" : undefined}>{`Nível ${match[1]}${match[2] ?? ""}:`}</strong>{" "}
-        {effect.slice(start, end).trim()}{index < levels.length - 1 ? " " : null}
-      </span>;
-    })}
-  </p>;
-  return <p className="survivor-condition-effect-compact">{effect}</p>;
+  if (levels.length) return <div className="survivor-condition-effect">
+    <ol className="survivor-condition-effect-levels" aria-label="Efeitos por nível">
+      {levels.map((match, index) => {
+        const start = (match.index ?? 0) + match[0].length;
+        const end = levels[index + 1]?.index ?? effect.length;
+        const reached = Number(match[1]) <= (condition.level ?? 1);
+        return <li key={match.index} className="survivor-condition-effect-level-row">
+          <strong className={"survivor-condition-effect-level" + (reached ? " is-reached" : "")}>{`Nível ${match[1]}${match[2] ?? ""}:`}</strong>
+          <p><EffectRuleText text={effect.slice(start, end).trim()} /></p>
+        </li>;
+      })}
+    </ol>
+  </div>;
+  return <div className="survivor-condition-effect">
+    {effect.split(/(?<=[.!?])\s+(?=[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ])/u).map((sentence, index) => <p key={index}><EffectRuleText text={sentence} /></p>)}
+  </div>;
 }
 
 function ExposureRollControl({ game, survivor, condition, edit, playerActions }: {
@@ -344,8 +353,10 @@ export function SurvivorConditionPanel({ game, survivor, edit, editable, playerA
               <span className="survivor-condition-add-preview-icon"><ConditionIcon condition={{ id: "preview", kind }} size={19} /></span>
               <span><b>{definition.label}</b><small>{definition.category} · efeitos e cuidados</small></span>
             </div>
-            <p><strong>Efeito</strong> {definition.effect}</p>
-            <p><strong>Como remover</strong> {definition.clear}</p>
+            <div className="survivor-condition-preview-rule"><h4>Efeito</h4>
+              <ConditionEffect condition={{ id: "preview", kind, level: Number(level) as 1 | 2 | 3 }} effect={definition.effect} />
+            </div>
+            <div className="survivor-condition-preview-rule"><h4>Como remover</h4><p>{definition.clear}</p></div>
           </section>
           {applyFeedback && <p className="inventory-hint" role="status">{applyFeedback}</p>}
           <DialogFooter className="survivor-condition-add-footer">

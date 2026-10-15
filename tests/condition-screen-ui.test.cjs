@@ -33,8 +33,14 @@ const { SurvivorPanel } = require('../components/survivor-panel.tsx');
 Module._load = load;
 const { defaultState, initialSurvivor, content } = require('../lib/game.ts');
 const { applySurvivorCondition, conditionDefinitions } = require('../lib/survivor-conditions.ts');
-const text = node => node == null || typeof node === 'boolean' ? '' : Array.isArray(node) ? node.map(text).join('') : typeof node === 'object' ? text(node.props?.children) : String(node);
+const expandRule = node => typeof node?.type === 'function' && ['ConditionEffect', 'EffectRuleText'].includes(node.type.name) ? node.type(node.props) : node;
+const text = node => {
+  node = expandRule(node);
+  return node == null || typeof node === 'boolean' ? '' : Array.isArray(node) ? node.map(text).join('') : typeof node === 'object' ? text(node.props?.children) : String(node);
+};
 function nodes(node, tab, dialogOpen = true) {
+  if (Array.isArray(node)) return node.flatMap(child => nodes(child, tab, dialogOpen));
+  node = expandRule(node);
   if (Array.isArray(node)) return node.flatMap(child => nodes(child, tab, dialogOpen));
   if (!node?.props) return [];
   if (node.type === 'Tabs') tab = node.props.value;
@@ -114,7 +120,7 @@ test('Exposto abre o acompanhamento; tratamento e edição manual ficam reservad
   assert.ok(player.some(node => text(node).includes('Cenas significativas restantes: 2')));
 });
 
-test('detalhe de Frio e Calor apresenta texto compacto por nível, sem alterar a regra', () => {
+test('Frio e Calor separam os níveis e destacam mecânicas sem alterar a regra', () => {
   for (const kind of ['cold', 'heat']) {
     const { game, survivor } = fixture();
     applySurvivorCondition(game, survivor.id, kind, { level: 2 });
@@ -122,19 +128,20 @@ test('detalhe de Frio e Calor apresenta texto compacto por nível, sem alterar a
     assert.ok(condition);
     const effect = conditionDefinitions[kind].effect;
     const element = ConditionEffect({ condition, effect });
-    const fragments = nodes(element).filter(node => node.type === 'span' && node.props.className === 'survivor-condition-effect-fragment');
+    const fragments = nodes(element).filter(node => node.type === 'li' && node.props.className === 'survivor-condition-effect-level-row');
     const labels = [...effect.matchAll(/Nível\s+([123])(\+)?:\s*/g)];
-    assert.equal(element.props.className, 'survivor-condition-effect-compact');
+    assert.equal(element.props.className, 'survivor-condition-effect');
     assert.equal(fragments.length, 3);
     for (const [index, label] of labels.entries()) {
       const strong = nodes(fragments[index]).find(node => node.type === 'strong');
       const until = labels[index + 1]?.index ?? effect.length;
       const description = effect.slice(label.index + label[0].length, until).trim();
       assert.equal(text(strong), `Nível ${label[1]}${label[2] ?? ''}:`);
-      assert.equal(strong.props.className === 'is-reached', Number(label[1]) <= 2);
+      assert.equal(strong.props.className.includes('is-reached'), Number(label[1]) <= 2);
       assert.ok(text(fragments[index]).includes(description));
     }
-    assert.equal(text(element), effect);
+    assert.equal(fragments.map(fragment => nodes(fragment).filter(node => node.type === 'p' || node.props.className?.split(' ').includes('survivor-condition-effect-level')).map(text).join(' ')).join(' '), effect);
+    assert.ok(nodes(element).some(node => node.type === 'strong' && node.props.className === 'survivor-condition-mechanic' && text(node) === 'Desvantagem'));
   }
 });
 
@@ -149,15 +156,17 @@ test('efeito de todas as condições sem níveis mantém integralmente as frases
   }
 });
 
-test('modal de condições usa apresentação desktop compacta com escape para telas pequenas', () => {
+test('modal de condições mantém limites responsivos e isola a tipografia dos efeitos', () => {
   const css = fs.readFileSync(path.join(__dirname, '../app/condition-screen.css'), 'utf8');
   const component = fs.readFileSync(path.join(__dirname, '../components/survivor-conditions.tsx'), 'utf8');
   assert.match(css, /width:min\(790px,calc\(100vw - 28px\)\)/);
   assert.match(css, /max-height:calc\(100dvh - 20px\)/);
   assert.match(css, /overflow-y:auto/);
-  assert.match(css, /\.survivor-condition-effect-fragment\s*\{\s*display:inline/);
+  assert.match(css, /\.survivor-condition-effect-level-row\s*\{/);
   assert.match(css, /@media\(max-width:620px\)/);
-  assert.doesNotMatch(component, /survivor-condition-effect-row/);
+  assert.match(css, /@media\(max-width:420px\)/);
+  const legacyCss = fs.readFileSync(path.join(__dirname, '../app/visual-system.css'), 'utf8');
+  assert.doesNotMatch(legacyCss, /\.survivor-condition-detail span\s*,/);
   assert.match(component, /Rolar exposição/);
   assert.match(component, /Falha com Esperança/);
   assert.match(component, /Falha com Medo/);

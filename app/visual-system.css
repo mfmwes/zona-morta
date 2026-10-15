@@ -5098,7 +5098,7 @@ html[data-theme="dark"] .player-fear-scale { background:#42384e; }
 .survivor-condition-detail > div {
   padding:10px 11px;border:1px solid var(--border);border-radius:8px;background:var(--muted);
 }
-.survivor-condition-detail span,
+.survivor-condition-detail > div > span,
 .survivor-condition-action-title {
   display:block;margin:0 0 5px;color:var(--muted-foreground);
   font:800 .65rem/1 var(--font-mono);letter-spacing:.09em;
