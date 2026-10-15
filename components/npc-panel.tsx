@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Eye, EyeOff, MapPin, Plus, Sparkles, Trash2, Users } from "lucide-react";
+import { useId, useMemo, useState } from "react";
+import { Activity, Check, Eye, EyeOff, House, MapPin, Plus, Sparkles, Trash2, Users, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -209,10 +209,25 @@ function PublicNpcDetails({ npc, game }: { npc: NPC; game: GameState }) {
   </div>;
 }
 
+function NpcLinkOption({ label, description, checked, icon: Icon, selectedLabel, unselectedLabel, onChange, home = false }: {
+  label: string; description: string; checked: boolean; icon: LucideIcon;
+  selectedLabel: string; unselectedLabel: string; onChange: (checked: boolean) => void; home?: boolean;
+}) {
+  const descriptionId = useId();
+  return <label className={`npc-link-card${checked ? " is-selected" : ""}${home ? " npc-link-card--home" : ""}`}>
+    <input className="npc-choice-input" type="checkbox" aria-label={label} aria-describedby={descriptionId} checked={checked} onChange={event => onChange(event.target.checked)} />
+    <span className="npc-link-icon"><Icon size={22} aria-hidden="true" /></span>
+    <span className="npc-link-copy"><strong>{label}</strong><small id={descriptionId}>{description}</small></span>
+    <span className="npc-link-state" aria-hidden="true"><span className="npc-choice-mark">{checked && <Check size={13} />}</span>{checked ? selectedLabel : unselectedLabel}</span>
+  </label>;
+}
+
 function NpcForm({ game, draft, setDraft, hexOptions }: { game: GameState; draft: NPC; setDraft: (value: NPC) => void; hexOptions: { value: string; label: string }[] }) {
   const update = <K extends keyof NPC>(key: K, value: NPC[K]) => setDraft({ ...draft, [key]: value });
   const isAtShelter = Boolean(game.shelter.hex && draft.hex === game.shelter.hex);
   const visible = npcVisibleToPlayers(draft);
+  const localSurvivors = game.survivors.filter(person => (person.hex ?? game.partyHex) === draft.hex);
+  const selectedCompanions = localSurvivors.filter(person => draft.accompaniesSurvivorIds?.includes(person.id)).length;
   return <div className="grid gap-4 py-1">
     <div className={`npc-visibility-control ${visible ? "is-visible" : ""}`}><span className="npc-visibility-control-icon">{visible ? <Eye size={22} /> : <EyeOff size={22} />}</span>
       <div><b>{visible ? "Visível aos jogadores" : "Somente o mestre"}</b><p>{visible ? "Este PNJ aparece na comunidade e no mapa dos jogadores." : "Prepare este PNJ em segredo e revele-o no momento do encontro."}</p></div>
@@ -239,10 +254,32 @@ function NpcForm({ game, draft, setDraft, hexOptions }: { game: GameState; draft
       <TabsContent value="vinculos" className="npc-form-section">
     <div className="grid gap-3 sm:grid-cols-2"><Pick contentClassName="z-[110]" label="Hex atual" value={draft.hex} options={hexOptions} onChange={value => update("hex", value)} />
       <Field label="Função no abrigo" value={draft.duty ?? ""} onChange={value => update("duty", value || undefined)} placeholder="Vigia, cozinha, reparos..." /></div>
-    <div className="npc-toggle-row"><label><input type="checkbox" checked={draft.accompaniesParty ?? false} onChange={event => setDraft({ ...draft, accompaniesParty: event.target.checked, hex: event.target.checked ? game.partyHex : draft.hex })} /> <Users size={15} /> Acompanha o grupo principal</label>
-      <label><input type="checkbox" checked={draft.active} onChange={event => update("active", event.target.checked)} /> Ativo na campanha</label>
-      {game.shelter.hex && <label><input type="checkbox" checked={draft.home === game.shelter.hex} onChange={event => update("home", event.target.checked ? (game.shelter.hex ?? undefined) : undefined)} /> Morador identificado deste abrigo</label>}</div>
-    <div className="field"><span className="field-label">Acompanha este grupo de sobreviventes</span><div className="npc-companion-list">{game.survivors.filter(person => (person.hex ?? game.partyHex) === draft.hex).map(person => <label key={person.id}><input type="checkbox" checked={(draft.accompaniesSurvivorIds ?? []).includes(person.id)} onChange={event => update("accompaniesSurvivorIds", event.target.checked ? [...new Set([...(draft.accompaniesSurvivorIds ?? []), person.id])] : (draft.accompaniesSurvivorIds ?? []).filter(id => id !== person.id))} /> {person.name}</label>)}{!game.survivors.some(person => (person.hex ?? game.partyHex) === draft.hex) && <small className="subtle">Nenhum sobrevivente neste hex. Mova o PNJ ou use o grupo principal.</small>}</div></div>
+    <fieldset className="npc-link-options"><legend>Presença e vínculos</legend>
+      <div className="npc-link-grid">
+        <NpcLinkOption label="Acompanha o grupo principal" description="Segue o grupo principal nas viagens." icon={Users}
+          checked={draft.accompaniesParty ?? false} selectedLabel="Acompanhando" unselectedLabel="Não acompanha"
+          onChange={checked => setDraft({ ...draft, accompaniesParty: checked, hex: checked ? game.partyHex : draft.hex })} />
+        <NpcLinkOption label="Ativo na campanha" description="Mantém este PNJ ativo na campanha." icon={Activity}
+          checked={draft.active} selectedLabel="Ativo" unselectedLabel="Inativo" onChange={checked => update("active", checked)} />
+        {game.shelter.hex && <NpcLinkOption label="Morador identificado deste abrigo" description="Vincula a pessoa ao abrigo atual." icon={House} home
+          checked={draft.home === game.shelter.hex} selectedLabel="Morador" unselectedLabel="Sem vínculo"
+          onChange={checked => update("home", checked ? (game.shelter.hex ?? undefined) : undefined)} />}
+      </div>
+    </fieldset>
+    <fieldset className="npc-companion-picker"><legend>Acompanha este grupo de sobreviventes</legend>
+      <div className="npc-companion-heading"><p>Selecione quem este PNJ acompanha no mesmo hex.</p>{localSurvivors.length > 0 && <span>Selecionados: {selectedCompanions}/{localSurvivors.length}</span>}</div>
+      <div className="npc-companion-grid">{localSurvivors.map(person => {
+        const selected = (draft.accompaniesSurvivorIds ?? []).includes(person.id);
+        return <label key={person.id} className={`npc-companion-card${selected ? " is-selected" : ""}`}>
+          <input className="npc-choice-input" type="checkbox" aria-label={`Acompanhar ${person.name}`} checked={selected}
+            onChange={event => update("accompaniesSurvivorIds", event.target.checked ? [...new Set([...(draft.accompaniesSurvivorIds ?? []), person.id])] : (draft.accompaniesSurvivorIds ?? []).filter(id => id !== person.id))} />
+          <span className="npc-companion-avatar">{person.portrait ? <img src={person.portrait} alt="" /> : person.name.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join("").toUpperCase()}</span>
+          <span className="npc-companion-copy"><strong>{person.name}</strong><small>{[person.archetype, person.specialty].filter(Boolean).join(" · ") || "Sobrevivente"}</small></span>
+          <span className="npc-choice-mark" aria-hidden="true">{selected ? <Check size={14} /> : <Plus size={14} />}</span>
+        </label>;
+      })}</div>
+      {!localSurvivors.length && <div className="npc-companion-empty"><MapPin size={22} aria-hidden="true" /><p>Nenhum sobrevivente neste hex.<small>Mova o PNJ ou use o grupo principal.</small></p></div>}
+    </fieldset>
     {isAtShelter && <p className="text-xs subtle">Este PNJ está na base ativa e entra no consumo individual das reservas ao encerrar o dia.</p>}
       </TabsContent>
       <TabsContent value="notas" className="npc-form-section">
