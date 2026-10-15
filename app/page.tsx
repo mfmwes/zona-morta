@@ -7,6 +7,7 @@ import { MobileCampaignShell } from "@/components/mobile-campaign-shell";
 import { MobileDisclosure } from "@/components/mobile-disclosure";
 import { mobileReturnSection } from "@/lib/mobile-navigation";
 import { startCampaignSync, type CampaignSyncNotice } from "@/lib/campaign-sync";
+import { fetchCampaignResource } from "@/lib/campaign-loading";
 import { currentTableRest } from "@/lib/table-rest";
 import { toast } from "sonner";
 import { BookOpen, Brain, Clock3, Download, Droplets, Ear, Eye, EyeOff, House, LayoutDashboard, LogOut, Layers, Map, MessageSquare, MoreHorizontal, Package, RotateCcw, Search, Settings, ShieldAlert, Swords, Upload, Users, Utensils, Volume2 } from "lucide-react";
@@ -76,6 +77,9 @@ export default function CampaignApp() {
   const [loading, setLoading] = useState(true);
   const [campaigns, setCampaigns] = useState<CampaignSummary[]>([]);
   const [accountCharacters, setAccountCharacters] = useState<AccountCharacterSummary[]>([]);
+  const [charactersLoading, setCharactersLoading] = useState(false);
+  const [charactersError, setCharactersError] = useState("");
+  const charactersRequest = useRef<AbortController | null>(null);
   const [showLibrary, setShowLibrary] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [needsAuth, setNeedsAuth] = useState(false);
@@ -204,30 +208,47 @@ export default function CampaignApp() {
     } finally { presentationFlight.current = false; }
   }, [presentationPath]);
 
+  const loadAccountCharacters = useCallback(async () => {
+    charactersRequest.current?.abort();
+    const controller = new AbortController();
+    charactersRequest.current = controller;
+    setCharactersLoading(true);
+    setCharactersError("");
+    try {
+      const response = await fetchCampaignResource<{ error?: string; characters?: AccountCharacterSummary[] }>("/api/characters", controller.signal);
+      if (controller.signal.aborted) return;
+      if (!response.ok) throw new Error(response.data.error || "Não foi possível abrir seus sobreviventes.");
+      setAccountCharacters(response.data.characters ?? []);
+    } catch (error) {
+      if (!controller.signal.aborted) setCharactersError(error instanceof Error ? error.message : "Não foi possível abrir seus sobreviventes.");
+    } finally {
+      if (charactersRequest.current === controller) setCharactersLoading(false);
+    }
+  }, []);
+
+  useEffect(() => () => { charactersRequest.current?.abort(); }, []);
+
   const loadCampaign = useCallback(async () => {
+    charactersRequest.current?.abort();
     try {
       const campaignId = new URLSearchParams(window.location.search).get("campanha")?.trim() ?? "";
       if (!campaignId) {
-        const [campaignResponse, characterResponse] = await Promise.all([
-          fetch("/api/campaigns", { cache: "no-store" }),
-          fetch("/api/characters", { cache: "no-store" }),
-        ]);
-        const payload = await campaignResponse.json() as { error?: string; campaigns?: CampaignSummary[] };
-        const characterPayload = await characterResponse.json() as { error?: string; characters?: AccountCharacterSummary[] };
+        const campaignResponse = await fetchCampaignResource<{ error?: string; campaigns?: CampaignSummary[] }>("/api/campaigns");
+        const payload = campaignResponse.data;
         if (campaignResponse.status === 401) { setNeedsAuth(true); setShowLibrary(false); setLoadError(""); setGame(null); return; }
         if (!campaignResponse.ok) throw new Error(payload.error || "Falha ao abrir seus dossiês.");
         setNeedsAuth(false);
         setCampaigns(payload.campaigns ?? []);
-        setAccountCharacters(characterResponse.ok ? (characterPayload.characters ?? []) : []);
         setShowLibrary(true);
         setPresentation(undefined); presentationVersion.current = "";
         setGame(null); current.current = null;
         setLoadError("");
+        void loadAccountCharacters();
         return;
       }
       setShowLibrary(false);
-      const response = await fetch(apiPath(), { cache: "no-store" });
-      const payload = await response.json() as { error?: string; revision?: number; state?: GameState };
+      const response = await fetchCampaignResource<CampaignResponse & { error?: string }>(apiPath());
+      const payload = response.data;
       if (response.status === 401) { setNeedsAuth(true); setLoadError(""); setGame(null); return; }
       if (!response.ok) throw new Error(payload.error || "Falha ao abrir a campanha.");
       setNeedsAuth(false);
@@ -251,7 +272,7 @@ export default function CampaignApp() {
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : "Falha ao abrir a campanha.");
     } finally { setLoading(false); }
-  }, [apiPath, refreshPresentation]);
+  }, [apiPath, refreshPresentation, loadAccountCharacters]);
 
   // This starts network I/O; loadCampaign updates state only after the request resolves.
   // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -624,7 +645,9 @@ export default function CampaignApp() {
 
   if (needsAuth) return <AuthPanel onAuthenticated={loadCampaign} />;
 
-  if (showLibrary) return <CampaignLibrary campaigns={campaigns} characters={accountCharacters} onRefresh={loadCampaign} onSignOut={async () => {
+  if (showLibrary) return <CampaignLibrary campaigns={campaigns} characters={accountCharacters}
+    charactersLoading={charactersLoading} charactersError={charactersError} onRetryCharacters={loadAccountCharacters}
+    onRefresh={loadCampaign} onSignOut={async () => {
     await fetch("/api/auth", { method: "DELETE" });
     window.location.assign("/");
   }} />;

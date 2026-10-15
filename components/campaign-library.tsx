@@ -27,9 +27,12 @@ export type AccountCharacterSummary = {
   updatedAt: string;
 };
 
-export function CampaignLibrary({ campaigns, characters, onRefresh, onSignOut }: {
+export function CampaignLibrary({ campaigns, characters, charactersLoading = false, charactersError = "", onRetryCharacters, onRefresh, onSignOut }: {
   campaigns: CampaignSummary[];
   characters: AccountCharacterSummary[];
+  charactersLoading?: boolean;
+  charactersError?: string;
+  onRetryCharacters?: () => void | Promise<void>;
   onRefresh: () => void | Promise<void>;
   onSignOut: () => void | Promise<void>;
 }) {
@@ -134,6 +137,11 @@ export function CampaignLibrary({ campaigns, characters, onRefresh, onSignOut }:
 
       <section className="mb-8">
         <div className="flex items-center gap-2 mb-3"><UserRound size={19} /><div><p className="dossier-title">Conta</p><h2 className="section-title mt-1">Seus sobreviventes salvos</h2></div></div>
+        {charactersLoading && <p role="status" className="intro-line mb-3">Carregando seus sobreviventes… Você já pode abrir uma campanha.</p>}
+        {charactersError && <div role="alert" className="campaign-library-error mb-3 rounded-md border px-4 py-3 text-sm">
+          <p>{charactersError}</p>
+          {onRetryCharacters && <Button className="mt-3" size="sm" variant="outline" onClick={() => void onRetryCharacters()}>Tentar carregar sobreviventes novamente</Button>}
+        </div>}
         {characters.length ? <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {characters.map(character => <article key={`${character.id}-${character.campaignId}`} className="list-card library-character-card">
             <div className="flex items-center gap-3">
@@ -149,7 +157,7 @@ export function CampaignLibrary({ campaigns, characters, onRefresh, onSignOut }:
             </div>
             {!character.campaignArchived && <div className="mt-4"><Button size="sm" variant="outline" onClick={() => openCampaign(character.campaignId)}><BookOpen size={15} /> Abrir campanha</Button></div>}
           </article>)}
-        </div> : <div className="panel panel-pad"><p className="intro-line">Quando uma ficha for criada ou atualizada em uma campanha, uma cópia vinculada à sua conta aparecerá aqui.</p></div>}
+        </div> : !charactersLoading && !charactersError && <div className="panel panel-pad"><p className="intro-line">Quando uma ficha for criada ou atualizada em uma campanha, uma cópia vinculada à sua conta aparecerá aqui.</p></div>}
       </section>
 
       <section>
