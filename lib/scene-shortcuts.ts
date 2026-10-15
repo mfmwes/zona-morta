@@ -30,12 +30,18 @@ type SceneShortcut =
   | { action: "tool"; tool: SceneTool }
   | { action: "rotate"; delta: number }
   | { action: "zoom"; delta: number }
-  | { action: "cancel" | "labels" | "grid" | "multi" | "center" | "room" };
+  | { action: "cancel" | "labels" | "grid" | "multi" | "center" | "room" | "undo" | "redo" };
 
 /** Called only for keyboard events within the focused scene workspace. */
 export function sceneShortcut(event: ShortcutEvent, context: ShortcutContext): SceneShortcut | null {
-  if (context.readonly || context.blocked || event.ctrlKey || event.metaKey || event.altKey || event.repeat || event.isComposing) return null;
+  if (context.readonly || context.blocked || event.altKey || event.repeat || event.isComposing) return null;
   const key = event.key.toLowerCase();
+  if (event.ctrlKey || event.metaKey) {
+    if (context.interacting) return null;
+    if (key === "z") return { action: event.shiftKey ? "redo" : "undo" };
+    if (key === "y" && !event.shiftKey) return { action: "redo" };
+    return null;
+  }
   if (key === "escape") return { action: "cancel" };
   // Keep the active pointer gesture stable until it finishes or is cancelled.
   if (context.interacting) return null;

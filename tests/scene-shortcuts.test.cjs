@@ -10,6 +10,13 @@ const { sceneShortcut } = require('../lib/scene-shortcuts.ts');
 const { createSceneBoardObject, createSceneBoardScene, rotateWallWithFixtures, createFixtureOnWall } = require('../lib/scene-board.ts');
 const context = { readonly: false, preparing: true, fogEnabled: true, blocked: false, interacting: false };
 
+test('desfazer e refazer só funcionam com o editor livre e sem roubar o histórico de campos', () => {
+  assert.deepEqual(sceneShortcut({key:'z',ctrlKey:true},context),{action:'undo'});
+  assert.deepEqual(sceneShortcut({key:'z',metaKey:true,shiftKey:true},context),{action:'redo'});
+  assert.deepEqual(sceneShortcut({key:'y',ctrlKey:true},context),{action:'redo'});
+  for(const flag of ['readonly','blocked','interacting']) assert.equal(sceneShortcut({key:'z',ctrlKey:true},{...context,[flag]:true}),null);
+});
+
 test('atalhos respeitam campos, diálogos, jogadores, composição e combinações do navegador', () => {
   for (const key of ['v', 'h', 'w', 'd', 'j', 'e', 'o', 's', 'r', 'l', 'g', 'm', 'f', '+', '-', 'Escape']) {
     for (const flag of ['ctrlKey', 'metaKey', 'altKey', 'isComposing', 'repeat']) {

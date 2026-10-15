@@ -103,9 +103,10 @@ test('excluir cena privada mantém a apresentação; cenas editadas ou apresenta
 });
 
 let host;
-const hooks={...React,useState(initial){const index=host.cursor++;if(!(index in host.slots))host.slots[index]=typeof initial==='function'?initial():initial;const owner=host;return [owner.slots[index],value=>{owner.slots[index]=typeof value==='function'?value(owner.slots[index]):value;}];},useMemo(fn){return fn();},useRef(initial){const index=host.cursor++;if(!(index in host.slots))host.slots[index]={current:initial};return host.slots[index];}};
+const hooks={...React,useSyncExternalStore(_subscribe,_getSnapshot,getServerSnapshot){return getServerSnapshot();},useState(initial){const index=host.cursor++;if(!(index in host.slots))host.slots[index]=typeof initial==='function'?initial():initial;const owner=host;return [owner.slots[index],value=>{owner.slots[index]=typeof value==='function'?value(owner.slots[index]):value;}];},useMemo(fn){return fn();},useRef(initial){const index=host.cursor++;if(!(index in host.slots))host.slots[index]={current:initial};return host.slots[index];}};
 const load=Module._load;
 Module._load=function(name,parent,main){
+ if(name==='react' && /use-scene-library\.ts$/.test(parent?.filename??''))return hooks;
  if(/(?:shelter-project-manager|scene-board)\.tsx$/.test(parent?.filename??'')){
   if(name==='react')return hooks;
   if(name==='sonner')return {toast:{success(){},error(){}}};

@@ -52,6 +52,22 @@ jobs:
       - name: Validar build
         run: pnpm build
 
+      - name: Preparar Chromium para verificações visuais
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Verificar layouts e interações no navegador
+        run: pnpm test:visual
+
+      - name: Guardar relatório visual
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verificacao-visual
+          path: |
+            outputs/visual-report
+            outputs/visual-results
+          retention-days: 7
+
       - name: Validar sincronização em tempo real
         run: node scripts/check-campaign-live.mjs
 

@@ -1,6 +1,6 @@
 # Atalhos da cena visual
 
-Clique na cena ou use Tab para focar o editor. Os atalhos funcionam somente dentro do editor do mestre e ficam suspensos em campos de texto, buscas e diálogos. Combinações com Ctrl, Cmd ou Alt continuam disponíveis para o navegador.
+Clique na cena ou use Tab para focar o editor. Os atalhos funcionam somente dentro do editor do mestre e ficam suspensos em campos de texto, buscas e diálogos. Ctrl/Cmd+Z e Ctrl/Cmd+Y controlam o histórico da cena; as demais combinações com Ctrl, Cmd ou Alt continuam disponíveis para o navegador.
 
 | Tecla | Ação |
 | --- | --- |
@@ -18,6 +18,8 @@ Clique na cena ou use Tab para focar o editor. Os atalhos funcionam somente dent
 | F | Centralizar cena |
 | + / − | Ajustar zoom |
 | Esc | Cancelar gesto, limpar seleção e voltar a selecionar |
+| Ctrl/Cmd+Z | Desfazer a última edição da cena |
+| Ctrl/Cmd+Shift+Z ou Ctrl/Cmd+Y | Refazer a edição |
 
 Construção (W, D, J, S) está disponível no modo **Montar cena**. A rotação exige uma única peça selecionada e respeita seu bloqueio; paredes levam portas e janelas vinculadas consigo. Durante um arraste, apenas Esc interrompe o gesto, descartando sua prévia.
 

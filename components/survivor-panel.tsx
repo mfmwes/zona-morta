@@ -2,6 +2,8 @@
 import { MobileSurvivorOverview, type MobileResource } from "@/components/mobile-survivor-overview";
 import { MobileDisclosure } from "@/components/mobile-disclosure";
 import { RuleHelp } from "@/components/rule-help";
+import { ChoiceCard } from "@/components/choice-card";
+import { RuleText } from "@/components/rule-text";
 
 import { currentTableRest, requestTableRest, confirmTableRest } from "@/lib/table-rest";
 
@@ -186,7 +188,7 @@ function RestPlanner({ game, edit, selected, playerMode, playerPreview, restPeer
       <div className="character-chips">{request.invitedIds.map(id=><span key={id}>{peers.find(p=>p.id===id)?.name??(id===selected.id?selected.name:"Sobrevivente")} · {request.participantIds.includes(id)?"Confirmado":"Aguardando escolhas"}</span>)}</div>
       {request.awaitingNight ? <p className="character-rest-status">Todos confirmaram. O mestre aplica estas escolhas em Encerrar dia.</p> : <div className="character-rest-actions"><Button disabled={disabled} onClick={()=>begin(request.kind!)}>{confirmed?"Alterar minhas escolhas":personalPlanning?"Escolher minhas duas ações":`Escolher ações de ${selected.name}`}</Button></div>}
       {!personalPlanning&&<Button size="sm" variant="outline" disabled={busy} onClick={cancel}>Cancelar descanso</Button>}
-    </> : <><div className="rest-group-picker" aria-label="Participantes do descanso">{groupPeers.map(peer=><label key={peer.id}><input type="checkbox" checked={restGroupIds.includes(peer.id)} disabled={peer.id===selected.id||disabled||occupiedIds.has(peer.id)} onChange={event=>setRestGroupSelection({forId:selected.id,ids:event.target.checked?[...restGroupIds,peer.id]:restGroupIds.filter(id=>id!==peer.id)})}/>{peer.name}</label>)}</div><div className="character-rest-actions"><Button variant="outline" disabled={disabled} onClick={()=>void send("request-rest","short")}><Moon size={16}/> Solicitar descanso curto · 1h</Button><Button disabled={disabled} onClick={()=>void send("request-rest","long")}><Moon size={16}/> Solicitar descanso longo · 6h</Button></div></>}
+    </> : <><div className="choice-card-grid" role="group" aria-label="Participantes do descanso">{groupPeers.map(peer=><ChoiceCard key={peer.id} title={peer.name} description={peer.id===selected.id?"Você · participa do descanso":occupiedIds.has(peer.id)?"Ocupado em outra atividade":restGroupIds.includes(peer.id)?"Convidado para descansar":"Incluir no descanso"} checked={restGroupIds.includes(peer.id)} disabled={peer.id===selected.id||disabled||occupiedIds.has(peer.id)} onChange={checked=>setRestGroupSelection({forId:selected.id,ids:checked?[...restGroupIds,peer.id]:restGroupIds.filter(id=>id!==peer.id)})}/>)}</div><div className="character-rest-actions"><Button variant="outline" disabled={disabled} onClick={()=>void send("request-rest","short")}><Moon size={16}/> Solicitar descanso curto · 1h</Button><Button disabled={disabled} onClick={()=>void send("request-rest","long")}><Moon size={16}/> Solicitar descanso longo · 6h</Button></div></>}
     <Dialog open={open} onOpenChange={setOpen}><DialogContent className="rest-planner-dialog"><DialogHeader><DialogTitle>Suas ações de descanso {kind==="short"?"curto":"longo"}</DialogTitle><DialogDescription>Escolha duas ações. Cada benefício pode ir para você ou alguém no mesmo hex. O descanso começa quando os participantes confirmarem. Os benefícios são aplicados no horário de conclusão.</DialogDescription></DialogHeader>
       <div className="rest-planner-row"><b>{selected.name}</b><div className="rest-planner-choices">{([0,1] as const).map(index=><div className="rest-planner-action" key={index}><span className="rest-planner-action-title">AÇÃO {index+1}</span><Pick label="O que fazer" value={choices[index].action} options={restActionsFor(kind).map(action=>({value:action,label:restActionLabels[action]}))} onChange={value=>setChoices(current=>current.map((choice,i)=>i===index?{...choice,action:value as RestAction}:choice) as [RestChoice,RestChoice])}/><Pick label="Quem recebe o benefício" value={choices[index].targetId} options={targets} onChange={value=>setChoices(current=>current.map((choice,i)=>i===index?{...choice,targetId:value}:choice) as [RestChoice,RestChoice])}/></div>)}</div></div>
       <DialogFooter><Button variant="outline" onClick={()=>setOpen(false)}>Cancelar</Button><Button disabled={disabled||!request||request.awaitingNight} onClick={()=>void send("confirm-rest")}>Confirmar minhas ações</Button></DialogFooter>
@@ -225,7 +227,7 @@ function AbilityUseControl({ game, edit, survivorId, abilityId, name, effect, ho
     </Button></DialogTrigger>
     <DialogContent className="ability-use-dialog"><DialogHeader><DialogTitle>Usar {name}</DialogTitle>
       <DialogDescription>Confirme que o gatilho ocorreu. O aplicativo desconta o recurso e guarda o limite de uso; resolva o efeito descrito com o grupo.</DialogDescription></DialogHeader>
-      <p className="character-rule-note">{effect}</p>
+      <RuleText text={effect} className="character-rule-note" />
       {period && <p className="inventory-hint"><b>Limite:</b> {periodLabels[period]}{period === "place" ? " identificado abaixo" : period === "patient" ? /durante um descanso curto/i.test(effect) ? " por descanso curto" : " por cena" : ""}.</p>}
       {placeOrPatient && <Field label={period === "patient" ? "Nome do paciente" : "Hex ou local da descoberta"} value={context}
         onChange={setContext} placeholder={period === "patient" ? "Ex.: Joana" : `hex ${currentHex}`} />}
@@ -260,7 +262,7 @@ function AbilityCard({ game, edit, survivorId, abilityId, name, category, effect
         <span className="character-ability-preview">{text}</span>
       </span>
     </AccordionTrigger>
-    <AccordionContent className="character-ability-detail"><p>{text}</p>
+    <AccordionContent className="character-ability-detail"><RuleText text={text} />
       {effect && <div className="character-ability-actions">{options.map(option => <AbilityUseControl key={option.abilityId} game={game} edit={edit} survivorId={survivorId}
         {...option} context={contexts[option.abilityId] ?? ""} onContextChange={value => setContexts(previous => ({ ...previous, [option.abilityId]: value }))} />)}</div>}
     </AccordionContent>
@@ -272,11 +274,21 @@ function deadlineLabel(deadline: number | null | undefined) {
   return `dia ${Math.floor(deadline / 1440) + 1}, ${String(Math.floor((deadline % 1440) / 60)).padStart(2, "0")}:${String(deadline % 60).padStart(2, "0")}`;
 }
 
-export function SurvivorPanel({ mobile = false, initialSurvivorId, initialSection, game, edit, playerPreview, playerMode = false, restPeers = [], onOpenConflict, playerActions, masterActions }: { mobile?: boolean; initialSurvivorId?:string; initialSection?:string; game: GameState; edit: Edit; playerPreview: boolean; playerMode?: boolean; restPeers?: RestPeer[]; onOpenConflict?: () => void; playerActions?: PlayerActionControls; masterActions?: MasterActionControls }) {
+export function SurvivorPanel({ mobile = false, initialSurvivorId, initialSection, initialRestFocus, game, edit, playerPreview, playerMode = false, restPeers = [], onOpenConflict, playerActions, masterActions }: { mobile?: boolean; initialSurvivorId?:string; initialSection?:string; initialRestFocus?:boolean; game: GameState; edit: Edit; playerPreview: boolean; playerMode?: boolean; restPeers?: RestPeer[]; onOpenConflict?: () => void; playerActions?: PlayerActionControls; masterActions?: MasterActionControls }) {
   const mobileSectionsTrigger = useRef<HTMLButtonElement>(null);
   const [mobileSectionsOpen, setMobileSectionsOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(initialSurvivorId??null);
   const [activeTab, setActiveTab] = useState(initialSection??"resumo");
+  useEffect(() => {
+    if (!initialRestFocus) return;
+    const frame = window.requestAnimationFrame(() => {
+      const panel = document.getElementById("character-rest-panel"), details = panel?.closest("details");
+      if (details) details.open = true;
+      panel?.scrollIntoView({ block: "center" });
+      panel?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [initialRestFocus]);
   useEffect(() => {
     const openRest = () => {
       setActiveTab("resumo");

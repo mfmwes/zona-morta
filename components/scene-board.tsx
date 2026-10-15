@@ -2,10 +2,10 @@
 
 import { MasterContextActions, PlayerContextActions, type MasterActionControls, type PlayerActionControls } from "@/components/player-actions-panel";
 
-import { useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
+import { memo, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
 import {
   Copy, Eye, EyeOff, Hand, Layers, Lock, MousePointer2, Plus, RotateCcw, RotateCw,
-  Search, Square, Tags, Trash2, Type, Unlock, User, ZoomIn, ZoomOut,
+  Search, Square, Tags, Trash2, Type, Unlock, User, ZoomIn, ZoomOut, Undo2, Redo2, Star, BookmarkPlus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -17,6 +17,9 @@ import { sceneShortcut, sceneToolShortcuts, type SceneTool } from "@/lib/scene-s
 import { survivorIsDown, type GameState } from "@/lib/game";
 import { removalFingerprint } from "@/lib/master-removals";
 import { createId } from "@/lib/id";
+import { applySceneEdit, describeSceneEdit, emptySceneHistory, recordSceneEdit, type SceneHistory } from "@/lib/scene-history";
+import { createSceneTemplate, insertSceneTemplate, scenePieceKey, type SceneTemplate } from "@/lib/scene-templates";
+import { useSceneLibrary } from "@/hooks/use-scene-library";
 import { portraitFrame, type PortraitFrame } from "@/lib/portrait-frame";
 import {
   clampSceneDelta,
@@ -176,13 +179,13 @@ function safeBoard(game: GameState): SceneBoardState {
   return game.sceneBoard ?? { scenes: [] };
 }
 
-function ObjectVisual({ variant, compact = false }: { variant?: string; compact?: boolean }) {
+const ObjectVisual = memo(function ObjectVisual({ variant, compact = false }: { variant?: string; compact?: boolean }) {
   const art = sceneObjectArtFor(variant);
   if (art) return <SceneObjectArt art={art} compact={compact} />;
   return <span className={"scene-object-visual visual-" + (variant ?? "generic") + (compact ? " is-compact" : "")} aria-hidden="true">
     <i className="visual-a" /><i className="visual-b" /><i className="visual-c" /><i className="visual-d" />
   </span>;
-}
+});
 
 function portraitStyle(frame?: PortraitFrame) {
   const crop = portraitFrame(frame);
@@ -284,7 +287,12 @@ export function SceneBoard({ game, edit, playerPreview, playerActions, masterAct
   const [tool, setTool] = useState<Tool>("select");
   const [multiSelect, setMultiSelect] = useState(false);
   const [showLabels, setShowLabels] = useState(true);
-  const [libraryMode, setLibraryMode] = useState<"objects" | "tokens">("objects");
+  const [libraryMode, setLibraryMode] = useState<"objects" | "tokens" | "templates">("objects");
+  const { library: savedLibrary, update: updateLibrary } = useSceneLibrary(game.campaignId);
+  const [templateOpen, setTemplateOpen] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const histories = useRef(new Map<string, SceneHistory>());
+  const [historyCounts, setHistoryCounts] = useState<Record<string, { undo: number; redo: number }>>({});
   const [libraryCategory, setLibraryCategory] = useState("all");
   const [libraryQuery, setLibraryQuery] = useState("");
   const [zoom, setZoom] = useState(.8);
@@ -309,6 +317,8 @@ export function SceneBoard({ game, edit, playerPreview, playerActions, masterAct
     ?? board.scenes[0];
   const selectedObjects = scene?.objects.filter(object => selectedIds.includes(object.id)) ?? [];
   const selected = selectedObjects.length === 1 ? selectedObjects[0] : undefined;
+  const historyKey = `${game.campaignId}:${scene?.id ?? ""}`;
+  const history = historyCounts[historyKey];
   const snapEnabled = scene?.snapToGrid !== false;
   const showLibrary = !readonly && (workspaceMode === "prepare" || libraryOpen);
   const showInspector = !readonly && (workspaceMode === "prepare" || selectedObjects.length > 0);
@@ -318,11 +328,11 @@ export function SceneBoard({ game, edit, playerPreview, playerActions, masterAct
     .map(object => object.refId!));
   const normalizedLibraryQuery = libraryQuery.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
   const visibleLibraryGroups = libraryGroups
-    .filter(group => libraryCategory === "all" || group.id === libraryCategory)
+    .filter(group => libraryCategory === "all" || libraryCategory === "favorites" || group.id === libraryCategory)
     .map(group => ({
       ...group,
-      pieces: group.pieces.filter(piece => !normalizedLibraryQuery
-        || (piece.label + " " + group.label).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR").includes(normalizedLibraryQuery)),
+      pieces: group.pieces.filter(piece => (libraryCategory !== "favorites" || savedLibrary.favorites.includes(scenePieceKey(piece))) && (!normalizedLibraryQuery
+        || (piece.label + " " + group.label).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR").includes(normalizedLibraryQuery))),
     }))
     .filter(group => group.pieces.length > 0);
   const visibleSurvivors = game.survivors.filter(person => !normalizedLibraryQuery
@@ -372,10 +382,65 @@ export function SceneBoard({ game, edit, playerPreview, playerActions, masterAct
 
   function patchScene(fn: (target: SceneBoardScene) => void) {
     if (readonly || !scene) return;
+    let recorded = false;
     edit(draft => {
       const target = draft.sceneBoard?.scenes.find(entry => entry.id === scene.id);
-      if (target) fn(target);
+      if (!target) return;
+      const before = structuredClone(target);
+      fn(target);
+      const entry = describeSceneEdit(before, target);
+      if (entry) {
+        const stack = histories.current.get(historyKey) ?? emptySceneHistory();
+        recordSceneEdit(stack, entry); histories.current.set(historyKey, stack); recorded = true;
+      }
     });
+    if (recorded) refreshHistory();
+  }
+
+  function refreshHistory() {
+    const stack = histories.current.get(historyKey);
+    setHistoryCounts(previous => ({ ...previous, [historyKey]: { undo: stack?.undo.length ?? 0, redo: stack?.redo.length ?? 0 } }));
+  }
+
+  function stepHistory(direction: "undo" | "redo") {
+    if (readonly || !scene || dragRef.current || wallDraftRef.current || fogDraftRef.current || panRef.current) return;
+    const stack = histories.current.get(historyKey), entry = stack?.[direction].at(-1);
+    if (!stack || !entry) return;
+    let applied = false, message = "";
+    edit(draft => {
+      const target = draft.sceneBoard?.scenes.find(s => s.id === scene.id);
+      if (!target) return;
+      const result = applySceneEdit(target, entry, direction);
+      if (!result.ok) { message = result.message; return; }
+      draft.sceneBoard!.scenes = draft.sceneBoard!.scenes.map(s => s.id === target.id ? result.scene : s); applied = true;
+    });
+    if (applied) {
+      stack[direction].pop(); stack[direction === "undo" ? "redo" : "undo"].push(entry);
+      setSelectedIds([]); refreshHistory();
+    } else if (message) toast.info(message);
+  }
+
+  function toggleFavorite(piece: LibraryPiece) {
+    try { updateLibrary(value => { const key = scenePieceKey(piece); value.favorites = value.favorites.includes(key) ? value.favorites.filter(k => k !== key) : [...value.favorites, key]; }); }
+    catch { toast.error("Não foi possível salvar os favoritos neste navegador."); }
+  }
+
+  function saveTemplate() {
+    if (readonly || !scene) return;
+    try {
+      const template = createSceneTemplate(scene, selectedIds, templateName);
+      updateLibrary(value => { if (value.templates.length >= 24) throw new Error("A biblioteca já tem 24 modelos. Remova um antes de guardar outro."); value.templates.push(template); });
+      setTemplateOpen(false); setLibraryMode("templates"); toast.success("Modelo guardado neste navegador");
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Não foi possível guardar o modelo."); }
+  }
+
+  function insertTemplate(template: SceneTemplate) {
+    if (readonly || !scene) return;
+    let ids: string[] = [];
+    try {
+      patchScene(target => { const objects = insertSceneTemplate(target, template); target.objects.push(...objects); ids = objects.map(o => o.id); });
+      setSelectedIds(ids); setTool("select");
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Não foi possível inserir o modelo."); }
   }
 
   function patchSelected(fn: (target: SceneBoardObject) => void) {
@@ -706,7 +771,7 @@ export function SceneBoard({ game, edit, playerPreview, playerActions, masterAct
       readonly,
       preparing: workspaceMode === "prepare",
       fogEnabled: Boolean(scene.fogEnabled),
-      blocked: createOpen || Boolean(deletionTarget) || Boolean(target?.closest(
+      blocked: createOpen || templateOpen || Boolean(deletionTarget) || Boolean(target?.closest(
         'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="dialog"], [role="alertdialog"], [role="combobox"], [role="menu"]',
       )),
       interacting: Boolean(dragRef.current || panRef.current || wallDraftRef.current || fogDraftRef.current),
@@ -715,6 +780,8 @@ export function SceneBoard({ game, edit, playerPreview, playerActions, masterAct
     event.preventDefault();
     event.stopPropagation();
     switch (shortcut.action) {
+      case "undo": stepHistory("undo"); break;
+      case "redo": stepHistory("redo"); break;
       case "tool": setTool(shortcut.tool); break;
       case "room": add("zone", "Sala / área", "room"); break;
       case "labels": setShowLabels(value => !value); break;
@@ -792,6 +859,11 @@ export function SceneBoard({ game, edit, playerPreview, playerActions, masterAct
 
   return <section ref={workspaceRef} className="scene-board-root" tabIndex={0} aria-label="Editor de cena visual" onKeyDown={handleShortcut}>
 
+    {!readonly && <Dialog open={templateOpen} onOpenChange={setTemplateOpen}><DialogContent><DialogHeader><DialogTitle>Guardar modelo da seleção</DialogTitle><DialogDescription>Guarda objetos do ambiente nesta campanha e neste navegador. Personagens ficam de fora; portas e janelas levam sua parede.</DialogDescription></DialogHeader>
+      <form onSubmit={event => { event.preventDefault(); saveTemplate(); }}><Field label="Nome do modelo" value={templateName} onChange={setTemplateName} placeholder="Ex.: Quarto com duas camas" />
+        <DialogFooter className="mt-4"><Button type="button" variant="outline" onClick={() => setTemplateOpen(false)}>Cancelar</Button><Button type="submit" disabled={!templateName.trim()}>Guardar modelo</Button></DialogFooter></form>
+    </DialogContent></Dialog>}
+
     <header className="panel panel-pad scene-board-header">
       <div><p className="dossier-title">Cena visual</p><div className="scene-board-title"><h2 className="section-title">{scene.name}</h2>
         <span className={live ? "tag scene-live" : "tag"}>{live ? <Eye size={13} /> : <EyeOff size={13} />}{live ? "AO VIVO" : readonly ? "Não apresentada" : "Privada"}</span></div></div>
@@ -799,6 +871,8 @@ export function SceneBoard({ game, edit, playerPreview, playerActions, masterAct
         className={entry.id === scene.id ? "is-active" : ""} onClick={() => selectScene(entry.id)}>{entry.name}</button>)}
         <button type="button" disabled={board.scenes.length >= sceneBoardLimits.maxScenes} onClick={openCreateScene}><Plus size={14} /> Nova</button></div>}
       <div className="scene-board-actions">
+        {!readonly && <><Button size="sm" variant="outline" disabled={!history?.undo || Boolean(drag || wallDraft || fogDraft || pan)} title="Desfazer (Ctrl/⌘ Z)" onClick={() => stepHistory("undo")}><Undo2 size={15} /> Desfazer</Button>
+          <Button size="sm" variant="outline" disabled={!history?.redo || Boolean(drag || wallDraft || fogDraft || pan)} title="Refazer (Ctrl/⌘ Shift Z)" onClick={() => stepHistory("redo")}><Redo2 size={15} /> Refazer</Button></>}
         <Button size="sm" variant="outline" aria-label="Diminuir zoom" onClick={() => changeZoom(zoom - .1)}><ZoomOut size={15} /></Button>
         <span className="scene-zoom">{Math.round(zoom * 100)}%</span>
         <Button size="sm" variant="outline" aria-label="Aumentar zoom" onClick={() => changeZoom(zoom + .1)}><ZoomIn size={15} /></Button>
@@ -853,6 +927,7 @@ export function SceneBoard({ game, edit, playerPreview, playerActions, masterAct
         <div><dt><kbd>L</kbd></dt><dd>Ocultar / exibir legendas nesta tela</dd></div>
         <div><dt><kbd>G</kbd></dt><dd>Ocultar / exibir grade</dd></div>
         <div><dt><kbd>M</kbd></dt><dd>Seleção múltipla</dd></div>
+        <div><dt><kbd>Ctrl/⌘ Z</kbd></dt><dd>Desfazer edição · Shift para refazer</dd></div>
         <div><dt><kbd>F</kbd></dt><dd>Centralizar cena</dd></div>
         <div><dt><kbd>+</kbd> / <kbd>−</kbd></dt><dd>Ajustar zoom</dd></div>
         <div><dt><kbd>Esc</kbd></dt><dd>Cancelar gesto e voltar a selecionar</dd></div>
@@ -863,30 +938,41 @@ export function SceneBoard({ game, edit, playerPreview, playerActions, masterAct
       {showLibrary && <aside className="panel scene-palette">
         <div className="scene-library-head">
           <div className="scene-library-title-row"><div><p className="dossier-title">Biblioteca visual</p><small>{libraryGroups.reduce((sum, group) => sum + group.pieces.length, 0)} objetos disponíveis</small></div>
-            <div className="scene-library-mode" role="tablist" aria-label="Tipo de item da biblioteca">
-              <button type="button" className={libraryMode === "objects" ? "is-active" : ""} onClick={() => setLibraryMode("objects")}>Objetos</button>
-              <button type="button" className={libraryMode === "tokens" ? "is-active" : ""} onClick={() => setLibraryMode("tokens")}>Personagens</button>
+            <div className="scene-library-mode" role="group" aria-label="Tipo de item da biblioteca">
+              <button type="button" aria-pressed={libraryMode === "objects"} className={libraryMode === "objects" ? "is-active" : ""} onClick={() => setLibraryMode("objects")}>Objetos</button>
+              <button type="button" aria-pressed={libraryMode === "tokens"} className={libraryMode === "tokens" ? "is-active" : ""} onClick={() => setLibraryMode("tokens")}>Personagens</button>
+              <button type="button" aria-pressed={libraryMode === "templates"} className={libraryMode === "templates" ? "is-active" : ""} onClick={() => setLibraryMode("templates")}>Modelos</button>
             </div>
           </div>
           <label className="scene-library-search"><Search size={15} aria-hidden="true" /><input type="search" value={libraryQuery}
-            onChange={event => setLibraryQuery(event.target.value)} placeholder={libraryMode === "objects" ? "Buscar cama, veículo, hospital…" : "Buscar personagem…"} /></label>
+            aria-label="Buscar na biblioteca visual" onChange={event => setLibraryQuery(event.target.value)} placeholder={libraryMode === "objects" ? "Buscar cama, veículo, hospital…" : libraryMode === "templates" ? "Buscar modelo…" : "Buscar personagem…"} /></label>
           {libraryMode === "objects" && <div className="scene-library-categories" aria-label="Categorias da biblioteca">
             <button type="button" className={libraryCategory === "all" ? "is-active" : ""} onClick={() => setLibraryCategory("all")}>Todos</button>
+            <button type="button" className={libraryCategory === "favorites" ? "is-active" : ""} onClick={() => setLibraryCategory("favorites")}><Star size={12} /> Favoritos</button>
             {libraryGroups.map(group => <button type="button" key={group.id} className={libraryCategory === group.id ? "is-active" : ""}
               onClick={() => setLibraryCategory(group.id)}>{group.shortLabel}</button>)}
           </div>}
         </div>
 
         <div className="scene-library-scroll">
+          <Button size="sm" variant="outline" className="scene-save-template" disabled={!selectedObjects.some(o => o.kind !== "token")} onClick={() => { setTemplateName(""); setTemplateOpen(true); }}><BookmarkPlus size={14} /> Guardar seleção</Button>
           {libraryMode === "objects" ? <>
             <p className="scene-palette-note">Clique para inserir. Os tamanhos iniciais seguem a proporção aproximada de uma planta e continuam ajustáveis no inspetor.</p>
             {visibleLibraryGroups.map(group => <section className="scene-library-group" key={group.id}>
               <div className="scene-library-group-heading"><b>{group.label}</b><span>{group.pieces.length}</span></div>
-              <div className="scene-piece-grid">{group.pieces.map(piece => <button type="button" key={piece.label}
+              <div className="scene-piece-grid">{group.pieces.map(piece => <div className="scene-library-piece" key={piece.label}><button type="button"
                 title={"Adicionar " + piece.label + (piece.kind === "zone" ? " (S)" : "")} aria-keyshortcuts={piece.kind === "zone" ? "S" : undefined} onClick={() => add(piece.kind, piece.label, piece.variant)}>
-                {piece.kind === "text" ? <Type size={17} /> : <ObjectVisual variant={piece.variant} compact />}<span>{piece.label}</span></button>)}</div>
+                {piece.kind === "text" ? <Type size={17} /> : <ObjectVisual variant={piece.variant} compact />}<span>{piece.label}</span></button><button type="button" className="scene-piece-favorite" aria-label={`Favoritar ${piece.label}`} aria-pressed={savedLibrary.favorites.includes(scenePieceKey(piece))} onClick={() => toggleFavorite(piece)}><Star size={12} /></button></div>)}</div>
             </section>)}
-            {visibleLibraryGroups.length === 0 && <p className="scene-library-empty">Nenhum objeto encontrado para “{libraryQuery.trim()}”.</p>}
+            {visibleLibraryGroups.length === 0 && <p className="scene-library-empty">{libraryCategory === "favorites" && !libraryQuery.trim() ? "Marque a estrela dos objetos que mais usa para encontrá-los aqui." : `Nenhum objeto encontrado para “${libraryQuery.trim()}”.`}</p>}
+          </> : libraryMode === "templates" ? <>
+            <p className="scene-palette-note">Modelos desta campanha, guardados neste navegador. Insira, selecione e mova o conjunto para posicioná-lo.</p>
+            {savedLibrary.templates.filter(t => t.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR").includes(normalizedLibraryQuery)).map(template => <article className="scene-template-card" key={template.id}>
+              <b>{template.name}</b><small>{template.objects.length} elementos</small><Button size="sm" onClick={() => insertTemplate(template)}><Plus size={14} /> Inserir modelo</Button>
+              <Button size="sm" variant="ghost" aria-label={`Remover modelo ${template.name}`} onClick={() => { try { updateLibrary(value => { value.templates = value.templates.filter(t => t.id !== template.id); }); } catch { toast.error("Não foi possível remover o modelo."); } }}>Remover da biblioteca</Button>
+            </article>)}
+            {!savedLibrary.templates.length && <p className="scene-library-empty">Selecione uma sala ou um conjunto de objetos e use Guardar seleção.</p>}
+            {savedLibrary.templates.length > 0 && !savedLibrary.templates.some(t => t.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR").includes(normalizedLibraryQuery)) && <p className="scene-library-empty">Nenhum modelo corresponde à busca.</p>}
           </> : <>
             <p className="scene-palette-note">Tokens usam os retratos e estados já registrados no sistema.</p>
             {visibleSurvivors.length > 0 && <div className="scene-token-section"><b>Sobreviventes</b>{visibleSurvivors.map(person => <button type="button" className="scene-library-person" key={person.id}

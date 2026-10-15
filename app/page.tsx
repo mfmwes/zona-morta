@@ -34,6 +34,7 @@ import { RecentEvents } from "@/components/recent-events";
 import { DayCloseDialog } from "@/components/day-close-dialog";
 import { TablePresentationControl, TablePresentationViewer } from "@/components/table-presentation";
 import { SceneBoard } from "@/components/scene-board";
+import { PlayerAttention } from "@/components/player-attention";
 import { TeamActionError } from "@/components/player-actions-panel";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { campaignTargetExists, type CampaignTarget } from "@/lib/campaign-attention";
@@ -87,6 +88,7 @@ export default function CampaignApp() {
   const [saveError, setSaveError] = useState("");
   const [tab, setTab] = useState("resumo");
   const [focus,setFocus]=useState<{key:string;target:CampaignTarget}|null>(null);
+  const [playerFocus, setPlayerFocus] = useState<{ key: string; section: string; rest: boolean } | null>(null);
 
   const [chatOpen, setChatOpen] = useState(false);
   const [checkpointsOpen,setCheckpointsOpen]=useState(false);
@@ -796,6 +798,11 @@ export default function CampaignApp() {
               </AlertDialogContent>
             </AlertDialog></MobileDisclosure>}
         </div>
+        {readOnlyPreview && viewedSurvivorId && <PlayerAttention game={previewActionGame} actorId={viewedSurvivorId} onOpen={target => {
+          if (target === "conflict") setTab("conflito");
+          else if (target === "map") setTab("mapa");
+          else { setPlayerFocus({ key: createId(), section: target === "inventory" ? "inventario" : "resumo", rest: target === "rest" }); setTab("sobreviventes"); }
+        }} />}
         {!playerPreview && (status === "erro" || status === "conflito") && <div role="alert" className="mb-5 rounded-md border border-[#d5aaa1] bg-[#fff2ed] px-4 py-3 text-sm text-[#803b35]">
           <b>As alterações ainda estão nesta tela.</b> {saveError} Baixe uma cópia antes de recarregar, se precisar.
         </div>}
@@ -898,7 +905,7 @@ export default function CampaignApp() {
           </div></MobileDisclosure>}
         </>}
         {activeTab === "cena" && <SceneBoard game={previewActionGame} edit={edit} playerPreview={readOnlyPreview} playerActions={playerActionControls} masterActions={masterActionControls} />}
-        {activeTab === "sobreviventes" && <SurvivorPanel mobile={mobile} key={playerPreview ? `preview:${viewedSurvivorId}` : focus?.target.tab==="sobreviventes"?focus.key:"live"} initialSurvivorId={!readOnlyPreview&&focus?.target.tab==="sobreviventes"?focus.target.survivorId:undefined} initialSection={!readOnlyPreview&&focus?.target.tab==="sobreviventes"?focus.target.section:undefined} game={game} edit={edit} playerPreview={readOnlyPreview} playerMode={readOnlyPreview} restPeers={viewedPeers} onOpenConflict={() => setTab("conflito")} playerActions={playerActionControls} masterActions={masterActionControls} />}
+        {activeTab === "sobreviventes" && <SurvivorPanel mobile={mobile} key={readOnlyPreview ? `${viewedSurvivorId}:${playerFocus?.key ?? "player"}` : focus?.target.tab==="sobreviventes"?focus.key:"live"} initialRestFocus={readOnlyPreview && playerFocus?.rest} initialSurvivorId={!readOnlyPreview&&focus?.target.tab==="sobreviventes"?focus.target.survivorId:undefined} initialSection={readOnlyPreview ? playerFocus?.section : focus?.target.tab==="sobreviventes"?focus.target.section:undefined} game={game} edit={edit} playerPreview={readOnlyPreview} playerMode={readOnlyPreview} restPeers={viewedPeers} onOpenConflict={() => setTab("conflito")} playerActions={playerActionControls} masterActions={masterActionControls} />}
         {activeTab === "comunidade" && <NpcPanel key={focus?.target.tab==="comunidade"?focus.key:"comunidade"} initialNpcId={!readOnlyPreview&&focus?.target.tab==="comunidade"?focus.target.npcId:undefined} game={communityView} edit={edit} playerPreview={readOnlyPreview} />}
         {activeTab === "abrigo" && <ShelterPanel key={focus?.target.tab==="abrigo"?focus.key:"abrigo"} initialProjectId={!readOnlyPreview&&focus?.target.tab==="abrigo"?focus.target.projectId:undefined} game={communityView} edit={edit} playerPreview={readOnlyPreview} playerSurvivorId={readOnlyPreview ? viewedSurvivorId : null} playerActions={playerActionControls} masterActions={masterActionControls} />}
         {activeTab === "conflito" && role === "mestre" && !playerPreview && <ConflictSceneManager mobile={mobile} game={game} edit={edit} />}

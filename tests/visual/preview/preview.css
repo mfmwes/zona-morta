@@ -1,0 +1,5 @@
+.qa-controls { display:flex; flex-wrap:wrap; align-items:center; gap:12px; padding:14px 20px; background:var(--card); border-bottom:1px solid var(--border); }
+.qa-controls label { display:flex; gap:6px; align-items:center; font-size:.85rem; }
+.qa-controls select,.qa-controls button { background:var(--background); color:var(--foreground); border:1px solid var(--input); border-radius:5px; padding:7px; }
+.qa-controls small { color:var(--muted-foreground); }
+.qa-reading { max-width:720px; }

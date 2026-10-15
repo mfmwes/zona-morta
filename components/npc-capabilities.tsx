@@ -2,6 +2,7 @@
 
 import { Binoculars, Boxes, CookingPot, Hammer, Radio, Sparkles, Sprout, Stethoscope, Wrench, Zap, type LucideIcon } from "lucide-react";
 import { useState } from "react";
+import { ChoiceCard } from "@/components/choice-card";
 import { communityCapabilities, type CommunityCapability } from "@/lib/game";
 import { normalizeNpcCapabilities, setNpcCapability } from "@/lib/npc-presentation";
 
@@ -30,11 +31,7 @@ export function NpcCapabilities({ skills, onChange }: { skills: string[]; onChan
   const [custom] = useState(() => selected.filter(skill => !communityCapabilities.includes(skill as CommunityCapability)));
   function option(skill: string, Icon: LucideIcon, description: string) {
     const checked = selected.includes(skill);
-    return <label key={skill} className={`npc-capability-option ${checked ? "is-selected" : ""}`}>
-      <input type="checkbox" aria-label={skill} checked={checked} onChange={event => onChange(setNpcCapability(skills, skill, event.target.checked))} />
-      <span className="npc-capability-icon"><Icon size={21} aria-hidden="true" /></span>
-      <span className="npc-capability-copy"><b>{skill}</b><small>{description}</small></span>
-    </label>;
+    return <ChoiceCard key={skill} title={skill} description={description} icon={<Icon size={21} />} checked={checked} onChange={checked => onChange(setNpcCapability(skills, skill, checked))} />;
   }
   return <fieldset className="npc-capabilities">
     <legend>Capacidades <span>{selected.length} selecionada(s)</span></legend>

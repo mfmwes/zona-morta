@@ -17,6 +17,7 @@ import "./mobile-experience.css";
 import "./condition-screen.css";
 import "./appearance-fonts.css";
 import "./appearance.css";
+import "./usability-upgrade.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { appearanceBootstrapScript } from "@/lib/appearance";
