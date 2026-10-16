@@ -78,7 +78,7 @@ function fixture(playerPreview = false, initialTarget) {
 
 test('selecionar um hex abre exploração sem modificar a campanha; outro hex volta à exploração', () => {
   const f = fixture(), original = structuredClone(f.state());
-  assert.ok(f.find(node => node.type === 'Tabs' && node.props.value === 'exploration'));
+  assert.equal(f.find(node => node.type === 'Tabs'), undefined);
   f.select('0,0');assert.ok(f.find(node => node.type === 'Tabs' && node.props.value === 'exploration'));
   assert.equal(f.find(node => node.type === 'Pick' && node.props.label === 'Terreno'), undefined);
   f.tabTo('management');assert.ok(f.find(node => node.type === 'Pick' && node.props.label === 'Terreno'));
@@ -89,7 +89,7 @@ test('selecionar um hex abre exploração sem modificar a campanha; outro hex vo
 test('escolher o marcador de grupo mantém o mapa aberto; ferramentas contextuais abrem gestão', () => {
   const f = fixture();
   f.find(node => node.type === 'MapGroupMarker' && node.props.hexId === '0,0').props.onSelect();
-  assert.ok(f.find(node => node.type === 'Tabs' && node.props.value === 'exploration'));
+  assert.equal(f.find(node => node.type === 'Tabs'), undefined);
   f.find(node => node.type === 'HexContextMenu' && node.props.hexId === '1,0').props.onOpenMasterTools();
   assert.ok(f.find(node => node.type === 'Tabs' && node.props.value === 'management'));
 });
@@ -126,13 +126,13 @@ test('movimento de grupo único avança o relógio e aplica a chegada e bloqueia
 
 test('fechar busca ou gerador devolve o mestre ao setor selecionado', () => {
   const f = fixture();f.select('0,0');f.click('Adicionar local');
-  assert.ok(f.find(node => node.type === 'Tabs'));
+  assert.equal(f.find(node => node.type === 'Tabs'), undefined);
   const generator = f.find(node => node.type === 'HexGeneratorDialog');assert.ok(generator);generator.props.onOpenChange(false);
   assert.ok(f.find(node => node.type === 'Tabs' && node.props.value === 'exploration'));
   const search = fixture();
   search.state().hexes['0,0'].points = [{ id: 'workshop', name: 'Garagem de reparos', kind: 'local', signal: '', access: '', notes: '', revealed: true, searches: [] }];
   search.select('0,0');search.click('Explorar local');
-  assert.ok(search.find(node => node.type === 'Tabs'));
+  assert.equal(search.find(node => node.type === 'Tabs'), undefined);
   const searchDialog = search.find(node => node.type === 'HexSearchDialog');assert.ok(searchDialog);
   assert.equal(searchDialog.props.request.pointId, 'workshop');searchDialog.props.onClose();
   assert.ok(search.find(node => node.type === 'Tabs' && node.props.value === 'exploration'));

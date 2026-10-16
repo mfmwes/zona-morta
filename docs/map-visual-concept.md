@@ -1,16 +1,8 @@
-# Mapa ilustrado e exploração
+# Imagens e marcadores dos hexes
 
-Implementação do conceito aprovado, em `codex/map-visual-concept`, a partir de `16bc8e1`. A integração na main depende da avaliação da prévia.
+Escopo revisado: apenas imagens e organização dos ícones. Painéis, gestão, busca, controles e cores de fundo restaurados da main 16bc8e1.
 
-## Interface
-
-- Hexes com ilustrações isométricas, nomes legíveis e marcadores de grupo, achados e acontecimentos.
-- Painel lateral persistente no desktop; detalhes em painel inferior no celular e em telas estreitas.
-- Busca por coordenadas, setor e nome de local/pista, incluindo palavras sem acentos.
-- Filtros Todos, Com achados e Eventos pendentes. Os setores sem correspondência ficam atenuados, preservando a orientação espacial.
-- Expandir mapa recolhe o painel; selecionar um setor volta a mostrá-lo. Zoom e posição são mantidos ao abrir e fechar os diálogos de exploração.
-- Locais apresentados em cartões com ações; acontecimentos recolhíveis e gestão em aba separada.
-- As regras, permissões e dados salvos da campanha permanecem compatíveis. Nenhuma migração é necessária.
+PNJs acima à esquerda; abrigo acima à direita; grupo abaixo à esquerda; locais abaixo à direita. Nomes com contorno para leitura sobre as imagens.
 
 ## Imagens
 
@@ -20,8 +12,6 @@ Especificação da geração: atlas quadrado 4 × 4 de cenários isométricos p�
 
 As imagens representam categorias visuais, não plantas exatas dos locais. Setores personalizados usam a categoria reconhecida pelo nome ou a imagem residencial padrão. Setores desconhecidos usam apenas silhuetas neutras. A escolha da imagem não consulta pistas nem eventos secretos.
 
-## Validação e prévia
+## Validação
 
-`npm run typecheck`, `npm test`, `npm run lint`, `npm run build` e testes Playwright em `tests/visual/map-concept.spec.ts`. Os testes verificam busca, privacidade, filtros, câmera, painel lateral e layout móvel. A prévia `/?screen=map` usa uma campanha de exemplo, sem enviar dados à campanha real.
-
-Backup anterior: `outputs/backups/zona-morta-before-map-concept.bundle`, validado com `git bundle verify`. SHA-256: `2F33C58CFAA121CDB9A446EFC767209912F42D690CA7094E80862483BC4D943D`. Contém o histórico Git até a versão anterior; não contém o banco de campanhas nem credenciais.
+594 testes, typecheck e testes visuais de desktop/móvel e abertura do diálogo original. Prévia na porta 4187; aplicação completa na porta 4188. Sem merge ou push.

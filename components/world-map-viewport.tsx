@@ -5,16 +5,14 @@ import { Crosshair, Maximize, Search, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { HexState } from "@/lib/game";
 import { hexCenter, mapBounds, parseHex, worldHexes } from "@/lib/world";
-import { findMapLocations } from "@/lib/map-presentation";
 
-export function WorldMapViewport({ hexes, activeHex, selected, focusHex, playerPreview, onSelect, children, filters, expanded, onExpand }: {
+export function WorldMapViewport({ hexes, activeHex, selected, focusHex, playerPreview, onSelect, children }: {
   hexes: Record<string, HexState>; activeHex: string; selected: string; focusHex: string;
   playerPreview: boolean; onSelect: (id: string) => void; children: ReactNode;
-  filters?: ReactNode; expanded?: boolean; onExpand?: () => void;
 }) {
   const viewport = useRef<HTMLDivElement>(null);
   const start = hexCenter(parseHex(activeHex) ?? { q: 0, r: 0 });
-  const [camera, setCamera] = useState({ ...start, width: 450 });
+  const [camera, setCamera] = useState({ ...start, width: 600 });
   const [aspect, setAspect] = useState(1.25);
   const [query, setQuery] = useState("");
   const [message, setMessage] = useState("");
@@ -31,7 +29,7 @@ export function WorldMapViewport({ hexes, activeHex, selected, focusHex, playerP
       setAspect(node.clientWidth / Math.max(1, node.clientHeight));
       if (!initialized.current && node.clientWidth) {
         initialized.current = true;
-        setCamera(previous => ({ ...previous, width: Math.max(300, Math.min(450, node.clientWidth)) }));
+        setCamera(previous => ({ ...previous, width: Math.max(300, Math.min(600, node.clientWidth)) }));
       }
     });
     observer.observe(node);
@@ -79,31 +77,38 @@ export function WorldMapViewport({ hexes, activeHex, selected, focusHex, playerP
   function zoom(factor: number) {
     setCamera(previous => ({ ...previous, width: Math.max(180, Math.min(Math.max(1200, fitWidth * 2), previous.width * factor)) }));
   }
-  const matches = findMapLocations(hexes, query, playerPreview);
+  const matches = query.trim() ? Object.entries(hexes).filter(([id, hex]) =>
+    id.includes(query.trim()) || ((hex.discovery !== "desconhecido" || !playerPreview)
+      && hex.sector?.name.toLocaleLowerCase("pt-BR").includes(query.trim().toLocaleLowerCase("pt-BR")))).slice(0, 6) : [];
   function navigate(id: string) {
     center(id); onSelect(id); setQuery(""); setMessage("");
   }
 
   return <>
     <div className="world-map-toolbar">
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" variant="outline" aria-label="Ampliar mapa" onClick={() => zoom(0.75)}><ZoomIn /></Button>
+        <Button size="sm" variant="outline" aria-label="Reduzir mapa" onClick={() => zoom(1 / 0.75)}><ZoomOut /></Button>
+        <Button size="sm" variant="outline" onClick={() => setCamera({ x: bounds.x, y: bounds.y, width: fitWidth })}><Maximize /> Ver tudo</Button>
+        <Button size="sm" variant="outline" onClick={() => center(activeHex)}><Crosshair /> Grupo ativo</Button>
+        <Button size="sm" variant="outline" onClick={() => center(selected)}>Hex selecionado</Button>
+      </div>
       <form className="world-map-search" onSubmit={event => {
         event.preventDefault();
         const exact = query.trim();
         if (Object.hasOwn(hexes, exact) && parseHex(exact)) navigate(exact);
-        else if (matches.length === 1) navigate(matches[0].id);
+        else if (matches.length === 1) navigate(matches[0][0]);
         else setMessage(matches.length ? "Escolha um dos setores encontrados." : "Nenhum hex encontrado.");
       }}>
-        <input type="search" aria-label="Buscar setor, local ou pista" placeholder="Buscar setor, local ou pista…" value={query} onChange={event => { setQuery(event.target.value); setMessage(""); }} onKeyDown={event => { if (event.key === "Escape") { event.stopPropagation(); setQuery(""); } }} />
+        <input type="search" aria-label="Buscar hex por nome ou coordenadas" placeholder="Nome ou coordenadas (3,0)" value={query} onChange={event => { setQuery(event.target.value); setMessage(""); }} />
         <Button size="sm" variant="outline" aria-label="Buscar no mapa"><Search /></Button>
         {query.trim() && <div className="world-map-results">
-          {matches.map(({ id, name, pointName }) => <button type="button" key={id} onClick={() => navigate(id)}>
-            <b>{pointName ?? name}</b><small>{pointName ? `${name} · ` : ""}Hex {id}</small>
+          {matches.map(([id, hex]) => <button type="button" key={id} onClick={() => navigate(id)}>
+            <b>Hex {id}</b> · {hex.discovery !== "desconhecido" || !playerPreview ? hex.sector?.name ?? "Desconhecido" : "Desconhecido"}
           </button>)}
           <p role="status">{message || (!matches.length ? "Nenhum hex encontrado." : "Selecione para centralizar e consultar.")}</p>
         </div>}
       </form>
-      {onExpand && <Button size="sm" variant="outline" className="world-map-expand" aria-pressed={Boolean(expanded)} onClick={onExpand}><Maximize />{expanded ? "Restaurar painel" : "Expandir mapa"}</Button>}
-      {filters}
     </div>
     <div ref={viewport} className="map-viewport world-map-viewport"
       onPointerDown={event => {
@@ -137,13 +142,6 @@ export function WorldMapViewport({ hexes, activeHex, selected, focusHex, playerP
           }
         }}>{children}</svg>
     </div>
-      <div className="world-map-camera-controls">
-        <Button size="sm" variant="outline" aria-label="Ampliar mapa" onClick={() => zoom(0.75)}><ZoomIn /></Button>
-        <Button size="sm" variant="outline" aria-label="Reduzir mapa" onClick={() => zoom(1 / 0.75)}><ZoomOut /></Button>
-        <Button size="sm" variant="outline" onClick={() => setCamera({ x: bounds.x, y: bounds.y, width: fitWidth })}><Maximize /> Ver tudo</Button>
-        <Button size="sm" variant="outline" onClick={() => center(activeHex)}><Crosshair /> Centralizar grupo</Button>
-        <Button size="sm" variant="outline" onClick={() => center(selected)}>Hex selecionado</Button>
-      </div>
     <p className="world-map-hint">Arraste para navegar. Role a roda do mouse sobre o mapa para ampliar ou reduzir; “Ver tudo” mostra o mundo inteiro.</p>
   </>;
 }
