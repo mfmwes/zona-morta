@@ -3756,7 +3756,7 @@
         },
         {
           "label": "Efeito",
-          "value": "Ilumina até Perto com bateria plausível."
+          "value": "Com bateria utilizável, ilumina até Perto e remove impedimentos causados exclusivamente pela escuridão na área iluminada. Ocupa uma mão, denuncia a posição e conserva seu perfil de arma secundária. Golpear não amplia a luz; não revela alvos atrás de cobertura."
         },
         {
           "label": "Carga guardada",
@@ -4138,7 +4138,7 @@
       "fields": [
         {
           "label": "Uso concreto",
-          "value": "Facilita passar despercebido na penumbra com cobertura. Não torna Oculto sozinho."
+          "value": "Pode conceder Vantagem para permanecer despercebido na penumbra, com cobertura, quando a cor da roupa oferecer vantagem concreta confirmada pelo mestre. Não concede Escondido automaticamente nem ajuda contra observação próxima ou outros sentidos."
         },
         {
           "label": "Carga guardada",
@@ -4194,7 +4194,7 @@
       "fields": [
         {
           "label": "Uso concreto",
-          "value": "Adequados para corrida em piso seco, frágeis em entulho cortante."
+          "value": "Podem conceder Vantagem em uma corrida curta sobre piso seco e regular quando o calçado oferecer vantagem concreta, além de apenas permitir correr, confirmada pelo mestre. Sem benefício em lama, entulho ou escalada. Não aumentam deslocamento nem reduzem tempo de viagem."
         },
         {
           "label": "Carga guardada",
@@ -4208,7 +4208,7 @@
       "fields": [
         {
           "label": "Uso concreto",
-          "value": "Permitem mover entulho áspero ou vidro com cuidado."
+          "value": "Dispensam teste quando o único risco for abrasão leve ao manipular cuidadosamente entulho áspero. Protegem apenas as mãos cobertas; não impedem mordidas, perfurações, cortes fortes ou choque elétrico. Reutilizáveis enquanto íntegras."
         },
         {
           "label": "Carga guardada",
@@ -4222,7 +4222,7 @@
       "fields": [
         {
           "label": "Uso concreto",
-          "value": "Ajudam em higiene de cuidados. Um par é usado numa cena de procedimento."
+          "value": "Um par permite um procedimento de cuidado sem transferir sujeira superficial diretamente às mãos cobertas, enquanto permanecer íntegro. Consome 1 unidade de jogo por cena de procedimento. Não protege contra perfurações, Mordida ou Exposição ao agente do surto."
         },
         {
           "label": "Carga guardada",
@@ -4236,7 +4236,7 @@
       "fields": [
         {
           "label": "Uso concreto",
-          "value": "Protegem os olhos de poeira e respingos comuns se estiverem no rosto."
+          "value": "Evitam penalidade de visão causada exclusivamente por poeira leve ou respingos comuns nos olhos cobertos. Não protegem contra ataques, fumaça densa ou substâncias corrosivas e não removem lesões existentes."
         },
         {
           "label": "Carga guardada",
@@ -4250,7 +4250,7 @@
       "fields": [
         {
           "label": "Uso concreto",
-          "value": "Reduz inalação de poeira. Não é respirador para fumaça tóxica."
+          "value": "Enquanto ajustada e utilizável, concede Vantagem em teste para resistir à poeira comum suspensa. Não protege contra gases, fumaça tóxica, falta de ar ou o agente do surto. Não remove condições existentes."
         },
         {
           "label": "Carga guardada",
@@ -4264,7 +4264,7 @@
       "fields": [
         {
           "label": "Uso concreto",
-          "value": "Protege roupa de sujeira numa tarefa de limpeza."
+          "value": "Evita sujeira ou umidade superficial por respingos comuns na roupa que cobre durante uma tarefa. Não evita a condição Molhado por chuva, imersão ou exposição do restante do corpo, nem remove Molhado existente."
         },
         {
           "label": "Carga guardada",
@@ -4278,7 +4278,7 @@
       "fields": [
         {
           "label": "Uso concreto",
-          "value": "Bolsos e tecido de trabalho. Roupa comum, não Armadura."
+          "value": "Evita que sujeira e abrasão leve de uma tarefa inutilizem a roupa coberta por baixo. Reutilizável enquanto íntegro. Não concede Armadura, Vantagem em reparos ou proteção contra cortes, produtos corrosivos e riscos elétricos."
         },
         {
           "label": "Carga guardada",
@@ -4292,7 +4292,7 @@
       "fields": [
         {
           "label": "Uso concreto",
-          "value": "Identifica possível trabalhador da área. Pode abrir diálogo ou criar cobranças."
+          "value": "Permite apresentar-se como trabalhador da área em contexto compatível. Dispensa teste de identificação visual apenas onde a aparência bastaria e não há fiscalização. Não concede conhecimento médico, autorização restrita ou sucesso diante de perguntas técnicas e pessoas que conhecem a equipe."
         },
         {
           "label": "Carga guardada",
@@ -4306,7 +4306,7 @@
       "fields": [
         {
           "label": "Uso concreto",
-          "value": "Justifica circular com ferramentas em prédios ainda ocupados."
+          "value": "Permite justificar presença com ferramentas em áreas de serviço compatíveis. Dispensa teste de identificação visual apenas quando essa aparência bastaria, sem fiscalização. Não substitui credenciais nem libera áreas restritas; contradições podem denunciar o disfarce."
         },
         {
           "label": "Carga guardada",
@@ -4320,7 +4320,7 @@
       "fields": [
         {
           "label": "Uso concreto",
-          "value": "Torna o portador visível a motoristas e aliados, inclusive a observadores."
+          "value": "Com iluminação adequada, permite que aliados distingam visualmente o portador sem teste quando esse for o único obstáculo. Não revela sua identidade por si. Também facilita que outros observadores o percebam; não concede bônus de furtividade."
         },
         {
           "label": "Carga guardada",
@@ -4334,7 +4334,7 @@
       "fields": [
         {
           "label": "Uso concreto",
-          "value": "Adequada a mato e chuva leve, sem reduzir horas por hex sozinha."
+          "value": "Evita penalidade causada exclusivamente por vegetação leve prendendo ou arranhando a roupa durante deslocamento cuidadoso. Não protege contra vegetação perigosa, Frio ou Molhado, nem reduz tempo por hex."
         },
         {
           "label": "Carga guardada",
@@ -4348,7 +4348,7 @@
       "fields": [
         {
           "label": "Uso concreto",
-          "value": "Pode permitir disfarce se ninguém o reconhecer. Brasão também denuncia."
+          "value": "Permite tentar assumir função de vigilância ou passar por posto compatível. Só dispensa teste quando a aparência bastaria e não há fiscalização. Não cria autoridade ou autorização automática; insígnias erradas e pessoas que conhecem a equipe podem denunciar o disfarce."
         },
         {
           "label": "Carga guardada",
@@ -4362,7 +4362,7 @@
       "fields": [
         {
           "label": "Uso concreto",
-          "value": "Ajuda a atravessar risco de queda de detritos. Não concede espaço extra de Armadura."
+          "value": "Enquanto íntegro e vestido, concede Vantagem em teste para resistir ao impacto de pequenos detritos na cabeça durante uma tarefa. Não aumenta Armadura, reduz dano de ataques ou protege contra desabamento estrutural."
         },
         {
           "label": "Carga guardada",
@@ -4376,7 +4376,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Reparo comum, parafusos e alavancas. Não fornece Peças."
+          "value": "Permite reparos comuns, como reapertar, alinhar ou remontar peça acessível. Um reparo simples, seguro e com materiais disponíveis leva 30 minutos sem teste; sob risco, exige teste adequado. Reutilizável; não fornece Peças, substitui especialista ou reduz turnos de construção e reparo do abrigo."
         },
         {
           "label": "Carga",
@@ -4390,7 +4390,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Corta arame fino e segura peça quente com proteção adequada."
+          "value": "Remove arame fino ou fixação acessível em 10 minutos, sem teste quando houver segurança. Sob pressão ou resistência relevante, permite a tentativa com teste adequado, sem Vantagem automática. Reutilizável; não corta corrente ou cadeado e não protege contra eletricidade."
         },
         {
           "label": "Carga",
@@ -4418,7 +4418,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Abre fechadura compatível. Etiquetas podem indicar portas."
+          "value": "Abre sem teste e sem Barulho adicional uma fechadura cuja chave foi identificada como compatível. Uso imediato e reutilizável. Não resolve fechadura emperrada ou outro bloqueio da passagem."
         },
         {
           "label": "Carga",
@@ -4432,7 +4432,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Permite tentar abrir fechadura simples. Exige tempo e Acuidade se houver risco."
+          "value": "Permite abrir fechadura mecânica simples: sem risco ou pressão, leva 10 minutos e dispensa teste; sob risco, exige Acuidade, com dificuldade definida pelo mestre. A tentativa ocupa 10 minutos mesmo em falha. Reutilizável; repetir exige mudança concreta de abordagem. Não concede Vantagem por si nem abre fechadura eletrônica."
         },
         {
           "label": "Carga",
@@ -4446,7 +4446,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Desmontam conexões acessíveis. Sem fonte de energia gratuita."
+          "value": "Desmontam uma conexão aparafusada acessível sem destruir os componentes: 10 minutos por conexão simples, sem teste em condições seguras. Peça emperrada ou pressão exige teste adequado. Reutilizáveis; não produzem Peças automaticamente nem fornecem energia."
         },
         {
           "label": "Carga",
@@ -4460,7 +4460,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Reforça ligação ou cobre fio numa cena. Não substitui reparo definitivo."
+          "value": "Uma aplicação isola provisoriamente um ponto exposto de circuito desligado, em 10 minutos. O mestre confirma se o ponto ficou seguro antes de religar. Consome 1 unidade de jogo, correspondente a material para uma aplicação. Não protege trabalho energizado nem restaura instalação danificada."
         },
         {
           "label": "Carga",
@@ -4474,7 +4474,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Prende uma barreira leve por uma cena, se houver superfície adequada."
+          "value": "Com superfície adequada, mantém uma fixação ou barreira leve no lugar até o fim da cena; preparar leva 10 minutos. Consome 1 unidade de jogo, correspondente a material para uma aplicação. Não recupera Armadura ou integridade estrutural, não suporta pessoas e não impede passagem à força."
         },
         {
           "label": "Carga",
@@ -4488,7 +4488,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Permite amarrar objeto ou descer trecho com ancoragem confiável."
+          "value": "Com ancoragem confiável, 10 minutos de preparo permitem descida curta controlada ou baixar objeto compatível. Dispensa teste apenas quando a falta de apoio seria o único risco. Reutilizável, mas fica comprometida no local até recolhida. Alcance, peso, ataques e ancoragem precária continuam limitando o uso."
         },
         {
           "label": "Carga",
@@ -4502,7 +4502,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Fecha passagem. Intrusos podem contornar ou quebrar."
+          "value": "Em 10 minutos, tranca uma passagem com pontos adequados de fixação, impedindo sua abertura normal. Atravessar exige chave, rompimento ou outra rota. Reutilizável, mas fica instalada até retirada. A resistência depende da corrente e da fixação; não cria barreira indestrutível."
         },
         {
           "label": "Carga",
@@ -4516,7 +4516,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Corta madeira ou metal apropriado, com tempo e Barulho plausível."
+          "value": "Corta um obstáculo pequeno de material compatível e acessível em 30 minutos, com +1 Barulho na cena, inclusive em tentativa sem sucesso. Sem perigo, dispensa teste; sob risco, o mestre define o teste. Reutilizável; não atravessa qualquer metal, parede ou estrutura."
         },
         {
           "label": "Carga",
@@ -4558,7 +4558,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Ilumina até Perto enquanto houver bateria plausível."
+          "value": "Com bateria utilizável, ilumina até Perto e remove impedimentos causados exclusivamente pela escuridão na área iluminada. Ocupa uma mão e denuncia a posição. Não revela alvos atrás de cobertura nem concede Vantagem automática."
         },
         {
           "label": "Carga",
@@ -4572,7 +4572,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Ilumina até Perto deixando as mãos livres. Luz denuncia posição."
+          "value": "Com bateria utilizável, ilumina até Perto e remove impedimentos causados exclusivamente pela escuridão na área iluminada, mantendo as mãos livres. A luz acompanha o olhar e denuncia posição e direção observada. Não revela alvos atrás de cobertura."
         },
         {
           "label": "Carga",
@@ -4600,7 +4600,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Escuta ou transmite sinal ao alcance e com bateria."
+          "value": "Com bateria, canal e aparelhos compatíveis, permite conversar sem teste dentro do alcance estabelecido pelo mestre. Obstáculos e interferência podem interromper o contato. Não concede alcance ilimitado, comunicação privada ou conhecimento sobre quem escuta."
         },
         {
           "label": "Carga",
@@ -4614,7 +4614,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Funciona se houver veículo, bateria e antena utilizáveis."
+          "value": "Com veículo, energia e antena funcionais, recebe transmissões compatíveis sem teste quando o sinal estiver claro. Não transmite, salvo se essa função tiver sido estabelecida para o aparelho. Não fornece informações onde não há sinal."
         },
         {
           "label": "Carga",
@@ -4642,7 +4642,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Observa uma quina sem expor o rosto. Reflexo pode denunciar."
+          "value": "Permite observar uma quina ou abertura mantendo o rosto atrás da cobertura. Revela apenas o que couber no ângulo de reflexão; observar detalhes ainda pode exigir teste. O reflexo ou o próprio espelho pode denunciar a presença."
         },
         {
           "label": "Carga",
@@ -4656,7 +4656,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Permitem examinar um marco distante de posição com vista."
+          "value": "Com linha de visão, permitem distinguir detalhes visíveis de um marco distante. Observação cuidadosa e sem pressão dispensa teste quando a distância for a única dificuldade. Exigem as duas mãos; não atravessam escuridão, neblina ou cobertura nem revelam conteúdo oculto do setor."
         },
         {
           "label": "Carga",
@@ -4670,7 +4670,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Oferece traçado antigo das ruas. Bloqueios atuais ainda são descobertos."
+          "value": "Após 10 minutos de consulta, informa sem teste o traçado antigo de ruas e acessos efetivamente representados. Não revela bloqueios atuais, ameaças, saque ou locais secretos, não explora hexes nem reduz automaticamente tempo de viagem."
         },
         {
           "label": "Carga",
@@ -4684,7 +4684,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Guardam rotas, nomes, horários e promessas sem rolagem."
+          "value": "Permitem registrar e consultar rotas, nomes, horários e promessas sem teste de memória. O benefício exige que a informação tenha sido anotada e o caderno esteja acessível. O registro não garante que a informação seja verdadeira ou atual."
         },
         {
           "label": "Carga",
@@ -4698,7 +4698,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Contatos e fotos só podem ser vistos após conseguir energia."
+          "value": "Após obter energia e acesso ao aparelho, permite consultar contatos, fotos e informações armazenadas sem teste de memória. O mestre estabelece o conteúdo disponível. Não implica rede, internet, comunicação ou desbloqueio automático."
         },
         {
           "label": "Carga",
@@ -4712,7 +4712,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Registra prova visível. Mostrar a gravação exige aparelho funcional."
+          "value": "Com bateria e enquadramento adequado, registra uma cena visível. Revisar ou apresentar a gravação dispensa teste para lembrar detalhes efetivamente capturados. Não registra o que estava oculto, amplia a visão ou convence automaticamente quem vê a prova."
         },
         {
           "label": "Carga",
@@ -4852,7 +4852,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Acende chama com combustível. Fogo e fumaça são perceptíveis."
+          "value": "Com combustível disponível, acende material inflamável adequado sem teste em condições favoráveis. Vento, umidade ou perigo podem exigir preparação ou teste. Fogo e fumaça são perceptíveis. Não remove Frio sozinho, cria combustível ou substitui o Fogareiro no preparo de provisões."
         },
         {
           "label": "Carga guardada",
@@ -4894,7 +4894,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Sabão, pano e recipiente para manter espaço limpo num descanso."
+          "value": "Com água adequada disponível, 10 minutos removem sujeira superficial de uma pessoa ou pequena área de trabalho, eliminando um impedimento causado exclusivamente por essa sujeira. Não remove condições, recupera PV ou substitui antissepsia. Água e materiais precisam existir na ficção; não há conversão automática em porções de bebida."
         },
         {
           "label": "Carga guardada",
@@ -4908,7 +4908,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Pode estabelecer identidade verdadeira ou permitir disfarce verificável."
+          "value": "Comprova sem teste a identidade ou autorização que realmente representa quando estiver válido e for aceito pelo interlocutor. Documento de outra pessoa permite tentar um disfarce, mas não garante sucesso. Não concede acesso além da autorização indicada."
         },
         {
           "label": "Carga guardada",
@@ -4922,7 +4922,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Ligam pessoas e lugares já descobertos. Não têm bônus de rolagem por si."
+          "value": "Servem como prova de vínculo, mensagem ou detalhe efetivamente registrado; dispensam teste para recordar ou demonstrar esse conteúdo. Não garantem autenticidade, intenções atuais ou convencimento, nem concedem bônus de rolagem por si."
         },
         {
           "label": "Carga guardada",
@@ -5928,7 +5928,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Um par para uma cena de cuidados. Não impede Mordida."
+          "value": "Um par permite um procedimento de cuidado sem transferir sujeira superficial diretamente às mãos cobertas, enquanto permanecer íntegro. Consome 1 unidade de jogo por cena de procedimento. Tem o mesmo efeito das Luvas descartáveis; os benefícios não se acumulam. Não protege contra perfurações, Mordida ou Exposição ao agente do surto."
         },
         {
           "label": "Carga",
@@ -5942,7 +5942,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Material de higiene para um cuidado. Isoladamente não é 1 Medicamentos."
+          "value": "Consome 1 unidade para remover sujeira superficial de pequeno instrumento ou superfície, tornando-o utilizável quando esse for o único impedimento. Não esteriliza automaticamente, equivale a Medicamentos ou remove condições."
         },
         {
           "label": "Carga",
@@ -5956,7 +5956,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Permite lavar sujeira numa cena de cuidado. Não equivale a tratamento de Exposição."
+          "value": "Consome 1 unidade como material para lavagem em um cuidado que exija esse recurso, dispensando improvisar substituto. Não remove Sangramento, Lesão ou Exposição e não recupera PV. Seu uso depende do cuidado estabelecido na ficção."
         },
         {
           "label": "Carga",
@@ -5998,7 +5998,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Permite verificar febre. Não identifica causa secreta."
+          "value": "Com tempo para medir e aparelho funcional, confirma e registra a presença de febre sem teste. Reutilizável. Não identifica a causa, determina gravidade clínica ou revela estado secreto de infecção."
         },
         {
           "label": "Carga",
@@ -6012,7 +6012,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Protegem roupa de respingos comuns. Não bloqueiam Mordida sem Armadura apropriada."
+          "value": "Um conjunto evita sujeira superficial por respingos comuns na roupa e nas regiões cobertas durante uma cena de cuidado. Consome 1 unidade de jogo por cena de procedimento. Não impede Mordida ou Exposição ao agente do surto, substitui Armadura ou protege o corpo inteiro."
         },
         {
           "label": "Carga",
@@ -6026,7 +6026,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Objeto de troca/cuidado para dor comum. Sem bônus nem cura automática."
+          "value": "Regra abstrata de cuidado: se o mestre estabelecer dor comum e uma penalidade situacional ligada a ela, 1 unidade pode suspender somente essa penalidade por uma cena, após intervalo definido na ficção. Não ignora Lesão ou Fratura, recupera PV ou concede Vantagem. Usos adicionais não acumulam o benefício."
         },
         {
           "label": "Carga",
@@ -6040,7 +6040,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Acompanha cuidado de febre comum. Não reverte estado de infecção."
+          "value": "Regra abstrata de cuidado: se o mestre estabelecer mal-estar febril comum e uma penalidade situacional ligada a ele, 1 unidade pode suspender somente essa penalidade por uma cena, após intervalo definido na ficção. Não altera infecção, Frio ou Calor, recupera PV ou concede Vantagem. Usos adicionais não acumulam o benefício."
         },
         {
           "label": "Carga",
@@ -6054,7 +6054,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Uso narrativo em alergia comum. Não cura o agente do surto."
+          "value": "Regra abstrata de cuidado: se o mestre estabelecer alergia comum e uma penalidade situacional ligada a ela, 1 unidade pode suspender somente essa penalidade por uma cena, após intervalo definido na ficção. Não trata situação grave, remove condições formais ou cura o agente do surto. Usos adicionais não acumulam o benefício."
         },
         {
           "label": "Carga",
@@ -6068,7 +6068,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Uso narrativo em mal-estar comum. Não elimina Estresse sozinho."
+          "value": "Regra abstrata de cuidado: se o mestre estabelecer enjoo comum e uma penalidade situacional ligada a ele, 1 unidade pode suspender somente essa penalidade por uma cena, após intervalo definido na ficção. Não recupera Estresse ou PV nem remove condições formais. Usos adicionais não acumulam o benefício."
         },
         {
           "label": "Carga",
@@ -6082,7 +6082,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Útil a quem depende dele. Guarda, troca e administração exigem contexto."
+          "value": "Atende uma necessidade específica de um personagem somente quando ela e o uso apropriado tiverem sido estabelecidos pelo mestre. Uma utilização consome 1 unidade de jogo. Sem benefício universal, cura automática ou reversão da infecção do surto."
         },
         {
           "label": "Carga",
@@ -6096,7 +6096,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Recurso ficcional de tratamento médico comum. Não cura infecção zumbi."
+          "value": "Pode cumprir um requisito de tratamento comum previamente estabelecido na história pelo mestre. Uma utilização consome 1 unidade de jogo. Não oferece cura imediata, recupera PV por si ou afeta a infecção zumbi."
         },
         {
           "label": "Carga",
@@ -6124,7 +6124,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Permite lidar com poeira/fumaça apropriada ao filtro. Não substitui ar respirável."
+          "value": "Com filtro funcional, vedação adequada e risco compatível confirmado pelo mestre, permite lidar com poeira ou fumaça apropriada ao filtro e concede Vantagem no teste para resistir a essa exposição. Não fornece oxigênio, torna respirável uma atmosfera perigosa ou protege genericamente contra o agente do surto. Não remove condições existentes."
         },
         {
           "label": "Carga",
