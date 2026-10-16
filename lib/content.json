@@ -2900,7 +2900,7 @@
         },
         {
           "label": "Observação",
-          "value": "Fácil de ocultar"
+          "value": "Fácil de ocultar."
         }
       ]
     },
@@ -2934,7 +2934,7 @@
         },
         {
           "label": "Observação",
-          "value": "Pode ser empunhado com secundária; machado causa mais dano, mas exige duas mãos."
+          "value": "Pode ser empunhado com uma arma secundária compatível. O Machado de trabalho causa mais dano, mas exige duas mãos."
         }
       ]
     },
@@ -3002,7 +3002,7 @@
         },
         {
           "label": "Observação",
-          "value": "Ferramenta de alavanca"
+          "value": "Ferramenta de alavanca."
         }
       ]
     },
@@ -3070,7 +3070,7 @@
         },
         {
           "label": "Observação",
-          "value": "Inicial: 1 carga compatível além do item pessoal. Achada: sem munição."
+          "value": "Se escolhida como arma inicial, acompanha 1 unidade de Munição de Pistola, além do item pessoal. Se encontrada, não inclui munição."
         }
       ]
     },
@@ -3104,7 +3104,7 @@
         },
         {
           "label": "Observação",
-          "value": "Inicial: 1 carga compatível além do item pessoal. Achada: sem munição."
+          "value": "Se escolhido como arma inicial, acompanha 1 unidade de Munição de Pistola, além do item pessoal. Se encontrado, não inclui munição."
         }
       ]
     },
@@ -3138,7 +3138,7 @@
         },
         {
           "label": "Observação",
-          "value": "Em Longe, fora de alcance"
+          "value": "Seu alcance é Perto; um alvo em Longe está fora de alcance."
         }
       ]
     },
@@ -3172,7 +3172,7 @@
         },
         {
           "label": "Observação",
-          "value": "Exige linha de visão"
+          "value": "Exige linha de visão."
         }
       ]
     },
@@ -3206,7 +3206,7 @@
         },
         {
           "label": "Observação",
-          "value": "Abre embalagens e corta cordas"
+          "value": "Abre embalagens e corta cordas."
         }
       ]
     },
@@ -3240,7 +3240,7 @@
         },
         {
           "label": "Observação",
-          "value": "Também abre vegetação leve"
+          "value": "Também abre vegetação leve."
         }
       ]
     },
@@ -3274,7 +3274,7 @@
         },
         {
           "label": "Observação",
-          "value": "Ferramenta de impacto"
+          "value": "Ferramenta de impacto."
         }
       ]
     },
@@ -3308,7 +3308,7 @@
         },
         {
           "label": "Observação",
-          "value": "Ajuda a desmontar peças acessíveis"
+          "value": "Ajuda a desmontar peças acessíveis."
         }
       ]
     },
@@ -3342,7 +3342,7 @@
         },
         {
           "label": "Observação",
-          "value": "Comprido e fácil de identificar"
+          "value": "Comprido e fácil de identificar."
         }
       ]
     },
@@ -3376,7 +3376,7 @@
         },
         {
           "label": "Observação",
-          "value": "Ferramenta rural"
+          "value": "Ferramenta rural."
         }
       ]
     },
@@ -3410,7 +3410,7 @@
         },
         {
           "label": "Observação",
-          "value": "Escava e remove entulho"
+          "value": "Escava e remove entulho."
         }
       ]
     },
@@ -3444,7 +3444,7 @@
         },
         {
           "label": "Observação",
-          "value": "Pode ser guardado fechado"
+          "value": "Pode ser guardado fechado."
         }
       ]
     },
@@ -3478,7 +3478,7 @@
         },
         {
           "label": "Observação",
-          "value": "Usa pedras plausíveis. Sem carga de munição"
+          "value": "Usa pedras disponíveis na ficção. Não consome unidades de Munição."
         }
       ]
     },
@@ -3512,7 +3512,7 @@
         },
         {
           "label": "Observação",
-          "value": "Usa carga de flechas por cena"
+          "value": "Usa 1 unidade de Munição de Flechas por cena em que disparar."
         }
       ]
     },
@@ -3546,7 +3546,7 @@
         },
         {
           "label": "Observação",
-          "value": "Usa carga de virotes por cena"
+          "value": "Usa 1 unidade de Munição de Virotes por cena em que disparar."
         }
       ]
     },
@@ -3580,7 +3580,7 @@
         },
         {
           "label": "Observação",
-          "value": "Usa carga de pistola. Fácil de ocultar"
+          "value": "Usa Munição de Pistola. Fácil de ocultar."
         }
       ]
     },
@@ -3614,7 +3614,7 @@
         },
         {
           "label": "Observação",
-          "value": "Usa carga própria de chumbinhos"
+          "value": "Usa Munição de Chumbinhos."
         }
       ]
     },
@@ -3648,7 +3648,7 @@
         },
         {
           "label": "Observação",
-          "value": "Usa carga compatível com carabina"
+          "value": "Usa Munição de Carabina."
         }
       ]
     },
@@ -3682,7 +3682,7 @@
         },
         {
           "label": "Observação",
-          "value": "Usa carga compatível com carabina"
+          "value": "Usa Munição de Carabina."
         }
       ]
     },
@@ -3704,7 +3704,7 @@
         },
         {
           "label": "Efeito",
-          "value": "+1 ao dano da primária em Corpo a corpo."
+          "value": "Enquanto empunhada como secundária compatível, concede +1 ao dano da arma primária em Corpo a corpo."
         },
         {
           "label": "Carga guardada",
@@ -3730,7 +3730,7 @@
         },
         {
           "label": "Efeito",
-          "value": "+1 ao valor de Armadura."
+          "value": "Enquanto empunhada como secundária compatível, concede +1 ao valor de Armadura."
         },
         {
           "label": "Carga guardada",
@@ -3886,7 +3886,7 @@
         },
         {
           "label": "Efeito",
-          "value": "+2 ao valor de Armadura enquanto íntegro e empunhado."
+          "value": "Enquanto íntegro e empunhado como secundária compatível, concede +2 ao valor de Armadura."
         },
         {
           "label": "Carga guardada",
@@ -3934,7 +3934,7 @@
         },
         {
           "label": "Efeito",
-          "value": "+1 Evasão"
+          "value": "+1 Evasão."
         },
         {
           "label": "Carga guardada",
@@ -3956,7 +3956,7 @@
         },
         {
           "label": "Efeito",
-          "value": "Sem efeito adicional"
+          "value": "Sem efeito adicional."
         },
         {
           "label": "Carga guardada",
@@ -3978,7 +3978,7 @@
         },
         {
           "label": "Efeito",
-          "value": "−1 Evasão. Não impede infecção por si só"
+          "value": "−1 Evasão. Não impede infecção por si só."
         },
         {
           "label": "Carga guardada",
@@ -4066,7 +4066,7 @@
         },
         {
           "label": "Efeito",
-          "value": "−1 Acuidade por rigidez"
+          "value": "−1 Acuidade por rigidez."
         },
         {
           "label": "Carga guardada",
@@ -4088,7 +4088,7 @@
         },
         {
           "label": "Efeito",
-          "value": "−1 Agilidade. Máscara e ar são itens separados"
+          "value": "−1 Agilidade. Máscara e ar são itens separados."
         },
         {
           "label": "Carga guardada",
@@ -4110,7 +4110,7 @@
         },
         {
           "label": "Efeito",
-          "value": "−1 Agilidade. Volumoso e visível"
+          "value": "−1 Agilidade. Volumoso e visível."
         },
         {
           "label": "Carga guardada",
@@ -4362,7 +4362,7 @@
       "fields": [
         {
           "label": "Uso concreto",
-          "value": "Enquanto íntegro e vestido, concede Vantagem em teste para resistir ao impacto de pequenos detritos na cabeça durante uma tarefa. Não aumenta Armadura, reduz dano de ataques ou protege contra desabamento estrutural."
+          "value": "Enquanto íntegro e vestido, concede Vantagem em teste para resistir ao impacto de pequenos detritos na cabeça durante uma tarefa. Não aumenta Armadura, não reduz dano de ataques e não protege contra desabamento estrutural."
         },
         {
           "label": "Carga guardada",
@@ -4376,7 +4376,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Permite reparos comuns, como reapertar, alinhar ou remontar peça acessível. Um reparo simples, seguro e com materiais disponíveis leva 30 minutos sem teste; sob risco, exige teste adequado. Reutilizável; não fornece Peças, substitui especialista ou reduz turnos de construção e reparo do abrigo."
+          "value": "Permite reparos comuns, como reapertar, alinhar ou remontar peça acessível. Um reparo simples, seguro e com materiais disponíveis leva 30 minutos sem teste; sob risco, exige teste adequado. Reutilizável; não fornece Peças, não substitui especialista e não reduz turnos de construção e reparo do abrigo."
         },
         {
           "label": "Carga",
@@ -4530,7 +4530,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Escava ou retira entulho. Arma primária Pá curta se empunhada."
+          "value": "Escava ou remove entulho. Quando empunhada como arma, usa o perfil de Pá curta, inclusive a exigência de duas mãos."
         },
         {
           "label": "Carga",
@@ -4544,7 +4544,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Vazio ou cheio, ocupa 1 espaço. Transporta até 4 porções de Água ou 1 unidade de Combustível, sem somar a carga do conteúdo."
+          "value": "Vazio ou cheio, ocupa 1 espaço de carga. Transporta até 4 porções de Água ou 1 unidade de Combustível, sem misturar os recursos. O conteúdo não adiciona carga à do recipiente."
         },
         {
           "label": "Carga",
@@ -4586,7 +4586,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Consumível: repõe a bateria plausível de um aparelho pequeno durante uma expedição. Uma utilização."
+          "value": "Consumível: 1 unidade recarrega a bateria de um aparelho pequeno compatível que esteja descarregado. O kit é consumido; o aparelho permanece."
         },
         {
           "label": "Carga",
@@ -4600,7 +4600,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Com bateria, canal e aparelhos compatíveis, permite conversar sem teste dentro do alcance estabelecido pelo mestre. Obstáculos e interferência podem interromper o contato. Não concede alcance ilimitado, comunicação privada ou conhecimento sobre quem escuta."
+          "value": "Com bateria, canal e aparelhos compatíveis, permite conversar sem teste dentro do alcance estabelecido pelo mestre. Obstáculos e interferência podem interromper o contato. Não garante alcance ilimitado, privacidade da comunicação ou conhecimento sobre quem escuta."
         },
         {
           "label": "Carga",
@@ -4628,7 +4628,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Chama aliados ou desvia Cego. Gera +1 Barulho na cena."
+          "value": "Emite um sinal que pode chamar aliados ou atrair a atenção de um Cego, conforme a situação. Cada uso gera +1 Barulho na cena. Reutilizável; não garante a reação de quem o ouve."
         },
         {
           "label": "Carga",
@@ -4670,7 +4670,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Após 10 minutos de consulta, informa sem teste o traçado antigo de ruas e acessos efetivamente representados. Não revela bloqueios atuais, ameaças, saque ou locais secretos, não explora hexes nem reduz automaticamente tempo de viagem."
+          "value": "Após 10 minutos de consulta, informa sem teste o traçado antigo de ruas e acessos efetivamente representados. Não revela bloqueios atuais, ameaças, saque ou locais secretos; não explora hexes nem reduz automaticamente o tempo de viagem."
         },
         {
           "label": "Carga",
@@ -4712,7 +4712,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Com bateria e enquadramento adequado, registra uma cena visível. Revisar ou apresentar a gravação dispensa teste para lembrar detalhes efetivamente capturados. Não registra o que estava oculto, amplia a visão ou convence automaticamente quem vê a prova."
+          "value": "Com bateria e enquadramento adequado, registra uma cena visível. Revisar ou apresentar a gravação dispensa teste para lembrar detalhes efetivamente capturados. Não registra o que estava oculto, não amplia a visão e não convence automaticamente quem vê a prova."
         },
         {
           "label": "Carga",
@@ -4726,7 +4726,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Vestida, +1 espaço de carga. Acesso rápido, não segura arma longa."
+          "value": "Enquanto vestida como bolsa ativa, concede +1 espaço de capacidade de carga. Permite acesso rápido, mas não acomoda arma longa. O bônus não se acumula com o de outra bolsa."
         },
         {
           "label": "Carga guardada",
@@ -4740,7 +4740,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Vestida, +2 espaços de carga. Cabe uma peça longa presa externamente."
+          "value": "Enquanto vestida como bolsa ativa, concede +2 espaços de capacidade de carga. Acomoda uma peça longa presa externamente. O bônus não se acumula com o de outra bolsa."
         },
         {
           "label": "Carga guardada",
@@ -4754,7 +4754,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Vestida, +3 espaços de carga. Exige ajuste, cabe uma peça longa externa."
+          "value": "Enquanto vestida como bolsa ativa, concede +3 espaços de capacidade de carga. Exige ajuste e acomoda uma peça longa presa externamente. O bônus não se acumula com o de outra bolsa."
         },
         {
           "label": "Carga guardada",
@@ -4768,7 +4768,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Vestida, +4 espaços de carga. Cheia, atrapalha vãos estreitos e natação."
+          "value": "Enquanto vestida como bolsa ativa, concede +4 espaços de capacidade de carga. Cheia, pode atrapalhar a passagem por vãos estreitos e a natação, conforme a situação. O bônus não se acumula com o de outra bolsa."
         },
         {
           "label": "Carga guardada",
@@ -4824,7 +4824,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Permite tentar tornar água suspeita utilizável com tempo e verificação. Não cria Água."
+          "value": "Reutilizável: permite tratar água suspeita no preparo de provisões, desde que o tratamento seja adequado à contaminação estabelecida na ficção. A origem e a segurança precisam ser verificadas. Não cria Água nem torna qualquer líquido potável."
         },
         {
           "label": "Carga guardada",
@@ -4838,7 +4838,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Consumível: uma utilização trata até 4 porções de água encontrada. Acesso e verificação ainda importam."
+          "value": "Consumível: 1 unidade trata até 4 porções de água encontrada, quando esse tratamento for adequado à contaminação estabelecida na ficção. Origem, acesso e segurança ainda precisam ser verificados. Não torna qualquer líquido potável."
         },
         {
           "label": "Carga guardada",
@@ -4852,7 +4852,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Com combustível disponível, acende material inflamável adequado sem teste em condições favoráveis. Vento, umidade ou perigo podem exigir preparação ou teste. Fogo e fumaça são perceptíveis. Não remove Frio sozinho, cria combustível ou substitui o Fogareiro no preparo de provisões."
+          "value": "Com combustível disponível, acende material inflamável adequado sem teste em condições favoráveis. Vento, umidade ou perigo podem exigir preparação ou teste. Fogo e fumaça são perceptíveis. Não remove Frio sozinho, não cria combustível e não substitui o Fogareiro no preparo de provisões."
         },
         {
           "label": "Carga guardada",
@@ -4880,7 +4880,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Permite cozinhar e aquecer água. Não purifica automaticamente contaminação desconhecida."
+          "value": "Com fonte de calor funcional, permite cozinhar e aquecer água. Pode ser usada na fervura exigida pelo preparo de provisões, quando esse tratamento for adequado à situação. Não resolve automaticamente uma contaminação desconhecida."
         },
         {
           "label": "Carga guardada",
@@ -4894,7 +4894,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Com água adequada disponível, 10 minutos removem sujeira superficial de uma pessoa ou pequena área de trabalho, eliminando um impedimento causado exclusivamente por essa sujeira. Não remove condições, recupera PV ou substitui antissepsia. Água e materiais precisam existir na ficção; não há conversão automática em porções de bebida."
+          "value": "Com água adequada disponível, 10 minutos removem sujeira superficial de uma pessoa ou pequena área de trabalho, eliminando um impedimento causado exclusivamente por essa sujeira. Não remove condições, não recupera PV e não substitui antissepsia. Água e materiais precisam existir na ficção; não há conversão automática em porções de bebida."
         },
         {
           "label": "Carga guardada",
@@ -4936,7 +4936,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Consumível: uma utilização; ilumina e revela posição. +2 Barulho quando acionado."
+          "value": "Consumível: cada uso consome 1 unidade, ilumina o local e denuncia a posição, gerando +2 Barulho na cena."
         },
         {
           "label": "Carga guardada",
@@ -5872,7 +5872,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Consumível: pode tratar uma Lesão ou estabilizar Sangramento; também serve como material com Kit médico de campo. Equivale a 1 unidade de Medicamentos nas reservas."
+          "value": "Consumível: trata uma Lesão ou estabiliza Sangramento; também pode fornecer o material consumido pelo Kit médico de campo. Como alternativa ao tratamento, pode ser convertida em 1 unidade de Medicamentos nas reservas. Escolha um uso; não conte o mesmo conteúdo duas vezes."
         },
         {
           "label": "Carga",
@@ -5886,7 +5886,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Consumível no tratamento: trata uma Lesão ou estabiliza Sangramento e deixa um Kit médico de campo reutilizável. Também pode virar 1 unidade de Medicamentos nas reservas."
+          "value": "No tratamento, consome seu conteúdo para tratar uma Lesão ou estabilizar Sangramento e deixa um Kit médico de campo reutilizável. Como alternativa, pode ser convertida em 1 unidade de Medicamentos nas reservas, também deixando o kit. Escolha um uso; não conte o mesmo conteúdo duas vezes."
         },
         {
           "label": "Carga",
@@ -5900,7 +5900,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "1 unidade de Medicamentos para a tentativa de limpar Exposição. Não garante sucesso."
+          "value": "Pode ser convertido em 1 unidade de Medicamentos para uma tentativa de limpar Exposição. O estojo é consumido na conversão. Não garante sucesso no tratamento."
         },
         {
           "label": "Carga",
@@ -5942,7 +5942,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Consome 1 unidade para remover sujeira superficial de pequeno instrumento ou superfície, tornando-o utilizável quando esse for o único impedimento. Não esteriliza automaticamente, equivale a Medicamentos ou remove condições."
+          "value": "Consome 1 unidade para remover sujeira superficial de pequeno instrumento ou superfície, tornando-o utilizável quando esse for o único impedimento. Não esteriliza automaticamente, não equivale a Medicamentos e não remove condições."
         },
         {
           "label": "Carga",
@@ -5984,7 +5984,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Imobiliza uma Fratura ou trata por imobilização uma Lesão de braço/perna. O conjunto fica comprometido no paciente e sai do inventário."
+          "value": "Imobiliza uma Fratura ou trata por imobilização uma Lesão de braço ou perna. O conjunto fica comprometido no paciente e sai do inventário. Imobilizar não remove automaticamente a Fratura nem recupera PV."
         },
         {
           "label": "Carga",
@@ -5998,7 +5998,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Com tempo para medir e aparelho funcional, confirma e registra a presença de febre sem teste. Reutilizável. Não identifica a causa, determina gravidade clínica ou revela estado secreto de infecção."
+          "value": "Com tempo para medir e aparelho funcional, confirma e registra a presença de febre sem teste. Reutilizável. Não identifica a causa, não determina a gravidade clínica e não revela estado secreto de infecção."
         },
         {
           "label": "Carga",
@@ -6012,7 +6012,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Um conjunto evita sujeira superficial por respingos comuns na roupa e nas regiões cobertas durante uma cena de cuidado. Consome 1 unidade de jogo por cena de procedimento. Não impede Mordida ou Exposição ao agente do surto, substitui Armadura ou protege o corpo inteiro."
+          "value": "Um conjunto evita sujeira superficial por respingos comuns na roupa e nas regiões cobertas durante uma cena de cuidado. Consome 1 unidade de jogo por cena de procedimento. Não impede Mordida ou Exposição ao agente do surto, não substitui Armadura e não protege o corpo inteiro."
         },
         {
           "label": "Carga",
@@ -6026,7 +6026,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Regra abstrata de cuidado: se o mestre estabelecer dor comum e uma penalidade situacional ligada a ela, 1 unidade pode suspender somente essa penalidade por uma cena, após intervalo definido na ficção. Não ignora Lesão ou Fratura, recupera PV ou concede Vantagem. Usos adicionais não acumulam o benefício."
+          "value": "Regra abstrata de cuidado: se o mestre estabelecer dor comum e uma penalidade situacional ligada a ela, 1 unidade pode suspender somente essa penalidade por uma cena, após intervalo definido na ficção. Não ignora Lesão ou Fratura, não recupera PV e não concede Vantagem. Usos adicionais não acumulam o benefício."
         },
         {
           "label": "Carga",
@@ -6040,7 +6040,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Regra abstrata de cuidado: se o mestre estabelecer mal-estar febril comum e uma penalidade situacional ligada a ele, 1 unidade pode suspender somente essa penalidade por uma cena, após intervalo definido na ficção. Não altera infecção, Frio ou Calor, recupera PV ou concede Vantagem. Usos adicionais não acumulam o benefício."
+          "value": "Regra abstrata de cuidado: se o mestre estabelecer mal-estar febril comum e uma penalidade situacional ligada a ele, 1 unidade pode suspender somente essa penalidade por uma cena, após intervalo definido na ficção. Não altera infecção, Frio ou Calor, não recupera PV e não concede Vantagem. Usos adicionais não acumulam o benefício."
         },
         {
           "label": "Carga",
@@ -6054,7 +6054,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Regra abstrata de cuidado: se o mestre estabelecer alergia comum e uma penalidade situacional ligada a ela, 1 unidade pode suspender somente essa penalidade por uma cena, após intervalo definido na ficção. Não trata situação grave, remove condições formais ou cura o agente do surto. Usos adicionais não acumulam o benefício."
+          "value": "Regra abstrata de cuidado: se o mestre estabelecer alergia comum e uma penalidade situacional ligada a ela, 1 unidade pode suspender somente essa penalidade por uma cena, após intervalo definido na ficção. Não trata situações graves, não remove condições formais e não cura a infecção causada pelo agente do surto. Usos adicionais não acumulam o benefício."
         },
         {
           "label": "Carga",
@@ -6096,7 +6096,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Pode cumprir um requisito de tratamento comum previamente estabelecido na história pelo mestre. Uma utilização consome 1 unidade de jogo. Não oferece cura imediata, recupera PV por si ou afeta a infecção zumbi."
+          "value": "Pode cumprir um requisito de tratamento comum previamente estabelecido na história pelo mestre. Uma utilização consome 1 unidade de jogo. Não oferece cura imediata, não recupera PV por si e não afeta a infecção zumbi."
         },
         {
           "label": "Carga",
@@ -6124,7 +6124,7 @@
       "fields": [
         {
           "label": "Uso em jogo",
-          "value": "Com filtro funcional, vedação adequada e risco compatível confirmado pelo mestre, permite lidar com poeira ou fumaça apropriada ao filtro e concede Vantagem no teste para resistir a essa exposição. Não fornece oxigênio, torna respirável uma atmosfera perigosa ou protege genericamente contra o agente do surto. Não remove condições existentes."
+          "value": "Com filtro funcional, vedação adequada e risco compatível confirmado pelo mestre, permite lidar com poeira ou fumaça apropriada ao filtro e concede Vantagem no teste para resistir a essa exposição. Não fornece oxigênio, não torna respirável uma atmosfera perigosa e não protege genericamente contra o agente do surto. Não remove condições existentes."
         },
         {
           "label": "Carga",
@@ -6142,7 +6142,7 @@
         },
         {
           "label": "Regra de transporte",
-          "value": "Quatro porções ocupam 1. Até duas porções pessoais soltas ocupam 0."
+          "value": "1 unidade equivale a 4 porções de Comida. Na carga pessoal, as primeiras 2 porções não ocupam espaço; cada grupo adicional de até 4 porções ocupa 1 espaço. Não some novamente o peso dos alimentos já contabilizados por porções."
         }
       ]
     },
@@ -6156,7 +6156,7 @@
         },
         {
           "label": "Regra de transporte",
-          "value": "Quatro porções: galão ou pacote inteiro 1. Até duas porções pessoais ocupam 0."
+          "value": "1 unidade equivale a 4 porções de Água. Na carga pessoal, as primeiras 2 porções não ocupam espaço; cada grupo adicional de até 4 porções ocupa 1 espaço. O Galão vazio preenchido usa sua regra própria: 1 espaço para recipiente e conteúdo juntos."
         }
       ]
     },
@@ -6170,7 +6170,7 @@
         },
         {
           "label": "Regra de transporte",
-          "value": "Um tratamento relevante. Bolsa ou caixa já inclui a unidade em sua carga."
+          "value": "Recurso para um tratamento relevante, conforme a regra usada; não garante sucesso. Ao converter bolsa ou caixa em Medicamentos, retire o conteúdo físico correspondente para não duplicar o recurso."
         }
       ]
     },
@@ -6282,7 +6282,7 @@
         },
         {
           "label": "Regra de transporte",
-          "value": "Em galão já contado não some carga. No veículo, segue o reservatório."
+          "value": "Ocupa 1 espaço quando transportado como unidade separada. Se estiver em um galão já contabilizado, não some a carga novamente. No veículo, registre o combustível no reservatório."
         }
       ]
     },
@@ -6296,7 +6296,7 @@
         },
         {
           "label": "Regra de transporte",
-          "value": "Materiais de um avanço ou reparo. Itens isolados não viram unidade sem ficção."
+          "value": "Representa materiais para um avanço de obra ou reparo, conforme o custo indicado. Objetos isolados só se tornam uma unidade de Peças quando a ficção e o mestre justificarem essa conversão."
         }
       ]
     },
@@ -6316,7 +6316,7 @@
       "fields": [
         {
           "label": "Pergunta de conferência",
-          "value": "Capacidade = 3 + bônus da bolsa + técnicas pertinentes. Quais itens guardados ocupam 1 ou 2 espaços?"
+          "value": "Capacidade = 3 + bônus da bolsa ativa + benefícios aplicáveis de especialidade e técnicas. Confira a carga dos itens guardados e os agrupamentos de provisões e munição."
         }
       ]
     },
@@ -6326,7 +6326,7 @@
       "fields": [
         {
           "label": "Pergunta de conferência",
-          "value": "Até 2 Comida e 2 Água pessoais cabem sem espaço. A partir da 3ª porção, cada grupo adicional de até 4 porções ocupa 1."
+          "value": "Conte Comida e Água separadamente. As primeiras 2 porções pessoais de cada recurso não ocupam espaço; cada grupo adicional de até 4 porções ocupa 1 espaço. Inclua as porções dos itens físicos sem contá-las duas vezes. Recipientes com regra própria, como o Galão vazio preenchido, seguem essa regra."
         }
       ]
     },
@@ -6336,7 +6336,7 @@
       "fields": [
         {
           "label": "Pergunta de conferência",
-          "value": "Uma carga pronta na arma ativa ocupa 0. Cada reserva ocupa 1 e tem tipo específico."
+          "value": "Agrupe a munição por tipo: cada grupo de até 4 unidades do mesmo tipo ocupa 1 espaço de carga. Uma unidade é comprometida no primeiro disparo daquele tipo na cena e removida ao encerrar a cena. Enquanto comprometida, permanece na carga e não pode ser transferida ou descartada."
         }
       ]
     },
@@ -6346,7 +6346,7 @@
       "fields": [
         {
           "label": "Pergunta de conferência",
-          "value": "Pergunte o que procuram, para quê e onde. Busca específica responde ao objetivo se houver fonte; busca aberta usa um d12 por setor. Nada se duplica depois de vasculhado."
+          "value": "Defina o que procuram, para quê e em qual área do local. A busca específica depende de uma fonte compatível; a busca aberta usa o d12 da área vasculhada. Áreas narrativas não concedem rolagem própria. Recolher achados não os duplica; uma busca profunda segue seus requisitos e limites próprios."
         }
       ]
     },
@@ -6356,7 +6356,7 @@
       "fields": [
         {
           "label": "Pergunta de conferência",
-          "value": "Marque o amanhecer de vencimento do lote: F vence no segundo seguinte, R no próximo. Ingrediente seco D bem guardado continua D após aberto; comida preparada ou úmida aberta vira R. C exige frio comprovado."
+          "value": "Confira o prazo do lote: D = durável; F = fresco, vence no segundo amanhecer; R = refrigerado ou preparado, vence no próximo amanhecer; C = congelado, exige frio contínuo. Ingrediente seco D bem guardado continua durável após aberto; alimento preparado ou úmido aberto passa a R."
         }
       ]
     },
@@ -6366,7 +6366,7 @@
       "fields": [
         {
           "label": "Pergunta de conferência",
-          "value": "Bolsa não empilha com outra. Carrinho aberto funciona como contêiner próprio de 4 espaços, exige duas mãos e só pode ser conduzido enquanto a rota permitir; carro 3, moto 1 e van 6 são capacidade de carga do veículo e continuam sob controle do mestre até haver ficha própria de veículo."
+          "value": "Use o bônus de uma única bolsa ativa. O Carrinho dobrável aberto é um contêiner de 4 espaços e exige duas mãos livres e uma rota compatível. Veículos seguem os valores narrativos de carga: carro 3, moto 1 e van 6 espaços, sob controle do mestre."
         }
       ]
     },
@@ -6376,7 +6376,7 @@
       "fields": [
         {
           "label": "Pergunta de conferência",
-          "value": "Transfira porções sem duplicá-las. Desconte comida e água ao anoitecer. No amanhecer, descarte apenas os lotes cujo prazo venceu fora do frio."
+          "value": "Transfira provisões sem duplicá-las. Ao anoitecer, confira o consumo de Comida e Água, descontando o que cada sobrevivente já consumiu naquele dia. No amanhecer, confira o vencimento dos lotes e as condições de conservação."
         }
       ]
     }

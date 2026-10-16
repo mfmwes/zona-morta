@@ -33,13 +33,11 @@ Os textos abaixo aparecem no catálogo. A mesa resolve os efeitos situacionais e
 
 ## Textos finais por categoria
 
-
 ### Armas secundárias
 
 **Lanterna pesada**
 
 Com bateria utilizável, ilumina até Perto e remove impedimentos causados exclusivamente pela escuridão na área iluminada. Ocupa uma mão, denuncia a posição e conserva seu perfil de arma secundária. Golpear não amplia a luz; não revela alvos atrás de cobertura.
-
 
 ### Trajes e acessórios
 
@@ -54,6 +52,10 @@ Podem conceder Vantagem em uma corrida curta sobre piso seco e regular quando o 
 **Luvas de trabalho**
 
 Dispensam teste quando o único risco for abrasão leve ao manipular cuidadosamente entulho áspero. Protegem apenas as mãos cobertas; não impedem mordidas, perfurações, cortes fortes ou choque elétrico. Reutilizáveis enquanto íntegras.
+
+**Luvas descartáveis**
+
+Um par permite um procedimento de cuidado sem transferir sujeira superficial diretamente às mãos cobertas, enquanto permanecer íntegro. Consome 1 unidade de jogo por cena de procedimento. Não protege contra perfurações, Mordida ou Exposição ao agente do surto.
 
 **Óculos de proteção**
 
@@ -93,14 +95,17 @@ Permite tentar assumir função de vigilância ou passar por posto compatível. 
 
 **Capacete de obra com viseira**
 
-Enquanto íntegro e vestido, concede Vantagem em teste para resistir ao impacto de pequenos detritos na cabeça durante uma tarefa. Não aumenta Armadura, reduz dano de ataques ou protege contra desabamento estrutural.
-
-**Luvas descartáveis**
-
-Um par permite um procedimento de cuidado sem transferir sujeira superficial diretamente às mãos cobertas, enquanto permanecer íntegro. Consome 1 unidade de jogo por cena de procedimento. Não protege contra perfurações, Mordida ou Exposição ao agente do surto.
-
+Enquanto íntegro e vestido, concede Vantagem em teste para resistir ao impacto de pequenos detritos na cabeça durante uma tarefa. Não aumenta Armadura, não reduz dano de ataques e não protege contra desabamento estrutural.
 
 ### Ferramentas, acesso e reparo
+
+**Kit de ferramentas de trabalho**
+
+Permite reparos comuns, como reapertar, alinhar ou remontar peça acessível. Um reparo simples, seguro e com materiais disponíveis leva 30 minutos sem teste; sob risco, exige teste adequado. Reutilizável; não fornece Peças, não substitui especialista e não reduz turnos de construção e reparo do abrigo.
+
+**Alicate**
+
+Remove arame fino ou fixação acessível em 10 minutos, sem teste quando houver segurança. Sob pressão ou resistência relevante, permite a tentativa com teste adequado, sem Vantagem automática. Reutilizável; não corta corrente ou cadeado e não protege contra eletricidade.
 
 **Jogo de chaves**
 
@@ -109,18 +114,6 @@ Abre sem teste e sem Barulho adicional uma fechadura cuja chave foi identificada
 **Gazua improvisada**
 
 Permite abrir fechadura mecânica simples: sem risco ou pressão, leva 10 minutos e dispensa teste; sob risco, exige Acuidade, com dificuldade definida pelo mestre. A tentativa ocupa 10 minutos mesmo em falha. Reutilizável; repetir exige mudança concreta de abordagem. Não concede Vantagem por si nem abre fechadura eletrônica.
-
-**Alicate**
-
-Remove arame fino ou fixação acessível em 10 minutos, sem teste quando houver segurança. Sob pressão ou resistência relevante, permite a tentativa com teste adequado, sem Vantagem automática. Reutilizável; não corta corrente ou cadeado e não protege contra eletricidade.
-
-**Serra manual**
-
-Corta um obstáculo pequeno de material compatível e acessível em 30 minutos, com +1 Barulho na cena, inclusive em tentativa sem sucesso. Sem perigo, dispensa teste; sob risco, o mestre define o teste. Reutilizável; não atravessa qualquer metal, parede ou estrutura.
-
-**Kit de ferramentas de trabalho**
-
-Permite reparos comuns, como reapertar, alinhar ou remontar peça acessível. Um reparo simples, seguro e com materiais disponíveis leva 30 minutos sem teste; sob risco, exige teste adequado. Reutilizável; não fornece Peças, substitui especialista ou reduz turnos de construção e reparo do abrigo.
 
 **Chaves de boca**
 
@@ -142,6 +135,9 @@ Com ancoragem confiável, 10 minutos de preparo permitem descida curta controlad
 
 Em 10 minutos, tranca uma passagem com pontos adequados de fixação, impedindo sua abertura normal. Atravessar exige chave, rompimento ou outra rota. Reutilizável, mas fica instalada até retirada. A resistência depende da corrente e da fixação; não cria barreira indestrutível.
 
+**Serra manual**
+
+Corta um obstáculo pequeno de material compatível e acessível em 30 minutos, com +1 Barulho na cena, inclusive em tentativa sem sucesso. Sem perigo, dispensa teste; sob risco, o mestre define o teste. Reutilizável; não atravessa qualquer metal, parede ou estrutura.
 
 ### Luz, comunicação e informação
 
@@ -155,7 +151,7 @@ Com bateria utilizável, ilumina até Perto e remove impedimentos causados exclu
 
 **Rádio portátil**
 
-Com bateria, canal e aparelhos compatíveis, permite conversar sem teste dentro do alcance estabelecido pelo mestre. Obstáculos e interferência podem interromper o contato. Não concede alcance ilimitado, comunicação privada ou conhecimento sobre quem escuta.
+Com bateria, canal e aparelhos compatíveis, permite conversar sem teste dentro do alcance estabelecido pelo mestre. Obstáculos e interferência podem interromper o contato. Não garante alcance ilimitado, privacidade da comunicação ou conhecimento sobre quem escuta.
 
 **Rádio de carro**
 
@@ -171,7 +167,7 @@ Com linha de visão, permitem distinguir detalhes visíveis de um marco distante
 
 **Mapa de bairro**
 
-Após 10 minutos de consulta, informa sem teste o traçado antigo de ruas e acessos efetivamente representados. Não revela bloqueios atuais, ameaças, saque ou locais secretos, não explora hexes nem reduz automaticamente tempo de viagem.
+Após 10 minutos de consulta, informa sem teste o traçado antigo de ruas e acessos efetivamente representados. Não revela bloqueios atuais, ameaças, saque ou locais secretos; não explora hexes nem reduz automaticamente o tempo de viagem.
 
 **Caderno e lápis**
 
@@ -183,18 +179,17 @@ Após obter energia e acesso ao aparelho, permite consultar contatos, fotos e in
 
 **Câmera com bateria**
 
-Com bateria e enquadramento adequado, registra uma cena visível. Revisar ou apresentar a gravação dispensa teste para lembrar detalhes efetivamente capturados. Não registra o que estava oculto, amplia a visão ou convence automaticamente quem vê a prova.
-
+Com bateria e enquadramento adequado, registra uma cena visível. Revisar ou apresentar a gravação dispensa teste para lembrar detalhes efetivamente capturados. Não registra o que estava oculto, não amplia a visão e não convence automaticamente quem vê a prova.
 
 ### Abrigo, transporte e mochilas
 
 **Isqueiro**
 
-Com combustível disponível, acende material inflamável adequado sem teste em condições favoráveis. Vento, umidade ou perigo podem exigir preparação ou teste. Fogo e fumaça são perceptíveis. Não remove Frio sozinho, cria combustível ou substitui o Fogareiro no preparo de provisões.
+Com combustível disponível, acende material inflamável adequado sem teste em condições favoráveis. Vento, umidade ou perigo podem exigir preparação ou teste. Fogo e fumaça são perceptíveis. Não remove Frio sozinho, não cria combustível e não substitui o Fogareiro no preparo de provisões.
 
 **Kit de higiene**
 
-Com água adequada disponível, 10 minutos removem sujeira superficial de uma pessoa ou pequena área de trabalho, eliminando um impedimento causado exclusivamente por essa sujeira. Não remove condições, recupera PV ou substitui antissepsia. Água e materiais precisam existir na ficção; não há conversão automática em porções de bebida.
+Com água adequada disponível, 10 minutos removem sujeira superficial de uma pessoa ou pequena área de trabalho, eliminando um impedimento causado exclusivamente por essa sujeira. Não remove condições, não recupera PV e não substitui antissepsia. Água e materiais precisam existir na ficção; não há conversão automática em porções de bebida.
 
 **Documento ou crachá**
 
@@ -204,7 +199,6 @@ Comprova sem teste a identidade ou autorização que realmente representa quando
 
 Servem como prova de vínculo, mensagem ou detalhe efetivamente registrado; dispensam teste para recordar ou demonstrar esse conteúdo. Não garantem autenticidade, intenções atuais ou convencimento, nem concedem bônus de rolagem por si.
 
-
 ### Medicamentos e cuidado
 
 **Luvas de procedimento**
@@ -213,7 +207,7 @@ Um par permite um procedimento de cuidado sem transferir sujeira superficial dir
 
 **Solução de limpeza lacrada**
 
-Consome 1 unidade para remover sujeira superficial de pequeno instrumento ou superfície, tornando-o utilizável quando esse for o único impedimento. Não esteriliza automaticamente, equivale a Medicamentos ou remove condições.
+Consome 1 unidade para remover sujeira superficial de pequeno instrumento ou superfície, tornando-o utilizável quando esse for o único impedimento. Não esteriliza automaticamente, não equivale a Medicamentos e não remove condições.
 
 **Soro fisiológico lacrado**
 
@@ -221,23 +215,23 @@ Consome 1 unidade como material para lavagem em um cuidado que exija esse recurs
 
 **Termômetro**
 
-Com tempo para medir e aparelho funcional, confirma e registra a presença de febre sem teste. Reutilizável. Não identifica a causa, determina gravidade clínica ou revela estado secreto de infecção.
+Com tempo para medir e aparelho funcional, confirma e registra a presença de febre sem teste. Reutilizável. Não identifica a causa, não determina a gravidade clínica e não revela estado secreto de infecção.
 
 **Máscara e avental clínico**
 
-Um conjunto evita sujeira superficial por respingos comuns na roupa e nas regiões cobertas durante uma cena de cuidado. Consome 1 unidade de jogo por cena de procedimento. Não impede Mordida ou Exposição ao agente do surto, substitui Armadura ou protege o corpo inteiro.
+Um conjunto evita sujeira superficial por respingos comuns na roupa e nas regiões cobertas durante uma cena de cuidado. Consome 1 unidade de jogo por cena de procedimento. Não impede Mordida ou Exposição ao agente do surto, não substitui Armadura e não protege o corpo inteiro.
 
 **Analgésico genérico**
 
-Regra abstrata de cuidado: se o mestre estabelecer dor comum e uma penalidade situacional ligada a ela, 1 unidade pode suspender somente essa penalidade por uma cena, após intervalo definido na ficção. Não ignora Lesão ou Fratura, recupera PV ou concede Vantagem. Usos adicionais não acumulam o benefício.
+Regra abstrata de cuidado: se o mestre estabelecer dor comum e uma penalidade situacional ligada a ela, 1 unidade pode suspender somente essa penalidade por uma cena, após intervalo definido na ficção. Não ignora Lesão ou Fratura, não recupera PV e não concede Vantagem. Usos adicionais não acumulam o benefício.
 
 **Antitérmico genérico**
 
-Regra abstrata de cuidado: se o mestre estabelecer mal-estar febril comum e uma penalidade situacional ligada a ele, 1 unidade pode suspender somente essa penalidade por uma cena, após intervalo definido na ficção. Não altera infecção, Frio ou Calor, recupera PV ou concede Vantagem. Usos adicionais não acumulam o benefício.
+Regra abstrata de cuidado: se o mestre estabelecer mal-estar febril comum e uma penalidade situacional ligada a ele, 1 unidade pode suspender somente essa penalidade por uma cena, após intervalo definido na ficção. Não altera infecção, Frio ou Calor, não recupera PV e não concede Vantagem. Usos adicionais não acumulam o benefício.
 
 **Medicamento para alergia**
 
-Regra abstrata de cuidado: se o mestre estabelecer alergia comum e uma penalidade situacional ligada a ela, 1 unidade pode suspender somente essa penalidade por uma cena, após intervalo definido na ficção. Não trata situação grave, remove condições formais ou cura o agente do surto. Usos adicionais não acumulam o benefício.
+Regra abstrata de cuidado: se o mestre estabelecer alergia comum e uma penalidade situacional ligada a ela, 1 unidade pode suspender somente essa penalidade por uma cena, após intervalo definido na ficção. Não trata situações graves, não remove condições formais e não cura a infecção causada pelo agente do surto. Usos adicionais não acumulam o benefício.
 
 **Medicamento para enjoo**
 
@@ -249,8 +243,8 @@ Atende uma necessidade específica de um personagem somente quando ela e o uso a
 
 **Antibiótico prescrito**
 
-Pode cumprir um requisito de tratamento comum previamente estabelecido na história pelo mestre. Uma utilização consome 1 unidade de jogo. Não oferece cura imediata, recupera PV por si ou afeta a infecção zumbi.
+Pode cumprir um requisito de tratamento comum previamente estabelecido na história pelo mestre. Uma utilização consome 1 unidade de jogo. Não oferece cura imediata, não recupera PV por si e não afeta a infecção zumbi.
 
 **Máscara respiratória com filtro**
 
-Com filtro funcional, vedação adequada e risco compatível confirmado pelo mestre, permite lidar com poeira ou fumaça apropriada ao filtro e concede Vantagem no teste para resistir a essa exposição. Não fornece oxigênio, torna respirável uma atmosfera perigosa ou protege genericamente contra o agente do surto. Não remove condições existentes.
+Com filtro funcional, vedação adequada e risco compatível confirmado pelo mestre, permite lidar com poeira ou fumaça apropriada ao filtro e concede Vantagem no teste para resistir a essa exposição. Não fornece oxigênio, não torna respirável uma atmosfera perigosa e não protege genericamente contra o agente do surto. Não remove condições existentes.
