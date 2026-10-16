@@ -2,10 +2,25 @@ import { defaultState, initialSurvivor, content } from "@/lib/game";
 import { createSceneBoardScene, createSceneBoardObject, createFixtureOnWall } from "@/lib/scene-board";
 import { createConflictScene, resolveSurvivorDamageTier } from "@/lib/conflict";
 import { requestTableRest } from "@/lib/table-rest";
+import { assignCustomSector } from "@/lib/sectors";
+import { prepareLocationForExploration } from "@/lib/hex-automation";
 
 export function previewFixture(options: { base?: boolean; conflict?: boolean; rest?: boolean; objects?: number } = {}) {
   const game = defaultState({ withShelter: options.base, startSectorId: "morro" });
   game.campaignId = "visual-sandbox";
+  for (const [id, name] of [['0,0','Bairro residencial'],['0,-1','Reservatórios'],['1,0','Praça central'],['-1,0','Oficinas'],['0,1','Mercado velho'],['1,-1','Estação ferroviária'],['-1,1','Margem do canal']]) {
+    assignCustomSector(game,id,name); game.hexes[id].discovery='explorado'; game.hexes[id].points=[]; game.hexes[id].events=[];
+  }
+  game.hexes['0,0'].points=[
+    {id:'market',name:'Mercado da praça',kind:'comércio',signal:'Uma porta lateral entreaberta.',access:'',notes:'Nota reservada',revealed:true,lootTable:content.lootTables[1].name,searches:[]},
+    {id:'house',name:'Casa de esquina',kind:'local',signal:'Janelas cobertas.',access:'',notes:'',revealed:true,searches:[]},
+    {id:'secret',name:'Depósito secreto',kind:'local',signal:'',access:'',notes:'',revealed:false,searches:[]},
+  ];
+  prepareLocationForExploration(game,'0,0','market');
+  const previewPreparation=game.hexes['0,0'].points[0].preparation!;
+  previewPreparation.stock=[];
+  for(const area of previewPreparation.areas) area.visibleOutcome='none';
+  game.hexes['0,0'].events=[{id:'rooftop',text:'Sinais no telhado: uma silhueta observa a rua.',trigger:'',revealed:true,status:'active'},{id:'hidden-event',text:'Emboscada secreta',trigger:'',revealed:false,status:'pending'}];
   const archetype = content.archetypes[0];
   game.survivors = ["Nina", "Rafael de Albuquerque"].map((name, index) => ({ ...initialSurvivor({ name, origin: content.origins[0].name, past: "", archetype: archetype.name,
     specialty: archetype.specialties[0].name, freeExperience: "Resgates", techniques: [], attributes: { Agilidade: 2, Força: 1, Finesse: 1, Instinto: 0, Presença: 0, Conhecimento: -1 },

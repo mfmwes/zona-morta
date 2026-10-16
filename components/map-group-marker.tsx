@@ -1,7 +1,7 @@
 "use client";
 
 import type { KeyboardEvent, MouseEvent } from "react";
-import { Footprints } from "lucide-react";
+import { Footprints, Users } from "lucide-react";
 
 type Member = { id: string; name: string; portrait?: string };
 
@@ -17,6 +17,7 @@ export function MapGroupMarker({
   main,
   active,
   onSelect,
+  compact = false,
 }: {
   hexId: string;
   x: number;
@@ -25,6 +26,7 @@ export function MapGroupMarker({
   main: boolean;
   active: boolean;
   onSelect: () => void;
+  compact?: boolean;
 }) {
   if (!members.length) return null;
 
@@ -37,6 +39,13 @@ export function MapGroupMarker({
     event.stopPropagation();
     onSelect();
   }
+
+  if (compact) return <g role="button" tabIndex={0} className={`map-group-pill${active ? " is-active" : ""}`} aria-label={label} onClick={select}
+    onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); select(event); } }}>
+    <title>{label}</title><rect x={x-33} y={y+25} width="66" height="13" rx="6.5" fill={active ? "#72e5c1" : "#bdd8de"} stroke="#102333" strokeWidth="1" />
+    <Users x={x-28} y={y+27} width="9" height="9" stroke="#102333" strokeWidth="2" />
+    <text x={x+4} y={y+34} textAnchor="middle" fontSize="6.3" fontWeight="750" fill="#102333">{main ? "Grupo principal" : `Grupo · ${members.length}`}</text>
+  </g>;
 
   if (main) {
     return <g

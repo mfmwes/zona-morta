@@ -10,7 +10,6 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Archive, CheckCircle2, ChevronDown, Compass, Dice5, Eye, Footprints, House, MapPin, Package, Play, Route, Search, Trash2, Undo2, Users, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -20,6 +19,8 @@ import { WorldMapViewport } from "@/components/world-map-viewport";
 import { WorldExpansionDialog } from "@/components/world-expansion-dialog";
 import { hexCenter, parseHex, passages, terrains, worldHexes, type Terrain, type Passage } from "@/lib/world";
 import { MapGroupMarker } from "@/components/map-group-marker";
+import { MapHexArt } from "@/components/map-hex-art";
+import { mapArtworkIndex, mapHexSummary, type MapFilter } from "@/lib/map-presentation";
 import { HexContextMenu } from "@/components/hex-context-menu";
 import { HexGeneratorDialog, type HexGeneratorKind, type HexGeneratorRequest } from "@/components/hex-generator-dialog";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -86,6 +87,8 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
   const [pendingSectorOverride, setPendingSectorOverride] = useState<{ mode: "random" | "custom"; discovery: "avistado" | "explorado"; name?: string } | null>(null);
   const [compact, setCompact] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [mapExpanded, setMapExpanded] = useState(false);
+  const [mapFilter, setMapFilter] = useState<MapFilter>("all");
   const [expansionOpen, setExpansionOpen] = useState(false);
   const [focusHex, setFocusHex] = useState(initialTarget?.hexId??game.partyHex);
   const [relocateOpen, setRelocateOpen] = useState(false);
@@ -96,19 +99,20 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
 
 
   useEffect(() => {
-    const query = window.matchMedia("(max-width: 1279px)");
+    const query = window.matchMedia("(max-width: 1099px)");
     const update = () => { setCompact(query.matches); if (!query.matches && playerPreview) setSheetOpen(false); };
     update(); query.addEventListener("change", update);
     return () => query.removeEventListener("change", update);
   }, [playerPreview]);
 
   function selectHex(id: string, openDetails = true) {
+    if (openDetails) setMapExpanded(false);
     if (id !== selected) {
       setSelected(id);
       setSignsDraft(null); setNotesDraft(null);
       setGmOpen(false);
     }
-    if (openDetails && (mobile || compact || !playerPreview)) setSheetOpen(true);
+    if (openDetails && (mobile || compact)) setSheetOpen(true);
   }
 
   const area = parseHex(selected)!;
@@ -271,7 +275,7 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
         {playerPreview && record.discovery !== "desconhecido" && record.sector?.border && <div className="list-card mt-5 text-sm leading-relaxed"><b>{selected === "0,0" ? "Desde o início" : "Sinal da borda"}</b><p className="mt-1">{record.sector.border}</p></div>}
         {playerPreview && record.signs && <p className="mt-3 text-sm"><b>Outros sinais:</b> {record.signs}</p>}
         {playerActions && <details className="hex-player-travel mt-3"><summary><Footprints size={15} /> {selected === game.publicPlayerActions?.hexId ? "Viagens a partir deste hex" : "Viajar para este hex"}</summary><PlayerContextActions key={selected+"travel"} game={game} controls={playerActions} context={{kind:"travel",destination:selected === game.publicPlayerActions?.hexId?undefined:selected}} /></details>}
-        <div className="hex-sector-locations-bar"><div className="hex-points-heading"><MapPin size={18} aria-hidden="true" /><h3 className="section-title">Locais e pistas neste setor</h3><span className="tag">{exposedPoints.length}</span></div>
+        <div className="hex-sector-locations-bar"><div className="hex-points-heading"><MapPin size={18} aria-hidden="true" /><h3 className="section-title">Locais e pistas</h3><span className="tag">{exposedPoints.length}</span></div>
           {!playerPreview && record.discovery !== "desconhecido" && <div className="hex-sector-actions"><Button size="sm" variant="ghost" onClick={() => { edit(draft => { prepareHex(draft, selected); }); toast.success("Hex preparado; conteúdo reservado para revisão"); }}><Package size={15} /> Preparar hex</Button><Button size="sm" variant="outline" onClick={() => openManualPoint(selected)}><Plus size={15} /> Adicionar local</Button></div>}
         </div>
         {exposedPoints.length === 0 && <p className="intro-line mt-3">Nenhum local ou pista registrado neste setor.</p>}
@@ -298,7 +302,7 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
               : searchable.length ? `${searched}/${searchable.length} áreas vasculhadas`
               : prep ? "Exploração narrativa" : "Ainda não preparado";
             return <article key={point.id} className="hex-point-card list-card text-sm">
-              <div className="hex-point-heading"><div><p className="dossier-title">{isCluePoint(point) ? "Pista" : point.kind === "comércio" ? "Comércio neste setor" : "Local neste setor"}</p><b>{point.name}</b></div>
+              <div className="hex-point-heading"><span className="hex-location-icon" aria-hidden="true">{isCluePoint(point) ? <Compass size={23} /> : point.kind === "comércio" ? <Package size={23} /> : <House size={23} />}</span><div><b>{point.name}</b><p className="dossier-title">{isCluePoint(point) ? "Pista" : point.kind === "comércio" ? "Comércio" : "Local"}</p></div>
                 {!playerPreview && <label className="flex items-center gap-2 text-xs whitespace-nowrap"><Switch size="sm" checked={point.revealed}
                   onCheckedChange={checked => edit(draft => { const found = draft.hexes[selected].points.find(p=>p.id===point.id); if(found) found.revealed=checked; })} /> Público</label>}</div>
               {playerPreview && playerActions && game.publicPlayerActions?.hexId === selected && !isCluePoint(point) && (() => {
@@ -366,7 +370,7 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
         </div>}
         {(exposedEvents.length > 0 || archivedEvents.length > 0) && <div className="mt-5">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-            <h3 className="section-title">Eventos</h3>
+            <h3 className="section-title">Acontecimentos</h3>
             {!playerPreview && <span className="tag">{exposedEvents.filter(event => ["active", "pending"].includes(eventStatus(event))).length} ativos/pendentes · {archivedEvents.length} arquivados</span>}
           </div>
           <div className="grid gap-2">
@@ -375,7 +379,7 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
               const suggestedAction = suggestedEventActionKind(event);
               const ready = !playerPreview && eventTriggerReady(game, selected, event);
               return <div className={`list-card text-sm hex-event-card hex-event-${status}`} key={event.id}>
-                <div className="flex flex-wrap items-start justify-between gap-2">
+                <details className="hex-event-details"><summary><span className="hex-event-dot" /><span>{event.text.length > 82 ? `${event.text.slice(0, 79)}…` : event.text}</span><span className="tag">{status === "pending" ? "Pendente" : status === "active" ? "Ativo" : "Resolvido"}</span></summary><div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div className="flex flex-wrap gap-2 items-center">
                       <b>{playerPreview ? "Evento" : eventTriggerLabel(event)}</b>
@@ -413,7 +417,7 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
                 {!playerPreview && event.actionLinks && <div className="flex flex-wrap gap-2 mt-2" aria-label="Vínculos do evento">
                   {eventActionLinkLabels(game, selected, event).map(label => <span key={label} className="tag">{label}</span>)}
                 </div>}
-              </div>;
+              </details></div>;
             })}
           </div>
           {!playerPreview && archivedEvents.length > 0 && <Collapsible className="mt-3">
@@ -466,7 +470,7 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
           </Button>}
           {selected === game.shelter.hex && <span className="tag">Abrigo</span>}
         </div>
-        {!playerPreview && <Button size="sm" variant="ghost" className="hex-sector-close" onClick={() => setSheetOpen(false)}>Fechar</Button>}
+        {!playerPreview && <Button size="sm" variant="ghost" className="hex-sector-close" onClick={() => { setSheetOpen(false); if (!compact && !mobile) setMapExpanded(true); }}>Fechar</Button>}
       </div>
       <div className="hex-sector-context">
         <div className="hex-sector-signal">
@@ -571,8 +575,8 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
     </Tabs>}
   </section>;
 
-  return <div className={playerPreview ? "grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(345px,.75fr)]" : "grid gap-5"}>
-    <section className="panel panel-pad min-w-0 self-start">
+  return <div className={`map-explorer${mapExpanded ? " is-expanded" : ""}`}>
+    <section className="panel panel-pad min-w-0 self-start map-main-panel">
       <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
         <div><p className="dossier-title">Mundo / {Object.keys(game.hexes).length} áreas</p><h2 className="section-title mt-1">Mapa de exploração</h2></div>
         <div className="flex flex-wrap items-center gap-2"><span className="tag">1 hex ≈ 2 km</span>
@@ -584,7 +588,11 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
         <em>Hex {activeGroup.hex}</em>
       </div>}
       <div className="map-surface">
-        <WorldMapViewport hexes={game.hexes} activeHex={activeSourceHex} selected={selected} focusHex={focusHex} playerPreview={playerPreview} onSelect={selectHex}>
+        <WorldMapViewport hexes={game.hexes} activeHex={activeSourceHex} selected={selected} focusHex={focusHex} playerPreview={playerPreview} onSelect={selectHex}
+          expanded={mapExpanded} onExpand={() => setMapExpanded(value => !value)} filters={<div className="map-filter-chips" role="group" aria-label="Filtrar setores">
+            {([['all', 'Todos'], ['stock', 'Com achados'], ['events', 'Eventos pendentes']] as const).map(([value, label]) => <button key={value} type="button" aria-pressed={mapFilter === value} onClick={() => setMapFilter(value)}>{value === 'stock' ? <Package size={14} /> : value === 'events' ? <span className="hex-event-dot" /> : null}{label}</button>)}
+            {mapFilter !== "all" && <span role="status">{Object.keys(game.hexes).filter(id => mapHexSummary(game, id, playerPreview)[mapFilter] > 0).length} setores destacados</span>}
+          </div>}>
           <defs><pattern id="setor-avistado" width="8" height="8" patternUnits="userSpaceOnUse">
             <rect width="8" height="8" fill="#2d4d50" />
             <path d="M-2 8L8-2M2 10L10 2" stroke="#527478" strokeWidth="1" opacity=".58" />
@@ -610,6 +618,9 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
             const formerBase = (game.formerShelters ?? []).some(site => site.hex === id);
             const membersHere = publicPositions.filter(person => (person.hex ?? game.partyHex) === id);
             const lines = discovered || observed ? labelLines(title) : ["?"];
+            const summary = mapHexSummary(game, id, playerPreview);
+            const dimmed = mapFilter !== "all" && summary[mapFilter] === 0;
+            const clipId = `map-art-${id.replaceAll('-', 'm').replace(',', 'r')}`;
             return <HexContextMenu key={id} game={game} edit={edit} hexId={id} playerPreview={playerPreview}
               onOpenDetails={() => selectHex(id)}
               onGenerate={kind => openGenerator(id, kind)}
@@ -618,22 +629,26 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
               onRelocateShelter={() => openRelocation(id)}
               activeGroupHex={activeSourceHex}
               onMoveSurvivors={() => openMovement(id)}>
-              <g role="button" tabIndex={0} className="map-cell" aria-pressed={id === selected}
+              <g role="button" tabIndex={0} className={`map-cell${dimmed ? " is-filtered" : ""}${observed ? " is-observed" : ""}`} aria-pressed={id === selected}
                 aria-label={`${id}: ${title}${nearby ? ", adjacente ao grupo ativo" : ""}${id === game.shelter.hex ? ", abrigo" : ""}${formerBase ? ", antiga base com depósito" : ""}${membersHere.length ? `, sobreviventes: ${membersHere.map(person => person.name).join(", ")}` : ""}`}
                 onClick={() => selectHex(id)} onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectHex(id); } }}>
                 <title>{title} · Hex {id}{discovered || observed ? ` · ${terrains[state.terrain ?? "urban"]}${state.passage && state.passage !== "none" ? ` · ${passages[state.passage]}` : ""}` : ""}</title>
                 <polygon points={polygon} className={`map-hex ${id === selected ? "selected" : ""} ${nearby ? "nearby" : ""}`}
                   fill={fill} stroke={observed ? "#759897" : "#49666a"} strokeWidth="2" />
-                <text x={x} y={y-17} textAnchor="middle" fontSize="10" fill="#c4d8d3" fontFamily="monospace">{id}</text>
-                <text x={x} y={lines.length > 1 ? y-1 : y+8} textAnchor="middle" fontSize={discovered || observed ? "11.5" : "17"} fontWeight="700" fill={discovered ? "#f5f8f2" : "#d1e0dc"}>
-                  {lines.map((line,index) => <tspan key={index} x={x} dy={index ? 13 : 0}>{line}</tspan>)}
+                <defs><clipPath id={clipId}><polygon points={polygon} /></clipPath><linearGradient id={`${clipId}-shade`} x1="0" y1="0" x2="0" y2="1"><stop offset="25%" stopColor="#102333" stopOpacity="0" /><stop offset="65%" stopColor="#102333" stopOpacity=".85" /><stop offset="100%" stopColor="#102333" /></linearGradient></defs>
+                <g clipPath={`url(#${clipId})`} pointerEvents="none"><MapHexArt index={mapArtworkIndex(state)} x={x} y={y} /><polygon points={polygon} fill={`url(#${clipId}-shade)`} /></g>
+                <polygon points={polygon} className={`map-hex-outline${id === selected ? " selected" : ""}${nearby ? " nearby" : ""}`} fill="none" pointerEvents="none" />
+                <text className="map-coordinate" x={x} y={y-32} textAnchor="middle" fontSize="7" fill="#c4d8d3" fontFamily="monospace">{id}</text>
+                <text className="map-sector-label" x={x} y={discovered || observed ? y+9 : y+3} textAnchor="middle" fontSize={discovered || observed ? "8" : "17"} fontWeight="700" fill={discovered ? "#f5f8f2" : "#d1e0dc"}>
+                  {lines.map((line,index) => <tspan key={index} x={x} dy={index ? 10 : 0}>{line}</tspan>)}
                 </text>
+                {(summary.stock > 0 || summary.events > 0) && <g className="map-status-markers" aria-hidden="true">{summary.stock > 0 && <Package x={x-29} y={y-23} width={9} height={9} stroke="#f1bd62" />}{summary.events > 0 && <circle cx={x-13} cy={y-18} r="3" fill="#f1bd62" />}</g>}
                 {shownPoints > 0 && <g className="map-point-marker" aria-hidden="true">
                   <rect x={x+13} y={y+19} width="30" height="18" rx="9" />
                   <MapPin x={x+16} y={y+22} width={12} height={12} strokeWidth={2.4} />
                   <text x={x+34} y={y+31.5} textAnchor="middle" fontSize="9.5" fontWeight="900">{shownPoints > 9 ? "9+" : shownPoints}</text>
                 </g>}
-                {npcsHere.length > 0 && <g aria-hidden="true"><circle cx={x-27} cy={y+27} r="10" fill="#c7d9e4" stroke="#173135" strokeWidth="2" />
+                {npcsHere.length > 0 && !membersHere.length && <g aria-hidden="true"><circle cx={x-27} cy={y+27} r="10" fill="#c7d9e4" stroke="#173135" strokeWidth="2" />
                   <Users x={x-34} y={y+20} width={14} height={14} stroke="#173135" strokeWidth={2.5} />
                   {npcsHere.length > 1 && <text x={x-20} y={y+34} textAnchor="middle" fontSize="9" fill="#173135" fontWeight="800">{npcsHere.length > 9 ? "9+" : npcsHere.length}</text>}</g>}
                 {id === game.shelter.hex && <g className="map-shelter-marker" aria-hidden="true">
@@ -645,6 +660,7 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
                 {formerBase && <g aria-hidden="true"><circle cx={x+27} cy={y-29} r="13" fill="#e7d3a2" stroke="#173135" strokeWidth="2" />
                   <Package x={x+18} y={y-38} width={18} height={18} stroke="#173135" strokeWidth={2.5} /></g>}
                 {membersHere.length > 0 && <MapGroupMarker
+                  compact
                   hexId={id}
                   x={x}
                   y={y}
@@ -658,16 +674,13 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
           })}
         </WorldMapViewport>
         <div className="map-caption" hidden={mobile}>
-          <span><i className="legend-swatch" style={{background:"#35686a"}} /> Explorado</span>
-          <span><i className="legend-swatch legend-observed" /> Avistado</span>
-          <span><i className="legend-swatch" style={{background:"#17282d"}} /> Desconhecido</span>
-          <span><i className="legend-swatch legend-nearby" /> Adjacente</span>
-          <span className="flex items-center gap-1"><Footprints size={15} /> Pegadas = grupo principal</span>
-          <span className="flex items-center gap-1"><Users size={15} /> Retrato = sobrevivente ou subgrupo</span>
-          {game.shelter.hex && <span className="flex items-center gap-1"><House size={15} /> Casa = abrigo atual</span>}
-          {(game.formerShelters ?? []).length > 0 && <span className="flex items-center gap-1"><Package size={15} /> Antiga base</span>}
-          <span className="flex items-center gap-1"><MapPin size={15} /> Pin = locais descobertos</span>
-          {(game.npcs ?? []).length > 0 && <span className="flex items-center gap-1"><Users size={15} /> PNJs</span>}
+          <span><i className="map-legend-group" /> Grupo</span>
+          <span><i className="map-legend-selected" /> Selecionado</span>
+          <span><House size={13} /> Abrigo</span>
+          <span><i className="map-legend-observed" /> Avistado</span>
+          <span><i className="map-legend-unknown" /> Desconhecido</span>
+          <span><Package size={13} /> Achados</span>
+          <span><i className="hex-event-dot" /> Acontecimento</span>
         </div>
       </div>
       <div className="map-group-summary" aria-label="Selecionar grupo ativo">
@@ -680,8 +693,8 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
           <span><b>{group.main ? "Principal" : group.members.length === 1 ? group.members[0].name : group.members.map(person => person.name.split(" ")[0]).join(" · ")}</b><small>Hex {group.hex} · {game.publicActivities?.some(a=>a.participantIds.some(id=>group.members.some(p=>p.id===id))) || game.activities?.some(a=>a.status==="running"&&a.participantIds.some(id=>group.members.some(p=>p.id===id))) ? "em atividade" : "disponível"}</small></span>
         </button>)}
       </div>
-      <p hidden={mobile} className="text-sm subtle mt-2">Clique ou toque nas pegadas/retratos para escolher o grupo ativo; os hexes adjacentes a ele ficam destacados. Clique em um hex para abrir os detalhes e, no computador, use o botão direito para ações rápidas.</p>
-      {mobile && <><button ref={mobileSelectionTrigger} type="button" className="mobile-sector-selection" onClick={() => setSheetOpen(true)} aria-haspopup="dialog"><span><small>Hex {selected} · {record.discovery}</small><b>{visible ? sectorName : "Setor desconhecido"}</b></span><span>Detalhes →</span></button><details className="mobile-map-help"><summary>Como usar o mapa</summary><p>Toque em um setor para abrir locais e ações. Use as pegadas ou retratos para selecionar o grupo. Arraste para navegar e use os controles de zoom.</p></details></>}
+      <p hidden={mobile} className="text-sm subtle mt-2">Clique ou toque no marcador do grupo para escolher o grupo ativo; os hexes adjacentes a ele ficam destacados. Clique em um hex para abrir os detalhes e, no computador, use o botão direito para ações rápidas.</p>
+      {mobile && <><button ref={mobileSelectionTrigger} type="button" className="mobile-sector-selection" onClick={() => setSheetOpen(true)} aria-haspopup="dialog"><span><small>Hex {selected} · {record.discovery}</small><b>{visible ? sectorName : "Setor desconhecido"}</b></span><span>Detalhes →</span></button><details className="mobile-map-help"><summary>Como usar o mapa</summary><p>Toque em um setor para abrir locais e ações. Use o marcador do grupo para selecioná-lo. Arraste para navegar e use os controles de zoom.</p></details></>}
       <p hidden={mobile} className="intro-line mt-4">O setor ganha nome e sinais quando é avistado. Um hex pode conter vários locais; suas áreas internas continuam em aberto até a exploração.</p>
     </section>
 
@@ -718,13 +731,7 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
       onMoved={destination => { setActiveGroupHex(destination); setSelected(destination); setFocusHex(destination); }} />}
     {relocateDestination && <ShelterMoveDialog game={game} edit={edit} mode="relocate" destination={relocateDestination}
       open={relocateOpen} onOpenChange={setRelocateOpen} hideTrigger />}
-    {!playerPreview && !compact && !mobile ? <Dialog open={sheetOpen} onOpenChange={setSheetOpen}>
-      <DialogContent showCloseButton={false} className="hex-sector-dialog">
-        <DialogTitle className="sr-only">Setor do mapa · Hex {selected}</DialogTitle>
-        <DialogDescription className="sr-only">Exploração, locais e ferramentas de gestão do setor selecionado.</DialogDescription>
-        {detailPanel}
-      </DialogContent>
-    </Dialog> : compact || mobile ? <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+    {compact || mobile ? <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
       <SheetContent onCloseAutoFocus={mobile ? event => { event.preventDefault(); mobileSelectionTrigger.current?.focus(); } : undefined} side="bottom" showCloseButton={false} className={`max-h-[88dvh] overflow-y-auto rounded-t-xl p-0${mobile ? " mobile-sector-sheet" : ""}`}>
         <SheetHeader className={playerPreview || mobile ? "sticky top-0 z-10 flex flex-row items-center justify-between border-b bg-background px-4 py-3" : "sr-only"}>
           <div><SheetTitle>Hex {selected}</SheetTitle><SheetDescription className="sr-only">Detalhes do setor selecionado no mapa.</SheetDescription></div>
@@ -732,6 +739,6 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
         </SheetHeader>
         {detailPanel}
       </SheetContent>
-    </Sheet> : <div className="hex-detail-desktop">{detailPanel}</div>}
+    </Sheet> : <aside className="hex-detail-desktop" aria-label="Detalhes do setor" hidden={mapExpanded}>{detailPanel}</aside>}
   </div>;
 }
