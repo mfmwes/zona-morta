@@ -89,12 +89,15 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
   visible.log = visible.log.filter(entry => entry.kind !== "evento" && (entry.kind === "chat" || entry.kind === "rolagem" || entry.kind === "ameaça" || entry.actorId === survivorId
     || (entry.kind === "busca" && entry.participantIds?.includes(survivorId))));
   for (const hex of Object.values(visible.hexes)) {
+    if (hex.connections) hex.connections = hex.connections.filter(link => visible.hexes[link.to]?.discovery !== "desconhecido");
     delete hex.searchSequence;
     hex.notes = "";
     hex.infestation = null;
     if (hex.discovery === "desconhecido") {
       delete hex.terrain;
       delete hex.passage;
+      delete hex.region;
+      delete hex.connections;
       hex.sector = null; hex.signs = ""; hex.points = []; hex.events = [];
       continue;
     }

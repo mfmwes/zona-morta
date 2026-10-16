@@ -13,6 +13,8 @@ import { shelterTravelMinutes } from "@/lib/shelter-projects";
 import { displayTime } from "@/lib/game";
 import { timedActionParticipantIssue } from "@/lib/activity";
 import { movementSources, scheduleSurvivorTravel } from "@/lib/hex-actions";
+import { worldMovementIssue } from "@/lib/world";
+import { groupTravelMultiplier } from "@/lib/survivor-conditions";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 
@@ -43,9 +45,9 @@ export function SurvivorMoveDialog({
   const selected = selectedIds.length || sourceHex ? selectedIds : members.map(person => person.id);
   const destinationMembers = survivorsAtHex(game, destination);
   const destinationName = game.hexes[destination]?.sector?.name ?? `Hex ${destination}`;
-  const travelMinutes = shelterTravelMinutes(game, source?.hex ?? game.partyHex, destination, (game.hexes[destination]?.routeHours ?? 1) * 60);
+  const travelMinutes = Math.ceil(shelterTravelMinutes(game, source?.hex ?? game.partyHex, destination, (game.hexes[destination]?.routeHours ?? 1) * 60) * groupTravelMultiplier(game, selected));
   const parallel = hasMultipleSurvivorGroups(game);
-  const issue = timedActionParticipantIssue(game, selected);
+  const issue = timedActionParticipantIssue(game, selected) || worldMovementIssue(game.hexes, source?.hex ?? game.partyHex, destination);
 
   function changeSource(value: string) {
     const next = sources.find(group => group.hex === value);

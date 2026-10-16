@@ -4,8 +4,9 @@ import { createConflictScene, resolveSurvivorDamageTier } from "@/lib/conflict";
 import { requestTableRest } from "@/lib/table-rest";
 import { assignCustomSector } from "@/lib/sectors";
 import { prepareLocationForExploration } from "@/lib/hex-automation";
+import { expandWorld, setWorldConnection } from "@/lib/world";
 
-export function previewFixture(options: { base?: boolean; conflict?: boolean; rest?: boolean; objects?: number } = {}) {
+export function previewFixture(options: { base?: boolean; conflict?: boolean; rest?: boolean; roads?: boolean; objects?: number } = {}) {
   const game = defaultState({ withShelter: options.base, startSectorId: "morro" });
   game.campaignId = "visual-sandbox";
   for (const [id, name] of [['0,0','Bairro residencial'],['0,-1','Reservatórios'],['1,0','Praça central'],['-1,0','Oficinas'],['0,1','Mercado velho'],['1,-1','Estação ferroviária'],['-1,1','Margem do canal']]) {
@@ -41,5 +42,35 @@ export function previewFixture(options: { base?: boolean; conflict?: boolean; re
     game.conflict = createConflictScene({ name: "Encontro no reservatório", sceneNumber: game.scene ?? 1, day: game.day, time: "08:00", survivorIds: game.survivors.map(s => s.id) });
     game.conflict.damageRequests = [{ id: "damage-1", sourceThreatId: "threat", targetSurvivorId: game.survivors[0].id, sourceName: "Invasor", attackName: "Golpe", damage: 5, damageType: "Físico", tier: resolveSurvivorDamageTier(8,14,5), status: "pending", createdDay: game.day, createdTime: "08:00" }];
   }
+  if (options.roads) prepareRoadJourney(game);
   return game;
+}
+
+function prepareRoadJourney(game: ReturnType<typeof defaultState>) {
+  for (const hex of Object.values(game.hexes)) hex.region = "Santa Aurora";
+  assignCustomSector(game, "2,0", "Saída leste"); game.hexes["2,0"].discovery = "explorado";
+  expandWorld(game, { origin: "2,0", mode: "direction", direction: 1, length: 8, terrain: "rural", passage: "road", connect: true });
+  for (let q = 3; q <= 10; q++) {
+    const id = `${q},0`;
+    assignCustomSector(game, id, q === 3 ? "Posto da rodovia" : q === 6 ? "Ponte bloqueada" : q >= 9 ? "Entrada de Vale Seco" : "Trecho de rodovia");
+    Object.assign(game.hexes[id], { discovery: "explorado", terrain: q >= 9 ? "urban" : q === 4 || q === 8 ? "forest" : "rural", region: q >= 9 ? "Vale Seco" : "Rodovia entre cidades" });
+  }
+  setWorldConnection(game.hexes, "0,0", "1,0", "road"); setWorldConnection(game.hexes, "1,0", "2,0", "road");
+  setWorldConnection(game.hexes, "5,0", "6,0", "road", true);
+  for (const [origin, name] of [["5,0", "Sítio abandonado"], ["6,0", "Desvio pela mata"]]) {
+    const [q] = origin.split(",");
+    expandWorld(game, { origin, mode: "neighbor", direction: 2, length: 1, terrain: q === "5" ? "rural" : "forest", passage: "trail" });
+    assignCustomSector(game, `${q},1`, name); game.hexes[`${q},1`].discovery = "explorado";
+  }
+  setWorldConnection(game.hexes, "5,0", "5,1", "trail"); setWorldConnection(game.hexes, "5,1", "6,1", "trail"); setWorldConnection(game.hexes, "6,1", "7,0", "trail");
+  const cityNames = ["Estação de Vale Seco", "Distrito industrial", "Bairro sul", "Praça de Vale Seco", "Acesso oeste", "Hospital de Vale Seco"];
+  for (let direction = 0; direction < 6; direction++) {
+    const added = expandWorld(game, { origin: "10,0", mode: "neighbor", direction, length: 1, terrain: "urban", passage: "road", connect: true, region: "Vale Seco" });
+    for (const id of added) { assignCustomSector(game, id, cityNames[direction]); game.hexes[id].discovery = "avistado"; }
+  }
+  for (let q = 4; q <= 8; q++) {
+    const added = expandWorld(game, { origin: `${q},0`, mode: "neighbor", direction: 5, length: 1, terrain: q % 2 ? "rural" : "forest", passage: "none" });
+    for (const id of added) { assignCustomSector(game, id, q % 2 ? "Campos abertos" : "Mata à margem"); game.hexes[id].discovery = "avistado"; }
+  }
+  game.survivors.push(...["Bia", "Caio"].map((name, index) => ({ ...structuredClone(game.survivors[0]), id: `road-person-${index}`, name })));
 }

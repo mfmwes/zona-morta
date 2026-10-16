@@ -44,7 +44,7 @@ import './preview.css';
 declare global { interface Window { __qa: { game: () => GameState; mutate: (fn: (draft: GameState) => void) => void } } }
 const query = new URLSearchParams(location.search);
 function Preview() {
-  const [full, setFull] = useState(() => previewFixture({base:query.has('base'),conflict:query.get('screen')==='conflict',rest:query.get('scenario')==='rest',objects:Number(query.get('objects')||3)}));
+  const [full, setFull] = useState(() => previewFixture({base:query.has('base'),conflict:query.get('screen')==='conflict',rest:query.get('scenario')==='rest',roads:query.get('scenario')==='roads',objects:Number(query.get('objects')||3)}));
   const current = useRef(full);
   const [role,setRole] = useState(query.get('role') ?? 'master');
   const [screen,setScreen] = useState(query.get('screen') ?? 'scene');

@@ -11,6 +11,7 @@ import { scheduleGroupRest, restActionsFor, type RestChoice } from "./abilities"
 import { eventTriggerReady } from "./hex-generators";
 import { projectPlayerSceneBoard, type SceneBoardScene } from "./scene-board";
 import { shelterTravelMinutes } from "./shelter-projects";
+import { worldMovementIssue } from "./world";
 import { equipmentModifiers } from "./equipment";
 import { resolveActionRoll, resolveRollResources, rollDie, type Edge } from "./rolls";
 import { consumeDailyProvision } from "./survival";
@@ -136,7 +137,7 @@ export function projectPlayerActions(game: GameState, actorId: string): PublicPl
       }
     }
   }
-  result.routes = state.policy.routes.filter(r => r.from === hexId && game.hexes[r.to]?.discovery !== "desconhecido" && game.hexes[r.to]).map(r => ({ destination: r.to, name: game.hexes[r.to].sector?.name ?? `Hex ${r.to}`, minutes: shelterTravelMinutes(game, r.from, r.to, game.hexes[r.to].routeHours * 60) }));
+  result.routes = state.policy.routes.filter(r => r.from === hexId && game.hexes[r.to]?.discovery !== "desconhecido" && game.hexes[r.to] && !worldMovementIssue(game.hexes, r.from, r.to)).map(r => ({ destination: r.to, name: game.hexes[r.to].sector?.name ?? `Hex ${r.to}`, minutes: shelterTravelMinutes(game, r.from, r.to, game.hexes[r.to].routeHours * 60) }));
   result.operations = state.operations.filter(op => op.day === game.day && (op.status === "scheduled" || game.activities?.some(a => a.status === "running" && a.operationId === op.id) || op.scene === (game.scene ?? 1)) && (op.type === "transfer" || op.type === "exception" ? op.initiatorId === actorId || op.invitedIds.includes(actorId) : op.hexId === hexId || op.initiatorId === actorId || op.invitedIds.includes(actorId))).map(op => {
     const safe: Omit<TeamOperation, "itemSnapshot" | "plans"> = { ...op };
     delete (safe as TeamOperation).itemSnapshot; delete (safe as TeamOperation).plans;
@@ -305,6 +306,8 @@ function executeCommand(game: GameState, actorId: string, cmd: PlayerCommand, di
       });
     } else if (cmd.type === "travel") {
       if (!policy.routes.some(r => r.from === hexId && r.to === cmd.destination) || !game.hexes[cmd.destination] || game.hexes[cmd.destination].discovery === "desconhecido") return "Esta rota não foi liberada pelo mestre.";
+      const routeIssue = worldMovementIssue(game.hexes, hexId, cmd.destination);
+      if (routeIssue) return routeIssue;
       proposal.destination = cmd.destination;
     } else if (cmd.type === "rest") {
       if (!policy.rest) return "O mestre ainda não liberou a conclusão de descansos pela equipe.";

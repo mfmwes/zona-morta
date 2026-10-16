@@ -8,7 +8,7 @@ import { transferPortionLots } from "./provisions";
 import { groupedProvisionPortions } from "./provision-items";
 import { defaultThreatTemplates, type ThreatTemplate } from "./threats";
 import type { ConflictScene, PublicConflictScene } from "./conflict";
-import type { Terrain, Passage } from "./world";
+import type { Terrain, Passage, HexConnection } from "./world";
 import type { SceneBoardState } from "./scene-board";
 import type { LocationPreparation } from "./hex-automation-types";
 import type { SurvivorCondition } from "./survivor-condition-types";
@@ -77,6 +77,8 @@ export type HexEvent = {
 export type HexState = {
   terrain?: Terrain;
   passage?: Passage;
+  region?: string;
+  connections?: HexConnection[];
   sector: Sector | null;
   discovery: Discovery;
   infestation: number | null;

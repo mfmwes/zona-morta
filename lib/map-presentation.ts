@@ -4,9 +4,10 @@ const normalize = (value: string) => value.normalize("NFD").replace(/[\u0300-\u0
 /** Artwork is chosen only from the visible sector, never its hidden points or events. */
 export function mapArtworkIndex(hex: HexState): number | null {
   if (hex.discovery === "desconhecido") return null;
+  const name = normalize(hex.sector?.name ?? "");
+  if (/ponte/.test(name) && (hex.passage === "road" || hex.connections?.some(link => link.kind === "road"))) return 6;
   const terrain = hex.terrain ?? "urban";
   if (terrain !== "urban") return { rural: 12, forest: 13, mountain: 14, swamp: 15 }[terrain];
-  const name = normalize(hex.sector?.name ?? "");
   const categories: [RegExp, number][] = [
     [/reservat|agua|bombeamento/, 1], [/praca|monumento/, 2], [/estacao|ferrovi/, 3],
     [/industr|oficina|fabrica|conteiner|deposit/, 4], [/mercado|feira|comerc/, 5],

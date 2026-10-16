@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import type { HexState } from "@/lib/game";
 import { hexCenter, mapBounds, parseHex, worldHexes } from "@/lib/world";
 
-export function WorldMapViewport({ hexes, activeHex, selected, focusHex, playerPreview, onSelect, children }: {
+export function WorldMapViewport({ hexes, activeHex, selected, focusHex, playerPreview, onSelect, children, plannedPath }: {
   hexes: Record<string, HexState>; activeHex: string; selected: string; focusHex: string;
   playerPreview: boolean; onSelect: (id: string) => void; children: ReactNode;
+  plannedPath?: string[];
 }) {
   const viewport = useRef<HTMLDivElement>(null);
   const start = hexCenter(parseHex(activeHex) ?? { q: 0, r: 0 });
@@ -92,6 +93,10 @@ export function WorldMapViewport({ hexes, activeHex, selected, focusHex, playerP
         <Button size="sm" variant="outline" onClick={() => setCamera({ x: bounds.x, y: bounds.y, width: fitWidth })}><Maximize /> Ver tudo</Button>
         <Button size="sm" variant="outline" onClick={() => center(activeHex)}><Crosshair /> Grupo ativo</Button>
         <Button size="sm" variant="outline" onClick={() => center(selected)}>Hex selecionado</Button>
+        {Boolean(plannedPath?.length) && <Button size="sm" variant="outline" onClick={() => {
+          const routeBounds = mapBounds(plannedPath!.map(id => parseHex(id)!));
+          setCamera({ x: routeBounds.x, y: routeBounds.y, width: Math.max(routeBounds.width, routeBounds.height * aspect) });
+        }}>Ver trajeto</Button>}
       </div>
       <form className="world-map-search" onSubmit={event => {
         event.preventDefault();

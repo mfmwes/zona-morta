@@ -4,7 +4,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Counter, Pick } from "@/components/game-controls";
+import { Counter, Pick, Field } from "@/components/game-controls";
+import { Switch } from "@/components/ui/switch";
 import { addLog, type GameState } from "@/lib/game";
 import { directions, expandWorld, expansionHexes, hexCenter, mapBounds, MAX_WORLD_HEXES, passages, terrains, worldHexes, type Expansion, type Passage, type Terrain } from "@/lib/world";
 
@@ -17,7 +18,9 @@ export function WorldExpansionDialog({ game, origin, edit, onClose, onExpanded }
   const [length, setLength] = useState(3);
   const [terrain, setTerrain] = useState<Terrain>("urban");
   const [passage, setPassage] = useState<Passage>("none");
-  const input = { origin, mode, direction, length, terrain, passage };
+  const [connect, setConnect] = useState(false);
+  const [region, setRegion] = useState("");
+  const input = { origin, mode, direction, length, terrain, passage, connect: connect && mode !== "ring" && passage !== "none", region };
   const additions = expansionHexes(game.hexes, input);
   const total = Object.keys(game.hexes).length + additions.length;
   const existing = worldHexes(game.hexes);
@@ -53,7 +56,9 @@ export function WorldExpansionDialog({ game, origin, edit, onClose, onExpanded }
         <Pick contentClassName="z-[110]" label="Terreno dos novos hexes" value={terrain} options={Object.entries(terrains).map(([value, label]) => ({ value, label }))} onChange={value => setTerrain(value as Terrain)} />
         <Pick contentClassName="z-[110]" label="Via dos novos hexes" value={passage} options={Object.entries(passages).map(([value, label]) => ({ value, label }))} onChange={value => setPassage(value as Passage)} />
       </div>
-      <p className="text-sm subtle">Terreno e via são independentes: uma estrada pode atravessar a floresta. A travessia começa em 1 hora e pode ser ajustada nas ferramentas de cada hex.</p>
+      <Field label="Cidade ou região dos novos hexes (opcional)" value={region} onChange={value => setRegion(value.slice(0, 80))} />
+      {passage !== "none" && mode !== "ring" && <label className="flex items-center gap-2 text-sm"><Switch checked={connect} onCheckedChange={setConnect} /> Conectar a via desde o hex de origem</label>}
+      <p className="text-sm subtle">Conectar vias é opcional: ative apenas para ligar pontos do mapa. Hexes sem conexão continuam com a exploração normal. A travessia começa em 1 hora e pode ser ajustada nas ferramentas de cada hex.</p>
       <div className="world-expansion-preview">
         <svg viewBox={`${bounds.x - bounds.width / 2} ${bounds.y - bounds.height / 2} ${bounds.width} ${bounds.height}`} role="img" aria-label={`Prévia: ${additions.length} novos hexes destacados em dourado`}>
           {[...existing, ...additions].map(hex => {

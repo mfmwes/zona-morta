@@ -7,6 +7,7 @@ export const terrains = { urban: "Urbano", rural: "Rural", forest: "Floresta", m
 export type Terrain = keyof typeof terrains;
 export const passages = { none: "Sem via definida", road: "Estrada", trail: "Trilha", railway: "Ferrovia" } as const;
 export type Passage = keyof typeof passages;
+export type HexConnection = { to: string; kind: Exclude<Passage, "none">; blocked: boolean };
 export type HexCoordinate = { q: number; r: number; id: string };
 export const directions = [
   { q: 1, r: -1, label: "Nordeste" }, { q: 1, r: 0, label: "Leste" },
@@ -39,7 +40,7 @@ export function worldFrontier(hexes: Record<string, HexState>): HexCoordinate[] 
   return [...frontier.values()];
 }
 
-export type Expansion = { origin: string; mode: "neighbor" | "direction" | "ring"; direction: number; length: number; terrain: Terrain; passage: Passage };
+export type Expansion = { origin: string; mode: "neighbor" | "direction" | "ring"; direction: number; length: number; terrain: Terrain; passage: Passage; connect?: boolean; region?: string };
 export function expansionHexes(hexes: Record<string, HexState>, input: Expansion): HexCoordinate[] {
   const source = parseHex(input.origin);
   if (!source || !Object.hasOwn(hexes, input.origin)) return [];
@@ -53,13 +54,55 @@ export function expansionHexes(hexes: Record<string, HexState>, input: Expansion
 }
 export function expandWorld(game: GameState, input: Expansion): string[] {
   if (!Object.hasOwn(terrains, input.terrain) || !Object.hasOwn(passages, input.passage)) return [];
+  if (input.region !== undefined && (typeof input.region !== "string" || input.region.length > 80)) return [];
   const additions = expansionHexes(game.hexes, input);
   if (Object.keys(game.hexes).length + additions.length > MAX_WORLD_HEXES) return [];
   for (const hex of additions) game.hexes[hex.id] = {
     sector: null, discovery: "desconhecido", infestation: null, signs: "", notes: "",
     terrain: input.terrain, passage: input.passage, routeHours: 1, points: [], events: [],
+    ...(input.region?.trim() ? { region: input.region.trim() } : {}),
   };
+  if (additions.length && input.connect && input.passage !== "none" && input.mode !== "ring") {
+    const origin = parseHex(input.origin)!;
+    const direction = directions[input.direction];
+    let from = input.origin;
+    for (let i = 1; i <= (input.mode === "neighbor" ? 1 : input.length); i++) {
+      const to = coordinate(origin.q + direction.q * i, origin.r + direction.r * i).id;
+      // Preserve previously configured connections, including blocked passages.
+      if (!worldConnection(game.hexes, from, to)) setWorldConnection(game.hexes, from, to, input.passage);
+      from = to;
+    }
+  }
   return additions.map(hex => hex.id);
+}
+
+export function worldConnection(hexes: Record<string, HexState>, from: string, to: string): HexConnection | undefined {
+  const forward = hexes[from]?.connections?.find(link => link.to === to);
+  const reverse = hexes[to]?.connections?.find(link => link.to === from);
+  const connection = forward ?? reverse;
+  return connection ? { to, kind: connection.kind, blocked: Boolean(forward?.blocked || reverse?.blocked) } : undefined;
+}
+
+/** An edge belongs to both endpoints; updates and removals are always reciprocal. */
+export function setWorldConnection(hexes: Record<string, HexState>, from: string, to: string, kind: Passage, blocked = false): boolean {
+  if (!hexes[from] || !hexes[to] || !Object.hasOwn(passages, kind) || !adjacentHexes(from).some(hex => hex.id === to)) return false;
+  for (const [source, destination] of [[from, to], [to, from]]) {
+    const links = (hexes[source].connections ?? []).filter(link => link.to !== destination);
+    if (kind !== "none") links.push({ to: destination, kind, blocked });
+    if (links.length) hexes[source].connections = links;
+    else delete hexes[source].connections;
+  }
+  return true;
+}
+
+export function visibleWorldConnections(hexes: Record<string, HexState>) {
+  return Object.entries(hexes).flatMap(([from, hex]) => hex.discovery === "desconhecido" ? []
+    : (hex.connections ?? []).filter(link => from < link.to && hexes[link.to]?.discovery !== "desconhecido" && hexes[link.to])
+      .map(link => ({ from, ...link })));
+}
+
+export function worldMovementIssue(hexes: Record<string, HexState>, from: string, to: string): string | null {
+  return worldConnection(hexes, from, to)?.blocked ? "A passagem entre estes hexes está bloqueada. Escolha um desvio ou resolva o bloqueio na gestão do setor." : null;
 }
 
 export function hexCenter(hex: Pick<HexCoordinate, "q" | "r">) {
@@ -120,5 +163,14 @@ export function validWorld(value: unknown): value is Record<string, HexState> {
     && (hex.searchSequence === undefined || (Number.isSafeInteger(hex.searchSequence) && hex.searchSequence >= 0))
     && Array.isArray(hex.events) && hex.events.length <= 160 && hex.events.every(validEvent)
     && (hex.terrain === undefined || Object.hasOwn(terrains, hex.terrain))
-    && (hex.passage === undefined || Object.hasOwn(passages, hex.passage)));
+    && (hex.passage === undefined || Object.hasOwn(passages, hex.passage))
+    && (hex.region === undefined || (typeof hex.region === "string" && hex.region.length <= 80))
+    && (hex.connections === undefined || (Array.isArray(hex.connections) && hex.connections.length <= 6
+      && new Set(hex.connections.map((link: HexConnection) => link?.to)).size === hex.connections.length
+      && hex.connections.every((link: HexConnection) => link && typeof link.to === "string"
+        && ["road", "trail", "railway"].includes(link.kind) && typeof link.blocked === "boolean"
+        && adjacentHexes(id).some(neighbor => neighbor.id === link.to)
+        && Object.hasOwn(value, link.to)
+        && Array.isArray((value as Record<string, HexState>)[link.to]?.connections)
+        && (value as Record<string, HexState>)[link.to]?.connections?.some(reverse => reverse?.to === id && reverse.kind === link.kind && reverse.blocked === link.blocked)))));
 }

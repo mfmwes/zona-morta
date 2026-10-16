@@ -15,6 +15,40 @@
 .world-expansion-preview { border-radius: 8px; overflow: hidden; background: #132b2e; color: #edf5ed; }
 .world-expansion-preview svg { display: block; width: 100%; height: 180px; padding: 8px; }
 .world-expansion-preview p { padding: 10px; font-size: .85rem; border-top: 1px solid #426366; }
+.map-road-overlay path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.map-road-edge { stroke: #142c30; stroke-width: 7; }
+.map-road-surface { stroke: #9eaba2; stroke-width: 4; }
+.map-road-trail { stroke: #bcad82; stroke-width: 3; stroke-dasharray: 5 4; }
+.map-road-railway { stroke: #a3b6c0; stroke-dasharray: 2 3; }
+.map-road-overlay .map-planned-route { stroke: #edc578; stroke-width: 2; }
+.map-road-blocked { fill: #743e35; stroke: #ffb7a7; stroke-width: 1.5; }
+.map-road-legend, .map-route-legend { display: inline-block; width: 18px; height: 3px; background: #9eaba2; }
+.map-route-legend { background: #edc578; }
+.world-route-editor { margin: 12px 0 18px; border-block: 1px solid var(--border); padding: 10px 0; }
+.world-route-editor summary { font-weight: 600; cursor: pointer; }
+.world-route-editor > .field, .world-route-editor > p { margin-top: 10px; }
+.world-route-editor-row { display: flex; align-items: end; gap: 12px; margin-top: 12px; }
+.world-route-editor-row > div { min-width: 0; flex: 1; }
+.world-route-block { display: flex; gap: 7px; align-items: center; font-size: .8rem; padding-bottom: 9px; }
+.journey-planner { margin-top: 16px; border-block: 1px solid var(--border); padding-block: 16px; }
+.journey-planner-heading, .journey-next-step { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.journey-planner > p { margin-top: 8px; }
+.journey-planner-controls { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin-block: 14px; }
+.journey-planner-controls .metric { padding: 10px; }
+.journey-planner-stats { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; margin-block: 16px; }
+.journey-planner-stats span, .journey-planner-stats small { display: block; font-size: .75rem; color: var(--muted-foreground); }
+.journey-planner-stats b { display: block; margin-top: 3px; font-size: .9rem; font-variant-numeric: tabular-nums; }
+.journey-stages { display: grid; gap: 10px; margin-block: 16px; }
+.journey-stages li { display: flex; align-items: center; gap: 10px; padding-block: 10px; border-top: 1px solid var(--border); }
+.journey-stages li > div { flex: 1; min-width: 0; }
+.journey-stages span, .journey-stages small { display: block; font-size: .78rem; color: var(--muted-foreground); overflow-wrap: anywhere; }
+.journey-stages b { font-size: .85rem; }
+.journey-next-step { margin-top: 14px; justify-content: flex-start; flex-wrap: wrap; }
+@media (max-width: 700px) {
+  .journey-planner-stats { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .journey-planner-controls { grid-template-columns: minmax(0,1fr); }
+  .world-route-editor-row { flex-wrap: wrap; }
+}
 @media (max-width: 600px) {
   .world-map-toolbar { padding: 10px; }
   .world-map-toolbar button { font-size: .78rem; }

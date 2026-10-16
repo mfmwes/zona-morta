@@ -9,7 +9,7 @@ import {
   type GameState,
 } from "./game";
 import { revealSector } from "./sectors";
-import { adjacentHexes, parseHex } from "./world";
+import { adjacentHexes, parseHex, worldMovementIssue } from "./world";
 import { advanceCampaignTime, advanceParticipantTime, completeSingleGroupActivity } from "./time";
 import { shelterTravelMinutes } from "./shelter-projects";
 import { parallelTimeLabel, participantTimePreview, survivorTimedCommitment } from "./activity";
@@ -76,6 +76,8 @@ export function moveSurvivors(game: GameState, destination: string, survivorIds:
   if (busy?.commitment) return { ok: false, message: `${busy.person.name} está ocupado: trabalhando em ${busy.commitment.projectName} até ${busy.commitment.until}.` };
   const sourceHex = survivorHex(game, people[0]);
   if (!people.every(person => survivorHex(game, person) === sourceHex)) return { ok: false, message: "" };
+  const routeIssue = worldMovementIssue(game.hexes, sourceHex, destination);
+  if (routeIssue) return { ok: false, message: routeIssue };
 
   const source = game.hexes[sourceHex] ? parseHex(sourceHex) : null;
   const target = parseHex(destination);
@@ -126,10 +128,11 @@ export function hexActionOptions(game: GameState, id: string) {
   const mainGroup = survivorsAtHex(game, game.partyHex);
   const canObserve = (sources.length > 0 || (game.survivors.length === 0 && nearby)) && record.discovery === "desconhecido";
   const canTravel = nearby && record.discovery !== "desconhecido"
+    && !worldMovementIssue(game.hexes, game.partyHex, id)
     && (mainGroup.length === 0 ? game.minutes + travelMinutes < 1440
       : participantTimePreview(game, mainGroup.map(person => person.id), travelMinutes).ok);
   const canMoveSurvivors = sources.some(group =>
-    participantTimePreview(game, group.members.map(person => person.id),
+    !worldMovementIssue(game.hexes, group.hex, id) && participantTimePreview(game, group.members.map(person => person.id),
       shelterTravelMinutes(game, group.hex, id, record.routeHours * 60)).ok)
     && record.discovery !== "desconhecido";
   const canEstablish = (peopleHere.length > 0 || (game.survivors.length === 0 && atParty))
@@ -211,6 +214,8 @@ export function scheduleSurvivorTravel(game: GameState, destination: string, ids
   const source = sources.find(group => ids.length > 0 && ids.every(id => group.members.some(p => p.id === id)));
   if (!destinationHex || destinationHex.discovery === "desconhecido" || !source)
     return { ok: false, message: "Escolha sobreviventes no mesmo hex adjacente e um destino revelado." };
+  const routeIssue = worldMovementIssue(game.hexes, source.hex, destination);
+  if (routeIssue) return { ok: false, message: routeIssue };
   const baseMinutes = shelterTravelMinutes(game, source.hex, destination, destinationHex.routeHours * 60);
   const multiplier = groupTravelMultiplier(game, ids);
   const minutes = Math.ceil(baseMinutes * multiplier);

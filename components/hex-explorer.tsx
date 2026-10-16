@@ -18,6 +18,13 @@ import { ShelterMoveDialog } from "@/components/shelter-move";
 import { SurvivorMoveDialog } from "@/components/survivor-move-dialog";
 import { WorldMapViewport } from "@/components/world-map-viewport";
 import { WorldExpansionDialog } from "@/components/world-expansion-dialog";
+import { WorldRouteEditor } from "@/components/world-route-editor";
+import { MapRoads } from "@/components/map-roads";
+import { JourneyPlanner } from "@/components/journey-planner";
+import { planJourney, type JourneyMode } from "@/lib/journey";
+import { worldMovementIssue, visibleWorldConnections } from "@/lib/world";
+import { eventMovementIssue } from "@/lib/event-conditions";
+import { groupTravelMultiplier } from "@/lib/survivor-conditions";
 import { hexCenter, parseHex, passages, terrains, worldHexes, type Terrain, type Passage } from "@/lib/world";
 import { MapHexArt } from "@/components/map-hex-art";
 import { mapArtworkIndex } from "@/lib/map-presentation";
@@ -32,7 +39,7 @@ import { assignCustomSector, redrawSector, revealSector } from "@/lib/sectors";
 import { searchAreaLabel, searchAvailabilityError } from "@/lib/exploration";
 import { HexSearchDialog, type HexSearchRequest } from "@/components/hex-search-dialog";
 import { PlayerHexSearchDialog, type PlayerHexSearchRequest } from "@/components/player-hex-search-dialog";
-import { movementSources, performHexAction, type HexQuickAction } from "@/lib/hex-actions";
+import { movementSources, performHexAction, scheduleSurvivorTravel, type HexQuickAction } from "@/lib/hex-actions";
 import { shelterTravelMinutes } from "@/lib/shelter-projects";
 import { eventStatus, eventTriggerLabel, eventTriggerReady, generateHexContent } from "@/lib/hex-generators";
 import { HexEventGuideDialog } from "@/components/hex-event-guide-dialog";
@@ -95,6 +102,12 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
   const [moveOpen, setMoveOpen] = useState(false);
   const [moveDestination, setMoveDestination] = useState<string | null>(null);
   const [activeGroupHex, setActiveGroupHex] = useState(game.partyHex);
+  const [planning, setPlanning] = useState(false);
+  const [showRoads, setShowRoads] = useState(true);
+  const [journeyDestination, setJourneyDestination] = useState("");
+  const [journeyMode, setJourneyMode] = useState<JourneyMode>("any");
+  const [marchHours, setMarchHours] = useState(8);
+  const [reserveDays, setReserveDays] = useState(0);
 
 
   useEffect(() => {
@@ -105,6 +118,9 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
   }, [playerPreview]);
 
   function selectHex(id: string, openDetails = true) {
+    if (planning && openDetails && !playerPreview) {
+      setJourneyDestination(id); setSelected(id); return;
+    }
     if (id !== selected) {
       setSelected(id);
       setSignsDraft(null); setNotesDraft(null);
@@ -147,11 +163,28 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
     ?? publicGroups.find(group => group.main)
     ?? publicGroups[0];
   const activeSourceHex = activeGroup?.hex ?? game.partyHex;
-  const mainTravelIssue = timedActionParticipantIssue(game, survivorsAtHex(game, game.partyHex).map(p=>p.id));
+  const mainTravelIssue = timedActionParticipantIssue(game, survivorsAtHex(game, game.partyHex).map(p=>p.id)) || worldMovementIssue(game.hexes, game.partyHex, selected);
   const activeTravelMinutes = shelterTravelMinutes(game, activeSourceHex, selected, record.routeHours * 60);
   const [activeQ, activeR] = activeSourceHex.split(",").map(Number);
   const activeAdjacentToSelected = hexDistance(area.q - activeQ, area.r - activeR) === 1;
-  const activeCanMoveSelected = activeAdjacentToSelected && record.discovery !== "desconhecido";
+  const activeCanMoveSelected = activeAdjacentToSelected && record.discovery !== "desconhecido" && !worldMovementIssue(game.hexes, activeSourceHex, selected);
+  const journey = planning ? planJourney(game, { from: activeSourceHex, to: journeyDestination,
+    survivorIds: survivorsAtHex(game, activeSourceHex).map(person => person.id), mode: journeyMode, dailyHours: marchHours, reserveDays }) : null;
+  const journeyMembers = survivorsAtHex(game, activeSourceHex).map(person => person.id);
+  const nextJourneyHex = journey?.path[1];
+  const nextJourneyMinutes = nextJourneyHex ? Math.ceil(shelterTravelMinutes(game, activeSourceHex, nextJourneyHex, game.hexes[nextJourneyHex].routeHours * 60) * groupTravelMultiplier(game, journeyMembers)) : 0;
+  const journeyIssue = timedActionParticipantIssue(game, journeyMembers) || eventMovementIssue(game, journeyMembers)
+    || (game.conflict?.active ? "Termine o conflito antes de viajar." : null)
+    || (journey?.stages[0]?.day && journey.stages[0].day > game.day ? "A próxima etapa está prevista para amanhã. Encerre o dia ou ajuste a marcha planejada." : null)
+    || (nextJourneyHex && game.minutes + nextJourneyMinutes >= 1440 ? "Este trecho não cabe no dia. Feche o dia antes de continuar." : null);
+  function travelNextJourneyHex() {
+    if (!nextJourneyHex || journeyIssue) return;
+    const result: { value: ReturnType<typeof scheduleSurvivorTravel> | null } = { value: null };
+    edit(draft => { result.value = scheduleSurvivorTravel(draft, nextJourneyHex, journeyMembers); });
+    if (!result.value?.ok) { toast.error(result.value?.message || "Não foi possível iniciar este trecho."); return; }
+    toast.success(result.value.message);
+    if (result.value.completed) { setActiveGroupHex(nextJourneyHex); setFocusHex(nextJourneyHex); }
+  }
   function selectGroup(hex: string) {
     setActiveGroupHex(hex);
     setFocusHex(hex);
@@ -505,6 +538,7 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
             <Pick label="Via" value={record.passage ?? "none"} options={Object.entries(passages).map(([value, label]) => ({ value, label }))}
               onChange={value => edit(draft => { draft.hexes[selected].passage = value as Passage; })} />
           </div>
+          <WorldRouteEditor game={game} hexId={selected} edit={edit} />
           <Button size="sm" variant="outline" className="mb-3" onClick={() => { setSheetOpen(false); setExpansionOpen(true); }}><Plus /> Expandir a partir deste hex</Button>
           <div className="grid gap-3 sm:grid-cols-2">
             <Pick label="Descoberta" value={record.discovery}
@@ -578,6 +612,12 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
       <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
         <div><p className="dossier-title">Mundo / {Object.keys(game.hexes).length} áreas</p><h2 className="section-title mt-1">Mapa de exploração</h2></div>
         <div className="flex flex-wrap items-center gap-2"><span className="tag">1 hex ≈ 2 km</span>
+          {visibleWorldConnections(game.hexes).length > 0 && <Button size="sm" variant="outline" aria-pressed={showRoads}
+            onClick={() => setShowRoads(!showRoads)}>{showRoads ? "Ocultar vias" : "Mostrar vias"}</Button>}
+          {!playerPreview && <Button size="sm" variant={planning ? "default" : "outline"} aria-pressed={planning} onClick={() => {
+            if (!planning && selected !== activeSourceHex) setJourneyDestination(selected);
+            setPlanning(!planning); setSheetOpen(false);
+          }}><Route /> Planejar viagem</Button>}
           {!playerPreview && <Button size="sm" variant="outline" onClick={() => setExpansionOpen(true)}><Plus /> Expandir mundo</Button>}</div>
       </div>
       {activeGroup && <div className="map-active-group" role="status" aria-live="polite">
@@ -586,7 +626,7 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
         <em>Hex {activeGroup.hex}</em>
       </div>}
       <div className="map-surface">
-        <WorldMapViewport hexes={game.hexes} activeHex={activeSourceHex} selected={selected} focusHex={focusHex} playerPreview={playerPreview} onSelect={selectHex}>
+        <WorldMapViewport hexes={game.hexes} activeHex={activeSourceHex} selected={selected} focusHex={focusHex} playerPreview={playerPreview} onSelect={selectHex} plannedPath={journey?.path}>
           <defs><pattern id="setor-avistado" width="8" height="8" patternUnits="userSpaceOnUse">
             <rect width="8" height="8" fill="#2d4d50" />
             <path d="M-2 8L8-2M2 10L10 2" stroke="#527478" strokeWidth="1" opacity=".58" />
@@ -632,7 +672,7 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
                   <g clipPath={`url(#${clipId})`} pointerEvents="none" opacity={observed ? .5 : .85}><MapHexArt index={mapArtworkIndex(state)} x={x} y={y} /></g>
                 </>}
                 <text className="map-art-label" x={x} y={y-35} textAnchor="middle" fontSize="7" fill="#c4d8d3" fontFamily="monospace">{id}</text>
-                <text className="map-art-label" x={x} y={lines.length > 1 ? y+3 : y+10} textAnchor="middle" fontSize={discovered || observed ? "9" : "17"} fontWeight="700" fill={discovered ? "#f5f8f2" : "#d1e0dc"}>
+                <text className="map-art-label" x={x} y={state.connections?.length ? y+14 : lines.length > 1 ? y+3 : y+10} textAnchor="middle" fontSize={discovered || observed ? "9" : "17"} fontWeight="700" fill={discovered ? "#f5f8f2" : "#d1e0dc"}>
                   {lines.map((line,index) => <tspan key={index} x={x} dy={index ? 11 : 0}>{line}</tspan>)}
                 </text>
                 {shownPoints > 0 && <g className="map-point-marker" transform={`translate(${x+28} ${y+28}) scale(.72) translate(${-x-28} ${-y-28})`} aria-hidden="true">
@@ -663,12 +703,16 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
               </g>
             </HexContextMenu>;
           })}
+          <MapRoads hexes={game.hexes} plannedPath={journey?.path ?? []} showRoads={showRoads} />
         </WorldMapViewport>
         <div className="map-caption" hidden={mobile}>
           <span><i className="legend-swatch" style={{background:"#35686a"}} /> Explorado</span>
           <span><i className="legend-swatch legend-observed" /> Avistado</span>
           <span><i className="legend-swatch" style={{background:"#17282d"}} /> Desconhecido</span>
           <span><i className="legend-swatch legend-nearby" /> Adjacente</span>
+          {showRoads && visibleWorldConnections(game.hexes).length > 0 && <span><i className="map-road-legend" /> Via conectada</span>}
+          {Boolean(journey?.path.length) && <span><i className="map-route-legend" /> Trajeto planejado</span>}
+          {showRoads && visibleWorldConnections(game.hexes).some(edge => edge.blocked) && <span>× Passagem bloqueada</span>}
           <span className="flex items-center gap-1"><Footprints size={15} /> Pegadas = grupo principal</span>
           <span className="flex items-center gap-1"><Users size={15} /> Retrato = sobrevivente ou subgrupo</span>
           {game.shelter.hex && <span className="flex items-center gap-1"><House size={15} /> Casa = abrigo atual</span>}
@@ -677,6 +721,11 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
           {(game.npcs ?? []).length > 0 && <span className="flex items-center gap-1"><Users size={15} /> PNJs</span>}
         </div>
       </div>
+      {planning && journey && !playerPreview && <JourneyPlanner game={game} source={activeSourceHex} destination={journeyDestination}
+        onDestination={id => { setJourneyDestination(id); setSelected(id); }} mode={journeyMode} onMode={setJourneyMode}
+        dailyHours={marchHours} onDailyHours={setMarchHours} reserveDays={reserveDays} onReserveDays={setReserveDays}
+        plan={journey} issue={journeyIssue} onClose={() => setPlanning(false)} onNext={travelNextJourneyHex}
+        onInspect={id => { setSelected(id); setFocusHex(id); setSheetOpen(true); }} />}
       <div className="map-group-summary" aria-label="Selecionar grupo ativo">
         {publicGroups.map(group => <button type="button" key={group.hex}
           className={`map-group-chip ${activeSourceHex === group.hex ? "is-active" : ""}`}
@@ -687,7 +736,7 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
           <span><b>{group.main ? "Principal" : group.members.length === 1 ? group.members[0].name : group.members.map(person => person.name.split(" ")[0]).join(" · ")}</b><small>Hex {group.hex} · {game.publicActivities?.some(a=>a.participantIds.some(id=>group.members.some(p=>p.id===id))) || game.activities?.some(a=>a.status==="running"&&a.participantIds.some(id=>group.members.some(p=>p.id===id))) ? "em atividade" : "disponível"}</small></span>
         </button>)}
       </div>
-      <p hidden={mobile} className="text-sm subtle mt-2">Clique ou toque nas pegadas/retratos para escolher o grupo ativo; os hexes adjacentes a ele ficam destacados. Clique em um hex para abrir os detalhes e, no computador, use o botão direito para ações rápidas.</p>
+      <p hidden={mobile} className="text-sm subtle mt-2">{planning ? "Clique em um hex conhecido para escolher o destino da viagem. Use Ver hex nas etapas para consultar o setor." : "Clique ou toque nas pegadas/retratos para escolher o grupo ativo; os hexes adjacentes a ele ficam destacados. Clique em um hex para abrir os detalhes e, no computador, use o botão direito para ações rápidas."}</p>
       {mobile && <><button ref={mobileSelectionTrigger} type="button" className="mobile-sector-selection" onClick={() => setSheetOpen(true)} aria-haspopup="dialog"><span><small>Hex {selected} · {record.discovery}</small><b>{visible ? sectorName : "Setor desconhecido"}</b></span><span>Detalhes →</span></button><details className="mobile-map-help"><summary>Como usar o mapa</summary><p>Toque em um setor para abrir locais e ações. Use as pegadas ou retratos para selecionar o grupo. Arraste para navegar e use os controles de zoom.</p></details></>}
       <p hidden={mobile} className="intro-line mt-4">O setor ganha nome e sinais quando é avistado. Um hex pode conter vários locais; suas áreas internas continuam em aberto até a exploração.</p>
     </section>
