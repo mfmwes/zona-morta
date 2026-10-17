@@ -20,7 +20,7 @@ import { resetParallelTime } from "./activity";
 import { dailyExtraWater } from "./survivor-conditions";
 
 export type DailyResource = "food" | "water";
-export type DayProvisionSource = "already" | "shared" | "personal" | "other" | "none";
+export type DayProvisionSource = "already" | "shared" | "personal" | "mixed" | "other" | "none";
 export type DayCloseSurvivorPlan = {
   survivorId: string;
   food: DayProvisionSource;
@@ -219,20 +219,27 @@ export function defaultDayClosePlan(game: GameState): DayClosePlan {
   };
   const storageHex = game.shelter.hex ?? game.partyHex;
 
+  const personalRemaining = new Map(game.survivors.map(person => [person.id, {
+    food: provisionBreakdown(person, "food").total,
+    water: provisionBreakdown(person, "water").total,
+  }]));
   function sourceFor(person: Survivor, resource: DailyResource): DayProvisionSource {
     const needed = remainingDailyProvisionPortions(game, person, resource);
     if (needed === 0) return "already";
-    const personal = provisionBreakdown(person, resource).total;
+    const stock = personalRemaining.get(person.id)!;
+    const personal = stock[resource];
     if (survivorHex(game, person) === storageHex && sharedRemaining[resource] >= needed) {
       sharedRemaining[resource] -= needed;
       return "shared";
     }
-    if (personal >= needed) return "personal";
+    if (personal >= needed) { stock[resource] -= needed; return "personal"; }
     if (survivorHex(game, person) === storageHex && sharedRemaining[resource] > 0) {
+      const shortfall = needed - sharedRemaining[resource];
       sharedRemaining[resource] = Math.max(0, sharedRemaining[resource] - needed);
+      if (personal > 0) { stock[resource] -= Math.min(personal, shortfall); return "mixed"; }
       return "shared";
     }
-    if (personal > 0) return "personal";
+    if (personal > 0) { stock[resource] = 0; return "personal"; }
     return "none";
   }
 
@@ -241,25 +248,25 @@ export function defaultDayClosePlan(game: GameState): DayClosePlan {
     food: sourceFor(person, "food"),
     water: sourceFor(person, "water"),
   }));
-  function carrierFor(npc: NPC, resource: DailyResource) {
-    return game.survivors.find(person => survivorHex(game, person) === npc.hex
-      && provisionBreakdown(person, resource).total > 0)?.id;
-  }
-  function npcSource(npc: NPC, resource: DailyResource): DayProvisionSource {
-    if (npcConsumedToday(game, npc, resource)) return "already";
-    if (npc.hex === storageHex && sharedRemaining[resource] > 0) { sharedRemaining[resource] -= 1; return "shared"; }
-    return carrierFor(npc, resource) ? "personal" : "none";
+  function npcSource(npc: NPC, resource: DailyResource): { source: DayProvisionSource; carrierId?: string } {
+    if (npcConsumedToday(game, npc, resource)) return { source: "already" };
+    if (npc.hex === storageHex && sharedRemaining[resource] > 0) { sharedRemaining[resource] -= 1; return { source: "shared" }; }
+    const carrier = game.survivors.find(person => survivorHex(game, person) === npc.hex
+      && personalRemaining.get(person.id)![resource] > 0);
+    if (!carrier) return { source: "none" };
+    personalRemaining.get(carrier.id)![resource] -= 1;
+    return { source: "personal", carrierId: carrier.id };
   }
   return {
     expectedDay: game.day,
     residentsFood: game.shelter.residents,
     residentsWater: game.shelter.residents,
     survivors,
-    npcs: (game.npcs ?? []).filter(npc => npc.active && npc.status !== "Morto" && npc.status !== "Desaparecido").map(npc => ({
-      npcId: npc.id,
-      food: npcSource(npc, "food"), water: npcSource(npc, "water"),
-      foodCarrierId: carrierFor(npc, "food"), waterCarrierId: carrierFor(npc, "water"),
-    })),
+    npcs: (game.npcs ?? []).filter(npc => npc.active && npc.status !== "Morto" && npc.status !== "Desaparecido").map(npc => {
+      const food = npcSource(npc, "food"), water = npcSource(npc, "water");
+      return { npcId: npc.id, food: food.source, water: water.source,
+        foodCarrierId: food.carrierId, waterCarrierId: water.carrierId };
+    }),
   };
 }
 
@@ -303,6 +310,7 @@ export function inspectDayClosePlan(game: GameState, plan: DayClosePlan): DayClo
     remainingPersonal[resource] -= taken;
     return taken === needed;
   }
+  const mixedSharedDemand: Record<DailyResource, number> = { food: 0, water: 0 };
   for (const person of game.survivors) {
     const entry = planEntry(plan, person.id);
     for (const resource of ["food", "water"] as const) {
@@ -310,6 +318,18 @@ export function inspectDayClosePlan(game: GameState, plan: DayClosePlan): DayClo
       if (needed === 0) continue;
       const source = entry?.[resource] ?? "none";
       if (source === "other") continue;
+      if (source === "mixed") {
+        if (survivorHex(game, person) !== storageHex) {
+          deprivations.push({ survivorId: person.id, name: person.name, resource, reason: "remote" });
+        } else {
+          const taken = Math.min(remaining[resource], needed);
+          remaining[resource] -= taken;
+          mixedSharedDemand[resource] += taken;
+          if (!takePersonal(person.id, storageHex, resource, needed - taken))
+            deprivations.push({ survivorId: person.id, name: person.name, resource, reason: "unavailable" });
+        }
+        continue;
+      }
       if (source === "personal") {
         if (!takePersonal(person.id, survivorHex(game, person), resource, needed))
           deprivations.push({ survivorId: person.id, name: person.name, resource, reason: "unavailable" });
@@ -362,8 +382,8 @@ export function inspectDayClosePlan(game: GameState, plan: DayClosePlan): DayClo
       && entry?.[resource] === "shared" && !npcConsumedToday(game, npc, resource);
   }).length;
   const demand: Record<DailyResource, number> = {
-    food: residentDemand.food + sharedDemand("food") + npcSharedDemand("food"),
-    water: residentDemand.water + sharedDemand("water") + npcSharedDemand("water"),
+    food: residentDemand.food + sharedDemand("food") + mixedSharedDemand.food + npcSharedDemand("food"),
+    water: residentDemand.water + sharedDemand("water") + mixedSharedDemand.water + npcSharedDemand("water"),
   };
 
   return {
@@ -436,6 +456,22 @@ export function closeDayWithPlan(game: GameState, plan: DayClosePlan, transition
       if (source === "other") {
         markDailyProvisionConsumed(game, person, resource, needed);
         addLog(game, "provisões", `${person.name}: ${needed} porção(ões) de ${resourceLabel(resource)} registrada(s) por outra fonte/dispensa do mestre.`, person.id);
+        continue;
+      }
+
+      if (source === "mixed") {
+        if (survivorHex(game, person) !== storageHex) {
+          actualDeprivations.push({ survivorId: person.id, name: person.name, resource, reason: "remote" });
+          continue;
+        }
+        const shared = consumeMany(game.shelter, resource, needed);
+        const personal = consumeMany(person, resource, needed - shared.consumed);
+        const consumed = shared.consumed + personal.consumed;
+        if (consumed) {
+          markDailyProvisionConsumed(game, person, resource, consumed);
+          addLog(game, "provisões", `${person.name} consumiu ${consumed}/${needed} porção(ões) de ${resourceLabel(resource)}: ${shared.consumed} das reservas e ${personal.consumed} pessoais.`, person.id);
+        }
+        if (consumed < needed) actualDeprivations.push({ survivorId: person.id, name: person.name, resource, reason: "unavailable" });
         continue;
       }
 

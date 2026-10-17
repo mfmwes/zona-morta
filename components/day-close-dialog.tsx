@@ -33,6 +33,7 @@ const sourceLabels: Record<DayProvisionSource, string> = {
   already: "Já consumiu hoje",
   shared: "Reservas compartilhadas",
   personal: "Provisão pessoal",
+  mixed: "Reservas + provisão pessoal",
   other: "Outra fonte / dispensado",
   none: "Sem consumir · privação",
 };
@@ -142,6 +143,8 @@ export function DayCloseDialog({
       options.push({ value: "shared", label: `${sourceLabels.shared} · ${shared} disponível(is) · precisa ${needed}` });
     if (personal > 0)
       options.push({ value: "personal", label: `${sourceLabels.personal} · ${personal} disponível(is) · precisa ${needed}` });
+    if (atStorage && shared > 0 && personal > 0)
+      options.push({ value: "mixed", label: `${sourceLabels.mixed} · ${shared + personal} disponível(is) · precisa ${needed}` });
     options.push({ value: "other", label: sourceLabels.other });
     options.push({ value: "none", label: sourceLabels.none });
     return options;

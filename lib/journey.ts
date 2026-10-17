@@ -19,8 +19,8 @@ export function planJourney(game: GameState, input: {
   const members = game.survivors.filter(person => input.survivorIds.includes(person.id) && survivorHex(game, person) === input.from);
   const ids = members.map(person => person.id);
   const walkedToday = Math.max(0, ...ids.map(id => (game.activities ?? []).filter(activity => activity.type === "travel"
-    && activity.day === game.day && activity.status === "completed" && activity.participantIds.includes(id))
-    .reduce((sum, activity) => sum + activity.endMinute - activity.startMinute, 0)));
+    && activity.day === game.day && (activity.status === "completed" || (activity.status === "cancelled" && activity.cancelledMinute !== undefined)) && activity.participantIds.includes(id))
+    .reduce((sum, activity) => sum + (activity.status === "cancelled" ? activity.cancelledMinute! : activity.endMinute) - activity.startMinute, 0)));
   const wholeGroup = members.length === game.survivors.filter(person => survivorHex(game, person) === input.from).length;
   const companions = (game.npcs ?? []).filter(npc => npc.active && npc.hex === input.from && !["Morto", "Desaparecido"].includes(npc.status)
     && ((npc.accompaniesSurvivorIds?.length && npc.accompaniesSurvivorIds.every(id => ids.includes(id)))

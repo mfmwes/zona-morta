@@ -146,7 +146,8 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
   const visible = !playerPreview || record.discovery !== "desconhecido";
   const [partyQ, partyR] = (game.partyHex || "0,0").split(",").map(Number);
   const canTravel = hexDistance(area.q-partyQ, area.r-partyR) === 1;
-  const travelMinutes = shelterTravelMinutes(game, game.partyHex, selected, record.routeHours * 60);
+  const travelMinutes = Math.ceil(shelterTravelMinutes(game, game.partyHex, selected, record.routeHours * 60)
+    * groupTravelMultiplier(game, survivorsAtHex(game, game.partyHex).map(person => person.id)));
   const actualMembersHere = survivorsAtHex(game, selected);
   const nearbyGroups = movementSources(game, selected);
   const canMakeBase = actualMembersHere.length > 0 && record.discovery === "explorado" && game.shelter.hex !== selected;
@@ -165,7 +166,8 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
     ?? publicGroups[0];
   const activeSourceHex = activeGroup?.hex ?? game.partyHex;
   const mainTravelIssue = timedActionParticipantIssue(game, survivorsAtHex(game, game.partyHex).map(p=>p.id)) || worldMovementIssue(game.hexes, game.partyHex, selected);
-  const activeTravelMinutes = shelterTravelMinutes(game, activeSourceHex, selected, record.routeHours * 60);
+  const activeTravelMinutes = Math.ceil(shelterTravelMinutes(game, activeSourceHex, selected, record.routeHours * 60)
+    * groupTravelMultiplier(game, survivorsAtHex(game, activeSourceHex).map(person => person.id)));
   const [activeQ, activeR] = activeSourceHex.split(",").map(Number);
   const activeAdjacentToSelected = hexDistance(area.q - activeQ, area.r - activeR) === 1;
   const activeCanMoveSelected = activeAdjacentToSelected && record.discovery !== "desconhecido" && !worldMovementIssue(game.hexes, activeSourceHex, selected);

@@ -7,6 +7,7 @@ type ActivityBase = {
   id: string; day: number; startMinute: number; endMinute: number;
   participantIds: string[]; hexId: string; label: string;
   status: "running" | "completed" | "cancelled";
+  cancelledMinute?: number;
   issue?: string; operationId?: string;
 };
 export type ScheduledActivity = ActivityBase & (
@@ -56,6 +57,7 @@ export function cancelActivity(game: GameState, id: string) {
   const activity = runningActivities(game).find(a => a.id === id);
   if (!activity) return false;
   activity.status = "cancelled";
+  activity.cancelledMinute = Math.min(activity.endMinute, Math.max(activity.startMinute, game.minutes));
   if (activity.type === "search") {
     const attempt = game.hexes[activity.hexId]?.points.find(p => p.id === activity.pointId)?.preparation?.attempts.find(a => a.id === activity.attemptId);
     if (attempt) { attempt.status = "failed"; attempt.result = "Busca interrompida pelo mestre; nenhum achado liberado."; }

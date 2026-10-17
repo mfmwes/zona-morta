@@ -32,3 +32,21 @@ test('players do not receive time and reserve management controls', async ({ pag
   await expect(page.getByRole('region', { name: 'Controles da exploração' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: '+1 h', exact: true })).toHaveCount(0);
 });
+
+test('fractured leg duration in the sector matches actual arrival and prevents crossing midnight', async ({ page }) => {
+  await page.goto('/?screen=map&scenario=roads');
+  await page.evaluate(() => window.__qa.mutate(g => {
+    g.minutes = 480;
+    g.survivors[0].conditions = [{ id: 'fracture', kind: 'fracture', bodyRegion: 'left-leg' }];
+  }));
+  await page.getByRole('searchbox', { name: 'Buscar hex por nome ou coordenadas' }).fill('1,0');
+  await page.getByRole('button', { name: 'Buscar no mapa', exact: true }).click();
+  const travel = page.getByRole('button', { name: 'Mover grupo principal · 1h30', exact: true });
+  await expect(travel).toBeEnabled();
+  await expect(page.getByText('Travessia: 1h30.', { exact: true })).toBeVisible();
+  await page.evaluate(() => window.__qa.mutate(g => { g.minutes = 1360; }));
+  await expect(travel).toBeDisabled();
+  await page.evaluate(() => window.__qa.mutate(g => { g.minutes = 480; }));
+  await travel.click();
+  expect(await page.evaluate(() => ({ minute: window.__qa.game().minutes, hex: window.__qa.game().partyHex }))).toEqual({ minute: 570, hex: '1,0' });
+});

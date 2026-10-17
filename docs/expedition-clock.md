@@ -11,6 +11,12 @@ e aplica as privações já previstas pelo sistema. Consumo já registrado não 
 cobrado novamente. Validade dos alimentos e progressão diária de infecção
 acompanham a mudança de dia.
 
+O plano padrão combina reservas e provisões pessoais quando uma necessidade
+diária não pode ser atendida por uma fonte só, desde que o sobrevivente esteja
+no mesmo hex das reservas. O encerramento manual também oferece essa opção.
+Na distribuição para PNJs, o plano reserva primeiro o consumo dos sobreviventes
+e escolhe portadores com saldo suficiente para cada acompanhante.
+
 Esse avanço não recupera PV, Estresse ou armadura, não realiza descanso e não
 inicia uma nova cena nem zera Barulho ou Medo. Escolhas de descanso não
 realizadas são descartadas. Atividades de descanso já concluídas antes da

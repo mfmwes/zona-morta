@@ -74,6 +74,11 @@ A previsão usa a travessia de cada destino, o Quadro de rotas e condições de
 deslocamento dos sobreviventes. Divide a marcha em dias, sugere paradas e
 respeita a marcha já registrada hoje e o tempo antes da meia-noite. Horas de
 marcha por dia e dias extras de mantimentos são escolhas do planejamento.
+Viagens interrompidas passam a registrar o minuto da interrupção e contam apenas
+o tempo transcorrido na marcha diária. Registros antigos sem esse horário
+continuam compatíveis, sem estimar um tempo de interrupção que não foi salvo.
+Os detalhes do setor e seus botões de viagem consideram também os modificadores
+de deslocamento do grupo, como fraturas nas pernas.
 As paradas são sugestões; sua segurança precisa ser avaliada na mesa.
 
 Mantimentos seguem a regra de **1 comida e 1 água por pessoa/dia**, incluindo
