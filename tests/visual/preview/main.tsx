@@ -5,6 +5,8 @@ import { ShelterPanel } from '@/components/campaign-views';
 import { SceneBoard } from '@/components/scene-board';
 import { HexExplorer } from '@/components/hex-explorer';
 import { TableChat } from '@/components/table-chat';
+import { MasterOverview } from '@/components/master-overview';
+import { applySessionCommand } from '@/lib/campaign-sessions';
 import { MapSessionBar } from '@/components/map-session-bar';
 import { RecentEvents } from '@/components/recent-events';
 import { MobileDisclosure } from '@/components/mobile-disclosure';
@@ -19,7 +21,7 @@ import { RuleText } from '@/components/rule-text';
 import { ChoiceCard } from '@/components/choice-card';
 import { RuntimeErrorBoundary } from '@/components/runtime-error-boundary';
 import { projectPlayerGame, applyPlayerChange, playerEditPayload } from '@/lib/collaboration';
-import { applyPlayerAction } from '@/lib/player-actions';
+import { applyPlayerAction, setPlayerPolicy } from '@/lib/player-actions';
 import { playerTeamPeers } from '@/lib/player-preview';
 import { resolveSurvivorDamageRequest, requestConflictSpotlight, cancelConflictSpotlightRequest } from '@/lib/conflict';
 import { survivorStats, type GameState } from '@/lib/game';
@@ -48,6 +50,7 @@ import '@/app/map-concept.css';
 import './preview.css';
 import '@/app/map-workspace.css';
 import '@/app/campaign-navigation.css';
+import '@/app/overview-dashboard.css';
 
 declare global { interface Window { __qa: { game: () => GameState; mutate: (fn: (draft: GameState) => void) => void } } }
 const query = new URLSearchParams(location.search);
@@ -79,15 +82,16 @@ function Preview() {
   const simulation={spotlight:(action:'request'|'cancel')=>mutate(d=>{if(d.conflict){if(action==='request')requestConflictSpotlight(d.conflict,actor.id);else cancelConflictSpotlightRequest(d.conflict,actor.id);}}),
     damage:(id:string,resolution:'hp'|'armor')=>{const next=structuredClone(current.current),person=next.survivors[0];const result=resolveSurvivorDamageRequest(next.conflict!,id,person,survivorStats(person),resolution,next.day,'08:00');if(!result.ok)throw new Error('Este impacto não pode ser resolvido agora.');commit(next);return result;},
     target:()=>{throw new Error('Use a tela do mestre para preparar ataques nesta prévia.');}};
-  return <PlayerSimulationContext.Provider value={simulation}><div className={`qa-preview${screen==='map'?' is-map':''}`}><div className="qa-controls"><b>Prévia isolada · dados de exemplo</b>
+  return <PlayerSimulationContext.Provider value={simulation}><div className={`qa-preview${screen==='map'?' is-map':screen==='overview'?' is-overview':''}`}><div className="qa-controls"><b>Prévia isolada · dados de exemplo</b>
     <label>Perfil <select aria-label="Perfil" value={role} onChange={e=>setRole(e.target.value)}><option value="master">Mestre</option><option value="player">Jogador</option></select></label>
-    <label>Tela <select aria-label="Tela" value={screen} onChange={e=>setScreen(e.target.value)}><option value="map">Mapa e exploração</option><option value="scene">Cena visual</option><option value="sheet">Ficha</option><option value="shelter">Abrigo</option><option value="conflict">Conflito</option><option value="npcs">PNJs</option><option value="reading">Leitura e seleção</option></select></label>
+    <label>Tela <select aria-label="Tela" value={screen} onChange={e=>setScreen(e.target.value)}><option value="overview">Visão geral</option><option value="map">Mapa e exploração</option><option value="scene">Cena visual</option><option value="sheet">Ficha</option><option value="shelter">Abrigo</option><option value="conflict">Conflito</option><option value="npcs">PNJs</option><option value="reading">Leitura e seleção</option></select></label>
     <label>Tema <select aria-label="Tema" defaultValue="dark" onChange={e=>document.documentElement.dataset.theme=e.target.value}><option value="dark">Escuro</option><option value="light">Claro</option></select></label>
     <label>Estilo <select aria-label="Estilo" defaultValue="tecnico" onChange={e=>document.documentElement.dataset.visualStyle=e.target.value}><option>tecnico</option><option>fiel</option><option>leitura</option></select></label>
     <button onClick={()=>location.reload()}>Reiniciar exemplo</button>{query.has('chat')&&<button aria-expanded={chatOpen} onClick={()=>setChatOpen(!chatOpen)}>Chat</button>}<small>Nenhum dado é enviado à campanha real.</small>
-  </div><div className={`app-shell compact-navigation${query.has('chat')?(chatOpen?' chat-open':' chat-closed'):''}${screen==='map'?' map-mode qa-map-mode':''}`}><aside className="rail"><b title="Zona Morta">ZM</b><div className="campaign-navigation-dock"><nav className="rail-nav"><button title="Ficha" aria-current={screen==='sheet'?'page':undefined} onClick={()=>setScreen('sheet')}><Users size={17}/><span>Ficha</span></button><button title="Abrigo" aria-current={screen==='shelter'?'page':undefined} onClick={()=>setScreen('shelter')}><House size={17}/><span>Abrigo</span></button><button title="Cena visual" aria-current={screen==='scene'?'page':undefined} onClick={()=>setScreen('scene')}><Layers size={17}/><span>Cena visual</span></button></nav><div className="rail-presentation-slot campaign-utility-controls"><ThemeToggle placement="campaign"/></div></div></aside><main className="workspace"><div className="page"><div className="campaign-page-heading mb-6"><h1 className="page-title">{screen==='map'?'Mapa e exploração':screen==='shelter'?'Abrigo':screen==='sheet'?'Meu sobrevivente':screen==='scene'?'Cena visual':screen==='conflict'?'Conflito':'Zona Morta'}</h1><p className="intro-line mt-2">Explore as alterações com uma campanha de exemplo.</p></div>
+  </div><div className={`app-shell compact-navigation${query.has('chat')?(chatOpen?' chat-open':' chat-closed'):''}${screen==='map'?' map-mode qa-map-mode':screen==='overview'?' overview-mode':''}`}><aside className="rail"><b title="Zona Morta">ZM</b><div className="campaign-navigation-dock"><nav className="rail-nav"><button title="Ficha" aria-current={screen==='sheet'?'page':undefined} onClick={()=>setScreen('sheet')}><Users size={17}/><span>Ficha</span></button><button title="Abrigo" aria-current={screen==='shelter'?'page':undefined} onClick={()=>setScreen('shelter')}><House size={17}/><span>Abrigo</span></button><button title="Cena visual" aria-current={screen==='scene'?'page':undefined} onClick={()=>setScreen('scene')}><Layers size={17}/><span>Cena visual</span></button></nav><div className="rail-presentation-slot campaign-utility-controls"><ThemeToggle placement="campaign"/></div></div></aside><main className="workspace"><div className="page"><div className="campaign-page-heading mb-6"><h1 className="page-title">{screen==='overview'?'Visão geral':screen==='map'?'Mapa e exploração':screen==='shelter'?'Abrigo':screen==='sheet'?'Meu sobrevivente':screen==='scene'?'Cena visual':screen==='conflict'?'Conflito':'Zona Morta'}</h1><p className="intro-line mt-2">Explore as alterações com uma campanha de exemplo.</p></div>
     {player&&<PlayerAttention game={game} actorId={actor.id} onOpen={target=>{if(target==='conflict')setScreen('conflict');else if(target==='map')toast.info('Abra o local da busca no mapa da campanha.');else{setFocus({key:focus.key+1,section:target==='inventory'?'inventario':'resumo',rest:target==='rest'});setScreen('sheet');}}}/>}
     <RuntimeErrorBoundary key={`${role}:${screen}`}>
+      {screen==='overview'&&<MasterOverview game={game} mobile={mobile} canManageSession masterActions={{canAct:true,send:async payload=>{const next=setPlayerPolicy(current.current,payload.policy);if(!next)throw new Error('Liberação inválida');commit(next);}}} onNavigate={tab=>setScreen(({mapa:'map',sobreviventes:'sheet',abrigo:'shelter',conflito:'conflict',cena:'scene'} as Record<string,string>)[tab]??tab)} onOpen={target=>setScreen(({mapa:'map',sobreviventes:'sheet',abrigo:'shelter',conflito:'conflict',comunidade:'npcs'} as Record<string,string>)[target.tab]??'overview')} onSessionAction={async command=>{mutate(d=>applySessionCommand(d,command));}} /> }
       {screen==='map'&&<HexExplorer game={game} edit={edit} playerPreview={player} mobile={mobile} teamPeers={playerTeamPeers(full)} playerActions={player?controls:undefined} headerActions={!player?<div className="map-log-popover"><MobileDisclosure mobile title="Registro"><RecentEvents game={game} edit={edit} role="mestre" /></MobileDisclosure></div>:undefined} sessionControls={!player?activeHex=><MapSessionBar game={game} edit={edit} activeHex={activeHex}/>:undefined}/>}
       {screen==='scene'&&<SceneBoard game={game} edit={edit} playerPreview={player} playerActions={player?controls:undefined}/>}
       {screen==='shelter'&&<ShelterPanel game={game} edit={edit} playerPreview={player} playerSurvivorId={actor.id} playerActions={player?controls:undefined}/>}

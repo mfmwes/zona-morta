@@ -3,6 +3,12 @@
 .qa-controls select,.qa-controls button { background:var(--background); color:var(--foreground); border:1px solid var(--input); border-radius:5px; padding:7px; }
 .qa-controls small { color:var(--muted-foreground); }
 .qa-reading { max-width:720px; }
+@media (min-width: 1100px) and (min-height: 650px) {
+  .qa-preview.is-overview { height: 100dvh; display: flex; flex-direction: column; }
+  .qa-preview.is-overview > .qa-controls { flex: none; }
+  .qa-preview.is-overview > .app-shell { flex: 1; min-height: 0; }
+  .qa-preview.is-overview .overview-mode > .workspace, .qa-preview.is-overview .rail { height: 100%; }
+}
 @media (min-width: 1321px) {
   .qa-preview.is-map #table-chat { min-height: 0; }
   .qa-preview.is-map .table-chat { height: 100%; }

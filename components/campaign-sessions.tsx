@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { activeCampaignSession, sessionEntries, type SessionCommand } from "@/lib/campaign-sessions";
 import { displayTime, type GameState } from "@/lib/game";
 import { Button } from "@/components/ui/button";
+import { CalendarDays } from "lucide-react";
 
 export function CampaignSessions({ game, canAct, onAction }: { game: GameState; canAct: boolean; onAction: (c: SessionCommand) => Promise<void> }) {
   const active = activeCampaignSession(game);
@@ -28,7 +29,7 @@ export function CampaignSessions({ game, canAct, onAction }: { game: GameState; 
     finally { setBusy(false); }
   }
   return <section className="master-overview-card campaign-sessions mt-5" aria-busy={busy}>
-    <header><div><span><b>Sessões da mesa</b><small>{active ? `Em andamento: ${active.name}` : "Nenhuma sessão em andamento"}</small></span></div>
+    <header><div><CalendarDays size={18} /><span><b>Sessões da mesa</b><small>{active ? `Em andamento: ${active.name}` : "Nenhuma sessão em andamento"}</small></span></div>
       <Button ref={toggle} size="sm" variant={editing ? "ghost" : active ? "outline" : "default"} disabled={busy || (!canAct && !editing)} aria-expanded={editing} aria-controls="campaign-session-form" onClick={() => { setEditing(!editing); setError(""); setFeedback(""); }}>{editing ? "Recolher" : active ? "Encerrar sessão" : "Iniciar sessão"}</Button>
     </header>
     {feedback && <p className="campaign-feedback" role="status">{feedback}</p>}

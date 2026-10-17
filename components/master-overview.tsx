@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Clock3, House, Map, Package, Search, ShieldAlert, Swords, Users, Wrench } from "lucide-react";
+import { AlertTriangle, Brain, CheckCircle2, Clock3, Droplets, Fuel, House, Map, Package, Pill, Search, ShieldAlert, Swords, Users, Utensils, Wrench } from "lucide-react";
 import { MasterContextActions, type MasterActionControls } from "@/components/player-actions-panel";
 import { playerActionState } from "@/lib/player-actions";
 import { Button } from "@/components/ui/button";
@@ -75,15 +75,15 @@ export function MasterOverview({ mobile = false, game, onNavigate, onOpen, maste
   return <div className="master-overview">
     <section className="master-overview-hero">
       <div>
-        <p className="eyebrow">Situação atual</p>
+        <p className="eyebrow"><Clock3 size={14} /> Situação atual</p>
         <h2>Dia {game.day} · {displayTime(game.minutes)}</h2>
         <p>{groups.length > 1 ? `${groups.length} grupos estão agindo em posições diferentes.` : groups.length === 1 ? "A equipe está reunida." : "Nenhum sobrevivente registrado nesta campanha."}</p>
       </div>
       <div className="master-overview-hero-metrics">
-        <span><b>{groups.length}</b><small>grupo{groups.length === 1 ? "" : "s"}</small></span>
-        <span><b>{searches.length}</b><small>busca{searches.length === 1 ? "" : "s"} ativa{searches.length === 1 ? "" : "s"}</small></span>
-        <span className={readyEvents.length ? "is-warning" : ""}><b>{readyEvents.length}</b><small>evento{readyEvents.length === 1 ? "" : "s"} pronto{readyEvents.length === 1 ? "" : "s"}</small></span>
-        <span className={game.conflict?.active ? "is-danger" : ""}><b>{game.conflict?.active ? 1 : 0}</b><small>conflito ativo</small></span>
+        <span><Users size={19} /><b>{groups.length}</b><small>grupo{groups.length === 1 ? "" : "s"}</small></span>
+        <span><Search size={19} /><b>{searches.length}</b><small>busca{searches.length === 1 ? "" : "s"} ativa{searches.length === 1 ? "" : "s"}</small></span>
+        <span className={readyEvents.length ? "is-warning" : ""}><AlertTriangle size={19} /><b>{readyEvents.length}</b><small>evento{readyEvents.length === 1 ? "" : "s"} pronto{readyEvents.length === 1 ? "" : "s"}</small></span>
+        <span className={game.conflict?.active ? "is-danger" : ""}><Swords size={19} /><b>{game.conflict?.active ? 1 : 0}</b><small>conflito ativo</small></span>
       </div>
     </section>
 
@@ -103,9 +103,9 @@ export function MasterOverview({ mobile = false, game, onNavigate, onOpen, maste
             <div><Map size={16} /><span><b>{hexLabel(game, group.hex)}</b><small>Hex {group.hex}</small></span></div>
             <ul>{group.members.map(person => {
               const commitment = survivorTimedCommitment(game, person.id);
-              return <li key={person.id}><button type="button" className="text-left hover:underline" onClick={()=>onOpen({tab:"sobreviventes",survivorId:person.id})}>{person.name}</button>{commitment
+              return <li key={person.id}><button type="button" className="overview-person-link text-left hover:underline" onClick={()=>onOpen({tab:"sobreviventes",survivorId:person.id})}><span className="overview-person-initial" aria-hidden="true">{person.name.trim().slice(0,1).toUpperCase()}</span>{person.name}</button>{commitment
                 ? <small className="is-busy"><Clock3 size={12} /> {commitment.projectName} até {commitment.until}</small>
-                : <small>Livre para agir</small>}</li>;
+                : <small><CheckCircle2 size={12} /> Livre para agir</small>}</li>;
             })}</ul>
           </article>) : <p className="master-overview-empty">Cadastre sobreviventes para acompanhar a equipe.</p>}
         </div>
@@ -130,7 +130,7 @@ export function MasterOverview({ mobile = false, game, onNavigate, onOpen, maste
         </div>
       </section>
 
-      <section className="master-overview-card">
+      <section className="master-overview-card master-overview-work">
         <header><div><Search size={18} /><span><b>Em andamento</b><small>Buscas e trabalhos que já foram iniciados.</small></span></div></header>
         <div className="master-overview-list">
           {(showAllWork?searches:searches.slice(0, 5)).map(search => <button type="button" className="master-overview-row" key={search.id} onClick={() => onOpen({tab:"mapa",hexId:search.hexId,pointId:search.pointId,areaId:search.areaId})}>
@@ -143,24 +143,26 @@ export function MasterOverview({ mobile = false, game, onNavigate, onOpen, maste
             </button>;
           })}
           {(searches.length>5||activeProjects.length>5)&&<Button variant="ghost" size="sm" onClick={()=>setShowAllWork(v=>!v)}>{showAllWork?"Mostrar menos":`Ver todas as ${searches.length+activeProjects.length} atividades`}</Button>}
-          {!searches.length && !activeProjects.length && <p className="master-overview-empty">Nenhuma busca ou obra está aguardando resolução.</p>}
+          {!searches.length && !activeProjects.length && <p className="master-overview-empty"><CheckCircle2 size={20} />Nenhuma busca ou obra está aguardando resolução.</p>}
         </div>
       </section>
 
       <section className="master-overview-card master-overview-resources">
         <header><div><Package size={18} /><span><b>Reservas principais</b><small>{game.shelter.hex ? game.shelter.name : "Grupo sem abrigo estabelecido"}</small></span></div><Button size="sm" variant="ghost" onClick={() => onNavigate("abrigo")}>Gerenciar</Button></header>
         <div className="master-overview-resource-grid">
-          <span><small>Comida</small><b>{game.shelter.food}</b></span>
-          <span><small>Água</small><b>{game.shelter.water}</b></span>
-          <span><small>Medicamentos</small><b>{game.shelter.medications}</b></span>
-          <span><small>Peças</small><b>{game.shelter.parts}</b></span>
-          <span><small>Combustível</small><b>{game.shelter.fuel}</b></span>
-          <span><small>Medo</small><b>{game.fear}/12</b></span>
+          <span><Utensils size={19} /><small>Comida</small><b>{game.shelter.food}</b></span>
+          <span><Droplets size={19} /><small>Água</small><b>{game.shelter.water}</b></span>
+          <span><Pill size={19} /><small>Medicamentos</small><b>{game.shelter.medications}</b></span>
+          <span><Wrench size={19} /><small>Peças</small><b>{game.shelter.parts}</b></span>
+          <span><Fuel size={19} /><small>Combustível</small><b>{game.shelter.fuel}</b></span>
+          <span><Brain size={19} /><small>Medo</small><b>{game.fear}/12</b></span>
         </div>
         {occupied.length > 0 && <p className="master-overview-note"><Clock3 size={14} /> {occupied.length} sobrevivente{occupied.length === 1 ? "" : "s"} trabalhando agora.</p>}
       </section>
     </div>
-    {onSessionAction && <MobileDisclosure mobile={mobile} title="Sessão da mesa"><CampaignSessions game={game} canAct={Boolean(canManageSession)} onAction={onSessionAction}/></MobileDisclosure>}
-    <MobileDisclosure mobile={mobile} title="Retomar acontecimentos"><CampaignRecap game={game} onOpen={onOpen}/></MobileDisclosure>
+    <div className="overview-utilities">
+      {onSessionAction && <MobileDisclosure mobile={mobile} title="Sessão da mesa"><CampaignSessions game={game} canAct={Boolean(canManageSession)} onAction={onSessionAction}/></MobileDisclosure>}
+      <MobileDisclosure mobile={mobile} title="Retomar acontecimentos"><CampaignRecap game={game} onOpen={onOpen}/></MobileDisclosure>
+    </div>
   </div>;
 }
