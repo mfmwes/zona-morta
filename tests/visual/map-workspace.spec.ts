@@ -2,6 +2,35 @@ import { test, expect } from '@playwright/test';
 
 test.use({ baseURL: process.env.ROAD_PREVIEW_URL || 'http://127.0.0.1:4173' });
 
+for (const width of [1280, 1440, 1920]) test(`map heading and log share one compact row at ${width}px`, async ({ page }) => {
+  await page.setViewportSize({ width, height: 1000 });
+  await page.goto('/?screen=map&scenario=roads');
+  const heading = page.locator('.map-stage-heading');
+  await expect(heading.getByRole('heading', { name: 'Mapa de exploração', exact: true })).toBeVisible();
+  await expect(heading).toContainText('39 áreas');
+  expect((await heading.boundingBox())!.height).toBeLessThanOrEqual(40);
+  const surfaceBefore = (await page.locator('.world-map-viewport').boundingBox())!;
+  await heading.locator('.map-log-popover summary').click();
+  await expect(page.locator('.map-log-popover details')).toHaveAttribute('open', '');
+  await expect(page.locator('.map-log-popover details > div')).toBeVisible();
+  expect((await page.locator('.world-map-viewport').boundingBox())!.height).toBe(surfaceBefore.height);
+  await heading.locator('.map-log-popover summary').click();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+});
+
+test('map log fits the mobile viewport without expanding the heading', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/?screen=map&scenario=roads');
+  const heading = page.locator('.map-stage-heading');
+  const before = (await heading.boundingBox())!.height;
+  await heading.locator('.map-log-popover summary').click();
+  const panel = page.locator('.map-log-popover details > div');
+  await expect(panel).toBeVisible();
+  const box = (await panel.boundingBox())!;
+  expect(box.x).toBeGreaterThanOrEqual(0); expect(box.x + box.width).toBeLessThanOrEqual(390);
+  expect((await heading.boundingBox())!.height).toBe(before);
+});
+
 for (const width of [1280, 1440, 1920]) {
   test(`map chat opens inside the viewport, stays open across screens and closes at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 1000 });

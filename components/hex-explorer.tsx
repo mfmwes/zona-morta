@@ -70,9 +70,10 @@ function travelDurationLabel(minutes: number) {
   return `${hours}h${String(rest).padStart(2, "0")}`;
 }
 
-export function HexExplorer({ mobile = false, initialTarget, game, edit, playerPreview, teamPeers = [], playerActions, masterActions, sessionControls }: {
+export function HexExplorer({ mobile = false, initialTarget, game, edit, playerPreview, teamPeers = [], playerActions, masterActions, sessionControls, headerActions }: {
   mobile?: boolean;
   sessionControls?: ReactNode | ((activeHex: string) => ReactNode);
+  headerActions?: ReactNode;
   initialTarget?: {hexId:string;eventId?:string;pointId?:string;areaId?:string};
   game: GameState;
   edit: Edit;
@@ -613,7 +614,7 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
   return <div className={`map-workbench${planning && !sheetOpen ? " has-journey" : ""}`}>
     <section className="map-stage" aria-label="Mesa de exploração">
       <div className="map-stage-heading">
-        <div><p className="dossier-title">Mundo / {Object.keys(game.hexes).length} áreas</p><h2 className="section-title mt-1">Mapa de exploração</h2></div>
+        <div className="map-stage-heading-left"><h2 className="section-title">Mapa de exploração</h2><p className="dossier-title">{Object.keys(game.hexes).length} áreas</p>{headerActions}</div>
         <div className="flex flex-wrap items-center gap-2"><span className="tag">1 hex ≈ 2 km</span>
           <span className="map-session-status">Dia {game.day} · {Math.floor(game.minutes / 60).toString().padStart(2, "0")}:{(game.minutes % 60).toString().padStart(2, "0")} <span>Barulho {game.noise}/5 · Medo {game.fear}/12</span></span>
         </div>

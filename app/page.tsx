@@ -807,7 +807,7 @@ export default function CampaignApp() {
         </div>}
         {activeTab === "resumo" && role === "mestre" && !readOnlyPreview && <MasterOverview mobile={mobile} game={game} canManageSession={status === "salvo"} onSessionAction={sessionAction} onNavigate={setTab} onOpen={openCampaignTarget} masterActions={masterActionControls} />}
         {activeTab === "mapa" && <>
-          <HexExplorer mobile={mobile} key={!readOnlyPreview&&focus?.target.tab==="mapa"?focus.key:game.campaignId} initialTarget={!readOnlyPreview&&focus?.target.tab==="mapa"?focus.target:undefined} game={communityView} edit={edit} playerPreview={readOnlyPreview} teamPeers={viewedPeers} playerActions={playerActionControls} masterActions={masterActionControls} sessionControls={!readOnlyPreview ? activeHex => <MapSessionBar game={game} edit={edit} activeHex={activeHex} onAdjustTime={openTimeEditor} /> : undefined} />
+          <HexExplorer mobile={mobile} key={!readOnlyPreview&&focus?.target.tab==="mapa"?focus.key:game.campaignId} initialTarget={!readOnlyPreview&&focus?.target.tab==="mapa"?focus.target:undefined} game={communityView} edit={edit} playerPreview={readOnlyPreview} teamPeers={viewedPeers} playerActions={playerActionControls} masterActions={masterActionControls} headerActions={!readOnlyPreview ? <div className="map-log-popover"><MobileDisclosure mobile title="Registro"><RecentEvents game={game} edit={edit} role={role} readOnly={playerPreview} /></MobileDisclosure></div> : undefined} sessionControls={!readOnlyPreview ? activeHex => <MapSessionBar game={game} edit={edit} activeHex={activeHex} onAdjustTime={openTimeEditor} /> : undefined} />
           {!readOnlyPreview && <>
             <Dialog open={timeEditorOpen} onOpenChange={setTimeEditorOpen}>
               <DialogContent><DialogHeader><DialogTitle>Ajustar horário do dia</DialogTitle>
@@ -828,7 +828,7 @@ export default function CampaignApp() {
         {activeTab === "ameacas" && role === "mestre" && !playerPreview && <section className="panel panel-pad"><ThreatManager game={game} edit={edit} /></section>}
         {activeTab === "referencias" && <ReferencePanel />}
         {activeTab === "jogadores" && role === "mestre" && !playerPreview && <PlayersPanel game={game} ownerId={ownerId} />}
-        {activeTab === "mapa" && !readOnlyPreview && <div className="map-log-popover"><MobileDisclosure mobile title="Registro"><RecentEvents game={game} edit={edit} role={role} readOnly={playerPreview} /></MobileDisclosure></div>}
+
 </>;
   const tableChat = <TableChat key={playerPreview ? `preview:${viewedSurvivorId}` : "live"} layout={mobile ? "screen" : "panel"} active={!mobile || activeTab === "chat"} game={game} edit={edit} role={readOnlyPreview ? "jogador" : role} survivorId={viewedSurvivorId} readOnly={false} onClose={() => mobile ? setTab(mobileReturnSection(lastMobileSection, masterExperience, publicConflictActive)) : setChatOpen(false)} />;
   const mobilePendingDamage = readOnlyPreview ? game.publicConflict?.pendingDamage.length ?? 0 : game.conflict?.damageRequests?.filter(request => request.status === "pending").length ?? 0;
