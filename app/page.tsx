@@ -10,16 +10,17 @@ import { startCampaignSync, type CampaignSyncNotice } from "@/lib/campaign-sync"
 import { fetchCampaignResource } from "@/lib/campaign-loading";
 import { currentTableRest } from "@/lib/table-rest";
 import { toast } from "sonner";
-import { BookOpen, Brain, Clock3, Download, Droplets, Ear, Eye, EyeOff, House, LayoutDashboard, LogOut, Layers, Map, MessageSquare, MoreHorizontal, Package, RotateCcw, Search, Settings, ShieldAlert, Swords, Upload, Users, Utensils, Volume2 } from "lucide-react";
+import { BookOpen, Brain, Clock3, Download, Ear, Eye, EyeOff, House, LayoutDashboard, LogOut, Layers, Map, MessageSquare, MoreHorizontal, RotateCcw, Search, ShieldAlert, Swords, Upload, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sidebar, SidebarProvider } from "@/components/ui/sidebar";
-import { Counter, Field, Pick } from "@/components/game-controls";
+import { Field, Pick } from "@/components/game-controls";
 import { HexExplorer } from "@/components/hex-explorer";
+import { MapSessionBar } from "@/components/map-session-bar";
 import { SurvivorPanel, type RestPeer } from "@/components/survivor-panel";
 import { NpcPanel } from "@/components/npc-panel";
 import { ReferencePanel, ShelterPanel } from "@/components/campaign-views";
@@ -46,12 +47,10 @@ import { addLog, displayTime, survivorHex, type GameState, type Point, type Surv
 import { createId } from "@/lib/id";
 import { npcPlayerView } from "@/lib/npc-presentation";
 import { sectorProfiles } from "@/lib/sectors";
-import { adjustProvisionCount } from "@/lib/provisions";
-import { beginExpedition, beginScene } from "@/lib/abilities";
 import { PlayerPreviewSession } from "@/lib/player-preview";
 import { PlayerSimulationContext } from "@/components/player-simulation";
 import { PlayerSaveQueue } from "@/lib/player-save-queue";
-import { advanceCampaignTime, setCampaignTime } from "@/lib/time";
+import { setCampaignTime } from "@/lib/time";
 
 type CampaignResponse = { revision?: number; state?: GameState; role: "mestre" | "jogador" | "convidado"; ownerId: string; survivorId?: string | null; restPeers?: RestPeer[] };
 type SaveStatus = "salvo" | "salvando" | "erro" | "conflito";
@@ -808,93 +807,9 @@ export default function CampaignApp() {
         </div>}
         {activeTab === "resumo" && role === "mestre" && !readOnlyPreview && <MasterOverview mobile={mobile} game={game} canManageSession={status === "salvo"} onSessionAction={sessionAction} onNavigate={setTab} onOpen={openCampaignTarget} masterActions={masterActionControls} />}
         {activeTab === "mapa" && <>
-          {!readOnlyPreview && <div className="map-session-popover"><MobileDisclosure mobile title="Sessão e reservas" summary={`Barulho ${game.noise} · Medo ${game.fear}`}><div className="panel scene-control-panel mb-5">
-            <section className="scene-control-section scene-pressure-section">
-              <div className="scene-control-heading">
-                <div className="scene-control-title"><Volume2 size={20} /><b>Pressão da cena</b></div>
-                <div className="scene-control-actions">
-                  <Button size="sm" variant="outline" onClick={() => {
-                    edit(beginScene);
-                    toast.success("Nova cena iniciada", { description: "Barulho voltou a 0 e habilidades por cena foram renovadas." });
-                  }}>Nova cena</Button>
-                  <Button size="sm" variant="outline" onClick={() => {
-                    edit(beginExpedition);
-                    toast.success("Nova expedição iniciada", { description: "Habilidades por expedição foram renovadas." });
-                  }}>Nova expedição</Button>
-                </div>
-              </div>
-
-              <div className="scene-pressure-grid">
-                <div className="scene-meter scene-meter-noise">
-                  <div className="scene-meter-identity">
-                    <Ear size={28} aria-hidden="true" />
-                    <span><b>Barulho</b><small>0–5</small></span>
-                  </div>
-                  <div className="scene-meter-control">
-                    <Counter compact label="Barulho" value={game.noise} max={5} onChange={value=>edit(d=>{d.noise=value;})} />
-                  </div>
-                </div>
-                <div className="scene-meter scene-meter-fear">
-                  <div className="scene-meter-identity">
-                    <Brain size={28} aria-hidden="true" />
-                    <span><b>Medo</b><small>0–12</small></span>
-                  </div>
-                  <div className="scene-meter-control">
-                    <Counter compact tone="fear" label="Medo" value={game.fear} max={12} onChange={value=>edit(d=>{d.fear=value;})} />
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section className="scene-control-section scene-supplies-section">
-              <div className="scene-control-heading">
-                <div className="scene-control-title"><Package size={20} /><b>{game.shelter.hex ? "Suprimentos do abrigo" : "Reservas do grupo"}</b></div>
-              </div>
-
-              <div className="scene-supplies-grid">
-                {([
-                  ["food","Comida",Utensils,"food"],
-                  ["water","Água",Droplets,"water"],
-                  ["parts","Peças",Settings,"parts"],
-                ] as const).map(([key,label,Icon,tone]) =>
-                  <div className={`scene-supply scene-supply-${tone}`} key={key}>
-                    <div className="scene-supply-identity">
-                      <Icon size={25} aria-hidden="true" />
-                      <b>{label}</b>
-                    </div>
-                    <div className="scene-supply-control">
-                      <Counter compact label={label} value={game.shelter[key]} max={key === "parts" ? 99 : 999}
-                        editable quickStep={key === "parts" ? undefined : 4}
-                        onChange={value=>edit(d=>{ if (key === "parts") d.shelter.parts = value;
-                          else adjustProvisionCount(d.shelter, key, value); })} />
-                    </div>
-                  </div>)}
-              </div>
-              <p className="scene-supplies-note">Comida e Água em porções (4 = 1 unidade); Peças em unidades. Sem abrigo, registre apenas o que o grupo consegue transportar.</p>
-            </section>
-          </div></MobileDisclosure></div>}
-          <HexExplorer mobile={mobile} key={!readOnlyPreview&&focus?.target.tab==="mapa"?focus.key:game.campaignId} initialTarget={!readOnlyPreview&&focus?.target.tab==="mapa"?focus.target:undefined} game={communityView} edit={edit} playerPreview={readOnlyPreview} teamPeers={viewedPeers} playerActions={playerActionControls} masterActions={masterActionControls} />
-          {!readOnlyPreview && <div className="map-clock-popover"><MobileDisclosure mobile title="Relógio da expedição" summary={displayTime(game.minutes)}><div className="panel panel-pad mt-5 flex flex-wrap items-center gap-3">
-            <div className="mr-auto"><b>Relógio da expedição</b><p className="text-xs subtle">Ao anoitecer, registre o descanso na ficha, mesmo sem abrigo.</p></div>
-            {[30,60,120].map(amount=><Button key={amount} size="sm" variant="outline" disabled={game.minutes+amount>=1440}
-              onClick={() => {
-                let completedWork: { name: string; points: number; completed: boolean }[] = [];
-                let issue = "";
-                edit(d => {
-                  const result = advanceCampaignTime(d, amount, `Passaram ${amount} minutos na expedição.`);
-                  completedWork = result.completedWork;
-                  issue = result.issue ?? (result.ok ? "" : "Não foi possível avançar o relógio.");
-                });
-                if (issue) { toast.info("Avanço interrompido", {description:issue}); return; }
-                toast("Tempo avançado", {
-                  description: completedWork.length
-                    ? `+${amount < 60 ? `${amount} min` : `${amount / 60} h`} · ${completedWork.map(row => `${row.name} +${row.points}${row.completed ? " concluída" : ""}`).join(" · ")}`
-                    : `+${amount < 60 ? `${amount} min` : `${amount / 60} h`} na expedição.`,
-                });
-              }}>
-              +{amount<60?`${amount} min`:`${amount/60} h`}</Button>)}
+          <HexExplorer mobile={mobile} key={!readOnlyPreview&&focus?.target.tab==="mapa"?focus.key:game.campaignId} initialTarget={!readOnlyPreview&&focus?.target.tab==="mapa"?focus.target:undefined} game={communityView} edit={edit} playerPreview={readOnlyPreview} teamPeers={viewedPeers} playerActions={playerActionControls} masterActions={masterActionControls} sessionControls={!readOnlyPreview ? <MapSessionBar game={game} edit={edit} onAdjustTime={openTimeEditor} /> : undefined} />
+          {!readOnlyPreview && <>
             <Dialog open={timeEditorOpen} onOpenChange={setTimeEditorOpen}>
-              <DialogTrigger asChild><Button size="sm" variant="outline" onClick={openTimeEditor}><Clock3 size={16} /> Ajustar horário</Button></DialogTrigger>
               <DialogContent><DialogHeader><DialogTitle>Ajustar horário do dia</DialogTitle>
                 <DialogDescription>Use esta correção quando a ficção pedir outro horário. A alteração fica registrada no diário da campanha.</DialogDescription></DialogHeader>
                 <Field label="Horário" type="time" value={manualTime} onChange={value => { setManualTime(value); setManualTimeRollbackConfirmed(false); }} />
@@ -902,7 +817,7 @@ export default function CampaignApp() {
                 <DialogFooter><Button variant="outline" onClick={() => setTimeEditorOpen(false)}>Cancelar</Button><Button onClick={saveManualTime}>Salvar horário</Button></DialogFooter>
               </DialogContent>
             </Dialog>
-          </div></MobileDisclosure></div>}
+          </>}
         </>}
         {activeTab === "cena" && <SceneBoard game={previewActionGame} edit={edit} playerPreview={readOnlyPreview} playerActions={playerActionControls} masterActions={masterActionControls} />}
         {activeTab === "sobreviventes" && <SurvivorPanel mobile={mobile} key={readOnlyPreview ? `${viewedSurvivorId}:${playerFocus?.key ?? "player"}` : focus?.target.tab==="sobreviventes"?focus.key:"live"} initialRestFocus={readOnlyPreview && playerFocus?.rest} initialSurvivorId={!readOnlyPreview&&focus?.target.tab==="sobreviventes"?focus.target.survivorId:undefined} initialSection={readOnlyPreview ? playerFocus?.section : focus?.target.tab==="sobreviventes"?focus.target.section:undefined} game={game} edit={edit} playerPreview={readOnlyPreview} playerMode={readOnlyPreview} restPeers={viewedPeers} onOpenConflict={() => setTab("conflito")} playerActions={playerActionControls} masterActions={masterActionControls} />}

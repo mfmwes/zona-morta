@@ -55,7 +55,9 @@ esquerda reúne setor, vias, viagem e expansão. No desktop, clicar em um hex ab
 a janela original do setor, com as abas Exploração e Gestão do setor. No celular, os
 detalhes abrem em uma gaveta inferior. Jogadores consultam apenas o conteúdo
 revelado e não recebem as ferramentas de gestão. Sessão, reservas e relógio
-ficam disponíveis em controles expansíveis para o mestre.
+ficam visíveis para o mestre numa faixa integrada acima do mapa. Os botões de
+tempo podem atravessar a meia-noite sem conceder descanso. Veja
+[relógio contínuo da expedição](expedition-clock.md).
 
 O mestre escolhe o grupo ativo e **Planejar viagem**, seleciona um destino
 conhecido no mapa ou na lista, e usa **Ver trajeto** para enquadrar o percurso.

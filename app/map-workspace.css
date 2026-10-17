@@ -6,6 +6,52 @@
 .map-stage-heading .section-title { margin-top: 2px; font-size: 1rem; }
 .map-session-status { font: 700 .8rem var(--font-mono); display: flex; gap: 16px; align-items: center; }
 .map-session-status > span { font-weight: 400; color: var(--muted-foreground); }
+.map-session-bar { display: flex; flex-wrap: wrap; align-items: stretch; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--border); background: color-mix(in srgb,var(--background) 65%,var(--card)); flex-shrink: 0; z-index: 3; }
+.map-session-bar > div { display: flex; flex-direction: column; gap: 5px; min-width: 0; padding: 8px 10px; border: 1px solid color-mix(in srgb,var(--border) 75%,transparent); border-radius: 9px; background: var(--card); box-shadow: 0 2px 5px #00000005; }
+.map-session-bar .map-session-time { flex: .9 1 210px; border-top: 2px solid #b79558; }
+.map-session-bar .map-session-pressure { flex: 1 1 225px; }
+.map-session-bar .map-session-reserves { flex: 1.3 1 322px; }
+.map-session-group-title { display: flex; align-items: center; gap: 6px; color: var(--muted-foreground); font: 600 .59rem var(--font-mono); letter-spacing: .065em; text-transform: uppercase; line-height: 1.3; }
+.map-session-group-title > svg { flex-shrink: 0; }
+.map-session-group-title .map-session-daylight { margin-left: auto; color: #b79558; }
+.map-session-unit { margin-left: auto; font-size: .53rem; letter-spacing: 0; opacity: .8; }
+.map-session-clock-row { display: flex; align-items: center; justify-content: space-between; min-height: 28px; }
+.map-session-clock-row b { display: flex; align-items: baseline; gap: 7px; font-size: .74rem; color: var(--muted-foreground); font-weight: 500; }
+.map-session-clock-row strong { color: var(--foreground); font: 700 1.4rem var(--font-mono); letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+.map-session-buttons, .map-session-counters { display: flex; align-items: center; gap: 6px; }
+.map-session-bar button { min-height: 28px; height: 28px; padding: 3px 7px; font-size: .69rem; border-radius: 5px; }
+.map-session-bar button:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.map-session-bar button svg { width: 13px; height: 13px; }
+.map-session-bar .map-session-adjust { width: 28px; padding: 5px; color: var(--muted-foreground); }
+.map-session-time-steps > button { flex: 1; background: color-mix(in srgb,var(--background) 60%,var(--card)); border-color: var(--border); font: 600 .7rem var(--font-mono); }
+.map-session-time-steps > button:hover { background: color-mix(in srgb,#b79558 14%,var(--card)); border-color: #b79558; }
+.map-session-bar small { color: var(--muted-foreground); font-size: .59rem; line-height: 1.35; }
+.map-session-clock-note { display: flex; align-items: center; gap: 5px; }
+.map-session-clock-note svg { flex-shrink: 0; }
+.map-session-metric { --metric-accent: #638e8d; flex: 1; position: relative; min-width: 0; padding: 6px; border: 1px solid color-mix(in srgb,var(--metric-accent) 25%,var(--border)); border-radius: 7px; background: color-mix(in srgb,var(--metric-accent) 5%,var(--card)); }
+.map-session-metric > svg { position: absolute; left: 7px; top: 5px; width: 24px; height: 24px; padding: 4px; color: var(--metric-accent); background: color-mix(in srgb,var(--metric-accent) 12%,transparent); border-radius: 6px; }
+.map-session-metric.metric-fear { --metric-accent: #aa81bf; }
+.map-session-metric.metric-food { --metric-accent: #b7934e; }
+.map-session-metric.metric-water { --metric-accent: #659fba; }
+.map-session-metric.metric-parts { --metric-accent: #83998e; }
+.map-session-metric.metric-noise.is-high { --metric-accent: #c48c5c; }
+.map-session-metric > div:not(.map-session-meter) { display: grid; grid-template-columns: minmax(0,1fr); justify-content: stretch; width: 100%; gap: 5px; }
+.map-session-metric .font-bold { padding-left: 26px; font-size: .68rem; line-height: 16px; font-weight: 600; }
+.map-session-bar .number-control { display: flex; justify-content: center; gap: 0; min-width: 0; width: 100%; border: 1px solid var(--border); border-radius: 5px; background: var(--card); overflow: hidden; }
+.map-session-bar .number-control:focus-within { outline: 2px solid var(--ring); outline-offset: 2px; }
+.map-session-bar .number-control button { min-width: 21px; width: 21px; min-height: 25px; height: 25px; padding: 2px; flex: 1; border: 0; border-radius: 0; background: transparent; color: var(--muted-foreground); font-size: .73rem; }
+.map-session-bar .number-control button:hover:not(:disabled) { color: var(--foreground); background: color-mix(in srgb,var(--metric-accent) 15%,var(--card)); }
+.map-session-bar .number-control button:disabled { opacity: .35; }
+.map-session-bar .number-control input, .map-session-bar .number-control output { width: 29px; min-width: 29px; height: 25px; padding: 2px 0; border: 0; border-radius: 0; background: transparent; text-align: center; color: var(--foreground); font: 700 .85rem var(--font-mono); font-variant-numeric: tabular-nums; }
+.map-session-bar .number-control input { appearance: textfield; }
+.map-session-bar .number-control input::-webkit-inner-spin-button, .map-session-bar .number-control input::-webkit-outer-spin-button { appearance: none; margin: 0; }
+.map-session-meter { display: flex; gap: 3px; margin-top: 4px; }
+.map-session-meter i { flex: 1; height: 3px; border-radius: 3px; background: color-mix(in srgb,var(--metric-accent) 16%,var(--card)); }
+.map-session-meter i.is-filled { background: var(--metric-accent); }
+.map-session-scene-actions { justify-content: space-between; margin-top: auto; }
+.map-session-scene-actions button { gap: 5px; min-height: 24px; height: 24px; color: var(--muted-foreground); font-size: .64rem; }
+.map-session-reserves > small { margin-top: auto; }
+.map-stage:has(.map-session-bar) .map-session-status { display: none; }
 .map-stage > .map-surface { flex: 1; min-height: 0; position: relative; border: 0; border-radius: 0; margin: 0; display: flex; flex-direction: column; }
 .map-stage .world-map-viewport { flex: 1; height: auto; min-height: 0; }
 .map-stage .world-map-toolbar { position: absolute; top: 12px; left: 82px; right: 16px; padding: 0; border: 0; background: transparent; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; pointer-events: none; z-index: 4; }
@@ -26,7 +72,10 @@
 .map-stage .world-map-hint, .map-stage > .intro-line, .map-stage > p, .map-stage .mobile-map-help { display: none; }
 .map-stage .map-caption { background: #102a30ec; padding: 7px 15px; margin: 0; border-top: 1px solid #426366; font-size: .67rem; gap: 7px 14px; color: #c4d9d1; }
 .map-journey-dock { position: absolute; top: 66px; bottom: 0; right: 0; width: min(410px,40%); z-index: 6; overflow-y: auto; overscroll-behavior: contain; background: var(--card); border-left: 1px solid var(--border); box-shadow: -8px 0 28px #0003; scrollbar-width: thin; }
-.map-workbench.has-journey .map-stage > .map-surface { margin-right: min(410px,40%); }
+.map-workbench.has-journey .map-stage > .map-surface { padding-right: min(410px,40%); }
+.map-stage .map-surface > .map-tool-dock { top: 14px; }
+.map-stage .map-surface > .map-journey-dock { top: 0; }
+.map-workbench.has-journey .world-map-toolbar { right: calc(min(410px,40%) + 16px); }
 .map-workbench.has-journey .map-active-group { max-width: min(350px,42%); }
 .map-workbench.has-journey .map-group-summary { right: min(425px,42%); }
 .map-journey-dock { padding: 16px; }
@@ -39,19 +88,11 @@
 .map-mode .campaign-page-heading { display: none; }
 .map-mode .topbar { min-height: 60px; padding: 8px 18px; }
 .map-mode .map-workbench { height: calc(100dvh - 78px); }
-.map-session-popover, .map-clock-popover, .map-log-popover { position: absolute; z-index: 12; right: 26px; top: 22px; }
-.map-mode .page:has(.map-session-popover) .map-session-status { visibility: hidden; }
-.map-mode .page:has(.map-session-popover) .map-stage-heading .tag { display: none; }
-.map-clock-popover { right: 220px; }
-.map-log-popover { left: 240px; right: auto; }
-.map-session-popover details, .map-clock-popover details, .map-log-popover details { margin: 0; border: 1px solid var(--border); border-radius: 6px; background: var(--card); }
-.map-session-popover summary, .map-clock-popover summary, .map-log-popover summary { padding: 7px 10px; cursor: pointer; font-size: .75rem; }
-.map-session-popover summary small, .map-clock-popover summary small { display: none; }
-.map-session-popover details > div, .map-clock-popover details > div, .map-log-popover details > div { position: absolute; top: 40px; right: 0; width: min(720px,calc(100vw - 110px)); max-height: 70dvh; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--card); box-shadow: 0 10px 32px #0005; }
-.map-log-popover details > div { left: 0; right: auto; }
+.map-log-popover { position: absolute; z-index: 12; left: 240px; top: 22px; }
+.map-log-popover details { margin: 0; border: 1px solid var(--border); border-radius: 6px; background: var(--card); }
+.map-log-popover summary { padding: 7px 10px; cursor: pointer; font-size: .75rem; }
+.map-log-popover details > div { position: absolute; top: 40px; left: 0; width: min(720px,calc(100vw - 110px)); max-height: 70dvh; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--card); box-shadow: 0 10px 32px #0005; }
 .map-log-popover .panel { margin: 0; }
-.map-session-popover .scene-control-panel { margin: 0; display: block; }
-.map-clock-popover .panel { margin: 0; }
 .qa-map-mode .map-workbench { height: calc(100dvh - 86px); }
 @media (min-width: 761px) {
   .qa-preview.is-map { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
@@ -72,6 +113,12 @@
   .map-stage .world-map-search { width: 210px; }
 }
 @media (max-width: 760px) {
+  .map-session-bar { max-height: 170px; overflow-y: auto; padding: 6px 8px; gap: 8px; }
+  .map-session-bar .map-session-reserves { flex-basis: 100%; }
+  .map-stage .map-surface > .map-tool-dock { top: 96px; }
+  .map-stage .map-surface > .map-journey-dock { top: 90px; }
+  .map-workbench.has-journey .map-stage > .map-surface { padding-right: 0; }
+  .map-workbench.has-journey .world-map-toolbar { right: 9px; }
   .map-workbench, .map-mode .map-workbench { height: calc(100dvh - 185px); min-height: 460px; }
   .map-stage-heading { padding: 10px; gap: 6px; }
   .map-stage-heading .tag { display: none; }
@@ -92,8 +139,8 @@
   .map-journey-dock { top: 118px; width: calc(100% - 60px); max-height: calc(100% - 118px); }
   .map-workbench.has-journey .map-stage > .map-surface { margin-right: 0; }
   .map-mode .page { padding: 6px; }
-  .map-session-popover, .map-clock-popover, .map-log-popover { position: relative; inset: auto; display: inline-block; margin: 4px 3px; }
-  .map-session-popover details > div, .map-clock-popover details > div, .map-log-popover details > div { left: 0; right: auto; width: min(94vw,500px); }
+  .map-log-popover { position: relative; inset: auto; display: inline-block; margin: 4px 3px; }
+  .map-log-popover details > div { left: 0; right: auto; width: min(94vw,500px); }
   .qa-map-mode .rail { display: none; }
   .qa-map-mode .map-workbench { height: calc(100dvh - 165px); }
 }

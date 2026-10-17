@@ -377,20 +377,23 @@ export function inspectDayClosePlan(game: GameState, plan: DayClosePlan): DayClo
   };
 }
 
-function advanceMorning(game: GameState) {
+function advanceMorning(game: GameState, transition: "morning" | "midnight" = "morning") {
   settleScheduledWorkBeforeMorning(game);
   game.day += 1;
-  game.minutes = 480;
+  game.minutes = transition === "morning" ? 480 : 0;
   expireEventClocks(game);
   resetParallelTime(game);
-  game.noise = 0;
-  game.scene = (game.scene ?? 1) + 1;
+  if (transition === "morning") {
+    game.noise = 0;
+    game.scene = (game.scene ?? 1) + 1;
+  }
   const morning = absoluteMinutes(game);
+  const dayMoment = transition === "morning" ? "Ao amanhecer" : "Na passagem de dia";
   const lostAtLocations = expireLocationFood(game);
-  if (lostAtLocations.length) addLog(game, "provisões", `Ao amanhecer, estragou nos locais: ${lostAtLocations.join(", ")}.`);
+  if (lostAtLocations.length) addLog(game, "provisões", `${dayMoment}, estragou nos locais: ${lostAtLocations.join(", ")}.`);
   const lostAtBase = [...expirePortionLots(game.shelter, game.day),
     ...expirePhysicalFood(game, game.shelter.inventory ?? [], shelterColdStorageActive(game, game.shelter))];
-  if (lostAtBase.length) addLog(game, "provisões", `Ao amanhecer, estragou nas reservas: ${lostAtBase.join(", ")}.`);
+  if (lostAtBase.length) addLog(game, "provisões", `${dayMoment}, estragou nas reservas: ${lostAtBase.join(", ")}.`);
   for (const site of game.formerShelters ?? []) {
     const spoiled = [...expirePortionLots(site, game.day),
       ...expirePhysicalFood(game, site.inventory ?? [], Boolean(site.coldStorage && shelterMetrics(site).energy > 0))];
@@ -403,12 +406,12 @@ function advanceMorning(game: GameState) {
     if (prior === "Exposto" && person.exposureDeadline !== null && person.exposureDeadline < morning) person.infection = "Infectado";
     else if (prior === "Infectado") person.infection = "Sintomático";
     else if (prior === "Sintomático") { person.infection = "Terminal"; person.terminalScenes = 3; }
-    if (prior !== person.infection) addLog(game, "infecção", `${person.name}: ${prior} → ${person.infection} ao amanhecer.`);
+    if (prior !== person.infection) addLog(game, "infecção", `${person.name}: ${prior} → ${person.infection} ${transition === "morning" ? "ao amanhecer" : "na passagem de dia"}.`);
   }
-  addLog(game, "dia", `Amanhecer do dia ${game.day}.`);
+  addLog(game, "dia", transition === "morning" ? `Amanhecer do dia ${game.day}.` : `Meia-noite: início do dia ${game.day}, sem descanso. A cena e o Barulho continuam.`);
 }
 
-export function closeDayWithPlan(game: GameState, plan: DayClosePlan): DayCloseResult {
+export function closeDayWithPlan(game: GameState, plan: DayClosePlan, transition: "morning" | "midnight" = "morning"): DayCloseResult {
   if (game.activities?.some(a => a.day === game.day && a.status === "running")) return { ok: false, ...inspectDayClosePlan(game, plan) };
   if (game.day !== plan.expectedDay || !validResidentCount(plan.residentsFood) || !validResidentCount(plan.residentsWater))
     return { ok: false, ...inspectDayClosePlan(game, plan), stale: true };
@@ -515,7 +518,7 @@ export function closeDayWithPlan(game: GameState, plan: DayClosePlan): DayCloseR
     addLog(game, "privação", `Moradores do abrigo: faltaram ${residentFoodMissing} porção(ões) de Comida e ${residentWaterMissing} de Água. Nenhuma consequência mecânica foi aplicada automaticamente.`);
   }
 
-  advanceMorning(game);
+  advanceMorning(game, transition);
   return {
     ok: true,
     ...inspection,

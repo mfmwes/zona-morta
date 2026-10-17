@@ -5,6 +5,7 @@ import { ShelterPanel } from '@/components/campaign-views';
 import { SceneBoard } from '@/components/scene-board';
 import { HexExplorer } from '@/components/hex-explorer';
 import { TableChat } from '@/components/table-chat';
+import { MapSessionBar } from '@/components/map-session-bar';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Users, House, Layers } from 'lucide-react';
 import { SurvivorPanel } from '@/components/survivor-panel';
@@ -85,7 +86,7 @@ function Preview() {
   </div><div className={`app-shell compact-navigation${query.has('chat')?(chatOpen?' chat-open':' chat-closed'):''}${screen==='map'?' map-mode qa-map-mode':''}`}><aside className="rail"><b title="Zona Morta">ZM</b><div className="campaign-navigation-dock"><nav className="rail-nav"><button title="Ficha" aria-current={screen==='sheet'?'page':undefined} onClick={()=>setScreen('sheet')}><Users size={17}/><span>Ficha</span></button><button title="Abrigo" aria-current={screen==='shelter'?'page':undefined} onClick={()=>setScreen('shelter')}><House size={17}/><span>Abrigo</span></button><button title="Cena visual" aria-current={screen==='scene'?'page':undefined} onClick={()=>setScreen('scene')}><Layers size={17}/><span>Cena visual</span></button></nav><div className="rail-presentation-slot campaign-utility-controls"><ThemeToggle placement="campaign"/></div></div></aside><main className="workspace"><div className="page"><div className="campaign-page-heading mb-6"><h1 className="page-title">{screen==='map'?'Mapa e exploração':screen==='shelter'?'Abrigo':screen==='sheet'?'Meu sobrevivente':screen==='scene'?'Cena visual':screen==='conflict'?'Conflito':'Zona Morta'}</h1><p className="intro-line mt-2">Explore as alterações com uma campanha de exemplo.</p></div>
     {player&&<PlayerAttention game={game} actorId={actor.id} onOpen={target=>{if(target==='conflict')setScreen('conflict');else if(target==='map')toast.info('Abra o local da busca no mapa da campanha.');else{setFocus({key:focus.key+1,section:target==='inventory'?'inventario':'resumo',rest:target==='rest'});setScreen('sheet');}}}/>}
     <RuntimeErrorBoundary key={`${role}:${screen}`}>
-      {screen==='map'&&<HexExplorer game={game} edit={edit} playerPreview={player} mobile={mobile} teamPeers={playerTeamPeers(full)} playerActions={player?controls:undefined}/>}
+      {screen==='map'&&<HexExplorer game={game} edit={edit} playerPreview={player} mobile={mobile} teamPeers={playerTeamPeers(full)} playerActions={player?controls:undefined} sessionControls={!player?<MapSessionBar game={game} edit={edit}/>:undefined}/>}
       {screen==='scene'&&<SceneBoard game={game} edit={edit} playerPreview={player} playerActions={player?controls:undefined}/>}
       {screen==='shelter'&&<ShelterPanel game={game} edit={edit} playerPreview={player} playerSurvivorId={actor.id} playerActions={player?controls:undefined}/>}
       {screen==='sheet'&&<SurvivorPanel key={focus.key} initialSection={focus.section} initialRestFocus={focus.rest} game={game} edit={edit} playerPreview={player} playerMode={player} mobile={mobile} restPeers={playerTeamPeers(full)} playerActions={player?controls:undefined} onOpenConflict={()=>setScreen('conflict')}/>}

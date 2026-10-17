@@ -6,7 +6,7 @@ import { timedActionParticipantIssue } from "@/lib/activity";
 
 import { MasterContextActions, PlayerContextActions, type MasterActionControls, type PlayerActionControls } from "@/components/player-actions-panel";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Archive, CheckCircle2, ChevronDown, Compass, Dice5, Eye, Footprints, House, MapPin, Package, Play, Route, Search, Trash2, Undo2, Users, Plus, Layers } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -70,8 +70,9 @@ function travelDurationLabel(minutes: number) {
   return `${hours}h${String(rest).padStart(2, "0")}`;
 }
 
-export function HexExplorer({ mobile = false, initialTarget, game, edit, playerPreview, teamPeers = [], playerActions, masterActions }: {
+export function HexExplorer({ mobile = false, initialTarget, game, edit, playerPreview, teamPeers = [], playerActions, masterActions, sessionControls }: {
   mobile?: boolean;
+  sessionControls?: ReactNode;
   initialTarget?: {hexId:string;eventId?:string;pointId?:string;areaId?:string};
   game: GameState;
   edit: Edit;
@@ -615,6 +616,14 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
           <span className="map-session-status">Dia {game.day} · {Math.floor(game.minutes / 60).toString().padStart(2, "0")}:{(game.minutes % 60).toString().padStart(2, "0")} <span>Barulho {game.noise}/5 · Medo {game.fear}/12</span></span>
         </div>
       </div>
+      {!playerPreview && sessionControls}
+
+      {activeGroup && <div className="map-active-group" role="status" aria-live="polite">
+        <span className="map-active-group-icon">{activeGroup.main ? <Footprints size={16} /> : <Users size={16} />}</span>
+        <span><small>GRUPO ATIVO</small><b>{activeGroup.members.map(person => person.name).join(", ")}</b></span>
+        <em>Hex {activeGroup.hex}</em>
+      </div>}
+      <div className="map-surface">
       <nav className="map-tool-dock" aria-label="Ferramentas do mapa">
           <Button size="sm" variant="outline" title="Detalhes do hex selecionado" aria-label="Detalhes do hex selecionado" aria-haspopup="dialog" aria-expanded={sheetOpen} onClick={() => setSheetOpen(!sheetOpen)}><MapPin /><span>Setor</span></Button>
           {visibleWorldConnections(game.hexes).length > 0 && <Button size="sm" variant="outline" title={showRoads ? "Ocultar vias" : "Mostrar vias"} aria-label={showRoads ? "Ocultar vias" : "Mostrar vias"} aria-pressed={showRoads}
@@ -625,12 +634,6 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
           }} title="Planejar viagem" aria-label="Planejar viagem"><Route /><span>Viagem</span></Button>}
           {!playerPreview && <Button size="sm" variant="outline" title="Expandir mundo" aria-label="Expandir mundo" onClick={() => setExpansionOpen(true)}><Plus /><span>Expandir</span></Button>}
       </nav>
-      {activeGroup && <div className="map-active-group" role="status" aria-live="polite">
-        <span className="map-active-group-icon">{activeGroup.main ? <Footprints size={16} /> : <Users size={16} />}</span>
-        <span><small>GRUPO ATIVO</small><b>{activeGroup.members.map(person => person.name).join(", ")}</b></span>
-        <em>Hex {activeGroup.hex}</em>
-      </div>}
-      <div className="map-surface">
         <WorldMapViewport hexes={game.hexes} activeHex={activeSourceHex} selected={selected} focusHex={focusHex} playerPreview={playerPreview} onSelect={selectHex} plannedPath={journey?.path}>
           <defs><pattern id="setor-avistado" width="8" height="8" patternUnits="userSpaceOnUse">
             <rect width="8" height="8" fill="#2d4d50" />
@@ -710,6 +713,11 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
           })}
           <MapRoads hexes={game.hexes} plannedPath={journey?.path ?? []} showRoads={showRoads} />
         </WorldMapViewport>
+      {planning && journey && !playerPreview && <div className={`map-journey-dock${sheetOpen ? " is-covered" : ""}`}><JourneyPlanner game={game} source={activeSourceHex} destination={journeyDestination}
+        onDestination={id => { setJourneyDestination(id); setSelected(id); }} mode={journeyMode} onMode={setJourneyMode}
+        dailyHours={marchHours} onDailyHours={setMarchHours} reserveDays={reserveDays} onReserveDays={setReserveDays}
+        plan={journey} issue={journeyIssue} onClose={() => setPlanning(false)} onNext={travelNextJourneyHex}
+        onInspect={id => { setSelected(id); setFocusHex(id); setSheetOpen(true); }} /></div>}
         <div className="map-caption" hidden={mobile}>
           <span><i className="legend-swatch" style={{background:"#35686a"}} /> Explorado</span>
           <span><i className="legend-swatch legend-observed" /> Avistado</span>
@@ -726,11 +734,7 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
           {(game.npcs ?? []).length > 0 && <span className="flex items-center gap-1"><Users size={15} /> PNJs</span>}
         </div>
       </div>
-      {planning && journey && !playerPreview && <div className={`map-journey-dock${sheetOpen ? " is-covered" : ""}`}><JourneyPlanner game={game} source={activeSourceHex} destination={journeyDestination}
-        onDestination={id => { setJourneyDestination(id); setSelected(id); }} mode={journeyMode} onMode={setJourneyMode}
-        dailyHours={marchHours} onDailyHours={setMarchHours} reserveDays={reserveDays} onReserveDays={setReserveDays}
-        plan={journey} issue={journeyIssue} onClose={() => setPlanning(false)} onNext={travelNextJourneyHex}
-        onInspect={id => { setSelected(id); setFocusHex(id); setSheetOpen(true); }} /></div>}
+
       <div className="map-group-summary" aria-label="Selecionar grupo ativo">
         {publicGroups.map(group => <button type="button" key={group.hex}
           className={`map-group-chip ${activeSourceHex === group.hex ? "is-active" : ""}`}
