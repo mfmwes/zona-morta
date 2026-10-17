@@ -53,11 +53,7 @@
 .map-session-popover .scene-control-panel { margin: 0; display: block; }
 .map-clock-popover .panel { margin: 0; }
 .qa-map-mode .map-workbench { height: calc(100dvh - 86px); }
-@media (min-width: 1321px) {
-  .app-shell.map-mode.chat-open { grid-template-columns: 72px minmax(0,1fr) 360px; }
-}
 @media (min-width: 761px) {
-  html:has(.map-mode) .theme-controls--global { display: none; }
   .qa-preview.is-map { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
   .qa-preview.is-map > .qa-controls { flex-shrink: 0; }
   .qa-preview.is-map > .app-shell { flex: 1; min-height: 0; overflow: hidden; }
@@ -69,24 +65,6 @@
   .qa-map-mode.app-shell { min-height: 0; }
   .qa-map-mode .workspace { height: calc(100dvh - 70px); }
   .qa-map-mode .rail { height: calc(100dvh - 70px); }
-}
-@media (min-width: 761px) {
-  .app-shell.map-mode { grid-template-columns: 72px minmax(0,1fr); }
-  .map-mode .rail { width: 72px; height: 100dvh; position: sticky; top: 0; padding: 16px 8px; gap: 20px; }
-  .app-shell.qa-map-mode .rail { height: calc(100dvh - 70px); }
-  .map-mode .rail > .flex > div:not(.brand-mark), .map-mode .rail > .px-3, .map-mode .rail-foot { display: none; }
-  .map-mode .rail > .flex { padding: 0; justify-content: center; }
-  .map-mode .rail-nav { display: grid; }
-  .map-mode .rail-nav button { justify-content: center; padding: 12px 6px; }
-  .map-mode .rail-nav button span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-  .map-mode .rail-presentation-slot { display: grid; gap: 8px; }
-  .map-mode .rail-presentation-slot button { width: 44px; min-width: 0; padding: 8px; }
-  .map-mode .rail-presentation-slot button span { display: none; }
-  .map-mode .rail .theme-controls { display: grid; gap: 8px; position: static; }
-  .map-mode .rail .theme-controls button { position: static; width: 44px; min-width: 44px; }
-  .map-mode .rail .campaign-utility-controls { display: grid; }
-  .map-mode .rail .theme-toggle--campaign { display: flex; justify-content: center; }
-  .map-mode .rail .theme-controls button span { display: none; }
 }
 @media (max-width: 1100px) and (min-width: 761px) {
   .map-stage-heading .map-session-status > span { display: none; }

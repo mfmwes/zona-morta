@@ -4,6 +4,12 @@ A campanha tem duas apresentações. Até 767 px, `MobileCampaignShell` organiza
 
 O `CampaignApp` continua responsável pela campanha, projeção de jogador, fila de alterações, sincronização, revisão e simulação local. Conteúdo, handlers e chat são compartilhados entre as apresentações; nenhuma campanha, regra ou API foi duplicada.
 
+No computador/tablet, todas as seções usam a mesma barra lateral de 72 px, com
+ícones, nomes ao passar o mouse e indicação da seção ativa. Tema, estilo e
+apresentação de imagem permanecem na barra; o chat reserva sua coluna em telas
+largas e abre sobreposto nas menores. O conteúdo aproveita a largura disponível,
+enquanto o mapa mantém seu comportamento de ocupar a altura da janela.
+
 ## Problemas e prioridades atendidas
 
 | Prioridade | Problema observado | Implementação |

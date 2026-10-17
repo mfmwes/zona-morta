@@ -959,7 +959,7 @@ export default function CampaignApp() {
       onSearch={masterExperience ? () => setSearchOpen(true) : undefined}
       scenePressure={readOnlyPreview ? { noise: game.noise, fear: game.fear } : undefined}
       priority={conflictActive ? mobilePendingDamage ? `${mobilePendingDamage} dano(s) aguardando decisão` : spotlightRequests ? `${spotlightRequests} pedido(s) de Spotlight` : "Conflito ativo" : undefined}
-      notices={campaignNotices} tools={mobileTools} chat={tableChat}>{campaignContent}</MobileCampaignShell> : <SidebarProvider className={`app-shell ${chatOpen ? "chat-open" : "chat-closed"}${activeTab === "mapa" ? " map-mode" : ""}`}>
+      notices={campaignNotices} tools={mobileTools} chat={tableChat}>{campaignContent}</MobileCampaignShell> : <SidebarProvider className={`app-shell compact-navigation ${chatOpen ? "chat-open" : "chat-closed"}${activeTab === "mapa" ? " map-mode" : ""}`}>
     <Sidebar collapsible="none" className="rail">
       <div className="flex items-center gap-3 px-2">
         <div className="brand-mark">ZM</div><div><div className="text-[.93rem] font-extrabold tracking-wide">ZONA MORTA</div>

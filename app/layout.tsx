@@ -20,6 +20,7 @@ import "./appearance.css";
 import "./usability-upgrade.css";
 import "./map-concept.css";
 import "./map-workspace.css";
+import "./campaign-navigation.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { appearanceBootstrapScript } from "@/lib/appearance";

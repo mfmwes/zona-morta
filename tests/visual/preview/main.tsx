@@ -5,6 +5,8 @@ import { ShelterPanel } from '@/components/campaign-views';
 import { SceneBoard } from '@/components/scene-board';
 import { HexExplorer } from '@/components/hex-explorer';
 import { TableChat } from '@/components/table-chat';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { Users, House, Layers } from 'lucide-react';
 import { SurvivorPanel } from '@/components/survivor-panel';
 import { PlayerConflictScene, ConflictSceneManager } from '@/components/conflict-scene-manager';
 import { NpcPanel } from '@/components/npc-panel';
@@ -42,6 +44,7 @@ import '@/app/usability-upgrade.css';
 import '@/app/map-concept.css';
 import './preview.css';
 import '@/app/map-workspace.css';
+import '@/app/campaign-navigation.css';
 
 declare global { interface Window { __qa: { game: () => GameState; mutate: (fn: (draft: GameState) => void) => void } } }
 const query = new URLSearchParams(location.search);
@@ -79,7 +82,7 @@ function Preview() {
     <label>Tema <select aria-label="Tema" defaultValue="dark" onChange={e=>document.documentElement.dataset.theme=e.target.value}><option value="dark">Escuro</option><option value="light">Claro</option></select></label>
     <label>Estilo <select aria-label="Estilo" defaultValue="tecnico" onChange={e=>document.documentElement.dataset.visualStyle=e.target.value}><option>tecnico</option><option>fiel</option><option>leitura</option></select></label>
     <button onClick={()=>location.reload()}>Reiniciar exemplo</button>{query.has('chat')&&<button aria-expanded={chatOpen} onClick={()=>setChatOpen(!chatOpen)}>Chat</button>}<small>Nenhum dado é enviado à campanha real.</small>
-  </div><div className={`app-shell${query.has('chat')?(chatOpen?' chat-open':' chat-closed'):''}${screen==='map'?' map-mode qa-map-mode':''}`}><aside className="rail"><b title="Zona Morta">ZM</b><nav className="rail-nav"><button onClick={()=>setScreen('sheet')}>Ficha</button><button onClick={()=>setScreen('shelter')}>Abrigo</button><button onClick={()=>setScreen('scene')}>Cena visual</button></nav></aside><main className="workspace"><div className="page"><div className="campaign-page-heading mb-6"><h1 className="page-title">{screen==='map'?'Mapa e exploração':screen==='shelter'?'Abrigo':screen==='sheet'?'Meu sobrevivente':screen==='scene'?'Cena visual':screen==='conflict'?'Conflito':'Zona Morta'}</h1><p className="intro-line mt-2">Explore as alterações com uma campanha de exemplo.</p></div>
+  </div><div className={`app-shell compact-navigation${query.has('chat')?(chatOpen?' chat-open':' chat-closed'):''}${screen==='map'?' map-mode qa-map-mode':''}`}><aside className="rail"><b title="Zona Morta">ZM</b><div className="campaign-navigation-dock"><nav className="rail-nav"><button title="Ficha" aria-current={screen==='sheet'?'page':undefined} onClick={()=>setScreen('sheet')}><Users size={17}/><span>Ficha</span></button><button title="Abrigo" aria-current={screen==='shelter'?'page':undefined} onClick={()=>setScreen('shelter')}><House size={17}/><span>Abrigo</span></button><button title="Cena visual" aria-current={screen==='scene'?'page':undefined} onClick={()=>setScreen('scene')}><Layers size={17}/><span>Cena visual</span></button></nav><div className="rail-presentation-slot campaign-utility-controls"><ThemeToggle placement="campaign"/></div></div></aside><main className="workspace"><div className="page"><div className="campaign-page-heading mb-6"><h1 className="page-title">{screen==='map'?'Mapa e exploração':screen==='shelter'?'Abrigo':screen==='sheet'?'Meu sobrevivente':screen==='scene'?'Cena visual':screen==='conflict'?'Conflito':'Zona Morta'}</h1><p className="intro-line mt-2">Explore as alterações com uma campanha de exemplo.</p></div>
     {player&&<PlayerAttention game={game} actorId={actor.id} onOpen={target=>{if(target==='conflict')setScreen('conflict');else if(target==='map')toast.info('Abra o local da busca no mapa da campanha.');else{setFocus({key:focus.key+1,section:target==='inventory'?'inventario':'resumo',rest:target==='rest'});setScreen('sheet');}}}/>}
     <RuntimeErrorBoundary key={`${role}:${screen}`}>
       {screen==='map'&&<HexExplorer game={game} edit={edit} playerPreview={player} mobile={mobile} teamPeers={playerTeamPeers(full)} playerActions={player?controls:undefined}/>}

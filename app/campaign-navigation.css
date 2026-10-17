@@ -1,0 +1,25 @@
+/* One desktop navigation rail for every campaign section; mobile uses its own shell. */
+@media (min-width: 761px) {
+  html:has(.compact-navigation) .theme-controls--global { display: none; }
+  .app-shell.compact-navigation { grid-template-columns: 72px minmax(0,1fr); }
+  .compact-navigation > .workspace > .page { max-width: none; width: 100%; }
+  .compact-navigation .rail { width: 72px; height: 100dvh; position: sticky; top: 0; padding: 16px 8px; gap: 20px; }
+  .compact-navigation .rail > .flex > div:not(.brand-mark),
+  .compact-navigation .rail > .px-3, .compact-navigation .rail-foot { display: none; }
+  .compact-navigation .rail > .flex { padding: 0; justify-content: center; }
+  .compact-navigation .campaign-navigation-dock { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 16px; }
+  .compact-navigation .rail-nav { display: grid; flex: 1; min-height: 0; align-content: start; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; }
+  .compact-navigation .rail-nav button { justify-content: center; padding: 12px 6px; }
+  .compact-navigation .rail-nav button span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .compact-navigation .rail-presentation-slot { display: grid; gap: 8px; position: static; inset: auto; margin: auto 0 0; padding: 0; flex-shrink: 0; pointer-events: auto; }
+  .compact-navigation .rail-presentation-slot button { width: 44px; min-width: 0; padding: 8px; }
+  .compact-navigation .rail-presentation-slot button span { display: none; }
+  .compact-navigation .rail .theme-controls { display: grid; gap: 8px; position: static; }
+  .compact-navigation .rail .theme-controls button { position: static; width: 44px; min-width: 44px; }
+  .compact-navigation .rail .campaign-utility-controls { display: grid; }
+  .compact-navigation .rail .theme-toggle--campaign { display: flex; justify-content: center; }
+  .compact-navigation .rail .theme-controls button span { display: none; }
+}
+@media (min-width: 1321px) {
+  .app-shell.compact-navigation.chat-open { grid-template-columns: 72px minmax(0,1fr) 360px; }
+}
