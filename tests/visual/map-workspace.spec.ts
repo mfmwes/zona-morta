@@ -2,6 +2,39 @@ import { test, expect } from '@playwright/test';
 
 test.use({ baseURL: process.env.ROAD_PREVIEW_URL || 'http://127.0.0.1:4173' });
 
+for (const width of [1280, 1440, 1920]) {
+  test(`map chat opens inside the viewport, stays open across screens and closes at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.goto('/?screen=map&scenario=roads&chat');
+    await page.getByRole('button', { name: 'Chat', exact: true }).click();
+    const chat = page.getByRole('complementary', { name: 'Chat da mesa', exact: true });
+    await expect(chat).toBeVisible();
+    await expect.poll(async () => {
+      const box = await chat.boundingBox();
+      return Boolean(box && box.y >= 0 && box.y + box.height <= 1001 && box.x >= 0 && box.x + box.width <= width + 1);
+    }).toBe(true);
+    if (width > 1320) {
+      const chatBox = (await chat.boundingBox())!;
+      const mapBox = (await page.locator('.map-workbench').boundingBox())!;
+      expect(mapBox.x + mapBox.width).toBeLessThanOrEqual(chatBox.x + 1);
+    }
+    await page.getByRole('textbox', { name: 'Mensagem para a mesa' }).fill('Chat funcionando no mapa');
+    await page.getByRole('button', { name: 'Enviar mensagem', exact: true }).click();
+    await expect(chat).toContainText('Chat funcionando no mapa');
+    await page.getByRole('combobox', { name: 'Tela', exact: true }).selectOption('scene');
+    await expect(chat).toBeVisible();
+    await page.getByRole('combobox', { name: 'Tela', exact: true }).selectOption('map');
+    await expect(chat).toBeVisible();
+    const box = (await chat.boundingBox())!;
+    expect(box.y + box.height).toBeLessThanOrEqual(1001);
+    if (width === 1440) await page.screenshot({ path: 'outputs/map-chat-fixed.png', fullPage: true });
+    await chat.getByRole('button', { name: 'Fechar chat', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Chat', exact: true })).toHaveAttribute('aria-expanded', 'false');
+    if (width > 1320) await expect(chat).toBeHidden();
+    else await expect.poll(async () => (await chat.boundingBox())?.x).toBeGreaterThanOrEqual(width);
+  });
+}
+
 test('desktop hex management keeps the original dialog and tabs without narrowing the map', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/?screen=map&scenario=roads');

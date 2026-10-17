@@ -3,3 +3,7 @@
 .qa-controls select,.qa-controls button { background:var(--background); color:var(--foreground); border:1px solid var(--input); border-radius:5px; padding:7px; }
 .qa-controls small { color:var(--muted-foreground); }
 .qa-reading { max-width:720px; }
+@media (min-width: 1321px) {
+  .qa-preview.is-map #table-chat { min-height: 0; }
+  .qa-preview.is-map .table-chat { height: 100%; }
+}

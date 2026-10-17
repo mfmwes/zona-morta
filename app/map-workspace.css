@@ -53,6 +53,9 @@
 .map-session-popover .scene-control-panel { margin: 0; display: block; }
 .map-clock-popover .panel { margin: 0; }
 .qa-map-mode .map-workbench { height: calc(100dvh - 86px); }
+@media (min-width: 1321px) {
+  .app-shell.map-mode.chat-open { grid-template-columns: 72px minmax(0,1fr) 360px; }
+}
 @media (min-width: 761px) {
   html:has(.map-mode) .theme-controls--global { display: none; }
   .qa-preview.is-map { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
