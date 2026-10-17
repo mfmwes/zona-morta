@@ -36,8 +36,8 @@ export function JourneyPlanner({ game, source, destination, onDestination, mode,
       <div className="journey-planner-stats" aria-live="polite">
         <div><span>Percurso</span><b>{plan.distanceKm} km · {plan.path.length - 1} hexes</b></div>
         <div><span>Marcha total</span><b>{time(plan.minutes)} · {plan.stages.length} dia(s)</b></div>
-        <div><span>Comida · porções</span><b>{plan.food} necessárias / {plan.carriedFood} levadas</b><small>{Math.max(0, plan.food - plan.carriedFood)} a separar</small></div>
-        <div><span>Água · porções</span><b>{plan.water} necessárias / {plan.carriedWater} levadas</b><small>{Math.max(0, plan.water - plan.carriedWater)} a separar</small></div>
+        <div title="Inclui comida pronta nas mochilas e carrinhos dos participantes."><span>Comida · porções</span><b>{plan.food} necessárias / {plan.carriedFood} levadas</b><small>{Math.max(0, plan.food - plan.carriedFood)} a separar</small></div>
+        <div title="Inclui água pronta nas mochilas e carrinhos dos participantes."><span>Água · porções</span><b>{plan.water} necessárias / {plan.carriedWater} levadas</b><small>{Math.max(0, plan.water - plan.carriedWater)} a separar</small></div>
       </div>
       <ol className="journey-stages">{plan.stages.map((stage, index) => <li key={stage.day}>
         {index < plan.stages.length - 1 ? <Tent size={17} /> : <MapPin size={17} />}

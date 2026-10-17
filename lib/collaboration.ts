@@ -43,6 +43,7 @@ export function projectPlayerGame(game: GameState, survivorId: string): GameStat
   delete visible.explorationPreferences;
   delete visible.parallelTime;
   delete visible.activities;
+  delete visible.archivedTravel;
   visible.publicActivities = publicActivities(game);
   visible.log = visible.log.map(entry => {
     const actor = entry.actorId ? game.survivors.find(person => person.id === entry.actorId) : null;

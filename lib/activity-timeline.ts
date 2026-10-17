@@ -48,7 +48,16 @@ export function scheduleActivity(game: GameState, input: ActivityInput, ids: str
   const activity: ScheduledActivity = { ...input, id: options.id ?? createId(), day: game.day,
     startMinute: game.minutes, endMinute: game.minutes + minutes, participantIds, hexId,
     label, status: "running", operationId: options.operationId };
-  game.activities = [...runningActivities(game), ...(game.activities ?? []).filter(a => a.status !== "running").slice(-100), activity];
+  const history = (game.activities ?? []).filter(a => a.status !== "running");
+  for (const archived of history.slice(0, Math.max(0, history.length - 100))) {
+    if (archived.type !== "travel" || archived.day !== game.day) continue;
+    const end = archived.status === "completed" ? archived.endMinute : archived.cancelledMinute;
+    if (end === undefined) continue;
+    if (game.archivedTravel?.day !== game.day) game.archivedTravel = { day: game.day, minutes: {} };
+    for (const id of archived.participantIds) if (game.survivors.some(p => p.id === id))
+      game.archivedTravel.minutes[id] = (game.archivedTravel.minutes[id] ?? 0) + end - archived.startMinute;
+  }
+  game.activities = [...runningActivities(game), ...history.slice(-100), activity];
   if (options.log !== false) addLog(game, "atividade", `${participantIds.map(id => game.survivors.find(p => p.id === id)!.name).join(", ")}: ${label} · ${displayTime(activity.startMinute)} → ${displayTime(activity.endMinute)}.`, participantIds[0], participantIds);
   return { ok: true as const, activity };
 }

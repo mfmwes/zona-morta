@@ -152,6 +152,11 @@ export function validState(value: unknown): value is GameState {
     && validCampaignSessions(state.sessions)
     && validParallelTime(state.parallelTime, state)
     && validActivities(state.activities, state)
+    && (state.archivedTravel === undefined || (state.archivedTravel !== null && typeof state.archivedTravel === "object"
+      && Number.isInteger(state.archivedTravel.day) && state.archivedTravel.day > 0 && state.archivedTravel.day <= state.day!
+      && state.archivedTravel.minutes !== null && typeof state.archivedTravel.minutes === "object" && !Array.isArray(state.archivedTravel.minutes)
+      && Object.keys(state.archivedTravel.minutes).length <= 30
+      && Object.entries(state.archivedTravel.minutes).every(([id, minutes]) => id.length > 0 && id.length <= 120 && Number.isSafeInteger(minutes) && minutes >= 0 && minutes <= 43200)))
     && state.publicActivities === undefined
     && Number.isInteger(state.fear) && state.fear! >= 0 && state.fear! <= 12
     && Number.isInteger(state.noise) && state.noise! >= 0 && state.noise! <= 5

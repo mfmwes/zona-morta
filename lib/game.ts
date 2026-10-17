@@ -444,6 +444,8 @@ export type GameState = {
   /** Curso temporal individual dos sobreviventes dentro do dia. Permite que subgrupos independentes preencham o mesmo intervalo sem cobrar o relógio global duas vezes. */
   parallelTime?: ParallelTimeState;
   activities?: import("./activity-timeline").ScheduledActivity[];
+  /** March from today's travel records removed from the bounded activity history. */
+  archivedTravel?: { day: number; minutes: Record<string, number> };
   publicActivities?: import("./activity-timeline").PublicActivity[];
   explorationPreferences?: { autoPrepare: boolean; participantIds: string[]; transport?: "personal-first" | "cart-first" };
   hexes: Record<string, HexState>;

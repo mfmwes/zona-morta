@@ -2,7 +2,7 @@ import { survivorHex, type GameState } from "./game";
 import { adjacentHexes, worldConnection } from "./world";
 import { shelterTravelMinutes } from "./shelter-projects";
 import { dailyExtraWater, groupTravelMultiplier } from "./survivor-conditions";
-import { provisionBreakdown } from "./provision-items";
+import { readyStockProvisions } from "./ready-provisions";
 
 export type JourneyMode = "roads" | "any";
 export type JourneyStage = { day: number; from: string; to: string; minutes: number; hexes: string[] };
@@ -18,18 +18,14 @@ export function planJourney(game: GameState, input: {
 }): JourneyPlan {
   const members = game.survivors.filter(person => input.survivorIds.includes(person.id) && survivorHex(game, person) === input.from);
   const ids = members.map(person => person.id);
-  const walkedToday = Math.max(0, ...ids.map(id => (game.activities ?? []).filter(activity => activity.type === "travel"
+  const walkedToday = Math.max(0, ...ids.map(id => (game.archivedTravel?.day === game.day ? game.archivedTravel.minutes[id] ?? 0 : 0) + (game.activities ?? []).filter(activity => activity.type === "travel"
     && activity.day === game.day && (activity.status === "completed" || (activity.status === "cancelled" && activity.cancelledMinute !== undefined)) && activity.participantIds.includes(id))
     .reduce((sum, activity) => sum + (activity.status === "cancelled" ? activity.cancelledMinute! : activity.endMinute) - activity.startMinute, 0)));
   const wholeGroup = members.length === game.survivors.filter(person => survivorHex(game, person) === input.from).length;
   const companions = (game.npcs ?? []).filter(npc => npc.active && npc.hex === input.from && !["Morto", "Desaparecido"].includes(npc.status)
     && ((npc.accompaniesSurvivorIds?.length && npc.accompaniesSurvivorIds.every(id => ids.includes(id)))
       || (!npc.accompaniesSurvivorIds?.length && npc.accompaniesParty && input.from === game.partyHex && wholeGroup)));
-  const carried = (resource: "food" | "water") => members.reduce((sum, person) => {
-    const inventory = person.inventory.filter(item => item.expiresDay === undefined || item.expiresDay > game.day);
-    const expired = (person.provisionLots ?? []).filter(lot => lot.resource === resource && lot.expiresDay !== null && lot.expiresDay <= game.day).reduce((total, lot) => total + lot.qty, 0);
-    return sum + provisionBreakdown({ ...person, [resource]: Math.max(0, person[resource] - expired), inventory }, resource).total;
-  }, 0);
+  const carried = (resource: "food" | "water") => members.reduce((sum, person) => sum + readyStockProvisions(person, resource, game.day), 0);
   const result: JourneyPlan = { path: [], minutes: 0, distanceKm: 0, stages: [], people: members.length + companions.length,
     companions: companions.length, days: 0, food: 0, water: 0, carriedFood: carried("food"), carriedWater: carried("water"), walkedToday, error: null };
   if (!members.length) return { ...result, error: "Escolha um grupo de sobreviventes para planejar a viagem." };

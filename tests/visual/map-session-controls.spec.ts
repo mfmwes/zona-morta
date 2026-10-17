@@ -1,6 +1,35 @@
 import { test, expect } from '@playwright/test';
 
 test.use({ baseURL: process.env.ROAD_PREVIEW_URL || 'http://127.0.0.1:4173' });
+for (const width of [390, 1440]) test(`map and journey include ready cart provisions at ${width}px`, async ({ page }) => {
+  await page.setViewportSize({ width, height: 1000 });
+  await page.goto('/?screen=map&scenario=roads');
+  await page.evaluate(() => window.__qa.mutate(g => {
+    g.day = 4; g.shelter.food = 0; g.shelter.water = 0; g.shelter.hex = '1,0';
+    g.survivors = g.survivors.slice(0, 1);
+    const person = g.survivors[0]; person.hex = '0,0'; person.food = 2; person.water = 1;
+    const item = { qty: 1, load: 0, condition: 'Íntegro', prepared: true, verified: true };
+    person.inventory = [{ id: 'cart', name: 'Carrinho dobrável', qty: 1, load: 1, cartDeployed: true, cartItems: [
+      { ...item, id: 'food', name: 'Provisão de teste', provisionResource: 'food', portionsPerUnit: 4 },
+      { ...item, id: 'water', name: 'Água de teste', provisionResource: 'water', portionsPerUnit: 3 },
+      { ...item, id: 'expired', name: 'Fruta firme', category: 'Alimentos', foundDay: 1, provisionResource: 'food', portionsPerUnit: 1 },
+    ] }];
+  }));
+  const controls = page.getByRole('region', { name: 'Controles da exploração' });
+  await expect(controls.getByLabel('Comida disponível ao grupo ativo', { exact: true })).toHaveText('6');
+  await expect(controls.getByLabel('Água disponível ao grupo ativo', { exact: true })).toHaveText('4');
+  await expect(controls).toContainText('6 em transporte');
+  if (width === 1440) expect((await page.locator('.map-session-bar').boundingBox())!.height).toBeLessThanOrEqual(110);
+  await page.getByRole('button', { name: 'Planejar viagem', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Destino da viagem' }).click();
+  await page.getByRole('option', { name: 'Vale Seco · Entrada de Vale Seco (10,0)', exact: true }).click();
+  await page.getByRole('button', { name: 'Ver trajeto', exact: true }).click();
+  const planner = page.getByRole('region', { name: 'Planejamento de viagem' });
+  await expect(planner).toContainText('/ 6 levadas');
+  await expect(planner).toContainText('/ 4 levadas');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+});
+
 for (const width of [390, 1440]) test(`integrated controls cross midnight without rest or duplicate consumption at ${width}px`, async ({ page }) => {
   await page.setViewportSize({ width, height: 1000 });
   await page.goto('/?screen=map&scenario=roads');

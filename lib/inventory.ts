@@ -1,9 +1,9 @@
 import { ammunitionCount, ammunitionItemType, ammunitionLoad, ammunitionTypeFromName, ammunitionTypes, content, createAmmunitionItem, setShelterAmmoCount, shelterAmmoCount, survivorHex, survivorsAtHex, type AmmunitionType, type StockHolder, type EquipmentSlot, type GameState, type InventoryItem, type Survivor } from "./game";
 import { getPrimary, getProtection, getSecondary, weaponAmmoType } from "./equipment";
 import { createId } from "./id";
-import { transferPortionLots, withdrawPortions } from "./provisions";
+import { expirePhysicalFood, transferPortionLots, withdrawPortions } from "./provisions";
 import { groupedProvisionPortions, hydrateProvisionItem, physicalProvisionPortions, provisionItemInfo, type ProvisionResource } from "./provision-items";
-import { projectOperational } from "./shelter-projects";
+import { projectOperational, shelterColdStorageActive } from "./shelter-projects";
 import { dailyExtraWater } from "./survivor-conditions";
 
 type CatalogEntry = (typeof content.catalog)[number];
@@ -615,6 +615,7 @@ export function prepareProvisionItem(game: GameState, ownerId: string, itemId: s
   const items = container(game, ownerId);
   const item = items?.find(entry => entry.id === itemId);
   if (!items || !item) return null;
+  expirePhysicalFood(game, items, ownerId === "shared" && shelterColdStorageActive(game));
   const before = provisionItemInfo(item);
   if (!before.resource || before.ready || item.condition === "Estragado" || item.condition === "Contaminado") return null;
   const count = Math.max(1, Math.min(item.qty, Math.trunc(quantity)));
@@ -677,6 +678,7 @@ export function consumeProvisionItem(game: GameState, ownerId: string, itemId: s
   if (ownerId === "shared" && (!atSharedStorage(game) || (consumerId && !atSharedStorage(game, consumerId)))) return null;
   const items = container(game, ownerId);
   if (!items) return null;
+  expirePhysicalFood(game, items, ownerId === "shared" && shelterColdStorageActive(game));
   const result = consumeProvisionPortionFromItems(items, itemId);
   if (!result) return null;
   const consumer = consumerId ? game.survivors.find(person => person.id === consumerId)

@@ -70,17 +70,20 @@ export function expirePortionLots(holder: StockHolder, morningDay: number): stri
   return expired;
 }
 
-/** Preserve a spoiled object for disposal; it cannot be converted to portions. */
+export function physicalFoodExpired(item: InventoryItem, day: number, cold = false) {
+  if (item.category !== "Alimentos" || !item.foundDay) return false;
+  const shelf = catalogShelf(item);
+  if (shelf === "C" && cold && item.expiresDay === undefined && !item.prepared) return false;
+  const deadline = item.expiresDay ?? provisionDeadline(shelf, item.foundDay);
+  return deadline !== null && day >= deadline;
+}
+
+/** Preserve spoiled objects, including cart contents, for disposal. */
 export function expirePhysicalFood(game: GameState, items: InventoryItem[], cold = false): string[] {
   const expired: string[] = [];
   for (const item of items) {
-    if (item.condition === "Estragado" || item.category !== "Alimentos" || !item.foundDay) continue;
-    // The catalog lookup lives here to keep both the shelter and personal inventory on the same clock.
-    const shelf = catalogShelf(item);
-    const preparedExpiry = item.expiresDay ?? null;
-    if (shelf === "C" && cold && preparedExpiry === null && !item.prepared) continue;
-    const deadline = preparedExpiry ?? provisionDeadline(shelf, item.foundDay);
-    if (deadline !== null && game.day >= deadline) {
+    if (item.cartItems) expired.push(...expirePhysicalFood(game, item.cartItems));
+    if (item.condition !== "Estragado" && physicalFoodExpired(item, game.day, cold)) {
       item.condition = "Estragado";
       expired.push(`${item.qty}× ${item.name}`);
     }

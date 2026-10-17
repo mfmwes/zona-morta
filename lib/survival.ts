@@ -418,6 +418,7 @@ export function inspectDayClosePlan(game: GameState, plan: DayClosePlan): DayClo
 function advanceMorning(game: GameState, transition: "morning" | "midnight" = "morning") {
   settleScheduledWorkBeforeMorning(game);
   game.day += 1;
+  delete game.archivedTravel;
   game.minutes = transition === "morning" ? 480 : 0;
   expireEventClocks(game);
   resetParallelTime(game);
