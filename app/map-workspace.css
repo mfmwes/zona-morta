@@ -1,0 +1,119 @@
+/* Exploration desk: scoped to the map so the rest of the campaign keeps its layout. */
+.map-workbench { position: relative; height: calc(100dvh - 90px); min-height: 540px; isolation: isolate; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: #10292c; }
+.map-stage { height: 100%; min-width: 0; position: relative; display: flex; flex-direction: column; }
+.map-stage-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 18px; background: var(--card); border-bottom: 1px solid var(--border); z-index: 3; }
+.map-stage-heading .dossier-title { font-size: .64rem; }
+.map-stage-heading .section-title { margin-top: 2px; font-size: 1rem; }
+.map-session-status { font: 700 .8rem var(--font-mono); display: flex; gap: 16px; align-items: center; }
+.map-session-status > span { font-weight: 400; color: var(--muted-foreground); }
+.map-stage > .map-surface { flex: 1; min-height: 0; position: relative; border: 0; border-radius: 0; margin: 0; display: flex; flex-direction: column; }
+.map-stage .world-map-viewport { flex: 1; height: auto; min-height: 0; }
+.map-stage .world-map-toolbar { position: absolute; top: 12px; left: 82px; right: 16px; padding: 0; border: 0; background: transparent; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; pointer-events: none; z-index: 4; }
+.map-stage .world-map-toolbar > * { pointer-events: auto; }
+.map-stage .world-map-toolbar button { background: #163237ed; box-shadow: 0 2px 8px #0003; }
+.map-stage .world-map-toolbar > div { gap: 5px; }
+.map-stage .world-map-search { width: min(270px,100%); }
+.map-stage .world-map-search input { background: #163237ed; font-size: .78rem; padding-block: 6px; }
+.map-tool-dock { position: absolute; left: 14px; top: 86px; z-index: 5; display: grid; gap: 8px; padding: 6px; background: #0d2529ed; border: 1px solid #527572; border-radius: 9px; box-shadow: 0 8px 25px #0004; }
+.map-tool-dock button { width: 46px; height: 48px; padding: 5px; display: flex; flex-direction: column; gap: 3px; color: #d5e8df; background: #1b3b3f; border-color: #496763; }
+.map-tool-dock button span { font-size: .58rem; }
+.map-tool-dock button[aria-pressed=true], .map-tool-dock button[aria-expanded=true] { border-color: #e0bc78; background: #35514a; color: #ffe0a4; }
+.map-stage > .map-active-group { position: absolute; left: 87px; bottom: 94px; z-index: 3; max-width: min(430px,65%); margin: 0; background: #102a30e8; border: 1px solid #6b8b7b; padding: 8px 12px; border-radius: 8px; color: #e1ede5; pointer-events: none; }
+.map-stage .map-active-group small { color: #b1ccc2; }
+.map-stage .map-group-summary { position: absolute; left: 87px; bottom: 39px; right: 15px; z-index: 3; display: flex; flex-wrap: nowrap; overflow-x: auto; margin: 0; padding: 0; max-width: calc(100% - 102px); }
+.map-stage .map-group-chip { flex-shrink: 0; background: #163237ed; color: #d9ece2; }
+.map-stage .map-group-chip small { color: #bed3ca; }
+.map-stage .world-map-hint, .map-stage > .intro-line, .map-stage > p, .map-stage .mobile-map-help { display: none; }
+.map-stage .map-caption { background: #102a30ec; padding: 7px 15px; margin: 0; border-top: 1px solid #426366; font-size: .67rem; gap: 7px 14px; color: #c4d9d1; }
+.map-journey-dock { position: absolute; top: 66px; bottom: 0; right: 0; width: min(410px,40%); z-index: 6; overflow-y: auto; overscroll-behavior: contain; background: var(--card); border-left: 1px solid var(--border); box-shadow: -8px 0 28px #0003; scrollbar-width: thin; }
+.map-workbench.has-journey .map-stage > .map-surface { margin-right: min(410px,40%); }
+.map-workbench.has-journey .map-active-group { max-width: min(350px,42%); }
+.map-workbench.has-journey .map-group-summary { right: min(425px,42%); }
+.map-journey-dock { padding: 16px; }
+.map-journey-dock.is-covered { display: none; }
+.map-journey-dock .journey-planner { margin: 0; padding: 0; border: 0; }
+.map-journey-dock .journey-planner-stats { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.map-journey-dock .journey-planner-controls { grid-template-columns: minmax(0,1fr); }
+.map-journey-dock .journey-next-step button { width: 100%; }
+.map-mode .page { max-width: none; padding: 8px; position: relative; }
+.map-mode .campaign-page-heading { display: none; }
+.map-mode .topbar { min-height: 60px; padding: 8px 18px; }
+.map-mode .map-workbench { height: calc(100dvh - 78px); }
+.map-session-popover, .map-clock-popover, .map-log-popover { position: absolute; z-index: 12; right: 26px; top: 22px; }
+.map-mode .page:has(.map-session-popover) .map-session-status { visibility: hidden; }
+.map-mode .page:has(.map-session-popover) .map-stage-heading .tag { display: none; }
+.map-clock-popover { right: 220px; }
+.map-log-popover { left: 240px; right: auto; }
+.map-session-popover details, .map-clock-popover details, .map-log-popover details { margin: 0; border: 1px solid var(--border); border-radius: 6px; background: var(--card); }
+.map-session-popover summary, .map-clock-popover summary, .map-log-popover summary { padding: 7px 10px; cursor: pointer; font-size: .75rem; }
+.map-session-popover summary small, .map-clock-popover summary small { display: none; }
+.map-session-popover details > div, .map-clock-popover details > div, .map-log-popover details > div { position: absolute; top: 40px; right: 0; width: min(720px,calc(100vw - 110px)); max-height: 70dvh; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--card); box-shadow: 0 10px 32px #0005; }
+.map-log-popover details > div { left: 0; right: auto; }
+.map-log-popover .panel { margin: 0; }
+.map-session-popover .scene-control-panel { margin: 0; display: block; }
+.map-clock-popover .panel { margin: 0; }
+.qa-map-mode .map-workbench { height: calc(100dvh - 86px); }
+@media (min-width: 761px) {
+  html:has(.map-mode) .theme-controls--global { display: none; }
+  .qa-preview.is-map { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+  .qa-preview.is-map > .qa-controls { flex-shrink: 0; }
+  .qa-preview.is-map > .app-shell { flex: 1; min-height: 0; overflow: hidden; }
+  .qa-preview.is-map .workspace, .qa-preview.is-map .app-shell .rail { height: 100%; }
+  .map-mode .workspace { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+  .map-mode .topbar { flex-shrink: 0; }
+  .map-mode .page { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; width: 100%; }
+  .map-mode .map-workbench { flex: 1; min-height: 0; height: auto; }
+  .qa-map-mode.app-shell { min-height: 0; }
+  .qa-map-mode .workspace { height: calc(100dvh - 70px); }
+  .qa-map-mode .rail { height: calc(100dvh - 70px); }
+}
+@media (min-width: 761px) {
+  .app-shell.map-mode { grid-template-columns: 72px minmax(0,1fr); }
+  .map-mode .rail { width: 72px; height: 100dvh; position: sticky; top: 0; padding: 16px 8px; gap: 20px; }
+  .app-shell.qa-map-mode .rail { height: calc(100dvh - 70px); }
+  .map-mode .rail > .flex > div:not(.brand-mark), .map-mode .rail > .px-3, .map-mode .rail-foot { display: none; }
+  .map-mode .rail > .flex { padding: 0; justify-content: center; }
+  .map-mode .rail-nav { display: grid; }
+  .map-mode .rail-nav button { justify-content: center; padding: 12px 6px; }
+  .map-mode .rail-nav button span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .map-mode .rail-presentation-slot { display: grid; gap: 8px; }
+  .map-mode .rail-presentation-slot button { width: 44px; min-width: 0; padding: 8px; }
+  .map-mode .rail-presentation-slot button span { display: none; }
+  .map-mode .rail .theme-controls { display: grid; gap: 8px; position: static; }
+  .map-mode .rail .theme-controls button { position: static; width: 44px; min-width: 44px; }
+  .map-mode .rail .campaign-utility-controls { display: grid; }
+  .map-mode .rail .theme-toggle--campaign { display: flex; justify-content: center; }
+  .map-mode .rail .theme-controls button span { display: none; }
+}
+@media (max-width: 1100px) and (min-width: 761px) {
+  .map-stage-heading .map-session-status > span { display: none; }
+  .map-stage .world-map-toolbar { justify-content: flex-start; }
+  .map-stage .world-map-search { width: 210px; }
+}
+@media (max-width: 760px) {
+  .map-workbench, .map-mode .map-workbench { height: calc(100dvh - 185px); min-height: 460px; }
+  .map-stage-heading { padding: 10px; gap: 6px; }
+  .map-stage-heading .tag { display: none; }
+  .map-stage-heading .section-title { font-size: .85rem; }
+  .map-session-status { display: grid; gap: 2px; font-size: .64rem; }
+  .map-session-status > span { font-size: .6rem; }
+  .map-tool-dock { left: 8px; top: 128px; padding: 3px; gap: 5px; }
+  .map-tool-dock button { width: 40px; height: 44px; }
+  .map-stage .world-map-toolbar { left: 9px; top: 8px; right: 9px; gap: 7px; }
+  .map-stage .world-map-toolbar > div { gap: 4px; }
+  .map-stage .world-map-toolbar button { font-size: .65rem; padding-inline: 7px; min-height: 30px; }
+  .map-stage .world-map-search { width: 100%; }
+  .map-stage .world-map-viewport { min-height: 0; height: auto; }
+  .map-stage > .map-active-group { left: 61px; bottom: 106px; max-width: calc(100% - 72px); padding: 6px; }
+  .map-stage .map-active-group b { font-size: .7rem; }
+  .map-stage .map-group-summary { left: 61px; bottom: 57px; right: 8px; max-width: calc(100% - 72px); }
+  .map-stage .mobile-sector-selection { position: absolute; bottom: 5px; left: 8px; right: 8px; width: auto; margin: 0; background: #163237f5; color: #e0ece6; z-index: 3; }
+  .map-journey-dock { top: 118px; width: calc(100% - 60px); max-height: calc(100% - 118px); }
+  .map-workbench.has-journey .map-stage > .map-surface { margin-right: 0; }
+  .map-mode .page { padding: 6px; }
+  .map-session-popover, .map-clock-popover, .map-log-popover { position: relative; inset: auto; display: inline-block; margin: 4px 3px; }
+  .map-session-popover details > div, .map-clock-popover details > div, .map-log-popover details > div { left: 0; right: auto; width: min(94vw,500px); }
+  .qa-map-mode .rail { display: none; }
+  .qa-map-mode .map-workbench { height: calc(100dvh - 165px); }
+}
+

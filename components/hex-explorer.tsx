@@ -8,9 +8,9 @@ import { MasterContextActions, PlayerContextActions, type MasterActionControls, 
 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Archive, CheckCircle2, ChevronDown, Compass, Dice5, Eye, Footprints, House, MapPin, Package, Play, Route, Search, Trash2, Undo2, Users, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Archive, CheckCircle2, ChevronDown, Compass, Dice5, Eye, Footprints, House, MapPin, Package, Play, Route, Search, Trash2, Undo2, Users, Plus, Layers } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -112,7 +112,7 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
 
   useEffect(() => {
     const query = window.matchMedia("(max-width: 1279px)");
-    const update = () => { setCompact(query.matches); if (!query.matches && playerPreview) setSheetOpen(false); };
+    const update = () => { setCompact(query.matches); };
     update(); query.addEventListener("change", update);
     return () => query.removeEventListener("change", update);
   }, [playerPreview]);
@@ -126,7 +126,7 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
       setSignsDraft(null); setNotesDraft(null);
       setGmOpen(false);
     }
-    if (openDetails && (mobile || compact || !playerPreview)) setSheetOpen(true);
+    if (openDetails) setSheetOpen(true);
   }
 
   const area = parseHex(selected)!;
@@ -607,19 +607,24 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
     </Tabs>}
   </section>;
 
-  return <div className={playerPreview ? "grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(345px,.75fr)]" : "grid gap-5"}>
-    <section className="panel panel-pad min-w-0 self-start">
-      <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+  return <div className={`map-workbench${planning && !sheetOpen ? " has-journey" : ""}`}>
+    <section className="map-stage" aria-label="Mesa de exploração">
+      <div className="map-stage-heading">
         <div><p className="dossier-title">Mundo / {Object.keys(game.hexes).length} áreas</p><h2 className="section-title mt-1">Mapa de exploração</h2></div>
         <div className="flex flex-wrap items-center gap-2"><span className="tag">1 hex ≈ 2 km</span>
-          {visibleWorldConnections(game.hexes).length > 0 && <Button size="sm" variant="outline" aria-pressed={showRoads}
-            onClick={() => setShowRoads(!showRoads)}>{showRoads ? "Ocultar vias" : "Mostrar vias"}</Button>}
+          <span className="map-session-status">Dia {game.day} · {Math.floor(game.minutes / 60).toString().padStart(2, "0")}:{(game.minutes % 60).toString().padStart(2, "0")} <span>Barulho {game.noise}/5 · Medo {game.fear}/12</span></span>
+        </div>
+      </div>
+      <nav className="map-tool-dock" aria-label="Ferramentas do mapa">
+          <Button size="sm" variant="outline" title="Detalhes do hex selecionado" aria-label="Detalhes do hex selecionado" aria-haspopup="dialog" aria-expanded={sheetOpen} onClick={() => setSheetOpen(!sheetOpen)}><MapPin /><span>Setor</span></Button>
+          {visibleWorldConnections(game.hexes).length > 0 && <Button size="sm" variant="outline" title={showRoads ? "Ocultar vias" : "Mostrar vias"} aria-label={showRoads ? "Ocultar vias" : "Mostrar vias"} aria-pressed={showRoads}
+            onClick={() => setShowRoads(!showRoads)}><Layers /><span>Vias</span></Button>}
           {!playerPreview && <Button size="sm" variant={planning ? "default" : "outline"} aria-pressed={planning} onClick={() => {
             if (!planning && selected !== activeSourceHex) setJourneyDestination(selected);
             setPlanning(!planning); setSheetOpen(false);
-          }}><Route /> Planejar viagem</Button>}
-          {!playerPreview && <Button size="sm" variant="outline" onClick={() => setExpansionOpen(true)}><Plus /> Expandir mundo</Button>}</div>
-      </div>
+          }} title="Planejar viagem" aria-label="Planejar viagem"><Route /><span>Viagem</span></Button>}
+          {!playerPreview && <Button size="sm" variant="outline" title="Expandir mundo" aria-label="Expandir mundo" onClick={() => setExpansionOpen(true)}><Plus /><span>Expandir</span></Button>}
+      </nav>
       {activeGroup && <div className="map-active-group" role="status" aria-live="polite">
         <span className="map-active-group-icon">{activeGroup.main ? <Footprints size={16} /> : <Users size={16} />}</span>
         <span><small>GRUPO ATIVO</small><b>{activeGroup.members.map(person => person.name).join(", ")}</b></span>
@@ -721,11 +726,11 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
           {(game.npcs ?? []).length > 0 && <span className="flex items-center gap-1"><Users size={15} /> PNJs</span>}
         </div>
       </div>
-      {planning && journey && !playerPreview && <JourneyPlanner game={game} source={activeSourceHex} destination={journeyDestination}
+      {planning && journey && !playerPreview && <div className={`map-journey-dock${sheetOpen ? " is-covered" : ""}`}><JourneyPlanner game={game} source={activeSourceHex} destination={journeyDestination}
         onDestination={id => { setJourneyDestination(id); setSelected(id); }} mode={journeyMode} onMode={setJourneyMode}
         dailyHours={marchHours} onDailyHours={setMarchHours} reserveDays={reserveDays} onReserveDays={setReserveDays}
         plan={journey} issue={journeyIssue} onClose={() => setPlanning(false)} onNext={travelNextJourneyHex}
-        onInspect={id => { setSelected(id); setFocusHex(id); setSheetOpen(true); }} />}
+        onInspect={id => { setSelected(id); setFocusHex(id); setSheetOpen(true); }} /></div>}
       <div className="map-group-summary" aria-label="Selecionar grupo ativo">
         {publicGroups.map(group => <button type="button" key={group.hex}
           className={`map-group-chip ${activeSourceHex === group.hex ? "is-active" : ""}`}
@@ -774,13 +779,13 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
       onMoved={destination => { setActiveGroupHex(destination); setSelected(destination); setFocusHex(destination); }} />}
     {relocateDestination && <ShelterMoveDialog game={game} edit={edit} mode="relocate" destination={relocateDestination}
       open={relocateOpen} onOpenChange={setRelocateOpen} hideTrigger />}
-    {!playerPreview && !compact && !mobile ? <Dialog open={sheetOpen} onOpenChange={setSheetOpen}>
-      <DialogContent showCloseButton={false} className="hex-sector-dialog">
+    {!compact && !mobile ? <Dialog open={sheetOpen} onOpenChange={setSheetOpen}>
+      <DialogContent showCloseButton={playerPreview} className="hex-sector-dialog">
         <DialogTitle className="sr-only">Setor do mapa · Hex {selected}</DialogTitle>
         <DialogDescription className="sr-only">Exploração, locais e ferramentas de gestão do setor selecionado.</DialogDescription>
         {detailPanel}
       </DialogContent>
-    </Dialog> : compact || mobile ? <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+    </Dialog> : <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
       <SheetContent onCloseAutoFocus={mobile ? event => { event.preventDefault(); mobileSelectionTrigger.current?.focus(); } : undefined} side="bottom" showCloseButton={false} className={`max-h-[88dvh] overflow-y-auto rounded-t-xl p-0${mobile ? " mobile-sector-sheet" : ""}`}>
         <SheetHeader className={playerPreview || mobile ? "sticky top-0 z-10 flex flex-row items-center justify-between border-b bg-background px-4 py-3" : "sr-only"}>
           <div><SheetTitle>Hex {selected}</SheetTitle><SheetDescription className="sr-only">Detalhes do setor selecionado no mapa.</SheetDescription></div>
@@ -788,6 +793,6 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
         </SheetHeader>
         {detailPanel}
       </SheetContent>
-    </Sheet> : <div className="hex-detail-desktop">{detailPanel}</div>}
+    </Sheet>}
   </div>;
 }

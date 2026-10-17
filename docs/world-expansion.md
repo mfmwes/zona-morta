@@ -50,6 +50,13 @@ Com o mapa em foco, as setas também movem a visão.
 
 ## Planejamento de viagens
 
+A tela de exploração usa uma mesa com o mapa como área principal. A barra à
+esquerda reúne setor, vias, viagem e expansão. No desktop, clicar em um hex abre
+a janela original do setor, com as abas Exploração e Gestão do setor. No celular, os
+detalhes abrem em uma gaveta inferior. Jogadores consultam apenas o conteúdo
+revelado e não recebem as ferramentas de gestão. Sessão, reservas e relógio
+ficam disponíveis em controles expansíveis para o mestre.
+
 O mestre escolhe o grupo ativo e **Planejar viagem**, seleciona um destino
 conhecido no mapa ou na lista, e usa **Ver trajeto** para enquadrar o percurso.
 Por padrão, **Exploração normal entre hexes** encontra o caminho de menor tempo

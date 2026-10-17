@@ -808,7 +808,7 @@ export default function CampaignApp() {
         </div>}
         {activeTab === "resumo" && role === "mestre" && !readOnlyPreview && <MasterOverview mobile={mobile} game={game} canManageSession={status === "salvo"} onSessionAction={sessionAction} onNavigate={setTab} onOpen={openCampaignTarget} masterActions={masterActionControls} />}
         {activeTab === "mapa" && <>
-          {!readOnlyPreview && <MobileDisclosure mobile={mobile} title="Pressão e reservas" summary={`Barulho ${game.noise} · Medo ${game.fear}`}><div className="panel scene-control-panel mb-5">
+          {!readOnlyPreview && <div className="map-session-popover"><MobileDisclosure mobile title="Sessão e reservas" summary={`Barulho ${game.noise} · Medo ${game.fear}`}><div className="panel scene-control-panel mb-5">
             <section className="scene-control-section scene-pressure-section">
               <div className="scene-control-heading">
                 <div className="scene-control-title"><Volume2 size={20} /><b>Pressão da cena</b></div>
@@ -872,9 +872,9 @@ export default function CampaignApp() {
               </div>
               <p className="scene-supplies-note">Comida e Água em porções (4 = 1 unidade); Peças em unidades. Sem abrigo, registre apenas o que o grupo consegue transportar.</p>
             </section>
-          </div></MobileDisclosure>}
+          </div></MobileDisclosure></div>}
           <HexExplorer mobile={mobile} key={!readOnlyPreview&&focus?.target.tab==="mapa"?focus.key:game.campaignId} initialTarget={!readOnlyPreview&&focus?.target.tab==="mapa"?focus.target:undefined} game={communityView} edit={edit} playerPreview={readOnlyPreview} teamPeers={viewedPeers} playerActions={playerActionControls} masterActions={masterActionControls} />
-          {!readOnlyPreview && <MobileDisclosure mobile={mobile} title="Relógio da expedição" summary={displayTime(game.minutes)}><div className="panel panel-pad mt-5 flex flex-wrap items-center gap-3">
+          {!readOnlyPreview && <div className="map-clock-popover"><MobileDisclosure mobile title="Relógio da expedição" summary={displayTime(game.minutes)}><div className="panel panel-pad mt-5 flex flex-wrap items-center gap-3">
             <div className="mr-auto"><b>Relógio da expedição</b><p className="text-xs subtle">Ao anoitecer, registre o descanso na ficha, mesmo sem abrigo.</p></div>
             {[30,60,120].map(amount=><Button key={amount} size="sm" variant="outline" disabled={game.minutes+amount>=1440}
               onClick={() => {
@@ -902,7 +902,7 @@ export default function CampaignApp() {
                 <DialogFooter><Button variant="outline" onClick={() => setTimeEditorOpen(false)}>Cancelar</Button><Button onClick={saveManualTime}>Salvar horário</Button></DialogFooter>
               </DialogContent>
             </Dialog>
-          </div></MobileDisclosure>}
+          </div></MobileDisclosure></div>}
         </>}
         {activeTab === "cena" && <SceneBoard game={previewActionGame} edit={edit} playerPreview={readOnlyPreview} playerActions={playerActionControls} masterActions={masterActionControls} />}
         {activeTab === "sobreviventes" && <SurvivorPanel mobile={mobile} key={readOnlyPreview ? `${viewedSurvivorId}:${playerFocus?.key ?? "player"}` : focus?.target.tab==="sobreviventes"?focus.key:"live"} initialRestFocus={readOnlyPreview && playerFocus?.rest} initialSurvivorId={!readOnlyPreview&&focus?.target.tab==="sobreviventes"?focus.target.survivorId:undefined} initialSection={readOnlyPreview ? playerFocus?.section : focus?.target.tab==="sobreviventes"?focus.target.section:undefined} game={game} edit={edit} playerPreview={readOnlyPreview} playerMode={readOnlyPreview} restPeers={viewedPeers} onOpenConflict={() => setTab("conflito")} playerActions={playerActionControls} masterActions={masterActionControls} />}
@@ -913,7 +913,7 @@ export default function CampaignApp() {
         {activeTab === "ameacas" && role === "mestre" && !playerPreview && <section className="panel panel-pad"><ThreatManager game={game} edit={edit} /></section>}
         {activeTab === "referencias" && <ReferencePanel />}
         {activeTab === "jogadores" && role === "mestre" && !playerPreview && <PlayersPanel game={game} ownerId={ownerId} />}
-        {activeTab === "mapa" && !readOnlyPreview && <MobileDisclosure mobile={mobile} title="Eventos recentes"><RecentEvents game={game} edit={edit} role={role} readOnly={playerPreview} /></MobileDisclosure>}
+        {activeTab === "mapa" && !readOnlyPreview && <div className="map-log-popover"><MobileDisclosure mobile title="Registro"><RecentEvents game={game} edit={edit} role={role} readOnly={playerPreview} /></MobileDisclosure></div>}
 </>;
   const tableChat = <TableChat key={playerPreview ? `preview:${viewedSurvivorId}` : "live"} layout={mobile ? "screen" : "panel"} active={!mobile || activeTab === "chat"} game={game} edit={edit} role={readOnlyPreview ? "jogador" : role} survivorId={viewedSurvivorId} readOnly={false} onClose={() => mobile ? setTab(mobileReturnSection(lastMobileSection, masterExperience, publicConflictActive)) : setChatOpen(false)} />;
   const mobilePendingDamage = readOnlyPreview ? game.publicConflict?.pendingDamage.length ?? 0 : game.conflict?.damageRequests?.filter(request => request.status === "pending").length ?? 0;
@@ -959,7 +959,7 @@ export default function CampaignApp() {
       onSearch={masterExperience ? () => setSearchOpen(true) : undefined}
       scenePressure={readOnlyPreview ? { noise: game.noise, fear: game.fear } : undefined}
       priority={conflictActive ? mobilePendingDamage ? `${mobilePendingDamage} dano(s) aguardando decisão` : spotlightRequests ? `${spotlightRequests} pedido(s) de Spotlight` : "Conflito ativo" : undefined}
-      notices={campaignNotices} tools={mobileTools} chat={tableChat}>{campaignContent}</MobileCampaignShell> : <SidebarProvider className={`app-shell ${chatOpen ? "chat-open" : "chat-closed"}`}>
+      notices={campaignNotices} tools={mobileTools} chat={tableChat}>{campaignContent}</MobileCampaignShell> : <SidebarProvider className={`app-shell ${chatOpen ? "chat-open" : "chat-closed"}${activeTab === "mapa" ? " map-mode" : ""}`}>
     <Sidebar collapsible="none" className="rail">
       <div className="flex items-center gap-3 px-2">
         <div className="brand-mark">ZM</div><div><div className="text-[.93rem] font-extrabold tracking-wide">ZONA MORTA</div>
@@ -969,7 +969,7 @@ export default function CampaignApp() {
         <p className="text-sm text-[#a9c0bc] mt-1">Cidade em descoberta · mapa aberto</p></div>
       <div className="campaign-navigation-dock">
       <TabsList aria-label="Seções da campanha" className="rail-nav bg-transparent h-auto w-full p-0">
-        {nav.map((item,index) => <TabsTrigger value={item.value} key={item.value} className={index >= 4 ? "rail-nav-extra" : undefined} aria-current={activeTab===item.value ? "page" : undefined}>
+        {nav.map((item,index) => <TabsTrigger value={item.value} key={item.value} title={item.label} className={index >= 4 ? "rail-nav-extra" : undefined} aria-current={activeTab===item.value ? "page" : undefined}>
           <item.icon size={17} /><span>{item.label}</span></TabsTrigger>)}
         <DropdownMenu><DropdownMenuTrigger asChild><button type="button" className="rail-more" aria-label="Mais seções" aria-current={nav.slice(4).some(item => item.value === activeTab) ? "page" : undefined}><MoreHorizontal size={19} /><span>Mais</span></button></DropdownMenuTrigger>
           <DropdownMenuContent align="end" side="top" className="min-w-48">{nav.slice(4).map(item => <DropdownMenuItem key={item.value} onSelect={() => setTab(item.value)}><item.icon size={16} />{item.label}</DropdownMenuItem>)}</DropdownMenuContent>

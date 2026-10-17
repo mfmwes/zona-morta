@@ -40,6 +40,7 @@ import '@/app/appearance.css';
 import '@/app/usability-upgrade.css';
 import '@/app/map-concept.css';
 import './preview.css';
+import '@/app/map-workspace.css';
 
 declare global { interface Window { __qa: { game: () => GameState; mutate: (fn: (draft: GameState) => void) => void } } }
 const query = new URLSearchParams(location.search);
@@ -70,13 +71,13 @@ function Preview() {
   const simulation={spotlight:(action:'request'|'cancel')=>mutate(d=>{if(d.conflict){if(action==='request')requestConflictSpotlight(d.conflict,actor.id);else cancelConflictSpotlightRequest(d.conflict,actor.id);}}),
     damage:(id:string,resolution:'hp'|'armor')=>{const next=structuredClone(current.current),person=next.survivors[0];const result=resolveSurvivorDamageRequest(next.conflict!,id,person,survivorStats(person),resolution,next.day,'08:00');if(!result.ok)throw new Error('Este impacto não pode ser resolvido agora.');commit(next);return result;},
     target:()=>{throw new Error('Use a tela do mestre para preparar ataques nesta prévia.');}};
-  return <PlayerSimulationContext.Provider value={simulation}><div className="qa-controls"><b>Prévia isolada · dados de exemplo</b>
+  return <PlayerSimulationContext.Provider value={simulation}><div className={`qa-preview${screen==='map'?' is-map':''}`}><div className="qa-controls"><b>Prévia isolada · dados de exemplo</b>
     <label>Perfil <select aria-label="Perfil" value={role} onChange={e=>setRole(e.target.value)}><option value="master">Mestre</option><option value="player">Jogador</option></select></label>
     <label>Tela <select aria-label="Tela" value={screen} onChange={e=>setScreen(e.target.value)}><option value="map">Mapa e exploração</option><option value="scene">Cena visual</option><option value="sheet">Ficha</option><option value="shelter">Abrigo</option><option value="conflict">Conflito</option><option value="npcs">PNJs</option><option value="reading">Leitura e seleção</option></select></label>
     <label>Tema <select aria-label="Tema" defaultValue="dark" onChange={e=>document.documentElement.dataset.theme=e.target.value}><option value="dark">Escuro</option><option value="light">Claro</option></select></label>
     <label>Estilo <select aria-label="Estilo" defaultValue="tecnico" onChange={e=>document.documentElement.dataset.visualStyle=e.target.value}><option>tecnico</option><option>fiel</option><option>leitura</option></select></label>
     <button onClick={()=>location.reload()}>Reiniciar exemplo</button><small>Nenhum dado é enviado à campanha real.</small>
-  </div><div className="app-shell"><aside className="rail"><b>ZONA MORTA</b><nav className="rail-nav"><button onClick={()=>setScreen('sheet')}>Ficha</button><button onClick={()=>setScreen('shelter')}>Abrigo</button><button onClick={()=>setScreen('scene')}>Cena visual</button></nav></aside><main className="workspace"><div className="page"><div className="mb-6"><h1 className="page-title">{screen==='map'?'Mapa e exploração':screen==='shelter'?'Abrigo':screen==='sheet'?'Meu sobrevivente':screen==='scene'?'Cena visual':screen==='conflict'?'Conflito':'Zona Morta'}</h1><p className="intro-line mt-2">Explore as alterações com uma campanha de exemplo.</p></div>
+  </div><div className={`app-shell${screen==='map'?' map-mode qa-map-mode':''}`}><aside className="rail"><b title="Zona Morta">ZM</b><nav className="rail-nav"><button onClick={()=>setScreen('sheet')}>Ficha</button><button onClick={()=>setScreen('shelter')}>Abrigo</button><button onClick={()=>setScreen('scene')}>Cena visual</button></nav></aside><main className="workspace"><div className="page"><div className="campaign-page-heading mb-6"><h1 className="page-title">{screen==='map'?'Mapa e exploração':screen==='shelter'?'Abrigo':screen==='sheet'?'Meu sobrevivente':screen==='scene'?'Cena visual':screen==='conflict'?'Conflito':'Zona Morta'}</h1><p className="intro-line mt-2">Explore as alterações com uma campanha de exemplo.</p></div>
     {player&&<PlayerAttention game={game} actorId={actor.id} onOpen={target=>{if(target==='conflict')setScreen('conflict');else if(target==='map')toast.info('Abra o local da busca no mapa da campanha.');else{setFocus({key:focus.key+1,section:target==='inventory'?'inventario':'resumo',rest:target==='rest'});setScreen('sheet');}}}/>}
     <RuntimeErrorBoundary key={`${role}:${screen}`}>
       {screen==='map'&&<HexExplorer game={game} edit={edit} playerPreview={player} mobile={mobile} teamPeers={playerTeamPeers(full)} playerActions={player?controls:undefined}/>}
@@ -87,6 +88,6 @@ function Preview() {
       {screen==='conflict'&&(player?<PlayerConflictScene game={game} edit={edit} selfId={actor.id} playerActions={controls}/>:<ConflictSceneManager game={game} edit={edit} mobile={mobile}/>)}
       {screen==='reading'&&<section className="panel panel-pad qa-reading"><h2 className="section-title">Ações e efeitos</h2><div className="choice-card-grid"><ChoiceCard title="Nina" description="Participa desta etapa" checked={checked} onChange={setChecked}/><ChoiceCard title="Rafael de Albuquerque" description="Ocupado em outra atividade" checked={false} disabled onChange={()=>{}}/></div><RuleText text={'Gatilho: Ao ajudar alguém em perigo.\nEfeito: Descreva como sua experiência ajuda o grupo a atravessar o obstáculo.\nCusto: Marque 1 Estresse. Duração: Até o fim da cena.\nComo remover: Encerre a ação quando o perigo passar.'}/></section>}
     </RuntimeErrorBoundary>
-  </div></main></div><Toaster/></PlayerSimulationContext.Provider>;
+  </div></main></div><Toaster/></div></PlayerSimulationContext.Provider>;
 }
 createRoot(document.getElementById('root')!).render(<Preview/>);
