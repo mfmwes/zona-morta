@@ -108,6 +108,24 @@
 .map-log-popover .panel { margin: 0; }
 .qa-map-mode .map-workbench { height: calc(100dvh - 86px); }
 @media (min-width: 761px) {
+  .map-session-bar { padding: 6px 10px; gap: 8px; }
+  .map-session-bar > div { padding: 6px 8px; gap: 4px; }
+  .map-session-bar .map-session-time { display: grid; grid-template-columns: auto minmax(0,1fr); align-content: start; column-gap: 8px; }
+  .map-session-time > .map-session-group-title, .map-session-time > .map-session-clock-note { grid-column: 1 / -1; }
+  .map-session-clock-row { min-height: 26px; gap: 4px; }
+  .map-session-clock-row b { gap: 4px; }
+  .map-session-clock-row strong { font-size: 1.15rem; }
+  .map-session-bar .map-session-adjust { width: 22px; padding: 3px; }
+  .map-session-time-steps { gap: 4px; }
+  .map-session-time-steps > button { padding-inline: 4px; font-size: .64rem; }
+  .map-session-metric { padding: 4px 5px; }
+  .map-session-metric > svg { left: 5px; top: 4px; width: 20px; height: 20px; padding: 3px; }
+  .map-session-metric .font-bold { padding-left: 22px; }
+  .map-session-reserves .map-session-metric > div { grid-template-columns: auto minmax(0,1fr); align-items: center; gap: 4px; }
+  .map-session-reserves .map-session-metric .number-control { border: 0; background: transparent; justify-content: flex-end; }
+  .map-session-reserves .map-session-metric output { height: 20px; padding: 0; font-size: 1rem; line-height: 20px; }
+  .map-session-bar .map-reserve-composition { margin-top: 2px; }
+  .map-session-meter { margin-top: 3px; }
   .qa-preview.is-map { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
   .qa-preview.is-map > .qa-controls { flex-shrink: 0; }
   .qa-preview.is-map > .app-shell { flex: 1; min-height: 0; overflow: hidden; }
@@ -119,6 +137,14 @@
   .qa-map-mode.app-shell { min-height: 0; }
   .qa-map-mode .workspace { height: calc(100dvh - 70px); }
   .qa-map-mode .rail { height: calc(100dvh - 70px); }
+}
+@media (min-width: 1200px) {
+  .map-session-bar .map-session-pressure { display: grid; grid-template-columns: auto minmax(0,1fr); align-content: start; column-gap: 8px; }
+  .map-session-pressure > .map-session-group-title { grid-row: 1; grid-column: 1; }
+  .map-session-pressure > .map-session-scene-actions { grid-row: 1; grid-column: 2; margin: 0; justify-content: flex-end; gap: 4px; }
+  .map-session-pressure > .map-session-counters { grid-column: 1 / -1; grid-row: 2; }
+  .map-session-pressure .map-session-metric > div { grid-template-columns: auto minmax(55px,1fr); align-items: center; gap: 4px; }
+  .map-session-scene-actions button { min-height: 20px; height: 20px; padding: 2px 4px; font-size: .59rem; }
 }
 @media (max-width: 1100px) and (min-width: 761px) {
   .map-stage-heading .map-session-status > span { display: none; }

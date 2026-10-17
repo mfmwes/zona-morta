@@ -98,3 +98,13 @@ test('master can request rest again after a scene change cancels an unstarted re
     .filter(op => op.type === 'rest' && op.status === 'forming').map(op => op.scene))).toEqual([2]);
   await expect(page.getByText('Já há um descanso aguardando confirmação destes participantes.', { exact: true })).toHaveCount(0);
 });
+
+for (const width of [1440, 1920]) test(`session bar stays compact with a remote shelter at ${width}px`, async ({ page }) => {
+  await page.setViewportSize({ width, height: 1000 });
+  await page.goto('/?screen=map&scenario=roads');
+  await page.evaluate(() => window.__qa.mutate(g => { g.shelter.hex = '1,0'; }));
+  await expect(page.getByText(/Abrigo distante:/)).toBeVisible();
+  expect((await page.locator('.map-session-bar').boundingBox())!.height).toBeLessThanOrEqual(110);
+  expect((await page.locator('.world-map-viewport').boundingBox())!.height).toBeGreaterThan(650);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+});

@@ -42,16 +42,15 @@ export function MapSessionBar({ game, edit, onAdjustTime, activeHex }: {
       </div>
       <div className="map-session-buttons map-session-scene-actions"><Button size="sm" variant="ghost" onClick={() => edit(beginScene)}><Clapperboard size={13} aria-hidden="true" />Nova cena</Button><Button size="sm" variant="ghost" onClick={() => edit(beginExpedition)}><Compass size={13} aria-hidden="true" />Nova expedição</Button></div>
     </div>
-    <div className="map-session-reserves"><div className="map-session-group-title"><Package size={13} aria-hidden="true" /><span>Recursos do grupo ativo</span><span className="map-session-unit">Porções / unidades</span></div>
+    <div className="map-session-reserves"><div className="map-session-group-title"><Package size={13} aria-hidden="true" /><span title="Comida e água prontas para consumo, incluindo itens físicos.">Recursos do grupo ativo</span><span className="map-session-unit">Porções / unidades</span></div>
       <div className="map-session-counters" aria-live="polite">{([['food', 'Comida', Utensils], ['water', 'Água', Droplets], ['parts', 'Peças', Wrench]] as const).map(([key, label, Icon]) => <div className={`map-session-metric metric-${key}`} key={key}><Icon size={15} aria-hidden="true" />
         <div><span className="font-bold">{label}</span><div className="number-control"><output aria-label={`${label} disponível ao grupo ativo`}>{reserves.total[key]}</output></div></div>
         <small className="map-reserve-composition">{key === 'parts' ? "Compartilhadas aqui" : <>{reserves.personal[key]} mochilas + {reserves.shared[key]} aqui</>}</small>
       </div>)}</div>
-      <div className="map-reserve-footer"><small>Prontos para consumo · inclui itens</small>{reserves.local && <details className="map-reserve-adjust"><summary><SlidersHorizontal size={12} aria-hidden="true" />Ajustar compartilhado</summary>
+      <div className="map-reserve-footer">{reserves.remote ? <small className="map-reserve-remote">{game.shelter.hex ? "Abrigo distante" : "Reservas do grupo principal"}: {reserves.remote.food} comida · {reserves.remote.water} água · {reserves.remote.parts} peças — fora do total.</small> : <small>Prontos para consumo · inclui itens</small>}{reserves.local && <details className="map-reserve-adjust"><summary><SlidersHorizontal size={12} aria-hidden="true" />Ajustar compartilhado</summary>
         <div className="map-reserve-editors">{([['food', 'Comida compartilhada'], ['water', 'Água compartilhada'], ['parts', 'Peças compartilhadas']] as const).map(([key, label]) => <Counter key={key} compact editable label={label} value={game.shelter[key]} max={key === 'parts' ? 99 : 999} quickStep={key === 'parts' ? undefined : 4}
           onChange={value => edit(draft => { if (key === 'parts') draft.shelter.parts = value; else adjustProvisionCount(draft.shelter, key, value); })} />)}</div><small>Comida e água: ajustar apenas porções soltas. Itens e mochilas mantêm seus próprios estoques.</small>
       </details>}</div>
-      {reserves.remote && <small className="map-reserve-remote">{game.shelter.hex ? "Abrigo distante" : "Reservas do grupo principal"}: {reserves.remote.food} comida · {reserves.remote.water} água · {reserves.remote.parts} peças — fora do total.</small>}
     </div>
   </section>;
 }
