@@ -223,11 +223,27 @@ export function defaultDayClosePlan(game: GameState): DayClosePlan {
     food: provisionBreakdown(person, "food").total,
     water: provisionBreakdown(person, "water").total,
   }]));
+  // When reserves cannot cover everyone, use personal portions first so people
+  // without supplies are not deprived just because they appear later in the list.
+  const preferPersonal = (resource: DailyResource) => sharedRemaining[resource]
+    < game.survivors.filter(person => survivorHex(game, person) === storageHex)
+      .reduce((sum, person) => sum + remainingDailyProvisionPortions(game, person, resource), 0)
+      + sharedReserveNpcs(game).filter(npc => !npcConsumedToday(game, npc, resource)).length;
+  const scarce = { food: preferPersonal("food"), water: preferPersonal("water") };
   function sourceFor(person: Survivor, resource: DailyResource): DayProvisionSource {
     const needed = remainingDailyProvisionPortions(game, person, resource);
     if (needed === 0) return "already";
     const stock = personalRemaining.get(person.id)!;
     const personal = stock[resource];
+    if (scarce[resource] && personal > 0) {
+      const taken = Math.min(personal, needed);
+      stock[resource] -= taken;
+      if (taken < needed && survivorHex(game, person) === storageHex && sharedRemaining[resource] > 0) {
+        sharedRemaining[resource] -= Math.min(sharedRemaining[resource], needed - taken);
+        return "mixed";
+      }
+      return "personal";
+    }
     if (survivorHex(game, person) === storageHex && sharedRemaining[resource] >= needed) {
       sharedRemaining[resource] -= needed;
       return "shared";
@@ -322,10 +338,12 @@ export function inspectDayClosePlan(game: GameState, plan: DayClosePlan): DayClo
         if (survivorHex(game, person) !== storageHex) {
           deprivations.push({ survivorId: person.id, name: person.name, resource, reason: "remote" });
         } else {
-          const taken = Math.min(remaining[resource], needed);
+          const personal = Math.min(personalRemaining.get(person.id)![resource], needed);
+          takePersonal(person.id, storageHex, resource, personal);
+          const taken = Math.min(remaining[resource], needed - personal);
           remaining[resource] -= taken;
           mixedSharedDemand[resource] += taken;
-          if (!takePersonal(person.id, storageHex, resource, needed - taken))
+          if (personal + taken < needed)
             deprivations.push({ survivorId: person.id, name: person.name, resource, reason: "unavailable" });
         }
         continue;
@@ -464,8 +482,8 @@ export function closeDayWithPlan(game: GameState, plan: DayClosePlan, transition
           actualDeprivations.push({ survivorId: person.id, name: person.name, resource, reason: "remote" });
           continue;
         }
-        const shared = consumeMany(game.shelter, resource, needed);
-        const personal = consumeMany(person, resource, needed - shared.consumed);
+        const personal = consumeMany(person, resource, needed);
+        const shared = consumeMany(game.shelter, resource, needed - personal.consumed);
         const consumed = shared.consumed + personal.consumed;
         if (consumed) {
           markDailyProvisionConsumed(game, person, resource, consumed);

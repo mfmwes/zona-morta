@@ -113,6 +113,24 @@ export function recordAbilityUse(game: GameState, survivorId: string, abilityId:
   return true;
 }
 
+/** Discard unstarted requests from prior scenes, including legacy orphaned requests.
+ * Scheduled rests keep their activity and confirmed selections. */
+export function cancelStaleRestRequests(game: GameState) {
+  let cancelled = 0;
+  for (const op of game.playerActions?.operations ?? []) {
+    if (op.type !== "rest" || op.status !== "forming" || op.day !== game.day || op.scene === (game.scene ?? 1)
+      || game.activities?.some(activity => activity.status === "running" && activity.operationId === op.id)) continue;
+    op.status = "cancelled";
+    op.result = "Solicitação de descanso cancelada pela mudança de cena; nenhum benefício aplicado.";
+    for (const person of game.survivors) {
+      if (person.restPlan && person.restPlan.kind === op.kind && op.plans?.[person.id]
+        && JSON.stringify(person.restPlan.choices) === JSON.stringify(op.plans[person.id])) delete person.restPlan;
+    }
+    cancelled++;
+  }
+  if (cancelled) addLog(game, "descanso", `${cancelled} solicitação(ões) de descanso ainda não iniciada(s) cancelada(s) pela mudança de cena, sem benefícios.`);
+}
+
 export function beginScene(game: GameState) {
   const settled = settleSceneAmmunition(game);
   if (game.conflict?.active) {
@@ -121,6 +139,7 @@ export function beginScene(game: GameState) {
     addLog(game, "conflito", `Conflito encerrado ao iniciar nova cena: ${name}.`);
   }
   game.scene = (game.scene ?? 1) + 1;
+  cancelStaleRestRequests(game);
   game.noise = 0;
   addLog(game, "cena", `Nova cena: Barulho voltou a 0 e habilidades por cena estão disponíveis.${settled.length ? ` ${settled.reduce((sum, row) => sum + row.units, 0)} unidade(s) de munição foram consumidas da cena anterior.` : ""}`);
 }

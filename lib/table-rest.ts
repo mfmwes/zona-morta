@@ -2,7 +2,7 @@ import { addLog, survivorHex, type GameState } from "./game";
 import { createId } from "./id";
 import { defaultPlayerPolicy, type TeamOperation } from "./player-actions-types";
 import { participantTimePreview, timedActionParticipantIssue } from "./activity";
-import { scheduleGroupRest, restActionsFor, restDurationMinutes, type RestChoice, type RestKind } from "./abilities";
+import { cancelStaleRestRequests, scheduleGroupRest, restActionsFor, restDurationMinutes, type RestChoice, type RestKind } from "./abilities";
 import { rollDie } from "./rolls";
 
 export function currentTableRest(game: GameState, actorId?: string): TeamOperation | undefined {
@@ -33,6 +33,7 @@ export function requestTableRest(game: GameState, kind: RestKind, initiatorId = 
   const invitedIds = selectedIds ?? game.survivors.filter(p => survivorHex(game, p) === hex && !timedActionParticipantIssue(game, [p.id])).map(p => p.id);
   if (!invitedIds.length || new Set(invitedIds).size !== invitedIds.length || !invitedIds.includes(initiatorId!)
     || invitedIds.some(id => !game.survivors.some(p => p.id === id && survivorHex(game, p) === hex))) return "Escolha participantes presentes no mesmo hex, incluindo quem solicita.";
+  cancelStaleRestRequests(game);
   if (game.playerActions?.operations.some(op => op.type === "rest" && op.status === "forming" && op.day === game.day
     && op.invitedIds.some(id => invitedIds.includes(id)))) return "Já há um descanso aguardando confirmação destes participantes.";
   const issue = availabilityIssue(game, invitedIds);

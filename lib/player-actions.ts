@@ -7,7 +7,7 @@ import { scheduleSurvivorTravel } from "./hex-actions";
 import { atSharedStorage, catalogKey, transferItem, transferProvisions } from "./inventory";
 import { performItemAction } from "./item-actions";
 import { survivorTimedCommitment } from "./activity";
-import { scheduleGroupRest, restActionsFor, type RestChoice } from "./abilities";
+import { cancelStaleRestRequests, scheduleGroupRest, restActionsFor, type RestChoice } from "./abilities";
 import { eventTriggerReady } from "./hex-generators";
 import { projectPlayerSceneBoard, type SceneBoardScene } from "./scene-board";
 import { shelterTravelMinutes } from "./shelter-projects";
@@ -460,6 +460,7 @@ export function applyPlayerAction(game: GameState, actorId: string, input: unkno
   if (receipt) return receipt.fingerprint === fingerprint ? { ok: true, state: game, replay: true } : { ok: false, error: "O identificador já foi usado para outra ação." };
   const draft = structuredClone(game);
   draft.playerActions = structuredClone(state);
+  cancelStaleRestRequests(draft);
   draft.playerActions.operations = draft.playerActions.operations.filter(o => o.day === game.day && (o.scene === (game.scene ?? 1) || game.activities?.some(a => a.status === "running" && a.operationId === o.id)));
   draft.playerActions.receipts = draft.playerActions.receipts.filter(r => r.day === game.day);
   draft.playerActions.withdrawals = draft.playerActions.withdrawals.filter(r => r.day === game.day);

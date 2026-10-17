@@ -16,6 +16,16 @@ diária não pode ser atendida por uma fonte só, desde que o sobrevivente estej
 no mesmo hex das reservas. O encerramento manual também oferece essa opção.
 Na distribuição para PNJs, o plano reserva primeiro o consumo dos sobreviventes
 e escolhe portadores com saldo suficiente para cada acompanhante.
+Quando as reservas não cobrem todas as necessidades do grupo presente, o plano
+prioriza as porções pessoais e usa as reservas para completar os déficits. Isso
+evita gastar a única fonte de quem não carrega mantimentos. Na fonte combinada,
+o consumo e a inspeção usam primeiro o estoque pessoal; a escolha manual de uma
+fonte exclusiva continua sendo respeitada.
+
+Nova cena cancela solicitações de descanso ainda não iniciadas, limpa as escolhas
+parciais vinculadas e registra o cancelamento sem conceder benefícios. Descansos
+já agendados continuam até a conclusão. Pedidos antigos salvos em outra cena são
+cancelados ao solicitar um novo descanso pelo painel do mestre.
 
 Esse avanço não recupera PV, Estresse ou armadura, não realiza descanso e não
 inicia uma nova cena nem zera Barulho ou Medo. Escolhas de descanso não

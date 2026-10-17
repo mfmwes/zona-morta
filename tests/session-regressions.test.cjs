@@ -14,6 +14,8 @@ const { scheduleSurvivorTravel } = require('../lib/hex-actions.ts');
 const { cancelActivity } = require('../lib/activity-timeline.ts');
 const { planJourney } = require('../lib/journey.ts');
 const { validState } = require('../lib/campaign-validation.ts');
+const { requestTableRest, confirmTableRest, currentTableRest } = require('../lib/table-rest.ts');
+const { beginScene } = require('../lib/abilities.ts');
 function fixture(count = 1) {
   const g = defaultState(), a = content.archetypes[0];
   g.minutes = 1410; g.npcs = []; g.shelter.residents = 0; g.shelter.water = 0; g.shelter.food = 0;
@@ -82,4 +84,95 @@ test('cancelling immediately adds zero march; completed trips keep their full ma
   assert.equal(planJourney(g, input).walkedToday, 0); assert.equal(validState(g), true);
   scheduleSurvivorTravel(g, '1,0', [actor.id]); advanceExpeditionTime(g, 60);
   assert.equal(planJourney(g, { ...input, from: '1,0', to: '2,0' }).walkedToday, 60);
+});
+
+test('scarce shared food serves the person without personal food in either survivor order', () => {
+  for (const reverse of [false, true]) {
+    const g = fixture(2), [equipped, empty] = g.survivors; equipped.food = 1; empty.food = 0; g.shelter.food = 1;
+    if (reverse) g.survivors.reverse();
+    const before = structuredClone(g), plan = defaultDayClosePlan(g);
+    assert.deepEqual(inspectDayClosePlan(g, plan).deprivations, []); assert.deepEqual(g, before);
+    advanceExpeditionTime(g, 60);
+    assert.equal(equipped.food, 0); assert.equal(g.shelter.food, 0);
+    assert.ok(g.survivors.every(p => p.stress === 0)); assert.equal(validState(g), true);
+  }
+});
+
+test('all 180 water allocations agree between inspection and consumption; feasible cases have no deprivation', () => {
+  let checked = 0, feasible = 0;
+  for (let heatA = 0; heatA <= 1; heatA++) for (let heatB = 0; heatB <= 1; heatB++)
+    for (let personalA = 0; personalA <= 2; personalA++) for (let personalB = 0; personalB <= 2; personalB++)
+      for (let shared = 0; shared <= 4; shared++) {
+        const g = fixture(2); g.shelter.water = shared;
+        [personalA, personalB].forEach((water, i) => { g.survivors[i].water = water; });
+        [heatA, heatB].forEach((heat, i) => { if (heat) g.survivors[i].conditions = [{ id: `heat-${i}`, kind: 'heat', level: 1 }]; });
+        const plan = defaultDayClosePlan(g), preview = inspectDayClosePlan(g, plan);
+        const closed = closeDayWithPlan(g, plan, 'midnight');
+        assert.deepEqual(closed.deprivations, preview.deprivations);
+        const possible = shared >= Math.max(0, 1 + heatA - personalA) + Math.max(0, 1 + heatB - personalB);
+        if (possible) { feasible++; assert.deepEqual(closed.deprivations, [], JSON.stringify({ heatA, heatB, personalA, personalB, shared })); }
+        const consumed = g.survivors.reduce((n, p) => n + (p.waterConsumedDay === 1 ? 1 : 0) + (p.extraWaterConsumedDay === 1 ? 1 : 0), 0);
+        assert.equal(personalA + personalB + shared - g.shelter.water - g.survivors.reduce((n, p) => n + p.water, 0), consumed);
+        assert.equal(validState(g), true); checked++;
+      }
+  assert.equal(checked, 180); assert.equal(feasible, 132);
+});
+
+test('abundant shared supplies and residents retain their normal default allocation', () => {
+  const g = fixture(2); g.shelter.residents = 1; g.shelter.food = 3; g.shelter.water = 3;
+  const plan = defaultDayClosePlan(g); assert.ok(plan.survivors.every(p => p.food === 'shared' && p.water === 'shared'));
+  const result = closeDayWithPlan(g, plan); assert.deepEqual(result.deprivations, []);
+  assert.equal(g.shelter.food, 0); assert.equal(g.shelter.water, 0); assert.ok(g.survivors.every(p => p.food === 2 && p.water === 2));
+});
+
+test('new scene cancels unstarted rest and partial choices without recovery, then accepts a new request', () => {
+  for (const kind of ['short', 'long']) {
+    const g = fixture(2); g.minutes = 480; const person = g.survivors[0]; person.hp = 3; person.stress = 2;
+    assert.equal(requestTableRest(g, kind), null); const op = currentTableRest(g);
+    const choices = [{ action: kind === 'short' ? 'hp' : 'hp-full', targetId: person.id }, { action: 'fiction', targetId: person.id }];
+    assert.equal(confirmTableRest(g, person.id, op.id, choices), null); assert.ok(person.restPlan);
+    beginScene(g);
+    assert.equal(op.status, 'cancelled'); assert.equal(person.restPlan, undefined); assert.equal(currentTableRest(g), undefined);
+    assert.equal(person.hp, 3); assert.equal(person.stress, 2); assert.equal(g.minutes, 480);
+    const restored = JSON.parse(JSON.stringify(g)); assert.equal(requestTableRest(restored, kind), null);
+    assert.equal(currentTableRest(restored).scene, restored.scene); assert.equal(validState(restored), true);
+  }
+});
+
+test('requesting rest repairs an old orphaned scene request but preserves a live same-scene request', () => {
+  const g = fixture(2); g.minutes = 480; requestTableRest(g, 'short'); const old = currentTableRest(g);
+  g.scene = (g.scene ?? 1) + 1; // State saved before the scene cleanup existed.
+  assert.equal(requestTableRest(g, 'short'), null); assert.equal(old.status, 'cancelled');
+  const before = structuredClone(g); assert.match(requestTableRest(g, 'long'), /Já há um descanso/); assert.deepEqual(g, before);
+});
+
+test('scene change keeps an already scheduled subgroup rest and its selections until completion', () => {
+  const g = fixture(2); g.minutes = 480; g.survivors[1].hex = '-1,0'; const person = g.survivors[0]; person.hp = 3;
+  requestTableRest(g, 'short', person.id, [person.id]); const op = currentTableRest(g);
+  confirmTableRest(g, person.id, op.id, [{ action: 'hp', targetId: person.id }, { action: 'fiction', targetId: person.id }], () => 1);
+  assert.equal(op.status, 'scheduled'); beginScene(g); assert.equal(op.status, 'scheduled'); assert.ok(person.restPlan);
+  advanceExpeditionTime(g, 60); assert.equal(g.activities[0].status, 'completed'); assert.equal(g.playerActions.operations[0].status, 'done');
+  assert.equal(g.survivors[0].restPlan, undefined); assert.equal(validState(g), true);
+});
+
+test('confirmed overnight rest awaiting day close is still unstarted and grants no recovery on scene change', () => {
+  const g = fixture(2); g.minutes = 1410; requestTableRest(g, 'long'); const op = currentTableRest(g);
+  for (const person of g.survivors) {
+    person.hp = 3;
+    assert.equal(confirmTableRest(g, person.id, op.id, [{ action: 'hp-full', targetId: person.id }, { action: 'fiction', targetId: person.id }]), null);
+  }
+  assert.equal(op.awaitingNight, true); beginScene(g);
+  assert.equal(op.status, 'cancelled'); assert.ok(g.survivors.every(p => p.hp === 3 && p.restPlan === undefined));
+  assert.equal(requestTableRest(g, 'long'), null); assert.equal(validState(g), true);
+});
+
+test('player commands also clean partial choices from orphaned legacy requests without mutating the original', () => {
+  const { applyPlayerAction } = require('../lib/player-actions.ts');
+  const g = fixture(2); g.minutes = 480; requestTableRest(g, 'short'); const op = currentTableRest(g), person = g.survivors[0];
+  confirmTableRest(g, person.id, op.id, [{ action: 'hp', targetId: person.id }, { action: 'fiction', targetId: person.id }]);
+  g.scene = (g.scene ?? 1) + 1; const before = structuredClone(g);
+  const result = applyPlayerAction(g, person.id, { id: 'renew-rest', type: 'request-rest', day: g.day, kind: 'short' });
+  assert.equal(result.ok, true, result.error); assert.deepEqual(g, before);
+  assert.equal(result.state.survivors[0].restPlan, undefined); assert.equal(currentTableRest(result.state).scene, 2);
+  assert.equal(validState(result.state), true);
 });

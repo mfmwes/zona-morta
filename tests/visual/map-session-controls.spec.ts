@@ -50,3 +50,29 @@ test('fractured leg duration in the sector matches actual arrival and prevents c
   await travel.click();
   expect(await page.evaluate(() => ({ minute: window.__qa.game().minutes, hex: window.__qa.game().partyHex }))).toEqual({ minute: 570, hex: '1,0' });
 });
+
+test('scarce shared food is kept for the survivor without personal supplies at midnight', async ({ page }) => {
+  await page.goto('/?screen=map');
+  await page.evaluate(() => window.__qa.mutate(g => {
+    g.minutes = 1410; g.npcs = []; g.shelter.residents = 0; g.shelter.food = 1;
+    g.survivors[0].food = 1; g.survivors[1].food = 0;
+    for (const p of g.survivors) { p.water = 2; p.stress = 0; }
+  }));
+  await page.getByRole('button', { name: '+1 h', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => {
+    const g = window.__qa.game();
+    return { day: g.day, food: g.shelter.food, people: g.survivors.map(p => ({ food: p.food, stress: p.stress })) };
+  })).toEqual({ day: 2, food: 0, people: [{ food: 0, stress: 0 }, { food: 0, stress: 0 }] });
+});
+
+test('master can request rest again after a scene change cancels an unstarted rest', async ({ page }) => {
+  await page.goto('/?screen=map&scenario=rest');
+  expect(await page.evaluate(() => window.__qa.game().playerActions?.operations[0].status)).toBe('forming');
+  await page.getByRole('button', { name: 'Nova cena', exact: true }).click();
+  expect(await page.evaluate(() => window.__qa.game().playerActions?.operations[0].status)).toBe('cancelled');
+  await page.getByRole('button', { name: 'Ficha', exact: true }).click();
+  await page.getByRole('button', { name: 'Solicitar descanso curto · 1h', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.__qa.game().playerActions?.operations
+    .filter(op => op.type === 'rest' && op.status === 'forming').map(op => op.scene))).toEqual([2]);
+  await expect(page.getByText('Já há um descanso aguardando confirmação destes participantes.', { exact: true })).toHaveCount(0);
+});
