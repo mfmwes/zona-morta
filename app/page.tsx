@@ -807,7 +807,7 @@ export default function CampaignApp() {
         </div>}
         {activeTab === "resumo" && role === "mestre" && !readOnlyPreview && <MasterOverview mobile={mobile} game={game} canManageSession={status === "salvo"} onSessionAction={sessionAction} onNavigate={setTab} onOpen={openCampaignTarget} masterActions={masterActionControls} />}
         {activeTab === "mapa" && <>
-          <HexExplorer mobile={mobile} key={!readOnlyPreview&&focus?.target.tab==="mapa"?focus.key:game.campaignId} initialTarget={!readOnlyPreview&&focus?.target.tab==="mapa"?focus.target:undefined} game={communityView} edit={edit} playerPreview={readOnlyPreview} teamPeers={viewedPeers} playerActions={playerActionControls} masterActions={masterActionControls} sessionControls={!readOnlyPreview ? <MapSessionBar game={game} edit={edit} onAdjustTime={openTimeEditor} /> : undefined} />
+          <HexExplorer mobile={mobile} key={!readOnlyPreview&&focus?.target.tab==="mapa"?focus.key:game.campaignId} initialTarget={!readOnlyPreview&&focus?.target.tab==="mapa"?focus.target:undefined} game={communityView} edit={edit} playerPreview={readOnlyPreview} teamPeers={viewedPeers} playerActions={playerActionControls} masterActions={masterActionControls} sessionControls={!readOnlyPreview ? activeHex => <MapSessionBar game={game} edit={edit} activeHex={activeHex} onAdjustTime={openTimeEditor} /> : undefined} />
           {!readOnlyPreview && <>
             <Dialog open={timeEditorOpen} onOpenChange={setTimeEditorOpen}>
               <DialogContent><DialogHeader><DialogTitle>Ajustar horário do dia</DialogTitle>

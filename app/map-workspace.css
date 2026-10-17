@@ -51,6 +51,19 @@
 .map-session-scene-actions { justify-content: space-between; margin-top: auto; }
 .map-session-scene-actions button { gap: 5px; min-height: 24px; height: 24px; color: var(--muted-foreground); font-size: .64rem; }
 .map-session-reserves > small { margin-top: auto; }
+.map-session-bar .map-reserve-composition { display: block; margin-top: 5px; font-size: .57rem; overflow-wrap: anywhere; }
+.map-reserve-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: auto; }
+.map-reserve-adjust { margin-left: auto; min-width: 0; }
+.map-reserve-adjust > summary { display: flex; align-items: center; gap: 4px; cursor: pointer; color: var(--muted-foreground); font-size: .59rem; list-style: none; }
+.map-reserve-adjust > summary::-webkit-details-marker { display: none; }
+.map-reserve-adjust > summary:hover { color: var(--foreground); }
+.map-reserve-adjust[open] { flex-basis: 100%; }
+.map-reserve-adjust[open] > summary { margin-bottom: 7px; color: var(--foreground); }
+.map-reserve-editors { display: flex; flex-wrap: wrap; gap: 7px; padding-top: 6px; border-top: 1px solid var(--border); }
+.map-reserve-editors > div { flex: 1 1 110px; min-width: 0; }
+.map-reserve-editors .font-bold { font-size: .62rem; }
+.map-reserve-editors .number-control { margin: 4px 0; }
+.map-reserve-remote { overflow-wrap: anywhere; }
 .map-stage:has(.map-session-bar) .map-session-status { display: none; }
 .map-stage > .map-surface { flex: 1; min-height: 0; position: relative; border: 0; border-radius: 0; margin: 0; display: flex; flex-direction: column; }
 .map-stage .world-map-viewport { flex: 1; height: auto; min-height: 0; }

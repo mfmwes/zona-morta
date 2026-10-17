@@ -16,6 +16,7 @@ const { planJourney } = require('../lib/journey.ts');
 const { validState } = require('../lib/campaign-validation.ts');
 const { requestTableRest, confirmTableRest, currentTableRest } = require('../lib/table-rest.ts');
 const { beginScene } = require('../lib/abilities.ts');
+const { groupReserves } = require('../lib/group-reserves.ts');
 function fixture(count = 1) {
   const g = defaultState(), a = content.archetypes[0];
   g.minutes = 1410; g.npcs = []; g.shelter.residents = 0; g.shelter.water = 0; g.shelter.food = 0;
@@ -175,4 +176,23 @@ test('player commands also clean partial choices from orphaned legacy requests w
   assert.equal(result.ok, true, result.error); assert.deepEqual(g, before);
   assert.equal(result.state.survivors[0].restPlan, undefined); assert.equal(currentTableRest(result.state).scene, 2);
   assert.equal(validState(result.state), true);
+});
+
+test('map reserves include ready items and only selected-group backpacks and co-located storage', () => {
+  const g = fixture(2); g.shelter.hex = '0,0'; g.shelter.food = 3; g.shelter.water = 4; g.shelter.parts = 6;
+  g.survivors[1].hex = '1,0'; g.survivors[1].food = 7; g.survivors[1].water = 5;
+  g.survivors[0].inventory = [{ id: 'ready', name: 'Ração de exemplo', qty: 1, provisionResource: 'food', portionsPerUnit: 4, prepared: true, condition: 'Íntegro' }];
+  const before = structuredClone(g), local = groupReserves(g, '0,0'), remote = groupReserves(g, '1,0');
+  assert.deepEqual(local.total, { food: 9, water: 6, parts: 6 });
+  assert.deepEqual(local.personal, { food: 6, water: 2 });
+  assert.deepEqual(remote.total, { food: 7, water: 5, parts: 0 }); assert.deepEqual(remote.remote, { food: 3, water: 4, parts: 6 });
+  assert.deepEqual(g, before);
+});
+
+test('map reserves exclude spoiled, unprepared and expired items and loose expired lots', () => {
+  const g = fixture(); g.day = 2;
+  g.survivors[0].provisionLots = [{ id: 'lot', resource: 'food', label: 'Ontem', qty: 1, expiresDay: 2 }];
+  const item = { name: 'Comida de exemplo', qty: 1, provisionResource: 'food', portionsPerUnit: 4, prepared: true, condition: 'Íntegro' };
+  g.survivors[0].inventory = [{ ...item, id: 'expired', expiresDay: 2 }, { ...item, id: 'spoiled', condition: 'Estragado' }, { ...item, id: 'raw', prepared: false }];
+  assert.equal(groupReserves(g).total.food, 1);
 });

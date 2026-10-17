@@ -21,10 +21,32 @@ for (const width of [390, 1440]) test(`integrated controls cross midnight withou
   expect(await page.evaluate(() => window.__qa.game().survivors.every(p => p.food === 1 && p.water === 1))).toBe(true);
   await controls.getByRole('button', { name: 'Aumentar Medo', exact: true }).click();
   expect(await page.evaluate(() => window.__qa.game().fear)).toBe(1);
-  await controls.getByRole('spinbutton', { name: 'Quantidade de Comida', exact: true }).fill('3');
+  await controls.getByText('Ajustar compartilhado', { exact: true }).click();
+  await controls.getByRole('spinbutton', { name: 'Quantidade de Comida compartilhada', exact: true }).fill('3');
   expect(await page.evaluate(() => window.__qa.game().shelter.food)).toBe(3);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
   await page.screenshot({ path: `outputs/map-session-integrated-${width}.png`, fullPage: true });
+});
+
+test('map reserve totals follow the selected group and shared adjustments leave backpacks unchanged', async ({ page }) => {
+  await page.goto('/?screen=map');
+  await page.evaluate(() => window.__qa.mutate(g => {
+    g.shelter.hex = '0,0'; g.shelter.food = 3; g.shelter.water = 4; g.shelter.parts = 6;
+    g.survivors[0].food = 2; g.survivors[0].water = 1;
+    g.survivors[1].hex = '1,0'; g.survivors[1].food = 7; g.survivors[1].water = 5;
+  }));
+  const controls = page.getByRole('region', { name: 'Controles da exploração' });
+  await expect(controls.getByLabel('Comida disponível ao grupo ativo', { exact: true })).toHaveText('5');
+  await controls.getByText('Ajustar compartilhado', { exact: true }).click();
+  await controls.getByRole('spinbutton', { name: 'Quantidade de Comida compartilhada', exact: true }).fill('4');
+  await expect(controls.getByLabel('Comida disponível ao grupo ativo', { exact: true })).toHaveText('6');
+  expect(await page.evaluate(() => window.__qa.game().survivors.map(p => p.food))).toEqual([2, 7]);
+  await controls.getByText('Ajustar compartilhado', { exact: true }).click();
+  await page.getByRole('button', { name: /Rafael de Albuquerque.*Hex 1,0/ }).click();
+  await expect(controls.getByLabel('Comida disponível ao grupo ativo', { exact: true })).toHaveText('7');
+  await expect(controls.getByLabel('Água disponível ao grupo ativo', { exact: true })).toHaveText('5');
+  await expect(controls).toContainText('Abrigo distante: 4 comida · 4 água · 6 peças');
+  await expect(controls.getByText('Ajustar compartilhado', { exact: true })).toHaveCount(0);
 });
 
 test('players do not receive time and reserve management controls', async ({ page }) => {

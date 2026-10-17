@@ -72,7 +72,7 @@ function travelDurationLabel(minutes: number) {
 
 export function HexExplorer({ mobile = false, initialTarget, game, edit, playerPreview, teamPeers = [], playerActions, masterActions, sessionControls }: {
   mobile?: boolean;
-  sessionControls?: ReactNode;
+  sessionControls?: ReactNode | ((activeHex: string) => ReactNode);
   initialTarget?: {hexId:string;eventId?:string;pointId?:string;areaId?:string};
   game: GameState;
   edit: Edit;
@@ -618,7 +618,7 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
           <span className="map-session-status">Dia {game.day} · {Math.floor(game.minutes / 60).toString().padStart(2, "0")}:{(game.minutes % 60).toString().padStart(2, "0")} <span>Barulho {game.noise}/5 · Medo {game.fear}/12</span></span>
         </div>
       </div>
-      {!playerPreview && sessionControls}
+      {!playerPreview && (typeof sessionControls === "function" ? sessionControls(activeSourceHex) : sessionControls)}
 
       {activeGroup && <div className="map-active-group" role="status" aria-live="polite">
         <span className="map-active-group-icon">{activeGroup.main ? <Footprints size={16} /> : <Users size={16} />}</span>
