@@ -177,6 +177,8 @@
   html:has(.mobile-campaign) [data-slot="dialog-content"] {
     inset: 0;
     transform: none;
+    /* Tailwind v4 centraliza com a propriedade translate, independente de transform. */
+    translate: none;
     width: 100%;
     max-width: none;
     height: var(--mobile-viewport-height, 100dvh);
