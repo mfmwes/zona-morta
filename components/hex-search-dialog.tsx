@@ -14,18 +14,18 @@ import { createId } from "@/lib/id";
 import { catalogKey } from "@/lib/inventory";
 import { searchAvailabilityError } from "@/lib/exploration";
 import { displayTime } from "@/lib/game";
-import { collectLocationStock, deepSearchLimit, deepSearchesUsed, finishPreparedSearch, declareSearchArea, depositExpeditionItems, locationScaleLabels, locationScaleOf, lootDefinitions, pendingPlayerSearchOperation, prepareLocationForExploration, quickSearchOptions, registerVisibleStock, resolveNoVisibleStock, resizeLocationPreparation, resolvePreparedSearch, searchAreaSessionState, searchAreaState, schedulePreparedDeepSearch, suggestCollection, suggestVisibleStock, warehouseWorkers, type CollectionLine, type VisibleStockSuggestion } from "@/lib/hex-automation";
+import { collectLocationStock, deepSearchLimit, deepSearchesUsed, finishPreparedSearch, depositExpeditionItems, visibleSearchAreas, locationScaleLabels, locationScaleOf, lootDefinitions, pendingPlayerSearchOperation, prepareLocationForExploration, quickSearchOptions, registerVisibleStock, resolveNoVisibleStock, resizeLocationPreparation, resolvePreparedSearch, searchAreaSessionState, searchAreaState, schedulePreparedDeepSearch, suggestCollection, suggestVisibleStock, warehouseWorkers, type CollectionLine, type VisibleStockSuggestion } from "@/lib/hex-automation";
 import { RollForm } from "@/components/roll-dialog";
 import type { LocationScale, SearchArea } from "@/lib/hex-automation-types";
 import { parallelTimeLabel, participantTimePreview, survivorTimedCommitment } from "@/lib/activity";
-export type HexSearchRequest = { hexId: string; pointId: string; areaId?: string; participantIds?: string[] };
+export type HexSearchRequest = { hexId: string; pointId: string; areaId?: string; participantIds?: string[]; initialTab?: SearchTab };
 export function HexSearchDialog({ game, edit, request, onClose }: { game: GameState; edit: (fn: (draft: GameState) => void) => void; request: HexSearchRequest; onClose: () => void }) {
   const hex = game.hexes[request.hexId];
   const point = hex?.points.find(row => row.id === request.pointId);
   const prep = point?.preparation;
   const people = survivorsAtHex(game, request.hexId);
   const commitmentById = new Map(people.map(person => [person.id, survivorTimedCommitment(game, person.id)]));
-  const [tab, setTab] = useState<SearchTab>("explore");
+  const [tab, setTab] = useState<SearchTab>(request.initialTab ?? "explore");
   const [areaId, setAreaId] = useState(request.areaId??"");
   const [mode, setMode] = useState<"open" | "specific">("open");
   const [objective, setObjective] = useState("");
@@ -41,8 +41,6 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
   });
   const [worker, setWorker] = useState("");
   const [actorId, setActorId] = useState("");
-  const [newArea, setNewArea] = useState("");
-  const [newSignal, setNewSignal] = useState("");
   const [operationId, setOperationId] = useState(createId);
   const [collection, setCollection] = useState<CollectionLine[] | null>(null);
   const [collectionId, setCollectionId] = useState(createId);
@@ -53,12 +51,14 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
   const [deepItemKey, setDeepItemKey] = useState("");
   const [deepOperationId, setDeepOperationId] = useState(createId);
   const [deepActorId, setDeepActorId] = useState("");
-  const area = prep?.areas.find(row => row.id === areaId)
-    ?? prep?.areas.find(row => Boolean(pendingPlayerSearchOperation(game, request.hexId, request.pointId, row.id)))
-    ?? prep?.areas.find(row => prep.attempts.some(attempt => attempt.areaId === row.id && ["pending", "ready"].includes(attempt.status)))
-    ?? prep?.areas.find(row => prep.stock.some(stock => stock.areaId === row.id && stock.remaining > 0))
-    ?? prep?.areas.find(row => row.searchable !== false && !prep.attempts.some(attempt => attempt.areaId === row.id))
-    ?? prep?.areas[0];
+  // Cômodos narrativos antigos sem itens ficam ocultos (ver visibleSearchAreas).
+  const shownAreas = prep ? visibleSearchAreas(prep) : [];
+  const area = shownAreas.find(row => row.id === areaId)
+    ?? shownAreas.find(row => Boolean(pendingPlayerSearchOperation(game, request.hexId, request.pointId, row.id)))
+    ?? shownAreas.find(row => prep!.attempts.some(attempt => attempt.areaId === row.id && ["pending", "ready"].includes(attempt.status)))
+    ?? shownAreas.find(row => prep!.stock.some(stock => stock.areaId === row.id && stock.remaining > 0))
+    ?? shownAreas.find(row => row.searchable !== false && !prep!.attempts.some(attempt => attempt.areaId === row.id))
+    ?? shownAreas[0];
   const attempt = prep?.attempts.find(row => row.areaId === area?.id && (row.kind ?? "normal") === "normal");
   const deepAttempt = prep?.attempts.find(row => row.areaId === area?.id && row.kind === "deep");
   const playerProposal = area ? pendingPlayerSearchOperation(game, request.hexId, request.pointId, area.id) : undefined;
@@ -161,7 +161,7 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
     {!prep && point && <section className="hex-search-step"><h3>Preparar este local</h3><p className="text-sm subtle">Organiza áreas internas, resolve a camada de itens aparentes uma única vez e preserva buscas antigas.</p><Button onClick={() => edit(draft => { prepareLocationForExploration(draft, request.hexId, request.pointId); })}>Preparar exploração</Button></section>}
     {prep && area && <>
       {tab === "explore" && <div className="hex-search-workspace search-session-workspace">
-        <SearchRooms rooms={prep.areas.map(row => ({ id: row.id, name: row.name, state: searchRoomLabel(searchAreaSessionState(game, request.hexId, request.pointId, row)), units: stock.filter(item => item.areaId === row.id).reduce((sum, item) => sum + item.remaining, 0) }))} selected={area.id} onChange={selectArea} />
+        <SearchRooms rooms={shownAreas.map(row => ({ id: row.id, name: row.name, state: searchRoomLabel(searchAreaSessionState(game, request.hexId, request.pointId, row)), units: stock.filter(item => item.areaId === row.id).reduce((sum, item) => sum + item.remaining, 0) }))} selected={area.id} onChange={selectArea} />
         <div className="hex-search-area-detail">
           <section className="hex-search-step hex-search-area-intro">
             <div className="hex-search-area-title"><div><h3>{area.name}</h3></div>
@@ -194,11 +194,12 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
             <Pick label="Objetivo do grupo" value={mode} options={[{ value: "open", label: "Vasculhar por achados · d12 do grupo" }, { value: "specific", label: "Procurar um item combinado" }]} onChange={value => setMode(value as "open" | "specific")} />
             {mode === "open" && <Field label="Finalidade geral da busca" value={purpose} onChange={setPurpose} />}
             {mode === "specific" && <><Field label="O que procuram?" value={objective} onChange={setObjective} /><Field label="Para quê?" value={purpose} onChange={setPurpose} /><Pick label="Item plausível combinado" value={chosenKey} options={content.catalog.filter(row => keys.includes(catalogKey(row)) || itemKey === catalogKey(row)).map(row => ({ value: catalogKey(row), label: row.name }))} onChange={setItemKey} /><details><summary className="cursor-pointer text-sm">Outro item justificado na ficção</summary><Pick label="Catálogo completo" value={chosenKey} options={content.catalog.map(row => ({ value: catalogKey(row), label: `${row.category} · ${row.name}` }))} onChange={setItemKey} /></details><p className="text-xs subtle">Busca específica encontra no máximo <b>1 unidade</b>. Se a ficção já estabelece uma quantidade maior, registre-a como item à vista.</p></>}
-            <fieldset><legend className="field-label">Participantes presentes</legend><div className="flex flex-wrap gap-3">{people.map(person => { const commitment = commitmentById.get(person.id); return <label key={person.id} className="text-sm" title={commitment?.label}><input type="checkbox" disabled={Boolean(commitment)} checked={participants.includes(person.id)} onChange={event => setParticipants(current => event.target.checked ? [...current, person.id] : current.filter(id => id !== person.id))} /> {person.name}{commitment ? ` · ocupado até ${commitment.until}` : ""}</label>; })}</div><Button variant="ghost" size="sm" onClick={() => edit(draft => { draft.explorationPreferences = { ...draft.explorationPreferences, autoPrepare: draft.explorationPreferences?.autoPrepare ?? false, participantIds: participants }; })}>Usar estes participantes como padrão</Button></fieldset>
+            <fieldset><legend className="field-label">Participantes presentes</legend><div className="flex flex-wrap gap-3">{people.map(person => { const commitment = commitmentById.get(person.id); return <label key={person.id} className="text-sm hex-search-participant" title={commitment?.label}><input type="checkbox" disabled={Boolean(commitment)} checked={participants.includes(person.id)} onChange={event => setParticipants(current => event.target.checked ? [...current, person.id] : current.filter(id => id !== person.id))} /> {person.name}{commitment ? ` · ocupado até ${commitment.until}` : ""}</label>; })}</div><Button className="hex-search-default-participants" variant="outline" size="sm" onClick={() => edit(draft => { draft.explorationPreferences = { ...draft.explorationPreferences, autoPrepare: draft.explorationPreferences?.autoPrepare ?? false, participantIds: participants }; })}>Usar estes participantes como padrão</Button></fieldset>
             {(area.spacious || area.minutes === 60) && warehouseWorkers(game, request.hexId).some(row => participants.includes(row.id)) && <Pick label="Habilidade de depósito · 1× por expedição" value={worker || "none"} options={[{ value: "none", label: "Guardar a habilidade para depois" }, ...warehouseWorkers(game, request.hexId).filter(row => participants.includes(row.id)).map(row => ({ value: row.id, label: `${row.name} · ${area.minutes === 60 ? "reduzir para 30 min" : "identificar melhor área; sem achado extra"}` }))]} onChange={value => setWorker(value === "none" ? "" : value)} />}
             {worker && area.minutes === 30 && <p className="text-sm">Melhores indícios conhecidos: {(prep.areas.find(row => row.searchable !== false && !prep.attempts.some(attempt => attempt.areaId === row.id) && row.access === "open") ?? area).name} · {(prep.areas.find(row => row.searchable !== false && !prep.attempts.some(attempt => attempt.areaId === row.id) && row.access === "open") ?? area).signal}. Confirme esses indícios com o mestre antes de começar.</p>}
             <p className="text-sm subtle">{normalMinutes} min · Barulho +{area.noise} · {area.access === "open" ? "Acesso livre" : area.access === "risk" ? `Teste ${area.difficulty}` : "Acesso bloqueado"}.{normalTimePreview.ok && normalTimePreview.overlapMinutes > 0 ? ` ${parallelTimeLabel(normalTimePreview)}.` : ""}</p>
-            <Button disabled={Boolean(available) || !participants.length || area.access === "blocked"} onClick={() => { setAreaId(area.id); act(draft => resolvePreparedSearch(draft, { id: operationId, ...request, areaId: area.id, participants, mode, objective, purpose, catalogKey: chosenKey, quantity, warehouseWorker: worker || undefined })); }}>{area.access === "risk" ? "Iniciar busca e resolver acesso" : `Iniciar busca · ${worker && area.minutes === 60 ? 30 : area.minutes} min`}</Button>
+            {game.conflict?.active && <p role="status" className="hex-search-blocked-reason">Encerre o conflito antes de iniciar uma atividade.</p>}
+            <Button disabled={Boolean(available) || Boolean(game.conflict?.active) || !participants.length || area.access === "blocked"} onClick={() => { setAreaId(area.id); act(draft => resolvePreparedSearch(draft, { id: operationId, ...request, areaId: area.id, participants, mode, objective, purpose, catalogKey: chosenKey, quantity, warehouseWorker: worker || undefined })); }}>{area.access === "risk" ? "Iniciar busca e resolver acesso" : `Iniciar busca · ${worker && area.minutes === 60 ? 30 : area.minutes} min`}</Button>
           </section>}
 
           {attempt && !done && <section className="hex-search-step"><h3><Clock3 size={18} /> Retomar busca</h3><p className="text-sm">{attempt.mode === "open" ? "Busca aberta do grupo" : `${attempt.objective} · ${attempt.purpose}`} · {attempt.minutes} min · Barulho +{attempt.noise}</p>
@@ -221,7 +222,7 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
               <Pick label="Foco da busca profunda" value={deepChosenKey}
                 options={content.catalog.filter(row => deepKeys.includes(catalogKey(row))).map(row => ({ value: catalogKey(row), label: row.name }))}
                 onChange={setDeepItemKey} />
-              <fieldset><legend className="field-label">Participantes</legend><div className="flex flex-wrap gap-3">{people.map(person => { const commitment = commitmentById.get(person.id); return <label key={person.id} className="text-sm" title={commitment?.label}><input type="checkbox" disabled={Boolean(commitment)} checked={participants.includes(person.id)} onChange={event => setParticipants(current => event.target.checked ? [...current, person.id] : current.filter(id => id !== person.id))} /> {person.name}{commitment ? ` · ocupado até ${commitment.until}` : ""}</label>; })}</div></fieldset>
+              <fieldset><legend className="field-label">Participantes</legend><div className="flex flex-wrap gap-3">{people.map(person => { const commitment = commitmentById.get(person.id); return <label key={person.id} className="text-sm hex-search-participant" title={commitment?.label}><input type="checkbox" disabled={Boolean(commitment)} checked={participants.includes(person.id)} onChange={event => setParticipants(current => event.target.checked ? [...current, person.id] : current.filter(id => id !== person.id))} /> {person.name}{commitment ? ` · ocupado até ${commitment.until}` : ""}</label>; })}</div></fieldset>
               <Button disabled={Boolean(available) || !participants.length || !deepChosenKey} onClick={() => {
                 if (act(draft => schedulePreparedDeepSearch(draft, { id: deepOperationId, ...request, areaId: area.id, participants,
                   objective: deepChosenName, purpose: "Vasculhar a fundo algo que passou despercebido", catalogKey: deepChosenKey }), "Busca profunda preparada")) {
@@ -258,7 +259,7 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
           </section>}
           <details className="search-session-settings"><summary>Preparação e ajustes · mestre</summary>
       <details className="hex-location-preparation">
-        <summary>Porte do local <span>Porte {locationScaleLabels[scale]} · {prep.areas.length} áreas</span></summary>
+        <summary>Porte do local <span>Porte {locationScaleLabels[scale]} · {shownAreas.length} áreas</span></summary>
         <div>
           <p className="text-xs subtle">Essas opções estruturam o local, mas não precisam ser revisadas durante toda busca.</p>
           {canResize ? <div className="hex-search-scale-controls">
@@ -271,7 +272,6 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
       </details>
 
             {!attempt && !playerProposal && <details><summary className="cursor-pointer text-sm font-bold">Revisar preparação do mestre</summary><div className="grid gap-3 mt-3">
-              <label className="text-sm"><input type="checkbox" checked={area.searchable !== false} onChange={event => configure({ searchable: event.target.checked })} /> Esta área permite busca de recursos</label>
               <Field label="Nome do espaço" value={area.name} onChange={name => configure({ name })} />
               <Field label="Sinal desta área · confirme na ficção" value={area.signal} onChange={signal => configure({ signal })} />
               {area.searchable !== false && <Pick label="Tabela de achados desta área" value={area.table} options={content.lootTables.map(row => row.name)} onChange={table => configure({ table })} />}
@@ -328,15 +328,6 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
             </details>
           </details>
 
-          <details className="hex-search-add-area"><summary>+ Declarar outra área</summary><p className="text-xs subtle">Novas áreas começam como exploração narrativa para não criar loot extra automaticamente. O mestre pode habilitar uma busca ao revisar a preparação.</p>
-            <Field label="Nome da área interna" value={newArea} onChange={setNewArea} />
-            <Field label="Sinal que distingue este espaço" value={newSignal} onChange={setNewSignal} />
-            <Button size="sm" variant="outline" disabled={!newArea.trim() || !newSignal.trim()} onClick={() => {
-              if (act(draft => declareSearchArea(draft.hexes[request.hexId].points.find(row => row.id === request.pointId)!, newArea, newSignal) ? null : "A área já existe ou há uma busca em andamento. Declare um espaço distinto antes da busca.", "Área declarada")) {
-                setNewArea(""); setNewSignal("");
-              }
-            }}>Registrar espaço</Button>
-          </details>
           </details>
         </div>
       </div>}

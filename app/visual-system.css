@@ -359,6 +359,7 @@ html[data-theme="dark"] .character-story-grid > div,
 html[data-theme="dark"] .character-empty-list { background: #222d2d; color: #d2ddd7; }
 html[data-theme="dark"] .character-rest-readonly,
 html[data-theme="dark"] .rest-planner-row { border-color: #405650; background: #202d2c; color: #d9e5df; }
+html[data-theme="dark"] .rest-planner-row > b { color: var(--foreground); } /* nome do sobrevivente legível no modo noturno */
 html[data-theme="dark"] .character-rest-status { color: #b6cec5; }
 html[data-theme="dark"] .character-hope-teaser { border-color: #8a6b14; background: var(--hope-surface); color: #fff0b8; box-shadow: none; }
 html[data-theme="dark"] .character-hope-teaser:hover { background: #51420d; }
@@ -5296,3 +5297,33 @@ html[data-theme="dark"] .condition-item-badge {
 html[data-theme="dark"] .exposure-support-card {
   background:color-mix(in srgb,#77a394 10%,var(--card));
 }
+
+/* Encerrar o dia · modo noturno dos elementos novos (pendências, etiquetas, rodapé). */
+html[data-theme="dark"] .day-close-dialog > [data-slot="dialog-footer"] { border-color:#344744; }
+html[data-theme="dark"] .day-close-pending { border-color:#7a4a42; background:#2e211e; color:#f0bdb4; }
+html[data-theme="dark"] .day-close-pending.is-clear { border-color:#3f6a5e; background:#1c2d28; color:#a9dccb; }
+html[data-theme="dark"] .day-close-person-name b { color:#e2eee8; }
+html[data-theme="dark"] .day-close-person-name small,
+html[data-theme="dark"] details.day-close-person > summary::after,
+html[data-theme="dark"] .day-close-collapsible > summary > div > b::after,
+html[data-theme="dark"] .day-close-rules > summary { color:#aebfba; }
+html[data-theme="dark"] .day-close-chip { border-color:#405650; background:#202d2c; color:#d9e5df; }
+html[data-theme="dark"] .day-close-chip.is-ok { border-color:#3f6a5e; background:#1c2d28; color:#a9dccb; }
+html[data-theme="dark"] .day-close-chip.is-warning { border-color:#7a4a42; background:#2e211e; color:#f0bdb4; }
+html[data-theme="dark"] .day-close-footer-note { color:#f0bdb4; }
+
+/* Criação de sobrevivente · modo noturno dos elementos novos. */
+html[data-theme="dark"] .wizard-step { border-color:#405650; background:#202d2c; color:#c3d4ce; }
+html[data-theme="dark"] .wizard-step.is-current { border-color:#7fc2b1; background:#1c2d28; color:#e2eee8; box-shadow:inset 0 -3px #7fc2b1; }
+html[data-theme="dark"] .wizard-step-number { background:#344744; color:#d9e5df; }
+html[data-theme="dark"] .wizard-step.is-done .wizard-step-number { background:#7fc2b1; color:#0f1d1b; }
+html[data-theme="dark"] .wizard-footer { border-color:#344744; }
+html[data-theme="dark"] .wizard-footer-hint { color:#aebfba; }
+html[data-theme="dark"] .wizard-attribute-row { border-color:#405650; background:#1b2727; }
+html[data-theme="dark"] .wizard-attribute-values button { border-color:#405650; background:#202d2c; color:#d9e5df; }
+html[data-theme="dark"] .wizard-attribute-values button.is-selected { border-color:#7fc2b1; background:#7fc2b1; color:#0f1d1b; }
+html[data-theme="dark"] .wizard-attribute-pool > span { border-color:#405650; background:#202d2c; color:#c3d4ce; }
+html[data-theme="dark"] .wizard-attribute-pool > span.is-ok { border-color:#3f6a5e; background:#1c2d28; color:#a9dccb; }
+html[data-theme="dark"] .wizard-attribute-pool > span.is-over { border-color:#7a4a42; background:#2e211e; color:#f0bdb4; }
+html[data-theme="dark"] .wizard-attribute-pool > em { color:#f0bdb4; }
+html[data-theme="dark"] .wizard-attribute-pool > em.is-ok { color:#a9dccb; }

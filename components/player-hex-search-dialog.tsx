@@ -2,7 +2,7 @@
 import { hasMultipleSurvivorGroups } from "@/lib/game";
 
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle2, Circle, Clock3, Search, ShieldAlert, Users } from "lucide-react";
+import { CheckCircle2, Circle, Clock3, Eye, Search, ShieldAlert, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field, Pick } from "@/components/game-controls";
@@ -15,7 +15,7 @@ import { survivorStats, type GameState } from "@/lib/game";
 import { TeamActionError, type PlayerActionControls } from "@/components/player-actions-panel";
 import type { PublicSearchAreaState } from "@/lib/player-actions-types";
 
-export type PlayerHexSearchRequest = { hexId: string; pointId: string };
+export type PlayerHexSearchRequest = { hexId: string; pointId: string; initialTab?: SearchTab };
 
 const objectiveLabels: Record<string, string> = {
   open: "Busca geral (1d12)",
@@ -65,7 +65,7 @@ export function PlayerHexSearchDialog({
   const [mentorId, setMentorId] = useState("");
   const [cartId, setCartId] = useState("");
   const [quantities, setQuantities] = useState<Record<string, string>>({});
-  const [tab, setTab] = useState<SearchTab>("explore");
+  const [tab, setTab] = useState<SearchTab>(request.initialTab ?? "explore");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -210,7 +210,7 @@ export function PlayerHexSearchDialog({
               <p className="text-xs subtle">{area.searchable
                 ? `${area.minutes} min · Barulho +${area.noise} · ${area.access === "open" ? "acesso livre" : area.access === "risk" ? "acesso sob risco" : "acesso bloqueado"}.`
                 : "Este espaço existe na exploração, mas não concede uma rolagem própria de recursos."}</p>
-              {area.visibleOutcome === "none" && <div className="hex-visible-resolved"><Circle size={17} /><span><b>Nada evidente à vista</b><small>O restante deste cômodo depende de busca ou da exploração narrativa.</small></span></div>}
+              {area.visibleOutcome === "none" && <div className="hex-visible-resolved"><Eye size={17} aria-hidden="true" /><span><b>Nada evidente à vista</b><small>O restante deste cômodo depende de busca.</small></span></div>}
               {area.visibleOutcome === "item" && <div className="hex-visible-resolved"><Search size={17} /><span><b>Item aparente</b><small>{apparentUnits > 0 ? apparentStock.map(row => `${row.remaining} × ${row.name}`).join(" · ") : "O item aparente deste cômodo já foi recolhido."}</small></span></div>}
             </section>}
 

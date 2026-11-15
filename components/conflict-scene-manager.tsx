@@ -84,6 +84,8 @@ export function PlayerConflictScene({ game, edit, playerActions, selfId = null, 
   const simulation = usePlayerSimulation();
   const [resolvingDamage, setResolvingDamage] = useState<string | null>(null);
   const [damageError, setDamageError] = useState("");
+  // Retorno visível depois de decidir o dano: o aviso some da caixa de entrada, então o cartão "Você" mostra o que mudou.
+  const [lastDamageNote, setLastDamageNote] = useState("");
   const conflict = game.publicConflict
     ?? (game.conflict?.active ? publicConflictScene(game.conflict, game.survivors, selfId) : undefined);
   if (!conflict?.active) return null;
@@ -96,8 +98,15 @@ export function PlayerConflictScene({ game, edit, playerActions, selfId = null, 
 
   async function resolvePendingDamage(requestId: string, resolution: "hp" | "armor") {
     if (resolvingDamage) return;
+    const request = conflict?.pendingDamage.find(row => row.id === requestId);
+    const expectedHp = request ? (resolution === "armor" ? Math.max(0, request.tier.hpMarks - 1) : request.tier.hpMarks) : 0;
+    const note = (hpMarks: number) => resolution === "armor" ? `1 Armadura usada · ${hpMarks} PV marcado(s)` : `${hpMarks} PV marcado(s)`;
     if (simulation) {
-      try { simulation.damage(requestId, resolution); setDamageError(""); } catch (cause) { setDamageError(cause instanceof Error ? cause.message : "Dano indisponível."); }
+      try {
+        simulation.damage(requestId, resolution); setDamageError("");
+        setLastDamageNote(note(expectedHp));
+        toast.success(resolution === "armor" ? "Armadura usada" : "Dano marcado", { description: note(expectedHp) });
+      } catch (cause) { setDamageError(cause instanceof Error ? cause.message : "Dano indisponível."); }
       return;
     }
     if (preview) { toast.info("Prévia dos jogadores", { description: "O jogador poderá resolver seu dano aqui. A prévia não altera a campanha." }); return; }
@@ -111,11 +120,9 @@ export function PlayerConflictScene({ game, edit, playerActions, selfId = null, 
       });
       const payload = await response.json() as { error?: string; resolution?: { hpMarks: number; armorUsed: number } };
       if (!response.ok) throw new Error(payload.error || "Não foi possível resolver o dano.");
-      toast.success(resolution === "armor" ? "Armadura usada" : "Dano marcado", {
-        description: resolution === "armor"
-          ? `1 Armadura marcada · ${payload.resolution?.hpMarks ?? 0} PV recebidos.`
-          : `${payload.resolution?.hpMarks ?? 0} PV marcados.`,
-      });
+      const hpMarks = payload.resolution?.hpMarks ?? expectedHp;
+      setLastDamageNote(note(hpMarks));
+      toast.success(resolution === "armor" ? "Armadura usada" : "Dano marcado", { description: note(hpMarks) });
       window.dispatchEvent(new CustomEvent("zona-morta:campaign-refresh"));
     } catch (error) {
       setDamageError(error instanceof Error ? error.message : "Não foi possível resolver o dano.");
@@ -195,6 +202,12 @@ export function PlayerConflictScene({ game, edit, playerActions, selfId = null, 
               <div className="conflict-public-copy">
                 <div><b>{person.name}</b>{isSelf && <span className="tag">VOCÊ</span>}</div>
                 <small>Sobrevivente</small>
+                {isSelf && self && selfStats && <div className="conflict-survivor-resources conflict-self-resources">
+                  <ResourceMeter icon={<HeartPulse size={10} />} label="PV" description="PV marcados" value={self.hp} max={selfStats.hp} tone="hp" />
+                  <ResourceMeter icon={<Zap size={10} />} label="Estresse" value={self.stress} max={6} tone="stress" />
+                  <ResourceMeter icon={<Activity size={10} />} label="Esperança" value={self.hope} max={6} tone="hope" />
+                </div>}
+                {isSelf && lastDamageNote && <p className="conflict-self-note" role="status">Último dano: {lastDamageNote}</p>}
               </div>
               {isFocused && <span className="conflict-focus-badge"><Crosshair size={11} /> Spotlight</span>}
               <div className="conflict-condition-slot">

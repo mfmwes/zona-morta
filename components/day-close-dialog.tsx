@@ -215,6 +215,25 @@ export function DayCloseDialog({
     setOpen(false);
   }
 
+  const runningActivities = Boolean(game.activities?.some(a => a.day === game.day && a.status === "running"));
+  const reasonText = (reason: string) => reason === "remote" ? "reservas fora de alcance" : reason === "unavailable" ? "fonte sem porção" : "sem consumo registrado";
+  // Pendências reunidas no topo: o mestre vê de uma vez o que precisa de atenção antes de rolar o diálogo.
+  const pendingItems: { key: string; text: string; tone: "warning" | "block" }[] = [
+    ...(inspection.stale ? [{ key: "stale", text: "O dia mudou desde que este painel foi aberto. Feche e abra novamente para recalcular.", tone: "block" as const }] : []),
+    ...(runningActivities ? [{ key: "activities", text: "Há atividades em andamento. Conclua ou interrompa na linha do tempo antes de encerrar.", tone: "block" as const }] : []),
+    ...(awaitingChoices ? [{ key: "rest", text: "Um descanso aguarda as escolhas dos sobreviventes.", tone: "block" as const }] : []),
+    ...inspection.deprivations.map(row => ({ key: `dep-${row.survivorId ?? row.npcId}-${row.resource}`, text: `${row.name}: sem ${resourceName(row.resource).toLowerCase()} · ${reasonText(row.reason)}${row.survivorId ? " · +1 Estresse" : ""}`, tone: "warning" as const })),
+    ...(inspection.residentMissing.food > 0 || inspection.residentMissing.water > 0 ? [{ key: "residents", text: `Moradores: faltam ${inspection.residentMissing.food} porção(ões) de comida e ${inspection.residentMissing.water} de água nas reservas.`, tone: "warning" as const }] : []),
+    ...(timedEvents.length ? [{ key: "events", text: `${timedEvents.length} evento(s) temporal(is) pendente(s) antes do amanhecer: ${timedEvents.slice(0, 3).map(row => `${row.sector} (${row.event.triggerType === "night" ? "noturno" : "Barulho"})`).join(", ")}${timedEvents.length > 3 ? ` +${timedEvents.length - 3}` : ""}.`, tone: "warning" as const }] : []),
+  ];
+  const shortSource: Record<DayProvisionSource, string> = { already: "já consumiu", shared: "reservas", personal: "provisão pessoal", mixed: "reservas + pessoal", other: "outra fonte", none: "privação" };
+  function sourceChip(resource: DailyResource, consumed: boolean, source: DayProvisionSource, warning: boolean) {
+    const Icon = resource === "food" ? Utensils : Droplets;
+    return <span className={`day-close-chip${warning ? " is-warning" : consumed ? " is-ok" : ""}`}>
+      <Icon size={13} aria-hidden="true" />{resourceName(resource)}: {consumed ? "já consumiu" : warning ? "sem recurso" : shortSource[source]}
+    </span>;
+  }
+
   return <Dialog open={open} onOpenChange={handleOpenChange}>
     <DialogTrigger asChild>
       <Button size={size} variant={variant} className={className} onClick={prepare}>
@@ -225,141 +244,155 @@ export function DayCloseDialog({
       <DialogHeader>
         <DialogTitle>Encerrar o dia {game.day}</DialogTitle>
         <DialogDescription>
-          Revise quem já consumiu, de onde virá cada porção e quem ficará sem recurso. Confirmar avança a campanha para o próximo amanhecer às 08:00. Um descanso longo só é aplicado se você ativá-lo abaixo e todos tiverem escolhas registradas.
+          Confira de onde vem a comida e a água de cada pessoa e confirme o novo amanhecer. O descanso longo só é aplicado se você ativá-lo e todos tiverem escolhas registradas.
         </DialogDescription>
-      </DialogHeader><RuleHelp topic="day"/>
+      </DialogHeader>
 
-      <div className="day-close-summary">
-        <div><span>AGORA</span><b>Dia {game.day}</b><small>horário atual da campanha</small></div>
-        <Moon size={20} aria-hidden="true" />
-        <div><span>PRÓXIMO</span><b>Dia {game.day + 1} · 08:00</b><small>novo amanhecer</small></div>
+      <div className="day-close-body">
+        <div className="day-close-overview">
+          <div className="day-close-summary">
+            <div><span>AGORA</span><b>Dia {game.day}</b></div>
+            <Moon size={18} aria-hidden="true" />
+            <div><span>PRÓXIMO</span><b>Dia {game.day + 1} · 08:00</b></div>
+          </div>
+          <div className="day-close-reserve-summary">
+            {(["food", "water"] as const).map(resource => <div key={resource}>
+              {resource === "food" ? <Utensils size={17} /> : <Droplets size={17} />}
+              <span><small>{resourceName(resource)} nas reservas</small>
+                <b>{inspection.shared[resource].demand} previstas / {inspection.shared[resource].available} disponíveis</b></span>
+              {inspection.shared[resource].missing > 0
+                ? <strong className="is-warning">−{inspection.shared[resource].missing}</strong>
+                : <CheckCircle2 size={17} className="is-ok" aria-label="Suficiente" />}
+            </div>)}
+          </div>
+        </div>
+
+        <section className={`day-close-pending${pendingItems.length ? "" : " is-clear"}`} aria-live="polite">
+          {pendingItems.length ? <>
+            <h3><AlertTriangle size={16} aria-hidden="true" /> {pendingItems.length} pendência(s)</h3>
+            <ul>{pendingItems.map(item => <li key={item.key} className={item.tone === "block" ? "is-block" : undefined}>{item.text}</li>)}</ul>
+            {hasWarnings && !inspection.stale && <p>Você ainda pode encerrar o dia; privações são registradas nominalmente no diário.</p>}
+          </> : <h3><CheckCircle2 size={16} aria-hidden="true" /> Tudo pronto: todos têm comida e água definidas.</h3>}
+        </section>
+
+        <section className="day-close-section">
+          <div className="day-close-section-heading">
+            <div><small>SOBREVIVENTES</small><b>{game.survivors.length} pessoa(s)</b></div>
+            <span>Abra para trocar a fonte. Consumo já registrado nunca é cobrado de novo.</span>
+          </div>
+          <div className="day-close-people">
+            {game.survivors.map(person => {
+              const entry = planFor(person);
+              const atStorage = survivorHex(game, person) === storageHex;
+              const foodWarning = warningFor(person, "food");
+              const waterWarning = warningFor(person, "water");
+              const extraStress = Number(Boolean(foodWarning)) + Number(Boolean(waterWarning));
+              return <details className={`day-close-person ${extraStress ? "has-warning" : ""}`} key={person.id} open={extraStress > 0}>
+                <summary>
+                  <span className="day-close-avatar">{person.portrait ? <img src={person.portrait} alt="" /> : person.name.charAt(0).toUpperCase()}</span>
+                  <span className="day-close-person-name"><b>{person.name}</b><small><MapPin size={12} /> Hex {survivorHex(game, person)} · {atStorage ? "junto às reservas" : "em campo"}</small></span>
+                  <span className="day-close-chips">
+                    {sourceChip("food", provisionConsumedToday(game, person, "food"), entry.food, Boolean(foodWarning))}
+                    {sourceChip("water", provisionConsumedToday(game, person, "water"), entry.water, Boolean(waterWarning))}
+                  </span>
+                </summary>
+                <div className="day-close-person-body">
+                  {extraStress > 0 && <p className="day-close-inline-warning">Privação prevista: +{extraStress} Estresse · {person.stress} → {Math.min(6, person.stress + extraStress)}/6</p>}
+                  <div className="day-close-person-resources">
+                    {(["food", "water"] as const).map(resource => {
+                      const consumed = provisionConsumedToday(game, person, resource);
+                      const warning = warningFor(person, resource);
+                      const personal = provisionBreakdown(person, resource).total;
+                      const required = requiredDailyProvision(person, resource);
+                      const remainingNeed = remainingDailyProvisionPortions(game, person, resource);
+                      return <div className="day-close-resource-row" key={resource}>
+                        <span className="day-close-resource-label">
+                          {resource === "food" ? <Utensils size={15} /> : <Droplets size={15} />}
+                          <b>{resourceName(resource)}</b>
+                          {consumed && <small className="is-ok"><CheckCircle2 size={12} /> necessidade completa</small>}
+                          {!consumed && required > 1 && <small className="is-warning">Calor · faltam {remainingNeed}/{required}</small>}
+                          {!consumed && personal > 0 && <small>{personal} pessoal(is)</small>}
+                        </span>
+                        {consumed
+                          ? <span className="day-close-consumed">Já consumiu hoje</span>
+                          : <Pick label={`Fonte de ${resourceName(resource).toLowerCase()}`} value={entry[resource]}
+                              options={sourceOptions(person, resource)}
+                              onChange={value => updateSource(person.id, resource, value as DayProvisionSource)} />}
+                        {warning && <small className="day-close-inline-warning"><AlertTriangle size={12} />
+                          {warning.reason === "remote" ? "Reservas inacessíveis deste hex."
+                            : warning.reason === "unavailable" ? "A fonte escolhida não tem porção disponível."
+                            : "Sem consumo registrado para o dia."}</small>}
+                      </div>;
+                    })}
+                  </div>
+                </div>
+              </details>;
+            })}
+            {game.survivors.length === 0 && <p className="character-rule-note">Nenhum sobrevivente registrado. Apenas o consumo dos moradores será processado.</p>}
+          </div>
+        </section>
+
+        <details className="day-close-section day-close-collapsible" open={inspection.residentMissing.food > 0 || inspection.residentMissing.water > 0}>
+          <summary className="day-close-section-heading">
+            <div><small>MORADORES DO ABRIGO</small><b>{residents} registrado(s) · {currentPlan.residentsFood} comem · {currentPlan.residentsWater} bebem</b></div>
+            <span>Quantos usarão as reservas hoje?</span>
+          </summary>
+          <div className="day-close-resident-controls">
+            <Counter compact editable label="Comida" value={currentPlan.residentsFood} min={0} max={residents} onChange={value => updateResident("food", value)} />
+            <Counter compact editable label="Água" value={currentPlan.residentsWater} min={0} max={residents} onChange={value => updateResident("water", value)} />
+          </div>
+          <p className="text-xs subtle">Moradores não incluídos nesses contadores são tratados como atendidos por outra fonte; o sistema não cria privação para eles automaticamente.</p>
+          {(inspection.residentMissing.food > 0 || inspection.residentMissing.water > 0) && <p className="day-close-warning">
+            <AlertTriangle size={15} /> As reservas não cobrem {inspection.residentMissing.food} porção(ões) de comida e {inspection.residentMissing.water} de água previstas para moradores.
+          </p>}
+        </details>
+
+        {(npcsAtReserve.length > 0 || fieldNpcList.length > 0) && <details className="day-close-section day-close-collapsible" open={inspection.deprivations.some(row => row.npcId)}>
+          <summary className="day-close-section-heading"><div><small>PNJS IDENTIFICADOS</small><b>{npcsAtReserve.length} junto às reservas · {fieldNpcList.length} em campo</b></div>
+            <span>Todo consumo é nominal e auditável.</span></summary>
+          <p className="text-xs subtle">PNJs no abrigo podem usar reservas compartilhadas. Quem está em campo só pode usar uma porção portada por sobrevivente no mesmo hex, outra fonte declarada pelo mestre ou terá a privação registrada.</p>
+          <div className="day-close-people">{[...npcsAtReserve, ...fieldNpcList].map(npc => {
+            const entry = npcPlanFor(npc);
+            const carriers = game.survivors.filter(person => survivorHex(game, person) === npc.hex);
+            return <article className={`day-close-person is-static ${npcWarningFor(npc, "food") || npcWarningFor(npc, "water") ? "has-warning" : ""}`} key={npc.id}><header>
+              <span className="day-close-avatar">{npc.portrait ? <img src={npc.portrait} alt="" /> : npc.name.charAt(0).toUpperCase()}</span><span className="day-close-person-name"><b>{npc.name}</b><small><MapPin size={12} /> Hex {npc.hex} · {npc.hex === storageHex ? "junto às reservas" : "em campo"}</small></span>
+            </header><div className="day-close-person-resources">{(["food", "water"] as const).map(resource => {
+              const warning = npcWarningFor(npc, resource);
+              const consumed = (resource === "food" ? npc.foodConsumedDay : npc.waterConsumedDay) === game.day;
+              const carrierId = resource === "food" ? entry.foodCarrierId : entry.waterCarrierId;
+              return <div className="day-close-resource-row" key={resource}><span className="day-close-resource-label">{resource === "food" ? <Utensils size={15} /> : <Droplets size={15} />}<b>{resourceName(resource)}</b>{consumed && <small className="is-ok"><CheckCircle2 size={12} /> já registrado</small>}</span>
+                {consumed ? <span className="day-close-consumed">Já consumiu hoje</span> : <div className="grid gap-2"><Pick label={`Fonte de ${resourceName(resource).toLowerCase()}`} value={entry[resource]} options={npcSourceOptions(npc, resource)} onChange={value => updateNpcSource(npc.id, resource, value as DayProvisionSource)} />
+                  {entry[resource] === "personal" && <Pick label="Quem porta a porção" value={carrierId ?? ""} options={[{ value: "", label: "Selecione a pessoa" }, ...carriers.map(person => ({ value: person.id, label: `${person.name} · ${provisionBreakdown(person, resource).total} porção(ões)` }))]} onChange={value => updateCarrier(npc.id, resource, value)} />}</div>}
+                {warning && <small className="day-close-inline-warning"><AlertTriangle size={12} />{warning.reason === "remote" ? "Reserva remota; escolha uma pessoa deste hex." : warning.reason === "unavailable" ? "A fonte escolhida não tem porção disponível." : "Sem consumo registrado para o dia."}</small>}
+              </div>;
+            })}</div></article>;
+          })}</div>
+        </details>}
+
+        <section className="day-close-section">
+          <div className="day-close-section-heading"><div><small>DESCANSO DA NOITE</small><b>6h · opcional</b></div>
+            <span>{tableRestReadyForNight(game) ? "Descanso solicitado e confirmado por todos." : "Escolha se haverá descanso durante a noite."}</span></div>
+          <label className="inventory-ready">
+            <input type="checkbox" checked={overnightRest || tableRestReadyForNight(game)} disabled={!overnightRestReady || tableRestReadyForNight(game)}
+              onChange={event => setOvernightRest(event.target.checked)} />
+            <span><b>Aplicar descanso longo durante a noite</b><small>{overnightRestReady
+              ? "Todos os sobreviventes têm duas escolhas de descanso longo registradas. O amanhecer às 08:00 representa o tempo de descanso."
+              : "Ainda faltam escolhas de descanso longo. Registre-as nas fichas dos sobreviventes antes de encerrar o dia."}</small></span>
+          </label>
+        </section>
+
+        <details className="day-close-rules">
+          <summary>Como o consumo funciona</summary>
+          <p className="character-rule-note">
+            O sistema usa primeiro provisões abertas ou próximas do vencimento. Cada sobrevivente marca +1 Estresse por não comer e +1 por não beber no dia: ambas as faltas somam +2, até o limite de 6 Estresse. Voltar a consumir não remove Estresse. PNJs e moradores, que não têm trilha de Estresse, mantêm o registro de faltas.
+          </p>
+          <RuleHelp topic="day"/>
+        </details>
       </div>
-
-      <div className="day-close-reserve-summary">
-        {(["food", "water"] as const).map(resource => <div key={resource}>
-          {resource === "food" ? <Utensils size={17} /> : <Droplets size={17} />}
-          <span><small>{resourceName(resource).toUpperCase()} · RESERVAS</small>
-            <b>{inspection.shared[resource].demand} previstas / {inspection.shared[resource].available} disponíveis</b></span>
-          {inspection.shared[resource].missing > 0
-            ? <strong className="is-warning">−{inspection.shared[resource].missing}</strong>
-            : <CheckCircle2 size={17} className="is-ok" />}
-        </div>)}
-      </div>
-
-      <section className="day-close-section">
-        <div className="day-close-section-heading">
-          <div><small>MORADORES DO ABRIGO</small><b>{residents} registrado(s)</b></div>
-          <span>Quantos usarão as reservas hoje?</span>
-        </div>
-        <div className="day-close-resident-controls">
-          <Counter compact editable label="Comida" value={currentPlan.residentsFood} min={0} max={residents} onChange={value => updateResident("food", value)} />
-          <Counter compact editable label="Água" value={currentPlan.residentsWater} min={0} max={residents} onChange={value => updateResident("water", value)} />
-        </div>
-        <p className="text-xs subtle">Moradores não incluídos nesses contadores são tratados como atendidos por outra fonte; o sistema não cria privação para eles automaticamente.</p>
-        {(inspection.residentMissing.food > 0 || inspection.residentMissing.water > 0) && <p className="day-close-warning">
-          <AlertTriangle size={15} /> As reservas não cobrem {inspection.residentMissing.food} porção(ões) de comida e {inspection.residentMissing.water} de água previstas para moradores.
-        </p>}
-      </section>
-
-      <section className="day-close-section">
-        <div className="day-close-section-heading">
-          <div><small>SOBREVIVENTES</small><b>Prestação de contas individual</b></div>
-          <span>Consumo já registrado nunca é cobrado novamente.</span>
-        </div>
-        <div className="day-close-people">
-          {game.survivors.map(person => {
-            const entry = planFor(person);
-            const atStorage = survivorHex(game, person) === storageHex;
-            const foodWarning = warningFor(person, "food");
-            const waterWarning = warningFor(person, "water");
-            return <article className={`day-close-person ${foodWarning || waterWarning ? "has-warning" : ""}`} key={person.id}>
-              <header>
-                <span className="day-close-avatar">{person.portrait ? <img src={person.portrait} alt="" /> : person.name.charAt(0).toUpperCase()}</span>
-                <span><b>{person.name}</b><small><MapPin size={12} /> Hex {survivorHex(game, person)} · {atStorage ? "junto às reservas" : "em campo"}</small></span>
-              </header>
-
-              {(foodWarning || waterWarning) && <p className="day-close-inline-warning">Privação prevista: +{Number(Boolean(foodWarning)) + Number(Boolean(waterWarning))} Estresse · {person.stress} → {Math.min(6, person.stress + Number(Boolean(foodWarning)) + Number(Boolean(waterWarning)))}/6</p>}
-              <div className="day-close-person-resources">
-                {(["food", "water"] as const).map(resource => {
-                  const consumed = provisionConsumedToday(game, person, resource);
-                  const warning = warningFor(person, resource);
-                  const personal = provisionBreakdown(person, resource).total;
-                  const required = requiredDailyProvision(person, resource);
-                  const remainingNeed = remainingDailyProvisionPortions(game, person, resource);
-                  return <div className="day-close-resource-row" key={resource}>
-                    <span className="day-close-resource-label">
-                      {resource === "food" ? <Utensils size={15} /> : <Droplets size={15} />}
-                      <b>{resourceName(resource)}</b>
-                      {consumed && <small className="is-ok"><CheckCircle2 size={12} /> necessidade completa</small>}
-                      {!consumed && required > 1 && <small className="is-warning">Calor · faltam {remainingNeed}/{required}</small>}
-                      {!consumed && personal > 0 && <small>{personal} pessoal(is)</small>}
-                    </span>
-                    {consumed
-                      ? <span className="day-close-consumed">Já consumiu hoje</span>
-                      : <Pick label={`Fonte de ${resourceName(resource).toLowerCase()}`} value={entry[resource]}
-                          options={sourceOptions(person, resource)}
-                          onChange={value => updateSource(person.id, resource, value as DayProvisionSource)} />}
-                    {warning && <small className="day-close-inline-warning"><AlertTriangle size={12} />
-                      {warning.reason === "remote" ? "Reservas inacessíveis deste hex."
-                        : warning.reason === "unavailable" ? "A fonte escolhida não tem porção disponível."
-                        : "Sem consumo registrado para o dia."}</small>}
-                  </div>;
-                })}
-              </div>
-            </article>;
-          })}
-          {game.survivors.length === 0 && <p className="character-rule-note">Nenhum sobrevivente registrado. Apenas o consumo dos moradores será processado.</p>}
-        </div>
-      </section>
-
-      {(npcsAtReserve.length > 0 || fieldNpcList.length > 0) && <section className="day-close-section">
-        <div className="day-close-section-heading"><div><small>NPCS IDENTIFICADOS</small><b>{npcsAtReserve.length} junto às reservas · {fieldNpcList.length} em campo</b></div>
-          <span>Todo consumo é nominal e auditável.</span></div>
-        <p className="text-xs subtle mb-3">PNJs no abrigo podem usar reservas compartilhadas. Quem está em campo só pode usar uma porção portada por sobrevivente no mesmo hex, outra fonte declarada pelo mestre ou terá a privação registrada.</p>
-        <div className="day-close-people">{[...npcsAtReserve, ...fieldNpcList].map(npc => {
-          const entry = npcPlanFor(npc);
-          const carriers = game.survivors.filter(person => survivorHex(game, person) === npc.hex);
-          return <article className={`day-close-person ${npcWarningFor(npc, "food") || npcWarningFor(npc, "water") ? "has-warning" : ""}`} key={npc.id}><header>
-            <span className="day-close-avatar">{npc.portrait ? <img src={npc.portrait} alt="" /> : npc.name.charAt(0).toUpperCase()}</span><span><b>{npc.name}</b><small><MapPin size={12} /> Hex {npc.hex} · {npc.hex === storageHex ? "junto às reservas" : "em campo"}</small></span>
-          </header><div className="day-close-person-resources">{(["food", "water"] as const).map(resource => {
-            const warning = npcWarningFor(npc, resource);
-            const consumed = (resource === "food" ? npc.foodConsumedDay : npc.waterConsumedDay) === game.day;
-            const carrierId = resource === "food" ? entry.foodCarrierId : entry.waterCarrierId;
-            return <div className="day-close-resource-row" key={resource}><span className="day-close-resource-label">{resource === "food" ? <Utensils size={15} /> : <Droplets size={15} />}<b>{resourceName(resource)}</b>{consumed && <small className="is-ok"><CheckCircle2 size={12} /> já registrado</small>}</span>
-              {consumed ? <span className="day-close-consumed">Já consumiu hoje</span> : <div className="grid gap-2"><Pick label={`Fonte de ${resourceName(resource).toLowerCase()}`} value={entry[resource]} options={npcSourceOptions(npc, resource)} onChange={value => updateNpcSource(npc.id, resource, value as DayProvisionSource)} />
-                {entry[resource] === "personal" && <Pick label="Quem porta a porção" value={carrierId ?? ""} options={[{ value: "", label: "Selecione a pessoa" }, ...carriers.map(person => ({ value: person.id, label: `${person.name} · ${provisionBreakdown(person, resource).total} porção(ões)` }))]} onChange={value => updateCarrier(npc.id, resource, value)} />}</div>}
-              {warning && <small className="day-close-inline-warning"><AlertTriangle size={12} />{warning.reason === "remote" ? "Reserva remota; escolha uma pessoa deste hex." : warning.reason === "unavailable" ? "A fonte escolhida não tem porção disponível." : "Sem consumo registrado para o dia."}</small>}
-            </div>;
-          })}</div></article>;
-        })}</div>
-      </section>}
-
-      <section className="day-close-section">
-        <div className="day-close-section-heading"><div><small>DESCANSO DA NOITE</small><b>6h · opcional</b></div>
-          <span>{tableRestReadyForNight(game) ? "Descanso solicitado e confirmado por todos." : "Escolha se haverá descanso durante a noite."}</span></div>
-        <label className="inventory-ready">
-          <input type="checkbox" checked={overnightRest || tableRestReadyForNight(game)} disabled={!overnightRestReady || tableRestReadyForNight(game)}
-            onChange={event => setOvernightRest(event.target.checked)} />
-          <span><b>Aplicar descanso longo durante a noite</b><small>{overnightRestReady
-            ? "Todos os sobreviventes têm duas escolhas de descanso longo registradas. O amanhecer às 08:00 representa o tempo de descanso."
-            : "Ainda faltam escolhas de descanso longo. Registre-as nas fichas dos sobreviventes antes de encerrar o dia."}</small></span>
-        </label>
-      </section>
-
-            <p className="character-rule-note">
-        O sistema usa primeiro provisões abertas ou próximas do vencimento. Cada sobrevivente marca +1 Estresse por não comer e +1 por não beber no dia: ambas as faltas somam +2, até o limite de 6 Estresse. Voltar a consumir não remove Estresse. PNJs e moradores, que não têm trilha de Estresse, mantêm o registro de faltas.
-      </p>
-
-      {game.activities?.some(a => a.day === game.day && a.status === "running") && <p className="day-close-warning">Há atividades em andamento. Conclua ou interrompa essas atividades na linha do tempo antes de encerrar o dia.</p>}
-      {timedEvents.length > 0 && <div className="day-close-warning"><AlertTriangle size={15} /><span><b>Há {timedEvents.length} evento(s) temporal(is) pendente(s) antes do amanhecer.</b> {timedEvents.slice(0, 3).map(row => `${row.sector}: ${row.event.triggerType === "night" ? "evento noturno" : "evento de Barulho"}`).join(" · ")}{timedEvents.length > 3 ? ` · +${timedEvents.length - 3}` : ""}. Você ainda pode encerrar o dia; o aviso evita que esses gatilhos sejam esquecidos.</span></div>}
-      {inspection.stale && <p className="day-close-warning"><AlertTriangle size={15} /> O dia mudou desde que este painel foi aberto. Feche e abra novamente para recalcular.</p>}
-      {hasWarnings && !inspection.stale && <p className="day-close-warning">
-        <AlertTriangle size={15} /> Há pendências ou privações previstas. Você ainda pode encerrar o dia; elas serão registradas nominalmente no diário.
-      </p>}
 
       <DialogFooter>
+        {awaitingChoices && <p role="status" className="day-close-footer-note">Há um descanso aguardando as escolhas dos sobreviventes.</p>}
         <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-        {awaitingChoices && <p role="status">Há um descanso aguardando as escolhas dos sobreviventes.</p>}
         <Button disabled={inspection.stale || awaitingChoices} onClick={nextMorning}>
           {hasWarnings || timedEvents.length ? "Confirmar com pendências" : `Confirmar e iniciar dia ${game.day + 1}`}
         </Button>

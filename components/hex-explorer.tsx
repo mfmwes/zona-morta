@@ -359,11 +359,11 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
                   : location.activeSearches ? `${location.activeSearches} busca(s) em andamento`
                   : location.apparentStockUnits ? `${location.apparentStockUnits} item(ns) aparente(s) à vista`
                   : location.stockUnits ? `${location.stockUnits} item(ns) aguardando coleta`
-                  : `${location.searchedAreas}/${location.areaCount} áreas vasculhadas`;
+                  : `${location.searchedAreas}/${location.areaCount - (location.narrativeAreas ?? 0)} áreas vasculhadas`;
                 return <div className="hex-point-session-flow">
                   <div className="hex-point-session-state"><span className={location?.activeSearches ? "is-active" : location?.stockUnits ? "has-stock" : ""}><Search size={14} /> {playerStatus}</span></div>
                   <Button size="sm" variant={location?.activeSearches || location?.stockUnits ? "default" : "outline"}
-                    onClick={() => { setSheetOpen(false); setPlayerSearchRequest({ hexId: selected, pointId: point.id }); }}>
+                    onClick={() => { setSheetOpen(false); setPlayerSearchRequest({ hexId: selected, pointId: point.id, initialTab: !location?.activeSearches && location?.stockUnits ? "finds" : undefined }); }}>
                     <Search size={15} /> {playerActionLabel}
                   </Button>
                 </div>;
@@ -380,7 +380,7 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
                   {deepAvailable > 0 && !activeAttempts.length && !stockRemaining && <small>{deepAvailable} cômodo(s) com busca profunda disponível</small>}
                 </div>
                 <Button size="sm" variant={activeAttempts.length || stockRemaining ? "default" : "outline"} disabled={Boolean(searchIssue)} title={actionLabel}
-                  onClick={() => { edit(draft => { prepareLocationForExploration(draft, selected, point.id); }); setSheetOpen(false); setSearchRequest({ hexId: selected, pointId: point.id, participantIds: activeGroup?.hex === selected ? activeGroup.members.map(row => row.id) : [] }); }}>
+                  onClick={() => { edit(draft => { prepareLocationForExploration(draft, selected, point.id); }); setSheetOpen(false); setSearchRequest({ hexId: selected, pointId: point.id, participantIds: activeGroup?.hex === selected ? activeGroup.members.map(row => row.id) : [], initialTab: !activeAttempts.length && stockRemaining ? "finds" : undefined }); }}>
                   <Search size={15} /> {activeAttempts.length ? "Retomar busca" : stockRemaining ? "Recolher achados" : "Explorar local"}
                 </Button>
                 {searchIssue && <p className="hex-point-session-issue">{searchIssue}</p>}
@@ -488,7 +488,8 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
 
   const detailPanel = <section className={`panel panel-pad min-w-0${playerPreview ? "" : " hex-sector-compact"}`}>
     {playerPreview ? <>
-      <div className="flex flex-wrap items-start justify-between gap-2">
+      {/* pr-10: espaço para o "×" do diálogo, que antes cobria a etiqueta "Abrigo". */}
+      <div className="flex flex-wrap items-start justify-between gap-2 pr-10">
         <div><p className="dossier-title">Setor do mapa · Hex {selected}</p><h2 className="text-xl font-extrabold mt-1">{record.discovery !== "desconhecido" && visible ? sectorName : "Além do horizonte"}</h2></div>
         <div className="flex flex-wrap gap-2"><span className="tag">{record.discovery}</span>
           {visible && <span className="tag">{terrains[record.terrain ?? "urban"]}{record.passage && record.passage !== "none" ? ` · ${passages[record.passage]}` : ""}</span>}
@@ -513,7 +514,8 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
           </Button>}
           {selected === game.shelter.hex && <span className="tag">Abrigo</span>}
         </div>
-        {!playerPreview && <Button size="sm" variant="ghost" className="hex-sector-close" onClick={() => setSheetOpen(false)}>Fechar</Button>}
+        {/* No celular a folha já tem "Voltar ao mapa" no topo; um segundo botão de fechar seria redundante. */}
+        {!playerPreview && !mobile && <Button size="sm" variant="ghost" className="hex-sector-close" onClick={() => setSheetOpen(false)}>Fechar</Button>}
       </div>
       <div className="hex-sector-context">
         <div className="hex-sector-signal">
