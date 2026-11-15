@@ -83,6 +83,8 @@ button { cursor: pointer; } button:disabled { cursor: not-allowed; }
 .legend-swatch { display:inline-block; width:12px; height:12px; border-radius:2px; margin-right:6px; vertical-align:-1px; border:1px solid #7fa7a3; }
 .legend-observed { background:repeating-linear-gradient(135deg,#527478 0 2px,#2d4d50 2px 6px); }
 .legend-nearby { background:#203a3e; border:2px dashed #a7ddd3; }
+/* Amostras em forma de hexágono (como os setores do mapa), para não parecerem caixas de seleção. */
+.legend-hex { display:inline-block; flex:none; width:17px; height:15px; margin-right:6px; vertical-align:-3px; overflow:visible; }
 .map-zoom-toggle, .map-pan-hint { display:none; }
 .player-preview-banner { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; background:#dfefe9; border-bottom:2px solid #3b8988; padding:12px clamp(18px,3vw,42px); color:#16474b; font-size:.95rem; }
 .players-layout { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(290px,.9fr); gap:18px; align-items:start; }
@@ -215,7 +217,7 @@ button { cursor: pointer; } button:disabled { cursor: not-allowed; }
 .character-roster-person > span:last-child { min-width:0; }
 .character-roster-person b { display:block; font-size:.84rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .character-roster-person small { display:flex; align-items:center; gap:3px; font-size:.7rem; color:#506a6b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.character-roster-person .character-roster-state { margin-top:2px; color:#3f746a; font-size:.64rem; }
+.character-roster-person .character-roster-state { margin-top:2px; color:#3f746a; font-size:.64rem; flex-wrap:wrap; column-gap:3px; row-gap:0; white-space:normal; }
 .character-roster-person .character-roster-state.at-risk { color:#9a5848; }
 .character-roster-peer { min-width:190px; cursor:default; border-color:#d9e2dc; background:#f5f7f2; }
 .character-roster-peer:hover { background:#f5f7f2; }
