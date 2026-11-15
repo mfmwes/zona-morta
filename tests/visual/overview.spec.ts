@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test.use({ baseURL: process.env.OVERVIEW_PREVIEW_URL || 'http://127.0.0.1:4193' });
+test.use({ baseURL: process.env.OVERVIEW_PREVIEW_URL || 'http://127.0.0.1:4173' });
 
 for (const [width, height] of [[1366, 768], [1440, 900], [1920, 925]]) {
   test(`overview keeps all six panels in the viewport at ${width}x${height}`, async ({ page }) => {
