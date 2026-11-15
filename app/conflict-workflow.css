@@ -56,6 +56,11 @@
   color: var(--muted-foreground);
   font-size: .8rem;
 }
+/* Mesmo recuo lateral da Trilha de Conflito; antes o botão encostava na borda do cartão. */
+.conflict-hero > .conflict-player-prompt { margin: 12px 22px 18px; }
+@media (max-width: 680px) {
+  .conflict-hero > .conflict-player-prompt { margin-inline: 14px; }
+}
 .conflict-request-control { min-width: 0; }
 .conflict-request-control > [role="alert"] { max-width: 320px; }
 .conflict-pending-summary {
@@ -237,6 +242,21 @@
   overflow-wrap: anywhere;
 }
 .conflict-person--compact .conflict-resource small { font-size: .7rem; white-space: normal; }
+/* Rótulo acima do valor, sem caixa alta: "Estresse" e "Esperança" aparecem inteiros.
+   Quando o cartão fica estreito, as caixas passam para a linha de baixo em vez de transbordar. */
+.conflict-person--compact .conflict-survivor-resources {
+  grid-template-columns: repeat(auto-fit, minmax(5.75rem, 1fr));
+}
+.conflict-person--compact .conflict-resource > span:first-child {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+.conflict-person--compact .conflict-resource small {
+  max-width: 100%;
+  text-transform: none;
+  letter-spacing: 0;
+}
 .conflict-threat--compact .conflict-resource > span:first-child { flex-wrap: wrap; }
 .conflict-threat-detail-body .conflict-condition-editor input,
 .conflict-threat-detail-body .conflict-condition-editor > button { min-height: 44px; }

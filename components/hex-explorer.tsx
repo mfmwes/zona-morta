@@ -70,6 +70,14 @@ function travelDurationLabel(minutes: number) {
   return `${hours}h${String(rest).padStart(2, "0")}`;
 }
 
+/** Amostra da legenda em forma de hexágono, igual aos setores do mapa. */
+function LegendHex({ fill, stroke = "#7fa7a3", dashed = false, striped = false }: { fill: string; stroke?: string; dashed?: boolean; striped?: boolean }) {
+  return <svg className="legend-hex" viewBox="0 0 17 15" aria-hidden="true" focusable="false">
+    {striped && <defs><pattern id="legend-hex-stripes" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="4" height="4" fill={fill} /><rect width="1.5" height="4" fill="#527478" /></pattern></defs>}
+    <polygon points="4.5,1 12.5,1 16,7.5 12.5,14 4.5,14 1,7.5" fill={striped ? "url(#legend-hex-stripes)" : fill} stroke={stroke} strokeWidth={dashed ? 1.6 : 1.2} strokeDasharray={dashed ? "2.4 1.6" : undefined} strokeLinejoin="round" />
+  </svg>;
+}
+
 export function HexExplorer({ mobile = false, initialTarget, game, edit, playerPreview, teamPeers = [], playerActions, masterActions, sessionControls, headerActions }: {
   mobile?: boolean;
   sessionControls?: ReactNode | ((activeHex: string) => ReactNode);
@@ -722,10 +730,10 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
         plan={journey} issue={journeyIssue} onClose={() => setPlanning(false)} onNext={travelNextJourneyHex}
         onInspect={id => { setSelected(id); setFocusHex(id); setSheetOpen(true); }} /></div>}
         <div className="map-caption" hidden={mobile}>
-          <span><i className="legend-swatch" style={{background:"#35686a"}} /> Explorado</span>
-          <span><i className="legend-swatch legend-observed" /> Avistado</span>
-          <span><i className="legend-swatch" style={{background:"#17282d"}} /> Desconhecido</span>
-          <span><i className="legend-swatch legend-nearby" /> Adjacente</span>
+          <span><LegendHex fill="#35686a" /> Explorado</span>
+          <span><LegendHex fill="#2d4d50" striped /> Avistado</span>
+          <span><LegendHex fill="#17282d" /> Desconhecido</span>
+          <span><LegendHex fill="#203a3e" stroke="#a7ddd3" dashed /> Adjacente</span>
           {showRoads && visibleWorldConnections(game.hexes).length > 0 && <span><i className="map-road-legend" /> Via conectada</span>}
           {Boolean(journey?.path.length) && <span><i className="map-route-legend" /> Trajeto planejado</span>}
           {showRoads && visibleWorldConnections(game.hexes).some(edge => edge.blocked) && <span>× Passagem bloqueada</span>}
