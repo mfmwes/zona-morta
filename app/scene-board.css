@@ -470,3 +470,8 @@ html[data-theme="dark"] .scene-stage.has-grid{background-image:linear-gradient(r
 @media(min-width:761px){.scene-toolstrip{flex-wrap:wrap;overflow-x:visible}.scene-toolstrip .scene-toolstrip-spacer{display:none}}
 /* Atalhos continuam na dica (title) e em "Mais > Atalhos do teclado"; sem as letras, as ferramentas cabem numa linha. */
 @media(min-width:761px){.scene-toolstrip button>kbd{display:none}.scene-toolstrip button{padding-inline:8px}}
+/* Na aba da cena, o título da página fica compacto (como no mapa e na visão geral), deixando a altura para a área de montagem. */
+.scene-mode .campaign-page-heading{margin-bottom:10px}
+.scene-mode .campaign-page-heading .eyebrow,.scene-mode .campaign-page-heading .intro-line{display:none}
+.scene-mode .campaign-page-heading h1{font-size:1.45rem}
+.scene-mode .page{padding-top:14px}
