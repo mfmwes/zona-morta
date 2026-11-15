@@ -127,6 +127,22 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
     return () => query.removeEventListener("change", update);
   }, [playerPreview]);
 
+  // "Aqui você pode": ações do jogador no hex em que está, com os mesmos rótulos da lista de locais do setor.
+  const playerHere = playerPreview && game.publicPlayerActions ? game.publicPlayerActions.hexId : null;
+  const playerHereActions = playerHere ? (game.publicPlayerActions?.locations ?? []).filter(location => location.hexId === playerHere).flatMap(location => {
+    const label = !location.prepared ? "Explorar local"
+      : location.activeSearches ? "Retomar busca"
+      : location.stockUnits ? "Recolher achados"
+      : location.availableAreas ? "Escolher cômodo e buscar"
+      : null;
+    if (!label) return [];
+    const detail = location.activeSearches ? `${location.activeSearches} busca(s) em andamento`
+      : location.stockUnits ? `${location.stockUnits} item(ns) para recolher`
+      : location.prepared ? `${location.availableAreas} cômodo(s) disponível(is)` : "Áreas organizadas ao abrir";
+    return [{ key: location.pointId, label, place: location.pointName, detail, request: { hexId: location.hexId, pointId: location.pointId, initialTab: !location.activeSearches && location.stockUnits ? "finds" as const : undefined } }];
+  }) : [];
+  const playerActionBlock = playerPreview ? (game.publicPlayerActions?.policy.paused ? "As ações dos jogadores estão pausadas pelo mestre." : game.publicPlayerActions?.busy ?? "") : "";
+
   function selectHex(id: string, openDetails = true) {
     if (planning && openDetails && !playerPreview) {
       setJourneyDestination(id); setSelected(id); return;
@@ -637,6 +653,21 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
         <em>Hex {activeGroup.hex}</em>
       </div>}
       <div className="map-surface">
+      {playerHere && <details className="map-player-actions" open={!mobile}>
+        <summary><Search size={15} aria-hidden="true" /> Aqui você pode{playerHereActions.length ? ` · ${playerHereActions.length}` : ""}</summary>
+        <div className="map-player-actions-body">
+          <p className="map-player-actions-place">{game.hexes[playerHere]?.sector?.name ?? `Hex ${playerHere}`}</p>
+          {playerActionBlock && <p className="map-player-actions-block" role="status">{playerActionBlock}</p>}
+          {playerHereActions.map(action => <button type="button" key={action.key} className="map-player-action"
+            onClick={() => { setSheetOpen(false); setPlayerSearchRequest(action.request); }}>
+            <span><b>{action.label}</b><small>{action.place} · {action.detail}</small></span>
+          </button>)}
+          {!playerHereActions.length && <p className="map-player-actions-empty">Nenhuma busca ou coleta disponível aqui agora.</p>}
+          <button type="button" className="map-player-action is-secondary" onClick={() => selectHex(playerHere)}>
+            <span><b>Viagens e detalhes do setor</b><small>Destinos, locais e eventos deste hex</small></span>
+          </button>
+        </div>
+      </details>}
       <nav className="map-tool-dock" aria-label="Ferramentas do mapa">
           <Button size="sm" variant="outline" title="Detalhes do hex selecionado" aria-label="Detalhes do hex selecionado" aria-haspopup="dialog" aria-expanded={sheetOpen} onClick={() => setSheetOpen(!sheetOpen)}><MapPin /><span>Setor</span></Button>
           {visibleWorldConnections(game.hexes).length > 0 && <Button size="sm" variant="outline" title={showRoads ? "Ocultar vias" : "Mostrar vias"} aria-label={showRoads ? "Ocultar vias" : "Mostrar vias"} aria-pressed={showRoads}
@@ -700,6 +731,10 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
                   <rect x={x+13} y={y+19} width="30" height="18" rx="9" />
                   <MapPin x={x+16} y={y+22} width={12} height={12} strokeWidth={2.4} />
                   <text x={x+34} y={y+31.5} textAnchor="middle" fontSize="9.5" fontWeight="900">{shownPoints > 9 ? "9+" : shownPoints}</text>
+                </g>}
+                {playerHere === id && playerHereActions.length > 0 && <g className="map-action-badge" aria-hidden="true">
+                  <circle cx={x+40} cy={y-6} r="9" />
+                  <Search x={x+34.5} y={y-11.5} width={11} height={11} strokeWidth={2.6} />
                 </g>}
                 {npcsHere.length > 0 && <g transform={`translate(0 -52)`} aria-hidden="true"><circle cx={x-27} cy={y+27} r="10" fill="#c7d9e4" stroke="#173135" strokeWidth="2" />
                   <Users x={x-34} y={y+20} width={14} height={14} stroke="#173135" strokeWidth={2.5} />

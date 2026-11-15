@@ -228,3 +228,27 @@
   .map-session-bar .map-reserve-composition { margin-top: 1px; line-height: 1.2; }
   .map-session-reserves > .map-session-group-title, .map-reserve-footer { line-height: 1.2; }
 }
+
+/* Mapa do jogador: cartão "Aqui você pode" sobre o mapa e selo no hex com ação disponível. */
+.map-player-actions { position: absolute; right: 16px; top: 62px; z-index: 6; width: min(310px, calc(100% - 110px)); border: 1px solid #527572; border-radius: 10px; background: #0d2529f2; color: #e4efe9; box-shadow: 0 8px 24px #0006; }
+.map-player-actions > summary { display: flex; align-items: center; gap: 7px; padding: 9px 12px; font-size: .85rem; font-weight: 750; cursor: pointer; list-style: none; }
+.map-player-actions > summary::-webkit-details-marker { display: none; }
+.map-player-actions > summary::after { content: "▾"; margin-left: auto; opacity: .7; }
+.map-player-actions:not([open]) > summary::after { content: "▸"; }
+.map-player-actions-body { display: grid; gap: 6px; padding: 0 10px 10px; }
+.map-player-actions-place { margin: 0; color: #a9c2bb; font-size: .78rem; }
+.map-player-actions-block { margin: 0; padding: 6px 8px; border-left: 3px solid #c99a4f; border-radius: 5px; background: #3a2f1f; color: #f1d9ad; font-size: .78rem; }
+.map-player-actions-empty { margin: 0; color: #a9c2bb; font-size: .8rem; }
+.map-player-action { display: flex; width: 100%; padding: 8px 10px; border: 1px solid #e0bc78; border-radius: 8px; background: #35514a; color: #fff3d8; text-align: left; cursor: pointer; }
+.map-player-action:hover { background: #3f5f56; }
+.map-player-action span { display: grid; gap: 2px; min-width: 0; }
+.map-player-action b { font-size: .88rem; }
+.map-player-action small { color: #d9e8e0; font-size: .75rem; }
+.map-player-action.is-secondary { border-color: #496763; background: #1b3b3f; color: #d5e8df; }
+.map-player-action:focus-visible { outline: 2px solid #ffe0a4; outline-offset: 2px; }
+.map-action-badge circle { fill: #e0bc78; stroke: #173135; stroke-width: 2; }
+.map-action-badge svg { color: #173135; }
+@media (max-width: 760px) {
+  .map-player-actions { top: 96px; right: 8px; width: min(280px, calc(100% - 80px)); }
+  .map-player-actions > summary { padding: 7px 10px; }
+}
