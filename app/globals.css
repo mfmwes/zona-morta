@@ -3908,3 +3908,32 @@ details.day-close-person[open] > summary::after { transform:rotate(90deg); }
 
 /* Piso de legibilidade: <small> sem tamanho próprio segue 80% do texto ao redor, mas nunca abaixo de 12px. */
 small { font-size: max(.75rem, 80%); }
+
+/* Abrigo · visão geral: planta compacta. Espaços livres viram blocos baixos; só estruturas mantêm a altura cheia.
+   A planta da aba Construção não muda. */
+.shelter-overview-architectural .architectural-building-plan { min-height:0; }
+.shelter-overview-architectural .architectural-room { min-height:0; }
+.shelter-overview-architectural .architectural-slot.is-empty { display:flex; flex-direction:row; justify-content:center; gap:8px; min-height:48px; padding:16px 8px 6px; }
+.shelter-overview-architectural .architectural-slot.is-empty .shelter-room-icon { width:auto; height:auto; padding:0; border:0; background:transparent; opacity:.7; }
+.shelter-overview-architectural .architectural-slot.is-empty b { font-size:.8rem; font-weight:600; opacity:.75; }
+.shelter-overview-architectural .architectural-slot.is-empty .architectural-slot-number { top:3px; }
+@media (max-width:760px) {
+  .shelter-overview-architectural .architectural-service-grid,
+  .shelter-overview-architectural .architectural-yard-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .shelter-overview-architectural .architectural-service-grid > .architectural-slot { border-right:1px solid #4d6a64; border-bottom:0; }
+  .shelter-overview-architectural .architectural-slot.is-empty { flex-direction:column; gap:2px; padding-top:18px; }
+}
+@media (max-width:520px) {
+  .shelter-overview-architectural .architectural-building-plan { grid-template-columns:1fr 1fr; grid-template-areas:"rooma roomb" "roomc roomd" "roome roomf"; }
+}
+/* Painel lateral sem estrutura: resumo de espaços livres. */
+.shelter-free-summary { display:grid; gap:4px; width:100%; max-width:240px; margin:4px 0 8px; padding:0; list-style:none; }
+.shelter-free-summary li { display:flex; justify-content:space-between; gap:12px; padding:4px 10px; border:1px solid rgba(143,191,178,.25); border-radius:6px; font-size:.8rem; }
+.shelter-free-summary b { font-family:var(--font-mono); }
+/* Ajustes do abrigo recolhidos. */
+details.shelter-overview-admin > summary { cursor:pointer; list-style:none; }
+details.shelter-overview-admin > summary::-webkit-details-marker { display:none; }
+details.shelter-overview-admin > summary h3::after { content:" ▸"; opacity:.6; }
+details.shelter-overview-admin[open] > summary h3::after { content:" ▾"; }
+details.shelter-overview-admin:not([open]) { gap:0; }
+.shelter-room-detail .shelter-detail-empty { min-height:0; }
