@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, ArrowRight, Brain, CheckCircle2, Clock3, Droplets, Fuel, House, Map, Package, Pill, Search, ShieldAlert, Swords, Users, Utensils, Wrench } from "lucide-react";
+import { AlertTriangle, ArrowRight, Brain, CheckCircle2, Clock3, Droplets, Fuel, Map, Package, Pill, Search, Swords, Users, Utensils, Wrench } from "lucide-react";
 import { MasterContextActions, type MasterActionControls } from "@/components/player-actions-panel";
 import { playerActionState } from "@/lib/player-actions";
 import { Button } from "@/components/ui/button";
@@ -79,20 +79,19 @@ export function MasterOverview({ mobile = false, game, onNavigate, onOpen, maste
         <h2>Dia {game.day} · {displayTime(game.minutes)}</h2>
         <p>{groups.length > 1 ? `${groups.length} grupos estão agindo em posições diferentes.` : groups.length === 1 ? "A equipe está reunida." : "Nenhum sobrevivente registrado nesta campanha."}</p>
       </div>
-      <div className="master-overview-hero-metrics">
-        <span><Users size={19} /><b>{groups.length}</b><small>grupo{groups.length === 1 ? "" : "s"}</small></span>
-        <span><Search size={19} /><b>{searches.length}</b><small>busca{searches.length === 1 ? "" : "s"} ativa{searches.length === 1 ? "" : "s"}</small></span>
-        <span className={readyEvents.length ? "is-warning" : ""}><AlertTriangle size={19} /><b>{readyEvents.length}</b><small>evento{readyEvents.length === 1 ? "" : "s"} pronto{readyEvents.length === 1 ? "" : "s"}</small></span>
-        <span className={game.conflict?.active ? "is-danger" : ""}><Swords size={19} /><b>{game.conflict?.active ? 1 : 0}</b><small>conflito ativo</small></span>
+      {/* Indicadores como etiquetas: discretos quando zerados, destacados quando pedem atenção. */}
+      <ul className="master-overview-chips" aria-label="Resumo da campanha">
+        <li><Users size={14} aria-hidden="true" /><b>{groups.length}</b> grupo{groups.length === 1 ? "" : "s"}</li>
+        <li className={searches.length ? "is-active" : "is-zero"}><Search size={14} aria-hidden="true" /><b>{searches.length}</b> busca{searches.length === 1 ? "" : "s"} ativa{searches.length === 1 ? "" : "s"}</li>
+        <li className={readyEvents.length ? "is-warning" : "is-zero"}><AlertTriangle size={14} aria-hidden="true" /><b>{readyEvents.length}</b> evento{readyEvents.length === 1 ? "" : "s"} pronto{readyEvents.length === 1 ? "" : "s"}</li>
+        <li className={game.conflict?.active ? "is-danger" : "is-zero"}><Swords size={14} aria-hidden="true" />{game.conflict?.active ? "Conflito ativo" : "Sem conflito"}</li>
+      </ul>
+      <div className="master-overview-hero-actions">
+        {/* Atalhos que repetiam o menu lateral saíram; fica o principal e o conflito quando ativo. */}
+        <Button onClick={() => onNavigate("mapa")}><Map size={16} /> Explorar mapa</Button>
+        {game.conflict?.active && <Button variant="outline" onClick={() => onNavigate("conflito")}><Swords size={16} /> Conflito ativo</Button>}
       </div>
-    </section>
-
-    <section className="master-overview-actions" aria-label="Ações rápidas do mestre">
-      <Button onClick={() => onNavigate("mapa")}><Map size={16} /> Explorar mapa</Button>
-      <Button variant="outline" onClick={() => onNavigate("sobreviventes")}><Users size={16} /> Sobreviventes</Button>
-      <Button variant="outline" onClick={() => onNavigate("abrigo")}><House size={16} /> Abrigo</Button>
-      <Button variant={game.conflict?.active ? "default" : "outline"} onClick={() => onNavigate("conflito")}><Swords size={16} /> {game.conflict?.active ? "Conflito ativo" : "Conflito"}</Button>
-      <Button variant="outline" onClick={() => onNavigate("cena")}><ShieldAlert size={16} /> Cena visual</Button>
+      {masterActions && <div className="master-overview-table-control"><MasterContextActions game={game} controls={masterActions} context={{kind:"overview"}} section="pause" /></div>}
     </section>
 
     <div className="master-overview-grid">
@@ -108,6 +107,22 @@ export function MasterOverview({ mobile = false, game, onNavigate, onOpen, maste
                 : <small><CheckCircle2 size={12} /> Livre para agir</small>}</li>;
             })}</ul>
           </article>) : <p className="master-overview-empty">Cadastre sobreviventes para acompanhar a equipe.</p>}
+        </div>
+        <div className="master-overview-work">
+          <h3><Search size={15} aria-hidden="true" /> Em andamento{searches.length + activeProjects.length ? ` · ${searches.length + activeProjects.length}` : ""}</h3>
+          <div className="master-overview-list">
+            {(showAllWork?searches:searches.slice(0, 5)).map(search => <button type="button" className="master-overview-row" key={search.id} onClick={() => onOpen({tab:"mapa",hexId:search.hexId,pointId:search.pointId,areaId:search.areaId})}>
+              <Search size={15} /><span><b>{search.deep ? "Busca profunda" : "Busca"} · {search.point}</b><small>{search.area} · {hexLabel(game, search.hexId)} · {search.status === "pending" ? "aguarda teste" : "aguarda horário de conclusão"}</small></span>
+            </button>)}
+            {(showAllWork?activeProjects:activeProjects.slice(0, 5)).map(project => {
+              const progress = projectProgress(project);
+              return <button type="button" className="master-overview-row" key={project.id} onClick={() => onOpen({tab:"abrigo",projectId:project.id})}>
+                <Wrench size={15} /><span><b>{project.name}</b><small>{progress.repairing ? "Reparo" : "Construção"} · {progress.value}/{progress.required}</small></span>
+              </button>;
+            })}
+            {(searches.length>5||activeProjects.length>5)&&<Button variant="ghost" size="sm" onClick={()=>setShowAllWork(v=>!v)}>{showAllWork?"Mostrar menos":`Ver todas as ${searches.length+activeProjects.length} atividades`}</Button>}
+            {!searches.length && !activeProjects.length && <p className="master-overview-work-empty"><CheckCircle2 size={14} aria-hidden="true" /> Nenhuma busca ou obra aguardando resolução.</p>}
+          </div>
         </div>
       </section>
 
@@ -126,24 +141,7 @@ export function MasterOverview({ mobile = false, game, onNavigate, onOpen, maste
           </article>) : !hasActionAttention && <div className="master-overview-clear"><span>Sem pendências urgentes.</span><small>A mesa pode seguir a exploração normalmente.</small></div>}
           {attention.length > 0 && !filteredAttention.length && <p className="master-overview-empty">Nenhuma pendência corresponde aos filtros. Limpe os filtros para ver todas.</p>}
           {filteredAttention.length>8&&<Button variant="ghost" size="sm" onClick={()=>setShowAll(v=>!v)}>{showAll?"Mostrar menos":`Ver todas as ${filteredAttention.length} pendências`}</Button>}
-          {masterActions && <MasterContextActions game={game} controls={masterActions} context={{kind:"overview"}} />}
-        </div>
-      </section>
-
-      <section className="master-overview-card master-overview-work">
-        <header><div><Search size={18} /><span><b>Em andamento</b><small>Buscas e trabalhos que já foram iniciados.</small></span></div></header>
-        <div className="master-overview-list">
-          {(showAllWork?searches:searches.slice(0, 5)).map(search => <button type="button" className="master-overview-row" key={search.id} onClick={() => onOpen({tab:"mapa",hexId:search.hexId,pointId:search.pointId,areaId:search.areaId})}>
-            <Search size={15} /><span><b>{search.deep ? "Busca profunda" : "Busca"} · {search.point}</b><small>{search.area} · {hexLabel(game, search.hexId)} · {search.status === "pending" ? "aguarda teste" : "aguarda horário de conclusão"}</small></span>
-          </button>)}
-          {(showAllWork?activeProjects:activeProjects.slice(0, 5)).map(project => {
-            const progress = projectProgress(project);
-            return <button type="button" className="master-overview-row" key={project.id} onClick={() => onOpen({tab:"abrigo",projectId:project.id})}>
-              <Wrench size={15} /><span><b>{project.name}</b><small>{progress.repairing ? "Reparo" : "Construção"} · {progress.value}/{progress.required}</small></span>
-            </button>;
-          })}
-          {(searches.length>5||activeProjects.length>5)&&<Button variant="ghost" size="sm" onClick={()=>setShowAllWork(v=>!v)}>{showAllWork?"Mostrar menos":`Ver todas as ${searches.length+activeProjects.length} atividades`}</Button>}
-          {!searches.length && !activeProjects.length && <p className="master-overview-empty"><CheckCircle2 size={20} />Nenhuma busca ou obra está aguardando resolução.</p>}
+          {masterActions && <MasterContextActions game={game} controls={masterActions} context={{kind:"overview"}} section="requests" />}
         </div>
       </section>
 

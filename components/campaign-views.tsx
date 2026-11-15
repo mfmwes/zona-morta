@@ -250,8 +250,8 @@ export function ShelterPanel({ initialProjectId, game, edit, playerPreview, play
 
       <TabsContent value="overview" className="shelter-tab-content">
         <ShelterVisualDashboard game={game} onNavigate={setShelterSection} />
-        {!playerPreview && <section className="panel panel-pad shelter-overview-admin">
-          <div className="shelter-admin-heading"><div><p className="dossier-title">Administração</p><h3 className="section-title mt-1">Configuração rápida</h3></div><p className="text-xs subtle">Detalhes administrativos ficam fora da planta para manter a visão geral limpa.</p></div>
+        {!playerPreview && <details className="panel panel-pad shelter-overview-admin">
+          <summary className="shelter-admin-heading"><div><p className="dossier-title">Administração</p><h3 className="section-title mt-1">Ajustes do abrigo</h3></div><p className="text-xs subtle">Nome, capacidade, moradores não identificados e notas.</p></summary>
           <div className="shelter-admin-grid">
             <div><Field label="Nome do abrigo" value={shelterName} onChange={setShelterName} placeholder="Ex.: Escola das Mangueiras" />
               <Button size="sm" variant="outline" className="mt-2" disabled={!shelterName.trim() || shelterName.trim() === s.name}
@@ -272,7 +272,7 @@ export function ShelterPanel({ initialProjectId, game, edit, playerPreview, play
               toast.success("Notas do abrigo salvas.");
             }}>Salvar notas</Button>
           </div>
-        </section>}
+        </details>}
         {playerPreview && s.notes && <section className="panel panel-pad"><p className="dossier-title">Notas do abrigo</p><p className="text-sm mt-2 leading-relaxed">{s.notes}</p></section>}
       </TabsContent>
 

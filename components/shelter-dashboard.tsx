@@ -275,7 +275,22 @@ export function ShelterVisualDashboard({ game, onNavigate }: { game: GameState; 
                 ? <Button size="sm" variant="outline" onClick={() => onNavigate("construction")}>Abrir Construção</Button> : null}
             </div>
           </div>
-        </> : <div className="shelter-detail-empty"><Package size={24} /><b>Nenhuma estrutura construída</b><p>Use a aba Construção para planejar a primeira instalação ou melhoria deste abrigo.</p></div>}
+        </> : (() => {
+          // Sem estrutura selecionada: resumo dos espaços livres e atalho para planejar, em vez de um painel vazio.
+          const free = shelterBlueprintSlots.filter(slot => !occupied.get(slot.id));
+          const byZone = (zone: string) => free.filter(slot => slot.zone === zone).length;
+          return <div className="shelter-detail-empty">
+            <Hammer size={24} aria-hidden="true" />
+            <b>Nenhuma estrutura construída</b>
+            <p>{free.length} espaço(s) livre(s) na planta.</p>
+            <ul className="shelter-free-summary">
+              <li><span>Salas internas</span><b>{byZone("interior")}</b></li>
+              <li><span>Área técnica</span><b>{byZone("utility")}</b></li>
+              <li><span>Pátio / área externa</span><b>{byZone("exterior")}</b></li>
+            </ul>
+            {onNavigate && <Button size="sm" onClick={() => onNavigate("construction")}><Hammer size={15} aria-hidden="true" /> Planejar construção</Button>}
+          </div>;
+        })()}
       </aside>
     </div>
   </div>;

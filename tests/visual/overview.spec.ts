@@ -3,12 +3,13 @@ import { test, expect } from '@playwright/test';
 test.use({ baseURL: process.env.OVERVIEW_PREVIEW_URL || 'http://127.0.0.1:4173' });
 
 for (const [width, height] of [[1366, 768], [1440, 900], [1920, 925]]) {
-  test(`overview keeps all six panels in the viewport at ${width}x${height}`, async ({ page }) => {
+  test(`overview keeps all five panels in the viewport at ${width}x${height}`, async ({ page }) => {
     await page.setViewportSize({ width, height });
     await page.goto('/?screen=overview&base=1');
     await expect(page.getByText('Equipe agora', { exact: true })).toBeVisible();
     const cards = page.locator('.master-overview-card');
-    await expect(cards).toHaveCount(6);
+    // Três cartões na grade ("Em andamento" fica dentro de "Equipe agora") + sessão e retomada.
+    await expect(cards).toHaveCount(5);
     for (const card of await cards.all()) {
       const box = (await card.boundingBox())!;
       expect(box.y).toBeGreaterThan(0);

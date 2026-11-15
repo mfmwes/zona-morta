@@ -435,3 +435,43 @@ html[data-theme="dark"] .scene-library-head{background:var(--card)}
 /* Hide names only; text annotations and game-state badges remain readable. */
 .scene-viewport.hides-labels .scene-object>small,
 .scene-viewport.hides-labels .scene-zone>span{display:none}
+
+/* Cena visual com a área de montagem primeiro: cabeçalho numa linha, ferramentas numa faixa e o restante da
+   altura para a cena. */
+.scene-board-header--compact{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:10px 14px}
+.scene-board-header--compact .scene-board-heading{display:grid;gap:2px;min-width:0;flex:1 1 220px}
+.scene-board-header--compact .scene-board-title h2{margin:0;font-size:1.1rem}
+.scene-board-status{margin:0;color:var(--muted-foreground);font-size:.75rem;line-height:1.35}
+.scene-board-header--compact .scene-tabs{flex:0 1 auto;padding-bottom:0;max-width:100%}
+.scene-board-header--compact .scene-workflow-switch{display:flex;gap:4px}
+.scene-more-menu{position:relative}
+.scene-more-menu>summary{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:6px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--foreground);font-size:.85rem;font-weight:700;cursor:pointer;list-style:none}
+.scene-more-menu>summary::-webkit-details-marker{display:none}
+.scene-more-menu[open]>summary{border-color:var(--primary)}
+.scene-more-panel{position:absolute;right:0;top:calc(100% + 6px);z-index:40;display:grid;gap:10px;width:min(360px,calc(100vw - 32px));max-height:min(70dvh,520px);overflow:auto;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--card);box-shadow:0 14px 36px #0000004d}
+.scene-more-title{margin:0;font-size:.8rem;font-weight:750;color:var(--muted-foreground)}
+.scene-more-panel .scene-board-actions{display:flex;flex-wrap:wrap;gap:6px}
+.scene-more-panel .scene-shortcut-help{margin:0}
+.scene-more-danger{padding-top:8px;border-top:1px solid var(--border)}
+.scene-toolstrip .scene-history-controls,.scene-toolstrip .scene-zoom-controls{display:flex;align-items:center;gap:4px;flex:0 0 auto;padding-left:8px;border-left:1px solid var(--border)}
+.scene-board-header .scene-zoom-controls{display:flex;align-items:center;gap:4px}
+.scene-zoom-controls .scene-zoom{min-width:42px;text-align:center;font-family:var(--font-mono);font-size:.8rem}
+/* A área de montagem ocupa a altura restante da janela. */
+.scene-viewport{height:max(420px,calc(100dvh - 300px));max-height:none;min-height:420px}
+/* Modo noturno: papel escuro em vez do bege, para não ofuscar. */
+html[data-theme="dark"] .scene-stage{background-color:#28302f}
+html[data-theme="dark"] .scene-stage.has-grid{background-color:#28302f;background-image:linear-gradient(rgba(200,214,208,.09) 1px,transparent 1px),linear-gradient(90deg,rgba(200,214,208,.09) 1px,transparent 1px)}
+@media(max-width:760px){
+  .scene-board-header--compact{padding:10px}
+  .scene-more-panel{right:auto;left:0}
+  .scene-viewport{height:max(360px,calc(100dvh - 330px));min-height:360px}
+}
+html[data-theme="dark"] .scene-stage.has-grid{background-image:linear-gradient(rgba(200,214,208,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(200,214,208,.1) 1px,transparent 1px),linear-gradient(rgba(200,214,208,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(200,214,208,.04) 1px,transparent 1px)}
+@media(min-width:761px){.scene-toolstrip{flex-wrap:wrap;overflow-x:visible}.scene-toolstrip .scene-toolstrip-spacer{display:none}}
+/* Atalhos continuam na dica (title) e em "Mais > Atalhos do teclado"; sem as letras, as ferramentas cabem numa linha. */
+@media(min-width:761px){.scene-toolstrip button>kbd{display:none}.scene-toolstrip button{padding-inline:8px}}
+/* Na aba da cena, o título da página fica compacto (como no mapa e na visão geral), deixando a altura para a área de montagem. */
+.scene-mode .campaign-page-heading{margin-bottom:10px}
+.scene-mode .campaign-page-heading .eyebrow,.scene-mode .campaign-page-heading .intro-line{display:none}
+.scene-mode .campaign-page-heading h1{font-size:1.45rem}
+.scene-mode .page{padding-top:14px}

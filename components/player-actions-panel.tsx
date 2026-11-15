@@ -19,9 +19,10 @@ export type Send = (payload: Record<string, unknown>) => Promise<void>;
 export type MasterActionControls = { canAct: boolean; send: Send; pending?: boolean };
 export type MasterActionContext = PlayerActionContext | { kind: "overview" };
 
-export function MasterContextActions({game, controls, context}: {game:GameState; controls:MasterActionControls; context:MasterActionContext}) {
+/** Na visão geral, "pause" mostra só o controle da mesa e "requests" só os pedidos; sem a prop, mostra tudo. */
+export function MasterContextActions({game, controls, context, section}: {game:GameState; controls:MasterActionControls; context:MasterActionContext; section?: "pause" | "requests"}) {
   if (context.kind === "search" || context.kind === "rest") return null;
-  return <PlayerActionsPanel game={game} master survivorId={null} canAct={controls.canAct} send={controls.send} context={context} hasPending={controls.pending} />;
+  return <PlayerActionsPanel game={game} master survivorId={null} canAct={controls.canAct} send={controls.send} context={context} hasPending={controls.pending} section={section} />;
 }
 
 export type PlayerActionControls = { actorId: string; canAct: boolean; send: Send; pending?: boolean; preview?: boolean };
@@ -30,8 +31,8 @@ export function PlayerContextActions({game, controls, context}: {game:GameState;
   return <PlayerActionsPanel game={controls.preview ? projectPlayerGame(game,controls.actorId) : game} master={false} survivorId={controls.actorId} canAct={controls.canAct} send={controls.send} context={context} hasPending={controls.pending} preview={controls.preview} />;
 }
 
-export function PlayerActionsPanel({ game, master, survivorId, canAct, send, context, hasPending = false, preview = false }: {
-  game: GameState; master: boolean; survivorId: string | null; canAct: boolean; send: Send; context: MasterActionContext; hasPending?: boolean; preview?: boolean;
+export function PlayerActionsPanel({ game, master, survivorId, canAct, send, context, hasPending = false, preview = false, section }: {
+  game: GameState; master: boolean; survivorId: string | null; canAct: boolean; send: Send; context: MasterActionContext; hasPending?: boolean; preview?: boolean; section?: "pause" | "requests";
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -59,7 +60,7 @@ export function PlayerActionsPanel({ game, master, survivorId, canAct, send, con
     {error && <div className="team-error" role="alert"><p>{error}</p>{canRetry && hasPending && <Button size="sm" variant="outline" disabled={busy || !canAct} onClick={() => perform(JSON.parse(retry.current!.signature).input)}>Tentar novamente a mesma ação</Button>}</div>}
     {notice && <p className="team-notice" role="status">{notice}</p>}
     <fieldset disabled={busy || !canAct} className="team-actions-fieldset" aria-busy={busy}>
-      {master ? <MasterPermissions game={game} perform={perform} context={context} /> : survivorId && context.kind !== "overview" && <PlayerActivities game={game} actorId={survivorId} perform={perform} context={context} />}
+      {master ? <MasterPermissions game={game} perform={perform} context={context} section={section} /> : survivorId && context.kind !== "overview" && <PlayerActivities game={game} actorId={survivorId} perform={perform} context={context} />}
     </fieldset>
   </section>;
 }
@@ -67,7 +68,7 @@ export class TeamActionError extends Error {
   constructor(message: string, public rejected = false) { super(message); }
 }
 
-function MasterPermissions({ game, perform, context }: { game: GameState; perform: (payload: Record<string, unknown>) => Promise<boolean>; context:MasterActionContext }) {
+function MasterPermissions({ game, perform, context, section }: { game: GameState; perform: (payload: Record<string, unknown>) => Promise<boolean>; context:MasterActionContext; section?: "pause" | "requests" }) {
   const state = playerActionState(game);
   const policy = state.policy;
   const [draft, setDraft] = useState<{ source: string; value: PlayerActionPolicy } | null>(null);
@@ -90,7 +91,7 @@ function MasterPermissions({ game, perform, context }: { game: GameState; perfor
     : context.kind === "supplies" ? [["deposits", "Depósito de itens próprios no abrigo"]] as const
     : context.kind === "scene" ? [["tokens", "Mover o próprio token e marcar posições reveladas"]] as const : [];
   return <>
-    {switches.length > 0 && <section className="team-card"><h3><Users size={18} /> {context.kind === "overview" ? "Controle da mesa" : "Liberação para jogadores"}</h3>
+    {switches.length > 0 && section !== "requests" && <section className="team-card"><h3><Users size={18} /> {context.kind === "overview" ? "Controle da mesa" : "Liberação para jogadores"}</h3>
       <div className="team-policy-options">{switches.map(([key, label]) => <label key={key}><input type="checkbox" checked={config[key]} onChange={e => change(p => { p[key] = e.target.checked; })} />{label}</label>)}</div>
         {context.kind === "overview" && <details className="overview-pause-help"><summary>Como funciona a pausa</summary><p className="subtle">Conflitos suspendem buscas, viagens e descansos. Falhas de acesso, Medo, barulho elevado e novos acontecimentos pausam as ações para você resolver a consequência. A coleta de achados já liberados permanece disponível durante a pausa.</p></details>}
     </section>}
@@ -102,8 +103,8 @@ function MasterPermissions({ game, perform, context }: { game: GameState; perfor
       <div className="team-form-row">{(['food','water'] as const).map(resource=><Field key={resource} label={resource==='food'?'Porções de Comida':'Porções de Água'} type="number" value={String(config.supplies[resource])} onChange={value=>change(p=>{p.supplies[resource]=Math.max(0,Math.min(20,Number(value)||0));})}/>)}</div>
       {(game.shelter.inventory??[]).map(item=><Field key={item.id} label={`${item.name} · ${item.qty} no depósito · limite diário`} type="number" value={String(config.supplies.items[item.id]??0)} onChange={value=>change(p=>{p.supplies.items[item.id]=Math.max(0,Math.min(20,Number(value)||0));})}/>)}
     </section>}
-    {context.kind !== "overview" || draft ? <div className="team-policy-save"><Button disabled={!draft} onClick={async()=>{if(await perform({type:'policy',policy:config,expectedPolicy:draft?.source??JSON.stringify(policy)})) setDraft(null);}}>Salvar liberações</Button><Button variant="outline" disabled={!draft} onClick={()=>setDraft(null)}>Descartar rascunho</Button><small>As liberações passam a valer após o salvamento.</small></div> : null}
-    {context.kind === "overview" && alerts.length > 0 && <section className="team-card"><h3>Pedidos e consequências · {alerts.length}</h3>{alerts.length?alerts.map(op=><div className="team-operation" key={op.id}><b>{operationLabels[op.type]} · {game.survivors.find(p=>p.id===op.initiatorId)?.name}</b><p>{op.attention}</p><p>{op.purpose}</p>{op.result&&<p>{op.result}</p>}<Button size="sm" variant="outline" onClick={()=>perform({type:'review',operationId:op.id})}>Marcar como resolvido</Button></div>):<p className="team-empty">Nenhum pedido ou consequência aguardando avaliação.</p>}<p className="subtle">Após resolver a consequência, desmarque a pausa acima e salve as liberações. Bloqueios e exceções são tratados pelas ferramentas habituais.</p></section>}
+    {(context.kind !== "overview" || draft) && section !== "requests" ? <div className="team-policy-save"><Button disabled={!draft} onClick={async()=>{if(await perform({type:'policy',policy:config,expectedPolicy:draft?.source??JSON.stringify(policy)})) setDraft(null);}}>Salvar liberações</Button><Button variant="outline" disabled={!draft} onClick={()=>setDraft(null)}>Descartar rascunho</Button><small>As liberações passam a valer após o salvamento.</small></div> : null}
+    {context.kind === "overview" && section !== "pause" && alerts.length > 0 && <section className="team-card"><h3>Pedidos e consequências · {alerts.length}</h3>{alerts.length?alerts.map(op=><div className="team-operation" key={op.id}><b>{operationLabels[op.type]} · {game.survivors.find(p=>p.id===op.initiatorId)?.name}</b><p>{op.attention}</p><p>{op.purpose}</p>{op.result&&<p>{op.result}</p>}<Button size="sm" variant="outline" onClick={()=>perform({type:'review',operationId:op.id})}>Marcar como resolvido</Button></div>):<p className="team-empty">Nenhum pedido ou consequência aguardando avaliação.</p>}<p className="subtle">Após resolver a consequência, desmarque a pausa acima e salve as liberações. Bloqueios e exceções são tratados pelas ferramentas habituais.</p></section>}
   </>;
 }
 
