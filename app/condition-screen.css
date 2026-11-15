@@ -133,7 +133,7 @@ html[data-theme="dark"] .survivor-condition-dialog.tone-neutral { --condition-ac
 .survivor-condition-dialog .exposure-support-heading h3 {
   margin:0 0 5px;
   color:var(--muted-foreground);
-  font:800 .66rem/1.35 var(--font-mono);
+  font:800 .75rem/1.35 var(--font-mono);
   text-transform:uppercase;letter-spacing:.095em;
 }
 .survivor-condition-dialog .survivor-condition-info-body p {
@@ -179,7 +179,7 @@ html[data-theme="dark"] .survivor-condition-dialog .exposure-support-heading { c
 }
 .survivor-condition-dialog .survivor-condition-action-title {
   display:flex;align-items:center;gap:7px;margin:0;
-  font:800 .67rem/1.35 var(--font-mono);text-transform:uppercase;letter-spacing:.085em;
+  font:800 .75rem/1.35 var(--font-mono);text-transform:uppercase;letter-spacing:.085em;
 }
 .survivor-condition-dialog .survivor-condition-actions > div { display:flex;flex-wrap:wrap;gap:7px; }
 .survivor-condition-dialog .survivor-condition-actions button {
@@ -195,7 +195,7 @@ html[data-theme="dark"] .survivor-condition-dialog .exposure-support-heading { c
   background:color-mix(in srgb,var(--destructive) 8%,var(--card));
 }
 .survivor-condition-dialog .survivor-condition-actions small {
-  max-width:100%;color:var(--muted-foreground);font-size:.73rem;line-height:1.4;
+  max-width:100%;color:var(--muted-foreground);font-size:.75rem;line-height:1.4;
 }
 .survivor-condition-dialog .survivor-condition-dialog-footer {
   display:flex;flex-direction:row;justify-content:flex-end;flex-wrap:wrap;
@@ -282,7 +282,7 @@ html[data-theme="dark"] .survivor-condition-add-dialog.tone-neutral { --add-cond
 .survivor-condition-choice-group { display:grid;gap:5px;min-width:0; }
 .survivor-condition-choice-group > p {
   margin:0;color:var(--muted-foreground);
-  font:750 .63rem/1.35 var(--font-mono);
+  font:750 .75rem/1.35 var(--font-mono);
   text-transform:uppercase;letter-spacing:.09em;
 }
 .survivor-condition-choice-grid { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;min-width:0; }
@@ -360,7 +360,7 @@ html[data-theme="dark"] .survivor-condition-choice-card.tone-neutral { --choice-
 .survivor-condition-add-preview-heading > span:last-child { display:grid;gap:2px;min-width:0; }
 .survivor-condition-add-dialog .survivor-condition-add-preview-heading b { font-size:.88rem; }
 .survivor-condition-add-dialog .survivor-condition-add-preview-heading small {
-  color:var(--muted-foreground);font-size:.69rem;
+  color:var(--muted-foreground);font-size:.75rem;
 }
 .survivor-condition-add-dialog .survivor-condition-add-preview p {
   margin:0;color:var(--foreground);font:400 .9rem/1.65 var(--font-sans);
@@ -369,7 +369,7 @@ html[data-theme="dark"] .survivor-condition-choice-card.tone-neutral { --choice-
 .survivor-condition-preview-rule { display:grid;gap:7px;min-width:0; }
 .survivor-condition-preview-rule + .survivor-condition-preview-rule { border-top:1px solid var(--border);padding-top:10px; }
 .survivor-condition-preview-rule h4 {
-  margin:0;color:var(--muted-foreground);font:700 .68rem/1.4 var(--font-mono);
+  margin:0;color:var(--muted-foreground);font:700 .75rem/1.4 var(--font-mono);
   text-transform:uppercase;letter-spacing:.07em;
 }
 /* Shared typography prevents metadata styles from leaking into rule prose. */
@@ -411,7 +411,7 @@ html[data-theme="dark"] .survivor-condition-choice-card.tone-neutral { --choice-
   .survivor-condition-choice-grid { gap:6px; }
   .survivor-condition-choice-card {
     flex-direction:column;justify-content:center;gap:4px;min-height:69px;
-    padding:7px 5px;text-align:center;font-size:.73rem;
+    padding:7px 5px;text-align:center;font-size:.75rem;
   }
   .survivor-condition-choice-icon { width:29px;height:29px; }
   .survivor-condition-choice-name { padding-right:0; }

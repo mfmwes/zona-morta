@@ -60,7 +60,7 @@
 }
 .hex-location-path > span { min-width: 0; padding: 12px; overflow-wrap: anywhere; }
 .hex-location-path > span + span { border-left: 1px solid var(--border); }
-.hex-location-path small { display: block; color: var(--muted-foreground); font-size: .72rem; margin-bottom: 4px; }
+.hex-location-path small { display: block; color: var(--muted-foreground); font-size: .75rem; margin-bottom: 4px; }
 .hex-location-path b { font-size: .9rem; }
 .hex-search-step { display: grid; gap: 12px; padding-top: 14px; border-top: 1px solid var(--border); }
 .hex-search-step h3 { display: flex; align-items: center; gap: 9px; margin: 0; font-size: .95rem; font-weight: 750; }
@@ -132,7 +132,7 @@ html[data-theme="dark"] .hex-event-active {
 }
 .hex-search-location-summary > div:first-child > small {
   color: var(--muted-foreground);
-  font-size: .72rem;
+  font-size: .75rem;
 }
 .hex-search-location-summary > label,
 .hex-search-location-summary > div:last-child {
@@ -169,7 +169,7 @@ html[data-theme="dark"] .hex-event-active {
 }
 .hex-search-area-panel-head small {
   color: var(--muted-foreground);
-  font-size: .68rem;
+  font-size: .75rem;
 }
 .hex-search-area-list {
   display: grid;
@@ -226,7 +226,7 @@ html[data-theme="dark"] .hex-event-active {
 }
 .hex-search-area-card small {
   color: var(--muted-foreground);
-  font-size: .64rem;
+  font-size: .75rem;
   line-height: 1.25;
 }
 .hex-search-add-area {
@@ -236,7 +236,7 @@ html[data-theme="dark"] .hex-event-active {
 .hex-search-add-area summary {
   cursor: pointer;
   color: var(--muted-foreground);
-  font-size: .7rem;
+  font-size: .75rem;
   font-weight: 750;
 }
 .hex-search-add-area[open] {
@@ -273,7 +273,7 @@ html[data-theme="dark"] .hex-event-active {
   border-radius: 999px;
   background: var(--background);
   color: var(--muted-foreground);
-  font-size: .65rem;
+  font-size: .75rem;
   font-weight: 800;
   white-space: nowrap;
 }
@@ -312,7 +312,7 @@ html[data-theme="dark"] .hex-event-active {
 }
 .hex-search-narrative-note small {
   color: var(--muted-foreground);
-  font-size: .69rem;
+  font-size: .75rem;
   line-height: 1.4;
 }
 @media (max-width: 760px) {
@@ -405,7 +405,7 @@ html[data-theme="dark"] .hex-event-active {
   border-radius: 999px;
   background: var(--background);
   color: var(--muted-foreground);
-  font-size: .67rem;
+  font-size: .75rem;
   font-weight: 750;
 }
 .hex-deep-search-complete {
@@ -447,7 +447,7 @@ html[data-theme="dark"] .hex-event-active {
 }
 .hex-quick-search-head small {
   color: var(--muted-foreground);
-  font-size: .66rem;
+  font-size: .75rem;
   line-height: 1.35;
 }
 .hex-quick-search-options {
@@ -472,13 +472,13 @@ html[data-theme="dark"] .hex-event-active {
   border-color: color-mix(in srgb, var(--primary) 58%, var(--border));
 }
 .hex-quick-search-button > span {
-  font-size: .72rem;
+  font-size: .75rem;
   font-weight: 800;
 }
 .hex-quick-search-button > small {
   overflow: hidden;
   color: var(--muted-foreground);
-  font-size: .59rem;
+  font-size: .75rem;
   line-height: 1.22;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -497,7 +497,7 @@ html[data-theme="dark"] .hex-event-active {
 .hex-quick-search-notice {
   margin: 0;
   color: var(--muted-foreground);
-  font-size: .66rem;
+  font-size: .75rem;
   line-height: 1.4;
 }
 .hex-quick-search-notice.is-visible {
@@ -569,7 +569,7 @@ html[data-theme="dark"] .hex-event-active {
 .hex-visible-suggestion-main small,
 .hex-visible-resolved small {
   color: var(--muted-foreground);
-  font-size: .67rem;
+  font-size: .75rem;
   line-height: 1.4;
 }
 .hex-visible-suggestion.has-item {
@@ -591,7 +591,7 @@ html[data-theme="dark"] .hex-event-active {
 }
 .hex-visible-manual > summary {
   cursor: pointer;
-  font-size: .7rem;
+  font-size: .75rem;
   font-weight: 750;
   color: var(--muted-foreground);
 }
@@ -634,7 +634,7 @@ html[data-theme="dark"] .hex-event-active {
 .hex-sector-preparation-trigger b { font-size: .78rem; }
 .hex-sector-preparation-trigger small {
   color: var(--muted-foreground);
-  font-size: .64rem;
+  font-size: .75rem;
   font-weight: 500;
 }
 .hex-sector-preparation[data-state="open"] .hex-sector-preparation-trigger > svg:last-child { transform: rotate(180deg); }
@@ -666,21 +666,21 @@ html[data-theme="dark"] .hex-event-active {
   align-items: center;
   gap: 6px;
   color: var(--muted-foreground);
-  font-size: .72rem;
+  font-size: .75rem;
   font-weight: 750;
 }
 .hex-point-session-state > span.is-active { color: #936a2d; }
 .hex-point-session-state > span.has-stock { color: var(--primary); }
 .hex-point-session-state small {
   color: var(--muted-foreground);
-  font-size: .62rem;
+  font-size: .75rem;
   line-height: 1.35;
 }
 .hex-point-session-issue {
   flex-basis: 100%;
   margin: 0;
   color: var(--muted-foreground);
-  font-size: .65rem;
+  font-size: .75rem;
 }
 .hex-point-master-details {
   margin-top: 9px;
@@ -690,7 +690,7 @@ html[data-theme="dark"] .hex-event-active {
 .hex-point-master-details > summary {
   cursor: pointer;
   color: var(--muted-foreground);
-  font-size: .68rem;
+  font-size: .75rem;
   font-weight: 750;
 }
 .hex-point-master-details > div {
@@ -733,7 +733,7 @@ html[data-theme="dark"] .hex-event-active {
   border-radius: 50%;
   background: var(--muted);
   color: var(--muted-foreground);
-  font: 800 .7rem var(--font-mono);
+  font: 800 .75rem var(--font-mono);
 }
 .hex-search-flow > button b {
   min-width: 0;
@@ -742,7 +742,7 @@ html[data-theme="dark"] .hex-event-active {
 .hex-search-flow > button small {
   overflow: hidden;
   color: var(--muted-foreground);
-  font-size: .61rem;
+  font-size: .75rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -773,14 +773,14 @@ html[data-theme="dark"] .hex-event-active {
 }
 .hex-search-recommended small {
   color: var(--primary);
-  font: 800 .61rem var(--font-mono);
+  font: 800 .75rem var(--font-mono);
   letter-spacing: .08em;
 }
 .hex-search-recommended b { font-size: .82rem; }
 .hex-search-recommended p {
   margin: 0;
   color: var(--muted-foreground);
-  font-size: .69rem;
+  font-size: .75rem;
   line-height: 1.4;
 }
 .hex-location-preparation {
@@ -795,7 +795,7 @@ html[data-theme="dark"] .hex-event-active {
   cursor: pointer;
   padding: 9px 11px;
   color: var(--muted-foreground);
-  font-size: .7rem;
+  font-size: .75rem;
   font-weight: 750;
 }
 .hex-location-preparation > summary span {
@@ -857,7 +857,7 @@ html[data-theme="dark"] .hex-event-active {
 .hex-search-stock-row b { font-size: .76rem; }
 .hex-search-stock-row small {
   color: var(--muted-foreground);
-  font-size: .62rem;
+  font-size: .75rem;
 }
 .hex-search-stock-row > strong {
   min-width: 28px;
@@ -878,7 +878,7 @@ html[data-theme="dark"] .hex-event-active {
   cursor: pointer;
   padding: 8px 10px;
   color: var(--muted-foreground);
-  font-size: .68rem;
+  font-size: .75rem;
   font-weight: 750;
 }
 .hex-collection-options > div,
@@ -891,7 +891,7 @@ html[data-theme="dark"] .hex-event-active {
 }
 .hex-collection-start small {
   color: var(--muted-foreground);
-  font-size: .64rem;
+  font-size: .75rem;
 }
 .hex-collection-plan {
   display: grid;
@@ -911,10 +911,10 @@ html[data-theme="dark"] .hex-event-active {
   background: color-mix(in srgb, var(--accent) 42%, var(--card));
 }
 .hex-collection-plan > div > span { display: grid; gap: 1px; }
-.hex-collection-plan b { font-size: .72rem; }
+.hex-collection-plan b { font-size: .75rem; }
 .hex-collection-plan small {
   color: var(--muted-foreground);
-  font-size: .61rem;
+  font-size: .75rem;
 }
 .hex-collection-plan svg { flex: none; color: var(--primary); }
 .hex-collection-actions {

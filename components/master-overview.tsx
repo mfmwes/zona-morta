@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Brain, CheckCircle2, Clock3, Droplets, Fuel, House, Map, Package, Pill, Search, ShieldAlert, Swords, Users, Utensils, Wrench } from "lucide-react";
+import { AlertTriangle, ArrowRight, Brain, CheckCircle2, Clock3, Droplets, Fuel, House, Map, Package, Pill, Search, ShieldAlert, Swords, Users, Utensils, Wrench } from "lucide-react";
 import { MasterContextActions, type MasterActionControls } from "@/components/player-actions-panel";
 import { playerActionState } from "@/lib/player-actions";
 import { Button } from "@/components/ui/button";
@@ -97,7 +97,7 @@ export function MasterOverview({ mobile = false, game, onNavigate, onOpen, maste
 
     <div className="master-overview-grid">
       <section className="master-overview-card master-overview-team">
-        <header><div><Users size={18} /><span><b>Equipe agora</b><small>Onde cada grupo está e quem já comprometeu tempo.</small></span></div><Button size="sm" variant="ghost" onClick={() => onNavigate("sobreviventes")}>Ver fichas</Button></header>
+        <header><div><Users size={18} /><span><b>Equipe agora</b><small>Onde cada grupo está e quem já comprometeu tempo.</small></span></div><Button size="sm" variant="ghost" className="overview-header-link" onClick={() => onNavigate("sobreviventes")}>Ver fichas <ArrowRight size={14} aria-hidden="true" /></Button></header>
         <div className="master-overview-list">
           {groups.length ? groups.map(group => <article key={group.hex} className="master-overview-group">
             <div><Map size={16} /><span><b>{hexLabel(game, group.hex)}</b><small>Hex {group.hex}</small></span></div>
@@ -148,7 +148,7 @@ export function MasterOverview({ mobile = false, game, onNavigate, onOpen, maste
       </section>
 
       <section className="master-overview-card master-overview-resources">
-        <header><div><Package size={18} /><span><b>Reservas principais</b><small>{game.shelter.hex ? game.shelter.name : "Grupo sem abrigo estabelecido"}</small></span></div><Button size="sm" variant="ghost" onClick={() => onNavigate("abrigo")}>Gerenciar</Button></header>
+        <header><div><Package size={18} /><span><b>Reservas principais</b><small>{game.shelter.hex ? game.shelter.name : "Grupo sem abrigo estabelecido"}</small></span></div><Button size="sm" variant="ghost" className="overview-header-link" onClick={() => onNavigate("abrigo")}>Gerenciar <ArrowRight size={14} aria-hidden="true" /></Button></header>
         <div className="master-overview-resource-grid">
           <span><Utensils size={19} /><small>Comida</small><b>{game.shelter.food}</b></span>
           <span><Droplets size={19} /><small>Água</small><b>{game.shelter.water}</b></span>

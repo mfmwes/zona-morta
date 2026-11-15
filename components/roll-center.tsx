@@ -111,8 +111,8 @@ export function RollCenter({ game, edit, role, survivorId }: {
                   {entry.kind === "dano" ? <Crosshair size={17} /> : <Dice5 size={17} />}
                 </div>
                 <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2"><b>{actor}</b><span className={`rounded-full border px-2 py-0.5 text-[.68rem] font-bold uppercase tracking-wide ${badgeClass}`}>{result.label}</span></div>
-                  <p className="font-mono text-[.7rem] subtle mt-1">Dia {entry.day} · {entry.time}</p>
+                  <div className="flex flex-wrap items-center gap-2"><b>{actor}</b><span className={`rounded-full border px-2 py-0.5 text-xs font-bold uppercase tracking-wide ${badgeClass}`}>{result.label}</span></div>
+                  <p className="font-mono text-xs subtle mt-1">Dia {entry.day} · {entry.time}</p>
                 </div>
               </div>
               {damage && <strong className="text-xl font-mono">{damage} <span className="text-xs font-normal subtle">{result.label === "Não aplicado" ? "não aplicado" : result.label === "Dano potencial" ? "potencial" : "dano"}</span></strong>}

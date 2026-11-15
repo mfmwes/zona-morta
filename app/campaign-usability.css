@@ -41,7 +41,7 @@ html[data-theme="dark"] .campaign-form-error { color:#efaa98; }
 .campaign-search-result:hover,.campaign-search-result:focus-visible { background:var(--surface-soft); border-color:var(--primary); }
 .campaign-search-result > span { display:grid; gap:4px; min-width:0; }
 .campaign-search-result b { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; font-size:.9rem; line-height:1.4; overflow-wrap:anywhere; }
-.campaign-search-result small { color:var(--muted-foreground); font-size:.74rem; }
+.campaign-search-result small { color:var(--muted-foreground); font-size:.75rem; }
 .campaign-search-result > svg { flex:none; color:var(--primary); }
 .campaign-skip-link { position:fixed; top:12px; left:12px; z-index:100; padding:12px 18px; border-radius:6px; background:var(--primary); color:var(--primary-foreground); transform:translateY(-160%); }
 .campaign-skip-link:focus { transform:translateY(0); }
