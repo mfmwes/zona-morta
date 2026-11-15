@@ -6,7 +6,7 @@
 .resident-card > div { display:grid; gap:5px; min-width:0; }
 .resident-card b, .resident-choice-copy b { overflow-wrap:anywhere; }
 .resident-card small, .resident-choice-copy small, .resident-choice-copy em { color:var(--ink-soft); font-size:.75rem; line-height:1.5; }
-.resident-location { display:inline-flex; align-items:center; gap:5px; font-size:.72rem; padding:4px 7px; border-radius:6px; background:var(--surface-soft); border:1px solid var(--border); width:fit-content; }
+.resident-location { display:inline-flex; align-items:center; gap:5px; font-size:.75rem; padding:4px 7px; border-radius:6px; background:var(--surface-soft); border:1px solid var(--border); width:fit-content; }
 .resident-location.is-home { color:var(--primary); background:var(--accent); }
 .resident-private { display:flex; align-items:center; gap:5px; }
 .resident-empty { display:flex; align-items:center; gap:9px; margin:18px 0; color:var(--ink-soft); font-size:.85rem; }
@@ -22,7 +22,7 @@
 .resident-choice-group { border:0; padding:0; min-width:0; }
 .resident-choice-group + .resident-choice-group { margin-top:18px; }
 .resident-choice-group legend { display:flex; align-items:center; gap:8px; margin-bottom:10px; font-size:.85rem; font-weight:800; }
-.resident-choice-group legend span { background:var(--secondary); color:var(--secondary-foreground); padding:2px 7px; border-radius:99px; font-size:.7rem; }
+.resident-choice-group legend span { background:var(--secondary); color:var(--secondary-foreground); padding:2px 7px; border-radius:99px; font-size:.75rem; }
 .resident-choice-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
 .resident-choice { display:flex; align-items:flex-start; gap:10px; min-width:0; padding:12px; border:1px solid var(--border); border-radius:9px; background:var(--surface-soft); cursor:pointer; }
 .resident-choice:hover { border-color:var(--primary); }

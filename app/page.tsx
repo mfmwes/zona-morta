@@ -878,7 +878,7 @@ export default function CampaignApp() {
     <Sidebar collapsible="none" className="rail">
       <div className="flex items-center gap-3 px-2">
         <div className="brand-mark">ZM</div><div><div className="text-[.93rem] font-extrabold tracking-wide">ZONA MORTA</div>
-          <div className="text-[.7rem] text-[#a9c0bc] uppercase tracking-[.14em] font-mono">Daggerheart · alfa</div></div>
+          <div className="text-xs text-[#a9c0bc] uppercase tracking-[.14em] font-mono">Daggerheart · alfa</div></div>
       </div>
       <div className="px-3"><span className="smallcaps text-[#81d0cb]">Dossiê de campanha</span>
         <p className="text-sm text-[#a9c0bc] mt-1">Cidade em descoberta · mapa aberto</p></div>

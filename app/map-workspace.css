@@ -3,9 +3,9 @@
 .map-stage { height: 100%; min-width: 0; position: relative; display: flex; flex-direction: column; }
 .map-stage-heading { position: relative; display: flex; flex-shrink: 0; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; min-height: 36px; padding: 4px 10px; background: var(--card); border-bottom: 1px solid var(--border); z-index: 8; }
 .map-stage-heading-left { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; min-width: 0; }
-.map-stage-heading .dossier-title { margin: 0; font-size: .6rem; }
+.map-stage-heading .dossier-title { margin: 0; font-size: .75rem; }
 .map-stage-heading .section-title { margin: 0; font-size: .85rem; line-height: 1.25; }
-.map-stage-heading .tag { padding: 2px 7px; font-size: .65rem; }
+.map-stage-heading .tag { padding: 2px 7px; font-size: .75rem; }
 .map-session-status { font: 700 .8rem var(--font-mono); display: flex; gap: 16px; align-items: center; }
 .map-session-status > span { font-weight: 400; color: var(--muted-foreground); }
 .map-session-bar { display: flex; flex-wrap: wrap; align-items: stretch; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--border); background: color-mix(in srgb,var(--background) 65%,var(--card)); flex-shrink: 0; z-index: 3; }
@@ -13,21 +13,21 @@
 .map-session-bar .map-session-time { flex: .9 1 210px; border-top: 2px solid #b79558; }
 .map-session-bar .map-session-pressure { flex: 1 1 225px; }
 .map-session-bar .map-session-reserves { flex: 1.3 1 322px; }
-.map-session-group-title { display: flex; align-items: center; gap: 6px; color: var(--muted-foreground); font: 600 .59rem var(--font-mono); letter-spacing: .065em; text-transform: uppercase; line-height: 1.3; }
+.map-session-group-title { display: flex; align-items: center; gap: 6px; color: var(--muted-foreground); font: 600 .75rem var(--font-mono); letter-spacing: .065em; text-transform: uppercase; line-height: 1.3; }
 .map-session-group-title > svg { flex-shrink: 0; }
 .map-session-group-title .map-session-daylight { margin-left: auto; color: #b79558; }
-.map-session-unit { margin-left: auto; font-size: .53rem; letter-spacing: 0; opacity: .8; }
+.map-session-unit { margin-left: auto; font-size: .75rem; letter-spacing: 0; opacity: .8; }
 .map-session-clock-row { display: flex; align-items: center; justify-content: space-between; min-height: 28px; }
-.map-session-clock-row b { display: flex; align-items: baseline; gap: 7px; font-size: .74rem; color: var(--muted-foreground); font-weight: 500; }
+.map-session-clock-row b { display: flex; align-items: baseline; gap: 7px; font-size: .75rem; color: var(--muted-foreground); font-weight: 500; }
 .map-session-clock-row strong { color: var(--foreground); font: 700 1.4rem var(--font-mono); letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
 .map-session-buttons, .map-session-counters { display: flex; align-items: center; gap: 6px; }
-.map-session-bar button { min-height: 28px; height: 28px; padding: 3px 7px; font-size: .69rem; border-radius: 5px; }
+.map-session-bar button { min-height: 28px; height: 28px; padding: 3px 7px; font-size: .75rem; border-radius: 5px; }
 .map-session-bar button:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 .map-session-bar button svg { width: 13px; height: 13px; }
 .map-session-bar .map-session-adjust { width: 28px; padding: 5px; color: var(--muted-foreground); }
-.map-session-time-steps > button { flex: 1; background: color-mix(in srgb,var(--background) 60%,var(--card)); border-color: var(--border); font: 600 .7rem var(--font-mono); }
+.map-session-time-steps > button { flex: 1; background: color-mix(in srgb,var(--background) 60%,var(--card)); border-color: var(--border); font: 600 .75rem var(--font-mono); }
 .map-session-time-steps > button:hover { background: color-mix(in srgb,#b79558 14%,var(--card)); border-color: #b79558; }
-.map-session-bar small { color: var(--muted-foreground); font-size: .59rem; line-height: 1.35; }
+.map-session-bar small { color: var(--muted-foreground); font-size: .75rem; line-height: 1.35; }
 .map-session-clock-note { display: flex; align-items: center; gap: 5px; }
 .map-session-clock-note svg { flex-shrink: 0; }
 .map-session-metric { --metric-accent: #638e8d; flex: 1; position: relative; min-width: 0; padding: 6px; border: 1px solid color-mix(in srgb,var(--metric-accent) 25%,var(--border)); border-radius: 7px; background: color-mix(in srgb,var(--metric-accent) 5%,var(--card)); }
@@ -38,10 +38,10 @@
 .map-session-metric.metric-parts { --metric-accent: #83998e; }
 .map-session-metric.metric-noise.is-high { --metric-accent: #c48c5c; }
 .map-session-metric > div:not(.map-session-meter) { display: grid; grid-template-columns: minmax(0,1fr); justify-content: stretch; width: 100%; gap: 5px; }
-.map-session-metric .font-bold { padding-left: 26px; font-size: .68rem; line-height: 16px; font-weight: 600; }
+.map-session-metric .font-bold { padding-left: 26px; font-size: .75rem; line-height: 16px; font-weight: 600; }
 .map-session-bar .number-control { display: flex; justify-content: center; gap: 0; min-width: 0; width: 100%; border: 1px solid var(--border); border-radius: 5px; background: var(--card); overflow: hidden; }
 .map-session-bar .number-control:focus-within { outline: 2px solid var(--ring); outline-offset: 2px; }
-.map-session-bar .number-control button { min-width: 21px; width: 21px; min-height: 25px; height: 25px; padding: 2px; flex: 1; border: 0; border-radius: 0; background: transparent; color: var(--muted-foreground); font-size: .73rem; }
+.map-session-bar .number-control button { min-width: 21px; width: 21px; min-height: 25px; height: 25px; padding: 2px; flex: 1; border: 0; border-radius: 0; background: transparent; color: var(--muted-foreground); font-size: .75rem; }
 .map-session-bar .number-control button:hover:not(:disabled) { color: var(--foreground); background: color-mix(in srgb,var(--metric-accent) 15%,var(--card)); }
 .map-session-bar .number-control button:disabled { opacity: .35; }
 .map-session-bar .number-control input, .map-session-bar .number-control output { width: 29px; min-width: 29px; height: 25px; padding: 2px 0; border: 0; border-radius: 0; background: transparent; text-align: center; color: var(--foreground); font: 700 .85rem var(--font-mono); font-variant-numeric: tabular-nums; }
@@ -51,19 +51,19 @@
 .map-session-meter i { flex: 1; height: 3px; border-radius: 3px; background: color-mix(in srgb,var(--metric-accent) 16%,var(--card)); }
 .map-session-meter i.is-filled { background: var(--metric-accent); }
 .map-session-scene-actions { justify-content: space-between; margin-top: auto; }
-.map-session-scene-actions button { gap: 5px; min-height: 24px; height: 24px; color: var(--muted-foreground); font-size: .64rem; }
+.map-session-scene-actions button { gap: 5px; min-height: 24px; height: 24px; color: var(--muted-foreground); font-size: .75rem; }
 .map-session-reserves > small { margin-top: auto; }
-.map-session-bar .map-reserve-composition { display: block; margin-top: 5px; font-size: .57rem; overflow-wrap: anywhere; }
+.map-session-bar .map-reserve-composition { display: block; margin-top: 5px; font-size: .75rem; overflow-wrap: anywhere; }
 .map-reserve-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: auto; }
 .map-reserve-adjust { margin-left: auto; min-width: 0; }
-.map-reserve-adjust > summary { display: flex; align-items: center; gap: 4px; cursor: pointer; color: var(--muted-foreground); font-size: .59rem; list-style: none; }
+.map-reserve-adjust > summary { display: flex; align-items: center; gap: 4px; cursor: pointer; color: var(--muted-foreground); font-size: .75rem; list-style: none; }
 .map-reserve-adjust > summary::-webkit-details-marker { display: none; }
 .map-reserve-adjust > summary:hover { color: var(--foreground); }
 .map-reserve-adjust[open] { flex-basis: 100%; }
 .map-reserve-adjust[open] > summary { margin-bottom: 7px; color: var(--foreground); }
 .map-reserve-editors { display: flex; flex-wrap: wrap; gap: 7px; padding-top: 6px; border-top: 1px solid var(--border); }
 .map-reserve-editors > div { flex: 1 1 110px; min-width: 0; }
-.map-reserve-editors .font-bold { font-size: .62rem; }
+.map-reserve-editors .font-bold { font-size: .75rem; }
 .map-reserve-editors .number-control { margin: 4px 0; }
 .map-reserve-remote { overflow-wrap: anywhere; }
 .map-stage:has(.map-session-bar) .map-session-status { display: none; }
@@ -77,7 +77,7 @@
 .map-stage .world-map-search input { background: #163237ed; font-size: .78rem; padding-block: 6px; }
 .map-tool-dock { position: absolute; left: 14px; top: 86px; z-index: 5; display: grid; gap: 8px; padding: 6px; background: #0d2529ed; border: 1px solid #527572; border-radius: 9px; box-shadow: 0 8px 25px #0004; }
 .map-tool-dock button { width: 46px; height: 48px; padding: 5px; display: flex; flex-direction: column; gap: 3px; color: #d5e8df; background: #1b3b3f; border-color: #496763; }
-.map-tool-dock button span { font-size: .58rem; }
+.map-tool-dock button span { font-size: .75rem; }
 .map-tool-dock button[aria-pressed=true], .map-tool-dock button[aria-expanded=true] { border-color: #e0bc78; background: #35514a; color: #ffe0a4; }
 .map-stage > .map-active-group { position: absolute; left: 87px; bottom: 94px; z-index: 3; max-width: min(430px,65%); margin: 0; background: #102a30e8; border: 1px solid #6b8b7b; padding: 8px 12px; border-radius: 8px; color: #e1ede5; pointer-events: none; }
 .map-stage .map-active-group small { color: #b1ccc2; }
@@ -85,7 +85,7 @@
 .map-stage .map-group-chip { flex-shrink: 0; background: #163237ed; color: #d9ece2; }
 .map-stage .map-group-chip small { color: #bed3ca; }
 .map-stage .world-map-hint, .map-stage > .intro-line, .map-stage > p, .map-stage .mobile-map-help { display: none; }
-.map-stage .map-caption { background: #102a30ec; padding: 7px 15px; margin: 0; border-top: 1px solid #426366; font-size: .67rem; gap: 7px 14px; color: #c4d9d1; }
+.map-stage .map-caption { background: #102a30ec; padding: 7px 15px; margin: 0; border-top: 1px solid #426366; font-size: .75rem; gap: 7px 14px; color: #c4d9d1; }
 .map-journey-dock { position: absolute; top: 66px; bottom: 0; right: 0; width: min(410px,40%); z-index: 6; overflow-y: auto; overscroll-behavior: contain; background: var(--card); border-left: 1px solid var(--border); box-shadow: -8px 0 28px #0003; scrollbar-width: thin; }
 .map-workbench.has-journey .map-stage > .map-surface { padding-right: min(410px,40%); }
 .map-stage .map-surface > .map-tool-dock { top: 14px; }
@@ -105,7 +105,7 @@
 .map-mode .map-workbench { height: calc(100dvh - 78px); }
 .map-log-popover { position: static; z-index: 12; }
 .map-log-popover details { position: static; margin: 0; border: 1px solid var(--border); border-radius: 6px; background: var(--card); }
-.map-log-popover summary { padding: 3px 8px; cursor: pointer; font-size: .68rem; line-height: 20px; }
+.map-log-popover summary { padding: 3px 8px; cursor: pointer; font-size: .75rem; line-height: 20px; }
 .map-log-popover details > div { position: absolute; top: calc(100% + 6px); left: 10px; width: min(720px,calc(100% - 20px)); max-height: 70dvh; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--card); box-shadow: 0 10px 32px #0005; }
 .map-log-popover .panel { margin: 0; }
 .qa-map-mode .map-workbench { height: calc(100dvh - 86px); }
@@ -119,7 +119,7 @@
   .map-session-clock-row strong { font-size: 1.15rem; }
   .map-session-bar .map-session-adjust { width: 22px; padding: 3px; }
   .map-session-time-steps { gap: 4px; }
-  .map-session-time-steps > button { padding-inline: 4px; font-size: .64rem; }
+  .map-session-time-steps > button { padding-inline: 4px; font-size: .75rem; }
   .map-session-metric { padding: 4px 5px; }
   .map-session-metric > svg { left: 5px; top: 4px; width: 20px; height: 20px; padding: 3px; }
   .map-session-metric .font-bold { padding-left: 22px; }
@@ -146,7 +146,7 @@
   .map-session-pressure > .map-session-scene-actions { grid-row: 1; grid-column: 2; margin: 0; justify-content: flex-end; gap: 4px; }
   .map-session-pressure > .map-session-counters { grid-column: 1 / -1; grid-row: 2; }
   .map-session-pressure .map-session-metric > div { grid-template-columns: auto minmax(55px,1fr); align-items: center; gap: 4px; }
-  .map-session-scene-actions button { min-height: 20px; height: 20px; padding: 2px 4px; font-size: .59rem; }
+  .map-session-scene-actions button { min-height: 20px; height: 20px; padding: 2px 4px; font-size: .75rem; }
 }
 @media (max-width: 1100px) and (min-width: 761px) {
   .map-stage-heading .map-session-status > span { display: none; }
@@ -168,17 +168,17 @@
   .map-stage-heading { padding: 4px 8px; gap: 6px; }
   .map-stage-heading .tag { display: none; }
   .map-stage-heading .section-title { font-size: .85rem; }
-  .map-session-status { display: grid; gap: 2px; font-size: .64rem; }
-  .map-session-status > span { font-size: .6rem; }
+  .map-session-status { display: grid; gap: 2px; font-size: .75rem; }
+  .map-session-status > span { font-size: .75rem; }
   .map-tool-dock { left: 8px; top: 128px; padding: 3px; gap: 5px; }
   .map-tool-dock button { width: 40px; height: 44px; }
   .map-stage .world-map-toolbar { left: 9px; top: 8px; right: 9px; gap: 7px; }
   .map-stage .world-map-toolbar > div { gap: 4px; }
-  .map-stage .world-map-toolbar button { font-size: .65rem; padding-inline: 7px; min-height: 30px; }
+  .map-stage .world-map-toolbar button { font-size: .75rem; padding-inline: 7px; min-height: 30px; }
   .map-stage .world-map-search { width: 100%; }
   .map-stage .world-map-viewport { min-height: 0; height: auto; }
   .map-stage > .map-active-group { left: 61px; bottom: 106px; max-width: calc(100% - 72px); padding: 6px; }
-  .map-stage .map-active-group b { font-size: .7rem; }
+  .map-stage .map-active-group b { font-size: .75rem; }
   .map-stage .map-group-summary { left: 61px; bottom: 57px; right: 8px; max-width: calc(100% - 72px); }
   .map-stage .mobile-sector-selection { position: absolute; bottom: 5px; left: 8px; right: 8px; width: auto; margin: 0; background: #163237f5; color: #e0ece6; z-index: 3; }
   .map-journey-dock { top: 118px; width: calc(100% - 60px); max-height: calc(100% - 118px); }
@@ -191,3 +191,40 @@
   .qa-map-mode .map-workbench { height: calc(100dvh - 165px); }
 }
 
+
+/* Piso de 12px: a coluna de ferramentas ganhou largura para "Expandir" caber no botão. */
+.map-tool-dock button { width: 58px; }
+@media (max-width: 760px) {
+  .map-tool-dock button { width: 54px; }
+  /* Botões do mapa numa linha só, com rolagem lateral, para não empurrar a busca sobre o mapa. */
+  .map-stage .world-map-toolbar > div:first-child { flex-wrap: nowrap; overflow-x: auto; max-width: 100%; scrollbar-width: none; }
+  .map-stage .world-map-toolbar > div:first-child::-webkit-scrollbar { display: none; }
+  .map-stage .world-map-toolbar > div:first-child > button { flex: none; }
+}
+@media (max-width: 760px) {
+  /* Recursos no celular: uma linha por recurso (ícone, nome, valor e detalhe), em vez de três colunas espremidas. */
+  .map-session-reserves .map-session-unit { display: none; }
+  .map-session-reserves .map-session-counters { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .map-session-reserves .map-session-metric { display: grid; grid-template-columns: auto auto minmax(0, 1fr); align-items: center; column-gap: 8px; padding: 4px 8px; }
+  .map-session-reserves .map-session-metric > div { display: flex; align-items: center; gap: 8px; }
+  .map-session-reserves .map-session-metric .number-control { width: auto; }
+  .map-session-bar .map-session-reserves .map-reserve-composition { margin: 0; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
+@media (max-width: 760px) {
+  .map-session-reserves .map-session-metric { min-height: 0; padding: 2px 8px; }
+  .map-session-reserves .map-session-metric .number-control output { height: 24px; line-height: 24px; }
+  .map-session-reserves .map-reserve-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 2px 10px; }
+}
+@media (max-width: 760px) {
+  .map-session-reserves .map-session-metric > div > span:first-child { min-width: 64px; }
+}
+@media (min-width: 761px) {
+  /* Piso de 12px: espaçamentos menores mantêm a faixa no limite de altura que preserva o mapa. */
+  .map-session-bar { padding-block: 6px; }
+  .map-session-bar > div { padding: 6px 10px; gap: 4px; }
+}
+@media (min-width: 761px) {
+  .map-session-reserves .map-session-metric { padding-block: 3px; }
+  .map-session-bar .map-reserve-composition { margin-top: 1px; line-height: 1.2; }
+  .map-session-reserves > .map-session-group-title, .map-reserve-footer { line-height: 1.2; }
+}
