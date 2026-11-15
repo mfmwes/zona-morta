@@ -2,7 +2,7 @@ import { isCluePoint } from "./hex-event-links";
 import "./event-resolution";
 import "./treatment";
 import { addLog, content as gameContent, survivorHex, survivorIsDown, survivorStats, type GameState } from "./game";
-import { collectLocationStock, deepSearchCandidateKeys, finishPreparedSearch, pendingPlayerSearchOperation, prepareLocationForExploration, quickSearchOptions, rollSearchAccess, searchAreaSessionState, searchAreaState, searchMentors, schedulePreparedDeepSearch, schedulePreparedSearch, warehouseWorkers } from "./hex-automation";
+import { collectLocationStock, deepSearchCandidateKeys, finishPreparedSearch, pendingPlayerSearchOperation, prepareLocationForExploration, quickSearchOptions, rollSearchAccess, searchAreaSessionState, searchAreaState, searchMentors, schedulePreparedDeepSearch, schedulePreparedSearch, visibleSearchAreas, warehouseWorkers } from "./hex-automation";
 import { scheduleSurvivorTravel } from "./hex-actions";
 import { atSharedStorage, catalogKey, transferItem, transferProvisions } from "./inventory";
 import { performItemAction } from "./item-actions";
@@ -70,7 +70,7 @@ export function projectPlayerActions(game: GameState, actorId: string): PublicPl
   for (const point of game.hexes[hexId]?.points ?? []) {
     if (!point.revealed || isCluePoint(point)) continue;
     const prep = point.preparation;
-    const publicAreas = prep?.areas ?? [];
+    const publicAreas = prep ? visibleSearchAreas(prep) : [];
     const areaStates = publicAreas.map(area => ({ area, state: searchAreaSessionState(game, hexId, point.id, area) }));
     result.locations.push({
       hexId,

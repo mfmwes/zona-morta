@@ -241,14 +241,17 @@ function buildLocationAreas(point: Point, scale: LocationScale) {
   const table = content.lootTables.find(row => row.name === point.lootTable)?.name ?? suggestedLootTable(point.name, "especial")!;
   const models = areaModels[table] ?? [];
   const count = locationScaleAreaCounts[scale];
-  const areas: SearchArea[] = [baseSearchArea(point, table, scale), ...models.slice(0, Math.max(0, count - 1)).map(model => blueprintArea(point, table, scale, model))];
+  const candidates: SearchArea[] = [baseSearchArea(point, table, scale), ...models.slice(0, Math.max(0, count - 1)).map(model => blueprintArea(point, table, scale, model))];
   const searchCap = locationScaleSearchCaps[scale];
   let searchableSeen = 0;
-  for (const area of areas) {
+  for (const area of candidates) {
     if (area.searchable === false) continue;
     searchableSeen += 1;
     if (searchableSeen > searchCap) area.searchable = false;
   }
+  // Cômodos de exploração narrativa não são mais gerados: o mestre narra esses espaços fora do sistema.
+  // A seleção acima é mantida para que cada porte continue com os mesmos cômodos vasculháveis de antes.
+  const areas = candidates.filter(area => area.searchable !== false);
 
   for (const search of point.searches) {
     const name = searchAreaLabel(point, search.sector);
@@ -264,6 +267,19 @@ function buildLocationAreas(point: Point, scale: LocationScale) {
     });
   }
   return areas.slice(0, 80);
+}
+
+/**
+ * Cômodo de exploração narrativa salvo em campanhas antigas. Fica oculto para mestre e jogador,
+ * sem apagar os dados, a menos que ainda tenha itens à vista para recolher.
+ */
+export function isHiddenNarrativeArea(prep: Pick<NonNullable<Point["preparation"]>, "stock">, area: SearchArea) {
+  return area.searchable === false && !prep.stock.some(row => row.areaId === area.id && row.remaining > 0);
+}
+
+/** Cômodos exibidos na interface: todos, exceto os narrativos antigos sem itens. */
+export function visibleSearchAreas(prep: NonNullable<Point["preparation"]>) {
+  return prep.areas.filter(area => !isHiddenNarrativeArea(prep, area));
 }
 
 /** Preparation is private and idempotent. Historical searches never grant stock. */
@@ -539,6 +555,8 @@ export function prepareLocationForExploration(game: GameState, hexId: string, po
       area.visibleOutcome = "item";
       continue;
     }
+    // Cômodos narrativos antigos ficam ocultos; não sorteamos itens novos que os fariam reaparecer.
+    if (area.searchable === false) continue;
     if (area.visibleOutcome) continue;
     const suggestion = suggestVisibleStock(area, random);
     if (suggestion.kind === "none") {

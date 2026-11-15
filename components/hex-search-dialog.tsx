@@ -14,7 +14,7 @@ import { createId } from "@/lib/id";
 import { catalogKey } from "@/lib/inventory";
 import { searchAvailabilityError } from "@/lib/exploration";
 import { displayTime } from "@/lib/game";
-import { collectLocationStock, deepSearchLimit, deepSearchesUsed, finishPreparedSearch, declareSearchArea, depositExpeditionItems, locationScaleLabels, locationScaleOf, lootDefinitions, pendingPlayerSearchOperation, prepareLocationForExploration, quickSearchOptions, registerVisibleStock, resolveNoVisibleStock, resizeLocationPreparation, resolvePreparedSearch, searchAreaSessionState, searchAreaState, schedulePreparedDeepSearch, suggestCollection, suggestVisibleStock, warehouseWorkers, type CollectionLine, type VisibleStockSuggestion } from "@/lib/hex-automation";
+import { collectLocationStock, deepSearchLimit, deepSearchesUsed, finishPreparedSearch, depositExpeditionItems, visibleSearchAreas, locationScaleLabels, locationScaleOf, lootDefinitions, pendingPlayerSearchOperation, prepareLocationForExploration, quickSearchOptions, registerVisibleStock, resolveNoVisibleStock, resizeLocationPreparation, resolvePreparedSearch, searchAreaSessionState, searchAreaState, schedulePreparedDeepSearch, suggestCollection, suggestVisibleStock, warehouseWorkers, type CollectionLine, type VisibleStockSuggestion } from "@/lib/hex-automation";
 import { RollForm } from "@/components/roll-dialog";
 import type { LocationScale, SearchArea } from "@/lib/hex-automation-types";
 import { parallelTimeLabel, participantTimePreview, survivorTimedCommitment } from "@/lib/activity";
@@ -41,8 +41,6 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
   });
   const [worker, setWorker] = useState("");
   const [actorId, setActorId] = useState("");
-  const [newArea, setNewArea] = useState("");
-  const [newSignal, setNewSignal] = useState("");
   const [operationId, setOperationId] = useState(createId);
   const [collection, setCollection] = useState<CollectionLine[] | null>(null);
   const [collectionId, setCollectionId] = useState(createId);
@@ -53,12 +51,14 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
   const [deepItemKey, setDeepItemKey] = useState("");
   const [deepOperationId, setDeepOperationId] = useState(createId);
   const [deepActorId, setDeepActorId] = useState("");
-  const area = prep?.areas.find(row => row.id === areaId)
-    ?? prep?.areas.find(row => Boolean(pendingPlayerSearchOperation(game, request.hexId, request.pointId, row.id)))
-    ?? prep?.areas.find(row => prep.attempts.some(attempt => attempt.areaId === row.id && ["pending", "ready"].includes(attempt.status)))
-    ?? prep?.areas.find(row => prep.stock.some(stock => stock.areaId === row.id && stock.remaining > 0))
-    ?? prep?.areas.find(row => row.searchable !== false && !prep.attempts.some(attempt => attempt.areaId === row.id))
-    ?? prep?.areas[0];
+  // Cômodos narrativos antigos sem itens ficam ocultos (ver visibleSearchAreas).
+  const shownAreas = prep ? visibleSearchAreas(prep) : [];
+  const area = shownAreas.find(row => row.id === areaId)
+    ?? shownAreas.find(row => Boolean(pendingPlayerSearchOperation(game, request.hexId, request.pointId, row.id)))
+    ?? shownAreas.find(row => prep!.attempts.some(attempt => attempt.areaId === row.id && ["pending", "ready"].includes(attempt.status)))
+    ?? shownAreas.find(row => prep!.stock.some(stock => stock.areaId === row.id && stock.remaining > 0))
+    ?? shownAreas.find(row => row.searchable !== false && !prep!.attempts.some(attempt => attempt.areaId === row.id))
+    ?? shownAreas[0];
   const attempt = prep?.attempts.find(row => row.areaId === area?.id && (row.kind ?? "normal") === "normal");
   const deepAttempt = prep?.attempts.find(row => row.areaId === area?.id && row.kind === "deep");
   const playerProposal = area ? pendingPlayerSearchOperation(game, request.hexId, request.pointId, area.id) : undefined;
@@ -161,7 +161,7 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
     {!prep && point && <section className="hex-search-step"><h3>Preparar este local</h3><p className="text-sm subtle">Organiza áreas internas, resolve a camada de itens aparentes uma única vez e preserva buscas antigas.</p><Button onClick={() => edit(draft => { prepareLocationForExploration(draft, request.hexId, request.pointId); })}>Preparar exploração</Button></section>}
     {prep && area && <>
       {tab === "explore" && <div className="hex-search-workspace search-session-workspace">
-        <SearchRooms rooms={prep.areas.map(row => ({ id: row.id, name: row.name, state: searchRoomLabel(searchAreaSessionState(game, request.hexId, request.pointId, row)), units: stock.filter(item => item.areaId === row.id).reduce((sum, item) => sum + item.remaining, 0) }))} selected={area.id} onChange={selectArea} />
+        <SearchRooms rooms={shownAreas.map(row => ({ id: row.id, name: row.name, state: searchRoomLabel(searchAreaSessionState(game, request.hexId, request.pointId, row)), units: stock.filter(item => item.areaId === row.id).reduce((sum, item) => sum + item.remaining, 0) }))} selected={area.id} onChange={selectArea} />
         <div className="hex-search-area-detail">
           <section className="hex-search-step hex-search-area-intro">
             <div className="hex-search-area-title"><div><h3>{area.name}</h3></div>
@@ -259,7 +259,7 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
           </section>}
           <details className="search-session-settings"><summary>Preparação e ajustes · mestre</summary>
       <details className="hex-location-preparation">
-        <summary>Porte do local <span>Porte {locationScaleLabels[scale]} · {prep.areas.length} áreas</span></summary>
+        <summary>Porte do local <span>Porte {locationScaleLabels[scale]} · {shownAreas.length} áreas</span></summary>
         <div>
           <p className="text-xs subtle">Essas opções estruturam o local, mas não precisam ser revisadas durante toda busca.</p>
           {canResize ? <div className="hex-search-scale-controls">
@@ -272,7 +272,6 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
       </details>
 
             {!attempt && !playerProposal && <details><summary className="cursor-pointer text-sm font-bold">Revisar preparação do mestre</summary><div className="grid gap-3 mt-3">
-              <label className="text-sm"><input type="checkbox" checked={area.searchable !== false} onChange={event => configure({ searchable: event.target.checked })} /> Esta área permite busca de recursos</label>
               <Field label="Nome do espaço" value={area.name} onChange={name => configure({ name })} />
               <Field label="Sinal desta área · confirme na ficção" value={area.signal} onChange={signal => configure({ signal })} />
               {area.searchable !== false && <Pick label="Tabela de achados desta área" value={area.table} options={content.lootTables.map(row => row.name)} onChange={table => configure({ table })} />}
@@ -329,15 +328,6 @@ export function HexSearchDialog({ game, edit, request, onClose }: { game: GameSt
             </details>
           </details>
 
-          <details className="hex-search-add-area"><summary>+ Declarar outra área</summary><p className="text-xs subtle">Novas áreas começam como exploração narrativa para não criar loot extra automaticamente. O mestre pode habilitar uma busca ao revisar a preparação.</p>
-            <Field label="Nome da área interna" value={newArea} onChange={setNewArea} />
-            <Field label="Sinal que distingue este espaço" value={newSignal} onChange={setNewSignal} />
-            <Button size="sm" variant="outline" disabled={!newArea.trim() || !newSignal.trim()} onClick={() => {
-              if (act(draft => declareSearchArea(draft.hexes[request.hexId].points.find(row => row.id === request.pointId)!, newArea, newSignal) ? null : "A área já existe ou há uma busca em andamento. Declare um espaço distinto antes da busca.", "Área declarada")) {
-                setNewArea(""); setNewSignal("");
-              }
-            }}>Registrar espaço</Button>
-          </details>
           </details>
         </div>
       </div>}

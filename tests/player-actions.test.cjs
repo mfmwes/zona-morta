@@ -171,7 +171,8 @@ test('jogador prepara automaticamente local revelado sem depender de ação do m
 
 test('item aparente em área narrativa é público e pode ser recolhido pelo jogador',()=>{
  const f=fixture();const point=f.game.hexes['0,0'].points[0];
- const area=point.preparation.areas.find(row=>row.searchable===false);assert.ok(area);
+ // Cômodo narrativo salvo por uma campanha antiga.
+ const area={...point.preparation.areas[0],id:'legacy-narrative',name:'Caixas / atendimento',searchable:false,visibleOutcome:undefined};point.preparation.areas.push(area);
  area.access='open';area.collectible=true;
  assert.equal(registerVisibleStock(f.game,'0,0','market',area.id,'visible-narrative-player','Bebidas::Garrafa de água lacrada',1),null);
  const view=projectPlayerActions(f.game,f.ids[0]);
@@ -310,7 +311,7 @@ test('pausa após busca mantém coleta de achados liberados sem liberar outra bu
  const op=propose(f);ok(f,f.ids[0],{type:'execute',operationId:op});
  assert.equal(f.game.playerActions.policy.paused,true);
  const point=f.game.hexes['0,0'].points[0];
- const narrative=point.preparation.areas.find(area=>area.searchable===false);
+ const narrative={...point.preparation.areas[0],id:'legacy-narrative',name:'Caixas / atendimento',searchable:false,visibleOutcome:undefined};point.preparation.areas.push(narrative);
  narrative.access='open';
  assert.equal(registerVisibleStock(f.game,'0,0','market',narrative.id,'apparent-after-search','Bebidas::Garrafa de água lacrada',2),null);
  const stock=point.preparation.stock.find(row=>row.attemptId===op);
@@ -435,4 +436,17 @@ test('falha de acesso com Esperança também encaminha consequência ao mestre',
  const op=propose(f);ok(f,f.ids[0],{type:'execute',operationId:op});const dice=[10,2];
  ok(f,f.ids[0],{type:'roll-access',operationId:op,trait:'Instinto',experiences:[]},()=>dice.shift());
  assert.equal(f.game.playerActions.policy.paused,true);assert.match(f.game.playerActions.operations[0].attention,/Falha/);
+});
+
+test('jogador não vê cômodo narrativo antigo sem itens e conta só os cômodos vasculháveis',()=>{
+ const f=fixture();const point=f.game.hexes['0,0'].points[0];
+ const area={...point.preparation.areas[0],id:'legacy-narrative',name:'Caixas / atendimento',searchable:false,visibleOutcome:undefined};point.preparation.areas.push(area);
+ let view=projectPlayerActions(f.game,f.ids[0]);
+ assert.ok(!view.areas.some(row=>row.areaId===area.id));
+ const location=view.locations.find(row=>row.pointId==='market');
+ assert.equal(location.areaCount-location.narrativeAreas,point.preparation.areas.filter(row=>row.searchable!==false).length);
+ area.access='open';
+ assert.equal(registerVisibleStock(f.game,'0,0','market',area.id,'legacy-visible-player','Bebidas::Garrafa de água lacrada',1),null);
+ view=projectPlayerActions(f.game,f.ids[0]);
+ assert.ok(view.areas.some(row=>row.areaId===area.id));
 });

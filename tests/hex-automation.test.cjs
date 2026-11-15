@@ -81,22 +81,24 @@ test('porte do local controla profundidade sem transformar toda área em nova ro
     lootTable:'Residências / condomínios', searches:[] };
   auto.prepareLocation(condo);
   assert.equal(condo.preparation.scale,'large');
-  assert.equal(condo.preparation.areas.length,6);
+  // Sem cômodos narrativos: só ficam os vasculháveis, no mesmo limite de antes.
+  assert.equal(condo.preparation.areas.length,auto.locationScaleSearchCaps.large);
   assert.equal(condo.preparation.areas.filter(area=>area.searchable!==false).length,auto.locationScaleSearchCaps.large);
   assert.equal(condo.preparation.areas.find(area=>area.name==='Área principal').minutes,60);
   assert.equal(condo.preparation.areas.find(area=>area.name==='Cozinha').minutes,30);
   assert.ok(condo.preparation.areas.some(area=>area.name==='Cozinha' && area.table==='Restaurantes / cozinhas'));
   assert.ok(condo.preparation.areas.some(area=>area.name==='Garagem' && area.table==='Oficinas / postos de serviço'));
-  assert.ok(condo.preparation.areas.some(area=>area.searchable===false));
+  assert.ok(condo.preparation.areas.every(area=>area.searchable!==false));
 
   const hospital = { id:'hospital', name:'Hospital central', kind:'local', signal:'Recepção vazia', access:'', notes:'', revealed:true,
     lootTable:'Hospitais / laboratórios', searches:[] };
   auto.prepareLocation(hospital);
   assert.equal(hospital.preparation.scale,'complex');
-  assert.equal(hospital.preparation.areas.length,8);
+  assert.equal(hospital.preparation.areas.length,auto.locationScaleSearchCaps.complex);
   assert.equal(hospital.preparation.areas.filter(area=>area.searchable!==false).length,auto.locationScaleSearchCaps.complex);
   assert.ok(hospital.preparation.areas.some(area=>area.name==='Farmácia interna' && area.table==='Farmácias / consultórios'));
-  assert.ok(hospital.preparation.areas.some(area=>area.name==='Manutenção' && area.table==='Oficinas / postos de serviço'));
+  // Manutenção passava do limite de buscas do porte e era narrativa; agora não é gerada.
+  assert.ok(!hospital.preparation.areas.some(area=>area.name==='Manutenção'));
 });
 
 
@@ -108,7 +110,8 @@ test('todas as tabelas respeitam orçamento de áreas, buscas e tempo por porte'
     auto.prepareLocation(point);
     for (const scale of ['small','medium','large','complex']) {
       assert.equal(auto.resizeLocationPreparation(point,scale),true, table.name + ' · ' + scale);
-      assert.equal(point.preparation.areas.length,auto.locationScaleAreaCounts[scale], table.name + ' · ' + scale + ' · áreas');
+      assert.ok(point.preparation.areas.length<=auto.locationScaleAreaCounts[scale], table.name + ' · ' + scale + ' · áreas');
+      assert.ok(point.preparation.areas.every(area=>area.searchable!==false), table.name + ' · ' + scale + ' · sem narrativas');
       const searchable=point.preparation.areas.filter(area=>area.searchable!==false);
       assert.ok(searchable.length<=auto.locationScaleSearchCaps[scale], table.name + ' · ' + scale + ' · buscas');
       assert.ok(searchable.reduce((sum,area)=>sum+area.minutes,0)<=maxNormalMinutes[scale], table.name + ' · ' + scale + ' · tempo');
@@ -169,9 +172,9 @@ test('local já preparado sem histórico pode atualizar as áreas contextuais co
 test('porte pode ser ajustado antes da primeira busca e fica estável depois que o local ganha histórico', () => {
   const f=campaign();
   assert.equal(f.point.preparation.scale,'medium');
-  assert.equal(f.point.preparation.areas.length,4);
+  assert.equal(f.point.preparation.areas.length,auto.locationScaleSearchCaps.medium);
   assert.equal(auto.resizeLocationPreparation(f.point,'large'),true);
-  assert.equal(f.point.preparation.areas.length,6);
+  assert.equal(f.point.preparation.areas.length,auto.locationScaleSearchCaps.large);
   f.area=f.point.preparation.areas[0];
   assert.equal(resolveAndConcludeSearch(f.game,input(f),die(1)),null);
   const current=f.game.hexes['0,0'].points[0];
@@ -278,8 +281,9 @@ test('interface de item aparente oferece aceitar, rerrolar, nada à vista e regi
 });
 test('área narrativa aceita elementos à vista, mas não uma busca d12 própria', () => {
   const f=campaign();
-  const narrative=f.point.preparation.areas.find(area=>area.searchable===false);
-  assert.ok(narrative);
+  // Cômodo narrativo salvo por uma campanha antiga.
+  const narrative={...f.point.preparation.areas[0],id:'legacy-narrative',name:'Caixas / atendimento',searchable:false,visibleOutcome:undefined};
+  f.point.preparation.areas.push(narrative);
   const before=structuredClone(f.game);
   assert.match(auto.startSearch(f.game,input(f,{areaId:narrative.id})),/não possui uma busca de recursos/);
   assert.deepEqual(f.game,before);
@@ -661,4 +665,21 @@ test('excluir histórico depois de preparar evento não apaga sua referência de
  f.game.hexes['0,0'].points[0].searches=[];
  assert.equal(recordSearch(f.game,{hex:'0,0',pointId:'market',sector:'Sala separada',mode:'specific',what:'Água',result:'Nada',minutes:30}),true);
  assert.equal(eventTriggerReady(f.game,'0,0',event),true);
+});
+
+test('cômodo narrativo de campanha antiga fica oculto, exceto com itens à vista, e não recebe novos itens', () => {
+  const f=campaign();
+  const prep=f.point.preparation;
+  const narrative={...prep.areas[0],id:'legacy-narrative',name:'Caixas / atendimento',searchable:false,visibleOutcome:undefined};
+  prep.areas.push(narrative);
+  assert.equal(auto.isHiddenNarrativeArea(prep,narrative),true);
+  assert.ok(!auto.visibleSearchAreas(prep).some(area=>area.id===narrative.id));
+  assert.equal(auto.prepareLocationForExploration(f.game,'0,0','market',()=>0),null);
+  assert.ok(!prep.stock.some(row=>row.areaId===narrative.id), 'nenhum item aparente novo no cômodo oculto');
+  assert.equal(auto.registerVisibleStock(f.game,'0,0','market',narrative.id,'legacy-visible','Bebidas::Garrafa de água lacrada',1),null);
+  assert.equal(auto.isHiddenNarrativeArea(prep,narrative),false);
+  assert.ok(auto.visibleSearchAreas(prep).some(area=>area.id===narrative.id));
+  prep.stock.find(row=>row.id==='legacy-visible').remaining=0;
+  assert.ok(!auto.visibleSearchAreas(prep).some(area=>area.id===narrative.id), 'some de novo depois de recolhido');
+  assert.equal(prep.areas.some(area=>area.id===narrative.id),true, 'os dados não são apagados');
 });

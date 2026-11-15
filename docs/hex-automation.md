@@ -4,7 +4,9 @@
 
 No mapa, **Preparar hex** conserva os locais existentes, prepara suas áreas e acrescenta um evento se o hex ainda não tem eventos. Locais e eventos novos começam reservados. A preferência **Preparar conteúdo reservado ao entrar em novos hexes** faz isso durante a entrada; selecionar um hex não prepara, revela nem cobra tempo.
 
-**Buscas e achados** abre o local com suas áreas preparadas. A localização aparece como setor do mapa → local → área interna. Os modelos sugerem espaços separados conforme a tabela do local. O mestre confirma seus sinais e ajusta acesso, extensão, posse e fatos estabelecidos antes da primeira tentativa. Outra área exige nome e sinal próprio; uma tentativa existente conserva sua identidade.
+**Buscas e achados** abre o local com suas áreas preparadas. A localização aparece como setor do mapa → local → área interna. Os modelos sugerem espaços separados conforme a tabela do local. O mestre confirma seus sinais e ajusta acesso, extensão, posse e fatos estabelecidos antes da primeira tentativa. Uma tentativa existente conserva sua identidade.
+
+Todo cômodo gerado é vasculhável; o porte do local define quantos (pequeno 2, médio 3, grande 4, complexo 5). Cômodos de exploração narrativa não são mais gerados nem declarados: espaços sem busca própria são narrados pelo mestre fora do sistema. Em campanhas antigas, esses cômodos continuam salvos, mas ficam ocultos para mestre e jogador, exceto enquanto tiverem itens à vista para recolher; nenhum item novo é sorteado neles.
 
 - **À vista:** registrar um item conhecido estabelece estoque sem teste, d12 ou tempo de busca. Recolhê-lo reduz esse estoque.
 - **Busca específica:** atalhos sugerem água, comida, medicamentos, peças ou combustível quando a tabela os comporta. Objetivo, finalidade, item e quantidade são combinados antes de resolver. Não há d12 adicional.
