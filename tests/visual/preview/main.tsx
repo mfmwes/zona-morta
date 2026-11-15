@@ -11,7 +11,9 @@ import { MapSessionBar } from '@/components/map-session-bar';
 import { RecentEvents } from '@/components/recent-events';
 import { MobileDisclosure } from '@/components/mobile-disclosure';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { Users, House, Layers } from 'lucide-react';
+import { MobileCampaignShell } from '@/components/mobile-campaign-shell';
+import { useMobileExperience } from '@/hooks/use-mobile-experience';
+import { Users, House, Layers, LayoutDashboard, Map, Swords, BookOpen } from 'lucide-react';
 import { SurvivorPanel } from '@/components/survivor-panel';
 import { PlayerConflictScene, ConflictSceneManager } from '@/components/conflict-scene-manager';
 import { NpcPanel } from '@/components/npc-panel';
@@ -63,8 +65,9 @@ function Preview() {
   const [checked,setChecked] = useState(false);
   const [chatOpen,setChatOpen] = useState(false);
   const player=role==='player', actor=full.survivors[0], game=player?projectPlayerGame(full,actor.id):full;
-  const [mobile,setMobile] = useState(innerWidth<=760);
-  React.useEffect(()=>{const listener=()=>setMobile(innerWidth<=760);window.addEventListener('resize',listener);return()=>window.removeEventListener('resize',listener);},[]);
+  // Mesmo critério do app: abaixo de 768px a campanha usa o MobileCampaignShell.
+  const mobile = useMobileExperience();
+  const [mobileExtra,setMobileExtra] = useState<{section:'chat'|'mais';screen:string}|null>(null);
   function commit(next: GameState) { current.current=next;setFull(next); }
   function mutate(fn: (draft: GameState) => void) { const next=structuredClone(current.current);fn(next);commit(next); }
   React.useEffect(()=>{window.__qa={game:()=>structuredClone(current.current),mutate};});
@@ -82,13 +85,8 @@ function Preview() {
   const simulation={spotlight:(action:'request'|'cancel')=>mutate(d=>{if(d.conflict){if(action==='request')requestConflictSpotlight(d.conflict,actor.id);else cancelConflictSpotlightRequest(d.conflict,actor.id);}}),
     damage:(id:string,resolution:'hp'|'armor')=>{const next=structuredClone(current.current),person=next.survivors[0];const result=resolveSurvivorDamageRequest(next.conflict!,id,person,survivorStats(person),resolution,next.day,'08:00');if(!result.ok)throw new Error('Este impacto não pode ser resolvido agora.');commit(next);return result;},
     target:()=>{throw new Error('Use a tela do mestre para preparar ataques nesta prévia.');}};
-  return <PlayerSimulationContext.Provider value={simulation}><div className={`qa-preview${screen==='map'?' is-map':screen==='overview'?' is-overview':''}`}><div className="qa-controls"><b>Prévia isolada · dados de exemplo</b>
-    <label>Perfil <select aria-label="Perfil" value={role} onChange={e=>setRole(e.target.value)}><option value="master">Mestre</option><option value="player">Jogador</option></select></label>
-    <label>Tela <select aria-label="Tela" value={screen} onChange={e=>setScreen(e.target.value)}><option value="overview">Visão geral</option><option value="map">Mapa e exploração</option><option value="scene">Cena visual</option><option value="sheet">Ficha</option><option value="shelter">Abrigo</option><option value="conflict">Conflito</option><option value="npcs">PNJs</option><option value="reading">Leitura e seleção</option></select></label>
-    <label>Tema <select aria-label="Tema" defaultValue="dark" onChange={e=>document.documentElement.dataset.theme=e.target.value}><option value="dark">Escuro</option><option value="light">Claro</option></select></label>
-    <label>Estilo <select aria-label="Estilo" defaultValue="tecnico" onChange={e=>document.documentElement.dataset.visualStyle=e.target.value}><option>tecnico</option><option>fiel</option><option>leitura</option></select></label>
-    <button onClick={()=>location.reload()}>Reiniciar exemplo</button>{query.has('chat')&&<button aria-expanded={chatOpen} onClick={()=>setChatOpen(!chatOpen)}>Chat</button>}<small>Nenhum dado é enviado à campanha real.</small>
-  </div><div className={`app-shell compact-navigation${query.has('chat')?(chatOpen?' chat-open':' chat-closed'):''}${screen==='map'?' map-mode qa-map-mode':screen==='overview'?' overview-mode':''}`}><aside className="rail"><b title="Zona Morta">ZM</b><div className="campaign-navigation-dock"><nav className="rail-nav"><button title="Ficha" aria-current={screen==='sheet'?'page':undefined} onClick={()=>setScreen('sheet')}><Users size={17}/><span>Ficha</span></button><button title="Abrigo" aria-current={screen==='shelter'?'page':undefined} onClick={()=>setScreen('shelter')}><House size={17}/><span>Abrigo</span></button><button title="Cena visual" aria-current={screen==='scene'?'page':undefined} onClick={()=>setScreen('scene')}><Layers size={17}/><span>Cena visual</span></button></nav><div className="rail-presentation-slot campaign-utility-controls"><ThemeToggle placement="campaign"/></div></div></aside><main className="workspace"><div className="page"><div className="campaign-page-heading mb-6"><h1 className="page-title">{screen==='overview'?'Visão geral':screen==='map'?'Mapa e exploração':screen==='shelter'?'Abrigo':screen==='sheet'?'Meu sobrevivente':screen==='scene'?'Cena visual':screen==='conflict'?'Conflito':'Zona Morta'}</h1><p className="intro-line mt-2">Explore as alterações com uma campanha de exemplo.</p></div>
+  const screenTitle=screen==='overview'?'Visão geral':screen==='map'?'Mapa e exploração':screen==='shelter'?'Abrigo':screen==='sheet'?'Meu sobrevivente':screen==='scene'?'Cena visual':screen==='conflict'?'Conflito':screen==='npcs'?'PNJs e comunidade':screen==='reading'?'Leitura e seleção':'Zona Morta';
+  const pageContent=<><div className="campaign-page-heading mb-6"><h1 className="page-title">{screenTitle}</h1><p className="intro-line mt-2">Explore as alterações com uma campanha de exemplo.</p></div>
     {player&&<PlayerAttention game={game} actorId={actor.id} onOpen={target=>{if(target==='conflict')setScreen('conflict');else if(target==='map')toast.info('Abra o local da busca no mapa da campanha.');else{setFocus({key:focus.key+1,section:target==='inventory'?'inventario':'resumo',rest:target==='rest'});setScreen('sheet');}}}/>}
     <RuntimeErrorBoundary key={`${role}:${screen}`}>
       {screen==='overview'&&<MasterOverview game={game} mobile={mobile} canManageSession masterActions={{canAct:true,send:async payload=>{const next=setPlayerPolicy(current.current,payload.policy);if(!next)throw new Error('Liberação inválida');commit(next);}}} onNavigate={tab=>setScreen(({mapa:'map',sobreviventes:'sheet',abrigo:'shelter',conflito:'conflict',cena:'scene'} as Record<string,string>)[tab]??tab)} onOpen={target=>setScreen(({mapa:'map',sobreviventes:'sheet',abrigo:'shelter',conflito:'conflict',comunidade:'npcs'} as Record<string,string>)[target.tab]??'overview')} onSessionAction={async command=>{mutate(d=>applySessionCommand(d,command));}} /> }
@@ -99,7 +97,32 @@ function Preview() {
       {screen==='npcs'&&<NpcPanel game={game} edit={edit} playerPreview={player}/>}
       {screen==='conflict'&&(player?<PlayerConflictScene game={game} edit={edit} selfId={actor.id} playerActions={controls}/>:<ConflictSceneManager game={game} edit={edit} mobile={mobile}/>)}
       {screen==='reading'&&<section className="panel panel-pad qa-reading"><h2 className="section-title">Ações e efeitos</h2><div className="choice-card-grid"><ChoiceCard title="Nina" description="Participa desta etapa" checked={checked} onChange={setChecked}/><ChoiceCard title="Rafael de Albuquerque" description="Ocupado em outra atividade" checked={false} disabled onChange={()=>{}}/></div><RuleText text={'Gatilho: Ao ajudar alguém em perigo.\nEfeito: Descreva como sua experiência ajuda o grupo a atravessar o obstáculo.\nCusto: Marque 1 Estresse. Duração: Até o fim da cena.\nComo remover: Encerre a ação quando o perigo passar.'}/></section>}
-    </RuntimeErrorBoundary>
-  </div></main>{query.has('chat')&&<>{chatOpen&&<button type="button" className="table-chat-backdrop" aria-label="Fechar chat" onClick={()=>setChatOpen(false)}/>}<div id="table-chat"><TableChat game={game} edit={edit} role={player?'jogador':'mestre'} survivorId={player?actor.id:null} onClose={()=>setChatOpen(false)}/></div></>}</div><Toaster/></div></PlayerSimulationContext.Provider>;
+    </RuntimeErrorBoundary></>;
+  const desktopShell=<div className={`app-shell compact-navigation${query.has('chat')?(chatOpen?' chat-open':' chat-closed'):''}${screen==='map'?' map-mode qa-map-mode':screen==='overview'?' overview-mode':''}`}><aside className="rail"><b title="Zona Morta">ZM</b><div className="campaign-navigation-dock"><nav className="rail-nav"><button title="Ficha" aria-current={screen==='sheet'?'page':undefined} onClick={()=>setScreen('sheet')}><Users size={17}/><span>Ficha</span></button><button title="Abrigo" aria-current={screen==='shelter'?'page':undefined} onClick={()=>setScreen('shelter')}><House size={17}/><span>Abrigo</span></button><button title="Cena visual" aria-current={screen==='scene'?'page':undefined} onClick={()=>setScreen('scene')}><Layers size={17}/><span>Cena visual</span></button></nav><div className="rail-presentation-slot campaign-utility-controls"><ThemeToggle placement="campaign"/></div></div></aside><main className="workspace"><div className="page">{pageContent}
+  </div></main>{query.has('chat')&&<>{chatOpen&&<button type="button" className="table-chat-backdrop" aria-label="Fechar chat" onClick={()=>setChatOpen(false)}/>}<div id="table-chat"><TableChat game={game} edit={edit} role={player?'jogador':'mestre'} survivorId={player?actor.id:null} onClose={()=>setChatOpen(false)}/></div></>}</div>;
+  // Seções do app real (app/page.tsx) mapeadas para as telas disponíveis na prévia.
+  const conflictActive=Boolean(player?game.publicConflict:full.conflict?.active);
+  const sectionScreens:Record<string,string>={resumo:'overview',mapa:'map',sobreviventes:'sheet',abrigo:'shelter',conflito:'conflict',cena:'scene',comunidade:'npcs',leitura:'reading'};
+  const screenSection=Object.fromEntries(Object.entries(sectionScreens).map(([section,target])=>[target,section]));
+  const mobileSections=[
+    ...(player?[{value:'sobreviventes',label:'Meu sobrevivente',icon:Users},...(conflictActive?[{value:'conflito',label:'Conflito ativo',icon:Swords}]:[]),{value:'mapa',label:'Mapa',icon:Map},{value:'abrigo',label:'Abrigo',icon:House}]
+      :[{value:'resumo',label:'Visão geral',icon:LayoutDashboard},{value:'mapa',label:'Mapa e exploração',icon:Map},{value:'sobreviventes',label:'Sobreviventes',icon:Users},conflictActive?{value:'conflito',label:'Conflito ativo',icon:Swords}:{value:'abrigo',label:'Abrigo',icon:House},conflictActive?{value:'abrigo',label:'Abrigo e reservas',icon:House}:{value:'conflito',label:'Conflito',icon:Swords}]),
+    {value:'cena',label:'Cena visual',icon:Layers},{value:'comunidade',label:'PNJs e comunidade',icon:Users},{value:'leitura',label:'Leitura e seleção (prévia)',icon:BookOpen},
+  ];
+  const extra=mobileExtra?.screen===screen?mobileExtra.section:null;
+  const mobileShell=<MobileCampaignShell master={!player} day={game.day} time="08:00" title={screenTitle} activeSection={extra??screenSection[screen]??'resumo'} sections={mobileSections}
+    conflictActive={conflictActive} pendingDamage={player?game.publicConflict?.pendingDamage.length??0:0}
+    status={<span className="mobile-save-status salvo" role="status" aria-label="Prévia local">Prévia</span>}
+    onNavigate={section=>{if(section==='chat'||section==='mais'){setMobileExtra({section,screen});return;}setMobileExtra(null);setScreen(sectionScreens[section]??screen);}}
+    scenePressure={player?{noise:game.noise,fear:game.fear}:undefined} notices={null}
+    tools={<div className="mobile-tool-group"><ThemeToggle placement="campaign"/></div>}
+    chat={<TableChat game={game} edit={edit} role={player?'jogador':'mestre'} survivorId={player?actor.id:null} onClose={()=>setMobileExtra(null)}/>}>{pageContent}</MobileCampaignShell>;
+  return <PlayerSimulationContext.Provider value={simulation}><div className={`qa-preview${screen==='map'?' is-map':screen==='overview'?' is-overview':''}`}><div className="qa-controls"><b>Prévia isolada · dados de exemplo</b>
+    <label>Perfil <select aria-label="Perfil" value={role} onChange={e=>setRole(e.target.value)}><option value="master">Mestre</option><option value="player">Jogador</option></select></label>
+    <label>Tela <select aria-label="Tela" value={screen} onChange={e=>setScreen(e.target.value)}><option value="overview">Visão geral</option><option value="map">Mapa e exploração</option><option value="scene">Cena visual</option><option value="sheet">Ficha</option><option value="shelter">Abrigo</option><option value="conflict">Conflito</option><option value="npcs">PNJs</option><option value="reading">Leitura e seleção</option></select></label>
+    <label>Tema <select aria-label="Tema" defaultValue="dark" onChange={e=>document.documentElement.dataset.theme=e.target.value}><option value="dark">Escuro</option><option value="light">Claro</option></select></label>
+    <label>Estilo <select aria-label="Estilo" defaultValue="tecnico" onChange={e=>document.documentElement.dataset.visualStyle=e.target.value}><option>tecnico</option><option>fiel</option><option>leitura</option></select></label>
+    <button onClick={()=>location.reload()}>Reiniciar exemplo</button>{query.has('chat')&&<button aria-expanded={chatOpen} onClick={()=>setChatOpen(!chatOpen)}>Chat</button>}<small>Nenhum dado é enviado à campanha real.</small>
+  </div>{mobile?mobileShell:desktopShell}<Toaster/></div></PlayerSimulationContext.Provider>;
 }
 createRoot(document.getElementById('root')!).render(<Preview/>);

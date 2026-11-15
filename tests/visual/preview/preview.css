@@ -13,3 +13,14 @@
   .qa-preview.is-map #table-chat { min-height: 0; }
   .qa-preview.is-map .table-chat { height: 100%; }
 }
+
+/* Celular: a prévia usa o MobileCampaignShell do app; controles e campanha dividem a altura da tela. */
+@media (max-width: 767px) {
+  .qa-preview { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+  .qa-preview > .qa-controls { flex: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 10px; padding: 8px 12px; }
+  .qa-preview > .qa-controls > b, .qa-preview > .qa-controls > small { grid-column: 1 / -1; font-size: .75rem; }
+  .qa-preview > .qa-controls label { justify-content: space-between; min-width: 0; font-size: .75rem; }
+  .qa-preview > .qa-controls select { min-width: 0; flex: 1; padding: 4px; }
+  .qa-preview > .qa-controls button { padding: 4px 8px; }
+  .qa-preview > .mobile-campaign { flex: 1; height: auto; min-height: 0; }
+}

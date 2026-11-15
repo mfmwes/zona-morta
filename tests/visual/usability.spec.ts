@@ -2,13 +2,16 @@ import { test, expect, type Page } from '@playwright/test';
 
 async function ready(page: Page, path: string) {
   await page.goto(path);
-  await expect(page.locator('.page')).toBeVisible();
+  // Abaixo de 768px a prévia usa o shell móvel do app (.mobile-page) no lugar de .page.
+  await expect(page.locator('.page, .mobile-page').first()).toBeVisible();
   await expect(page.locator('.runtime-error-panel')).toHaveCount(0);
   if(path.includes('screen=scene')) await expect(page.locator('.scene-viewport')).toBeVisible();
 }
 async function noOverflow(page: Page) {
   expect(await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth}))).toEqual(expect.objectContaining({width:expect.any(Number)}));
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+  // No shell móvel a rolagem fica no contêiner de conteúdo; um transbordo ali não aparece no documento.
+  expect(await page.evaluate(()=>[...document.querySelectorAll('.mobile-campaign-content')].every(el=>el.scrollWidth<=el.clientWidth+1))).toBe(true);
 }
 async function objectCount(page: Page) { return page.evaluate(()=>window.__qa.game().sceneBoard!.scenes[0].objects.length); }
 
