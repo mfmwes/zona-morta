@@ -2,13 +2,13 @@
 .conflict-condition-slot,.conflict-person > .survivor-condition-panel--compact { grid-column:1/-1;min-width:0; }
 .survivor-condition-panel--compact { gap:8px;padding:9px 0 0;border-top:1px solid var(--border); }
 .survivor-condition-panel--compact .survivor-condition-panel-heading { display:flex;flex-direction:row;align-items:center;flex-wrap:wrap;gap:8px; }
-.survivor-condition-panel--compact .survivor-condition-panel-heading h3 { font:650 .76rem/1.4 var(--font-sans);margin:0; }
-.survivor-condition-panel--compact .survivor-condition-panel-heading > button { width:auto;min-height:36px;margin-left:auto;padding:6px 9px;font-size:.75rem; }
-.survivor-condition-panel--compact .survivor-condition-count { min-width:20px;min-height:20px;font-size:.75rem; }
+.survivor-condition-panel--compact .survivor-condition-panel-heading h3 { font:650 var(--text-caption)/1.4 var(--font-sans);margin:0; }
+.survivor-condition-panel--compact .survivor-condition-panel-heading > button { width:auto;min-height:36px;margin-left:auto;padding:6px 9px;font-size:var(--text-caption); }
+.survivor-condition-panel--compact .survivor-condition-count { min-width:20px;min-height:20px;font-size:var(--text-caption); }
 .survivor-condition-panel--compact .survivor-condition-badges,.conflict-condition-slot > .survivor-condition-badges { justify-content:flex-start;gap:6px; }
 .survivor-condition-panel--compact .survivor-condition-badge,.conflict-condition-slot .survivor-condition-badge { min-height:34px;padding:6px 8px;white-space:normal;text-align:left; }
-.survivor-condition-panel--compact .survivor-condition-empty,.conflict-condition-slot .survivor-condition-empty { font-size:.75rem; }
-.conflict-trail-condition-count { position:absolute;left:-4px;bottom:-4px;display:inline-flex;align-items:center;gap:2px;padding:2px 4px;border:1px solid var(--border);border-radius:9px;background:var(--card);color:var(--foreground);font:700 .75rem/1 var(--font-sans); }
+.survivor-condition-panel--compact .survivor-condition-empty,.conflict-condition-slot .survivor-condition-empty { font-size:var(--text-caption); }
+.conflict-trail-condition-count { position:absolute;left:-4px;bottom:-4px;display:inline-flex;align-items:center;gap:2px;padding:2px 4px;border:1px solid var(--border);border-radius:9px;background:var(--card);color:var(--foreground);font:700 var(--text-caption)/1 var(--font-sans); }
 @media(max-width:620px) { .survivor-condition-panel--compact .survivor-condition-panel-heading > button { min-height:44px; } }
 
 .conflict-preparation {
@@ -22,7 +22,7 @@
   cursor: pointer;
   padding: 10px;
   color: var(--foreground);
-  font-size: .8rem;
+  font-size: var(--text-caption);
   font-weight: 650;
 }
 .conflict-preparation > summary svg {
@@ -54,7 +54,7 @@
 .conflict-player-prompt {
   margin-top: 12px;
   color: var(--muted-foreground);
-  font-size: .8rem;
+  font-size: var(--text-caption);
 }
 /* Mesmo recuo lateral da Trilha de Conflito; antes o botão encostava na borda do cartão. */
 .conflict-hero > .conflict-player-prompt { margin: 12px 22px 18px; }
@@ -77,7 +77,7 @@
 .conflict-pending-summary > div > span {
   flex-basis: 100%;
   color: var(--muted-foreground);
-  font-size: .8rem;
+  font-size: var(--text-caption);
 }
 .conflict-pending-summary ul {
   display: grid;
@@ -94,14 +94,14 @@
   border-radius: 5px;
   background: var(--surface-soft);
   color: var(--foreground);
-  font-size: .8rem;
+  font-size: var(--text-caption);
 }
 .conflict-pending-summary li > span { color: var(--muted-foreground); }
 .conflict-ability-reference .conflict-threat-detail-body {
   display: grid;
   gap: 12px;
   color: var(--foreground);
-  font-size: .8rem;
+  font-size: var(--text-caption);
   line-height: 1.5;
 }
 .conflict-ability-reference small {
@@ -163,7 +163,7 @@
 .conflict-threat-group-heading small,
 .conflict-threat-group-count small,
 .conflict-threat-group-count em {
-  font-size: .75rem;
+  font-size: var(--text-caption);
 }
 .conflict-threat--compact .conflict-threat-stats {
   grid-template-columns: 1.15fr .9fr .9fr 1.1fr;
@@ -179,7 +179,7 @@
 .conflict-threat--compact .conflict-stat small,
 .conflict-threat--compact .conflict-resource small {
   white-space: normal;
-  font-size: .75rem;
+  font-size: var(--text-caption);
   letter-spacing: 0;
 }
 .conflict-threat--compact .conflict-stat b,
@@ -192,7 +192,7 @@
 .conflict-person--compact .conflict-person-actions > button {
   min-height: 44px;
   padding: 6px;
-  font-size: .75rem;
+  font-size: var(--text-caption);
 }
 .conflict-threat--compact .conflict-threat-actions > button:last-child { grid-column: auto; }
 .conflict-threat--compact .conflict-threat-details {
@@ -203,7 +203,7 @@
   min-height: 36px;
   padding: 6px 8px;
   color: var(--foreground);
-  font-size: .78rem;
+  font-size: var(--text-caption);
 }
 .conflict-threat-details > summary:focus-visible,
 .conflict-condition-tags button:focus-visible {
@@ -228,12 +228,12 @@
   border-radius: 5px;
   background: var(--surface-soft);
   color: var(--foreground);
-  font-size: .75rem;
+  font-size: var(--text-caption);
   overflow-wrap: anywhere;
 }
 .conflict-person-copy .conflict-request-badge {
   color: var(--foreground);
-  font-size: .75rem;
+  font-size: var(--text-caption);
 }
 .conflict-person--compact .conflict-person-name { flex-wrap: wrap; }
 .conflict-person--compact .conflict-person-name > b {
@@ -241,7 +241,7 @@
   white-space: normal;
   overflow-wrap: anywhere;
 }
-.conflict-person--compact .conflict-resource small { font-size: .75rem; white-space: normal; }
+.conflict-person--compact .conflict-resource small { font-size: var(--text-caption); white-space: normal; }
 /* Rótulo acima do valor, sem caixa alta: "Estresse" e "Esperança" aparecem inteiros.
    Quando o cartão fica estreito, as caixas passam para a linha de baixo em vez de transbordar. */
 .conflict-person--compact .conflict-survivor-resources {
@@ -262,7 +262,7 @@
 .conflict-threat-detail-body .conflict-condition-editor > button { min-height: 44px; }
 .conflict-person--compact .conflict-person-actions { grid-column: 1 / -1; }
 .conflict-threat--compact .conflict-state-badge,
-.conflict-threat--compact .conflict-focus-badge { font-size: .75rem; }
+.conflict-threat--compact .conflict-focus-badge { font-size: var(--text-caption); }
 @container (max-width: 760px) {
   .conflict-threat-grid { grid-template-columns: 1fr; padding: 8px; }
 }
@@ -287,7 +287,7 @@
   border-radius: 6px;
   background: var(--surface-soft);
   color: var(--foreground);
-  font-size: .78rem;
+  font-size: var(--text-caption);
 }
 .conflict-reference-trigger > span:first-child { display: inline-flex; align-items: center; gap: 4px; }
 .conflict-reference-sheet[data-slot="sheet-content"] {
@@ -316,6 +316,11 @@
 
 /* Cartão "Você" na visão do jogador: os próprios recursos e o retorno do último dano. */
 .conflict-self-resources { margin-top: 8px; max-width: 420px; }
-.conflict-self-resources .conflict-resource small { font-size: .75rem; text-transform: none; letter-spacing: 0; }
+.conflict-self-resources .conflict-resource small { font-size: var(--text-caption); text-transform: none; letter-spacing: 0; }
 .conflict-self-resources .conflict-resource b { font-size: .85rem; }
-.conflict-self-note { margin: 8px 0 0; padding: 6px 10px; border-left: 3px solid var(--primary); border-radius: 6px; background: color-mix(in srgb, var(--primary) 10%, var(--card)); color: var(--foreground); font-size: .8rem; }
+/* Mesmo padrão do cartão compacto do mestre: rótulo acima do valor e caixas que descem de linha
+   em vez de truncar "Estresse" e "Esperança" em telas estreitas. */
+.conflict-survivor-resources.conflict-self-resources { grid-template-columns: repeat(auto-fit, minmax(5.75rem, 1fr)); }
+.conflict-self-resources .conflict-resource > span:first-child { flex-direction: column; align-items: flex-start; gap: 3px; }
+.conflict-self-resources .conflict-resource small { max-width: 100%; white-space: normal; }
+.conflict-self-note { margin: 8px 0 0; padding: 6px 10px; border-left: 3px solid var(--primary); border-radius: 6px; background: color-mix(in srgb, var(--primary) 10%, var(--card)); color: var(--foreground); font-size: var(--text-caption); }

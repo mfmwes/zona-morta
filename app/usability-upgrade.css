@@ -4,7 +4,7 @@
 .choice-card-icon { display:grid; place-items:center; width:34px; height:34px; border-radius:8px; background:var(--card); color:var(--primary); }
 .choice-card-copy { display:grid; gap:3px; min-width:0; overflow-wrap:anywhere; }
 .choice-card-copy b { font:700 .86rem/1.35 var(--font-sans); }
-.choice-card-copy small { font:400 .76rem/1.45 var(--font-sans); color:var(--muted-foreground); }
+.choice-card-copy small { font:400 var(--text-caption)/1.45 var(--font-sans); color:var(--muted-foreground); }
 .choice-card-mark { display:grid; place-items:center; width:20px; height:20px; border:1px solid var(--input); border-radius:5px; }
 .choice-card.is-selected { border-color:var(--primary); background:color-mix(in srgb,var(--primary) 9%,var(--card)); }
 .choice-card.is-selected .choice-card-mark { background:var(--primary); color:var(--primary-foreground); border-color:var(--primary); }
@@ -21,7 +21,7 @@
 .player-attention { padding:14px; margin-bottom:20px; }
 .player-attention > header { display:flex; align-items:center; gap:8px; margin-bottom:10px; color:var(--foreground); }
 .player-attention h2 { font-size:.9rem; font-weight:750; }
-.player-attention > header > span { border-radius:20px; padding:2px 8px; background:var(--primary); color:var(--primary-foreground); font-size:.75rem; }
+.player-attention > header > span { border-radius:20px; padding:2px 8px; background:var(--primary); color:var(--primary-foreground); font-size:var(--text-caption); }
 .player-attention-items { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr)); gap:8px; }
 .player-attention-items > button { display:flex; align-items:center; gap:10px; text-align:left; min-width:0; min-height:56px; padding:12px; border:1px solid var(--border); border-radius:7px; color:var(--foreground); background:var(--surface-soft,var(--card)); }
 .player-attention-items > button.is-danger { border-left:3px solid var(--destructive); }
@@ -29,7 +29,7 @@
 .player-attention-items > button:focus-visible { outline:2px solid var(--ring); outline-offset:2px; }
 .player-attention-items > button > span { flex:1; display:grid; gap:4px; min-width:0; overflow-wrap:anywhere; }
 .player-attention-items b { font-size:.86rem; }
-.player-attention-items small { font-size:.78rem; line-height:1.45; color:var(--muted-foreground); }
+.player-attention-items small { font-size:var(--text-caption); line-height:1.45; color:var(--muted-foreground); }
 .player-attention-items svg { flex-shrink:0; }
 .scene-library-mode { grid-template-columns:repeat(2,minmax(0,1fr)); }
 .scene-library-mode > button:last-child { grid-column:1/-1; }
