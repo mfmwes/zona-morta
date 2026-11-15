@@ -313,3 +313,9 @@
   .conflict-reference-trigger,
   .conflict-threat--compact .conflict-threat-details > summary { min-height: 44px; }
 }
+
+/* Cartão "Você" na visão do jogador: os próprios recursos e o retorno do último dano. */
+.conflict-self-resources { margin-top: 8px; max-width: 420px; }
+.conflict-self-resources .conflict-resource small { font-size: .72rem; text-transform: none; letter-spacing: 0; }
+.conflict-self-resources .conflict-resource b { font-size: .85rem; }
+.conflict-self-note { margin: 8px 0 0; padding: 6px 10px; border-left: 3px solid var(--primary); border-radius: 6px; background: color-mix(in srgb, var(--primary) 10%, var(--card)); color: var(--foreground); font-size: .8rem; }
