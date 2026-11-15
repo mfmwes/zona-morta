@@ -406,6 +406,9 @@ html[data-visual-style="tecnico"] {
 }
 @media (max-width: 767px) {
   html:has(.mobile-campaign) .theme-controls--global { display: none; }
+  /* Na tela "Mais" os controles ficam no fluxo da página. O isolamento mantém o z-index deles
+     dentro do grupo, para não cobrirem diálogos abertos a partir dali (ex.: Encerrar o dia). */
+  .mobile-tool-group { isolation: isolate; }
   .mobile-tool-group .theme-controls--campaign { position: static; display: flex; flex-wrap: wrap; width: 100%; }
   .mobile-tool-group .theme-controls .theme-toggle { flex: 1; min-width: 130px; }
   .mobile-tool-group .appearance-trigger .appearance-label { display: inline; }
