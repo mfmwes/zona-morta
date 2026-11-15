@@ -73,7 +73,7 @@
     min-height: 56px;
     align-self: stretch;
     padding: 6px 2px;
-    font-size: .75rem;
+    font-size: var(--text-caption);
     line-height: 1.2;
   }
   .app-shell .rail-nav > button > span {

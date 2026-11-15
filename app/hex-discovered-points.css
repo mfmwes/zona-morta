@@ -60,21 +60,21 @@
 }
 .hex-location-path > span { min-width: 0; padding: 12px; overflow-wrap: anywhere; }
 .hex-location-path > span + span { border-left: 1px solid var(--border); }
-.hex-location-path small { display: block; color: var(--muted-foreground); font-size: .75rem; margin-bottom: 4px; }
+.hex-location-path small { display: block; color: var(--muted-foreground); font-size: var(--text-caption); margin-bottom: 4px; }
 .hex-location-path b { font-size: .9rem; }
 .hex-search-step { display: grid; gap: 12px; padding-top: 14px; border-top: 1px solid var(--border); }
 .hex-search-step h3 { display: flex; align-items: center; gap: 9px; margin: 0; font-size: .95rem; font-weight: 750; }
-.hex-search-step h3 > span { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 50%; color: var(--primary-foreground); background: var(--primary); font-size: .75rem; flex: none; }
+.hex-search-step h3 > span { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 50%; color: var(--primary-foreground); background: var(--primary); font-size: var(--text-caption); flex: none; }
 .hex-search-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; min-width: 0; }
 .hex-search-choices > label { display: flex; align-items: flex-start; gap: 9px; border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; cursor: pointer; background: var(--card); min-width: 0; }
 .hex-search-choices input { flex: none; margin-top: 3px; accent-color: var(--primary); }
 .hex-search-choices b { display: block; font-size: .84rem; }
-.hex-search-choices small { display: block; color: var(--muted-foreground); font-size: .76rem; line-height: 1.4; margin-top: 4px; }
+.hex-search-choices small { display: block; color: var(--muted-foreground); font-size: var(--text-caption); line-height: 1.4; margin-top: 4px; }
 .hex-search-choices label:has(input:checked) { border-color: var(--primary); background: var(--accent); }
 .hex-search-choices label:has(input:disabled) { opacity: .65; cursor: default; }
 .hex-search-choices label:has(input:focus-visible) { outline: 2px solid var(--ring); outline-offset: 2px; }
 .hex-search-history { padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); }
-.hex-search-history > b { font-size: .8rem; }
+.hex-search-history > b { font-size: var(--text-caption); }
 @media (max-width: 480px) {
   .hex-search-choices, .hex-location-path { grid-template-columns: minmax(0, 1fr); }
   .hex-location-path > span + span { border-left: 0; border-top: 1px solid var(--border); }
@@ -132,7 +132,7 @@ html[data-theme="dark"] .hex-event-active {
 }
 .hex-search-location-summary > div:first-child > small {
   color: var(--muted-foreground);
-  font-size: .75rem;
+  font-size: var(--text-caption);
 }
 .hex-search-location-summary > label,
 .hex-search-location-summary > div:last-child {
@@ -163,13 +163,13 @@ html[data-theme="dark"] .hex-event-active {
   padding: 2px 3px 5px;
 }
 .hex-search-area-panel-head b {
-  font-size: .78rem;
+  font-size: var(--text-caption);
   text-transform: uppercase;
   letter-spacing: .055em;
 }
 .hex-search-area-panel-head small {
   color: var(--muted-foreground);
-  font-size: .75rem;
+  font-size: var(--text-caption);
 }
 .hex-search-area-list {
   display: grid;
@@ -221,12 +221,12 @@ html[data-theme="dark"] .hex-event-active {
 }
 .hex-search-area-card b {
   overflow-wrap: anywhere;
-  font-size: .77rem;
+  font-size: var(--text-caption);
   line-height: 1.25;
 }
 .hex-search-area-card small {
   color: var(--muted-foreground);
-  font-size: .75rem;
+  font-size: var(--text-caption);
   line-height: 1.25;
 }
 .hex-search-add-area {
@@ -236,7 +236,7 @@ html[data-theme="dark"] .hex-event-active {
 .hex-search-add-area summary {
   cursor: pointer;
   color: var(--muted-foreground);
-  font-size: .75rem;
+  font-size: var(--text-caption);
   font-weight: 750;
 }
 .hex-search-add-area[open] {
@@ -273,7 +273,7 @@ html[data-theme="dark"] .hex-event-active {
   border-radius: 999px;
   background: var(--background);
   color: var(--muted-foreground);
-  font-size: .75rem;
+  font-size: var(--text-caption);
   font-weight: 800;
   white-space: nowrap;
 }
@@ -308,11 +308,11 @@ html[data-theme="dark"] .hex-event-active {
   gap: 2px;
 }
 .hex-search-narrative-note b {
-  font-size: .76rem;
+  font-size: var(--text-caption);
 }
 .hex-search-narrative-note small {
   color: var(--muted-foreground);
-  font-size: .75rem;
+  font-size: var(--text-caption);
   line-height: 1.4;
 }
 @media (max-width: 760px) {
@@ -405,7 +405,7 @@ html[data-theme="dark"] .hex-event-active {
   border-radius: 999px;
   background: var(--background);
   color: var(--muted-foreground);
-  font-size: .75rem;
+  font-size: var(--text-caption);
   font-weight: 750;
 }
 .hex-deep-search-complete {
@@ -443,11 +443,11 @@ html[data-theme="dark"] .hex-event-active {
   gap: 2px;
 }
 .hex-quick-search-head b {
-  font-size: .78rem;
+  font-size: var(--text-caption);
 }
 .hex-quick-search-head small {
   color: var(--muted-foreground);
-  font-size: .75rem;
+  font-size: var(--text-caption);
   line-height: 1.35;
 }
 .hex-quick-search-options {
@@ -472,13 +472,13 @@ html[data-theme="dark"] .hex-event-active {
   border-color: color-mix(in srgb, var(--primary) 58%, var(--border));
 }
 .hex-quick-search-button > span {
-  font-size: .75rem;
+  font-size: var(--text-caption);
   font-weight: 800;
 }
 .hex-quick-search-button > small {
   overflow: hidden;
   color: var(--muted-foreground);
-  font-size: .75rem;
+  font-size: var(--text-caption);
   line-height: 1.22;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -497,7 +497,7 @@ html[data-theme="dark"] .hex-event-active {
 .hex-quick-search-notice {
   margin: 0;
   color: var(--muted-foreground);
-  font-size: .75rem;
+  font-size: var(--text-caption);
   line-height: 1.4;
 }
 .hex-quick-search-notice.is-visible {
@@ -563,13 +563,13 @@ html[data-theme="dark"] .hex-event-active {
 .hex-visible-generator-start b,
 .hex-visible-suggestion-main b,
 .hex-visible-resolved b {
-  font-size: .76rem;
+  font-size: var(--text-caption);
 }
 .hex-visible-generator-start small,
 .hex-visible-suggestion-main small,
 .hex-visible-resolved small {
   color: var(--muted-foreground);
-  font-size: .75rem;
+  font-size: var(--text-caption);
   line-height: 1.4;
 }
 .hex-visible-suggestion.has-item {
@@ -591,7 +591,7 @@ html[data-theme="dark"] .hex-event-active {
 }
 .hex-visible-manual > summary {
   cursor: pointer;
-  font-size: .75rem;
+  font-size: var(--text-caption);
   font-weight: 750;
   color: var(--muted-foreground);
 }
@@ -631,10 +631,10 @@ html[data-theme="dark"] .hex-event-active {
   min-width: 0;
   text-align: left;
 }
-.hex-sector-preparation-trigger b { font-size: .78rem; }
+.hex-sector-preparation-trigger b { font-size: var(--text-caption); }
 .hex-sector-preparation-trigger small {
   color: var(--muted-foreground);
-  font-size: .75rem;
+  font-size: var(--text-caption);
   font-weight: 500;
 }
 .hex-sector-preparation[data-state="open"] .hex-sector-preparation-trigger > svg:last-child { transform: rotate(180deg); }
@@ -666,21 +666,21 @@ html[data-theme="dark"] .hex-event-active {
   align-items: center;
   gap: 6px;
   color: var(--muted-foreground);
-  font-size: .75rem;
+  font-size: var(--text-caption);
   font-weight: 750;
 }
 .hex-point-session-state > span.is-active { color: #936a2d; }
 .hex-point-session-state > span.has-stock { color: var(--primary); }
 .hex-point-session-state small {
   color: var(--muted-foreground);
-  font-size: .75rem;
+  font-size: var(--text-caption);
   line-height: 1.35;
 }
 .hex-point-session-issue {
   flex-basis: 100%;
   margin: 0;
   color: var(--muted-foreground);
-  font-size: .75rem;
+  font-size: var(--text-caption);
 }
 .hex-point-master-details {
   margin-top: 9px;
@@ -690,7 +690,7 @@ html[data-theme="dark"] .hex-event-active {
 .hex-point-master-details > summary {
   cursor: pointer;
   color: var(--muted-foreground);
-  font-size: .75rem;
+  font-size: var(--text-caption);
   font-weight: 750;
 }
 .hex-point-master-details > div {
@@ -733,16 +733,16 @@ html[data-theme="dark"] .hex-event-active {
   border-radius: 50%;
   background: var(--muted);
   color: var(--muted-foreground);
-  font: 800 .75rem var(--font-mono);
+  font: 800 var(--text-caption) var(--font-mono);
 }
 .hex-search-flow > button b {
   min-width: 0;
-  font-size: .75rem;
+  font-size: var(--text-caption);
 }
 .hex-search-flow > button small {
   overflow: hidden;
   color: var(--muted-foreground);
-  font-size: .75rem;
+  font-size: var(--text-caption);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -773,14 +773,14 @@ html[data-theme="dark"] .hex-event-active {
 }
 .hex-search-recommended small {
   color: var(--primary);
-  font: 800 .75rem var(--font-mono);
+  font: 800 var(--text-caption) var(--font-mono);
   letter-spacing: .08em;
 }
 .hex-search-recommended b { font-size: .82rem; }
 .hex-search-recommended p {
   margin: 0;
   color: var(--muted-foreground);
-  font-size: .75rem;
+  font-size: var(--text-caption);
   line-height: 1.4;
 }
 .hex-location-preparation {
@@ -795,7 +795,7 @@ html[data-theme="dark"] .hex-event-active {
   cursor: pointer;
   padding: 9px 11px;
   color: var(--muted-foreground);
-  font-size: .75rem;
+  font-size: var(--text-caption);
   font-weight: 750;
 }
 .hex-location-preparation > summary span {
@@ -854,10 +854,10 @@ html[data-theme="dark"] .hex-event-active {
   gap: 1px;
   min-width: 0;
 }
-.hex-search-stock-row b { font-size: .76rem; }
+.hex-search-stock-row b { font-size: var(--text-caption); }
 .hex-search-stock-row small {
   color: var(--muted-foreground);
-  font-size: .75rem;
+  font-size: var(--text-caption);
 }
 .hex-search-stock-row > strong {
   min-width: 28px;
@@ -878,7 +878,7 @@ html[data-theme="dark"] .hex-event-active {
   cursor: pointer;
   padding: 8px 10px;
   color: var(--muted-foreground);
-  font-size: .75rem;
+  font-size: var(--text-caption);
   font-weight: 750;
 }
 .hex-collection-options > div,
@@ -891,7 +891,7 @@ html[data-theme="dark"] .hex-event-active {
 }
 .hex-collection-start small {
   color: var(--muted-foreground);
-  font-size: .75rem;
+  font-size: var(--text-caption);
 }
 .hex-collection-plan {
   display: grid;
@@ -911,10 +911,10 @@ html[data-theme="dark"] .hex-event-active {
   background: color-mix(in srgb, var(--accent) 42%, var(--card));
 }
 .hex-collection-plan > div > span { display: grid; gap: 1px; }
-.hex-collection-plan b { font-size: .75rem; }
+.hex-collection-plan b { font-size: var(--text-caption); }
 .hex-collection-plan small {
   color: var(--muted-foreground);
-  font-size: .75rem;
+  font-size: var(--text-caption);
 }
 .hex-collection-plan svg { flex: none; color: var(--primary); }
 .hex-collection-actions {

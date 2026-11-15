@@ -7,11 +7,11 @@
 .world-map-search input:focus-visible { outline: 2px solid #edc578; outline-offset: 2px; }
 .world-map-results { position: absolute; top: calc(100% + 4px); left: 0; right: 0; border: 1px solid #668985; border-radius: 6px; background: #132b2e; padding: 6px; box-shadow: 0 8px 24px #0005; }
 .world-map-results button { display: block; width: 100%; padding: 9px; text-align: left; border-radius: 4px; font-size: .88rem; }
-.world-map-results p { margin: 6px; font-size: .8rem; color: #c3d5ce; }
+.world-map-results p { margin: 6px; font-size: var(--text-caption); color: #c3d5ce; }
 .map-viewport.world-map-viewport { height: clamp(330px, 48vw, 490px); overflow: hidden; touch-action: none; user-select: none; cursor: grab; }
 .map-viewport.world-map-viewport:active { cursor: grabbing; }
 .map-viewport.world-map-viewport > svg { width: 100%; height: 100%; min-width: 0; max-height: none; }
-.world-map-hint { padding: 8px 12px; color: #c3d5ce; font-size: .8rem; border-top: 1px solid #426366; }
+.world-map-hint { padding: 8px 12px; color: #c3d5ce; font-size: var(--text-caption); border-top: 1px solid #426366; }
 .world-expansion-preview { border-radius: 8px; overflow: hidden; background: #132b2e; color: #edf5ed; }
 .world-expansion-preview svg { display: block; width: 100%; height: 180px; padding: 8px; }
 .world-expansion-preview p { padding: 10px; font-size: .85rem; border-top: 1px solid #426366; }
@@ -29,19 +29,19 @@
 .world-route-editor > .field, .world-route-editor > p { margin-top: 10px; }
 .world-route-editor-row { display: flex; align-items: end; gap: 12px; margin-top: 12px; }
 .world-route-editor-row > div { min-width: 0; flex: 1; }
-.world-route-block { display: flex; gap: 7px; align-items: center; font-size: .8rem; padding-bottom: 9px; }
+.world-route-block { display: flex; gap: 7px; align-items: center; font-size: var(--text-caption); padding-bottom: 9px; }
 .journey-planner { margin-top: 16px; border-block: 1px solid var(--border); padding-block: 16px; }
 .journey-planner-heading, .journey-next-step { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .journey-planner > p { margin-top: 8px; }
 .journey-planner-controls { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin-block: 14px; }
 .journey-planner-controls .metric { padding: 10px; }
 .journey-planner-stats { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; margin-block: 16px; }
-.journey-planner-stats span, .journey-planner-stats small { display: block; font-size: .75rem; color: var(--muted-foreground); }
+.journey-planner-stats span, .journey-planner-stats small { display: block; font-size: var(--text-caption); color: var(--muted-foreground); }
 .journey-planner-stats b { display: block; margin-top: 3px; font-size: .9rem; font-variant-numeric: tabular-nums; }
 .journey-stages { display: grid; gap: 10px; margin-block: 16px; }
 .journey-stages li { display: flex; align-items: center; gap: 10px; padding-block: 10px; border-top: 1px solid var(--border); }
 .journey-stages li > div { flex: 1; min-width: 0; }
-.journey-stages span, .journey-stages small { display: block; font-size: .78rem; color: var(--muted-foreground); overflow-wrap: anywhere; }
+.journey-stages span, .journey-stages small { display: block; font-size: var(--text-caption); color: var(--muted-foreground); overflow-wrap: anywhere; }
 .journey-stages b { font-size: .85rem; }
 .journey-next-step { margin-top: 14px; justify-content: flex-start; flex-wrap: wrap; }
 @media (max-width: 700px) {
@@ -51,6 +51,6 @@
 }
 @media (max-width: 600px) {
   .world-map-toolbar { padding: 10px; }
-  .world-map-toolbar button { font-size: .78rem; }
+  .world-map-toolbar button { font-size: var(--text-caption); }
   .map-viewport.world-map-viewport { height: 360px; }
 }

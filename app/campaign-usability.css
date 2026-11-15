@@ -1,11 +1,11 @@
 /* Task controls reuse the campaign palette in both themes. */
 .campaign-list-toolbar { display:grid; grid-template-columns:minmax(0,1fr) minmax(155px,.45fr); gap:12px; align-items:end; }
 .campaign-list-toolbar label { display:flex; align-items:center; gap:6px; }
-.campaign-list-count { margin:0; color:var(--muted-foreground); font-size:.78rem; line-height:1.5; }
-.campaign-filter-status { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px; font-size:.78rem; color:var(--muted-foreground); }
+.campaign-list-count { margin:0; color:var(--muted-foreground); font-size:var(--text-caption); line-height:1.5; }
+.campaign-filter-status { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px; font-size:var(--text-caption); color:var(--muted-foreground); }
 .campaign-attention-filters { display:grid; gap:10px; padding:0 0 14px; margin-bottom:12px; border-bottom:1px solid var(--border); }
 .campaign-filter-pair { display:grid; grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr); gap:10px; }
-.campaign-attention-filters label,.campaign-attention-filters .field-label { font-size:.76rem; }
+.campaign-attention-filters label,.campaign-attention-filters .field-label { font-size:var(--text-caption); }
 .campaign-attention-filters input,.campaign-attention-filters select { font-size:.82rem; }
 .campaign-inventory-filters { display:grid; gap:8px; margin-top:16px; }
 .campaign-empty { padding:16px; border:1px dashed var(--border); border-radius:8px; background:var(--surface-soft); color:var(--muted-foreground); line-height:1.5; }
@@ -22,7 +22,7 @@ html[data-theme="dark"] .campaign-form-error { color:#efaa98; }
 .campaign-checkbox { display:flex; align-items:flex-start; gap:9px; font-size:.85rem; line-height:1.4; cursor:pointer; }
 .campaign-checkbox input { width:18px; height:18px; flex:none; margin-top:2px; accent-color:var(--primary); }
 .campaign-checkbox span { display:grid; gap:4px; }
-.campaign-checkbox small { color:var(--muted-foreground); font-size:.76rem; }
+.campaign-checkbox small { color:var(--muted-foreground); font-size:var(--text-caption); }
 .campaign-session-history { margin-top:12px; }
 .campaign-session-history summary,.campaign-administrative summary { font-size:.86rem; font-weight:700; cursor:pointer; padding:10px 0; }
 .campaign-session-history > ul,.campaign-session-history ul { padding-left:18px; list-style:disc; }
@@ -41,7 +41,7 @@ html[data-theme="dark"] .campaign-form-error { color:#efaa98; }
 .campaign-search-result:hover,.campaign-search-result:focus-visible { background:var(--surface-soft); border-color:var(--primary); }
 .campaign-search-result > span { display:grid; gap:4px; min-width:0; }
 .campaign-search-result b { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; font-size:.9rem; line-height:1.4; overflow-wrap:anywhere; }
-.campaign-search-result small { color:var(--muted-foreground); font-size:.75rem; }
+.campaign-search-result small { color:var(--muted-foreground); font-size:var(--text-caption); }
 .campaign-search-result > svg { flex:none; color:var(--primary); }
 .campaign-skip-link { position:fixed; top:12px; left:12px; z-index:100; padding:12px 18px; border-radius:6px; background:var(--primary); color:var(--primary-foreground); transform:translateY(-160%); }
 .campaign-skip-link:focus { transform:translateY(0); }
