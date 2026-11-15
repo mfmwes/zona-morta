@@ -5297,3 +5297,17 @@ html[data-theme="dark"] .condition-item-badge {
 html[data-theme="dark"] .exposure-support-card {
   background:color-mix(in srgb,#77a394 10%,var(--card));
 }
+
+/* Encerrar o dia · modo noturno dos elementos novos (pendências, etiquetas, rodapé). */
+html[data-theme="dark"] .day-close-dialog > [data-slot="dialog-footer"] { border-color:#344744; }
+html[data-theme="dark"] .day-close-pending { border-color:#7a4a42; background:#2e211e; color:#f0bdb4; }
+html[data-theme="dark"] .day-close-pending.is-clear { border-color:#3f6a5e; background:#1c2d28; color:#a9dccb; }
+html[data-theme="dark"] .day-close-person-name b { color:#e2eee8; }
+html[data-theme="dark"] .day-close-person-name small,
+html[data-theme="dark"] details.day-close-person > summary::after,
+html[data-theme="dark"] .day-close-collapsible > summary > div > b::after,
+html[data-theme="dark"] .day-close-rules > summary { color:#aebfba; }
+html[data-theme="dark"] .day-close-chip { border-color:#405650; background:#202d2c; color:#d9e5df; }
+html[data-theme="dark"] .day-close-chip.is-ok { border-color:#3f6a5e; background:#1c2d28; color:#a9dccb; }
+html[data-theme="dark"] .day-close-chip.is-warning { border-color:#7a4a42; background:#2e211e; color:#f0bdb4; }
+html[data-theme="dark"] .day-close-footer-note { color:#f0bdb4; }
