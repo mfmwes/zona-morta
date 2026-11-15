@@ -94,3 +94,51 @@
 /* Links de cabeçalho dos cartões ("Ver fichas", "Gerenciar"): mesmo estilo de link com seta em todo o painel. */
 .overview-header-link { gap: 4px; color: var(--primary); font-weight: 700; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--primary) 40%, transparent); text-underline-offset: 3px; }
 .overview-header-link:hover { text-decoration-color: currentColor; }
+
+/* Visão geral enxuta: situação, etiquetas, atalho principal e controle da mesa no mesmo bloco do topo. */
+.master-overview-hero { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "text actions" "chips control"; align-items: center; row-gap: 10px; }
+.master-overview-hero > div:first-child { grid-area: text; }
+.master-overview-chips { grid-area: chips; display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.master-overview-chips li { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border)); border-radius: 999px; background: color-mix(in srgb, var(--primary) 8%, var(--card)); color: var(--foreground); font-size: .8rem; }
+.master-overview-chips li b { font-family: var(--font-mono); }
+.master-overview-chips li.is-zero { border-color: var(--border); background: transparent; color: var(--muted-foreground); }
+.master-overview-chips li.is-active { border-color: var(--primary); }
+.master-overview-chips li.is-warning { border-color: #b58a45; background: color-mix(in srgb, #b58a45 16%, var(--card)); font-weight: 700; }
+.master-overview-chips li.is-danger { border-color: #c26756; background: color-mix(in srgb, #c26756 16%, var(--card)); font-weight: 700; }
+.master-overview-hero-actions { grid-area: actions; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
+.master-overview-table-control { grid-area: control; justify-self: end; }
+.master-overview-table-control .team-actions-panel, .master-overview-table-control .team-card { margin: 0; padding: 0; border: 0; background: transparent; box-shadow: none; }
+.master-overview-table-control .team-card { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.master-overview-table-control .team-card > h3 { margin: 0; font-size: .8rem; color: var(--muted-foreground); }
+.master-overview-table-control .team-policy-options label { display: inline-flex; align-items: center; gap: 6px; font-size: .85rem; }
+.master-overview-table-control .overview-pause-help { flex-basis: 100%; text-align: right; font-size: .75rem; }
+/* "Em andamento" dentro de "Equipe agora". */
+.master-overview-team .master-overview-work { display: grid; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+.master-overview-team .master-overview-work > h3 { display: flex; align-items: center; gap: 6px; margin: 0; font-size: .85rem; font-weight: 750; }
+.master-overview-work-empty { display: flex; align-items: center; gap: 6px; margin: 0; color: var(--muted-foreground); font-size: .8rem; }
+@media (min-width: 761px) {
+  .master-overview-grid { grid-template-areas: "team attention" "team resources"; }
+  .master-overview-team { grid-area: team; }
+  .master-overview-attention { grid-area: attention; }
+  .master-overview-resources { grid-area: resources; }
+}
+@media (min-width: 1100px) {
+  .overview-mode .master-overview { grid-template-rows: auto minmax(0, 1fr) auto; }
+}
+@media (max-width: 1099px) {
+  .master-overview-hero { grid-template-columns: 1fr; grid-template-areas: "text" "chips" "actions" "control"; }
+  .master-overview-hero-actions, .master-overview-table-control { justify-self: start; justify-content: flex-start; }
+  .master-overview-table-control .overview-pause-help { text-align: left; }
+}
+@media (min-width: 1100px) and (min-height: 650px) {
+  /* Reservas com a altura do conteúdo; "Precisa de atenção" fica com o espaço restante e rola por dentro. */
+  .overview-mode .master-overview-grid { grid-template-rows: minmax(0, 1fr) auto; }
+  .overview-mode .master-overview-resources .master-overview-resource-grid { flex: none; }
+}
+@media (min-width: 1100px) and (min-height: 650px) {
+  /* Reservas em linhas baixas: ícone, nome e valor lado a lado, para sobrar altura às pendências. */
+  .overview-mode .master-overview-resources .master-overview-resource-grid > span { grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; padding: 5px 9px; }
+  .overview-mode .master-overview-resources .master-overview-resource-grid > span > svg { grid-row: auto; width: 17px; height: 17px; }
+  .overview-mode .master-overview-resources .master-overview-resource-grid b { font-size: .95rem; }
+  .overview-mode .master-overview-resources > header { padding-bottom: 6px; margin-bottom: 6px; }
+}
