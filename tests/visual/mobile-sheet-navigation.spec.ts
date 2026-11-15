@@ -7,13 +7,8 @@ for (const viewport of [{ width: 360, height: 640 }, { width: 390, height: 844 }
     await page.setViewportSize(viewport);
     await page.goto('/?screen=sheet&role=player');
     await expect(page.locator('.mobile-sheet-navigation')).toBeVisible();
-    // The preview uses the desktop shell. Enable the production mobile dialog rules.
-    await page.evaluate(() => {
-      const marker = document.createElement('div');
-      marker.className = 'mobile-campaign';
-      marker.hidden = true;
-      document.body.appendChild(marker);
-    });
+    // Below 768px the preview renders the production mobile shell.
+    await expect(page.locator('.mobile-campaign')).toBeVisible();
 
     const more = page.locator('.mobile-sheet-navigation > button');
     for (const section of ['Atributos', 'Combate', 'Condições', 'História', 'Inventário', 'Habilidades', 'Resumo']) {
