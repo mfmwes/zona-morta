@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { UserPlus } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { Check, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -14,6 +14,11 @@ import { content, initialSurvivor, traits, type Survivor } from "@/lib/game";
 const defaultAttributes: Record<string, number> = {
   Agilidade: 0, Força: -1, Finesse: 1, Instinto: 1, Presença: 2, Conhecimento: 0,
 };
+
+/** Valores a distribuir entre os seis atributos: +2, +1, +1, 0, 0 e −1. */
+const attributePool: [number, number][] = [[2, 1], [1, 2], [0, 2], [-1, 1]];
+const signed = (value: number) => value > 0 ? `+${value}` : value < 0 ? `−${Math.abs(value)}` : "0";
+const stepTitles = ["Identidade", "Atuação agora", "Duas técnicas", "Kit inicial"] as const;
 
 export function CharacterWizard({ onCreate }: { onCreate: (survivor: Survivor) => void | Promise<void> }) {
   const [open, setOpen] = useState(false);
@@ -31,14 +36,33 @@ export function CharacterWizard({ onCreate }: { onCreate: (survivor: Survivor) =
   const [secondary, setSecondary] = useState("");
   const [protection, setProtection] = useState("");
   const [personal, setPersonal] = useState("");
+  const [step, setStep] = useState(0);
+  const bodyRef = useRef<HTMLDivElement>(null);
 
   const originData = content.origins.find(o => o.name === origin);
   const archetypeData = content.archetypes.find(a => a.name === archetype);
   const primaryData = content.primaries.find(a => a.name === primary);
   const availableTechniques = useMemo(() => content.techniques.filter(t => archetypeData?.tracks.includes(t.track)), [archetypeData]);
   const distribution = Object.values(attributes).sort((a, b) => a-b).join(",") === "-1,0,0,1,1,2";
-  const complete = name.trim() && origin && archetype && specialty && distribution
-    && freeExperience.trim() && techniques.length === 2 && primary && protection && personal;
+  // Cada etapa sabe se está completa; o salvamento continua exigindo todas.
+  const stepDone = [
+    Boolean(name.trim() && origin),
+    Boolean(archetype && specialty && distribution && freeExperience.trim()),
+    techniques.length === 2,
+    Boolean(primary && protection && personal),
+  ];
+  const complete = stepDone.every(Boolean);
+  const missingHint = [
+    "Informe o nome e a origem.",
+    !archetype || !specialty ? "Escolha arquétipo e especialização." : !distribution ? "Distribua os atributos." : "Escreva a segunda Experiência.",
+    `Escolha ${2 - techniques.length} técnica(s).`,
+    "Escolha arma primária, proteção e item pessoal.",
+  ][step];
+  const usedCount = (value: number) => Object.values(attributes).filter(current => current === value).length;
+  function goTo(next: number) {
+    setStep(Math.max(0, Math.min(stepTitles.length - 1, next)));
+    bodyRef.current?.scrollTo({ top: 0 });
+  }
 
   async function create() {
     if (!complete || saving) return;
@@ -55,16 +79,25 @@ export function CharacterWizard({ onCreate }: { onCreate: (survivor: Survivor) =
     } finally { setSaving(false); }
   }
 
-  return <Dialog open={open} onOpenChange={value => { if (!saving) setOpen(value); }}>
+  return <Dialog open={open} onOpenChange={value => { if (!saving) { setOpen(value); if (value) setStep(0); } }}>
     <DialogTrigger asChild><Button><UserPlus /> Criar sobrevivente</Button></DialogTrigger>
-    <DialogContent className="character-wizard-dialog max-h-[92vh] overflow-y-auto sm:max-w-[820px]" onInteractOutside={event => { if (saving) event.preventDefault(); }}>
+    <DialogContent className="character-wizard-dialog sm:max-w-[820px]" onInteractOutside={event => { if (saving) event.preventDefault(); }}>
       <DialogHeader>
         <p className="dossier-title">Dossiê de sobrevivente / nível 1</p>
         <DialogTitle>Quem você era. Quem se tornou.</DialogTitle>
-        <DialogDescription>Origem e arquétipo são escolhas independentes. Siga as quatro partes e revise o kit antes de salvar.</DialogDescription>
+        <DialogDescription>Origem e arquétipo são escolhas independentes. Siga as quatro etapas e revise o kit antes de salvar.</DialogDescription>
       </DialogHeader>
-      <div className="grid gap-6">
-        <section className="grid gap-3">
+      <ol className="wizard-steps" aria-label="Etapas da criação">
+        {stepTitles.map((title, index) => <li key={title}>
+          <button type="button" className={`wizard-step${index === step ? " is-current" : ""}${stepDone[index] ? " is-done" : ""}`}
+            aria-current={index === step ? "step" : undefined} onClick={() => goTo(index)}>
+            <span className="wizard-step-number" aria-hidden="true">{stepDone[index] ? <Check size={14} /> : index + 1}</span>
+            <span className="wizard-step-title">{title}<span className="sr-only">{stepDone[index] ? " · completa" : " · pendente"}</span></span>
+          </button>
+        </li>)}
+      </ol>
+      <div className="wizard-body" ref={bodyRef}>
+        {step === 0 && <section className="grid gap-3">
           <h3 className="section-title">01 / Identidade</h3>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Nome" value={name} onChange={setName} placeholder="Como os outros chamam você?" />
@@ -77,8 +110,8 @@ export function CharacterWizard({ onCreate }: { onCreate: (survivor: Survivor) =
               <span className="subtle">{originData.past}</span></div>
           </div>}
           <Field label="Pessoa importante, perda ou promessa" value={past} onChange={setPast} placeholder="Uma resposta pode ligar os três." />
-        </section>
-        <section className="grid gap-3 border-t pt-5">
+        </section>}
+        {step === 1 && <section className="grid gap-3">
           <h3 className="section-title">02 / Atuação agora</h3>
           <div className="grid gap-3 sm:grid-cols-2">
             <Pick label="Arquétipo" value={archetype} options={content.archetypes.map(a => a.name)}
@@ -93,18 +126,25 @@ export function CharacterWizard({ onCreate }: { onCreate: (survivor: Survivor) =
               {specialty && <span className="wizard-specialty"><AbilityArt abilityId={`specialty:${specialty}`} size="tiny" /><span><b>{specialty}:</b> {archetypeData.specialties.find(s => s.name === specialty)?.effect}</span></span>}
               <span className="wizard-specialty"><AbilityArt abilityId={`hope:${archetype}`} size="tiny" /><span><b>Habilidade de Esperança:</b> {archetypeData.hopeFeature.split(":")[0]}</span></span></div>
           </div>}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {traits.map(trait => <Pick key={trait} label={traitLabel(trait)} value={String(attributes[trait])}
-              options={["-1", "0", "1", "2"]} onChange={value => setAttributes({ ...attributes, [trait]: Number(value) })} />)}
-          </div>
-          <p className={`text-sm ${distribution ? "text-emerald-700" : "text-red-700"}`}>
-            {distribution ? "Distribuição correta: +2, +1, +1, 0, 0, −1." : "Distribua exatamente +2, +1, +1, 0, 0 e −1."}
-          </p>
+          <fieldset className="wizard-attributes">
+            <legend className="field-label">Atributos · toque no valor de cada um</legend>
+            <div className="wizard-attribute-pool" role="status" aria-live="polite">
+              {attributePool.map(([value, total]) => { const used = usedCount(value); return <span key={value} className={used === total ? "is-ok" : used > total ? "is-over" : ""}>
+                <b>{signed(value)}</b> {used}/{total}</span>; })}
+              <em className={distribution ? "is-ok" : ""}>{distribution ? "Distribuição correta" : "Use exatamente +2, +1, +1, 0, 0 e −1"}</em>
+            </div>
+            {traits.map(trait => <div key={trait} className="wizard-attribute-row" role="radiogroup" aria-label={traitLabel(trait)}>
+              <span className="wizard-attribute-name">{traitLabel(trait)}</span>
+              <div className="wizard-attribute-values">{[-1, 0, 1, 2].map(value => <button key={value} type="button" role="radio" aria-checked={attributes[trait] === value}
+                className={attributes[trait] === value ? "is-selected" : undefined} onClick={() => setAttributes({ ...attributes, [trait]: value })}>{signed(value)}</button>)}</div>
+            </div>)}
+          </fieldset>
           <Field label="Segunda Experiência +2 (custa 1 Esperança ao usar)" value={freeExperience} onChange={setFreeExperience}
             placeholder="Ex.: Conheço os becos do centro" />
-        </section>
-        <section className="grid gap-3 border-t pt-5">
+        </section>}
+        {step === 2 && <section className="grid gap-3">
           <h3 className="section-title">03 / Duas técnicas</h3>
+          {!archetypeData && <p className="text-sm subtle">Escolha um arquétipo na etapa 2 para ver as técnicas disponíveis.</p>}
           <p className="intro-line">Escolha duas das trilhas do arquétipo, inclusive ambas da mesma trilha.</p>
           {availableTechniques.map(technique => <label key={technique.name} className="list-card flex gap-3 cursor-pointer">
             <Checkbox className="mt-1" checked={techniques.includes(technique.name)}
@@ -115,8 +155,8 @@ export function CharacterWizard({ onCreate }: { onCreate: (survivor: Survivor) =
             <span className="text-sm leading-relaxed"><b>{technique.name}</b> <span className="tag ml-1">{technique.track}</span><br />{technique.effect}</span>
           </label>)}
           <p className="text-sm subtle">{techniques.length}/2 técnicas escolhidas.</p>
-        </section>
-        <section className="grid gap-3 border-t pt-5">
+        </section>}
+        {step === 3 && <section className="grid gap-3">
           <h3 className="section-title">04 / Kit inicial</h3>
           <div className="grid gap-3 sm:grid-cols-2">
             <Pick label="Arma primária" value={primary} options={content.primaries.map(a => a.name)}
@@ -136,11 +176,16 @@ export function CharacterWizard({ onCreate }: { onCreate: (survivor: Survivor) =
           <div className="wizard-kit-note rounded-md bg-[#e7f1ed] p-3 text-sm leading-relaxed">
             O kit inclui 1 porção de Comida e 1 de Água. Armas que usam munição começam com 1 unidade física compatível no inventário. Até 4 unidades do mesmo tipo ocupam 1 espaço de carga. A proteção vestida e a arma ativa ocupam 0 carga.
           </div>
-        </section>
+        </section>}
       </div>
       {error && <p role="alert" className="inventory-danger">{error}</p>}
-      <DialogFooter className="border-t pt-4"><Button variant="outline" disabled={saving} onClick={() => setOpen(false)}>Voltar</Button>
-        <Button disabled={!complete || saving} onClick={() => void create()}>{saving ? "Salvando..." : "Salvar dossiê"}</Button></DialogFooter>
+      <DialogFooter className="wizard-footer">
+        <p className="wizard-footer-hint" role="status">{stepDone[step] ? (step === stepTitles.length - 1 && !complete ? `Falta concluir: ${stepTitles.filter((_, index) => !stepDone[index]).join(", ")}.` : "Etapa completa.") : missingHint}</p>
+        <Button variant="outline" disabled={saving} onClick={() => step === 0 ? setOpen(false) : goTo(step - 1)}>{step === 0 ? "Cancelar" : "Voltar"}</Button>
+        {step < stepTitles.length - 1
+          ? <Button onClick={() => goTo(step + 1)}>Próximo · {stepTitles[step + 1]}</Button>
+          : <Button disabled={!complete || saving} onClick={() => void create()}>{saving ? "Salvando..." : "Salvar dossiê"}</Button>}
+      </DialogFooter>
     </DialogContent>
   </Dialog>;
 }
