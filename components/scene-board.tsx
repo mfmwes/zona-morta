@@ -2,9 +2,9 @@
 
 import { MasterContextActions, PlayerContextActions, type MasterActionControls, type PlayerActionControls } from "@/components/player-actions-panel";
 
-import { memo, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
+import { memo, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
 import {
-  Copy, Eye, EyeOff, Hand, Layers, Lock, MousePointer2, Plus, RotateCcw, RotateCw,
+  Copy, Eye, EyeOff, Hand, Layers, Lock, MoreHorizontal, MousePointer2, Plus, RotateCcw, RotateCw,
   Search, Square, Tags, Trash2, Type, Unlock, User, ZoomIn, ZoomOut, Undo2, Redo2, Star, BookmarkPlus,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -316,6 +316,29 @@ export function SceneBoard({ game, edit, playerPreview, playerActions, masterAct
     ?? board.scenes.find(entry => entry.id === board.activeSceneId)
     ?? board.scenes[0];
   const selectedObjects = scene?.objects.filter(object => selectedIds.includes(object.id)) ?? [];
+  // Ao abrir uma cena, enquadra os objetos existentes para que não fiquem pequenos num canto da área.
+  const fittedSceneId = useRef<string | null>(null);
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!scene || !viewport || fittedSceneId.current === scene.id) return;
+    fittedSceneId.current = scene.id;
+    const items = scene.objects.filter(object => !readonly || object.visibleToPlayers);
+    if (!items.length) return;
+    const pad = 48;
+    const minX = Math.max(0, Math.min(...items.map(object => object.x)) - pad);
+    const minY = Math.max(0, Math.min(...items.map(object => object.y)) - pad);
+    const maxX = Math.min(scene.width, Math.max(...items.map(object => object.x + object.width)) + pad);
+    const maxY = Math.min(scene.height, Math.max(...items.map(object => object.y + object.height)) + pad);
+    const fit = Math.min(viewport.clientWidth / Math.max(1, maxX - minX), viewport.clientHeight / Math.max(1, maxY - minY));
+    const next = Math.max(.35, Math.min(1.6, Math.floor(fit * 20) / 20));
+    setZoom(next);
+    requestAnimationFrame(() => {
+      viewport.scrollLeft = Math.max(0, ((minX + maxX) / 2) * next - viewport.clientWidth / 2);
+      viewport.scrollTop = Math.max(0, ((minY + maxY) / 2) * next - viewport.clientHeight / 2);
+    });
+    // Só ao trocar de cena; mudanças de objetos não devem mover a câmera de quem está editando.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scene?.id]);
   const selected = selectedObjects.length === 1 ? selectedObjects[0] : undefined;
   const historyKey = `${game.campaignId}:${scene?.id ?? ""}`;
   const history = historyCounts[historyKey];
@@ -864,62 +887,40 @@ export function SceneBoard({ game, edit, playerPreview, playerActions, masterAct
         <DialogFooter className="mt-4"><Button type="button" variant="outline" onClick={() => setTemplateOpen(false)}>Cancelar</Button><Button type="submit" disabled={!templateName.trim()}>Guardar modelo</Button></DialogFooter></form>
     </DialogContent></Dialog>}
 
-    <header className="panel panel-pad scene-board-header">
-      <div><p className="dossier-title">Cena visual</p><div className="scene-board-title"><h2 className="section-title">{scene.name}</h2>
-        <span className={live ? "tag scene-live" : "tag"}>{live ? <Eye size={13} /> : <EyeOff size={13} />}{live ? "AO VIVO" : readonly ? "Não apresentada" : "Privada"}</span></div></div>
+    {/* Cabeçalho compacto: identidade da cena, cenas, modo, apresentação e menu "Mais" numa linha. */}
+    <header className="panel scene-board-header scene-board-header--compact">
+      <div className="scene-board-heading">
+        <div className="scene-board-title"><h2 className="section-title">{scene.name}</h2>
+          <span className={live ? "tag scene-live" : "tag"}>{live ? <Eye size={13} /> : <EyeOff size={13} />}{live ? "AO VIVO" : readonly ? "Não apresentada" : "Privada"}</span></div>
+        {!readonly && <p className="scene-board-status" role="status">{live ? "A mesa vê esta cena. Mudanças nos elementos visíveis aparecem para os jogadores." : board.activeSceneId ? `Você está preparando esta cena. A mesa vê: ${board.scenes.find(entry => entry.id === board.activeSceneId)?.name ?? "outra cena"}.` : "Esta cena está privada. Use Apresentar para mostrá-la à mesa."}</p>}
+      </div>
       {!readonly && <div className="scene-tabs">{board.scenes.map(entry => <button type="button" key={entry.id}
         className={entry.id === scene.id ? "is-active" : ""} onClick={() => selectScene(entry.id)}>{entry.name}</button>)}
         <button type="button" disabled={board.scenes.length >= sceneBoardLimits.maxScenes} onClick={openCreateScene}><Plus size={14} /> Nova</button></div>}
-      <div className="scene-board-actions">
-        {!readonly && <><Button size="sm" variant="outline" disabled={!history?.undo || Boolean(drag || wallDraft || fogDraft || pan)} title="Desfazer (Ctrl/⌘ Z)" onClick={() => stepHistory("undo")}><Undo2 size={15} /> Desfazer</Button>
-          <Button size="sm" variant="outline" disabled={!history?.redo || Boolean(drag || wallDraft || fogDraft || pan)} title="Refazer (Ctrl/⌘ Shift Z)" onClick={() => stepHistory("redo")}><Redo2 size={15} /> Refazer</Button></>}
-        <Button size="sm" variant="outline" aria-label="Diminuir zoom" onClick={() => changeZoom(zoom - .1)}><ZoomOut size={15} /></Button>
-        <span className="scene-zoom">{Math.round(zoom * 100)}%</span>
-        <Button size="sm" variant="outline" aria-label="Aumentar zoom" onClick={() => changeZoom(zoom + .1)}><ZoomIn size={15} /></Button>
-        <Button size="sm" variant="outline" title="Centralizar (F)" onClick={centerScene}>Centralizar</Button>
-        {!readonly && <>
-          {live ? <Button size="sm" variant="outline" onClick={hide}><EyeOff size={15} /> Ocultar da mesa</Button>
-            : <Button size="sm" onClick={present}><Eye size={15} /> Apresentar</Button>}
-          <Button size="sm" variant="outline" disabled={!masterActions?.canAct || masterActions.pending || deletionPending}
-            onClick={() => { setDeletionError(""); setDeletionTarget({ scene: structuredClone(scene), activeSceneId: board.activeSceneId ?? null, day: game.day, id: createId() }); }}><Trash2 size={15} /> Excluir cena</Button></>}
-      </div>
-    </header>
-
-    {!readonly && <>
-      <div className="scene-session-bar">
-        <div className="scene-workflow-switch" role="group" aria-label="Modo de uso da cena">
+      {!readonly && <div className="scene-workflow-switch" role="group" aria-label="Modo de uso da cena">
           <Button size="sm" variant={workspaceMode === "prepare" ? "default" : "outline"} aria-pressed={workspaceMode === "prepare"} onClick={() => switchWorkspaceMode("prepare")}>Montar cena</Button>
           <Button size="sm" variant={workspaceMode === "session" ? "default" : "outline"} aria-pressed={workspaceMode === "session"} onClick={() => switchWorkspaceMode("session")}>Conduzir sessão</Button>
-        </div>
-        <p role="status">{live ? "A mesa vê esta cena. Mudanças nos elementos visíveis aparecem para os jogadores." : board.activeSceneId ? `Você está preparando esta cena. A mesa vê: ${board.scenes.find(entry => entry.id === board.activeSceneId)?.name ?? "outra cena"}.` : "Esta cena está privada. Use Apresentar para mostrá-la à mesa."}</p>
-      </div>
-      <details className="panel scene-display-settings"><summary>Grade e visibilidade</summary><div className="scene-board-actions">
-        <Button size="sm" variant="outline" title="Alternar grade (G)" onClick={() => patchScene(target => { target.showGrid = !target.showGrid; })}>{scene.showGrid ? "Ocultar grade" : "Mostrar grade"} <kbd>G</kbd></Button>
+        </div>}
+      {!readonly && (live ? <Button size="sm" variant="outline" onClick={hide}><EyeOff size={15} /> Ocultar da mesa</Button>
+        : <Button size="sm" onClick={present}><Eye size={15} /> Apresentar</Button>)}
+      {readonly && <div className="scene-zoom-controls" role="group" aria-label="Zoom da cena">
+          <Button size="sm" variant="outline" aria-label="Diminuir zoom" onClick={() => changeZoom(zoom - .1)}><ZoomOut size={15} /></Button>
+          <span className="scene-zoom">{Math.round(zoom * 100)}%</span>
+          <Button size="sm" variant="outline" aria-label="Aumentar zoom" onClick={() => changeZoom(zoom + .1)}><ZoomIn size={15} /></Button>
+          <Button size="sm" variant="outline" title="Centralizar (F)" onClick={centerScene}>Centralizar</Button>
+        </div>}
+      {!readonly && <details className="scene-more-menu">
+        <summary><MoreHorizontal size={16} aria-hidden="true" /> Mais</summary>
+        <div className="scene-more-panel">
+          <p className="scene-more-title">Grade e visibilidade</p>
+          <div className="scene-board-actions">
+            <Button size="sm" variant="outline" title="Alternar grade (G)" onClick={() => patchScene(target => { target.showGrid = !target.showGrid; })}>{scene.showGrid ? "Ocultar grade" : "Mostrar grade"} <kbd>G</kbd></Button>
           <Button size="sm" variant={snapEnabled ? "default" : "outline"} onClick={() => patchScene(target => { target.snapToGrid = target.snapToGrid === false; })}>Encaixe {snapEnabled ? "ligado" : "desligado"}</Button>
           <Button size="sm" variant={scene.fogEnabled ? "default" : "outline"} onClick={toggleFog}>{scene.fogEnabled ? <EyeOff size={15} /> : <Eye size={15} />} Névoa {scene.fogEnabled ? "ativa" : "desligada"}</Button>
           {scene.fogEnabled && <><Button size="sm" variant="outline" onClick={() => patchScene(revealAllSceneFog)}>Revelar tudo</Button>
             <Button size="sm" variant="outline" onClick={() => patchScene(coverAllSceneFog)}>Cobrir tudo</Button></>}
-      </div></details>
-    </>}
-
-    {!readonly && <div className="panel scene-toolstrip" role="toolbar" aria-label="Ferramentas da cena">
-      {sceneToolShortcuts.filter(entry => !entry.construction || workspaceMode === "prepare").map(entry => <button type="button" key={entry.tool}
-        disabled={entry.fog && !scene.fogEnabled} className={(tool === entry.tool ? "is-active" : "") + (entry.construction ? " scene-construction-tool" : "")}
-        title={entry.label + " (" + entry.key + ")"} aria-keyshortcuts={entry.key} aria-pressed={tool === entry.tool} onClick={() => setTool(entry.tool)}>
-        {entry.construction ? <ObjectVisual variant={entry.tool} compact /> : entry.tool === "select" ? <MousePointer2 size={16} /> : entry.tool === "pan" ? <Hand size={16} /> : entry.tool === "reveal" ? <Eye size={15} /> : <EyeOff size={15} />}
-        <span>{entry.label}</span><kbd>{entry.key}</kbd>
-      </button>)}
-      <button type="button" title="Ocultar/exibir legendas nesta tela (L)" aria-keyshortcuts="L" aria-pressed={showLabels} className={showLabels ? "is-active" : ""} onClick={() => setShowLabels(value => !value)}>
-        <Tags size={15} /><span>Legendas</span><kbd>L</kbd>
-      </button>
-      {workspaceMode === "session" && <button type="button" aria-pressed={libraryOpen} className={libraryOpen ? "is-active" : ""} onClick={() => { setLibraryMode("tokens"); setLibraryOpen(value => !value); }}><User size={15} /><span>Adicionar personagens</span></button>}
-      <span className="scene-toolstrip-spacer" />
-      <button type="button" title="Seleção múltipla (M)" aria-keyshortcuts="M" className={multiSelect ? "is-active" : ""} aria-pressed={multiSelect} onClick={() => setMultiSelect(value => !value)}>
-        <Layers size={15} /><span>Múltipla</span><kbd>M</kbd>{selectedIds.length > 0 && <b>{selectedIds.length}</b>}
-      </button>
-    </div>}
-
-    {!readonly && <details className="scene-shortcut-help"><summary>Atalhos do teclado</summary>
+          </div>
+          <details className="scene-shortcut-help"><summary>Atalhos do teclado</summary>
       <p>Clique na cena ou use Tab para focar o editor. Os atalhos ficam suspensos em campos de texto e diálogos.</p>
       <dl>{sceneToolShortcuts.filter(entry => (!entry.construction || workspaceMode === "prepare") && (!entry.fog || scene.fogEnabled)).map(entry => <div key={entry.tool}><dt><kbd>{entry.key}</kbd></dt><dd>{entry.label}</dd></div>)}
         {workspaceMode === "prepare" && <div><dt><kbd>S</kbd></dt><dd>Criar sala / área</dd></div>}
@@ -932,7 +933,39 @@ export function SceneBoard({ game, edit, playerPreview, playerActions, masterAct
         <div><dt><kbd>+</kbd> / <kbd>−</kbd></dt><dd>Ajustar zoom</dd></div>
         <div><dt><kbd>Esc</kbd></dt><dd>Cancelar gesto e voltar a selecionar</dd></div>
       </dl>
-    </details>}
+    </details>
+          <div className="scene-more-danger"><Button size="sm" variant="outline" disabled={!masterActions?.canAct || masterActions.pending || deletionPending}
+            onClick={() => { setDeletionError(""); setDeletionTarget({ scene: structuredClone(scene), activeSceneId: board.activeSceneId ?? null, day: game.day, id: createId() }); }}><Trash2 size={15} /> Excluir cena</Button></div>
+        </div>
+      </details>}
+    </header>
+
+    {!readonly && <div className="panel scene-toolstrip" role="toolbar" aria-label="Ferramentas da cena">
+      {sceneToolShortcuts.filter(entry => !entry.construction || workspaceMode === "prepare").map(entry => <button type="button" key={entry.tool}
+        disabled={entry.fog && !scene.fogEnabled} className={(tool === entry.tool ? "is-active" : "") + (entry.construction ? " scene-construction-tool" : "")}
+        title={entry.label + " (" + entry.key + ")"} aria-keyshortcuts={entry.key} aria-pressed={tool === entry.tool} onClick={() => setTool(entry.tool)}>
+        {entry.construction ? <ObjectVisual variant={entry.tool} compact /> : entry.tool === "select" ? <MousePointer2 size={16} /> : entry.tool === "pan" ? <Hand size={16} /> : entry.tool === "reveal" ? <Eye size={15} /> : <EyeOff size={15} />}
+        <span>{entry.label}</span><kbd>{entry.key}</kbd>
+      </button>)}
+      <button type="button" title="Ocultar/exibir legendas nesta tela (L)" aria-keyshortcuts="L" aria-pressed={showLabels} className={showLabels ? "is-active" : ""} onClick={() => setShowLabels(value => !value)}>
+        <Tags size={15} /><span>Legendas</span><kbd>L</kbd>
+      </button>
+      {workspaceMode === "session" && <button type="button" aria-pressed={libraryOpen} className={libraryOpen ? "is-active" : ""} title="Adicionar personagens à cena" onClick={() => { setLibraryMode("tokens"); setLibraryOpen(value => !value); }}><User size={15} /><span>Personagens</span></button>}
+      <span className="scene-toolstrip-spacer" />
+      <button type="button" title="Seleção múltipla (M)" aria-keyshortcuts="M" className={multiSelect ? "is-active" : ""} aria-pressed={multiSelect} onClick={() => setMultiSelect(value => !value)}>
+        <Layers size={15} /><span>Múltipla</span><kbd>M</kbd>{selectedIds.length > 0 && <b>{selectedIds.length}</b>}
+      </button>
+      <div className="scene-history-controls" role="group" aria-label="Histórico de edição">
+        <Button size="sm" variant="outline" disabled={!history?.undo || Boolean(drag || wallDraft || fogDraft || pan)} title="Desfazer (Ctrl/⌘ Z)" aria-label="Desfazer" onClick={() => stepHistory("undo")}><Undo2 size={15} /></Button>
+        <Button size="sm" variant="outline" disabled={!history?.redo || Boolean(drag || wallDraft || fogDraft || pan)} title="Refazer (Ctrl/⌘ Shift Z)" aria-label="Refazer" onClick={() => stepHistory("redo")}><Redo2 size={15} /></Button>
+      </div>
+      <div className="scene-zoom-controls" role="group" aria-label="Zoom da cena">
+          <Button size="sm" variant="outline" aria-label="Diminuir zoom" onClick={() => changeZoom(zoom - .1)}><ZoomOut size={15} /></Button>
+          <span className="scene-zoom">{Math.round(zoom * 100)}%</span>
+          <Button size="sm" variant="outline" aria-label="Aumentar zoom" onClick={() => changeZoom(zoom + .1)}><ZoomIn size={15} /></Button>
+          <Button size="sm" variant="outline" title="Centralizar (F)" onClick={centerScene}>Centralizar</Button>
+        </div>
+    </div>}
 
     <div className={"scene-board-layout scene-workflow-layout" + (readonly ? " is-readonly" : "") + (showLibrary ? " has-library" : "") + (showInspector ? " has-inspector" : "")}>
       {showLibrary && <aside className="panel scene-palette">
