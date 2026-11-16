@@ -6,7 +6,7 @@ PNJs acima à esquerda; abrigo acima à direita; grupo abaixo à esquerda; locai
 
 ## Imagens
 
-Arquivo: `public/map/sector-atlas.png`, aproximadamente 3 MB, compartilhado e armazenável em cache pelos hexes. Gerado com a ferramenta integrada ImageGen, usando o conceito visual aprovado como referência. Os recortes são feitos pelo SVG em tempo de execução.
+Arquivo: `public/map/sector-atlas.webp` (1254 × 1254 px, WebP qualidade 85, cerca de 360 KB; antes PNG de 3 MB), compartilhado e armazenável em cache pelos hexes. Gerado com a ferramenta integrada ImageGen, usando o conceito visual aprovado como referência. Os recortes são feitos pelo SVG em tempo de execução.
 
 Especificação da geração: atlas quadrado 4 × 4 de cenários isométricos pós-apocalípticos detalhados, sem texto ou interface, perspectiva e iluminação consistentes; fundo azul-marinho, arquitetura em cinza, vegetação verde-oliva, preservando o estilo do conceito aprovado. Ordem das células: bairro residencial, reservatório, praça com monumento, estação ferroviária, oficinas industriais, mercado, canal com ponte, hospital, escola/universidade, parque, viaduto, construção, área rural, floresta, montanha e pântano.
 
