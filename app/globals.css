@@ -1711,6 +1711,8 @@ html[data-theme="dark"] .former-shelter-projects{ border-color:#79a89b; backgrou
   .shelter-room-detail > header { grid-template-columns:auto minmax(0,1fr); }
   .shelter-detail-state { grid-column:2; justify-self:start; }
   .shelter-resource-grid { grid-template-columns:1fr; }
+  /* Contagens de munição são só leitura: duas por linha em vez de sete linhas. */
+  .shelter-ammo-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .shelter-admin-heading { align-items:flex-start; flex-direction:column; }
   .shelter-admin-heading > p { text-align:left; }
 }
@@ -3826,6 +3828,7 @@ html[data-theme="dark"] .theme-label-dark { display:none; }
 .rule-help summary { display: flex; align-items: center; gap: .4rem; cursor: pointer; font-weight: 600; }
 .rule-help summary:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
 .rule-help ul { list-style: disc; padding-left: 1.2rem; margin-top: .6rem; display: grid; gap: .45rem; line-height: 1.5; }
+.shelter-explainer > p { margin-top: .6rem; line-height: 1.5; color: var(--muted-foreground); }
 
 /* Encerrar o dia: corpo com rolagem própria, rodapé sempre visível, pendências no topo e um bloco recolhível por pessoa. */
 .day-close-dialog { display:flex; flex-direction:column; gap:12px; overflow:hidden; }
