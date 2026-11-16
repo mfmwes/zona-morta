@@ -73,7 +73,7 @@
 @media (max-width: 1099px) {
   .master-overview-hero { grid-template-columns: 1fr; }
 }
-@media (max-width: 760px) {
+@media (max-width: 767px) {
   .master-overview-grid, .overview-utilities { grid-template-columns: 1fr; }
   .master-overview-card { padding: 12px; }
   .master-overview-group li { flex-wrap: wrap; }

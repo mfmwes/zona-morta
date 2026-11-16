@@ -170,7 +170,7 @@ button { cursor: pointer; } button:disabled { cursor: not-allowed; }
   .scene-pressure-section { padding-right:0; padding-bottom:17px; }
   .scene-supplies-section { padding-left:0; padding-top:17px; border-left:0; border-top:1px solid var(--border); }
 }
-@media (max-width:760px) {
+@media (max-width:767px) {
   .scene-control-panel { padding:16px; }
   .scene-control-heading { align-items:flex-start; flex-direction:column; }
   .scene-control-actions { width:100%; justify-content:flex-start; }
@@ -2559,7 +2559,7 @@ html[data-theme="dark"] .shelter-overview-admin{ background:#142f32; }
   .construction-workspace { grid-template-columns:1fr; }
   .architectural-building-plan { min-height:330px; }
 }
-@media (max-width:760px) {
+@media (max-width:767px) {
   .architectural-perimeter { grid-template-columns:1fr; }
   .architectural-building-plan {
     grid-template-columns:1fr 42px 1fr;
@@ -2972,7 +2972,7 @@ html[data-theme="dark"] .shelter-overview-admin{ background:#142f32; }
 .construction-operation-progress > div:first-child b { font:800 var(--text-caption) var(--font-mono); }
 .construction-operation-progress > small { color:var(--muted-foreground); font-size:var(--text-caption); line-height:1.4; }
 
-@media (max-width:760px) {
+@media (max-width:767px) {
   .construction-incident-controls,
   .construction-incident-preview { grid-template-columns:1fr; }
   .construction-incident-actions,
@@ -3524,7 +3524,7 @@ small { font-size: max(var(--text-caption), 80%); }
 .shelter-overview-architectural .architectural-slot.is-empty .shelter-room-icon { width:auto; height:auto; padding:0; border:0; background:transparent; opacity:.7; }
 .shelter-overview-architectural .architectural-slot.is-empty b { font-size:var(--text-caption); font-weight:600; opacity:.75; }
 .shelter-overview-architectural .architectural-slot.is-empty .architectural-slot-number { top:3px; }
-@media (max-width:760px) {
+@media (max-width:767px) {
   .shelter-overview-architectural .architectural-service-grid,
   .shelter-overview-architectural .architectural-yard-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .shelter-overview-architectural .architectural-service-grid > .architectural-slot { border-right:1px solid #4d6a64; border-bottom:0; }

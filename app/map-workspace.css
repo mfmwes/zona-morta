@@ -109,7 +109,7 @@
 .map-log-popover details > div { position: absolute; top: calc(100% + 6px); left: 10px; width: min(720px,calc(100% - 20px)); max-height: 70dvh; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--card); box-shadow: 0 10px 32px #0005; }
 .map-log-popover .panel { margin: 0; }
 .qa-map-mode .map-workbench { height: calc(100dvh - 86px); }
-@media (min-width: 761px) {
+@media (min-width: 768px) {
   .map-session-bar { padding: 6px 10px; gap: 8px; }
   .map-session-bar > div { padding: 6px 8px; gap: 4px; }
   .map-session-bar .map-session-time { display: grid; grid-template-columns: auto minmax(0,1fr); align-content: start; column-gap: 8px; }
@@ -148,12 +148,12 @@
   .map-session-pressure .map-session-metric > div { grid-template-columns: auto minmax(55px,1fr); align-items: center; gap: 4px; }
   .map-session-scene-actions button { min-height: 20px; height: 20px; padding: 2px 4px; font-size: var(--text-caption); }
 }
-@media (max-width: 1100px) and (min-width: 761px) {
+@media (max-width: 1100px) and (min-width: 768px) {
   .map-stage-heading .map-session-status > span { display: none; }
   .map-stage .world-map-toolbar { justify-content: flex-start; }
   .map-stage .world-map-search { width: 210px; }
 }
-@media (max-width: 760px) {
+@media (max-width: 767px) {
   /* Celular: os três painéis viram uma faixa deslizante na horizontal; o próximo painel
      aparece na borda, em vez de ficar escondido numa rolagem vertical interna. */
   .map-session-bar { flex-wrap: nowrap; align-items: flex-start; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding-inline: 8px; scrollbar-width: thin; padding: 6px 8px; gap: 8px; }
@@ -194,7 +194,7 @@
 
 /* Piso de 12px: a coluna de ferramentas ganhou largura para "Expandir" caber no botão. */
 .map-tool-dock button { width: 58px; }
-@media (max-width: 760px) {
+@media (max-width: 767px) {
   .map-tool-dock button { width: 54px; }
   /* Botões do mapa numa linha só, com rolagem lateral, para não empurrar a busca sobre o mapa. */
   .map-stage .world-map-toolbar > div:first-child { flex-wrap: nowrap; overflow-x: auto; max-width: 100%; scrollbar-width: none; }
@@ -205,7 +205,7 @@
   .world-map-toolbar .map-toolbar-label-short { display: inline; }
   .map-stage .world-map-toolbar > div:first-child > button { gap: 4px; padding-inline: 6px; }
 }
-@media (max-width: 760px) {
+@media (max-width: 767px) {
   /* Recursos no celular: uma linha por recurso (ícone, nome, valor e detalhe), em vez de três colunas espremidas. */
   .map-session-reserves .map-session-unit { display: none; }
   .map-session-reserves .map-session-counters { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
@@ -214,20 +214,20 @@
   .map-session-reserves .map-session-metric .number-control { width: auto; }
   .map-session-bar .map-session-reserves .map-reserve-composition { margin: 0; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 }
-@media (max-width: 760px) {
+@media (max-width: 767px) {
   .map-session-reserves .map-session-metric { min-height: 0; padding: 2px 8px; }
   .map-session-reserves .map-session-metric .number-control output { height: 24px; line-height: 24px; }
   .map-session-reserves .map-reserve-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 2px 10px; }
 }
-@media (max-width: 760px) {
+@media (max-width: 767px) {
   .map-session-reserves .map-session-metric > div > span:first-child { min-width: 64px; }
 }
-@media (min-width: 761px) {
+@media (min-width: 768px) {
   /* Piso de 12px: espaçamentos menores mantêm a faixa no limite de altura que preserva o mapa. */
   .map-session-bar { padding-block: 6px; }
   .map-session-bar > div { padding: 6px 10px; gap: 4px; }
 }
-@media (min-width: 761px) {
+@media (min-width: 768px) {
   .map-session-reserves .map-session-metric { padding-block: 2px; }
   .map-session-bar .map-reserve-composition { margin-top: 0; line-height: 1.2; }
   /* Com o texto mínimo em 13px, títulos e notas da barra usam a mesma entrelinha das reservas para manter a barra compacta. */
@@ -253,10 +253,10 @@
 .map-player-action:focus-visible { outline: 2px solid #ffe0a4; outline-offset: 2px; }
 .map-action-badge circle { fill: #e0bc78; stroke: #173135; stroke-width: 2; }
 .map-action-badge svg { color: #173135; }
-@media (max-width: 760px) {
+@media (max-width: 767px) {
   .map-player-actions { top: 96px; right: 8px; width: min(280px, calc(100% - 80px)); }
   .map-player-actions > summary { padding: 7px 10px; }
 }
 
 /* Desktop: rótulo completo; o curto só aparece no celular. */
-@media (min-width: 761px) { .world-map-toolbar .map-toolbar-label-short { display: none; } }
+@media (min-width: 768px) { .world-map-toolbar .map-toolbar-label-short { display: none; } }

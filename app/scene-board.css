@@ -36,7 +36,7 @@
 .scene-inspector input:focus{border-color:var(--primary)}.scene-inspector-buttons{display:grid;grid-template-columns:1fr 1fr;gap:6px}.scene-inspector-buttons button{min-width:0;height:auto;min-height:34px;padding:6px;font-size:var(--text-caption)}
 html[data-theme="dark"] .scene-live{color:#bce8d7;background:#214437;border-color:#35624f}
 @media(max-width:1180px){.scene-board-layout{grid-template-columns:190px minmax(0,1fr)}.scene-inspector{position:static;grid-column:1/-1;max-height:none}}
-@media(max-width:760px){.scene-board-layout{grid-template-columns:1fr}.scene-palette,.scene-inspector{position:static;max-height:none}.scene-piece-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.scene-viewport{min-height:420px;height:62dvh}.scene-board-actions>button{flex:1 1 auto}}
+@media(max-width:767px){.scene-board-layout{grid-template-columns:1fr}.scene-palette,.scene-inspector{position:static;max-height:none}.scene-piece-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.scene-viewport{min-height:420px;height:62dvh}.scene-board-actions>button{flex:1 1 auto}}
 @media(max-width:480px){.scene-piece-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.scene-inspector-buttons{grid-template-columns:1fr}}
 
 
@@ -59,7 +59,7 @@ html[data-theme="dark"] .scene-live{color:#bce8d7;background:#214437;border-colo
 .scene-attached-note{padding:8px 9px;border:1px dashed var(--border);border-radius:7px;background:var(--surface-soft);color:var(--ink-soft);font-size:var(--text-caption);line-height:1.45}
 html[data-theme="dark"] .scene-toolstrip button.is-active{color:#bfe8df;background:#203e3c}
 html[data-theme="dark"] .scene-object-lock{border-color:#31383a}
-@media(max-width:760px){
+@media(max-width:767px){
  .scene-toolstrip{position:sticky;top:58px;z-index:20;background:var(--card)}
  .scene-toolstrip button span{white-space:nowrap}
  .scene-toolstrip-spacer{display:none}
@@ -202,7 +202,7 @@ html[data-theme="dark"] .scene-object-lock{border-color:#31383a}
 .scene-conflict-token-library>small{margin-top:-3px;color:var(--ink-soft);font-size:var(--text-caption);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 html[data-theme="dark"] .scene-furniture>small,html[data-theme="dark"] .scene-prop>small{background:rgba(35,42,43,.94);color:#e6ece9}
-@media(max-width:760px){
+@media(max-width:767px){
  .scene-library-group .scene-piece-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
  .scene-palette .scene-object-visual.is-compact{width:30px;height:24px;min-width:30px;min-height:24px}
 }
@@ -226,7 +226,7 @@ html[data-theme="dark"] .scene-furniture>small,html[data-theme="dark"] .scene-pr
 .scene-door-open:after{content:"aberta"}.scene-door-closed:after{content:"fechada"}
 .scene-fog-status{display:flex;align-items:center;gap:6px;color:var(--ink-soft);font-size:var(--text-caption)}
 html[data-theme="dark"] .scene-fog-overlay.is-master{opacity:.68}
-@media(max-width:760px){
+@media(max-width:767px){
  .scene-fog-overlay.is-master{opacity:.52}
  .scene-door-open:after,.scene-door-closed:after{font-size:7px}
 }
@@ -273,7 +273,7 @@ html[data-theme="dark"] .scene-library-head{background:var(--card)}
  .scene-board-layout{grid-template-columns:250px minmax(0,1fr)}
  .scene-palette .scene-piece-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
-@media(max-width:760px){
+@media(max-width:767px){
  .scene-board-layout{grid-template-columns:1fr}
  .scene-palette{max-height:none!important}
  .scene-library-head{position:sticky;top:0;z-index:5}
@@ -461,15 +461,15 @@ html[data-theme="dark"] .scene-library-head{background:var(--card)}
 /* Modo noturno: papel escuro em vez do bege, para não ofuscar. */
 html[data-theme="dark"] .scene-stage{background-color:#28302f}
 html[data-theme="dark"] .scene-stage.has-grid{background-color:#28302f;background-image:linear-gradient(rgba(200,214,208,.09) 1px,transparent 1px),linear-gradient(90deg,rgba(200,214,208,.09) 1px,transparent 1px)}
-@media(max-width:760px){
+@media(max-width:767px){
   .scene-board-header--compact{padding:10px}
   .scene-more-panel{right:auto;left:0}
   .scene-viewport{height:max(360px,calc(100dvh - 330px));min-height:360px}
 }
 html[data-theme="dark"] .scene-stage.has-grid{background-image:linear-gradient(rgba(200,214,208,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(200,214,208,.1) 1px,transparent 1px),linear-gradient(rgba(200,214,208,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(200,214,208,.04) 1px,transparent 1px)}
-@media(min-width:761px){.scene-toolstrip{flex-wrap:wrap;overflow-x:visible}.scene-toolstrip .scene-toolstrip-spacer{display:none}}
+@media(min-width:768px){.scene-toolstrip{flex-wrap:wrap;overflow-x:visible}.scene-toolstrip .scene-toolstrip-spacer{display:none}}
 /* Atalhos continuam na dica (title) e em "Mais > Atalhos do teclado"; sem as letras, as ferramentas cabem numa linha. */
-@media(min-width:761px){.scene-toolstrip button>kbd{display:none}.scene-toolstrip button{padding-inline:8px}}
+@media(min-width:768px){.scene-toolstrip button>kbd{display:none}.scene-toolstrip button{padding-inline:8px}}
 /* Na aba da cena, o título da página fica compacto (como no mapa e na visão geral), deixando a altura para a área de montagem. */
 .scene-mode .campaign-page-heading{margin-bottom:10px}
 .scene-mode .campaign-page-heading .eyebrow,.scene-mode .campaign-page-heading .intro-line{display:none}

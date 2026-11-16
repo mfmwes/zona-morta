@@ -1174,7 +1174,7 @@ html[data-theme="dark"] .threat-card:hover {
   border-color:#5f887f;
   box-shadow:0 8px 20px #0000002e;
 }
-@media (max-width:760px) {
+@media (max-width:767px) {
   .threat-manager-toolbar {
     grid-template-columns:1fr;
   }
