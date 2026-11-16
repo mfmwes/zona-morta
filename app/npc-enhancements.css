@@ -20,29 +20,14 @@
 .npc-capabilities legend span { margin-left: auto; padding: 3px 8px; border-radius: 999px; background: var(--secondary); color: var(--secondary-foreground); font-size: var(--text-caption); font-weight: 700; }
 .npc-capabilities > p, .npc-capabilities-legacy > p { margin: 5px 0 12px; color: var(--ink-soft); font-size: var(--text-caption); line-height: 1.5; }
 .npc-capabilities-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
-.npc-capability-option { display: flex; align-items: center; gap: 9px; min-width: 0; padding: 12px 10px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface-soft); cursor: pointer; transition: border-color .15s, background .15s; }
-.npc-capability-option:hover { border-color: #7daba2; }
-.npc-capability-option:focus-within { outline: 2px solid var(--ring); outline-offset: 2px; }
-.npc-capability-option input { flex: 0 0 16px; width: 16px; height: 16px; margin: 0; accent-color: #246c60; cursor: pointer; }
-.npc-capability-option.is-selected { border-color: #5c9d8e; background: #e2f0e7; box-shadow: inset 0 0 0 1px #5c9d8e; }
-.npc-capability-icon { display: flex; flex-shrink: 0; color: var(--ink-soft); }
-.npc-capability-option.is-selected .npc-capability-icon { color: #286c59; }
-.npc-capability-copy { display: grid; gap: 3px; min-width: 0; }
-.npc-capability-copy b { font-size: var(--text-caption); line-height: 1.3; overflow-wrap: anywhere; }
-.npc-capability-copy small { font-size: var(--text-caption); line-height: 1.4; color: var(--ink-soft); }
 .npc-capabilities-legacy { margin-top: 14px; padding-top: 8px; border-top: 1px dashed var(--border); }
 .npc-capability-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
 .npc-capability-chips > span { display: inline-flex; align-items: center; gap: 4px; padding: 3px 6px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface-soft); color: var(--ink-soft); font-size: var(--text-caption); line-height: 1.4; }
 html[data-theme="dark"] .npc-eye-toggle[aria-pressed="false"] { background: #3b3021; color: #edd2a6; border-color: #7e6642; }
 html[data-theme="dark"] .npc-visibility-control { background: #302a20; color: #eddbbb; border-color: #78674b; }
 html[data-theme="dark"] .npc-visibility-control.is-visible { background: #20362f; color: #d5e8da; border-color: #526e5d; }
-html[data-theme="dark"] .npc-capability-option.is-selected { background: #233d31; border-color: #78ab8d; box-shadow: inset 0 0 0 1px #78ab8d; }
-html[data-theme="dark"] .npc-capability-option.is-selected .npc-capability-icon { color: #b7dfbb; }
-html[data-theme="dark"] .npc-capability-option input { accent-color: #98c8a9; }
 @media (max-width: 600px) {
   .npc-capabilities-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .npc-capability-option { flex-wrap: wrap; padding: 11px; }
-  .npc-capability-copy { flex: 1 0 100%; }
   .npc-visibility-control { flex-wrap: wrap; }
   .npc-visibility-control > button { margin-left: auto; }
   .npc-visibility-summary small { flex-basis: 100%; margin-left: 0; }

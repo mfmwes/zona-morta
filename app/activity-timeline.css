@@ -11,6 +11,4 @@
 .activity-timeline-item.has-issue { border-color: #b59653; }
 .activity-timeline-item.has-issue small[role="status"] { color: #b59653; }
 .activity-timeline-item button { flex-shrink: 0; font-size: var(--text-caption); }
-.rest-group-picker { display: flex; flex-wrap: wrap; gap: 12px; font-size: 13px; margin-bottom: 12px; }
-.rest-group-picker label { display: flex; align-items: center; gap: 6px; }
 @media (max-width: 640px) { .activity-timeline-heading { flex-wrap: wrap; } .activity-timeline-item { max-width: 85vw; } }
