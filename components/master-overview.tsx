@@ -126,6 +126,8 @@ export function MasterOverview({ mobile = false, game, onNavigate, onOpen, maste
         </div>
       </section>
 
+      {/* Coluna lateral: pendências e reservas empilhadas, cada uma com a altura do próprio conteúdo. */}
+      <div className="master-overview-side">
       <section className="master-overview-card master-overview-attention">
         <header><div><AlertTriangle size={18} /><span><b>Precisa de atenção{attention.length ? ` · ${attention.length}` : ""}</b><small>Estados que podem exigir uma decisão do mestre.</small></span></div></header>
         {(attention.length > 4 || hasFilters) && <div className="campaign-attention-filters">
@@ -157,6 +159,7 @@ export function MasterOverview({ mobile = false, game, onNavigate, onOpen, maste
         </div>
         {occupied.length > 0 && <p className="master-overview-note"><Clock3 size={14} /> {occupied.length} sobrevivente{occupied.length === 1 ? "" : "s"} trabalhando agora.</p>}
       </section>
+      </div>
     </div>
     <div className="overview-utilities">
       {onSessionAction && <MobileDisclosure mobile={mobile} title="Sessão da mesa"><CampaignSessions game={game} canAct={Boolean(canManageSession)} onAction={onSessionAction}/></MobileDisclosure>}

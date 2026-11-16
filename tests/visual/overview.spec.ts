@@ -24,6 +24,21 @@ for (const [width, height] of [[1366, 768], [1440, 900], [1920, 925]]) {
   });
 }
 
+test('sparse overview cards follow their content and narrow team cards keep names on one line', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/?screen=overview');
+  const attention = page.locator('.master-overview-attention');
+  await expect(attention.getByRole('button', { name: 'Abrir registro', exact: true })).toBeVisible();
+  // Sem caixa esticada: o cartão termina logo após a última pendência.
+  const gap = await attention.evaluate(card => card.getBoundingClientRect().bottom - card.querySelector('.master-overview-list')!.getBoundingClientRect().bottom);
+  expect(gap).toBeLessThan(40);
+  expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1)).toBe(true);
+  await page.setViewportSize({ width: 900, height: 1000 });
+  const name = page.locator('.overview-person-link').first();
+  await expect(name).toBeVisible();
+  expect((await name.boundingBox())!.height).toBeLessThan(40);
+});
+
 test('crowded overview keeps filters and all attention records accessible inside the panel', async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
   await page.goto('/?screen=overview');
