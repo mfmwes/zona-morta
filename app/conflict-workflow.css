@@ -324,3 +324,17 @@
 .conflict-self-resources .conflict-resource > span:first-child { flex-direction: column; align-items: flex-start; gap: 3px; }
 .conflict-self-resources .conflict-resource small { max-width: 100%; white-space: normal; }
 .conflict-self-note { margin: 8px 0 0; padding: 6px 10px; border-left: 3px solid var(--primary); border-radius: 6px; background: color-mix(in srgb, var(--primary) 10%, var(--card)); color: var(--foreground); font-size: var(--text-caption); }
+
+/* Conflito vazio: quem entra na cena ao iniciar (sobreviventes no hex do grupo). */
+.conflict-start-preview { display: grid; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+.conflict-start-preview > p.smallcaps { display: flex; align-items: center; gap: 6px; margin: 0; }
+.conflict-start-preview ul { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.conflict-start-preview li { display: inline-flex; align-items: center; gap: 7px; min-height: 32px; padding: 3px 10px 3px 4px; border: 1px solid var(--border); border-radius: 999px; background: var(--muted); font-size: .88rem; font-weight: 650; }
+.conflict-start-preview li > span { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: color-mix(in srgb, var(--primary) 16%, var(--card)); color: var(--primary); font-size: var(--text-caption); font-weight: 800; }
+.conflict-start-preview-empty { margin: 0; color: var(--muted-foreground); font-size: .88rem; }
+.conflict-start-preview > small { color: var(--muted-foreground); font-size: var(--text-caption); }
+@media (max-width: 560px) {
+  /* Celular: ícone acima do texto, para o texto usar a largura toda. */
+  .conflict-empty { grid-template-columns: 1fr; gap: 12px; }
+  .conflict-empty-icon { width: 44px; height: 44px; }
+}

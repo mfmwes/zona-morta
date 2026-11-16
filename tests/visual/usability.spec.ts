@@ -69,6 +69,17 @@ test('shelter explanations collapse on mobile and ammunition counts use two colu
   await expect(page.locator('details.shelter-explainer')).toHaveCount(0);await expect(page.getByText(/Munição agora é item físico/)).toBeVisible();
 });
 
+test('empty conflict lists who joins and starting adds exactly those survivors',async({page})=>{
+  await ready(page,'/?screen=sheet');
+  await page.getByRole('combobox',{name:'Tela',exact:true}).selectOption('conflict');
+  const preview=page.getByRole('group',{name:'Participantes ao iniciar'});
+  const names=await preview.locator('li').evaluateAll(items=>items.map(li=>li.lastChild!.textContent));
+  expect(names.length).toBeGreaterThan(0);
+  await page.getByRole('button',{name:'Iniciar conflito',exact:true}).click();
+  const joined=await page.evaluate(()=>{const g=window.__qa.game();return g.conflict!.survivorIds.map(id=>g.survivors.find(p=>p.id===id)!.name);});
+  expect(joined.sort()).toEqual([...names].sort());
+});
+
 test('player attention navigates to rest choices and clears after confirmation',async({page})=>{
   await ready(page,'/?screen=shelter&role=player&scenario=rest');
   await page.getByRole('button',{name:/Escolha seu descanso curto/}).click();
