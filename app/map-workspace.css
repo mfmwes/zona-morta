@@ -200,6 +200,10 @@
   .map-stage .world-map-toolbar > div:first-child { flex-wrap: nowrap; overflow-x: auto; max-width: 100%; scrollbar-width: none; }
   .map-stage .world-map-toolbar > div:first-child::-webkit-scrollbar { display: none; }
   .map-stage .world-map-toolbar > div:first-child > button { flex: none; }
+  /* Rótulos curtos no celular para os botões caberem na linha; o nome acessível continua completo. */
+  .world-map-toolbar .map-toolbar-label-full { display: none; }
+  .world-map-toolbar .map-toolbar-label-short { display: inline; }
+  .map-stage .world-map-toolbar > div:first-child > button { gap: 4px; padding-inline: 6px; }
 }
 @media (max-width: 760px) {
   /* Recursos no celular: uma linha por recurso (ícone, nome, valor e detalhe), em vez de três colunas espremidas. */
@@ -253,3 +257,6 @@
   .map-player-actions { top: 96px; right: 8px; width: min(280px, calc(100% - 80px)); }
   .map-player-actions > summary { padding: 7px 10px; }
 }
+
+/* Desktop: rótulo completo; o curto só aparece no celular. */
+@media (min-width: 761px) { .world-map-toolbar .map-toolbar-label-short { display: none; } }

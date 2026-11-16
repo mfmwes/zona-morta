@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Crosshair, Maximize, Search, ZoomIn, ZoomOut } from "lucide-react";
+import { Crosshair, LocateFixed, Maximize, Route, Search, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { HexState } from "@/lib/game";
 import { hexCenter, mapBounds, parseHex, worldHexes } from "@/lib/world";
@@ -90,13 +90,13 @@ export function WorldMapViewport({ hexes, activeHex, selected, focusHex, playerP
       <div className="flex flex-wrap gap-2">
         <Button size="sm" variant="outline" aria-label="Ampliar mapa" onClick={() => zoom(0.75)}><ZoomIn /></Button>
         <Button size="sm" variant="outline" aria-label="Reduzir mapa" onClick={() => zoom(1 / 0.75)}><ZoomOut /></Button>
-        <Button size="sm" variant="outline" onClick={() => setCamera({ x: bounds.x, y: bounds.y, width: fitWidth })}><Maximize /> Ver tudo</Button>
-        <Button size="sm" variant="outline" onClick={() => center(activeHex)}><Crosshair /> Grupo ativo</Button>
-        <Button size="sm" variant="outline" onClick={() => center(selected)}>Hex selecionado</Button>
-        {Boolean(plannedPath?.length) && <Button size="sm" variant="outline" onClick={() => {
+        <Button size="sm" variant="outline" aria-label="Ver tudo" onClick={() => setCamera({ x: bounds.x, y: bounds.y, width: fitWidth })}><Maximize /> <span className="map-toolbar-label-full">Ver tudo</span><span className="map-toolbar-label-short" aria-hidden="true">Tudo</span></Button>
+        <Button size="sm" variant="outline" aria-label="Grupo ativo" onClick={() => center(activeHex)}><Crosshair /> <span className="map-toolbar-label-full">Grupo ativo</span><span className="map-toolbar-label-short" aria-hidden="true">Grupo</span></Button>
+        <Button size="sm" variant="outline" aria-label="Hex selecionado" onClick={() => center(selected)}><LocateFixed /> <span className="map-toolbar-label-full">Hex selecionado</span><span className="map-toolbar-label-short" aria-hidden="true">Seleção</span></Button>
+        {Boolean(plannedPath?.length) && <Button size="sm" variant="outline" aria-label="Ver trajeto" onClick={() => {
           const routeBounds = mapBounds(plannedPath!.map(id => parseHex(id)!));
           setCamera({ x: routeBounds.x, y: routeBounds.y, width: Math.max(routeBounds.width, routeBounds.height * aspect) });
-        }}>Ver trajeto</Button>}
+        }}><Route /> <span className="map-toolbar-label-full">Ver trajeto</span><span className="map-toolbar-label-short" aria-hidden="true">Trajeto</span></Button>}
       </div>
       <form className="world-map-search" onSubmit={event => {
         event.preventDefault();
