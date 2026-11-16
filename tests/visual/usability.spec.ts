@@ -114,6 +114,17 @@ for(const role of ['master','player'])for(const screen of ['sheet','shelter','co
   });
 }
 
+// O Visual atual (sem data-visual-style) é o padrão do app; a prévia usa o estilo técnico por padrão.
+for(const role of ['master','player'])test(`default visual style (Visual atual) renders without overflow for ${role}`,async({page})=>{
+  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+  for(const width of [390,1440])for(const screen of ['sheet','shelter','map','scene']){
+    await page.setViewportSize({width,height:1000});await ready(page,`/?screen=${screen}&role=${role}&style=current`);
+    expect(await page.evaluate(()=>document.documentElement.hasAttribute('data-visual-style'))).toBe(false);
+    await noOverflow(page);
+  }
+  expect(errors).toEqual([]);
+});
+
 test('large scene renders and records insertion/undo timings',async({page},testInfo)=>{
   const start=Date.now();await ready(page,'/?screen=scene&objects=200');
   const loaded=Date.now()-start;await page.getByRole('button',{name:'Montar cena',exact:true}).click();const count=await objectCount(page);
