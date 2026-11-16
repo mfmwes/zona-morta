@@ -58,6 +58,17 @@ test('scene preparation layout remains readable on desktop and mobile',async({pa
   }
 });
 
+test('shelter explanations collapse on mobile and ammunition counts use two columns',async({page})=>{
+  await page.setViewportSize({width:390,height:844});await ready(page,'/?screen=shelter');
+  const ammoHelp=page.locator('details.shelter-explainer').filter({hasText:'Como funciona a munição'});
+  await expect(ammoHelp).toBeVisible();await expect(ammoHelp.getByText(/Munição agora é item físico/)).toBeHidden();
+  await ammoHelp.locator('summary').click();await expect(ammoHelp.getByText(/Munição agora é item físico/)).toBeVisible();
+  const cards=await page.locator('.shelter-ammo-grid > .metric').evaluateAll(els=>els.slice(0,2).map(el=>el.getBoundingClientRect().top));
+  expect(cards[0]).toBe(cards[1]);await noOverflow(page);
+  await page.setViewportSize({width:1440,height:1000});await ready(page,'/?screen=shelter');
+  await expect(page.locator('details.shelter-explainer')).toHaveCount(0);await expect(page.getByText(/Munição agora é item físico/)).toBeVisible();
+});
+
 test('player attention navigates to rest choices and clears after confirmation',async({page})=>{
   await ready(page,'/?screen=shelter&role=player&scenario=rest');
   await page.getByRole('button',{name:/Escolha seu descanso curto/}).click();

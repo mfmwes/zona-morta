@@ -2,7 +2,7 @@
 
 import { MasterContextActions, PlayerContextActions, type MasterActionControls, type PlayerActionControls } from "@/components/player-actions-panel";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { BookOpen, ChevronLeft, ChevronRight, Hammer, House, LayoutGrid, List, Moon, Package, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,13 @@ import { RuleHelp } from "@/components/rule-help";
 
 type Edit = (fn: (draft: GameState) => void) => void;
 
-export function ShelterPanel({ initialProjectId, game, edit, playerPreview, playerSurvivorId, playerActions, masterActions }: { initialProjectId?:string; game: GameState; edit: Edit; playerPreview: boolean; playerSurvivorId?: string | null; playerActions?: PlayerActionControls; masterActions?: MasterActionControls }) {
+/** No celular a explicação fica recolhida (mesmo padrão de "Consultar regra"); no desktop continua visível. */
+function ShelterExplainer({ mobile, summary, className, children }: { mobile: boolean; summary: string; className: string; children: ReactNode }) {
+  if (!mobile) return <p className={className}>{children}</p>;
+  return <details className="rule-help shelter-explainer"><summary><BookOpen size={14} aria-hidden="true" />{summary}</summary><p>{children}</p></details>;
+}
+
+export function ShelterPanel({ initialProjectId, mobile = false, game, edit, playerPreview, playerSurvivorId, playerActions, masterActions }: { initialProjectId?:string; mobile?: boolean; game: GameState; edit: Edit; playerPreview: boolean; playerSurvivorId?: string | null; playerActions?: PlayerActionControls; masterActions?: MasterActionControls }) {
   const [shelterNotes, setShelterNotes] = useState(game.shelter.notes);
   const [shelterName, setShelterName] = useState(game.shelter.name);
   const [cacheRecipient, setCacheRecipient] = useState("");
@@ -76,7 +82,7 @@ export function ShelterPanel({ initialProjectId, game, edit, playerPreview, play
     {playerActions && <PlayerContextActions game={game} controls={playerActions} context={{kind:"supplies"}} />}
     {masterActions && !playerPreview && <details className="team-card"><summary>Depósitos e limites de retirada dos jogadores</summary><MasterContextActions game={game} controls={masterActions} context={{kind:"supplies"}} /></details>}
     <div className="flex items-center gap-2 mb-3"><Package size={18} /><h3 className="section-title">{hasShelter ? "Estoque do abrigo" : "Reservas do grupo"}</h3></div>
-    <p className="intro-line mb-4">Comida e Água são contadas em porções: quatro porções formam uma unidade. Não desconte duas vezes o que saiu na mochila. {hasShelter ? "As reservas ficam na base." : "Registre aqui só o que o grupo transporta; confira a carga na ficção."}</p>
+    <ShelterExplainer mobile={mobile} summary="Como contar as porções" className="intro-line mb-4">Comida e Água são contadas em porções: quatro porções formam uma unidade. Não desconte duas vezes o que saiu na mochila. {hasShelter ? "As reservas ficam na base." : "Registre aqui só o que o grupo transporta; confira a carga na ficção."}</ShelterExplainer>
     <div className="shelter-resource-grid">
       {stocks.map(stock => {
         const provision = stock.key === "food" ? shelterFood : stock.key === "water" ? shelterWater : null;
@@ -96,7 +102,7 @@ export function ShelterPanel({ initialProjectId, game, edit, playerPreview, play
 
     <div className="divider" />
     <h3 className="section-title">Munição no depósito</h3>
-    <p className="intro-line mt-2 mb-3">Munição agora é item físico do inventário compartilhado. Cada unidade mantém seu tipo e até quatro unidades iguais ocupam 1 espaço quando carregadas por um sobrevivente.</p>
+    <ShelterExplainer mobile={mobile} summary="Como funciona a munição" className="intro-line mt-2 mb-3">Munição agora é item físico do inventário compartilhado. Cada unidade mantém seu tipo e até quatro unidades iguais ocupam 1 espaço quando carregadas por um sobrevivente.</ShelterExplainer>
     <div className="shelter-ammo-grid">
       {ammunitionTypes.map(type => <div className="metric" key={type}>
         <span className="smallcaps subtle">{type}</span><strong>{ammunitionCount(s.inventory, type)}</strong>
@@ -108,7 +114,7 @@ export function ShelterPanel({ initialProjectId, game, edit, playerPreview, play
     <div className="divider" />
     <div className="flex items-center justify-between gap-3 flex-wrap"><h3 className="section-title">Itens compartilhados</h3>
       {sharedAccessible && !playerPreview && <AddItemDialog game={game} edit={edit} ownerId="shared" />}</div>
-    <p className="intro-line mt-2">Objetos físicos continuam identificados aqui. Alimentos e bebidas prontos contribuem automaticamente para o total disponível sem desaparecer do inventário; itens pendentes de preparo/verificação aparecem separados.</p>
+    <ShelterExplainer mobile={mobile} summary="Como funcionam os itens compartilhados" className="intro-line mt-2">Objetos físicos continuam identificados aqui. Alimentos e bebidas prontos contribuem automaticamente para o total disponível sem desaparecer do inventário; itens pendentes de preparo/verificação aparecem separados.</ShelterExplainer>
     {!sharedAccessible && <p className="character-rule-note">O grupo está fora do abrigo. Volte ao hex da base para mover os itens compartilhados.</p>}
     {((s.inventory ?? []).length > 0 || inventoryHasFilters) && <div className="campaign-inventory-filters">
       <div className="campaign-list-toolbar"><Field label="Buscar itens compartilhados" type="search" placeholder="Nome, categoria ou estado" value={inventoryQuery} onChange={setInventoryQuery} /><Pick label="Categoria" value={inventoryCategory} options={[{ value: "all", label: "Todas" }, ...inventoryCategories.map(category => ({ value: category, label: category }))]} onChange={setInventoryCategory} /></div>
