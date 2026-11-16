@@ -170,7 +170,7 @@ html[data-theme="dark"] .hex-event-active {
   font-size: var(--text-caption);
   line-height: 1.4;
 }
-@media (max-width: 760px) {
+@media (max-width: 767px) {
   .hex-search-workspace {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -440,6 +440,6 @@ html[data-theme="dark"] .hex-point-master-details > div {
   background: var(--surface-soft);
 }
 
-@media (max-width: 760px) {
+@media (max-width: 767px) {
   .hex-search-scale-controls { grid-template-columns: 1fr; }
 }
