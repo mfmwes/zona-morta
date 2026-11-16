@@ -108,3 +108,17 @@ test('mobile opens sector details in a dismissible bottom drawer without overflo
   await page.getByRole('button', { name: 'Voltar ao mapa', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
 });
+
+test('mobile map toolbar fits in one row with short labels and full accessible names', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.goto('/?screen=map');
+  const row = page.locator('.world-map-toolbar > div').first();
+  for (const [name, short] of [['Ver tudo', 'Tudo'], ['Grupo ativo', 'Grupo'], ['Hex selecionado', 'Seleção']]) {
+    const button = page.getByRole('button', { name, exact: true });
+    await expect(button).toBeVisible();
+    expect(await button.evaluate(el => (el as HTMLElement).innerText.trim())).toBe(short);
+  }
+  expect(await row.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  expect(await page.getByRole('button', { name: 'Hex selecionado', exact: true }).evaluate(el => (el as HTMLElement).innerText.trim())).toBe('Hex selecionado');
+});
