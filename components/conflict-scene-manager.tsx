@@ -500,12 +500,20 @@ export function ConflictSceneManager({ game, edit, mobile = false }: { game: Gam
     toast.success("Conflito retomado");
   }
 
+  const presentAtStart = survivorsAtHex(game, game.partyHex);
   if (!conflict) return <section className="conflict-empty panel panel-pad">
     <div className="conflict-empty-icon"><Swords size={28} aria-hidden="true" /></div>
     <div className="conflict-empty-copy">
       <p className="dossier-title">Cena atual · conflito opcional</p>
       <h2 className="section-title mt-1">Nenhum conflito ativo</h2>
       <p className="intro-line mt-2">Inicie um conflito quando a ficção pedir acompanhamento de participantes, ameaças e spotlight. Não há iniciativa, fila ou turno automático.</p>
+      {/* Mesma regra de startConflict: entram os sobreviventes no hex do grupo principal. */}
+      <div className="conflict-start-preview" aria-label="Participantes ao iniciar" role="group">
+        <p className="smallcaps subtle"><Users size={14} aria-hidden="true" /> Entram ao iniciar · {sectorName}</p>
+        {presentAtStart.length ? <ul>{presentAtStart.map(person => <li key={person.id}><span aria-hidden="true">{person.name.trim().slice(0, 1).toUpperCase()}</span>{person.name}</li>)}</ul>
+          : <p className="conflict-start-preview-empty">Nenhum sobrevivente no hex do grupo. Adicione os participantes depois de iniciar.</p>}
+        <small>Ameaças e spotlight são adicionados com o conflito em andamento.</small>
+      </div>
     </div>
     <div className="conflict-start-controls">
       <Field label="Nome da cena de conflito" value={sceneName} onChange={setSceneName} placeholder="Ex.: Estacionamento do mercado" />
