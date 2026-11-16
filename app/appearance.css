@@ -196,8 +196,7 @@ html:is([data-visual-style="fiel"], [data-visual-style="leitura"], [data-visual-
   :is(.character-attribute strong, .character-summary-attribute strong, .character-ability-icon, .character-equipment-icon, .players-avatar) { color: var(--primary); }
   :is(.character-section-heading, .character-info-row, .character-kit-line, .character-experience, .character-equipment, .character-ability-detail, .character-specialties-footer, .character-proficiency, .reference-detail dl > div, .scene-supplies-section, .scene-meter + .scene-meter, .scene-supplies-note) { border-color: var(--border); }
   .character-section-heading > div > span { background: var(--accent); color: var(--primary); border-color: var(--border); }
-  .character-combat-metrics > div { background: var(--secondary); color: var(--primary); }
-  .character-combat-metrics span, .character-roll-history span, .rest-planner-action-title { color: var(--muted-foreground); }
+  .character-roll-history span, .rest-planner-action-title { color: var(--muted-foreground); }
   .character-rest-status { color: var(--primary); }
 
   /* Selected, hovered and keyboard states use the same foreground/background pair. */
@@ -252,9 +251,8 @@ html:is([data-visual-style="fiel"], [data-visual-style="leitura"], [data-visual-
 
   /* Semantic messages retain their meanings across all palettes. */
   .tag, .save-status { background: var(--accent); color: var(--foreground); border-color: var(--border); }
-  .tag-danger, .save-status.error, .character-condition-banner { background: var(--style-danger-surface); color: var(--style-danger-ink); border-color: var(--style-danger-ink); }
-  .character-condition-banner p, .character-alert, .campaign-form-error { color: var(--style-danger-ink); }
-  .character-rest-preview-note { background: var(--style-warning-surface); color: var(--style-warning-ink); }
+  .tag-danger, .save-status.error { background: var(--style-danger-surface); color: var(--style-danger-ink); border-color: var(--style-danger-ink); }
+  .character-alert, .campaign-form-error { color: var(--style-danger-ink); }
   .character-hope-teaser, .character-hope-teaser:hover { background: var(--hope-surface); color: var(--hope-ink); border-color: var(--hope-ink); }
   .character-hope-teaser strong { background: var(--hope-surface); color: var(--hope-ink); border: 1px solid var(--hope-ink); }
   .character-thresholds { background: var(--style-warning-surface); border-color: var(--style-warning-ink); }
@@ -295,16 +293,15 @@ html:is([data-visual-style="fiel"], [data-visual-style="leitura"], [data-visual-
   .master-overview-clear { background: var(--secondary); border-color: var(--border); color: var(--foreground); }
   .master-overview-clear span, .master-overview-clear p { color: var(--muted-foreground); }
   .master-overview-hero, .master-overview-card { background: var(--card); border-color: var(--border); color: var(--foreground); border-radius: var(--style-radius); }
-  .master-overview-hero-metrics > span, .master-overview-group, .master-overview-group li, .master-overview-attention-item, .master-overview-row, .master-overview-resource-grid > span, .map-active-group {
+  .master-overview-group, .master-overview-group li, .master-overview-attention-item, .master-overview-row, .master-overview-resource-grid > span, .map-active-group {
     background: var(--secondary); border-color: var(--border); color: var(--foreground);
   }
   .master-overview :is(h2, b), .map-active-group b { color: var(--foreground); }
   .master-overview :is(small, .master-overview-empty), .master-overview-hero p:last-child, .master-overview-note, .map-active-group small, .map-active-group em { color: var(--muted-foreground); }
   .master-overview-card > header svg, .master-overview-group > div svg, .master-overview-row > svg { color: var(--primary); }
   .master-overview-row:hover { background: var(--accent); border-color: var(--primary); }
-  .master-overview-hero-metrics .is-danger, .master-overview-attention-item.is-danger { background: var(--style-danger-surface); border-color: var(--style-danger-ink); }
-  .master-overview-hero-metrics .is-danger b { color: var(--style-danger-ink); }
-  .master-overview-hero-metrics .is-warning, .master-overview-attention-item.is-warning { background: var(--style-warning-surface); border-color: var(--style-warning-ink); }
+  .master-overview-attention-item.is-danger { background: var(--style-danger-surface); border-color: var(--style-danger-ink); }
+  .master-overview-attention-item.is-warning { background: var(--style-warning-surface); border-color: var(--style-warning-ink); }
   .master-overview-group li small.is-busy { color: var(--style-warning-ink); }
   .map-active-group-icon { background: var(--accent); color: var(--primary); }
   .table-chat-input textarea::placeholder { color: var(--muted-foreground); }

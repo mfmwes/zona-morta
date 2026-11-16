@@ -88,12 +88,6 @@
   .mobile-page .master-overview-hero { padding: 16px; gap: 14px; }
   .mobile-page .master-overview-hero h2 { font-size: 1.4rem; }
   .mobile-page .master-overview-hero h2, .mobile-page .master-overview-hero .eyebrow { display: none; }
-  .mobile-page .master-overview-hero-metrics { gap: 6px; }
-  .mobile-page .master-overview-hero-metrics > span { min-height: 60px; padding: 9px; }
-  .mobile-page .master-overview-hero-metrics b { font-size: 1.25rem; }
-  .mobile-page .master-overview-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .mobile-page .master-overview-actions button { min-width: 0; height: auto; white-space: normal; font-size: var(--text-caption); padding: 9px; }
-  .mobile-page .master-overview-actions button svg { flex: none; }
 
   /* A ficha mostra ações antes de biografia, kit completo e consultas secundárias. */
   .character-sheet--mobile .character-roster { flex-direction: column; padding: 0; border: 0; background: transparent; }
