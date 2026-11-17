@@ -349,6 +349,7 @@ button { cursor: pointer; } button:disabled { cursor: not-allowed; }
 .character-alert { color:#9a4737; font-size:var(--text-caption); font-weight:700; margin:8px 0 0; }
 .character-experience { display:grid; gap:2px; padding:8px 0; border-bottom:1px solid #e0e6df; font-size:.85rem; }
 .character-experience span { color:#526c6b; font-size:var(--text-caption); }
+html[data-theme="dark"] .character-experience span { color:var(--muted-foreground); }
 .character-hope-teaser { display:flex; align-items:center; gap:11px; width:100%; min-height:74px; margin-top:11px; padding:10px 12px; border:1px solid #e1c86c; border-left:4px solid var(--hope); border-radius:7px; background:var(--hope-surface); color:#514414; text-align:left; box-shadow:0 3px 9px #715d2810; }
 .character-hope-teaser:hover { background:#ffedab; }
 .character-hope-teaser > svg { flex:none; color:var(--hope-ink); }
@@ -2110,8 +2111,10 @@ html[data-theme="dark"] .shelter-overview-admin{ background:#142f32; }
 }
 .construction-flow-steps > span.is-done {
   border-color:#4e765d;
-  color:#82b394;
+  color:#2f6b4a;
 }
+/* Verde claro só no tema escuro; no claro ficava 2,3:1 sobre o cartão. */
+html[data-theme="dark"] .construction-flow-steps > span.is-done { color:#82b394; }
 .construction-flow-steps > span.is-done i::after { content:"✓"; }
 .construction-flow-steps > span.is-done i { font-size:0; }
 .construction-flow-steps > span.is-done i::after { font-size:var(--text-caption); }
@@ -2188,6 +2191,9 @@ html[data-theme="dark"] .shelter-overview-admin{ background:#142f32; }
 }
 .architectural-plan-heading .dossier-title { color:#91b9ae; }
 .architectural-plan-heading .section-title { color:#f2f5ee; }
+/* O botão outline define o fundo claro do tema mas herda a cor do texto; no cabeçalho escuro ficava branco sobre claro. */
+.architectural-plan-actions [data-variant="outline"] { border-color:#5d817a; background:transparent; color:#edf3ed; }
+.architectural-plan-actions [data-variant="outline"]:hover { border-color:#8fb5ab; background:#24484a; color:#fff; }
 .architectural-plan-actions {
   display:flex;
   flex-wrap:wrap;

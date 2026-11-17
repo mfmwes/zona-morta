@@ -224,6 +224,14 @@ html:is([data-visual-style="fiel"], [data-visual-style="leitura"], [data-visual-
     background: linear-gradient(120deg, var(--style-hero-start), var(--style-hero-end)); color: var(--style-on-dark); border-color: var(--style-quick-line);
   }
   :is(.character-hero, .library-hero, .character-quick, .character-hope-feature) { border-radius: var(--style-radius); }
+  /* Cabeçalho do abrigo também é área escura: sem isto, a regra de .panel o deixava claro com texto claro.
+     .panel.shelter-hero-panel supera a especificidade do :is() acima, que inclui ".character-story-grid > div". */
+  .panel.shelter-hero-panel { background: linear-gradient(120deg, var(--style-hero-start), var(--style-hero-end)); color: var(--style-on-dark); border-color: var(--style-quick-line); border-radius: var(--style-radius); }
+  .shelter-hero-copy .page-title { color: var(--style-on-dark); }
+  :is(.shelter-hero-copy > p:not(.dossier-title), .shelter-hero-copy > small) { color: var(--style-dark-muted); }
+  /* Rótulos sobre cabeçalhos escuros usam o destaque do estilo, não --primary (pensado para fundo claro). */
+  :is(.shelter-hero-copy, .architectural-plan-heading, .shelter-blueprint-heading) .dossier-title { color: var(--style-highlight); }
+  .shelter-hero-badges .tag { background: var(--style-quick-soft); color: var(--style-on-dark); border-color: var(--style-quick-line); }
   .character-hero::after, .auth-card::before { background: linear-gradient(90deg, var(--style-highlight), var(--style-quick-line)); }
   :is(.character-hero .character-serial, .character-hero-code, .character-identity-meta, .library-hero .intro-line, .rail-foot, .character-quick-heading, .character-quick-heading small, .character-quick-stat > span small, .character-quick-attack > span, .character-quick-attack small, .character-quick-mobile small, .character-quick-mobile-weapon span, .character-hope-feature p, .character-hope-feature-top, .character-hope-feature-foot) { color: var(--style-dark-muted); }
   :is(.character-hero .character-serial span, .library-hero .eyebrow, .character-quick-stat > svg, .character-quick-mobile svg) { color: var(--style-highlight); }

@@ -80,7 +80,7 @@
 .map-tool-dock button span { font-size: var(--text-caption); }
 .map-tool-dock button[aria-pressed=true], .map-tool-dock button[aria-expanded=true] { border-color: #e0bc78; background: #35514a; color: #ffe0a4; }
 .map-stage > .map-active-group { position: absolute; left: 87px; bottom: 94px; z-index: 3; max-width: min(430px,65%); margin: 0; background: #102a30e8; border: 1px solid #6b8b7b; padding: 8px 12px; border-radius: 8px; color: #e1ede5; pointer-events: none; }
-.map-stage .map-active-group small { color: #b1ccc2; }
+.map-stage .map-active-group small, .map-stage .map-active-group em { color: #b1ccc2; }
 .map-stage .map-group-summary { position: absolute; left: 87px; bottom: 39px; right: 15px; z-index: 3; display: flex; flex-wrap: nowrap; overflow-x: auto; margin: 0; padding: 0; max-width: calc(100% - 102px); }
 .map-stage .map-group-chip { flex-shrink: 0; background: #163237ed; color: #d9ece2; }
 .map-stage .map-group-chip small { color: #bed3ca; }
