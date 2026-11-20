@@ -12,7 +12,7 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-A configuração do Worker está em `wrangler.jsonc`. O ambiente local usa os bindings DB e CAMPAIGN_LIVE; credenciais e dados de produção não fazem parte do repositório. Não execute deploy para testar alterações de interface.
+A configuração do Worker está em `wrangler.jsonc`. O ambiente local usa os bindings DB e CAMPAIGN_LIVE; credenciais e dados de produção não fazem parte do repositório. Não execute deploy nem integre à `main` para testar alterações de interface: use a prévia abaixo.
 
 ## Prévia de avaliação
 
@@ -53,4 +53,8 @@ node scripts/report-client-bundle.mjs outputs/client-bundle.json
 - [Ações da equipe](docs/acoes-da-equipe.md)
 - [Aparência](docs/appearance.md)
 
-Deploy é uma etapa separada: `pnpm deploy` valida o ambiente, compila e publica no Cloudflare. A branch de avaliação deve ser aprovada antes da integração à main.
+## Deploy
+
+Todo push na branch `main` é publicado automaticamente em produção. A publicação é feita pela integração com o Git configurada no Cloudflare, fora deste repositório; a CI (`.github/workflows/ci.yml`) só testa e compila. Integrar à `main` equivale a publicar para mestres e jogadores: aprove a branch de avaliação antes do merge.
+
+`pnpm deploy` continua disponível para publicação manual: valida o ambiente, compila e publica no Cloudflare.

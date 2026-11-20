@@ -310,7 +310,9 @@ test('Cena de Conflito reage à largura útil e evita sobreposição dos control
   assert.match(visual, /\.conflict-team-panel \.conflict-add-row\s*\{[\s\S]*grid-template-columns:1fr/);
   assert.match(visual, /@container \(max-width: 980px\)/);
   assert.match(visual, /grid-template-columns:minmax\(290px,330px\) minmax\(0,1fr\)/);
-  assert.match(visual, /repeat\(auto-fit,minmax\(300px,1fr\)\)/);
+  // Grade de ameaças efetiva (a de 300px em visual-system.css era sobrescrita e foi removida).
+  const workflow = fs.readFileSync(require.resolve('../app/conflict-workflow.css'), 'utf8');
+  assert.match(workflow, /\.conflict-threat-grid\s*\{[^}]*repeat\(auto-fit, minmax\(min\(100%, 360px\), 1fr\)\)/);
 });
 
 test('Cena de Conflito usa dashboard compacto, grupos e vocabulário visual consistente', () => {
@@ -327,9 +329,9 @@ test('Cena de Conflito usa dashboard compacto, grupos e vocabulário visual cons
   assert.match(manager, /<Zap size=\{10\}/);
   assert.match(manager, /conflict-state-badge is-wounded/);
   assert.match(manager, /conflict-state-badge is-defeated/);
-  assert.match(visual, /grid-template-columns:minmax\(285px,.68fr\) minmax\(0,2.15fr\)/);
+  // Colunas efetivas da área de trabalho (a regra de 285px era sobrescrita e foi removida).
+  assert.match(visual, /\.conflict-workspace\s*\{[^}]*grid-template-columns:minmax\(290px,330px\) minmax\(0,1fr\)/);
   assert.match(visual, /conflict-threat-grid/);
-  assert.match(visual, /repeat\(auto-fit,minmax\(275px,1fr\)\)/);
 });
 
 test('Trilha de Conflito mantém 30 ameaças em grupos sem perder instâncias derrotadas', () => {

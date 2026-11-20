@@ -51,12 +51,12 @@
   .overview-mode .campaign-page-heading .eyebrow { display: none; }
   .overview-mode .campaign-page-heading h1 { font-size: 1.45rem; }
   .overview-mode .campaign-page-heading .intro-line { margin: 0; font-size: var(--text-caption); max-width: none; }
-  .overview-mode .master-overview { flex: 1; min-height: 0; grid-template-rows: auto auto minmax(0, 1fr) auto; }
+  .overview-mode .master-overview { flex: 1; min-height: 0; }
   .overview-mode .master-overview-hero { padding-block: 10px; }
   .overview-mode .master-overview-hero > div:first-child { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 2px 16px; }
   .overview-mode .master-overview-hero .eyebrow { grid-column: 1 / -1; }
   .overview-mode .master-overview-hero h2 { margin: 0; }
-  .overview-mode .master-overview-grid { min-height: 0; grid-template-rows: minmax(0, 1.1fr) minmax(0, .9fr); align-items: stretch; }
+  .overview-mode .master-overview-grid { min-height: 0; align-items: stretch; }
   .overview-mode .master-overview-grid > .master-overview-card { display: flex; flex-direction: column; min-height: 0; }
   .overview-mode .master-overview-card > header { flex: none; }
   .overview-mode .master-overview-list { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding-right: 3px; }
@@ -69,9 +69,6 @@
   .overview-mode .master-overview-resource-grid { flex: 1; min-height: 0; }
   .overview-mode .master-overview-resource-grid > span { padding-block: 6px; }
   .overview-mode .overview-utilities > .master-overview-card { max-height: clamp(90px, 17dvh, 160px); overflow-y: auto; scrollbar-width: thin; overscroll-behavior: contain; }
-}
-@media (max-width: 1099px) {
-  .master-overview-hero { grid-template-columns: 1fr; }
 }
 @media (max-width: 767px) {
   .master-overview-grid, .overview-utilities { grid-template-columns: 1fr; }
@@ -118,7 +115,6 @@
 }
 @media (min-width: 1100px) and (min-height: 650px) {
   /* Reservas com a altura do conteúdo; "Precisa de atenção" fica com o espaço restante e rola por dentro. */
-  .overview-mode .master-overview-grid { grid-template-rows: minmax(0, 1fr) auto; }
   .overview-mode .master-overview-resources .master-overview-resource-grid { flex: none; }
 }
 @media (min-width: 1100px) and (min-height: 650px) {
