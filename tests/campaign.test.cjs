@@ -549,7 +549,7 @@ test('Trilha de Conflito acompanha a rolagem da página sem invadir o modal de d
   assert.match(spotlightControl, /character-spotlight-request/);
   assert.match(hud, /character-conflict-sticky-sentinel/);
   assert.match(hud, /isStuck/);
-  assert.match(hud, /DANO PENDENTE/);
+  assert.match(hud, /Dano pendente/);
   assert.match(hud, /targets-recent/);
   assert.match(hud, /onThreatTarget=\{chooseTarget\}/);
   assert.match(trail, /data-trail-key/);

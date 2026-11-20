@@ -3535,6 +3535,10 @@ small { font-size: max(var(--text-caption), 80%); }
   .shelter-overview-architectural .architectural-yard-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .shelter-overview-architectural .architectural-service-grid > .architectural-slot { border-right:1px solid #4d6a64; border-bottom:0; }
   .shelter-overview-architectural .architectural-slot.is-empty { flex-direction:column; gap:2px; padding-top:18px; }
+  /* Vagas estreitas: o rótulo ("Área externa A") entra no fluxo, acima do ícone; antes, absoluto, quebrava em
+     duas linhas por cima do ícone. */
+  .shelter-overview-architectural .architectural-slot.is-empty { padding-top:6px; }
+  .shelter-overview-architectural .architectural-slot.is-empty .architectural-slot-number { position:static; order:-1; max-width:100%; line-height:1.2; letter-spacing:0; overflow-wrap:normal; }
 }
 @media (max-width:520px) {
   .shelter-overview-architectural .architectural-building-plan { grid-template-columns:1fr 1fr; grid-template-areas:"rooma roomb" "roomc roomd" "roome roomf"; }
@@ -3552,4 +3556,4 @@ details.shelter-overview-admin:not([open]) { gap:0; }
 .shelter-room-detail .shelter-detail-empty { min-height:0; }
 
 /* Estes rótulos agora são escritos em frase no código; o visual clássico continua mostrando em maiúsculas. */
-:is(.character-thresholds-title, .character-thresholds-track small, .character-micro, .character-serial, .character-hope-teaser-copy small, .character-hope-feature-top > span, .character-quick-heading > span, .character-quick-heading small, .character-quick-attack > span, .map-active-group small, .day-close-summary > div > span, .day-close-section-heading small, .construction-next-action small, .character-target-heading > div > span, .character-target-section > small) { text-transform: uppercase; }
+:is(.character-thresholds-title, .character-thresholds-track small, .character-micro, .character-serial, .character-hope-teaser-copy small, .character-hope-feature-top > span, .character-quick-heading > span, .character-quick-heading small, .character-quick-attack > span, .map-active-group small, .day-close-summary > div > span, .day-close-section-heading small, .construction-next-action small, .character-target-heading > div > span, .character-target-section > small, .character-conflict-damage-heading > div > span) { text-transform: uppercase; }
