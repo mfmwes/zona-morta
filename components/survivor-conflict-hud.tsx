@@ -210,7 +210,7 @@ export function SurvivorConflictHud({
     />
 
     {firstDamage && <div className="character-conflict-damage">
-      <div className="character-conflict-damage-heading"><ShieldAlert size={18} /><div><span>DANO PENDENTE{pendingDamage.length > 1 ? ` · ${pendingDamage.length} impactos` : ""}</span><strong>{firstDamage.sourceName} · {firstDamage.attackName}</strong></div><b>{firstDamage.tier.label}</b></div>
+      <div className="character-conflict-damage-heading"><ShieldAlert size={18} /><div><span>Dano pendente{pendingDamage.length > 1 ? ` · ${pendingDamage.length} impactos` : ""}</span><strong>{firstDamage.sourceName} · {firstDamage.attackName}</strong></div><b>{firstDamage.tier.label}</b></div>
       <div className="character-conflict-damage-info"><span><small>Dano</small><b>{firstDamage.damage} {firstDamage.damageType}</b></span><span><small>Sem Armadura</small><b>{firstDamage.tier.hpMarks} PV</b></span><span><small>Armadura livre</small><b>{freeArmor}/{stats.armor}</b></span></div>
       <div className="character-conflict-damage-actions">
         <Button size="sm" disabled={damageBusy} onClick={() => void resolveDamage("hp")}>Marcar {firstDamage.tier.hpMarks} PV</Button>

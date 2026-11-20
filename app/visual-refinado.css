@@ -224,7 +224,7 @@ html[data-visual-style="refinado"] {
   .map-session-group-title { font: var(--rf-label); letter-spacing: .01em; }
 
   /* Títulos curtos de diálogos e painéis: legenda em frase, sem monoespaçada. */
-  :is(.day-close-summary > div > span, .day-close-section-heading small, .construction-next-action small, .character-target-heading > div > span, .character-target-section > small) {
+  :is(.day-close-summary > div > span, .day-close-section-heading small, .construction-next-action small, .character-target-heading > div > span, .character-target-section > small, .character-conflict-damage-heading > div > span, .conflict-damage-numbers small, .conflict-damage-source small, .character-conflict-damage-info small) {
     font: var(--rf-label); letter-spacing: .01em; text-transform: none; color: var(--muted-foreground);
   }
   :is([data-slot="dialog-overlay"], [data-slot="alert-dialog-overlay"]):where([data-theme="dark"] *) { background: rgb(0 0 0 / .6); }
