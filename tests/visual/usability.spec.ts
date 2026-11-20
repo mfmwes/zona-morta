@@ -114,8 +114,8 @@ for(const role of ['master','player'])for(const screen of ['sheet','shelter','co
   });
 }
 
-// O Visual atual (sem data-visual-style) é o padrão do app; a prévia usa o estilo técnico por padrão.
-for(const role of ['master','player'])test(`default visual style (Visual atual) renders without overflow for ${role}`,async({page})=>{
+// O padrão do app e da prévia é o Refinado (testado acima). O Visual clássico (sem data-visual-style) continua disponível.
+for(const role of ['master','player'])test(`classic visual style renders without overflow for ${role}`,async({page})=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   for(const width of [390,1440])for(const screen of ['sheet','shelter','map','scene']){
     await page.setViewportSize({width,height:1000});await ready(page,`/?screen=${screen}&role=${role}&style=current`);

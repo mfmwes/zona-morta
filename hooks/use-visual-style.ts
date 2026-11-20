@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { isVisualStyle, type VisualStyle } from "@/lib/appearance";
+import { defaultVisualStyle, isVisualStyle, type VisualStyle } from "@/lib/appearance";
 
 function subscribe(onChange: () => void) {
   const observer = new MutationObserver(onChange);
@@ -15,5 +15,5 @@ function snapshot(): VisualStyle {
 }
 
 export function useVisualStyle() {
-  return useSyncExternalStore(subscribe, snapshot, (): VisualStyle => "current");
+  return useSyncExternalStore(subscribe, snapshot, (): VisualStyle => defaultVisualStyle);
 }
