@@ -192,7 +192,7 @@ html[data-visual-style="refinado"] {
   .character-quick-rolls button:last-child, .character-quick-rolls button:last-child:hover { color: var(--primary-foreground); }
   .character-resource-top strong { font-family: var(--font-sans); }
 
-  /* Rótulos da ficha: mesma legenda em todo lugar, em frase (o clássico os põe em maiúsculas por CSS). */
+  /* Rótulos da ficha: mesma legenda em todo lugar, em frase. */
   :is(.character-micro, .character-quick-heading > span, .character-quick-heading small, .character-quick-attack > span, .character-thresholds-title, .character-thresholds-track small, .character-hope-teaser-copy small, .character-active-weapon > div > span, .character-hope-feature-top > span) {
     font: var(--rf-label); letter-spacing: .01em; text-transform: none; color: var(--muted-foreground);
   }

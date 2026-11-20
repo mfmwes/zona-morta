@@ -20,7 +20,7 @@ A configuração do Worker está em `wrangler.jsonc`. O ambiente local usa os bi
 pnpm preview:qa
 ```
 
-Abra http://127.0.0.1:4173. A prévia usa componentes reais e uma campanha fictícia em memória, sem autenticação ou chamadas à campanha real. A barra superior alterna perfil, tela, tema e estilo. Recarregar reinicia a campanha de exemplo; favoritos e modelos da biblioteca persistem no navegador.
+Abra http://127.0.0.1:4173. A prévia usa componentes reais e uma campanha fictícia em memória, sem autenticação ou chamadas à campanha real. A barra superior alterna perfil, tela e tema. Recarregar reinicia a campanha de exemplo; favoritos e modelos da biblioteca persistem no navegador.
 
 Roteiro e limites: [melhorias de usabilidade e cena](docs/usability-scene-upgrade.md).
 

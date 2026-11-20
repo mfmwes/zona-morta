@@ -1,4 +1,4 @@
-/* Estilo Refinado (padrão). Sem data-visual-style vale o Visual clássico: a cascata original, sem estas regras.
+/* Estilo Refinado, o único estilo visual do app. O <html> sempre tem data-visual-style="refinado".
    As regras de forma e tipografia do Refinado ficam em visual-refinado.css. */
 /* Paleta: superfícies neutras e calmas, petróleo como ação e âmbar só como destaque. */
 html[data-visual-style="refinado"] {
@@ -265,30 +265,10 @@ html[data-visual-style="refinado"] {
   .topbar-context > .text-\[\#c4cfcb\] { color: var(--muted-foreground); }
 }
 
-/* Appearance controls share the existing day/night control's locations. */
+/* Controle de claro/noturno. */
 .theme-controls { position: fixed; z-index: 90; left: 15px; bottom: 15px; display: flex; gap: 6px; }
 .theme-controls .theme-toggle { position: static; }
 .theme-controls--campaign { display: none; }
-.appearance-picker[data-slot="popover-content"] { z-index: 100; width: min(350px, calc(100vw - 24px)); max-height: var(--radix-popover-content-available-height); overflow-y: auto; overscroll-behavior: contain; padding: 16px; }
-.appearance-heading { position: sticky; top: -16px; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 10px; background: var(--popover); }
-.appearance-heading h2 { margin: 0; font-size: 1rem; font-weight: 700; color: var(--foreground); }
-.appearance-close { display: grid; place-items: center; min-width: 36px; min-height: 36px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface-soft); color: var(--foreground); }
-.appearance-options { min-width: 0; margin: 0; padding: 0; border: 0; }
-.appearance-options legend { margin-bottom: 8px; color: var(--muted-foreground); font-size: var(--text-caption); }
-.appearance-option { display: flex; align-items: center; gap: 10px; padding: 12px 10px; margin-bottom: 6px; border: 1px solid var(--border); border-radius: 7px; background: var(--card); color: var(--foreground); cursor: pointer; }
-.appearance-option:has(input:checked) { border-color: var(--primary); box-shadow: inset 3px 0 var(--primary); background: var(--muted); }
-.appearance-option input { flex: none; width: 16px; height: 16px; margin: 0; accent-color: var(--primary); }
-.appearance-option-copy { min-width: 0; display: grid; gap: 3px; }
-.appearance-option-copy strong { font-size: .86rem; font-weight: 600; }
-.appearance-option-copy small { font-size: var(--text-caption); color: var(--muted-foreground); line-height: 1.4; }
-.appearance-swatch { display: flex; flex: none; overflow: hidden; width: 29px; height: 36px; border: 1px solid var(--border); border-radius: 4px; }
-.appearance-swatch i { flex: 1; background: #193b3e; }
-.appearance-swatch i:nth-child(2) { background: #e9ede8; }
-.appearance-swatch i:nth-child(3) { background: #c89a62; }
-.appearance-swatch--refinado i:first-child { background: #1b5f57; }
-.appearance-swatch--refinado i:nth-child(2) { background: #f3f5f2; }
-.appearance-swatch--refinado i:nth-child(3) { background: #e3ad5a; }
-.appearance-note { margin: 12px 0 0; color: var(--muted-foreground); font-size: var(--text-caption); line-height: 1.5; }
 
 @media (max-width: 1000px) {
   html:has(.campaign-navigation-dock) .theme-controls--global { display: none; }
@@ -301,7 +281,6 @@ html[data-visual-style="refinado"] {
   .mobile-tool-group { isolation: isolate; }
   .mobile-tool-group .theme-controls--campaign { position: static; display: flex; flex-wrap: wrap; width: 100%; }
   .mobile-tool-group .theme-controls .theme-toggle { flex: 1; min-width: 130px; }
-  .mobile-tool-group .appearance-trigger .appearance-label { display: inline; }
 }
 @media (max-width: 620px) {
   .theme-controls--global { left: 10px; bottom: calc(68px + env(safe-area-inset-bottom)); }

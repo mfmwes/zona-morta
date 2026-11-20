@@ -3510,5 +3510,3 @@ details.shelter-overview-admin[open] > summary h3::after { content:" ▾"; }
 details.shelter-overview-admin:not([open]) { gap:0; }
 .shelter-room-detail .shelter-detail-empty { min-height:0; }
 
-/* Estes rótulos agora são escritos em frase no código; o visual clássico continua mostrando em maiúsculas. */
-:is(.character-thresholds-title, .character-thresholds-track small, .character-micro, .character-serial, .character-hope-teaser-copy small, .character-hope-feature-top > span, .character-quick-heading > span, .character-quick-heading small, .character-quick-attack > span, .map-active-group small, .day-close-summary > div > span, .day-close-section-heading small, .construction-next-action small, .character-target-heading > div > span, .character-target-section > small, .character-conflict-damage-heading > div > span) { text-transform: uppercase; }

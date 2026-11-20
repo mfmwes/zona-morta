@@ -92,9 +92,9 @@ test('choice cards support keyboard and explicit rule labels remain readable',as
   await ready(page,'/?screen=reading');const checkbox=page.getByRole('checkbox',{name:'Nina',exact:true});
   await checkbox.focus();await page.keyboard.press('Space');await expect(checkbox).toBeChecked();
   await expect(page.locator('.rule-prose strong')).toHaveText(['Gatilho:','Efeito:','Custo:','Duração:','Como remover:']);
-  for(const theme of ['light','dark'])for(const style of ['refinado','current']){
-    await page.getByLabel('Tema',{exact:true}).selectOption(theme);await page.getByLabel('Estilo',{exact:true}).selectOption(style);
-    await noOverflow(page);await testInfo.attach(`reading-${theme}-${style}`,{body:await page.locator('.qa-reading').screenshot(),contentType:'image/png'});
+  for(const theme of ['light','dark']){
+    await page.getByLabel('Tema',{exact:true}).selectOption(theme);
+    await noOverflow(page);await testInfo.attach(`reading-${theme}`,{body:await page.locator('.qa-reading').screenshot(),contentType:'image/png'});
   }
 });
 
@@ -114,16 +114,6 @@ for(const role of ['master','player'])for(const screen of ['sheet','shelter','co
   });
 }
 
-// O padrão do app e da prévia é o Refinado (testado acima). O Visual clássico (sem data-visual-style) continua disponível.
-for(const role of ['master','player'])test(`classic visual style renders without overflow for ${role}`,async({page})=>{
-  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
-  for(const width of [390,1440])for(const screen of ['sheet','shelter','map','scene']){
-    await page.setViewportSize({width,height:1000});await ready(page,`/?screen=${screen}&role=${role}&style=current`);
-    expect(await page.evaluate(()=>document.documentElement.hasAttribute('data-visual-style'))).toBe(false);
-    await noOverflow(page);
-  }
-  expect(errors).toEqual([]);
-});
 
 test('large scene renders and records insertion/undo timings',async({page},testInfo)=>{
   const start=Date.now();await ready(page,'/?screen=scene&objects=200');

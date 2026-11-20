@@ -25,7 +25,7 @@ import "./overview-dashboard.css";
 import "./visual-refinado.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { appearanceBootstrapScript, defaultVisualStyle } from "@/lib/appearance";
+import { appearanceBootstrapScript, visualStyle } from "@/lib/appearance";
 
 export const metadata: Metadata = {
   title: "Zona Morta | Aplicativo de campanha",
@@ -48,7 +48,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" data-visual-style={defaultVisualStyle} suppressHydrationWarning>
+    <html lang="pt-BR" data-visual-style={visualStyle} suppressHydrationWarning>
       <head><script dangerouslySetInnerHTML={{ __html: appearanceBootstrapScript }} /></head>
       <body className="antialiased"><ThemeToggle />{children}<Toaster position="bottom-right" richColors closeButton /></body>
     </html>
