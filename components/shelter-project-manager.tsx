@@ -492,7 +492,7 @@ export function ShelterProjectsManager({ initialProjectId, game, edit, playerPre
     </section>
 
     {!playerPreview && <section className={`construction-next-action is-${constructionNext.tone}`}>
-      <div><ConstructionNextIcon size={18} /><span><small>PRÓXIMA AÇÃO</small><b>{constructionNext.title}</b><p>{constructionNext.detail}</p></span></div>
+      <div><ConstructionNextIcon size={18} /><span><small>Próxima ação</small><b>{constructionNext.title}</b><p>{constructionNext.detail}</p></span></div>
       <Button size="sm" variant={constructionNext.tone === "danger" || constructionNext.tone === "warning" ? "default" : "outline"} onClick={openConstructionNext}>{constructionNext.action}<ChevronRight size={15} /></Button>
     </section>}
 

@@ -174,9 +174,9 @@ export function SurvivorConflictHud({
         <Popover open={targetOpen} onOpenChange={setTargetOpen}>
           <PopoverTrigger asChild><Button size="sm" variant="outline"><Search size={14} /> Localizar</Button></PopoverTrigger>
           <PopoverContent align="end" className="character-target-popover">
-            <div className="character-target-heading"><div><span>ALVOS DA CENA</span><b>{livingThreats.length} disponíveis</b></div>{targetId && <button type="button" onClick={() => chooseTarget("")} aria-label="Limpar alvo"><X size={15} /></button>}</div>
+            <div className="character-target-heading"><div><span>Alvos da cena</span><b>{livingThreats.length} disponíveis</b></div>{targetId && <button type="button" onClick={() => chooseTarget("")} aria-label="Limpar alvo"><X size={15} /></button>}</div>
             <label className="character-target-search"><Search size={15} /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Buscar ameaça…" autoFocus /></label>
-            {!query && recentThreats.length > 0 && <div className="character-target-section"><small>RECENTES</small><div className="character-target-recents">{recentThreats.map(threat => <button type="button" key={threat.id} onClick={() => chooseTarget(threat.id)}>{threat.name}</button>)}</div></div>}
+            {!query && recentThreats.length > 0 && <div className="character-target-section"><small>Recentes</small><div className="character-target-recents">{recentThreats.map(threat => <button type="button" key={threat.id} onClick={() => chooseTarget(threat.id)}>{threat.name}</button>)}</div></div>}
             <div className="character-target-groups">
               {groups.map(([groupName, threats]) => <details key={groupName} open={groups.length <= 4 || Boolean(query)}>
                 <summary><span>{groupName}</span><b>{threats.length}</b></summary>

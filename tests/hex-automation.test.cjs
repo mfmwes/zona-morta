@@ -242,7 +242,7 @@ test('fluxo de exploração prioriza ação atual e recolhe configurações avan
   const explorer=fs.readFileSync(require.resolve('../components/hex-explorer.tsx'),'utf8');
   assert.match(dialog,/Explorar \{point\?\.name/);
   assert.match(dialog,/SearchTabs/);
-  assert.doesNotMatch(dialog,/PRÓXIMA AÇÃO|ETAPA 3/);
+  assert.doesNotMatch(dialog,/PRÓXIMA AÇÃO|Próxima ação|ETAPA 3/);
   assert.match(dialog,/Preparação e ajustes/);
   assert.match(dialog,/Recolher achados/);
   assert.match(dialog,/Busca proposta pelos jogadores/);
