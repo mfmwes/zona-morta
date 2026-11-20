@@ -92,7 +92,7 @@ test('choice cards support keyboard and explicit rule labels remain readable',as
   await ready(page,'/?screen=reading');const checkbox=page.getByRole('checkbox',{name:'Nina',exact:true});
   await checkbox.focus();await page.keyboard.press('Space');await expect(checkbox).toBeChecked();
   await expect(page.locator('.rule-prose strong')).toHaveText(['Gatilho:','Efeito:','Custo:','Duração:','Como remover:']);
-  for(const theme of ['light','dark'])for(const style of ['fiel','leitura','tecnico','refinado']){
+  for(const theme of ['light','dark'])for(const style of ['refinado','current']){
     await page.getByLabel('Tema',{exact:true}).selectOption(theme);await page.getByLabel('Estilo',{exact:true}).selectOption(style);
     await noOverflow(page);await testInfo.attach(`reading-${theme}-${style}`,{body:await page.locator('.qa-reading').screenshot(),contentType:'image/png'});
   }

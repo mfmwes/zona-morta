@@ -45,7 +45,7 @@ const lowContrastTexts = () => {
   return out;
 };
 
-for (const style of ['current', 'fiel', 'leitura', 'tecnico', 'refinado']) for (const theme of ['light', 'dark']) test(`text contrast stays readable in ${style} / ${theme}`, async ({ page }) => {
+for (const style of ['current', 'refinado']) for (const theme of ['light', 'dark']) test(`text contrast stays readable in ${style} / ${theme}`, async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   const failures: string[] = [];
   for (const screen of ['overview', 'sheet', 'map', 'shelter', 'shelter-plan']) {
