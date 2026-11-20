@@ -57,6 +57,17 @@ html[data-visual-style="refinado"] {
   .overview-header-link:hover { text-decoration: underline; text-underline-offset: 3px; }
   :is(button, a, [tabindex]):focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 
+  /* ---------- Diálogos e menus ---------- */
+  /* Superfície de cartão (o padrão era o fundo da página) e a elevação mais alta. :where() deixa
+     diálogos com estilo próprio (ex.: setor do mapa) vencerem. */
+  :where([data-slot="dialog-content"], [data-slot="alert-dialog-content"], [data-slot="sheet-content"]) {
+    background: var(--card); border-color: var(--border); border-radius: var(--rf-radius-lg); box-shadow: var(--rf-elev-3);
+  }
+  :where([data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="select-content"]) {
+    background: var(--popover); border-color: var(--border); border-radius: var(--rf-radius); box-shadow: var(--rf-elev-3);
+  }
+  :where([data-slot="dialog-overlay"], [data-slot="alert-dialog-overlay"]) { background: rgb(10 22 22 / .45); }
+
   /* ---------- Etiquetas ---------- */
   :is(.tag, .master-overview-chips li) {
     border-radius: 999px; border: 1px solid var(--border); background: var(--secondary); color: var(--foreground);
@@ -211,6 +222,12 @@ html[data-visual-style="refinado"] {
     font: var(--rf-label); letter-spacing: .01em; text-transform: none;
   }
   .map-session-group-title { font: var(--rf-label); letter-spacing: .01em; }
+
+  /* Títulos curtos de diálogos e painéis: legenda em frase, sem monoespaçada. */
+  :is(.day-close-summary > div > span, .day-close-section-heading small, .construction-next-action small, .character-target-heading > div > span, .character-target-section > small) {
+    font: var(--rf-label); letter-spacing: .01em; text-transform: none; color: var(--muted-foreground);
+  }
+  :is([data-slot="dialog-overlay"], [data-slot="alert-dialog-overlay"]):where([data-theme="dark"] *) { background: rgb(0 0 0 / .6); }
 
   /* ---------- Conflito ---------- */
   .conflict-overview-metric { border-radius: var(--rf-radius); min-height: 52px; padding: 8px 12px; box-shadow: var(--rf-elev-1); }

@@ -251,9 +251,9 @@ export function DayCloseDialog({
       <div className="day-close-body">
         <div className="day-close-overview">
           <div className="day-close-summary">
-            <div><span>AGORA</span><b>Dia {game.day}</b></div>
+            <div><span>Agora</span><b>Dia {game.day}</b></div>
             <Moon size={18} aria-hidden="true" />
-            <div><span>PRÓXIMO</span><b>Dia {game.day + 1} · 08:00</b></div>
+            <div><span>Próximo</span><b>Dia {game.day + 1} · 08:00</b></div>
           </div>
           <div className="day-close-reserve-summary">
             {(["food", "water"] as const).map(resource => <div key={resource}>
@@ -277,7 +277,7 @@ export function DayCloseDialog({
 
         <section className="day-close-section">
           <div className="day-close-section-heading">
-            <div><small>SOBREVIVENTES</small><b>{game.survivors.length} pessoa(s)</b></div>
+            <div><small>Sobreviventes</small><b>{game.survivors.length} pessoa(s)</b></div>
             <span>Abra para trocar a fonte. Consumo já registrado nunca é cobrado de novo.</span>
           </div>
           <div className="day-close-people">
@@ -334,7 +334,7 @@ export function DayCloseDialog({
 
         <details className="day-close-section day-close-collapsible" open={inspection.residentMissing.food > 0 || inspection.residentMissing.water > 0}>
           <summary className="day-close-section-heading">
-            <div><small>MORADORES DO ABRIGO</small><b>{residents} registrado(s) · {currentPlan.residentsFood} comem · {currentPlan.residentsWater} bebem</b></div>
+            <div><small>Moradores do abrigo</small><b>{residents} registrado(s) · {currentPlan.residentsFood} comem · {currentPlan.residentsWater} bebem</b></div>
             <span>Quantos usarão as reservas hoje?</span>
           </summary>
           <div className="day-close-resident-controls">
@@ -348,7 +348,7 @@ export function DayCloseDialog({
         </details>
 
         {(npcsAtReserve.length > 0 || fieldNpcList.length > 0) && <details className="day-close-section day-close-collapsible" open={inspection.deprivations.some(row => row.npcId)}>
-          <summary className="day-close-section-heading"><div><small>PNJS IDENTIFICADOS</small><b>{npcsAtReserve.length} junto às reservas · {fieldNpcList.length} em campo</b></div>
+          <summary className="day-close-section-heading"><div><small>PNJs identificados</small><b>{npcsAtReserve.length} junto às reservas · {fieldNpcList.length} em campo</b></div>
             <span>Todo consumo é nominal e auditável.</span></summary>
           <p className="text-xs subtle">PNJs no abrigo podem usar reservas compartilhadas. Quem está em campo só pode usar uma porção portada por sobrevivente no mesmo hex, outra fonte declarada pelo mestre ou terá a privação registrada.</p>
           <div className="day-close-people">{[...npcsAtReserve, ...fieldNpcList].map(npc => {
@@ -370,7 +370,7 @@ export function DayCloseDialog({
         </details>}
 
         <section className="day-close-section">
-          <div className="day-close-section-heading"><div><small>DESCANSO DA NOITE</small><b>6h · opcional</b></div>
+          <div className="day-close-section-heading"><div><small>Descanso da noite</small><b>6h · opcional</b></div>
             <span>{tableRestReadyForNight(game) ? "Descanso solicitado e confirmado por todos." : "Escolha se haverá descanso durante a noite."}</span></div>
           <label className="inventory-ready">
             <input type="checkbox" checked={overnightRest || tableRestReadyForNight(game)} disabled={!overnightRestReady || tableRestReadyForNight(game)}

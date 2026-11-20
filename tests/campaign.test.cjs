@@ -542,7 +542,7 @@ test('Trilha de Conflito acompanha a rolagem da página sem invadir o modal de d
   const rolls = fs.readFileSync(require.resolve('../components/roll-dialog.tsx'), 'utf8');
   const visual = fs.readFileSync(require.resolve('../app/visual-system.css'), 'utf8');
   assert.match(hud, /TRILHA DE CONFLITO/);
-  assert.match(hud, /ALVOS DA CENA/);
+  assert.match(hud, /Alvos da cena/);
   assert.match(hud, /Localizar/);
   assert.match(spotlightControl, /Pedir Spotlight/);
   assert.match(hud, /SpotlightRequestButton/);
@@ -2208,7 +2208,7 @@ test('etapa de UX do abrigo prioriza estado, pendências e próxima ação sem r
   assert.match(dashboard, /Outras pendências/);
   assert.match(dashboard, /Próximo passo/);
   assert.match(dashboard, /Provisões abaixo da população presente/);
-  assert.match(manager, /PRÓXIMA AÇÃO/);
+  assert.match(manager, /Próxima ação/);
   assert.match(manager, /constructionNext/);
   assert.match(manager, /Alocar trabalho/);
   assert.match(manager, /Revisar energia/);
