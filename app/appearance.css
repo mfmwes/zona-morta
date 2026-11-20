@@ -107,8 +107,47 @@ html[data-visual-style="tecnico"][data-theme="dark"] {
   --style-on-primary: #122d4c;
   --style-warm: #86dfed;
 }
+/* Refinado: superfícies neutras e calmas, petróleo como ação e âmbar só como destaque.
+   As regras próprias de forma e tipografia ficam em visual-refinado.css. */
+html[data-visual-style="refinado"] {
+  --font-sans: "IBM Plex Sans", "Segoe UI", sans-serif;
+  /* Sem monoespaçada nos rótulos e números: a sans com algarismos tabulares alinha igual e lê melhor. */
+  --font-mono: "IBM Plex Sans", "Segoe UI", sans-serif;
+  --style-background: #f3f5f2;
+  --style-paper: #ffffff;
+  --style-soft: #eef2ef;
+  --style-ink: #15282a;
+  --style-muted: #56676a;
+  --style-line: #dce3df;
+  --style-input: #7f8f8a;
+  --style-primary: #1b5f57;
+  --style-on-primary: #ffffff;
+  --style-warm: #96590f;
+  --style-highlight: #e3ad5a;
+  --style-hero-start: #10292b;
+  --style-hero-end: #183b3b;
+  --style-quick: #143234;
+  --style-quick-soft: #234846;
+  --style-quick-line: #4b6f69;
+  --style-on-dark: #f3f7f4;
+  --style-dark-muted: #b9ccc6;
+  --style-radius: 10px;
+  --style-shadow: 0 1px 2px #10282808, 0 2px 6px #1028280a;
+}
+html[data-visual-style="refinado"][data-theme="dark"] {
+  --style-background: #0f1716;
+  --style-paper: #162120;
+  --style-soft: #1d2a29;
+  --style-ink: #e8efec;
+  --style-muted: #a3b3ae;
+  --style-line: #2b3b39;
+  --style-input: #667a75;
+  --style-primary: #7cc7b4;
+  --style-on-primary: #0c2622;
+  --style-warm: #e7b977;
+}
 
-html:is([data-visual-style="fiel"], [data-visual-style="leitura"], [data-visual-style="tecnico"]) {
+html:is([data-visual-style="fiel"], [data-visual-style="leitura"], [data-visual-style="tecnico"], [data-visual-style="refinado"]) {
   --background: var(--style-background);
   --foreground: var(--style-ink);
   --card: var(--style-paper);
@@ -341,7 +380,7 @@ html:is([data-visual-style="fiel"], [data-visual-style="leitura"], [data-visual-
   .appearance-swatch--tecnico i:nth-child(3) { background: #86dfed; }
 }
 
-html:is([data-visual-style="fiel"], [data-visual-style="leitura"], [data-visual-style="tecnico"])[data-theme="dark"] {
+html:is([data-visual-style="fiel"], [data-visual-style="leitura"], [data-visual-style="tecnico"], [data-visual-style="refinado"])[data-theme="dark"] {
   --style-danger-surface: #442925;
   --style-danger-ink: #ffc3b8;
   --style-success-surface: #233e32;

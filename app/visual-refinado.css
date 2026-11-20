@@ -1,0 +1,227 @@
+/* Estilo "Refinado" (protótipo da Direção A). Só vale com data-visual-style="refinado";
+   os tokens de cor ficam em appearance.css, junto das outras paletas.
+   Escalas usadas aqui: texto 12/13/14/16/20/26px · raios 6/10/14px · elevação 1–3. */
+html[data-visual-style="refinado"] {
+  --rf-radius-sm: 6px;
+  --rf-radius: 10px;
+  --rf-radius-lg: 14px;
+  --rf-elev-1: 0 1px 2px #1028280a;
+  --rf-elev-2: 0 1px 2px #1028280a, 0 4px 12px #1028280d;
+  --rf-elev-3: 0 2px 4px #1028280f, 0 12px 28px #10282817;
+  --rf-label: 600 .75rem/1.3 var(--font-sans);
+  --rf-tint: color-mix(in srgb, var(--primary) 7%, var(--card));
+}
+html[data-visual-style="refinado"][data-theme="dark"] {
+  --rf-elev-1: 0 1px 2px #00000033;
+  --rf-elev-2: 0 1px 2px #00000040, 0 4px 14px #00000033;
+  --rf-elev-3: 0 2px 6px #00000047, 0 14px 32px #00000052;
+  --rf-tint: color-mix(in srgb, var(--primary) 9%, var(--card));
+}
+
+html[data-visual-style="refinado"] {
+  body { font-synthesis: none; font-size: 15px; letter-spacing: 0; text-rendering: optimizeLegibility; font-variant-numeric: tabular-nums; }
+  /* --font-mono aponta para a sans neste estilo; teclas de atalho continuam em fonte de código. */
+  kbd { font-family: "IBM Plex Mono", Consolas, monospace; }
+  /* Números alinhados em colunas, sem trocar de fonte. */
+  :is(b, strong, output, .master-overview-chips li b, .master-overview-resource-grid b) { font-variant-numeric: tabular-nums; }
+
+  /* ---------- Tipografia ---------- */
+  .page-title { font-size: 1.625rem; font-weight: 600; letter-spacing: -.015em; line-height: 1.2; color: var(--foreground); }
+  .intro-line { color: var(--muted-foreground); font-size: .875rem; line-height: 1.5; }
+  .section-title { font-size: 1rem; font-weight: 600; letter-spacing: -.005em; }
+  /* Rótulos: sem monoespaçada e sem espaçamento largo; leem como legenda, não como carimbo. */
+  :is(.eyebrow, .dossier-title, .smallcaps, .character-serial) {
+    font: var(--rf-label); letter-spacing: .02em; text-transform: none; color: var(--muted-foreground);
+  }
+  .campaign-page-heading .eyebrow { display: none; }
+  .campaign-page-heading { margin-bottom: 18px; }
+
+  /* ---------- Botões ---------- */
+  [data-slot="button"] {
+    border-radius: var(--rf-radius-sm); font-weight: 600; letter-spacing: 0; box-shadow: none;
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease;
+  }
+  [data-slot="button"][data-variant="default"], [data-slot="button"]:not([data-variant]) {
+    background: var(--primary); color: var(--primary-foreground); border: 1px solid transparent; box-shadow: var(--rf-elev-1);
+  }
+  [data-slot="button"][data-variant="default"]:hover:not(:disabled) { background: color-mix(in srgb, var(--primary) 88%, var(--foreground)); }
+  [data-slot="button"][data-variant="outline"] {
+    background: var(--card); color: var(--foreground); border: 1px solid color-mix(in srgb, var(--input) 70%, var(--border)); box-shadow: var(--rf-elev-1);
+  }
+  [data-slot="button"]:is([data-variant="outline"], [data-variant="secondary"]):hover:not(:disabled) { background: var(--secondary); border-color: var(--input); color: var(--foreground); }
+  [data-slot="button"][data-variant="secondary"] { background: var(--secondary); color: var(--foreground); border: 1px solid transparent; }
+  [data-slot="button"][data-variant="ghost"] { background: transparent; color: var(--foreground); }
+  [data-slot="button"][data-variant="ghost"]:hover:not(:disabled) { background: var(--secondary); }
+  [data-slot="button"][data-variant="link"] { color: var(--primary); }
+  .overview-header-link { font-weight: 600; text-decoration: none; }
+  .overview-header-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+  :is(button, a, [tabindex]):focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+
+  /* ---------- Etiquetas ---------- */
+  :is(.tag, .master-overview-chips li) {
+    border-radius: 999px; border: 1px solid var(--border); background: var(--secondary); color: var(--foreground);
+    font: 500 .8125rem/1.4 var(--font-sans); letter-spacing: 0; text-transform: none;
+  }
+  .master-overview-chips li { padding: 3px 10px; }
+  .master-overview-chips li b { font-family: var(--font-sans); font-weight: 600; }
+  .master-overview-chips li.is-zero { background: transparent; color: var(--muted-foreground); }
+  .master-overview-chips li.is-active { background: var(--rf-tint); border-color: color-mix(in srgb, var(--primary) 35%, var(--border)); }
+  .master-overview-chips li.is-warning { background: var(--style-warning-surface); border-color: color-mix(in srgb, var(--style-warning-ink) 35%, transparent); color: var(--style-warning-ink); }
+  .master-overview-chips li.is-danger { background: var(--style-danger-surface); border-color: color-mix(in srgb, var(--style-danger-ink) 35%, transparent); color: var(--style-danger-ink); }
+
+  /* ---------- Superfícies ---------- */
+  :is(.panel, .character-surface, .list-card, .library-card, .npc-card, .master-overview-card, .master-overview-hero, .character-roster) {
+    border-radius: var(--rf-radius-lg); border-color: var(--border); box-shadow: var(--rf-elev-2);
+  }
+  :is(.master-overview-group, .master-overview-attention-item, .master-overview-row, .master-overview-resource-grid > span, .character-attribute, .character-summary-attribute, .character-defense-card, .character-provision-grid > span) {
+    border-radius: var(--rf-radius);
+  }
+
+  /* ---------- Barra lateral: ícone com rótulo ---------- */
+  .compact-navigation .rail { width: 84px; padding: 14px 8px; gap: 14px; background: var(--style-hero-start); border-right: 1px solid #ffffff10; box-shadow: none; }
+  .compact-navigation .rail-nav { gap: 4px; }
+  .compact-navigation .rail-nav :is(button, .rail-more) {
+    display: grid; justify-items: center; gap: 4px; padding: 9px 4px 8px; border-radius: var(--rf-radius);
+    border: 0; font: 500 .6875rem/1.2 var(--font-sans); color: var(--style-dark-muted); text-align: center;
+  }
+  .compact-navigation .rail-nav :is(button, .rail-more) span { position: static; width: auto; height: auto; overflow: visible; clip-path: none; white-space: nowrap; max-width: 100%; text-overflow: ellipsis; overflow: hidden; }
+  .compact-navigation .rail-nav :is(button, .rail-more):hover { background: #ffffff0f; color: var(--style-on-dark); box-shadow: none; }
+  .compact-navigation .rail-nav :is(button, .rail-more):is([aria-current="page"], [data-state="active"]) {
+    background: #ffffff17; color: var(--style-on-dark); box-shadow: inset 0 0 0 1px #ffffff14;
+  }
+  .compact-navigation .rail-nav :is(button, .rail-more):is([aria-current="page"], [data-state="active"]) svg { color: var(--style-highlight); }
+  .compact-navigation .rail > b, .brand-mark {
+    display: grid; place-items: center; width: 40px; height: 40px; margin-inline: auto; border-radius: var(--rf-radius);
+    background: var(--style-highlight); color: var(--style-hero-start); border: 0; box-shadow: none;
+    font: 700 .9375rem/1 var(--font-sans); letter-spacing: -.02em;
+  }
+  .compact-navigation .rail .theme-controls button, .rail .theme-toggle { border-radius: var(--rf-radius); background: #ffffff0d; border-color: #ffffff1a; color: var(--style-dark-muted); }
+
+  /* ---------- Visão geral ---------- */
+  .master-overview-hero { background: var(--card); padding: 16px 20px; }
+  .master-overview-hero .eyebrow { color: var(--muted-foreground); }
+  .master-overview-hero .eyebrow svg { color: var(--primary); }
+  .master-overview-hero h2 { font-size: 1.375rem; font-weight: 600; letter-spacing: -.01em; color: var(--foreground); }
+  .master-overview-card { padding: 16px 18px; }
+  .master-overview-card > header { padding-bottom: 12px; margin-bottom: 12px; border-bottom-color: var(--border); }
+  .master-overview-card > header > div > svg { width: 32px; height: 32px; padding: 7px; border-radius: var(--rf-radius); background: var(--rf-tint); color: var(--primary); }
+  .master-overview-card > header b { font-size: .9375rem; font-weight: 600; }
+  .master-overview-card > header small { font-size: .8125rem; }
+  .master-overview-group { background: var(--secondary); border-color: transparent; }
+  .master-overview-group li { background: var(--card); border-color: var(--border); border-radius: var(--rf-radius-sm); }
+  .overview-person-initial { font-weight: 600; background: var(--rf-tint); }
+  .master-overview-attention-item { background: var(--card); border-left-width: 3px; }
+  .master-overview-attention-item.is-warning { background: var(--style-warning-surface); border-color: color-mix(in srgb, var(--style-warning-ink) 25%, transparent); border-left-color: var(--style-warning-ink); }
+  .master-overview-attention-item.is-danger { background: var(--style-danger-surface); border-color: color-mix(in srgb, var(--style-danger-ink) 25%, transparent); border-left-color: var(--style-danger-ink); }
+  .master-overview-resource-grid > span { background: var(--card); border-color: var(--border); }
+  .master-overview-resource-grid small { font-weight: 500; color: var(--muted-foreground); }
+  .master-overview-resource-grid b { font: 600 1rem var(--font-sans); color: var(--foreground); }
+  .master-overview-team .master-overview-work > h3 { font-weight: 600; }
+
+  /* ---------- Ficha ---------- */
+  /* Cabeçalho e Consulta rápida viram cartões claros: as variáveis "sobre escuro" passam a apontar para a superfície. */
+  :is(.character-hero, .character-quick, .character-hope-feature, .panel.shelter-hero-panel) {
+    --style-hero-start: var(--card);
+    --style-hero-end: var(--rf-tint);
+    --style-on-dark: var(--foreground);
+    --style-dark-muted: var(--muted-foreground);
+    --style-highlight: var(--primary);
+    --style-quick: var(--secondary);
+    --style-quick-soft: var(--secondary);
+    --style-quick-line: var(--border);
+    box-shadow: var(--rf-elev-2); border-radius: var(--rf-radius-lg);
+  }
+  .character-hero { min-height: 0; padding: 20px 24px; }
+  .character-hero::before { opacity: 0; }
+  .character-hero::after { height: 3px; background: linear-gradient(90deg, var(--primary), color-mix(in srgb, var(--primary) 20%, transparent)); }
+  .character-hero .character-serial span { color: var(--muted-foreground); }
+  .character-identity h2 { font-size: 1.75rem; font-weight: 600; letter-spacing: -.02em; }
+  .character-identity-meta { color: var(--muted-foreground); }
+  .character-portrait { font-family: var(--font-sans); font-weight: 600; border-radius: var(--rf-radius); box-shadow: none; background: var(--rf-tint); color: var(--primary); border-color: color-mix(in srgb, var(--primary) 30%, var(--border)); }
+  .character-portrait-upload { background: var(--card); color: var(--foreground); border-color: var(--border); box-shadow: var(--rf-elev-1); }
+  .character-hero-code { display: none; }
+
+  /* Abas: sublinhado em vez de botão cheio. */
+  .character-tabs-scroll { background: var(--card); border-color: var(--border); border-radius: var(--rf-radius-lg); box-shadow: var(--rf-elev-1); padding: 4px; }
+  .character-tab { border-radius: var(--rf-radius-sm); font-weight: 500; color: var(--muted-foreground); }
+  .character-tab:hover { background: var(--secondary); color: var(--foreground); border-color: transparent; }
+  .character-tab[data-state="active"] { background: var(--rf-tint); color: var(--primary); border-color: transparent; box-shadow: inset 0 -2px var(--primary); font-weight: 600; }
+
+  /* Títulos de seção sem numeração decorativa. */
+  .character-section-heading { border-bottom-color: var(--border); }
+  .character-section-heading > div > span { display: none; }
+  .character-section-heading h3 { font-size: 1rem; font-weight: 600; letter-spacing: -.005em; }
+
+  /* Consulta rápida: blocos limpos, botões de passo discretos. */
+  .character-quick { position: sticky; }
+  .character-quick-heading { background: transparent; }
+  .character-stepper button { border-radius: var(--rf-radius-sm); background: var(--card); border-color: var(--border); color: var(--foreground); }
+  .character-stepper button:hover:not(:disabled) { background: var(--secondary); }
+  .character-pips span { border-radius: 3px; }
+  .character-pips span:not(.filled) { background: var(--secondary); border-color: var(--border); }
+  .character-quick-rolls button:last-child, .character-quick-rolls button:last-child:hover { color: var(--primary-foreground); }
+  .character-resource-top strong { font-family: var(--font-sans); }
+
+  /* Rótulos da ficha: mesma legenda em todo lugar. Vários vêm em maiúsculas no texto; aqui ficam em frase. */
+  :is(.character-micro, .character-quick-heading > span, .character-quick-heading small, .character-quick-attack > span, .character-thresholds-title, .character-thresholds-track small, .character-hope-teaser-copy small, .character-active-weapon > div > span) {
+    display: inline-block; font: var(--rf-label); letter-spacing: .01em; text-transform: lowercase; color: var(--muted-foreground);
+  }
+  :is(.character-micro, .character-quick-heading > span, .character-quick-heading small, .character-quick-attack > span, .character-thresholds-title, .character-thresholds-track small, .character-hope-teaser-copy small, .character-active-weapon > div > span)::first-letter { text-transform: uppercase; }
+  .character-thresholds-title { color: var(--style-warning-ink); }
+  .character-thresholds-track small { color: inherit; }
+  :is(.character-roster-label b, .character-load-line b, .character-quick-stat > strong, .character-thresholds-track strong, .character-hope-teaser strong, .character-roster-avatar, .character-portrait-upload span) {
+    font-family: var(--font-sans); font-weight: 600; letter-spacing: 0;
+  }
+  .character-roster-label { font: var(--rf-label); letter-spacing: .01em; text-transform: none; color: var(--muted-foreground); }
+  .character-hero .character-serial { display: none; }
+  .character-provision-grid b { font-family: var(--font-sans); font-weight: 600; }
+  .character-roster-avatar { border-radius: var(--rf-radius-sm); }
+  .character-condition { border-radius: 999px; padding: 4px 10px; font: 600 .8125rem/1.3 var(--font-sans); background: var(--style-success-surface); color: var(--style-success-ink); border-color: color-mix(in srgb, var(--style-success-ink) 30%, transparent); }
+
+  /* Testes rápidos: nome em cima e valor embaixo, para nomes longos ("Conhecimento") caberem sem quebrar. */
+  .character-summary-attribute > span { display: grid; gap: 2px; min-width: 0; }
+  .character-summary-attribute small { white-space: nowrap; overflow-wrap: normal; font-size: .8125rem; font-weight: 500; color: var(--muted-foreground); }
+  .character-summary-attribute strong { font-size: 1.0625rem; color: var(--foreground); }
+  .character-summary-attribute > svg { color: var(--muted-foreground); }
+
+  .character-active-weapon { border-radius: var(--rf-radius); border-left-width: 3px; }
+  :is(.character-attribute, .character-summary-attribute) { border-left-width: 1px; border-left-color: var(--border); }
+  :is(.character-attribute, .character-summary-attribute) strong { font-family: var(--font-sans); font-weight: 600; }
+
+  /* ---------- Rótulos em maiúsculas das outras telas ---------- */
+  :is(.conflict-overview-metric small, .shelter-status-item small, .map-session-group-title > span, .map-session-unit, .map-active-group small) {
+    display: inline-block; font: var(--rf-label); letter-spacing: .01em; text-transform: lowercase;
+  }
+  :is(.conflict-overview-metric small, .shelter-status-item small, .map-session-group-title > span, .map-session-unit, .map-active-group small)::first-letter { text-transform: uppercase; }
+  .map-session-group-title { font: var(--rf-label); letter-spacing: .01em; }
+
+  /* ---------- Conflito ---------- */
+  .conflict-overview-metric { border-radius: var(--rf-radius); min-height: 52px; padding: 8px 12px; box-shadow: var(--rf-elev-1); }
+  .conflict-overview-metric b { font: 600 .9375rem var(--font-sans); }
+  :is(.conflict-avatar, .conflict-trail-initials) { font-family: var(--font-sans); font-weight: 600; letter-spacing: 0; }
+  .conflict-avatar { border-radius: var(--rf-radius); }
+  .conflict-damage-pending-badge { border-radius: 999px; padding: 2px 8px; font: 600 .75rem/1.3 var(--font-sans); letter-spacing: 0; text-transform: none; }
+
+  /* ---------- Abrigo ---------- */
+  /* Faixa de números em cartão claro; a planta e o painel da sala continuam escuros, como área visual. */
+  .shelter-status-strip { background: var(--card); color: var(--foreground); border-color: var(--border); border-radius: var(--rf-radius-lg); box-shadow: var(--rf-elev-2); }
+  .shelter-status-item, .shelter-status-item:nth-child(n) { border-color: var(--border); }
+  .shelter-status-icon { border: 0; border-radius: var(--rf-radius); background: var(--rf-tint); color: var(--primary); }
+  .shelter-status-item small { color: var(--muted-foreground); }
+  .shelter-status-item b { color: var(--foreground); font-size: 1.125rem; font-weight: 600; }
+  .shelter-status-item em { color: var(--muted-foreground); }
+  :is(.shelter-blueprint-card, .shelter-room-detail) { border-radius: var(--rf-radius-lg); box-shadow: var(--rf-elev-2); }
+  .shelter-free-summary b { font-weight: 600; }
+
+  /* ---------- PNJs ---------- */
+  /* O título da página já diz "PNJs e comunidade"; o cabeçalho interno repetia o mesmo nome. */
+  .npc-panel > div:first-child > div:first-child > :is(.dossier-title, .section-title) { display: none; }
+  .npc-panel > div:first-child > div:first-child > .intro-line { margin-top: 0; }
+  .npc-filter-row [data-slot="button"] { border-radius: 999px; font-weight: 500; }
+  .npc-filter-row [data-slot="button"][data-variant="default"] { font-weight: 600; }
+
+  /* ---------- Mapa e Cena: só a moldura ---------- */
+  :is(.map-session-bar > *, .scene-board-header, .scene-toolbar) { border-radius: var(--rf-radius); }
+  .map-active-group { border-radius: var(--rf-radius); box-shadow: var(--rf-elev-3); }
+  .map-active-group em { font-style: normal; }
+}

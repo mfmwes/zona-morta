@@ -6,14 +6,14 @@ const path = require('node:path');
 const css = fs.readFileSync(path.join(__dirname, '../app/appearance.css'), 'utf8');
 const optional = css.split('/* Appearance controls')[0].replace(/\/\*[\s\S]*?\*\//g, '');
 
-test('todas as regras novas exigem um dos três estilos opcionais, inclusive as variáveis', () => {
+test('todas as regras novas exigem um dos estilos opcionais, inclusive as variáveis', () => {
   let depth = 0, start = 0, count = 0;
   for (let i = 0; i < optional.length; i++) {
     if (optional[i] === '{') {
       if (depth === 0) {
         const selector = optional.slice(start, i).trim();
         assert.match(selector, /^html(?::is\(|\[data-visual-style=)/, selector);
-        assert.match(selector, /data-visual-style="(?:fiel|leitura|tecnico)"/, selector);
+        assert.match(selector, /data-visual-style="(?:fiel|leitura|tecnico|refinado)"/, selector);
         assert.doesNotMatch(selector, /current|:root/, selector);
         count++;
       }
@@ -37,9 +37,9 @@ function contrast(a, b) {
   const x = luminance(a), y = luminance(b);
   return (Math.max(x, y) + .05) / (Math.min(x, y) + .05);
 }
-const palettes = [...optional.matchAll(/html\[data-visual-style="(fiel|leitura|tecnico)"\](\[data-theme="dark"\])?\s*\{([^{}]*)\}/g)];
-test('texto, texto secundário, ações e campos mantêm contraste nas seis paletas', () => {
-  assert.equal(palettes.length, 6);
+const palettes = [...optional.matchAll(/html\[data-visual-style="(fiel|leitura|tecnico|refinado)"\](\[data-theme="dark"\])?\s*\{([^{}]*)\}/g)];
+test('texto, texto secundário, ações e campos mantêm contraste nas oito paletas', () => {
+  assert.equal(palettes.length, 8);
   const light = new Map();
   for (const [, style, dark, body] of palettes) {
     const own = Object.fromEntries([...body.matchAll(/--style-([\w-]+):\s*(#[\da-f]{6})\s*;/g)].map(([, key, value]) => [key, value]));
