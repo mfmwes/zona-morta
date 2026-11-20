@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 // Textos visíveis com contraste efetivo abaixo de 3:1 contra o fundo real (camadas, transparências e gradientes).
-// Cobre os quatro estilos visuais nos dois temas: trocar a paleta já deixou cabeçalhos escuros com texto ilegível.
+// Cobre os dois temas: trocar a paleta já deixou cabeçalhos escuros com texto ilegível.
 const lowContrastTexts = () => {
   const parseRgb = (c: string): number[][] => Array.from(c.matchAll(/rgba?\(([^)]+)\)/g)).map(m => { const p = m[1].split(/[ ,/]+/).filter(Boolean).map(Number); return [p[0], p[1], p[2], p.length > 3 ? p[3] : 1]; });
   // color-mix() é devolvido como color(srgb r g b / a), com canais de 0 a 1.
@@ -45,12 +45,12 @@ const lowContrastTexts = () => {
   return out;
 };
 
-for (const style of ['current', 'refinado']) for (const theme of ['light', 'dark']) test(`text contrast stays readable in ${style} / ${theme}`, async ({ page }) => {
+for (const theme of ['light', 'dark']) test(`text contrast stays readable in ${theme}`, async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   const failures: string[] = [];
   for (const screen of ['overview', 'sheet', 'map', 'shelter', 'shelter-plan']) {
     const shelter = screen.startsWith('shelter');
-    await page.goto(`/?screen=sheet&style=${style}${shelter ? '&base=1' : ''}`);
+    await page.goto(`/?screen=sheet${shelter ? '&base=1' : ''}`);
     await page.getByRole('combobox', { name: 'Tela', exact: true }).selectOption(shelter ? 'shelter' : screen);
     await page.getByRole('combobox', { name: 'Tema', exact: true }).selectOption(theme);
     await page.addStyleTag({ content: '*,*::before,*::after{transition:none!important;animation:none!important}' });

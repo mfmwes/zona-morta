@@ -17,7 +17,7 @@ for (const width of [960, 1440]) {
         expect((await workspace.boundingBox())!.x).toBe(railWidth);
         expect(await workspace.evaluate(el => el.clientWidth)).toBe(width - railWidth);
         await expect(rail.getByRole('button', { name: 'Ficha', exact: true })).toHaveAttribute('title', 'Ficha');
-        await expect(rail.getByRole('button', { name: 'Escolher estilo visual', exact: true })).toBeVisible();
+        await expect(rail.getByRole('button', { name: 'Alternar entre modo claro e modo noturno', exact: true })).toBeVisible();
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
       }
       await page.getByRole('button', { name: 'Chat', exact: true }).click();

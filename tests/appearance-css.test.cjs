@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const css = fs.readFileSync(path.join(__dirname, '../app/appearance.css'), 'utf8');
-const optional = css.split('/* Appearance controls')[0].replace(/\/\*[\s\S]*?\*\//g, '');
+const optional = css.split('/* Controle de claro/noturno')[0].replace(/\/\*[\s\S]*?\*\//g, '');
 
 test('todas as regras do Refinado exigem o atributo do estilo, inclusive as variáveis', () => {
   let depth = 0, start = 0, count = 0;
