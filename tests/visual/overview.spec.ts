@@ -63,6 +63,14 @@ test('session and recap remain usable without increasing the desktop page height
   await page.setViewportSize({ width: 1366, height: 768 });
   await page.goto('/?screen=overview');
   await page.getByRole('button', { name: 'Iniciar sessão', exact: true }).click();
+  // Formulário aberto: o cartão não rola por dentro (o título "Sessões da mesa" fica visível) e os cartões não se sobrepõem.
+  const sessions = page.locator('.campaign-sessions');
+  await expect(sessions.getByText('Sessões da mesa', { exact: true })).toBeInViewport();
+  expect(await sessions.evaluate(el => el.scrollHeight <= el.clientHeight + 1 && el.scrollTop === 0)).toBe(true);
+  expect(await page.evaluate(() => {
+    const boxes = [...document.querySelectorAll('.master-overview-card')].map(el => el.getBoundingClientRect()).filter(b => b.height > 0);
+    return boxes.every((a, i) => boxes.every((b, j) => i === j || a.bottom <= b.top + 1 || b.bottom <= a.top + 1 || a.right <= b.left + 1 || b.right <= a.left + 1));
+  })).toBe(true);
   await page.getByRole('textbox', { name: 'Nome da sessão', exact: true }).fill('Hospital');
   await page.getByRole('button', { name: 'Confirmar início', exact: true }).click();
   await expect(page.getByText('Em andamento: Hospital', { exact: true })).toBeVisible();
