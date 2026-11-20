@@ -6,6 +6,7 @@ export const visualStyles = [
   { id: "fiel", label: "Refino fiel", description: "Petróleo profundo, âmbar e detalhes de campo." },
   { id: "leitura", label: "Leitura confortável", description: "Papel quente, ameixa e a fonte Source Sans 3." },
   { id: "tecnico", label: "Dossiê técnico", description: "Azul de arquivo, ciano e as fontes IBM Plex." },
+  { id: "refinado", label: "Refinado", description: "Superfícies calmas, petróleo e âmbar, com as fontes IBM Plex." },
 ] as const;
 
 export type VisualStyle = typeof visualStyles[number]["id"];

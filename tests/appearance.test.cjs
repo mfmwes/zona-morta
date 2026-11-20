@@ -32,7 +32,7 @@ test('primeiro acesso mantém o visual atual sem criar uma preferência', () => 
 });
 
 test('inicialização restaura cada estilo nos dois modos antes da hidratação', () => {
-  for (const style of ['fiel', 'leitura', 'tecnico']) for (const theme of ['light', 'dark']) {
+  for (const style of ['fiel', 'leitura', 'tecnico', 'refinado']) for (const theme of ['light', 'dark']) {
     assert.deepEqual(boot({ [appearance.visualStyleStorageKey]: style, [appearance.themeStorageKey]: theme }), { visualStyle: style, theme });
   }
 });
@@ -55,7 +55,7 @@ test('troca de estilo persiste, preserva claro/escuro e permite voltar ao CSS or
   global.document = { documentElement: element };
   global.window = { localStorage: { setItem: (key, value) => saved.set(key, value) } };
   try {
-    for (const style of ['fiel', 'leitura', 'tecnico']) {
+    for (const style of ['fiel', 'leitura', 'tecnico', 'refinado']) {
       appearance.setVisualStyle(style);
       assert.equal(element.dataset.visualStyle, style);
       assert.equal(element.dataset.theme, 'dark');
@@ -99,7 +99,7 @@ test('controles mantêm a alternância direta de modo e oferecem os quatro estil
     toggle.props.onClick(); assert.equal(element.dataset.theme, 'dark'); assert.equal(element.dataset.visualStyle, 'tecnico');
     toggle.props.onClick(); assert.equal(element.dataset.theme, 'light');
     const radios = view.filter(node => node.type === 'input' && node.props.type === 'radio');
-    assert.deepEqual(radios.map(node => node.props.value), ['current', 'fiel', 'leitura', 'tecnico']);
+    assert.deepEqual(radios.map(node => node.props.value), ['current', 'fiel', 'leitura', 'tecnico', 'refinado']);
     assert.equal(radios.filter(node => node.props.checked).length, 1);
     assert.equal(radios.find(node => node.props.checked).props.value, 'tecnico');
     radios.find(node => node.props.value === 'fiel').props.onChange(); assert.equal(element.dataset.visualStyle, 'fiel');
