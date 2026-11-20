@@ -172,7 +172,8 @@ html[data-visual-style="refinado"] {
   .character-hero-code { display: none; }
 
   /* Abas: sublinhado em vez de botão cheio. */
-  .character-tabs-scroll { background: var(--card); border-color: var(--border); border-radius: var(--rf-radius-lg); box-shadow: var(--rf-elev-1); padding: 4px; }
+  /* Classe repetida: supera a regra de superfícies de appearance.css, cujo :is() inclui ".roll-dice .total" (duas classes). */
+  .character-tabs-scroll.character-tabs-scroll { background: var(--card); border-color: var(--border); border-radius: var(--rf-radius-lg); box-shadow: var(--rf-elev-1); padding: 4px; }
   .character-tab { border-radius: var(--rf-radius-sm); font-weight: 500; color: var(--muted-foreground); }
   .character-tab:hover { background: var(--secondary); color: var(--foreground); border-color: transparent; }
   .character-tab[data-state="active"] { background: var(--rf-tint); color: var(--primary); border-color: transparent; box-shadow: inset 0 -2px var(--primary); font-weight: 600; }
@@ -214,6 +215,7 @@ html[data-visual-style="refinado"] {
   .character-summary-attribute > svg { color: var(--muted-foreground); }
 
   .character-active-weapon { border-radius: var(--rf-radius); border-left-width: 3px; }
+  .character-equipment > div:last-child > span { font: var(--rf-label); letter-spacing: .01em; text-transform: none; color: var(--muted-foreground); }
   :is(.character-attribute, .character-summary-attribute) { border-left-width: 1px; border-left-color: var(--border); }
   :is(.character-attribute, .character-summary-attribute) strong { font-family: var(--font-sans); font-weight: 600; }
 
@@ -271,6 +273,7 @@ html[data-visual-style="refinado"] {
   /* ---------- Ameaças ---------- */
   /* Rótulos em frase e sem quebra no meio da palavra; em cartões estreitos, números em 2 × 2. */
   .threat-card { container-type: inline-size; }
+  .threat-card-meta { font: var(--rf-label); letter-spacing: .01em; text-transform: none; }
   .threat-card-stats small { overflow-wrap: normal; font: var(--rf-label); letter-spacing: 0; text-transform: none; }
   .threat-card-stats b { font: 600 .9375rem/1.25 var(--font-sans); }
   @container (max-width: 400px) {
