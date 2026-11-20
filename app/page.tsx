@@ -719,6 +719,10 @@ export default function CampaignApp() {
 
   ];
   const nav = [...masterPrimary, ...masterSecondary];
+  // Barra lateral estreita: nomes curtos (os mesmos da navegação do celular); o nome completo fica no title e no aria-label.
+  const railLabel = (label: string) => ({ "Mapa e exploração": "Mapa", "Sobreviventes": "Equipe", "Meu sobrevivente": "Ficha", "PNJs e comunidade": "PNJs",
+    "Regras e itens": "Regras", "Abrigo e reservas": "Abrigo", "Conflito ativo": "Conflito", "Cena visual": "Cena" } as Record<string, string>)[label]
+    ?? label.replace(/^Resolver dano/, "Dano");
   const masterActionControls = masterExperience ? {canAct:status === "salvo",send:executeTeamAction,pending:Boolean(teamActionError)} : undefined;
   const playerActionControls = readOnlyPreview && viewedSurvivorId ? { actorId: viewedSurvivorId, canAct: playerPreview || (status !== "erro" && status !== "conflito"), send: executeTeamAction, pending: playerPreview ? false : Boolean(teamActionError) } : undefined;
   const simulation = playerPreview && previewGame ? {
@@ -884,8 +888,8 @@ export default function CampaignApp() {
         <p className="text-sm text-[#a9c0bc] mt-1">Cidade em descoberta · mapa aberto</p></div>
       <div className="campaign-navigation-dock">
       <TabsList aria-label="Seções da campanha" className="rail-nav bg-transparent h-auto w-full p-0">
-        {nav.map((item,index) => <TabsTrigger value={item.value} key={item.value} title={item.label} className={index >= 4 ? "rail-nav-extra" : undefined} aria-current={activeTab===item.value ? "page" : undefined}>
-          <item.icon size={17} /><span>{item.label}</span></TabsTrigger>)}
+        {nav.map((item,index) => <TabsTrigger value={item.value} key={item.value} title={item.label} aria-label={item.label} className={index >= 4 ? "rail-nav-extra" : undefined} aria-current={activeTab===item.value ? "page" : undefined}>
+          <item.icon size={17} /><span>{railLabel(item.label)}</span></TabsTrigger>)}
         <DropdownMenu><DropdownMenuTrigger asChild><button type="button" className="rail-more" aria-label="Mais seções" aria-current={nav.slice(4).some(item => item.value === activeTab) ? "page" : undefined}><MoreHorizontal size={19} /><span>Mais</span></button></DropdownMenuTrigger>
           <DropdownMenuContent align="end" side="top" className="min-w-48">{nav.slice(4).map(item => <DropdownMenuItem key={item.value} onSelect={() => setTab(item.value)}><item.icon size={16} />{item.label}</DropdownMenuItem>)}</DropdownMenuContent>
         </DropdownMenu>

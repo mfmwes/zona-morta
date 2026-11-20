@@ -150,7 +150,7 @@ html[data-visual-style="refinado"] {
 
   /* ---------- Ficha ---------- */
   /* Cabeçalho e Consulta rápida viram cartões claros: as variáveis "sobre escuro" passam a apontar para a superfície. */
-  :is(.character-hero, .character-quick, .character-hope-feature, .panel.shelter-hero-panel) {
+  :is(.character-hero, .character-quick, .character-hope-feature, .panel.shelter-hero-panel, .library-hero) {
     --style-hero-start: var(--card);
     --style-hero-end: var(--rf-tint);
     --style-on-dark: var(--foreground);
@@ -258,4 +258,24 @@ html[data-visual-style="refinado"] {
   :is(.map-session-bar > *, .scene-board-header, .scene-toolbar) { border-radius: var(--rf-radius); }
   .map-active-group { border-radius: var(--rf-radius); box-shadow: var(--rf-elev-3); }
   .map-active-group em { font-style: normal; }
+
+  /* ---------- Biblioteca ---------- */
+  /* O cabeçalho virou cartão claro (lista acima); título e botão "Sair" seguem os tokens da superfície. */
+  .library-hero .page-title { color: var(--foreground); }
+  .library-hero .eyebrow { color: var(--primary); }
+  /* Controle de claro/noturno no fluxo da página, acima do conteúdo: fixo no canto, cobria "Abrir" no celular. */
+  &:has(.library-shell) .theme-controls--global { position: static; justify-content: flex-end; padding: 12px clamp(16px, 4vw, 32px) 0; }
+  /* Em telas pequenas o botão global fica só com ícone nos dois temas (antes o tema escuro reexibia o texto). */
+  @media (max-width: 620px) { .theme-controls--global .theme-toggle span { display: none; } }
+
+  /* ---------- Ameaças ---------- */
+  /* Rótulos em frase e sem quebra no meio da palavra; em cartões estreitos, números em 2 × 2. */
+  .threat-card { container-type: inline-size; }
+  .threat-card-stats small { overflow-wrap: normal; font: var(--rf-label); letter-spacing: 0; text-transform: none; }
+  .threat-card-stats b { font: 600 .9375rem/1.25 var(--font-sans); }
+  @container (max-width: 400px) {
+    .threat-card-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .threat-card-stats > span:nth-child(2) { border-right: 0; }
+    .threat-card-stats > span:nth-child(-n+2) { border-bottom: 1px solid var(--border); }
+  }
 }
