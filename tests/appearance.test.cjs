@@ -26,8 +26,9 @@ function boot(values = {}, blockedKey) {
   return element.dataset;
 }
 
-test('primeiro acesso mantém o visual atual sem criar uma preferência', () => {
-  assert.deepEqual(boot(), {});
+test('primeiro acesso abre no Refinado sem criar uma preferência; quem escolheu o clássico continua nele', () => {
+  assert.equal(appearance.defaultVisualStyle, 'refinado');
+  assert.deepEqual(boot(), { visualStyle: 'refinado' });
   assert.deepEqual(boot({ [appearance.visualStyleStorageKey]: 'current', [appearance.themeStorageKey]: 'dark' }), { theme: 'dark' });
 });
 
@@ -39,14 +40,14 @@ test('inicialização restaura cada estilo nos dois modos antes da hidratação'
 
 test('valores desconhecidos ou maliciosos não se tornam atributos do documento', () => {
   for (const value of ['invalid', 'DARK', '', '<script>alert(1)</script>']) {
-    assert.deepEqual(boot({ [appearance.visualStyleStorageKey]: value, [appearance.themeStorageKey]: value }), {});
+    assert.deepEqual(boot({ [appearance.visualStyleStorageKey]: value, [appearance.themeStorageKey]: value }), { visualStyle: 'refinado' });
     assert.equal(appearance.isVisualStyle(value), false);
   }
 });
 
 test('falha de armazenamento de uma preferência não impede a outra', () => {
   assert.deepEqual(boot({ [appearance.visualStyleStorageKey]: 'tecnico' }, appearance.themeStorageKey), { visualStyle: 'tecnico' });
-  assert.deepEqual(boot({ [appearance.themeStorageKey]: 'dark' }, appearance.visualStyleStorageKey), { theme: 'dark' });
+  assert.deepEqual(boot({ [appearance.themeStorageKey]: 'dark' }, appearance.visualStyleStorageKey), { theme: 'dark', visualStyle: 'refinado' });
 });
 
 test('troca de estilo persiste, preserva claro/escuro e permite voltar ao CSS original', () => {
@@ -77,7 +78,7 @@ test('estilo continua utilizável quando o navegador bloqueia localStorage', () 
   finally { delete global.document; delete global.window; }
 });
 
-test('controles mantêm a alternância direta de modo e oferecem os quatro estilos com rádios', () => {
+test('controles mantêm a alternância direta de modo e oferecem os cinco estilos com rádios', () => {
   const element = root(); element.dataset.visualStyle = 'tecnico';
   global.document = { documentElement: element };
   global.window = { localStorage: { setItem() {} } };
@@ -99,7 +100,7 @@ test('controles mantêm a alternância direta de modo e oferecem os quatro estil
     toggle.props.onClick(); assert.equal(element.dataset.theme, 'dark'); assert.equal(element.dataset.visualStyle, 'tecnico');
     toggle.props.onClick(); assert.equal(element.dataset.theme, 'light');
     const radios = view.filter(node => node.type === 'input' && node.props.type === 'radio');
-    assert.deepEqual(radios.map(node => node.props.value), ['current', 'fiel', 'leitura', 'tecnico', 'refinado']);
+    assert.deepEqual(radios.map(node => node.props.value), ['refinado', 'current', 'fiel', 'leitura', 'tecnico']);
     assert.equal(radios.filter(node => node.props.checked).length, 1);
     assert.equal(radios.find(node => node.props.checked).props.value, 'tecnico');
     radios.find(node => node.props.value === 'fiel').props.onChange(); assert.equal(element.dataset.visualStyle, 'fiel');

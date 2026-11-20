@@ -442,6 +442,9 @@ html[data-visual-style="tecnico"] {
 .appearance-swatch--tecnico i:first-child { background: #153d46; }
 .appearance-swatch--tecnico i:nth-child(2) { background: #e1ebed; }
 .appearance-swatch--tecnico i:nth-child(3) { background: #d3a771; }
+.appearance-swatch--refinado i:first-child { background: #1b5f57; }
+.appearance-swatch--refinado i:nth-child(2) { background: #f3f5f2; }
+.appearance-swatch--refinado i:nth-child(3) { background: #e3ad5a; }
 .appearance-note { margin: 12px 0 0; color: var(--muted-foreground); font-size: var(--text-caption); line-height: 1.5; }
 
 @media (max-width: 1000px) {

@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 
 test.use({ baseURL: process.env.ROAD_PREVIEW_URL || 'http://127.0.0.1:4173' });
+// Largura da barra compacta no estilo padrão (Refinado), que mostra o rótulo sob cada ícone.
+const railWidth = 84;
 
 for (const width of [960, 1440]) {
   for (const role of ['master', 'player']) {
@@ -11,9 +13,9 @@ for (const width of [960, 1440]) {
       const workspace = page.locator('.workspace');
       for (const screen of ['map', 'sheet', 'shelter', 'scene', 'conflict', 'npcs', 'reading']) {
         await page.getByRole('combobox', { name: 'Tela', exact: true }).selectOption(screen);
-        expect((await rail.boundingBox())!.width).toBe(72);
-        expect((await workspace.boundingBox())!.x).toBe(72);
-        expect(await workspace.evaluate(el => el.clientWidth)).toBe(width - 72);
+        expect((await rail.boundingBox())!.width).toBe(railWidth);
+        expect((await workspace.boundingBox())!.x).toBe(railWidth);
+        expect(await workspace.evaluate(el => el.clientWidth)).toBe(width - railWidth);
         await expect(rail.getByRole('button', { name: 'Ficha', exact: true })).toHaveAttribute('title', 'Ficha');
         await expect(rail.getByRole('button', { name: 'Escolher estilo visual', exact: true })).toBeVisible();
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
@@ -25,7 +27,7 @@ for (const width of [960, 1440]) {
         const box = (await chat.boundingBox())!;
         return box.x + box.width;
       }).toBeLessThanOrEqual(width + 1);
-      if (width > 1320) expect((await workspace.boundingBox())!.width).toBe(width - 72 - 360);
+      if (width > 1320) expect((await workspace.boundingBox())!.width).toBe(width - railWidth - 360);
       await chat.getByRole('button', { name: 'Fechar chat', exact: true }).click();
       if (width > 1320) await expect(chat).toBeHidden();
       await rail.getByRole('button', { name: 'Abrigo', exact: true }).click();

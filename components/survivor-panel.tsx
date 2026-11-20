@@ -66,11 +66,11 @@ function SectionHeading({ index, title, aside }: { index: string; title: string;
 
 function DamageThresholds({ major, severe }: { major: number; severe: number }) {
   return <div className="character-thresholds" role="group" aria-label={`Limiares de dano: leve abaixo de ${major}, maior a partir de ${major}, severo a partir de ${severe}`}>
-    <span className="character-thresholds-title">LIMIARES DE DANO</span>
+    <span className="character-thresholds-title">Limiares de dano</span>
     <div className="character-thresholds-track">
-      <span className="character-threshold-light"><small>LEVE</small><strong>&lt; {major}</strong></span>
-      <span className="character-threshold-major"><small>MAIOR</small><strong>≥ {major}</strong></span>
-      <span className="character-threshold-severe"><small>SEVERO</small><strong>≥ {severe}</strong></span>
+      <span className="character-threshold-light"><small>Leve</small><strong>&lt; {major}</strong></span>
+      <span className="character-threshold-major"><small>Maior</small><strong>≥ {major}</strong></span>
+      <span className="character-threshold-severe"><small>Severo</small><strong>≥ {severe}</strong></span>
     </div>
   </div>;
 }
@@ -181,7 +181,7 @@ function RestPlanner({ game, edit, selected, playerMode, playerPreview, restPeer
     });
   }
   const disabled=busy||Boolean(game.conflict?.active||game.publicConflict?.active||game.publicPlayerActions?.policy.paused||game.playerActions?.policy.paused)||occupiedIds.has(selected.id)||Boolean(personalPlanning&&(!playerActions?.canAct||playerActions.pending));
-  return <section id="character-rest-panel" className="character-surface character-rest-panel"><SectionHeading index="05" title={personalPlanning?"Seu descanso":"Descanso do grupo"} aside={<span className="character-micro">2 AÇÕES POR PESSOA</span>}/>
+  return <section id="character-rest-panel" className="character-surface character-rest-panel"><SectionHeading index="05" title={personalPlanning?"Seu descanso":"Descanso do grupo"} aside={<span className="character-micro">2 ações por pessoa</span>}/>
     <RuleHelp topic="rest" />
     {request ? <>
       <p className="character-section-intro">Descanso <b>{request.kind==="short"?"curto · 1h":"longo · 6h"}</b> solicitado. Cada pessoa confirma suas duas ações na própria ficha.</p>
@@ -516,7 +516,7 @@ export function SurvivorPanel({ mobile = false, initialSurvivorId, initialSectio
       <header className="character-hero">
         <Portrait survivor={selected} editable={!playerPreview || playerMode} onUpload={uploadPortrait} onClear={() => change(selected.id, s => { delete s.portrait; })} />
         <div className="character-identity">
-          <p className="character-serial">ZONA MORTA <span aria-hidden="true">/</span> DOSSIÊ DE SOBREVIVENTE</p>
+          <p className="character-serial">Zona Morta <span aria-hidden="true">/</span> Dossiê de sobrevivente</p>
           <h2>{selected.name}</h2>
           <div className="character-identity-meta"><span>{selected.origin}</span><span>{selected.archetype} · {selected.specialty}</span><span>Nível {selected.level ?? 1}</span></div>
         </div>
@@ -553,7 +553,7 @@ export function SurvivorPanel({ mobile = false, initialSurvivorId, initialSectio
               {stats.carried > stats.capacity && <p className="character-alert">Acima da capacidade. Redistribua antes de atravessar.</p>}
               <MobileDisclosure mobile title="Descanso"><RestPlanner game={game} edit={edit} selected={selected} playerMode={playerMode} playerPreview={playerPreview} restPeers={restPeers} playerActions={playerActions} /></MobileDisclosure>
             </MobileSurvivorOverview> : <div className="character-summary-grid">
-              <section className="character-surface character-summary-action"><SectionHeading index="01" title="Pronto para agir" aside={<span className="character-micro">KIT ATIVO</span>} />
+              <section className="character-surface character-summary-action"><SectionHeading index="01" title="Pronto para agir" aside={<span className="character-micro">Kit ativo</span>} />
                 <div className="character-active-weapon">{quickAttack.category ? <ItemArt name={quickAttack.name} category={quickAttack.category} /> : <EmptyItemArt />}<div><span>{primary ? "Arma principal" : secondary ? "Arma disponível" : "Sem arma equipada"}</span><strong>{quickAttack.name}</strong><small>{quickAttack.details}</small></div>
                   <Button size="sm" variant="outline" className="character-weapon-roll" disabled={down} onClick={() => beginRoll({ survivorId: selected.id, kind: "attack", weapon: quickAttack.slot })}><Dice5 size={16} /> {quickAttack.slot === "unarmed" ? "Desarmado" : "Atacar"}</Button></div>
                 {selected.secondary && <div className="character-info-row"><ItemArt name={selected.secondary} category="Armas secundárias" size="small" /><span>Secundária</span><b>{selected.secondary}</b></div>}
@@ -575,7 +575,7 @@ export function SurvivorPanel({ mobile = false, initialSurvivorId, initialSectio
                 {stats.carried > stats.capacity && <p className="character-alert">Acima da capacidade. Redistribua antes de atravessar.</p>}
                 <button className="character-text-link" type="button" onClick={() => setActiveTab("inventario")}>Abrir inventário <span aria-hidden="true">↗</span></button>
               </section>
-              <section className="character-surface character-summary-tests"><SectionHeading index="03" title="Testes rápidos" aside={<span className="character-micro">DADOS DE DUALIDADE</span>} />
+              <section className="character-surface character-summary-tests"><SectionHeading index="03" title="Testes rápidos" aside={<span className="character-micro">Dados de dualidade</span>} />
                 <p className="character-section-intro">Escolha um atributo para abrir a rolagem já configurada. Ajustes de equipamento entram automaticamente.</p>
                 <div className="character-summary-attributes">
                   {traits.map(trait => {
@@ -601,7 +601,7 @@ export function SurvivorPanel({ mobile = false, initialSurvivorId, initialSectio
                   </div>
                   <button className="character-hope-teaser" type="button" onClick={() => setActiveTab("habilidades")}
                     aria-label={`Ler habilidade de Esperança: ${hopeName}`}>
-                    <AbilityArt abilityId={`hope:${selected.archetype}`} /><span className="character-hope-teaser-copy"><small>HABILIDADE DE ESPERANÇA</small><b>{hopeName}</b></span><strong>3 Esperança</strong>
+                    <AbilityArt abilityId={`hope:${selected.archetype}`} /><span className="character-hope-teaser-copy"><small>Habilidade de Esperança</small><b>{hopeName}</b></span><strong>3 Esperança</strong>
                   </button>
                 </div>
                 <div className="character-specialties-footer">
@@ -613,7 +613,7 @@ export function SurvivorPanel({ mobile = false, initialSurvivorId, initialSectio
             </div>}
           </TabsContent>
           <TabsContent value="atributos" {...(mobile ? { "aria-label": "Atributos", "aria-labelledby": undefined } : {})} className="character-tab-content">
-            <section className="character-surface"><SectionHeading index="01" title="Atributos e testes" aside={<span className="character-micro">DADOS DE DUALIDADE</span>} />
+            <section className="character-surface"><SectionHeading index="01" title="Atributos e testes" aside={<span className="character-micro">Dados de dualidade</span>} />
               <p className="character-section-intro">Clique em um atributo para rolar. Uma Experiência pertinente acrescenta +2 ao gastar 1 Esperança; declare seu uso antes da rolagem.</p>
               <div className="character-attributes">{traits.map(trait => <button type="button" key={trait} className="character-attribute" onClick={() => beginRoll({ survivorId: selected.id, kind: "action", trait })} aria-label={`Rolar ${traitLabel(trait)}, modificador ${selected.attributes[trait]}`}><span>{traitLabel(trait)}</span><strong>{selected.attributes[trait] > 0 ? "+" : ""}{selected.attributes[trait]}</strong><Dice5 size={15} aria-hidden="true" /></button>)}</div>
               {Object.entries(modifiers?.traits ?? {}).some(([, value]) => value !== 0) && <p className="character-rule-note">Equipamento: {Object.entries(modifiers?.traits ?? {}).filter(([, value]) => value !== 0).map(([name, value]) => `${value} em ${traitLabel(name)}`).join(" · ")}. Os atributos acima são os valores base; os ajustes entram automaticamente ao rolar.</p>}
@@ -655,14 +655,14 @@ export function SurvivorPanel({ mobile = false, initialSurvivorId, initialSectio
           </TabsContent>
           <TabsContent value="habilidades" {...(mobile ? { "aria-label": "Habilidades", "aria-labelledby": undefined } : {})} className="character-tab-content">
             <section className="character-hope-feature" aria-labelledby="hope-feature-title">
-              <div className="character-hope-feature-top"><span><Sparkles size={17} aria-hidden="true" /> HABILIDADE DE ESPERANÇA</span><span>ARQUÉTIPO · {selected.archetype}</span></div>
+              <div className="character-hope-feature-top"><span><Sparkles size={17} aria-hidden="true" /> Habilidade de Esperança</span><span>Arquétipo · {selected.archetype}</span></div>
               <div className="character-hope-feature-body"><AbilityArt abilityId={`hope:${selected.archetype}`} size="large" />
                 <div><h3 id="hope-feature-title">{hopeName}</h3><p>{hopeEffect}</p></div></div>
               <div className="character-hope-feature-foot"><span className="character-hope-cost"><Sparkles size={15} aria-hidden="true" /> Custo: 3 Esperança</span><span>Esperança atual: <b>{selected.hope}/6</b></span>
                 <AbilityUseControl game={game} edit={edit} survivorId={selected.id} abilityId={`hope:${selected.archetype}`}
                   name={hopeName} effect={hopeEffect} hopeFeature /></div>
             </section>
-            <section className="character-surface"><SectionHeading index="02" title="Outras características e técnicas" aside={<span className="character-micro">TOQUE PARA LER</span>} /><p className="character-section-intro">Abra um card para consultar o efeito completo, inclusive gatilho, custo e limites.</p>
+            <section className="character-surface"><SectionHeading index="02" title="Outras características e técnicas" aside={<span className="character-micro">Toque para ler</span>} /><p className="character-section-intro">Abra um card para consultar o efeito completo, inclusive gatilho, custo e limites.</p>
               <Accordion type="multiple" className="character-abilities">
                 <AbilityCard game={game} edit={edit} survivorId={selected.id} abilityId={`origin:${selected.origin}`} name={origin?.feature || selected.origin} category={`Origem · ${selected.origin}`} effect={origin?.effect} />
                 <AbilityCard game={game} edit={edit} survivorId={selected.id} abilityId={`archetype:${selected.archetype}`} name={archetype?.feature || selected.archetype} category={`Arquétipo · ${selected.archetype}`} effect={archetype?.effect} />
@@ -772,7 +772,7 @@ export function SurvivorPanel({ mobile = false, initialSurvivorId, initialSectio
         </Tabs>
 
         {!mobile && <aside className="character-quick" aria-label="Consulta rápida do sobrevivente">
-          <div className="character-quick-desktop"><div className="character-quick-heading"><span>CONSULTA RÁPIDA</span><small>RECURSOS EM CENA</small></div>
+          <div className="character-quick-desktop"><div className="character-quick-heading"><span>Consulta rápida</span><small>Recursos em cena</small></div>
             <ResourceControl label="PV marcados" icon={Heart} current={selected.hp} max={stats.hp} onChange={value => change(selected.id, s => { s.hp = value; })} tone="health" />
             <ResourceControl label="Estresse" icon={Zap} current={selected.stress} max={6} onChange={value => change(selected.id, s => { s.stress = value; })} tone="stress" />
             <ResourceControl label="Esperança" icon={Sparkles} current={selected.hope} max={6} onChange={value => change(selected.id, s => { s.hope = value; })} tone="hope" />
@@ -782,7 +782,7 @@ export function SurvivorPanel({ mobile = false, initialSurvivorId, initialSectio
               <div className="character-quick-stat"><Dice5 size={20} aria-hidden="true" /><span>Proficiência<small>dados de dano</small></span><strong>{selected.proficiency ?? 1}</strong></div>
               <DamageThresholds major={stats.major} severe={stats.severe} />
             </div>
-            <div className="character-quick-attack"><span><Swords size={17} aria-hidden="true" /> ATAQUE PRONTO</span><strong>{selected.primary || "Sem arma principal"}</strong><small>{primary ? `${primary.damage} · ${primary.range}` : "Veja o kit de combate"}</small><div><span>{primaryAmmoType ? `Munição · ${primaryAmmoType}` : "Munição"}</span><b>{primaryAmmoType ? `${primaryAmmoAvailable} livre(s)${primaryAmmoCommitted ? ` + ${primaryAmmoCommitted} comprometida` : ""}` : "não usa"}</b></div></div>
+            <div className="character-quick-attack"><span><Swords size={17} aria-hidden="true" /> Ataque pronto</span><strong>{selected.primary || "Sem arma principal"}</strong><small>{primary ? `${primary.damage} · ${primary.range}` : "Veja o kit de combate"}</small><div><span>{primaryAmmoType ? `Munição · ${primaryAmmoType}` : "Munição"}</span><b>{primaryAmmoType ? `${primaryAmmoAvailable} livre(s)${primaryAmmoCommitted ? ` + ${primaryAmmoCommitted} comprometida` : ""}` : "não usa"}</b></div></div>
             <div className="character-quick-rolls"><button type="button" onClick={() => beginRoll({ survivorId: selected.id, kind: "action" })}><Dice5 size={16} aria-hidden="true" /> Teste</button><button type="button" disabled={!primary || down} onClick={() => beginRoll({ survivorId: selected.id, kind: "attack", weapon: "primary" })}><Crosshair size={16} aria-hidden="true" /> Ataque</button></div>
           </div>
           <div className="character-quick-mobile"><span title="PV marcados"><Heart size={16} aria-hidden="true" /><b>{selected.hp}/{stats.hp}</b><small>PV</small></span><span title="Estresse marcado"><Zap size={16} aria-hidden="true" /><b>{selected.stress}/6</b><small>Estresse</small></span><span title="Esperança"><Sparkles size={16} aria-hidden="true" /><b>{selected.hope}/6</b><small>Esperança</small></span><span title="Evasão"><Crosshair size={16} aria-hidden="true" /><b>{stats.evasion}</b><small>Evasão</small></span><button type="button" onClick={() => setActiveTab("combate")} aria-label="Abrir combate e controles de recursos"><Shield size={16} aria-hidden="true" /><b>{selected.armorMarked ?? 0}/{stats.armor}</b><small>Armadura</small></button><button type="button" className="character-quick-mobile-weapon" onClick={() => setActiveTab("combate")}><Swords size={14} aria-hidden="true" /><strong>{selected.primary || "Sem arma principal"}</strong><span>{primary ? `${primary.damage} · ${primary.range}` : "Ver ataque"}</span><span>{primaryAmmoType ? `${primaryAmmoAvailable} livre(s)` : "sem munição"}</span></button></div>

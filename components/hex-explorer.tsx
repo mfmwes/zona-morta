@@ -649,7 +649,7 @@ export function HexExplorer({ mobile = false, initialTarget, game, edit, playerP
 
       {activeGroup && <div className="map-active-group" role="status" aria-live="polite">
         <span className="map-active-group-icon">{activeGroup.main ? <Footprints size={16} /> : <Users size={16} />}</span>
-        <span><small>GRUPO ATIVO</small><b>{activeGroup.members.map(person => person.name).join(", ")}</b></span>
+        <span><small>Grupo ativo</small><b>{activeGroup.members.map(person => person.name).join(", ")}</b></span>
         <em>Hex {activeGroup.hex}</em>
       </div>}
       <div className="map-surface">
