@@ -1,9 +1,8 @@
 /* One desktop navigation rail for every campaign section; mobile uses its own shell. */
 @media (min-width: 768px) {
   html:has(.compact-navigation) .theme-controls--global { display: none; }
-  .app-shell.compact-navigation { grid-template-columns: 72px minmax(0,1fr); }
   .compact-navigation > .workspace > .page { max-width: none; width: 100%; }
-  .compact-navigation .rail { width: 72px; height: 100dvh; position: sticky; top: 0; padding: 16px 8px; gap: 20px; }
+  .compact-navigation .rail { height: 100dvh; position: sticky; top: 0; }
   .compact-navigation .rail > .flex > div:not(.brand-mark),
   .compact-navigation .rail > .px-3, .compact-navigation .rail-foot { display: none; }
   .compact-navigation .rail > .flex { padding: 0; justify-content: center; }
@@ -19,7 +18,4 @@
   .compact-navigation .rail .campaign-utility-controls { display: grid; }
   .compact-navigation .rail .theme-toggle--campaign { display: flex; justify-content: center; }
   .compact-navigation .rail .theme-controls button span { display: none; }
-}
-@media (min-width: 1321px) {
-  .app-shell.compact-navigation.chat-open { grid-template-columns: 72px minmax(0,1fr) 360px; }
 }

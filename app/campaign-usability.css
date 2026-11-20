@@ -12,8 +12,7 @@
 .campaign-empty p { margin:6px 0 12px; }
 .campaign-form-actions { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:12px; }
 .campaign-feedback { border-left:3px solid var(--primary); padding:8px 12px; color:var(--foreground); background:var(--surface-soft); font-size:.85rem; }
-.campaign-form-error { color:var(--destructive); font-size:.85rem; line-height:1.5; }
-html[data-theme="dark"] .campaign-form-error { color:#efaa98; }
+.campaign-form-error { font-size:.85rem; line-height:1.5; }
 .campaign-form-error > button { margin-top:8px; }
 .campaign-sessions > header { flex-wrap:wrap; gap:12px; }
 .campaign-sessions > header > button { flex:none; }

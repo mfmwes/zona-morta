@@ -1,21 +1,17 @@
 /* Campaign dashboard: compact chrome, independently scrollable collections. */
 .master-overview { gap: 10px; }
-.master-overview-hero { padding: 14px 18px; gap: 16px; border-radius: 12px; background: linear-gradient(115deg, color-mix(in srgb, var(--primary) 9%, var(--card)), var(--card)); }
+.master-overview-hero { gap: 16px; }
 .master-overview-hero .eyebrow { display: flex; align-items: center; gap: 6px; font-size: var(--text-caption); }
-.master-overview-hero h2 { font-size: 1.35rem; }
 .master-overview-hero p:last-child { font-size: var(--text-caption); }
 .master-overview-grid { gap: 10px; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
-.master-overview-card { padding: 12px 14px; border-radius: 11px; box-shadow: 0 4px 18px #00000008; }
-.master-overview-card > header { gap: 8px; margin-bottom: 9px; padding-bottom: 9px; border-bottom-color: color-mix(in srgb, var(--border) 65%, transparent); }
+.master-overview-card > header { gap: 8px; }
 .master-overview-card > header > div { align-items: center; gap: 9px; }
-.master-overview-card > header > div > svg { width: 30px; height: 30px; padding: 6px; margin: 0; border-radius: 8px; background: color-mix(in srgb, var(--primary) 10%, transparent); }
-.master-overview-card > header b { font-size: .82rem; }
-.master-overview-card > header small { font-size: var(--text-caption); }
+.master-overview-card > header > div > svg { margin: 0; }
 .master-overview-card > header button { height: 28px; min-height: 28px; padding: 4px 8px; font-size: var(--text-caption); }
 .master-overview-group { padding: 10px; gap: 12px; }
 .master-overview-group li { min-width: 0; gap: 8px; padding-block: 4px; }
 .overview-person-link { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: var(--text-caption); overflow-wrap: anywhere; }
-.overview-person-initial { display: inline-grid; place-items: center; flex: none; width: 25px; height: 25px; border-radius: 50%; background: color-mix(in srgb, var(--primary) 13%, var(--card)); color: var(--primary); font-weight: 800; font-size: var(--text-caption); }
+.overview-person-initial { display: inline-grid; place-items: center; flex: none; width: 25px; height: 25px; border-radius: 50%; color: var(--primary); font-size: var(--text-caption); }
 .master-overview-group li small:not(.is-busy) { color: var(--primary); }
 .master-overview-list { align-content: start; gap: 7px; }
 .master-overview-attention-item { padding: 9px 10px; gap: 8px; }
@@ -29,7 +25,6 @@
 .master-overview-resource-grid > span:nth-child(3) > svg { color: #d5b582; }
 .master-overview-resource-grid > span:nth-child(6) > svg { color: #bd9bdf; }
 .master-overview-resource-grid small { font-size: var(--text-caption); overflow-wrap: anywhere; }
-.master-overview-resource-grid b { font-size: 1.05rem; line-height: 1.3; }
 .overview-pause-help { margin-top: 8px; font-size: var(--text-caption); color: var(--muted-foreground); }
 .overview-pause-help summary { cursor: pointer; width: fit-content; }
 .overview-pause-help p { font-size: var(--text-caption); line-height: 1.5; }
@@ -46,13 +41,12 @@
   .overview-mode > .workspace { display: flex; flex-direction: column; height: 100dvh; min-height: 0; }
   .overview-mode > .workspace > .topbar { flex: none; }
   .overview-mode > .workspace > .page { display: flex; flex-direction: column; flex: 1; min-height: 0; padding: 14px 22px; }
-  .overview-mode .campaign-page-heading { flex: none; margin-bottom: 12px; gap: 8px; }
+  .overview-mode .campaign-page-heading { flex: none; gap: 8px; }
   .overview-mode .campaign-page-heading > div { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px 14px; }
   .overview-mode .campaign-page-heading .eyebrow { display: none; }
   .overview-mode .campaign-page-heading h1 { font-size: 1.45rem; }
   .overview-mode .campaign-page-heading .intro-line { margin: 0; font-size: var(--text-caption); max-width: none; }
   .overview-mode .master-overview { flex: 1; min-height: 0; }
-  .overview-mode .master-overview-hero { padding-block: 10px; }
   .overview-mode .master-overview-hero > div:first-child { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 2px 16px; }
   .overview-mode .master-overview-hero .eyebrow { grid-column: 1 / -1; }
   .overview-mode .master-overview-hero h2 { margin: 0; }
@@ -72,25 +66,21 @@
 }
 @media (max-width: 767px) {
   .master-overview-grid, .overview-utilities { grid-template-columns: 1fr; }
-  .master-overview-card { padding: 12px; }
   .master-overview-group li { flex-wrap: wrap; }
   .master-overview-resource-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 /* Links de cabeçalho dos cartões ("Ver fichas", "Gerenciar"): mesmo estilo de link com seta em todo o painel. */
-.overview-header-link { gap: 4px; color: var(--primary); font-weight: 700; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--primary) 40%, transparent); text-underline-offset: 3px; }
-.overview-header-link:hover { text-decoration-color: currentColor; }
+.overview-header-link { gap: 4px; color: var(--primary); text-underline-offset: 3px; }
 
 /* Visão geral enxuta: situação, etiquetas, atalho principal e controle da mesa no mesmo bloco do topo. */
 .master-overview-hero { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "text actions" "chips control"; align-items: center; row-gap: 10px; }
 .master-overview-hero > div:first-child { grid-area: text; }
 .master-overview-chips { grid-area: chips; display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
-.master-overview-chips li { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border)); border-radius: 999px; background: color-mix(in srgb, var(--primary) 8%, var(--card)); color: var(--foreground); font-size: var(--text-caption); }
-.master-overview-chips li b { font-family: var(--font-mono); }
-.master-overview-chips li.is-zero { border-color: var(--border); background: transparent; color: var(--muted-foreground); }
-.master-overview-chips li.is-active { border-color: var(--primary); }
-.master-overview-chips li.is-warning { border-color: #b58a45; background: color-mix(in srgb, #b58a45 16%, var(--card)); font-weight: 700; }
-.master-overview-chips li.is-danger { border-color: #c26756; background: color-mix(in srgb, #c26756 16%, var(--card)); font-weight: 700; }
+.master-overview-chips li { display: inline-flex; align-items: center; gap: 5px; }
+.master-overview-chips li.is-zero { border-color: var(--border); }
+.master-overview-chips li.is-warning { font-weight: 700; }
+.master-overview-chips li.is-danger { font-weight: 700; }
 .master-overview-hero-actions { grid-area: actions; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
 .master-overview-table-control { grid-area: control; justify-self: end; }
 .master-overview-table-control .team-actions-panel, .master-overview-table-control .team-card { margin: 0; padding: 0; border: 0; background: transparent; box-shadow: none; }
@@ -100,7 +90,7 @@
 .master-overview-table-control .overview-pause-help { flex-basis: 100%; text-align: right; font-size: var(--text-caption); }
 /* "Em andamento" dentro de "Equipe agora". */
 .master-overview-team .master-overview-work { display: grid; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
-.master-overview-team .master-overview-work > h3 { display: flex; align-items: center; gap: 6px; margin: 0; font-size: .85rem; font-weight: 750; }
+.master-overview-team .master-overview-work > h3 { display: flex; align-items: center; gap: 6px; margin: 0; font-size: .85rem; }
 .master-overview-work-empty { display: flex; align-items: center; gap: 6px; margin: 0; color: var(--muted-foreground); font-size: var(--text-caption); }
 /* Pendências e reservas empilhadas na coluna lateral; Equipe fica na coluna principal. */
 .master-overview-side { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
@@ -121,7 +111,6 @@
   /* Reservas em linhas baixas: ícone, nome e valor lado a lado, para sobrar altura às pendências. */
   .overview-mode .master-overview-resources .master-overview-resource-grid > span { grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; padding: 5px 9px; }
   .overview-mode .master-overview-resources .master-overview-resource-grid > span > svg { grid-row: auto; width: 17px; height: 17px; }
-  .overview-mode .master-overview-resources .master-overview-resource-grid b { font-size: .95rem; }
   .overview-mode .master-overview-resources > header { padding-bottom: 6px; margin-bottom: 6px; }
 }
 

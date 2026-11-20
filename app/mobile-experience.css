@@ -30,7 +30,6 @@
   .mobile-save-status { display: inline-flex; align-items: center; gap: 5px; font-size: var(--text-caption); color: var(--muted-foreground); }
   .mobile-save-status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
   .mobile-save-status.salvo { color: var(--primary); }
-  .mobile-save-status.erro, .mobile-save-status.conflito { color: var(--destructive); }
   .mobile-icon-button { display: grid; place-items: center; min-width: 44px; min-height: 44px; border-radius: 8px; }
   .mobile-priority { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 8px; min-height: 44px; margin-top: 8px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--muted); color: var(--foreground); font-size: var(--text-caption); font-weight: 700; text-align: left; }
   .mobile-campaign-content { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; }
@@ -70,7 +69,7 @@
   .mobile-tool-group .theme-toggle .theme-label-light { display: none; }
   html[data-theme="dark"] .mobile-tool-group .theme-toggle .theme-label-dark { display: none; }
   html[data-theme="dark"] .mobile-tool-group .theme-toggle .theme-label-light { display: inline; }
-  .mobile-disclosure { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; background: var(--card); }
+  .mobile-disclosure { border: 1px solid var(--border); margin-bottom: 12px; background: var(--card); }
   .mobile-disclosure > summary { min-height: 48px; padding: 12px; font-size: .85rem; font-weight: 700; cursor: pointer; }
   .mobile-disclosure > summary > small { display: block; margin: 3px 0 0 17px; color: var(--muted-foreground); font-size: var(--text-caption); font-weight: 500; }
   .mobile-disclosure > div { padding: 0 10px 10px; }
@@ -107,12 +106,12 @@
   .mobile-sheet-navigation > button { flex: none; padding-inline: 9px; font-size: var(--text-caption); max-width: 95px; height: auto; white-space: normal; }
   .mobile-survivor-overview { display: grid; gap: 12px; }
   .mobile-vitals { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-  .mobile-vitals > button { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; align-items: center; gap: 6px; text-align: left; min-height: 60px; border: 1px solid var(--border); border-radius: 8px; padding: 10px; background: var(--card); }
+  .mobile-vitals > button { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; align-items: center; gap: 6px; text-align: left; min-height: 60px; border: 1px solid var(--border); padding: 10px; background: var(--card); }
   .mobile-vitals > button > span { font-size: var(--text-caption); line-height: 1.25; }
   .mobile-vitals strong { font: 800 1.1rem var(--font-mono); white-space: nowrap; }
   .mobile-vitals strong small { font-size: var(--text-caption); font-weight: 500; color: var(--muted-foreground); }
   .mobile-vitals svg { color: var(--primary); }
-  .mobile-action-card, .mobile-daily-card { padding: 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--card); }
+  .mobile-action-card, .mobile-daily-card { padding: 14px; border: 1px solid var(--border); background: var(--card); }
   .mobile-action-card h3, .mobile-daily-card h3 { font-size: 1rem; font-weight: 750; margin: 0 0 6px; }
   .mobile-action-card p, .mobile-daily-card p { font-size: var(--text-caption); color: var(--muted-foreground); margin: 6px 0 12px; line-height: 1.5; }
   .mobile-action-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
