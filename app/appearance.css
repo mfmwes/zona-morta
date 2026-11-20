@@ -144,7 +144,7 @@ html[data-visual-style="refinado"] {
   :is(.reference-category, .character-tab, .character-attribute, .character-summary-attribute, .character-experience-list button, .reference-item, .library-card, .npc-card, .number-control button, .roll-edge button):hover {
     background: var(--accent); border-color: var(--primary); color: var(--accent-foreground);
   }
-  .character-tab { color: var(--muted-foreground); transition: box-shadow .18s ease; }
+  .character-tab { transition: box-shadow .18s ease; }
   .character-ability-trigger:hover { background: var(--secondary); color: var(--foreground); }
   :is(.character-tab[data-state="active"], .reference-category[aria-pressed="true"], .reference-tabs [data-state="active"]) {
     background: var(--primary); border-color: var(--primary); color: var(--primary-foreground); box-shadow: inset 0 -3px var(--style-highlight);
@@ -186,7 +186,7 @@ html[data-visual-style="refinado"] {
   }
   .character-quick-rolls button:hover, .character-quick-mobile > button:hover, .library-hero button:hover, .theme-toggle:hover { background: var(--style-hero-end); color: var(--style-on-dark); }
   .character-quick-rolls button:last-child, .character-quick-rolls button:last-child:hover {
-    background: var(--style-highlight); color: var(--style-hero-start); border-color: var(--style-highlight);
+    background: var(--style-highlight); border-color: var(--style-highlight);
   }
   .rail-nav button { color: var(--style-dark-muted); }
   .rail-nav button:hover, .rail-nav button[aria-current="page"], .rail-nav button[data-state="active"] {
@@ -205,7 +205,6 @@ html[data-visual-style="refinado"] {
   .character-hope-teaser, .character-hope-teaser:hover { background: var(--hope-surface); color: var(--hope-ink); border-color: var(--hope-ink); }
   .character-hope-teaser strong { background: var(--hope-surface); color: var(--hope-ink); border: 1px solid var(--hope-ink); }
   .character-thresholds { background: var(--style-warning-surface); border-color: var(--style-warning-ink); }
-  .character-thresholds-title { color: var(--style-warning-ink); }
   .character-thresholds-track { background: var(--style-success-surface); border-color: var(--border); }
   .character-thresholds-track > span + span { border-color: var(--border); }
   .character-threshold-light { background: var(--style-success-surface); color: var(--style-success-ink); }
@@ -220,20 +219,15 @@ html[data-visual-style="refinado"] {
   /* Counter controls must not turn Hope/Fear into the decorative theme accent. */
   .counter--fear .number-control output { color: var(--fear-ink); }
   .character-roster { background: var(--card); border-color: var(--border); box-shadow: var(--shadow-panel); }
-  .character-roster-label { border-color: var(--border); color: var(--muted-foreground); }
+  .character-roster-label { border-color: var(--border); }
   .character-roster-label b, .character-roster-person { color: var(--foreground); }
   .character-roster-person small, .character-roster-person .character-roster-state { color: var(--muted-foreground); }
   .character-roster-person .character-roster-state.at-risk { color: var(--style-danger-ink); }
   .character-roster-person:hover, .character-roster-person[aria-current="true"] { background: var(--accent); border-color: var(--primary); box-shadow: inset 3px 0 var(--primary); }
   .character-roster-avatar { background: var(--style-quick); color: var(--style-on-dark); }
   .character-roster-peer { background: var(--secondary); border-color: var(--border); }
-  .character-portrait { background: var(--style-quick-soft); border-color: var(--style-quick-line); color: var(--style-on-dark); }
-  .character-stepper button { background: var(--style-quick-soft); color: var(--style-on-dark); border-color: var(--style-quick-line); }
-  .character-stepper button:hover:not(:disabled) { background: var(--style-hero-end); }
-  .character-pips span:not(.filled) { background: var(--style-quick); border-color: var(--style-quick-line); }
   .character-resource-top small { color: var(--style-dark-muted); }
-  .character-portrait { font-family: var(--font-sans); box-shadow: 0 0 0 4px var(--style-hero-start), 0 7px 15px #0003; }
-  .character-summary-attribute small { white-space: normal; overflow-wrap: anywhere; text-overflow: clip; line-height: 1.3; }
+  .character-summary-attribute small { text-overflow: clip; line-height: 1.3; }
   .character-load-details dl { background: var(--secondary); border-color: var(--border); }
   .character-load-details dt, .character-story-grid p { color: var(--muted-foreground); }
   .character-load-details dd { color: var(--foreground); }
@@ -249,8 +243,6 @@ html[data-visual-style="refinado"] {
   .master-overview :is(small, .master-overview-empty), .master-overview-hero p:last-child, .master-overview-note, .map-active-group small, .map-active-group em { color: var(--muted-foreground); }
   .master-overview-card > header svg, .master-overview-group > div svg, .master-overview-row > svg { color: var(--primary); }
   .master-overview-row:hover { background: var(--accent); border-color: var(--primary); }
-  .master-overview-attention-item.is-danger { background: var(--style-danger-surface); border-color: var(--style-danger-ink); }
-  .master-overview-attention-item.is-warning { background: var(--style-warning-surface); border-color: var(--style-warning-ink); }
   .master-overview-group li small.is-busy { color: var(--style-warning-ink); }
   .map-active-group-icon { background: var(--accent); color: var(--primary); }
   .table-chat-input textarea::placeholder { color: var(--muted-foreground); }
