@@ -2,30 +2,29 @@
 
 O botão **Estilo**, ao lado do controle de modo claro/noturno, permite escolher:
 
-- **Visual atual** (padrão): aparência original da main.
-- **Refino fiel**: petróleo profundo e âmbar, Segoe UI/Consolas, contornos discretos e cartões com cantos moderados.
-- **Leitura confortável**: papel quente e ameixa (ameixa escuro no modo noturno), Source Sans 3, cantos suaves e entrelinhas mais abertas nos textos de leitura.
-- **Dossiê técnico**: azul de arquivo e ciano, IBM Plex Sans/Mono, cantos retos, divisórias e grade discreta no cabeçalho da ficha.
+- **Refinado** (padrão): superfícies neutras e calmas, petróleo como cor de ação e âmbar como destaque, IBM Plex Sans com algarismos tabulares, três raios e três elevações fixos.
+- **Visual clássico**: a aparência original do Zona Morta.
 
-No celular, os controles ficam em **Mais → Ferramentas**. A escolha é aplicada imediatamente e salva neste navegador, separadamente do modo claro/noturno. Não depende da conta ou da campanha e não altera dados do jogo. Se o navegador bloquear o armazenamento, a escolha continua válida na aba aberta.
+No celular, os controles ficam em **Mais → Ferramentas**. A escolha é aplicada imediatamente e salva neste navegador, separadamente do modo claro/noturno. Não depende da conta ou da campanha e não altera dados do jogo. Se o navegador bloquear o armazenamento, vale o padrão (Refinado) e a troca continua funcionando na aba aberta.
+
+Os estilos opcionais anteriores (Refino fiel, Leitura confortável e Dossiê técnico) foram retirados em novembro de 2026. Uma escolha salva de um deles é tratada como desconhecida e o app abre no Refinado.
 
 ## Implementação
 
-`lib/appearance.ts` define os estilos aceitos e o script executado antes da primeira pintura, evitando exibir o estilo original antes de restaurar a preferência. O Visual atual remove `data-visual-style` do elemento HTML: as regras dos três estilos opcionais deixam de se aplicar.
+`lib/appearance.ts` define os estilos aceitos, o padrão (`defaultVisualStyle`) e o script executado antes da primeira pintura. Sem preferência salva, o documento recebe `data-visual-style="refinado"`; o HTML do servidor já sai com esse atributo, então não há troca visível na carga. O Visual clássico é a ausência do atributo: as regras do Refinado deixam de se aplicar e vale a cascata original.
 
-`app/appearance.css` é carregado após os estilos existentes. Todas as novas regras ficam sob seletores explícitos dos três estilos opcionais; remover `data-visual-style` restaura a cascata original. As regras compartilhadas do seletor de aparência permanecem as mesmas.
+- `app/appearance.css`: paleta clara e escura do Refinado e o mapeamento dela para os tokens do app (superfícies, texto, ação, campos, contornos e uma família de cores para áreas escuras, como a barra lateral e a planta do abrigo). Também guarda o seletor de aparência, comum aos dois estilos.
+- `app/visual-refinado.css`: forma e tipografia do Refinado (escala de texto, raios, elevações, botões, etiquetas, cartões, diálogos, barra lateral com rótulos e ajustes por tela). É carregado por último.
 
-Cada tema define superfícies, texto principal/secundário, ação e seu texto, campos, contornos e uma família independente de cores para cabeçalhos escuros. Isso impede que o texto de um painel escuro herde a cor de uma superfície clara, e vice-versa. Painéis internos, abas ativas, controles da ficha, resumos do inventário, histórico, biblioteca, visão geral, chat e diálogos usam esses pares. Estados selecionados de rolagem também usam pares de cores completos. Fundos e textos dos botões mudam juntos, sem interpolação de cores que produza combinações ilegíveis durante a troca.
+No Refinado, `--font-mono` aponta para a IBM Plex Sans: rótulos e números deixam a monoespaçada, e os algarismos tabulares mantêm o alinhamento. Teclas de atalho (`kbd`) continuam em IBM Plex Mono. Rótulos são escritos em frase no código; o Visual clássico os mostra em maiúsculas por CSS (fim de `app/globals.css`). Etiquetas curtas de status (ACERTO/FALHA, VOCÊ, AO VIVO) ficam em maiúsculas nos dois estilos.
 
-Os temas mantêm grids, posições, sete áreas da ficha, ações e imagens do catálogo. Esperança, Medo, dano e avisos continuam com significado próprio; seus textos têm variantes claras/noturnas. Habilidades usadas preservam o estado dessaturado e a possibilidade de expansão. A arte dos objetos e as cores do mapa permanecem nos estilos originais. IBM Plex usa os pesos fornecidos localmente, sem sintetizar pesos mais fortes. O controle original de claro/noturno continua funcionando com um clique.
+Esperança, Medo, dano e avisos mantêm cores com significado próprio, com variantes clara e noturna. A arte dos objetos e as cores do mapa não mudam com o estilo.
 
-As fontes WOFF2 de Latin e Latin Extended são servidas por `/fonts/appearance/`, com as licenças SIL OFL na mesma pasta. Não há chamadas ao Google Fonts durante o uso do aplicativo. Fontes de origem: [Source Sans](https://github.com/adobe-fonts/source-sans), [IBM Plex](https://github.com/IBM/plex) e distribuição [Google Fonts](https://github.com/google/fonts).
+As fontes WOFF2 de Latin e Latin Extended são servidas por `/fonts/appearance/`, com as licenças SIL OFL na mesma pasta. Não há chamadas ao Google Fonts durante o uso do aplicativo. Fonte de origem: [IBM Plex](https://github.com/IBM/plex), distribuição [Google Fonts](https://github.com/google/fonts).
 
 ## Validação
 
-- Testes de restauração, valores inválidos, armazenamento bloqueado e independência entre estilo e claro/noturno em `tests/appearance.test.cjs`.
-- `tests/appearance-css.test.cjs` verifica o isolamento de todas as regras opcionais e contraste mínimo de 4,5:1 dos pares de texto das seis paletas; limites dos campos têm pelo menos 3:1 contra a superfície.
-- Conferência local dos três estilos em claro e escuro, da navegação nas sete áreas da ficha e dos controles no celular.
-- Nenhuma migração de banco ou alteração de regras de campanha.
-
-Backup anterior à implementação: branch `backup/main-antes-temas-2026-10-13`, commit `f6d832d65ddac7ed2d2e8d28fa84a942a888f4c0`.
+- `tests/appearance.test.cjs`: padrão no primeiro acesso, escolha salva do clássico respeitada, estilos retirados e valores inválidos caindo no padrão, armazenamento bloqueado e independência entre estilo e claro/noturno.
+- `tests/appearance-css.test.cjs`: todas as regras do Refinado em `appearance.css` exigem o atributo do estilo; contraste mínimo de 4,5:1 dos pares de texto nas paletas clara e escura e de 3:1 nos limites dos campos.
+- `tests/visual/contrast.spec.ts`: nenhum texto visível abaixo de 3:1 contra o fundo real, nos dois estilos e nos dois temas.
+- Testes visuais de layout, navegação e Visão geral rodam no padrão (Refinado); o clássico tem um teste próprio sem transbordamento.

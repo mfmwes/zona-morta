@@ -33,20 +33,21 @@ test('primeiro acesso abre no Refinado sem criar uma preferência; quem escolheu
 });
 
 test('inicialização restaura cada estilo nos dois modos antes da hidratação', () => {
-  for (const style of ['fiel', 'leitura', 'tecnico', 'refinado']) for (const theme of ['light', 'dark']) {
-    assert.deepEqual(boot({ [appearance.visualStyleStorageKey]: style, [appearance.themeStorageKey]: theme }), { visualStyle: style, theme });
+  for (const style of ['refinado', 'current']) for (const theme of ['light', 'dark']) {
+    assert.deepEqual(boot({ [appearance.visualStyleStorageKey]: style, [appearance.themeStorageKey]: theme }), style === 'current' ? { theme } : { visualStyle: style, theme });
   }
 });
 
 test('valores desconhecidos ou maliciosos não se tornam atributos do documento', () => {
-  for (const value of ['invalid', 'DARK', '', '<script>alert(1)</script>']) {
+  // Inclui os estilos retirados: quem os tinha salvo passa a abrir no Refinado.
+  for (const value of ['invalid', 'DARK', '', '<script>alert(1)</script>', 'fiel', 'leitura', 'tecnico']) {
     assert.deepEqual(boot({ [appearance.visualStyleStorageKey]: value, [appearance.themeStorageKey]: value }), { visualStyle: 'refinado' });
     assert.equal(appearance.isVisualStyle(value), false);
   }
 });
 
 test('falha de armazenamento de uma preferência não impede a outra', () => {
-  assert.deepEqual(boot({ [appearance.visualStyleStorageKey]: 'tecnico' }, appearance.themeStorageKey), { visualStyle: 'tecnico' });
+  assert.deepEqual(boot({ [appearance.visualStyleStorageKey]: 'current' }, appearance.themeStorageKey), {});
   assert.deepEqual(boot({ [appearance.themeStorageKey]: 'dark' }, appearance.visualStyleStorageKey), { theme: 'dark', visualStyle: 'refinado' });
 });
 
@@ -56,7 +57,7 @@ test('troca de estilo persiste, preserva claro/escuro e permite voltar ao CSS or
   global.document = { documentElement: element };
   global.window = { localStorage: { setItem: (key, value) => saved.set(key, value) } };
   try {
-    for (const style of ['fiel', 'leitura', 'tecnico', 'refinado']) {
+    for (const style of ['refinado']) {
       appearance.setVisualStyle(style);
       assert.equal(element.dataset.visualStyle, style);
       assert.equal(element.dataset.theme, 'dark');
@@ -74,12 +75,12 @@ test('estilo continua utilizável quando o navegador bloqueia localStorage', () 
   const element = root();
   global.document = { documentElement: element };
   global.window = { get localStorage() { throw new Error('Storage blocked'); } };
-  try { appearance.setVisualStyle('leitura'); assert.equal(element.dataset.visualStyle, 'leitura'); }
+  try { appearance.setVisualStyle('refinado'); assert.equal(element.dataset.visualStyle, 'refinado'); }
   finally { delete global.document; delete global.window; }
 });
 
-test('controles mantêm a alternância direta de modo e oferecem os cinco estilos com rádios', () => {
-  const element = root(); element.dataset.visualStyle = 'tecnico';
+test('controles mantêm a alternância direta de modo e oferecem os dois estilos com rádios', () => {
+  const element = root(); element.dataset.visualStyle = 'refinado';
   global.document = { documentElement: element };
   global.window = { localStorage: { setItem() {} } };
   const originalLoad = Module._load;
@@ -97,13 +98,13 @@ test('controles mantêm a alternância direta de modo e oferecem os cinco estilo
     function nodes(node, found = []) { if (Array.isArray(node)) node.forEach(child => nodes(child, found)); else if (node?.props) { found.push(node); nodes(node.props.children, found); } return found; }
     const view = nodes(ThemeToggle());
     const toggle = view.find(node => node.props['aria-label'] === 'Alternar entre modo claro e modo noturno');
-    toggle.props.onClick(); assert.equal(element.dataset.theme, 'dark'); assert.equal(element.dataset.visualStyle, 'tecnico');
+    toggle.props.onClick(); assert.equal(element.dataset.theme, 'dark'); assert.equal(element.dataset.visualStyle, 'refinado');
     toggle.props.onClick(); assert.equal(element.dataset.theme, 'light');
     const radios = view.filter(node => node.type === 'input' && node.props.type === 'radio');
-    assert.deepEqual(radios.map(node => node.props.value), ['refinado', 'current', 'fiel', 'leitura', 'tecnico']);
+    assert.deepEqual(radios.map(node => node.props.value), ['refinado', 'current']);
     assert.equal(radios.filter(node => node.props.checked).length, 1);
-    assert.equal(radios.find(node => node.props.checked).props.value, 'tecnico');
-    radios.find(node => node.props.value === 'fiel').props.onChange(); assert.equal(element.dataset.visualStyle, 'fiel');
+    assert.equal(radios.find(node => node.props.checked).props.value, 'refinado');
+    radios.find(node => node.props.value === 'current').props.onChange(); assert.equal(element.dataset.visualStyle, undefined);
     assert.equal(element.dataset.theme, 'light');
   } finally { Module._load = originalLoad; delete global.document; delete global.window; }
 });

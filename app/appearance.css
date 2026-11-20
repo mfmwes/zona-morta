@@ -1,114 +1,6 @@
-/* Optional themes only. Removing data-visual-style restores the original cascade. */
-html[data-visual-style="fiel"] {
-  --font-sans: "Segoe UI", "Trebuchet MS", Arial, sans-serif;
-  --font-mono: Consolas, "Liberation Mono", monospace;
-  --style-background: #e6ece8;
-  --style-paper: #fcfdf9;
-  --style-soft: #edf3ef;
-  --style-ink: #183b39;
-  --style-muted: #4c6862;
-  --style-line: #bccdc4;
-  --style-input: #718b80;
-  --style-primary: #185e56;
-  --style-on-primary: #ffffff;
-  --style-warm: #895516;
-  --style-highlight: #efbe75;
-  --style-hero-start: #102f30;
-  --style-hero-end: #24534d;
-  --style-quick: #153a38;
-  --style-quick-soft: #28524c;
-  --style-quick-line: #64897a;
-  --style-on-dark: #f6faf5;
-  --style-dark-muted: #c2d8cf;
-  --style-radius: 9px;
-  --style-shadow: 0 3px 15px #102f3010;
-}
-html[data-visual-style="leitura"] {
-  --font-sans: "Source Sans 3", "Segoe UI", sans-serif;
-  --font-mono: Consolas, "Liberation Mono", monospace;
-  --style-background: #eee7dd;
-  --style-paper: #fffcf5;
-  --style-soft: #f4ede5;
-  --style-ink: #372f36;
-  --style-muted: #6a5964;
-  --style-line: #cfc0bb;
-  --style-input: #917d86;
-  --style-primary: #75435c;
-  --style-on-primary: #ffffff;
-  --style-warm: #87572b;
-  --style-highlight: #efc29c;
-  --style-hero-start: #3e293b;
-  --style-hero-end: #644355;
-  --style-quick: #452f40;
-  --style-quick-soft: #614858;
-  --style-quick-line: #a78998;
-  --style-on-dark: #fff9f1;
-  --style-dark-muted: #ebd6df;
-  --style-radius: 14px;
-  --style-shadow: 0 4px 18px #432b3710;
-}
-html[data-visual-style="tecnico"] {
-  --font-sans: "IBM Plex Sans", "Segoe UI", sans-serif;
-  --font-mono: "IBM Plex Mono", Consolas, monospace;
-  --style-background: #e3eaf2;
-  --style-paper: #f9fcff;
-  --style-soft: #eaf1f9;
-  --style-ink: #1c304b;
-  --style-muted: #4d627b;
-  --style-line: #b8c8dc;
-  --style-input: #7188a2;
-  --style-primary: #2458a0;
-  --style-on-primary: #ffffff;
-  --style-warm: #285f80;
-  --style-highlight: #86dfed;
-  --style-hero-start: #10233f;
-  --style-hero-end: #224369;
-  --style-quick: #142e4a;
-  --style-quick-soft: #284969;
-  --style-quick-line: #6489af;
-  --style-on-dark: #f2f8ff;
-  --style-dark-muted: #c1d7ee;
-  --style-radius: 4px;
-  --style-shadow: 0 2px 0 #19375215;
-}
-html[data-visual-style="fiel"][data-theme="dark"] {
-  --style-background: #101d1b;
-  --style-paper: #1b2c28;
-  --style-soft: #263c35;
-  --style-ink: #eaf4ec;
-  --style-muted: #b3c9bc;
-  --style-line: #486258;
-  --style-input: #789989;
-  --style-primary: #9bd7bd;
-  --style-on-primary: #102e25;
-  --style-warm: #e8be83;
-}
-html[data-visual-style="leitura"][data-theme="dark"] {
-  --style-background: #221d23;
-  --style-paper: #302731;
-  --style-soft: #3f3340;
-  --style-ink: #f6eee8;
-  --style-muted: #d2bccb;
-  --style-line: #685462;
-  --style-input: #a28b9a;
-  --style-primary: #e9b3cd;
-  --style-on-primary: #3d2034;
-  --style-warm: #eac09a;
-}
-html[data-visual-style="tecnico"][data-theme="dark"] {
-  --style-background: #101b2a;
-  --style-paper: #192b41;
-  --style-soft: #233b56;
-  --style-ink: #edf5ff;
-  --style-muted: #b9cde5;
-  --style-line: #466586;
-  --style-input: #789bc1;
-  --style-primary: #97c8ff;
-  --style-on-primary: #122d4c;
-  --style-warm: #86dfed;
-}
-/* Refinado: superfícies neutras e calmas, petróleo como ação e âmbar só como destaque.
-   As regras próprias de forma e tipografia ficam em visual-refinado.css. */
+/* Estilo Refinado (padrão). Sem data-visual-style vale o Visual clássico: a cascata original, sem estas regras.
+   As regras de forma e tipografia do Refinado ficam em visual-refinado.css. */
+/* Paleta: superfícies neutras e calmas, petróleo como ação e âmbar só como destaque. */
 html[data-visual-style="refinado"] {
   --font-sans: "IBM Plex Sans", "Segoe UI", sans-serif;
   /* Sem monoespaçada nos rótulos e números: a sans com algarismos tabulares alinha igual e lê melhor. */
@@ -145,9 +37,19 @@ html[data-visual-style="refinado"][data-theme="dark"] {
   --style-primary: #7cc7b4;
   --style-on-primary: #0c2622;
   --style-warm: #e7b977;
+  --style-danger-surface: #442925;
+  --style-danger-ink: #ffc3b8;
+  --style-success-surface: #233e32;
+  --style-success-ink: #b0e9c8;
+  --style-warning-surface: #433820;
+  --style-warning-ink: #f5d79a;
+  --hope-ink: #ffe29a;
+  --hope-surface: #433810;
+  --fear-ink: #ddc2ff;
+  --fear-surface: #352444;
 }
 
-html:is([data-visual-style="fiel"], [data-visual-style="leitura"], [data-visual-style="tecnico"], [data-visual-style="refinado"]) {
+html[data-visual-style="refinado"] {
   --background: var(--style-background);
   --foreground: var(--style-ink);
   --card: var(--style-paper);
@@ -369,49 +271,7 @@ html:is([data-visual-style="fiel"], [data-visual-style="leitura"], [data-visual-
   .table-chat :is(input, textarea, select) { background: var(--card); color: var(--foreground); border-color: var(--input); }
   .table-chat-rollbar button, .table-chat-dice-types button { background: var(--card); color: var(--foreground); border-color: var(--input); }
   .topbar-context > .text-\[\#c4cfcb\] { color: var(--muted-foreground); }
-  .appearance-swatch--fiel i:first-child { background: #185e56; }
-  .appearance-swatch--fiel i:nth-child(2) { background: #fcfdf9; }
-  .appearance-swatch--fiel i:nth-child(3) { background: #efbe75; }
-  .appearance-swatch--leitura i:first-child { background: #75435c; }
-  .appearance-swatch--leitura i:nth-child(2) { background: #fffcf5; }
-  .appearance-swatch--leitura i:nth-child(3) { background: #efc29c; }
-  .appearance-swatch--tecnico i:first-child { background: #2458a0; }
-  .appearance-swatch--tecnico i:nth-child(2) { background: #f9fcff; }
-  .appearance-swatch--tecnico i:nth-child(3) { background: #86dfed; }
 }
-
-html:is([data-visual-style="fiel"], [data-visual-style="leitura"], [data-visual-style="tecnico"], [data-visual-style="refinado"])[data-theme="dark"] {
-  --style-danger-surface: #442925;
-  --style-danger-ink: #ffc3b8;
-  --style-success-surface: #233e32;
-  --style-success-ink: #b0e9c8;
-  --style-warning-surface: #433820;
-  --style-warning-ink: #f5d79a;
-  --hope-ink: #ffe29a;
-  --hope-surface: #433810;
-  --fear-ink: #ddc2ff;
-  --fear-surface: #352444;
-}
-
-/* Each optional theme has a distinct shape and typographic rhythm. */
-html[data-visual-style="leitura"] {
-  .character-identity h2, .page-title { font-weight: 650; letter-spacing: -.025em; }
-  .character-section-heading h3 { font-weight: 650; letter-spacing: 0; }
-  .character-surface :is(p, dd), .reference-detail dd { line-height: 1.7; }
-  .character-hero::before { opacity: .1; }
-  .character-ability-title, .reference-item-copy strong { font-size: 1rem; line-height: 1.4; }
-}
-html[data-visual-style="tecnico"] {
-  body { font-synthesis: none; }
-  .character-identity h2, .page-title, .character-section-heading h3 { font-weight: 600; letter-spacing: -.025em; }
-  .character-serial, .dossier-title, .eyebrow { font-weight: 600; letter-spacing: .09em; }
-  .character-section-heading { border-bottom: 2px solid var(--border); }
-  .character-hero::before { opacity: .4; background-image: linear-gradient(var(--style-quick-line) 1px, transparent 1px), linear-gradient(90deg, var(--style-quick-line) 1px, transparent 1px); background-size: 28px 28px; }
-  /* Plex is supplied up to 700; avoid synthetic 800/900 weights and cramped numerals. */
-  :is(.smallcaps, .dossier-title, .character-resource-top strong, .character-provision-grid b, .character-attribute strong, .character-summary-attribute strong, .character-combat-metrics b, .character-defense-card > strong, .character-thresholds-track strong, .character-thresholds-track small, .character-quick-stat > strong, .character-ability-meta span) { font-weight: 600; }
-  .character-tab { font-weight: 500; }
-}
-
 
 /* Appearance controls share the existing day/night control's locations. */
 .theme-controls { position: fixed; z-index: 90; left: 15px; bottom: 15px; display: flex; gap: 6px; }
@@ -433,15 +293,6 @@ html[data-visual-style="tecnico"] {
 .appearance-swatch i { flex: 1; background: #193b3e; }
 .appearance-swatch i:nth-child(2) { background: #e9ede8; }
 .appearance-swatch i:nth-child(3) { background: #c89a62; }
-.appearance-swatch--fiel i:first-child { background: #315d57; }
-.appearance-swatch--fiel i:nth-child(2) { background: #fafcf7; }
-.appearance-swatch--fiel i:nth-child(3) { background: #d1ab73; }
-.appearance-swatch--leitura i:first-child { background: #355f59; }
-.appearance-swatch--leitura i:nth-child(2) { background: #e1ece6; }
-.appearance-swatch--leitura i:nth-child(3) { background: #d6b37d; }
-.appearance-swatch--tecnico i:first-child { background: #153d46; }
-.appearance-swatch--tecnico i:nth-child(2) { background: #e1ebed; }
-.appearance-swatch--tecnico i:nth-child(3) { background: #d3a771; }
 .appearance-swatch--refinado i:first-child { background: #1b5f57; }
 .appearance-swatch--refinado i:nth-child(2) { background: #f3f5f2; }
 .appearance-swatch--refinado i:nth-child(3) { background: #e3ad5a; }

@@ -60,7 +60,7 @@ const query = new URLSearchParams(location.search);
 // Estilo visual: ?style=current mostra o Visual atual (padrão do app, sem data-visual-style).
 function applyPreviewStyle(style: string) { if (style === 'current') document.documentElement.removeAttribute('data-visual-style'); else document.documentElement.dataset.visualStyle = style; }
 // Padrão igual ao do app: Refinado.
-const initialStyle = ['tecnico', 'fiel', 'leitura', 'refinado', 'current'].includes(query.get('style') ?? '') ? query.get('style')! : 'refinado';
+const initialStyle = ['refinado', 'current'].includes(query.get('style') ?? '') ? query.get('style')! : 'refinado';
 applyPreviewStyle(initialStyle);
 function Preview() {
   const [full, setFull] = useState(() => previewFixture({base:query.has('base'),conflict:query.get('screen')==='conflict',rest:query.get('scenario')==='rest',roads:query.get('scenario')==='roads',objects:Number(query.get('objects')||3)}));
@@ -127,7 +127,7 @@ function Preview() {
     <label>Perfil <select aria-label="Perfil" value={role} onChange={e=>setRole(e.target.value)}><option value="master">Mestre</option><option value="player">Jogador</option></select></label>
     <label>Tela <select aria-label="Tela" value={screen} onChange={e=>setScreen(e.target.value)}><option value="overview">Visão geral</option><option value="map">Mapa e exploração</option><option value="scene">Cena visual</option><option value="sheet">Ficha</option><option value="shelter">Abrigo</option><option value="conflict">Conflito</option><option value="npcs">PNJs</option><option value="reading">Leitura e seleção</option></select></label>
     <label>Tema <select aria-label="Tema" defaultValue="dark" onChange={e=>document.documentElement.dataset.theme=e.target.value}><option value="dark">Escuro</option><option value="light">Claro</option></select></label>
-    <label>Estilo <select aria-label="Estilo" defaultValue={initialStyle} onChange={e=>applyPreviewStyle(e.target.value)}><option value="refinado">refinado</option><option value="current">clássico</option><option value="fiel">fiel</option><option value="leitura">leitura</option><option value="tecnico">tecnico</option></select></label>
+    <label>Estilo <select aria-label="Estilo" defaultValue={initialStyle} onChange={e=>applyPreviewStyle(e.target.value)}><option value="refinado">refinado</option><option value="current">clássico</option></select></label>
     <button onClick={()=>location.reload()}>Reiniciar exemplo</button>{query.has('chat')&&<button aria-expanded={chatOpen} onClick={()=>setChatOpen(!chatOpen)}>Chat</button>}<small>Nenhum dado é enviado à campanha real.</small>
   </div>{mobile?mobileShell:desktopShell}<Toaster/></div></PlayerSimulationContext.Provider>;
 }

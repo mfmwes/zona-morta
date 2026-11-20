@@ -4,12 +4,10 @@ export const visualStyleStorageKey = "zona-morta-visual-style";
 export const visualStyles = [
   { id: "refinado", label: "Refinado (padrão)", description: "Superfícies calmas, petróleo e âmbar, com as fontes IBM Plex." },
   { id: "current", label: "Visual clássico", description: "A aparência original do Zona Morta." },
-  { id: "fiel", label: "Refino fiel", description: "Petróleo profundo, âmbar e detalhes de campo." },
-  { id: "leitura", label: "Leitura confortável", description: "Papel quente, ameixa e a fonte Source Sans 3." },
-  { id: "tecnico", label: "Dossiê técnico", description: "Azul de arquivo, ciano e as fontes IBM Plex." },
 ] as const;
 
-/* Estilo de quem nunca escolheu um. "current" (clássico) é a ausência do atributo e continua disponível. */
+/* Estilo de quem nunca escolheu um. "current" (clássico) é a ausência do atributo e continua disponível.
+   Escolhas salvas de estilos retirados (fiel, leitura, tecnico) são desconhecidas e caem no padrão. */
 export const defaultVisualStyle = "refinado";
 
 export type VisualStyle = typeof visualStyles[number]["id"];
