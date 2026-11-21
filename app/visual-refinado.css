@@ -251,8 +251,22 @@ html[data-visual-style="refinado"] {
   }
   .conflict-state-badge { font: 600 .75rem/1.3 var(--font-sans); letter-spacing: 0; text-transform: none; }
   .character-conflict-kicker { font: 600 .8125rem/1.3 var(--font-sans); letter-spacing: .01em; }
+  /* Trilha fixa no topo da ficha: o rótulo do grupo tinha no máximo 56px e "Sobreviventes" invadia os avatares. */
+  .character-conflict-hud--trail.is-stuck .conflict-trail-group-label { max-width: 108px; overflow-wrap: anywhere; }
   /* No escuro o verde fixo (#47776f) ficava com pouco contraste sobre o cartão. */
   .character-conflict-hud:not(.is-own-spotlight) .character-conflict-kicker:where([data-theme="dark"] *) { color: var(--primary); }
+
+  /* Busca no hex: cômodo escolhido mais evidente que o realce de passar o mouse; título em frase. */
+  .search-session-room-list > b { font: var(--rf-label); letter-spacing: .01em; text-transform: none; }
+  .search-session-room-list button[aria-pressed="true"] { border-color: color-mix(in srgb, var(--primary) 55%, var(--border)); background: var(--rf-tint); box-shadow: inset 3px 0 0 var(--primary); }
+  .search-session-room-list button[aria-pressed="true"] span { color: var(--primary); }
+
+  /* Botão fixo da busca no celular: desativado ficava semitransparente e o texto de trás aparecia. */
+  @media (max-width: 767px) {
+    .search-session-dialog .hex-search-step > [data-slot="button"]:last-child:disabled { opacity: 1; background: var(--muted); color: var(--muted-foreground); border-color: var(--border); }
+  }
+  /* Abas Catálogo / Item livre e ações do inventário: fundo da faixa acompanha o tema (era claro fixo no escuro). */
+  :is(.inventory-mode, .inventory-action-tabs) { background: var(--muted); }
 
   /* ---------- Abrigo ---------- */
   /* Faixa de números em cartão claro; a planta e o painel da sala continuam escuros, como área visual. */
