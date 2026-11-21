@@ -162,7 +162,7 @@ export function SurvivorConflictHud({
     <section className={`character-conflict-hud character-conflict-hud--trail${isStuck ? " is-stuck" : ""}${ownSpotlight ? " is-own-spotlight" : ""}${firstDamage ? " has-damage" : ""}`}>
     <div className="character-conflict-trail-header">
       <div className="character-conflict-trail-title">
-        <span className="character-conflict-kicker"><Swords size={14} /> TRILHA DE CONFLITO</span>
+        <span className="character-conflict-kicker"><Swords size={14} /> Trilha de conflito</span>
         <span className="character-conflict-trail-summary" role="status">
           <span><Crosshair size={12} /> Spotlight <b>{ownSpotlight ? "VOCÊ" : spotlightName ?? "sem foco"}</b></span>
           <span><Target size={12} /> Alvo <b>{selectedTarget?.name ?? "nenhum"}</b></span>

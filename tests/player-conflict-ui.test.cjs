@@ -36,7 +36,7 @@ test('a trilha é renderizada no payload real do jogador, participante ou observ
     const live = render(projected,projected.survivors[0],false);
     const preview = render(game,person,true);
     for (const html of [live,preview]) {
-      assert.match(html,/TRILHA DE CONFLITO/);
+      assert.match(html,/Trilha de conflito/);
       assert.match(html,/Participante/);
       assert.equal(html.includes('Pedir Spotlight'),person.id === game.survivors[0].id);
     }
