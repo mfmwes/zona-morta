@@ -940,7 +940,7 @@ export default function CampaignApp() {
             {playerPreview ? <Eye size={16} /> : <EyeOff size={16} />}<span>{playerPreview ? "Prévia ativa" : "Prévia dos jogadores"}</span>
           </Button>}
           {masterExperience && <Button size="sm" variant="outline" onClick={() => setSearchOpen(true)} title="Buscar na campanha (Ctrl/⌘ K)" aria-keyshortcuts="Control+k Meta+k"><Search size={16} aria-hidden="true" /><span>Buscar</span></Button>}
-          <Button size="sm" variant={chatOpen ? "default" : "outline"} onClick={() => setChatOpen(value => !value)} aria-expanded={chatOpen} aria-controls="table-chat"><MessageSquare size={16} /><span className="topbar-options-label">Chat</span></Button>
+          <Button size="sm" variant={chatOpen ? "default" : "outline"} onClick={() => setChatOpen(value => !value)} aria-label="Chat" title="Chat da mesa" aria-expanded={chatOpen} aria-controls="table-chat"><MessageSquare size={16} /><span className="topbar-options-label">Chat</span></Button>
           <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" variant="outline" aria-label="Abrir opções da campanha"><MoreHorizontal size={17} /><span className="topbar-options-label">Opções</span></Button></DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-52">
               <DropdownMenuItem onSelect={downloadBackup}><Download size={16} />Baixar cópia</DropdownMenuItem>

@@ -543,7 +543,7 @@ test('Trilha de Conflito acompanha a rolagem da página sem invadir o modal de d
   const trail = fs.readFileSync(require.resolve('../components/conflict-trail.tsx'), 'utf8');
   const rolls = fs.readFileSync(require.resolve('../components/roll-dialog.tsx'), 'utf8');
   const visual = fs.readFileSync(require.resolve('../app/visual-system.css'), 'utf8');
-  assert.match(hud, /TRILHA DE CONFLITO/);
+  assert.match(hud, /Trilha de conflito/);
   assert.match(hud, /Alvos da cena/);
   assert.match(hud, /Localizar/);
   assert.match(spotlightControl, /Pedir Spotlight/);
